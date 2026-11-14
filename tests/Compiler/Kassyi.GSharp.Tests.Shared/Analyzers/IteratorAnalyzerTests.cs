@@ -146,39 +146,6 @@ public class IteratorAnalyzerTests : TranspilerTestBase
             actual);
     }
 
-    private const string SharedIterSource = """
-        using System.Collections.Generic;
-        using Kassyi.GSharp.Core;
-
-        public static partial class SharedIter
-        {
-            [GpuDeviceFunction]
-            public static IEnumerable<int> Values()
-            {
-                var s = new SharedMemory<int>(32);
-                s[ThreadIndex.X] = ThreadIndex.X;
-                int v = s[ThreadIndex.X];
-                yield return v;
-            }
-        }
-        """;
-
-    private const string SharedIterKernelsSource = """
-        using Kassyi.GSharp.Core;
-
-        public static partial class SharedIterKernels
-        {
-            [GpuKernel]
-            public static void SharedIterKernel(int[] o)
-            {
-                foreach (int v in SharedIter.Values())
-                {
-                    o[ThreadIndex.X] = v;
-                }
-            }
-        }
-        """;
-
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -186,17 +153,37 @@ public class IteratorAnalyzerTests : TranspilerTestBase
     public async Task IteratorSharedMemory_CrossFileIteratorWithSharedMemoryDeclaration_ReportsGSH0072WithoutGSH0048(string dialect)
     {
         var compilation = RoslynTestUtility.CreateCompilationAt(
-            ("SharedIter.cs", SharedIterSource),
-            ("SharedIterKernels.cu.cs", SharedIterKernelsSource));
+            ("SharedMemoryCrossFileIterator_Iterator.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/SharedMemoryCrossFileIterator_Iterator.cs")),
+            ("SharedMemoryCrossFileIterator_Kernels.cu.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/SharedMemoryCrossFileIterator_Kernels.cu.cs")));
 
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
 
         Assert.DoesNotContain(run.Generator, static d => d.Id == GSharpDiagnostics.InternalCompilerError.Id);
         var gsh0072 = Assert.Single(run.Analyzer, static d => d.Id == GSharpDiagnostics.IteratorBodyConstructNotSupported.Id);
         var span = gsh0072.Location.GetLineSpan().Span;
-        Assert.Equal(9, span.Start.Line + 1);
+        Assert.Equal(12, span.Start.Line + 1);
         Assert.Equal(9, span.Start.Character + 1);
-        Assert.Equal(9, span.End.Line + 1);
+        Assert.Equal(12, span.End.Line + 1);
         Assert.Equal(12, span.End.Character + 1);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task IteratorInArgument_CrossFileIteratorPassesConvertedArgument_ReportsNoInternalError(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilationAt(
+            ("InArgumentConversionCrossFileIterator_Iterator.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/InArgumentConversionCrossFileIterator_Iterator.cs")),
+            ("InArgumentConversionCrossFileIterator_Kernels.cu.cs",
+                RoslynTestUtility.ReadTestCase("Analyzers/InArgumentConversionCrossFileIterator_Kernels.cu.cs")));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        Assert.DoesNotContain(run.Generator, static d => d.Id == GSharpDiagnostics.InternalCompilerError.Id);
+        Assert.Empty(run.Generator);
     }
 }

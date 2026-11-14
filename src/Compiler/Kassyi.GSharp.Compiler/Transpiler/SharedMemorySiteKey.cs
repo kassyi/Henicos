@@ -22,11 +22,12 @@ internal static class SharedMemorySiteKey
     public static ulong Compute(SemanticModel semanticModel, BaseObjectCreationExpressionSyntax creation,
         INamedTypeSymbol? constructedStructType = null)
     {
-        var original = semanticModel.GetOriginalNode(creation) as BaseObjectCreationExpressionSyntax
-                       ?? throw new InvalidOperationException("A shared memory creation is not mapped to its source declaration.");
-        var model = semanticModel.SyntaxTree == original.SyntaxTree
-            ? semanticModel
-            : semanticModel.Compilation.GetCachedSemanticModel(original.SyntaxTree);
+        if (!semanticModel.TryGetOriginalNode(creation, out var originalNode, out var model) ||
+            originalNode is not BaseObjectCreationExpressionSyntax original)
+        {
+            throw new InvalidOperationException("A shared memory creation is not mapped to its source declaration.");
+        }
+
         var method = original.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>()
                      ?? throw new InvalidOperationException("A shared memory creation is not inside a method.");
         var methodId = model.GetDeclaredSymbol(method)?.GetDocumentationCommentId()
