@@ -1,5 +1,5 @@
 // The handlers of the messages that act on the queue rather than on the client's own job: status, cancel, move,
-// set-weight, start, await (wait) and stop.
+// set-weight, start, pause, resume, await (wait) and stop.
 
 import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
@@ -22,6 +22,8 @@ function status(connection: Connection): void {
     used: scheduler.used,
     memoryCapacity: scheduler.memoryCapacity,
     memoryUsed: scheduler.memoryUsed,
+    paused: scheduler.paused,
+    ...(scheduler.paused ? { pausedAt: scheduler.pausedAt } : {}),
     running: scheduler.running.map(view),
     waiting: scheduler.waiting.map(view),
   });
@@ -124,6 +126,40 @@ function start(connection: Connection, message: Incoming): void {
   connection.reply(startNow(connection.server, message));
 }
 
+/**
+ * pause and resume: the one flag the decision step reads (Scheduler.grant); the settle that follows every message
+ * grants (resume) or keeps back (pause) and saves the state, so the pause survives a restart.
+ */
+function setPaused(server: JobServer, paused: boolean): ServerMessage {
+  const scheduler = server.scheduler;
+  const changed = scheduler.paused !== paused;
+  if (changed) {
+    scheduler.paused = paused;
+    scheduler.pausedAt = paused ? Date.now() : 0;
+    server.log(paused ? "pause: nothing new is granted" : "resume");
+    if (paused) {
+      // Each waiting client hears of it once; a client queued later is told in its "queued"
+      scheduler.waiting.forEach((job) => server.tell(job, { type: "paused", at: scheduler.pausedAt }));
+    }
+  }
+  return {
+    type: "pause-result",
+    paused,
+    changed,
+    running: scheduler.running.length,
+    waiting: scheduler.waiting.length,
+    pausedAt: scheduler.pausedAt,
+  };
+}
+
+function pause(connection: Connection): void {
+  connection.reply(setPaused(connection.server, true));
+}
+
+function resume(connection: Connection): void {
+  connection.reply(setPaused(connection.server, false));
+}
+
 function awaitEnd(connection: Connection, message: Incoming): void {
   const id = idField(message, "id");
   if (id === null) {
@@ -175,6 +211,8 @@ export const ControlMessages: Readonly<Record<string, MessageHandler>> = {
   move,
   "set-weight": setWeight,
   start,
+  pause,
+  resume,
   await: awaitEnd,
   stop,
 };

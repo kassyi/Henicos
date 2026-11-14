@@ -87,6 +87,7 @@ export function sampleReply(): StatusReply {
 export const MainCheckout = "P:/repo";
 export const PanelWorktree = "P:/repo/tmp/worktree/issue-1851-panel";
 export const LaneWorktree = "P:/repo/tmp/worktree/issue-1835";
+export const FixWorktree = "P:/repo/tmp/worktree/issue-1890";
 
 export function chat(fields: Partial<ChatRecord>): ChatRecord {
   return {
@@ -101,13 +102,15 @@ export function chat(fields: Partial<ChatRecord>): ChatRecord {
 }
 
 /**
- * Four chats that wait (a choice question, a permission, a reply that asks and one that reports; one in the main
- * checkout) and three that do not, as listChats() returns them: the longest wait first.
+ * Four chats that wait for an answer (a choice question, a permission, a reply in the main checkout with its title
+ * and two open questions judged by Claude Haiku, and a reply of an older file known by its first prompt), one idle
+ * after a report, and three that do not wait, as listChats() returns them: the longest wait first. Summaries are on.
  */
 export function sampleChats(): ChatView {
   return {
     mainCheckout: MainCheckout,
     ignoreCase: true,
+    summaries: { on: true },
     chats: [
       chat({
         agent: "antigravity",
@@ -117,12 +120,29 @@ export function sampleChats(): ChatView {
           "Both pull requests change the state file of the queue, and merging them in the wrong order would " +
           "drop the key of the round-robin;\nwhich one goes first?",
         asks: true,
+        title: "Queue PR order",
+        // judged by Claude Haiku: two questions open, the newest first
+        askVerdict: "haiku",
+        summaryOf: Now - 41 * Minute,
+        openQuestions: [
+          { text: "Which of the two queue PRs merges first?", askedAt: Now - 41 * Minute },
+          { text: "Rebase the docs PR on main now?", askedAt: Now - 70 * Minute },
+        ],
+      }),
+      chat({
+        worktree: FixWorktree,
+        since: Now - 9 * Minute,
+        // an older file: no open questions recorded, the question mark of its paragraph decides
+        question: "The rows fit the width now.\nShall I push the branch?",
+        asks: true,
+        firstPrompt: "Fix the width of the chat rows in the live view",
       }),
       chat({
         worktree: LaneWorktree,
         since: Now - 2 * Minute,
         question: "The three lanes keep running until they finish; each builds and tests through the queue.",
         asks: false,
+        firstPrompt: "Run the three lanes of the M2 fixes and report when they are done",
       }),
       chat({
         worktree: PanelWorktree,

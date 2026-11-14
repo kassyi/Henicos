@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SharedMemorySizeNegative",
+    "id": "GSH0117",
+    "title": "SharedMemory<T> count must not be negative",
+    "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

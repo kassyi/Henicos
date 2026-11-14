@@ -135,7 +135,7 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
             DeviceDynamicSharedMemoryKernels.LaunchNegativeCountKernel(output, DeviceDynamicSharedMemoryScenarios.Length,
                 negative, blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
                 sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)));
-        Assert.Contains("G#: dynamic shared memory exceeds sharedMemBytes", ex.Message);
+        Assert.Contains("G#: the count of a shared memory declaration is negative", ex.Message);
         Assert.Null(ex.InnerException);
     }
 #endif

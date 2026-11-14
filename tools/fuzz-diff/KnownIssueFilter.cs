@@ -34,9 +34,6 @@ public sealed class KnownIssueFilter
     /// <summary>Issue #645: Instance methods of plain structs called from device code are not emitted or diagnosed.</summary>
     public const int Issue645PlainStructInstanceMethod = 645;
 
-    /// <summary>Issue #1101: <c>??=</c> used as a value has type <see cref="Nullable{T}"/> in generated C++ and does not compile.</summary>
-    public const int Issue1101CoalesceAssignValue = 1101;
-
     /// <summary>Issue #1102: Nested tuple deconstruction and conditional on the right of a deconstruction fail with GSH0003.</summary>
     public const int Issue1102ComplexTupleDeconstruction = 1102;
 
@@ -51,7 +48,6 @@ public sealed class KnownIssueFilter
         Issue998MixedWidthNullCoalesce,
         Issue984NullableLocalVariable,
         Issue645PlainStructInstanceMethod,
-        Issue1101CoalesceAssignValue,
         Issue1102ComplexTupleDeconstruction,
         Issue1103StructConversionDefault,
     ];
@@ -108,9 +104,6 @@ public sealed class KnownIssueFilter
 
     /// <summary>Gets whether #645 (calling plain struct instance methods from device code) should be avoided.</summary>
     public bool AvoidPlainStructInstanceMethods => _avoidedIssues.Contains(Issue645PlainStructInstanceMethod);
-
-    /// <summary>Gets whether #1101 (<c>??=</c> used as a value inside an expression) should be avoided.</summary>
-    public bool AvoidCoalesceAssignValue => _avoidedIssues.Contains(Issue1101CoalesceAssignValue);
 
     /// <summary>Gets whether #1102 (nested tuple deconstruction or conditional on the right of a deconstruction) should be avoided.</summary>
     public bool AvoidComplexTupleDeconstruction => _avoidedIssues.Contains(Issue1102ComplexTupleDeconstruction);
