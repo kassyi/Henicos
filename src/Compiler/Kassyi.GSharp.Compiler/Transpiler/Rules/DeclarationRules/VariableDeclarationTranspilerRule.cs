@@ -10,6 +10,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
+    // How many var locals HoldsReadOnlyArray follows back to the array they were initialized from
+    private const int MaxReadOnlyLocalChain = 8;
+
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,
         bool isVar,
@@ -200,9 +203,9 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
     }
 
-    // fixed (T* p = a) or fixed (T* p = &a[i]) where a is a [GpuReadOnly] parameter or field: the device holds a as a
-    // GSharpArray of const elements, so the pointer points at const T (C# forbids nothing here, and a write through the
-    // pointer is already a write to a read-only array)
+    // fixed (T* p = a) or fixed (T* p = &a[i]) where a holds a [GpuReadOnly] array: the device holds a as a GSharpArray
+    // of const elements, so the pointer points at const T (C# forbids nothing here, and a write through the pointer is
+    // already a write to a read-only array)
     private static bool PinsReadOnlyArray(VariableDeclaratorSyntax variable, ref TranspileContext context)
     {
         if (variable.Parent?.Parent is not FixedStatementSyntax || variable.Initializer is not { } initializer)
@@ -217,9 +220,33 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
             ? element.Expression
             : initializer.Value;
-        return context.Query.SemanticModel.GetSymbol(pinned) is (IParameterSymbol or IFieldSymbol or IPropertySymbol)
-                   and var symbol &&
-               symbol.HasAttribute(KnownAttributes.GpuReadOnly);
+        return HoldsReadOnlyArray(pinned, ref context);
+    }
+
+    // Whether the device holds the array of expression as a GSharpArray of const elements: a [GpuReadOnly] parameter,
+    // field or property, or a var local initialized from one (auto keeps the const elements)
+    private static bool HoldsReadOnlyArray(ExpressionSyntax expression, ref TranspileContext context)
+    {
+        for (var depth = 0; depth < MaxReadOnlyLocalChain; depth++)
+        {
+            switch (context.Query.SemanticModel.GetSymbol(expression))
+            {
+                case (IParameterSymbol or IFieldSymbol or IPropertySymbol) and var symbol:
+                    return symbol.HasAttribute(KnownAttributes.GpuReadOnly);
+                case ILocalSymbol local when local.DeclaringSyntaxReferences.Length == 1 &&
+                                             local.DeclaringSyntaxReferences[0].GetSyntax() is VariableDeclaratorSyntax
+                                             {
+                                                 Parent: VariableDeclarationSyntax { Type.IsVar: true },
+                                                 Initializer.Value: var value
+                                             }:
+                    expression = value;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsConst(VariableDeclaratorSyntax declarator) =>
