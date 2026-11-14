@@ -41,10 +41,10 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                         sequence.AppendArgument(argument, symbol.Parameters[i],
                             ref context, convertToParameter: i != 0 || mappingInfo.CastFirstArgumentTo == null);
                     }
-                    else if (!ArgumentMatchingHelper.TryAppendCallerInfoArgument(symbol.Parameters[i], node,
-                                 ref context))
+                    else
                     {
-                        ArgumentMatchingHelper.AppendDefaultArgument(symbol.Parameters[i], ref context);
+                        OmittedArgument.Plan(symbol.Parameters[i], node, context.Query.SemanticModel,
+                            visitsDefaultSyntax: false).Append(symbol.Parameters[i], ref context);
                     }
                 }
             }

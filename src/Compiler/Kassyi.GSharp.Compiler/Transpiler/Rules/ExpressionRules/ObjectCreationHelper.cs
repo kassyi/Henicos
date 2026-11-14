@@ -284,10 +284,10 @@ internal static class ObjectCreationHelper
             {
                 sequence.AppendArgument(argument, parameter, ref context, convertToParameter);
             }
-            else if (creation is null ||
-                     !ArgumentMatchingHelper.TryAppendCallerInfoArgument(parameter, creation, ref context))
+            else
             {
-                ArgumentMatchingHelper.AppendDefaultArgument(parameter, ref context);
+                OmittedArgument.Plan(parameter, creation, context.Query.SemanticModel, visitsDefaultSyntax: false)
+                    .Append(parameter, ref context);
             }
         }
     }

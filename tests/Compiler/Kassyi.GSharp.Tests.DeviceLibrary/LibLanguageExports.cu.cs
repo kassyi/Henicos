@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.DeviceLibrary;
@@ -33,4 +34,11 @@ public static partial class LibLanguageExports
 
     [GpuDeviceFunction]
     public static int WeightedDifference(this Pair pair, int scale) => (pair.A * scale) - pair.B;
+
+    // A caller-info parameter of a function that a kernel of another assembly calls (#946)
+    [GpuDeviceFunction]
+    public static int CallerLine([CallerLineNumber] int line = 0) => line;
+
+    [GpuDeviceFunction]
+    public static int LibLineAfter(this int x, [CallerLineNumber] int line = 0) => (x * 1000) + line;
 }

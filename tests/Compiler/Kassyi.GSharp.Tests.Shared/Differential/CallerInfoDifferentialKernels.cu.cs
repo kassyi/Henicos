@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Tests.DeviceLibrary;
 using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -19,6 +20,7 @@ public static partial class CallerInfoDifferentialKernels
     public static readonly string[] Columns =
     [
         "plain", "paren_on_next_line", "nested", "long", "constructor", "explicit", "mapped", "named_after",
+        "extension", "library", "library_extension", "local_function", "lambda",
     ];
 
     [GpuDeviceFunction]
@@ -60,7 +62,7 @@ public static partial class CallerInfoDifferentialKernels
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid >= xs.Length) return;
         int x = xs[tid] & 0x3FF;
-        int o = tid * 8;
+        int o = tid * 13;
         r[o + 0] = Line();
         r[o + 1] = Line
         (
@@ -73,6 +75,13 @@ public static partial class CallerInfoDifferentialKernels
         r[o + 6] = Line();
 #line default
         r[o + 7] = Offset(x, bias: 3);
+        r[o + 8] = x.LineAfter();
+        r[o + 9] = LibLanguageExports.CallerLine();
+        r[o + 10] = x.LibLineAfter();
+        r[o + 11] = LocalLine();
+        r[o + 12] = xs.AsStackEnumerable().Take(1).Select(static v => Line()).Sum();
+
+        static int LocalLine() => Line();
     }
 
     // The managed path calls the managed version of LineWithSum; C# cannot run the kernel as written
@@ -107,6 +116,12 @@ public static partial class CallerInfoDifferentialKernels
 
         r[tid] = sum;
     }
+}
+
+public static partial class CallerInfoExtensions
+{
+    [GpuDeviceFunction]
+    public static int LineAfter(this int x, [CallerLineNumber] int line = 0) => (x * 1000) + line;
 }
 
 public struct CallerInfoMarked

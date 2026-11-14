@@ -311,38 +311,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     // An optional parameter the call omits: the call site's value of a caller-info parameter, its default value, or for
     // [Optional] without one default(T), as C# passes. A params parameter without arguments takes nothing
     private static void AppendOmittedArgument(IParameterSymbol parameter, InvocationExpressionSyntax call,
-        ref TranspileContext context)
-    {
-        if (ArgumentMatchingHelper.TryAppendCallerInfoArgument(parameter, call, ref context))
-        {
-            return;
-        }
-
-        if (parameter.HasExplicitDefaultValue)
-        {
-            EmitDefaultValue(parameter, ref context);
-        }
-        else if (parameter.IsOptional)
-        {
-            context.Emitter.Writer.Append("{}");
-        }
-    }
-
-    private static void EmitDefaultValue(IParameterSymbol parameter, ref TranspileContext context)
-    {
-        if (GetDefaultValueSyntax(parameter) is { } syntax)
-        {
-            context.Visitor.Visit(syntax);
-            return;
-        }
-
-        // No default clause in the syntax: [DefaultParameterValue], or a method from metadata
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, parameter.ExplicitDefaultValue));
-    }
-
-    private static ExpressionSyntax? GetDefaultValueSyntax(IParameterSymbol parameter) =>
-        parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) &&
-        paramSyntax is { Default: { } defaultClause }
-            ? defaultClause.Value
-            : null;
+        ref TranspileContext context) =>
+        OmittedArgument.Plan(parameter, call, context.Query.SemanticModel, visitsDefaultSyntax: true)
+            .Append(parameter, ref context);
 }

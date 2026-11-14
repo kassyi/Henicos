@@ -78,16 +78,16 @@ internal sealed partial class ManagedExecutionRewriter
             SyntaxFactory.ArgumentList(callArguments));
     }
 
-    // <call>(<arguments>, <parameter>: <value>): a caller-info parameter that the call of a method of the user's code
-    // omits receives the value that C# computes at the user's call site (#946). Left to C#, the generated file would be
-    // the site, and a managed version does not keep the attribute. Calls of other methods (the runtime's, which the
-    // rewriter may map to other members) and SharedMemory<T>, whose site key replaces its caller information, are left
-    // as they are
+    // <call>(<arguments>, <parameter>: <value>): a caller-info parameter that the call of a method of the user's code,
+    // or of a device function of another assembly, omits receives the value that C# computes at the user's call site
+    // (#946). Left to C#, the generated file would be the site, and a managed version does not keep the attribute.
+    // Calls of other methods (the runtime's, which the rewriter may map to other members) and SharedMemory<T>, whose
+    // site key replaces its caller information, are left as they are
     private SyntaxNode? AddCallerInfoArguments(SyntaxNode node, SyntaxNode? visited)
     {
         if (visited is not (InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax) ||
             semanticModel.GetSymbol(node) is not IMethodSymbol method ||
-            method.OriginalDefinition.DeclaringSyntaxReferences.IsEmpty ||
+            !IsUserMethod(method) ||
             method.ContainingType.IsSharedMemoryType())
         {
             return visited;
@@ -123,6 +123,12 @@ internal sealed partial class ManagedExecutionRewriter
             _ => visited
         };
     }
+
+    // A method declared in this compilation, or a device function of another assembly (the managed path calls it, or its
+    // managed version, with the parameters it declares)
+    private static bool IsUserMethod(IMethodSymbol method) =>
+        !method.OriginalDefinition.DeclaringSyntaxReferences.IsEmpty ||
+        (method.ReducedFrom ?? method).OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction);
 
     private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>
         call.Expression switch

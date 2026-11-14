@@ -37,10 +37,12 @@ internal static class CallerInfoArgument
             IPropertyReferenceOperation indexer => indexer.Arguments,
             _ => ImmutableArray<IArgumentOperation>.Empty
         };
+        // The operation binds the declared method: a reduced extension call has its receiver as the first parameter
+        var declared = GetDeclaredParameter(parameter).OriginalDefinition;
         foreach (var argument in arguments)
         {
             if (argument is { ArgumentKind: ArgumentKind.DefaultValue, Parameter: { } bound } &&
-                bound.Ordinal == parameter.Ordinal &&
+                bound.OriginalDefinition.IsEqualTo(declared) &&
                 GetConstant(argument.Value) is { } value)
             {
                 return value;
@@ -51,13 +53,20 @@ internal static class CallerInfoArgument
     }
 
     /// <summary>
+    /// The value <see cref="GetValue"/> gives when device code can hold it: a number; <see langword="null"/> when the
+    /// parameter takes its default value or the value is a string, which has no device form yet.
+    /// </summary>
+    public static object? GetDeviceValue(IParameterSymbol parameter, SyntaxNode call, SemanticModel semanticModel) =>
+        GetValue(parameter, call, semanticModel) is { } value and not string ? value : null;
+
+    /// <summary>
     /// The literal of the value <see cref="GetValue"/> gives, as an expression that device code can hold;
     /// <see langword="null"/> when the parameter takes its default value or the value is a string, which has no device
     /// form.
     /// </summary>
     public static LiteralExpressionSyntax? CreateDeviceArgument(IParameterSymbol parameter, SyntaxNode call,
         SemanticModel semanticModel) =>
-        GetValue(parameter, call, semanticModel) is { } value and not string ? CreateLiteral(value) : null;
+        GetDeviceValue(parameter, call, semanticModel) is { } value ? CreateLiteral(value) : null;
 
     /// <summary>The C# literal of a value that <see cref="GetValue"/> returned.</summary>
     public static LiteralExpressionSyntax CreateLiteral(object value)
@@ -84,6 +93,12 @@ internal static class CallerInfoArgument
         value.ConstantValue is { HasValue: true, Value: { } constant } ? constant
         : value is IConversionOperation { Operand.ConstantValue: { HasValue: true, Value: { } operand } } ? operand
         : null;
+
+    // The parameter of the declared extension method for a parameter of its reduced form, which lacks the receiver
+    private static IParameterSymbol GetDeclaredParameter(IParameterSymbol parameter) =>
+        parameter.ContainingSymbol is IMethodSymbol { ReducedFrom: { } declared }
+            ? declared.Parameters[parameter.Ordinal + 1]
+            : parameter;
 
     private static bool HasCallerInfoAttribute(IParameterSymbol parameter) =>
         parameter.HasAttribute(KnownAttributes.CallerLineNumber) ||

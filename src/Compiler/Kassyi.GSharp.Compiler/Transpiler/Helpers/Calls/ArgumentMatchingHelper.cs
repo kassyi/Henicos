@@ -109,43 +109,6 @@ internal static class ArgumentMatchingHelper
     }
 
     /// <summary>
-    /// Appends the C++ representation of an omitted optional parameter: <c>{}</c> for default, or the constant literal.
-    /// </summary>
-    /// <remarks>
-    /// The value itself: an expression built for it (<see cref="CreateDefaultArgument"/>) is outside the compilation,
-    /// so a member access such as float.NaN would bind to nothing. default is {}; an enum is its base type in C++,
-    /// whose literal ConstexprLiteral writes.
-    /// </remarks>
-    public static void AppendDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
-    {
-        if (parameter.ExplicitDefaultValue is not { } value)
-        {
-            context.Emitter.Writer.Append("{}");
-            return;
-        }
-
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
-    }
-
-    /// <summary>
-    /// Appends the C++ value of a caller-info parameter that <paramref name="call"/> omits
-    /// (<see cref="CallerInfoArgument"/>); false when the parameter takes its default value.
-    /// </summary>
-    /// <remarks>A string has no device form; a string caller-info parameter keeps its default value.</remarks>
-    public static bool TryAppendCallerInfoArgument(IParameterSymbol parameter, SyntaxNode call,
-        ref TranspileContext context)
-    {
-        if (CallerInfoArgument.GetValue(parameter, call, context.Query.SemanticModel) is not { } value ||
-            value is string)
-        {
-            return false;
-        }
-
-        context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
-        return true;
-    }
-
-    /// <summary>
     /// Creates the C# argument for an optional parameter that <paramref name="call"/> omits: the call site's value of a
     /// caller-info parameter (<see cref="CallerInfoArgument"/>), or <see cref="CreateDefaultArgument"/>.
     /// </summary>

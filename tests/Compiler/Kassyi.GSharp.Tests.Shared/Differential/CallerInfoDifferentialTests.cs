@@ -1,4 +1,5 @@
 #nullable enable
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -13,9 +14,13 @@ public class CallerInfoDifferentialTests
 {
     private const int Rows = 128;
 
-    // The lines of the calls in CallerLineManagedVersionKernel and CallerLineSuspendingCallKernel
-    private const int ManagedVersionCallLine = 84;
-    private const int SuspendingCallLine = 93;
+    // The lines of the calls in CallerLineManagedVersionKernel and CallerLineSuspendingCallKernel, read from the kernel
+    // file
+    private static readonly int s_managedVersionCallLine =
+        LineOfCall(nameof(CallerInfoDifferentialKernels.LineWithSum));
+
+    private static readonly int s_suspendingCallLine =
+        LineOfCall(nameof(CallerInfoDifferentialKernels.LineAcrossBarrier));
 
     internal static readonly DifferentialCase s_callerLine = new(
         nameof(CallerInfoDifferentialKernels) + "." + nameof(CallerInfoDifferentialKernels.CallerLineKernel))
@@ -36,7 +41,7 @@ public class CallerInfoDifferentialTests
         OracleIsLaunch = true,
     };
 
-    // The oracle cannot run a float Sum as C#; the reference is LineWithSum(data) called at ManagedVersionCallLine
+    // The oracle cannot run a float Sum as C#; the reference is LineWithSum(data) called at s_managedVersionCallLine
     internal static readonly DifferentialCase s_managedVersion = new(
         nameof(CallerInfoDifferentialKernels) + "." +
         nameof(CallerInfoDifferentialKernels.CallerLineManagedVersionKernel))
@@ -50,10 +55,10 @@ public class CallerInfoDifferentialTests
             b.Get<int>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
-        Reference = static (b, _) => Array.Fill(b.Get<int>("r"), ManagedVersionCallLine),
+        Reference = static (b, _) => Array.Fill(b.Get<int>("r"), s_managedVersionCallLine),
     };
 
-    // The oracle cannot run barriers; the reference is LineAcrossBarrier(x) called at SuspendingCallLine
+    // The oracle cannot run barriers; the reference is LineAcrossBarrier(x) called at s_suspendingCallLine
     internal static readonly DifferentialCase s_suspendingCall = new(
         nameof(CallerInfoDifferentialKernels) + "." +
         nameof(CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel))
@@ -77,7 +82,7 @@ public class CallerInfoDifferentialTests
             var r = b.Get<int>("r");
             for (int tid = 0; tid < xs.Length; tid++)
             {
-                r[tid] = ((xs[tid] & 0x3FF) * 1000) + SuspendingCallLine;
+                r[tid] = ((xs[tid] & 0x3FF) * 1000) + s_suspendingCallLine;
             }
         },
     };
@@ -116,4 +121,15 @@ public class CallerInfoDifferentialTests
     [SkippableFact]
     public void OmittedCallerLineNumber_IteratorCall_ReceivesTheLineOfTheCallOnEveryPath() =>
         DifferentialRunner.Run(s_iterator);
+
+    // The line C# passes for the call of <method> in the kernels file: the line of its opening parenthesis
+    private static int LineOfCall(string method)
+    {
+        var (_, tree, _) = RoslynTestUtility.GetKernelContext();
+        var call = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Single(c => c.Expression is IdentifierNameSyntax name && name.Identifier.ValueText == method);
+        return tree.GetMappedLineSpan(call.ArgumentList.OpenParenToken.Span).StartLinePosition.Line + 1;
+    }
 }

@@ -21,6 +21,7 @@ public static class CallerInfoArgumentSource
         Both(),
         new Marked().Path,
         new Marked(1).Line,
+        3.ExtLine(),
 #line 700 "mapped/Other.cs"
         Line(),
         File(),
@@ -43,6 +44,11 @@ public static class CallerInfoArgumentSource
 
     // A line number wins over a file path
     public static object Both([CallerFilePath, CallerLineNumber] object? info = null) => info ?? "";
+}
+
+public static class CallerInfoExtensions
+{
+    public static int ExtLine(this int x, [CallerLineNumber] int line = 0) => line;
 }
 
 public sealed class Marked
