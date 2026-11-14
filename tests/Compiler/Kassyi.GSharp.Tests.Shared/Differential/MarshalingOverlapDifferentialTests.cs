@@ -863,4 +863,108 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void InOverlap_InFieldTenStructsDeepBesideARefToTheVariable_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_inDeepFieldAndRefStruct);
+
+    internal static readonly DifferentialCase s_inElementAndItsArray = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 1, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchInElementAndItsArrayKernel(
+                backing[0], backing, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inElementAndItsSlice = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 1, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            Span<int> slice = backing.AsSpan(1, 2);
+            MarshalingOverlapDifferentialKernels.LaunchInElementAndItsSliceKernel(
+                slice[0], slice, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    internal static readonly DifferentialCase s_inAndTwoRefsOneVariable = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 115;
+            b.Get<int>("final")[0] = 115;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchInAndTwoRefsOneVariableKernel(
+                variable,
+                ref variable,
+                ref variable,
+                b.Get<int>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    internal static readonly DifferentialCase s_inReadBeforeOut = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 5;
+            b.Get<int>("final")[0] = 7;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchInReadBeforeOutKernel(
+                variable, out variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InElementBesideItsArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_inElementAndItsArray);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InElementBesideItsSlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_inElementAndItsSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_OneVariablePassedToAnInAndTwoRefParameters_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inAndTwoRefsOneVariable);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void InOverlap_InReadBeforeTheOutOfTheSameVariableIsAssigned_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_inReadBeforeOut);
 }

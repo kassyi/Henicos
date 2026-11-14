@@ -441,4 +441,48 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[0] = field;
         }
     }
+
+    // An in element of an array that the same launch passes: the write to the array shows through the in
+    [GpuKernel]
+    public static void InElementAndItsArrayKernel(in int element, int[] array, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            array[0] = 42;
+            observed[0] = element;
+        }
+    }
+
+    [GpuKernel]
+    public static void InElementAndItsSliceKernel(in int element, Span<int> slice, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            slice[0] = 42;
+            observed[0] = element;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndTwoRefsOneVariableKernel(in int first, ref int second, ref int third, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second += 10;
+            third += 100;
+            observed[0] = first;
+        }
+    }
+
+    // The in is read before the out is assigned: the caller's value, as C# reads it
+    [GpuKernel]
+    public static void InReadBeforeOutKernel(in int first, out int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = first;
+        }
+
+        second = 7;
+    }
 }
