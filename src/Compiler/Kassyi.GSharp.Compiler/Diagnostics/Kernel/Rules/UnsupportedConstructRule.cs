@@ -99,20 +99,20 @@ internal sealed class UnsupportedConstructRule :
 
     // A kernel named without a call (U.K, K) would be called through the delegate it converts to
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context) =>
-        ReportKernelMethodGroup(node, node, ref context);
+        ReportKernelMethodGroup(node, ref context);
 
     public void Analyze(IdentifierNameSyntax node, ref ValidationContext context)
     {
         // The name of a member access is analyzed with the access
         if (node.Parent is not MemberAccessExpressionSyntax access || access.Name != node)
         {
-            ReportKernelMethodGroup(node, node, ref context);
+            ReportKernelMethodGroup(node, ref context);
         }
     }
 
-    private static void ReportKernelMethodGroup(SyntaxNode node, SyntaxNode symbolNode, ref ValidationContext context)
+    private static void ReportKernelMethodGroup(SyntaxNode node, ref ValidationContext context)
     {
-        if (context.SemanticModel.GetSymbol(symbolNode) is IMethodSymbol method &&
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol method &&
             method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel) &&
             CallTargetClassifier.IsMethodGroup(node) &&
             !RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
@@ -125,8 +125,7 @@ internal sealed class UnsupportedConstructRule :
     // a + b and a - b on delegates build a multicast delegate
     public void Analyze(BinaryExpressionSyntax node, ref ValidationContext context)
     {
-        if (node.Kind() is SyntaxKind.AddExpression or SyntaxKind.SubtractExpression &&
-            GpuCodeConstraints.IsDelegate(context.SemanticModel.GetTypeSymbol(node.Left)))
+        if (GpuCodeConstraints.IsDelegateCombination(node, context.SemanticModel))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateCombination);
         }
@@ -161,8 +160,7 @@ internal sealed class UnsupportedConstructRule :
     // An operator macro is expanded only as an assignment statement (MacroTranspiler)
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
-        if (node.Kind() is SyntaxKind.AddAssignmentExpression or SyntaxKind.SubtractAssignmentExpression &&
-            GpuCodeConstraints.IsDelegate(context.SemanticModel.GetTypeSymbol(node.Left)))
+        if (GpuCodeConstraints.IsDelegateCombination(node, context.SemanticModel))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateCombination);
             return;

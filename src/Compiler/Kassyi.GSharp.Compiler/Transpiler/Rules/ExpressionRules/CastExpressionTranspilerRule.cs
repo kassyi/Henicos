@@ -32,6 +32,14 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
+        var delegateForm = DelegateCasts.Plan(node, model, context.Emitter.Dialect);
+        if (delegateForm == DelegateCastForm.HeapObject)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateAsHeapObject);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         var targetType = model.GetTypeSymbol(node.Type);
         var conversionMethod = operation is IConversionOperation
         {
@@ -177,9 +185,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
-        // A delegate is a lambda of its own type on CUDA ("auto"), which names no type to cast to: the converted
-        // expression is the delegate (Func<int, int>)Inc
-        if (!(context.Emitter.Dialect.IsCuda && GpuCodeConstraints.IsDelegate(targetType)))
+        if (delegateForm != DelegateCastForm.OmitCast)
         {
             using (context.Emitter.Writer.Parentheses())
             {

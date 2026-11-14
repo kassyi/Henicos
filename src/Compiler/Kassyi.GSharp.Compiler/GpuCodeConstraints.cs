@@ -63,6 +63,32 @@ internal static class GpuCodeConstraints
     /// <summary>Whether <paramref name="type"/> is a delegate type.</summary>
     public static bool IsDelegate(ITypeSymbol? type) => type is { TypeKind: TypeKind.Delegate };
 
+    /// <summary>
+    /// Whether <paramref name="node"/> combines delegates (GSH0003): <c>a + b</c> and <c>a - b</c> with a delegate
+    /// result (the result type decides: <c>null + f</c> has no type on its left), and <c>a += b</c> and
+    /// <c>a -= b</c> on a delegate.
+    /// </summary>
+    public static bool IsDelegateCombination(SyntaxNode node, SemanticModel model) => node switch
+    {
+        BinaryExpressionSyntax binary when binary.Kind() is SyntaxKind.AddExpression or SyntaxKind.SubtractExpression =>
+            IsDelegate(model.GetTypeSymbol(binary)),
+        AssignmentExpressionSyntax assignment
+            when assignment.Kind() is SyntaxKind.AddAssignmentExpression or SyntaxKind.SubtractAssignmentExpression =>
+            IsDelegate(model.GetTypeSymbol(assignment.Left)),
+        _ => false
+    };
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is <see cref="object"/> or a delegate base class, which is a heap object.
+    /// </summary>
+    public static bool IsHeapDelegateTarget(ITypeSymbol? type) =>
+        type is { SpecialType: SpecialType.System_Object or SpecialType.System_Delegate or
+            SpecialType.System_MulticastDelegate };
+
+    /// <summary>The GSH0003 text for a delegate converted to <see cref="object"/> or <see cref="Delegate"/>.</summary>
+    public const string DelegateAsHeapObject =
+        "conversion of a delegate to object or Delegate (a delegate in device code is not a heap object)";
+
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
 
@@ -176,8 +202,8 @@ internal static class GpuCodeConstraints
     /// needs a heap.
     /// </summary>
     public const string DelegateCombination =
-        "delegate combination (+, -, +=, -=) is not supported in GPU code: a delegate holds one method; call each " +
-        "method in turn";
+        "delegate combination (+, -, +=, -=) is not supported in GPU code, because its targets are not known at " +
+        "compile time; call each method in turn";
 
     /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
     public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";

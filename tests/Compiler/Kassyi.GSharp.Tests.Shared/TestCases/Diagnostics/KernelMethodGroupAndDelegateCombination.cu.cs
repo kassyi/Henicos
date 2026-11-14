@@ -37,4 +37,22 @@ public static partial class KernelMethodGroupKernels
         Action<int[]> plain = first;
         plain(data);
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void NullCombineKernel(int[] data)
+    {
+        Action<int[]> first = Set;
+        Action<int[]> viaNull = null + first;
+        Action<int[]> removed = first - viaNull;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HeapCastKernel(int[] data)
+    {
+        Action<int[]> device = Set;
+        var boxed = (object)Set;
+        var viaDelegate = (Delegate)device;
+    }
 }
