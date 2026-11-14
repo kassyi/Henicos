@@ -17,7 +17,7 @@ struct __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiv
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_totalThreads, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__ShuffleRounds* __gsharp_ctx, TRoot* __gsharp_root);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__LinearThreadInBlock(){
-return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.z*(int)blockDim.y,(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__WarpCollectiveDifferentialKernels__GlobalThread(){
@@ -114,7 +114,7 @@ __gsharp_switch_1_state_2:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_0,1,32,""WarpCollectiveDifferentialKernels.cs(167,28)"");
 int __gsharp_id_4_shuffled = __gsharp_warp_temp_1;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_unroll_0%__gsharp_ctx->__gsharp_id_2_totalThreads,2),__gsharp_ctx->__gsharp_unroll_0/__gsharp_ctx->__gsharp_id_2_totalThreads), ""G#: a null array is read at WarpCollectiveDifferentialKernels.cs(168,13)"")=__gsharp_id_4_shuffled;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_rem_i32(__gsharp_ctx->__gsharp_unroll_0,__gsharp_ctx->__gsharp_id_2_totalThreads,""Attempted to divide by zero. at WarpCollectiveDifferentialKernels.cs(168,21)""),2),__gsharp_div_i32(__gsharp_ctx->__gsharp_unroll_0,__gsharp_ctx->__gsharp_id_2_totalThreads,""Attempted to divide by zero. at WarpCollectiveDifferentialKernels.cs(168,45)"")), ""G#: a null array is read at WarpCollectiveDifferentialKernels.cs(168,13)"")=__gsharp_id_4_shuffled;
 goto __gsharp_switch_1_state_3;
 }
 case 3:
@@ -254,7 +254,7 @@ case 2:
 {
 int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1, 32, "WarpCollectiveDifferentialKernels.cs(167,28)");
 int shuffled = __gsharp_warp_temp_1;
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = shuffled;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)] = shuffled;
 goto case 3;
 }
 
@@ -329,11 +329,14 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(857031197u, "WarpCollectiv
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(39492292u, "WarpCollectiveDifferentialKernels.cs", 128, 9, "VoteInDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1067528036u, "WarpCollectiveDifferentialKernels.cs", 129, 9, "VoteInDeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1551173893u, "WarpCollectiveDifferentialKernels.cs", 139, 13, "GridStrideBallotKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(298267088u, "WarpCollectiveDifferentialKernels.cs", 139, 21, "GridStrideBallotKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(752069543u, "WarpCollectiveDifferentialKernels.cs", 139, 45, "GridStrideBallotKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1703544546u, "WarpCollectiveDifferentialKernels.cs", 139, 95, "GridStrideBallotKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1669522536u, "WarpCollectiveDifferentialKernels.cs", 149, 9, "BallotCallerOutsideMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1997639228u, "WarpCollectiveDifferentialKernels.cs", 158, 9, "ReduceCallerOutsideMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1954964366u, "WarpCollectiveDifferentialKernels.cs", 189, 60, "GridStrideShuffleWithContextKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1293769727u, "WarpCollectiveDifferentialKernels.cs", 190, 13, "GridStrideShuffleWithContextKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1891425326u, "WarpCollectiveDifferentialKernels.cs", 190, 21, "GridStrideShuffleWithContextKernel", "Attempted to divide by zero."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1983,7 +1986,7 @@ case 2:
 __gsharp_switch_1_state_2:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_0,""WarpCollectiveDifferentialKernels.cs(139,65)"");
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_unroll_0%__gsharp_ctx->__gsharp_id_2_totalThreads,2),__gsharp_ctx->__gsharp_unroll_0/__gsharp_ctx->__gsharp_id_2_totalThreads), 1551173893u)=__gsharp_warp_temp_1;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_rem_i32(__gsharp_ctx->__gsharp_unroll_0,__gsharp_ctx->__gsharp_id_2_totalThreads,298267088u),2),__gsharp_div_i32(__gsharp_ctx->__gsharp_unroll_0,__gsharp_ctx->__gsharp_id_2_totalThreads,752069543u)), 1551173893u)=__gsharp_warp_temp_1;
 goto __gsharp_switch_1_state_3;
 }
 case 3:
@@ -2145,7 +2148,7 @@ return;
 case 2:
 {
 uint __gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(139,65)");
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.__gsharp_unroll_0 / __gsharp_ctx.totalThreads] = __gsharp_warp_temp_1;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)] = __gsharp_warp_temp_1;
 goto case 3;
 }
 
@@ -3529,7 +3532,7 @@ __gsharp_switch_1_state_2:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_arg_temp_0,1u,32,""WarpCollectiveDifferentialKernels.cs(189,28)"");
 int __gsharp_id_6_shuffled = __gsharp_warp_temp_1;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_unroll_0%__gsharp_ctx->__gsharp_id_2_totalThreads,2),__gsharp_ctx->__gsharp_id_3_round), 1293769727u)=__gsharp_id_6_shuffled;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_rem_i32(__gsharp_ctx->__gsharp_unroll_0,__gsharp_ctx->__gsharp_id_2_totalThreads,1891425326u),2),__gsharp_ctx->__gsharp_id_3_round), 1293769727u)=__gsharp_id_6_shuffled;
 __gsharp_ctx->__gsharp_id_3_round=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_round,1);
 goto __gsharp_switch_1_state_3;
 }
@@ -3695,7 +3698,7 @@ case 2:
 {
 int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_up_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.__gsharp_arg_temp_0, 1u, 32, "WarpCollectiveDifferentialKernels.cs(189,28)");
 int shuffled = __gsharp_warp_temp_1;
-__gsharp_ctx.output[(__gsharp_ctx.__gsharp_unroll_0 % __gsharp_ctx.totalThreads) * 2 + __gsharp_ctx.round] = shuffled;
+__gsharp_ctx.output[(global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(__gsharp_ctx.__gsharp_unroll_0, __gsharp_ctx.totalThreads)) * 2 + __gsharp_ctx.round] = shuffled;
 __gsharp_ctx.round++;
 goto case 3;
 }

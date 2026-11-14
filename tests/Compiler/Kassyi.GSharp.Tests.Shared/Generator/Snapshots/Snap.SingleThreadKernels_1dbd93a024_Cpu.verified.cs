@@ -14,8 +14,8 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadK
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__LinearThreadIndex(){
 int __gsharp_id_0_block = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x);
-int __gsharp_id_1_thread = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
-return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_block,__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z)),__gsharp_id_1_thread);
+int __gsharp_id_1_thread = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.z*(int)blockDim.y,(int)threadIdx.y),(int)blockDim.x),(int)threadIdx.x);
+return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_block,__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z)),__gsharp_id_1_thread);
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Transpiler__SingleThreadKernels__MarkOnce(GSharpArray<int> __gsharp_id_0_runs, int __gsharp_id_1_id){

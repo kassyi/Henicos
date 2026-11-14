@@ -1,4 +1,5 @@
 #if GSHARP_CPU
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Tests.DeviceLibrary;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
@@ -30,6 +31,39 @@ public class CrossAssemblyManagedTests : TranspilerTestBase
 
         Assert.Equal(1431655765u, result[0]);
         Assert.Equal(result, qualified);
+    }
+
+    // A library function whose only managed rewrite is the division: the managed fallback gives the GPU result of
+    // MinValue / -1, and the C# execution of the consumer runs the library's C# (it does not need the generated code)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Quotient_ManagedExecutionMinValueByMinusOne_GivesTheGpuResult()
+    {
+        int[] a = [int.MinValue, 7];
+        int[] d = [-1, 2];
+        var result = new int[2];
+
+        ManagedKernelRun.Run(() => CrossAssemblyKernels.LaunchQuotientKernel(a, d, result, blockDimX: 2));
+
+        Assert.Equal([int.MinValue, 3], result);
+    }
+
+    // mutant: the export record leaves ReachesGeneratedMeaning out, so a reader takes it for a record of an older G#
+    // and reads ManagedVersion, which is true here: the C# execution then refuses the kernel
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Quotient_CSharpExecution_RunsTheLibraryFunction()
+    {
+        int[] a = [20, 7];
+        int[] d = [4, 2];
+        var result = new int[2];
+
+        using (GpuExecution.Use(KernelExecution.CSharp))
+        {
+            CrossAssemblyKernels.LaunchQuotientKernel(a, d, result, blockDimX: 2);
+        }
+
+        Assert.Equal([5, 3], result);
     }
 
     [Fact]

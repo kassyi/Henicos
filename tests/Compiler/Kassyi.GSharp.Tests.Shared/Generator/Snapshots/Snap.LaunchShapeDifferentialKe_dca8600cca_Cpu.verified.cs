@@ -61,6 +61,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1278121396u, "LaunchShapeD
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2076879853u, "LaunchShapeDifferentialKernels.cs", 229, 13, "CrossAxisWarpShuffleAndActiveMaskKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812371822u, "LaunchShapeDifferentialKernels.cs", 252, 20, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1082247694u, "LaunchShapeDifferentialKernels.cs", 257, 32, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1424639347u, "LaunchShapeDifferentialKernels.cs", 264, 59, "MultiDimSharedMemoryAndBarrierKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(768237279u, "LaunchShapeDifferentialKernels.cs", 286, 13, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(784813301u, "LaunchShapeDifferentialKernels.cs", 287, 13, "MultiDimSharedMemoryAndBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1481023174u, "LaunchShapeDifferentialKernels.cs", 315, 23, "AutoResultThreeDimensionalKernel", "G#: a null array is read"),
@@ -882,7 +883,7 @@ long long __gsharp_id_11_gid = __gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_10_
 if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
 {
 atomicAdd(&__gsharp_array_at(__gsharp_id_0_header, 0, 867004329u),1);
-__gsharp_array_at(__gsharp_id_0_header, 1, 169086499u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.x,100),__gsharp_mul_i32((int)threadIdx.y,10)),(int)threadIdx.z),__gsharp_mul_i32((int)blockIdx.x,10000)),__gsharp_mul_i32((int)blockIdx.y,1000)),__gsharp_mul_i32((int)blockIdx.z,100000));
+__gsharp_array_at(__gsharp_id_0_header, 1, 169086499u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x*100,(int)threadIdx.y*10),(int)threadIdx.z),__gsharp_mul_i32((int)blockIdx.x,10000)),__gsharp_mul_i32((int)blockIdx.y,1000)),__gsharp_mul_i32((int)blockIdx.z,100000));
 if(__gsharp_id_3_earlyExitLeader!=0)
 {
 __gsharp_array_at(__gsharp_id_0_header, 2, 1247728166u)=111;
@@ -1953,7 +1954,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_id_16_partnerTid=__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_9_blockThreads,1),__gsharp_ctx->__gsharp_id_8_blockTid);
-__gsharp_ctx->__gsharp_id_17_permuted=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_staticBuf[__gsharp_ctx->__gsharp_id_16_partnerTid],__gsharp_ctx->__gsharp_id_14_dynamicBuf[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_blockTid,1))%__gsharp_ctx->__gsharp_id_9_blockThreads]);
+__gsharp_ctx->__gsharp_id_17_permuted=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_13_staticBuf[__gsharp_ctx->__gsharp_id_16_partnerTid],__gsharp_ctx->__gsharp_id_14_dynamicBuf[__gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_8_blockTid,1),__gsharp_ctx->__gsharp_id_9_blockThreads,1424639347u)]);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;
@@ -2136,7 +2137,7 @@ return;
 case 1:
 {
 __gsharp_ctx.partnerTid = __gsharp_ctx.blockThreads - 1 - __gsharp_ctx.blockTid;
-__gsharp_ctx.permuted = staticBuf[__gsharp_ctx.partnerTid] + dynamicBuf[(__gsharp_ctx.blockTid + 1) % __gsharp_ctx.blockThreads];
+__gsharp_ctx.permuted = staticBuf[__gsharp_ctx.partnerTid] + dynamicBuf[global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32((__gsharp_ctx.blockTid + 1), __gsharp_ctx.blockThreads)];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -2393,7 +2394,7 @@ int __gsharp_id_7_blockTid = __gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x,
 int __gsharp_id_8_blockThreads = __gsharp_mul_i32(__gsharp_mul_i32(__gsharp_id_2_bdx,__gsharp_id_3_bdy),__gsharp_id_4_bdz);
 long long __gsharp_id_9_blockBid = __gsharp_add_i64(__gsharp_add_i64((int)blockIdx.x,(long long)(int)blockIdx.y*__gsharp_id_5_gdx),__gsharp_mul_i64((long long)(int)blockIdx.z*__gsharp_id_5_gdx,__gsharp_id_6_gdy));
 int __gsharp_id_10_gid = (int)(__gsharp_add_i64(__gsharp_mul_i64(__gsharp_id_9_blockBid,__gsharp_id_8_blockThreads),__gsharp_id_7_blockTid));
-int __gsharp_id_11_coordMix = __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.x,3),__gsharp_mul_i32((int)threadIdx.y,5)),__gsharp_mul_i32((int)threadIdx.z,7)),__gsharp_mul_i32((int)blockIdx.x,11)),__gsharp_mul_i32((int)blockIdx.y,13)),__gsharp_mul_i32((int)blockIdx.z,17));
+int __gsharp_id_11_coordMix = __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32((int)threadIdx.x*3,(int)threadIdx.y*5),(int)threadIdx.z*7),__gsharp_mul_i32((int)blockIdx.x,11)),__gsharp_mul_i32((int)blockIdx.y,13)),__gsharp_mul_i32((int)blockIdx.z,17));
 int __gsharp_id_12_v = (__gsharp_id_10_gid<__gsharp_array_ref(__gsharp_id_0_src, 1481023174u).length?__gsharp_array_at(__gsharp_id_0_src, __gsharp_id_10_gid, 1419690520u):__gsharp_id_11_coordMix);
 __gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_id_12_v^__gsharp_id_1_salt,__gsharp_id_11_coordMix);
 __gsharp_state = -1;return;

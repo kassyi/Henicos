@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex();
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__AutoAllocateReturnArraysKernels__LinearThreadIndex(){
-return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x),__gsharp_mul_i32(__gsharp_mul_i32((int)blockDim.x,(int)blockDim.y),(int)blockDim.z)),__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)threadIdx.z,(int)blockDim.y),(int)threadIdx.y),(int)blockDim.x)),(int)threadIdx.x);
+return __gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.z,(int)gridDim.y),(int)blockIdx.y),(int)gridDim.x),(int)blockIdx.x),__gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z)),__gsharp_mul_i32(__gsharp_add_i32((int)threadIdx.z*(int)blockDim.y,(int)threadIdx.y),(int)blockDim.x)),(int)threadIdx.x);
 }
 
 ";

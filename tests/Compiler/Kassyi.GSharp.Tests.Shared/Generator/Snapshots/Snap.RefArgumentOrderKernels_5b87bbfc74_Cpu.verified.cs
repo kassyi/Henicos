@@ -219,7 +219,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_idx, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(177,9)"")=__gsharp_sub_i32(63,(int)threadIdx.x);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_idx, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(177,9)"")=63-(int)threadIdx.x;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -1127,7 +1127,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_j=__gsharp_mul_i32((int)threadIdx.x,2);
+__gsharp_ctx->__gsharp_id_1_j=(int)threadIdx.x*2;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_1_j;
 auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_cells, __gsharp_ctx->__gsharp_arg_temp_0, 1783803212u);
 __gsharp_ctx->__gsharp_arg_temp_2=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_1_j=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_j,1)),1);
@@ -2577,7 +2577,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_i=__gsharp_mul_i32((int)threadIdx.x,2);
+__gsharp_ctx->__gsharp_id_1_i=(int)threadIdx.x*2;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_1_i;
 auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 1318205495u);
 goto __gsharp_switch_1_state_1;
@@ -2916,7 +2916,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_i=__gsharp_mul_i32((int)threadIdx.x,2);
+__gsharp_ctx->__gsharp_id_1_i=(int)threadIdx.x*2;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_1_i;
 auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 56139298u);
 goto __gsharp_switch_1_state_1;
@@ -4940,7 +4940,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_i=__gsharp_mul_i32((int)threadIdx.x,2);
+__gsharp_ctx->__gsharp_id_1_i=(int)threadIdx.x*2;
 __gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_1_i;
 auto __gsharp_arg_temp_1 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_arg_temp_0, 344642019u);
 __gsharp_ctx->__gsharp_arg_temp_2=__gsharp_sub_i32((__gsharp_ctx->__gsharp_id_1_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_i,1)),1);

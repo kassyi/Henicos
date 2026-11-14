@@ -1084,7 +1084,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_array_at(__gsharp_id_0_counter, 0, 1587351333u),__gsharp_add_i32((int)threadIdx.x,1));
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(&__gsharp_array_at(__gsharp_id_0_counter, 0, 1587351333u),(int)threadIdx.x+1);
 __gsharp_state=-1;
 return;
 }

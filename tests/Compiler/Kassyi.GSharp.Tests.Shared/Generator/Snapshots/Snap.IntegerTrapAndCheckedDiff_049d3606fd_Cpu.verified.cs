@@ -32,47 +32,61 @@ public partial class IntegerTrapAndCheckedDifferentialKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(894749222u, "IntegerTrapAndCheckedDifferentialKernels.cs", 65, 9, "Int32DivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(496855u, "IntegerTrapAndCheckedDifferentialKernels.cs", 65, 18, "Int32DivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2126030637u, "IntegerTrapAndCheckedDifferentialKernels.cs", 65, 18, "Int32DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(237345429u, "IntegerTrapAndCheckedDifferentialKernels.cs", 65, 28, "Int32DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2021401896u, "IntegerTrapAndCheckedDifferentialKernels.cs", 77, 9, "Int32RemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1777452547u, "IntegerTrapAndCheckedDifferentialKernels.cs", 77, 18, "Int32RemainderKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1142448073u, "IntegerTrapAndCheckedDifferentialKernels.cs", 77, 18, "Int32RemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(708749073u, "IntegerTrapAndCheckedDifferentialKernels.cs", 77, 28, "Int32RemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1854017342u, "IntegerTrapAndCheckedDifferentialKernels.cs", 89, 9, "UInt32DivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2106057923u, "IntegerTrapAndCheckedDifferentialKernels.cs", 89, 18, "UInt32DivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1679198345u, "IntegerTrapAndCheckedDifferentialKernels.cs", 89, 18, "UInt32DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(939088301u, "IntegerTrapAndCheckedDifferentialKernels.cs", 89, 28, "UInt32DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(329777028u, "IntegerTrapAndCheckedDifferentialKernels.cs", 101, 9, "UInt32RemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1334743135u, "IntegerTrapAndCheckedDifferentialKernels.cs", 101, 18, "UInt32RemainderKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(766660245u, "IntegerTrapAndCheckedDifferentialKernels.cs", 101, 18, "UInt32RemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(62506319u, "IntegerTrapAndCheckedDifferentialKernels.cs", 101, 28, "UInt32RemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1515494136u, "IntegerTrapAndCheckedDifferentialKernels.cs", 113, 9, "Int64DivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(870492365u, "IntegerTrapAndCheckedDifferentialKernels.cs", 113, 18, "Int64DivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(926041535u, "IntegerTrapAndCheckedDifferentialKernels.cs", 113, 18, "Int64DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(286821173u, "IntegerTrapAndCheckedDifferentialKernels.cs", 113, 28, "Int64DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(931446184u, "IntegerTrapAndCheckedDifferentialKernels.cs", 125, 9, "UInt64DivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1494958723u, "IntegerTrapAndCheckedDifferentialKernels.cs", 125, 18, "UInt64DivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1735054665u, "IntegerTrapAndCheckedDifferentialKernels.cs", 125, 18, "UInt64DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1100089731u, "IntegerTrapAndCheckedDifferentialKernels.cs", 125, 28, "UInt64DivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1134371922u, "IntegerTrapAndCheckedDifferentialKernels.cs", 137, 21, "Int16CompoundDivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1585828680u, "IntegerTrapAndCheckedDifferentialKernels.cs", 138, 9, "Int16CompoundDivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(893681399u, "IntegerTrapAndCheckedDifferentialKernels.cs", 138, 16, "Int16CompoundDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(541613324u, "IntegerTrapAndCheckedDifferentialKernels.cs", 139, 9, "Int16CompoundDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(87668198u, "IntegerTrapAndCheckedDifferentialKernels.cs", 151, 21, "SByteCompoundRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2095601664u, "IntegerTrapAndCheckedDifferentialKernels.cs", 152, 9, "SByteCompoundRemainderKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(580648215u, "IntegerTrapAndCheckedDifferentialKernels.cs", 152, 16, "SByteCompoundRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(264611392u, "IntegerTrapAndCheckedDifferentialKernels.cs", 153, 9, "SByteCompoundRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(800934352u, "IntegerTrapAndCheckedDifferentialKernels.cs", 165, 9, "Int32MinValueDivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1564522331u, "IntegerTrapAndCheckedDifferentialKernels.cs", 165, 18, "Int32MinValueDivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(712128065u, "IntegerTrapAndCheckedDifferentialKernels.cs", 165, 18, "Int32MinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(106779019u, "IntegerTrapAndCheckedDifferentialKernels.cs", 165, 28, "Int32MinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1388203716u, "IntegerTrapAndCheckedDifferentialKernels.cs", 177, 9, "Int32MinValueRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1925099485u, "IntegerTrapAndCheckedDifferentialKernels.cs", 177, 18, "Int32MinValueRemainderKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(186084527u, "IntegerTrapAndCheckedDifferentialKernels.cs", 177, 18, "Int32MinValueRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1601881325u, "IntegerTrapAndCheckedDifferentialKernels.cs", 177, 28, "Int32MinValueRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(498228404u, "IntegerTrapAndCheckedDifferentialKernels.cs", 189, 9, "Int64MinValueDivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(621595951u, "IntegerTrapAndCheckedDifferentialKernels.cs", 189, 18, "Int64MinValueDivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1806624453u, "IntegerTrapAndCheckedDifferentialKernels.cs", 189, 18, "Int64MinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1986464783u, "IntegerTrapAndCheckedDifferentialKernels.cs", 189, 28, "Int64MinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(264342836u, "IntegerTrapAndCheckedDifferentialKernels.cs", 201, 9, "Int64MinValueRemainderKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(241670685u, "IntegerTrapAndCheckedDifferentialKernels.cs", 201, 18, "Int64MinValueRemainderKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1321994223u, "IntegerTrapAndCheckedDifferentialKernels.cs", 201, 18, "Int64MinValueRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1121413901u, "IntegerTrapAndCheckedDifferentialKernels.cs", 201, 28, "Int64MinValueRemainderKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1204729150u, "IntegerTrapAndCheckedDifferentialKernels.cs", 213, 22, "ShortMinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1194118027u, "IntegerTrapAndCheckedDifferentialKernels.cs", 214, 27, "ShortMinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1401488776u, "IntegerTrapAndCheckedDifferentialKernels.cs", 215, 9, "ShortMinValueDivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(731738268u, "IntegerTrapAndCheckedDifferentialKernels.cs", 215, 18, "ShortMinValueDivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1284693246u, "IntegerTrapAndCheckedDifferentialKernels.cs", 227, 23, "SByteMinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(853205907u, "IntegerTrapAndCheckedDifferentialKernels.cs", 228, 28, "SByteMinValueDivideKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1943961596u, "IntegerTrapAndCheckedDifferentialKernels.cs", 229, 9, "SByteMinValueDivideKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1820121892u, "IntegerTrapAndCheckedDifferentialKernels.cs", 229, 18, "SByteMinValueDivideKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1372136620u, "IntegerTrapAndCheckedDifferentialKernels.cs", 241, 9, "MathAbsInt32Kernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(844839609u, "IntegerTrapAndCheckedDifferentialKernels.cs", 241, 27, "MathAbsInt32Kernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(580979432u, "IntegerTrapAndCheckedDifferentialKernels.cs", 253, 9, "MathAbsSingleKernel", "G#: a null array is read"),
@@ -152,7 +166,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 894749222u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 2126030637u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 237345429u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 894749222u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 2126030637u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 237345429u),496855u);
 __gsharp_state=-1;
 return;
 }
@@ -263,7 +277,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -481,7 +495,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 2021401896u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1142448073u)%__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 708749073u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 2021401896u)=__gsharp_rem_i32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1142448073u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 708749073u),1777452547u);
 __gsharp_state=-1;
 return;
 }
@@ -592,7 +606,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -810,7 +824,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1854017342u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1679198345u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 939088301u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1854017342u)=__gsharp_div_u32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1679198345u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 939088301u),2106057923u);
 __gsharp_state=-1;
 return;
 }
@@ -1139,7 +1153,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 329777028u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 766660245u)%__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 62506319u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 329777028u)=__gsharp_rem_u32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 766660245u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 62506319u),1334743135u);
 __gsharp_state=-1;
 return;
 }
@@ -1468,7 +1482,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1515494136u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 926041535u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 286821173u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1515494136u)=__gsharp_div_i64(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 926041535u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 286821173u),870492365u);
 __gsharp_state=-1;
 return;
 }
@@ -1579,7 +1593,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -1797,7 +1811,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 931446184u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1735054665u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1100089731u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 931446184u)=__gsharp_div_u64(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1735054665u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1100089731u),1494958723u);
 __gsharp_state=-1;
 return;
 }
@@ -2127,7 +2141,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 short __gsharp_id_5_val = __gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1134371922u);
-__gsharp_id_5_val/=__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 893681399u);
+__gsharp_id_5_val=(short)__gsharp_div_i32(__gsharp_id_5_val,__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 893681399u),1585828680u);
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 541613324u)=__gsharp_id_5_val;
 __gsharp_state=-1;
 return;
@@ -2460,7 +2474,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 __gsharp_state = -1;return;
 }
 signed char __gsharp_id_5_val = __gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 87668198u);
-__gsharp_id_5_val%=__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 580648215u);
+__gsharp_id_5_val=(signed char)__gsharp_rem_i32(__gsharp_id_5_val,__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 580648215u),2095601664u);
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 264611392u)=__gsharp_id_5_val;
 __gsharp_state=-1;
 return;
@@ -2792,7 +2806,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 800934352u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 712128065u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 106779019u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 800934352u)=__gsharp_div_i32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 712128065u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 106779019u),1564522331u);
 __gsharp_state=-1;
 return;
 }
@@ -2903,7 +2917,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3121,7 +3135,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1388203716u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 186084527u)%__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1601881325u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1388203716u)=__gsharp_rem_i32(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 186084527u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1601881325u),1925099485u);
 __gsharp_state=-1;
 return;
 }
@@ -3232,7 +3246,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i32(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3450,7 +3464,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 498228404u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1806624453u)/__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1986464783u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 498228404u)=__gsharp_div_i64(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1806624453u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1986464783u),621595951u);
 __gsharp_state=-1;
 return;
 }
@@ -3561,7 +3575,7 @@ return;
 }
 }
 
-dst[t] = nums[t] / denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_div_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -3779,7 +3793,7 @@ if(__gsharp_id_4_t>=__gsharp_id_3_rows)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 264342836u)=__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1321994223u)%__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1121413901u);
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 264342836u)=__gsharp_rem_i64(__gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1321994223u),__gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1121413901u),241670685u);
 __gsharp_state=-1;
 return;
 }
@@ -3890,7 +3904,7 @@ return;
 }
 }
 
-dst[t] = nums[t] % denoms[t];
+dst[t] = global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_rem_i64(nums[t], denoms[t]);
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -4110,7 +4124,7 @@ __gsharp_state = -1;return;
 }
 short __gsharp_id_5_sMin = __gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1204729150u);
 short __gsharp_id_6_sMinusOne = __gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 1194118027u);
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1401488776u)=__gsharp_id_5_sMin/__gsharp_id_6_sMinusOne;
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1401488776u)=__gsharp_div_i32(__gsharp_id_5_sMin,__gsharp_id_6_sMinusOne,731738268u);
 __gsharp_state=-1;
 return;
 }
@@ -4443,7 +4457,7 @@ __gsharp_state = -1;return;
 }
 signed char __gsharp_id_5_sbMin = __gsharp_array_at(__gsharp_id_0_nums, __gsharp_id_4_t, 1284693246u);
 signed char __gsharp_id_6_sbMinusOne = __gsharp_array_at(__gsharp_id_1_denoms, __gsharp_id_4_t, 853205907u);
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1943961596u)=__gsharp_id_5_sbMin/__gsharp_id_6_sbMinusOne;
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_4_t, 1943961596u)=__gsharp_div_i32(__gsharp_id_5_sbMin,__gsharp_id_6_sbMinusOne,1820121892u);
 __gsharp_state=-1;
 return;
 }

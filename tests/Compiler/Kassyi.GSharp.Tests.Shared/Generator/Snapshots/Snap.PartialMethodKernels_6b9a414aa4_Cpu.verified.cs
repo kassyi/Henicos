@@ -43,7 +43,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_shared, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_i,1))%__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_shared, ""G#: a null array is read at PartialMethodKernels.cs(38,33)"").length, ""G#: a null array is read at PartialMethodKernels.cs(38,16)"");
+*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_shared, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_i,1),__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_shared, ""G#: a null array is read at PartialMethodKernels.cs(38,33)"").length,""Attempted to divide by zero. at PartialMethodKernels.cs(38,23)""), ""G#: a null array is read at PartialMethodKernels.cs(38,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
