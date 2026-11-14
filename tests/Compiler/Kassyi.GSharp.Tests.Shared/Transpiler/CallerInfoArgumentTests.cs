@@ -15,9 +15,13 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class CallerInfoArgumentTests
 {
-    private const string SourceDirectory = @"C:\work\project\";
-    private const string SourcePath = SourceDirectory + @"Kernels\CallerInfo.cs";
     private const string MappedDirectory = "/_/";
+
+    // A rooted path of this OS, so that /pathmap applies to it on Windows and on Linux
+    private static readonly string s_sourceDirectory =
+        Path.Combine(Path.GetPathRoot(Path.GetTempPath()) ?? "/", "work", "project") + Path.DirectorySeparatorChar;
+
+    private static readonly string s_sourcePath = Path.Combine(s_sourceDirectory, "Kernels", "CallerInfo.cs");
 
     private static readonly CSharpCompilation s_compilation = CreateCompilation();
 
@@ -95,12 +99,12 @@ public class CallerInfoArgumentTests
     private static CSharpCompilation CreateCompilation()
     {
         var compilation = RoslynTestUtility.CreateCompilationAt(
-            SourcePath,
+            s_sourcePath,
             RoslynTestUtility.ReadTestCase("Transpiler/CallerInfoArgumentSource.cs"));
         var resolver = new SourceFileResolver(
             ImmutableArray<string>.Empty,
             baseDirectory: null,
-            [new KeyValuePair<string, string>(SourceDirectory, MappedDirectory)]);
+            [new KeyValuePair<string, string>(s_sourceDirectory, MappedDirectory)]);
         return compilation.WithOptions(compilation.Options
             .WithSourceReferenceResolver(resolver)
             .WithOutputKind(OutputKind.DynamicallyLinkedLibrary));
