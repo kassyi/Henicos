@@ -10,18 +10,28 @@ public static partial class ManagedGpuContext
     [field: ThreadStatic]
     internal static bool IsCSharpExecution { get; private set; }
 
+    /// <summary>
+    /// Whether that run is the managed path of a kernel that has no generated copy (its body names a file-local type),
+    /// not <c>KernelExecution.CSharp</c>.
+    /// </summary>
+    [field: ThreadStatic]
+    internal static bool RunsAsManagedFallback { get; private set; }
+
     /// <summary>Sets the context of the GPU thread whose C# body the current host thread runs next.</summary>
     /// <param name="ctx">The coordinates of the GPU thread.</param>
-    internal static void BeginCSharpThread(in GpuThreadContext ctx)
+    /// <param name="runsAsManagedFallback">Whether the managed path runs the kernel's C# method.</param>
+    internal static void BeginCSharpThread(in GpuThreadContext ctx, bool runsAsManagedFallback = false)
     {
         SetThreadContext(ctx);
         IsCSharpExecution = true;
+        RunsAsManagedFallback = runsAsManagedFallback;
     }
 
     /// <summary>Clears the context after the last GPU thread of a C# execution, also when one of them threw.</summary>
     internal static void EndCSharpExecution()
     {
         IsCSharpExecution = false;
+        RunsAsManagedFallback = false;
         ClearThreadContext();
     }
 
@@ -40,10 +50,14 @@ public static partial class ManagedGpuContext
     {
         if (IsCSharpExecution)
         {
-            throw new CSharpExecutionUnsupportedException(
-                $"G#: {construct} cannot run in a kernel launched under KernelExecution.CSharp, which runs the " +
-                "C# body of the kernel one GPU thread at a time, so no other thread of the block or grid runs " +
-                "beside it. Launch the kernel under KernelExecution.Default or KernelExecution.Managed.");
+            throw new CSharpExecutionUnsupportedException(RunsAsManagedFallback
+                ? $"G#: {construct} cannot run on the managed path of this kernel: its body names a file-local type, " +
+                  "which no generated copy can name, so the managed path runs the C# body of the kernel one GPU " +
+                  "thread at a time, and no other thread of the block or grid runs beside it. Launch the kernel " +
+                  "under KernelExecution.Default, or declare the type without 'file'."
+                : $"G#: {construct} cannot run in a kernel launched under KernelExecution.CSharp, which runs the " +
+                  "C# body of the kernel one GPU thread at a time, so no other thread of the block or grid runs " +
+                  "beside it. Launch the kernel under KernelExecution.Default or KernelExecution.Managed.");
         }
     }
 }

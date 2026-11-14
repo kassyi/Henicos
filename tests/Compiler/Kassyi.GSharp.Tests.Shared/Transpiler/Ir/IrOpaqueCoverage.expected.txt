@@ -12,7 +12,7 @@ UnsupportedOperation	Await	AwaitExpression	1
 UnsupportedOperation	CoalesceAssignment	CoalesceAssignmentExpression	14
 UnsupportedOperation	CollectionExpression	CollectionExpression	16
 UnsupportedOperation	ConditionalAccess	ConditionalAccessExpression	5
-UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	34
+UnsupportedOperation	DeconstructionAssignment	SimpleAssignmentExpression	36
 UnsupportedOperation	DelegateCreation	GenericName	1
 UnsupportedOperation	DelegateCreation	IdentifierName	18
 UnsupportedOperation	DelegateCreation	ParenthesizedLambdaExpression	102
@@ -50,7 +50,7 @@ statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	124
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	5
-statement UnsupportedOperation	Switch	SwitchStatement	49
+statement UnsupportedOperation	Switch	SwitchStatement	50
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
