@@ -29,7 +29,7 @@ internal static class GenericCopies
         if (FindDeclaration(instance) is not { } declaration)
         {
             return new GenericCopyPlan(instance, ImmutableDictionary<int, CopyRewrite>.Empty,
-                ImmutableArray.Create(new CopyProblem(0, NoBody)));
+                ImmutableArray.Create(new CopyProblem(0, NoBody)), ImmutableArray<ConstrainedHelper>.Empty);
         }
 
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
@@ -59,6 +59,7 @@ internal static class GenericCopies
             }
 
             members.Add(copy.Copy);
+            members.AddRange(copy.Helpers);
         }
 
         var derived = compilation;
@@ -109,8 +110,10 @@ internal static class GenericCopies
         var nodes = CopyNodeIndex.List(declaration);
         var annotated = CopyNodeIndex.Annotate(LoweringAnnotations.AnnotateOriginalSpans(declaration, compilation));
         var marker = new SyntaxAnnotation(GenericCopyEmitter.CopyAnnotationKind);
-        var copy = GenericCopyEmitter.Emit(annotated, plan, GenericInstanceNames.GetCopyName(instance), marker);
-        return new PreparedCopy(instance, declaration, type, nodes, plan, copy, marker);
+        var name = GenericInstanceNames.GetCopyName(instance);
+        var copy = GenericCopyEmitter.Emit(annotated, plan, name, marker);
+        var helpers = GenericCopyEmitter.EmitHelpers(annotated, plan, name);
+        return new PreparedCopy(instance, declaration, type, nodes, plan, copy, helpers, marker);
     }
 
     private static GenericCopy Finish(Compilation derived, SyntaxTree tree, PreparedCopy prepared)
@@ -178,5 +181,6 @@ internal static class GenericCopies
         SyntaxNode[] Nodes,
         GenericCopyPlan Plan,
         MethodDeclarationSyntax Copy,
+        ImmutableArray<MethodDeclarationSyntax> Helpers,
         SyntaxAnnotation Marker);
 }

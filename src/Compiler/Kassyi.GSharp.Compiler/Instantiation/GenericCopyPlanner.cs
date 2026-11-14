@@ -32,7 +32,8 @@ internal static class GenericCopyPlanner
             }
         }
 
-        return new GenericCopyPlan(instance, plan.Rewrites.ToImmutable(), plan.Problems.ToImmutable());
+        return new GenericCopyPlan(instance, plan.Rewrites.ToImmutable(), plan.Problems.ToImmutable(),
+            plan.Helpers.ToImmutable());
     }
 
     /// <summary>
@@ -51,6 +52,9 @@ internal static class GenericCopyPlanner
             ImmutableDictionary.CreateBuilder<int, CopyRewrite>();
 
         public ImmutableArray<CopyProblem>.Builder Problems { get; } = ImmutableArray.CreateBuilder<CopyProblem>();
+
+        public ImmutableArray<ConstrainedHelper>.Builder Helpers { get; } =
+            ImmutableArray.CreateBuilder<ConstrainedHelper>();
 
         public void Visit(int index, SyntaxNode node)
         {
@@ -106,7 +110,7 @@ internal static class GenericCopyPlanner
             }
 
             if (invocation.Expression is MemberAccessExpressionSyntax callee &&
-                PlanClosedCall(index, invocation, callee))
+                (PlanConstrainedCall(index, callee) || PlanClosedCall(index, invocation, callee)))
             {
                 return;
             }
@@ -132,6 +136,71 @@ internal static class GenericCopyPlanner
                     Problems.Add(new CopyProblem(index,
                         $"the conditional call of the extension method '{reduced.Name}' cannot be pinned"));
                     break;
+            }
+        }
+
+        // x.M(a) through a type parameter whose implementation is explicit or a default one: a helper makes the
+        // constrained call, as C# does, and the copy calls the helper with the receiver by reference
+        private bool PlanConstrainedCall(int index, MemberAccessExpressionSyntax callee)
+        {
+            if (ResolveInstance(callee) is not ConstrainedMember.ConstrainedCall call)
+            {
+                return false;
+            }
+
+            if (!IsVariable(callee.Expression))
+            {
+                Problems.Add(new CopyProblem(index,
+                    $"the receiver '{callee.Expression}' of '{callee.Name}' is not a variable that a helper can take " +
+                    "by reference; call it on a local"));
+                return true;
+            }
+
+            var helper = new ConstrainedHelper(call.ClosedType, call.Member);
+            var position = IndexOf(helper);
+            if (position < 0)
+            {
+                Helpers.Add(helper);
+                position = Helpers.Count - 1;
+            }
+
+            Rewrites[index] = new CopyRewrite.ConstrainedCall(index, position);
+            return true;
+        }
+
+        private int IndexOf(ConstrainedHelper helper)
+        {
+            for (var i = 0; i < Helpers.Count; i++)
+            {
+                if (Helpers[i].ClosedType.IsEqualTo(helper.ClosedType) && Helpers[i].Member.IsEqualTo(helper.Member))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        // A local, a parameter that is not an in parameter, a field that is not readonly, or an element of an array:
+        // what a helper can take by reference
+        private bool IsVariable(ExpressionSyntax expression)
+        {
+            switch (expression)
+            {
+                case ParenthesizedExpressionSyntax parenthesized:
+                    return IsVariable(parenthesized.Expression);
+                case ElementAccessExpressionSyntax element:
+                    return model.GetTypeInfo(element.Expression).Type is IArrayTypeSymbol;
+                case IdentifierNameSyntax or MemberAccessExpressionSyntax:
+                    return model.GetSymbolInfo(expression).Symbol switch
+                    {
+                        ILocalSymbol local => !local.IsConst,
+                        IParameterSymbol parameter => parameter.RefKind != RefKind.In,
+                        IFieldSymbol field => !field.IsReadOnly && !field.IsConst,
+                        _ => false,
+                    };
+                default:
+                    return false;
             }
         }
 
@@ -170,6 +239,12 @@ internal static class GenericCopyPlanner
         {
             if (ResolveInstance(access) is { } instance)
             {
+                // A call through a helper is planned at the call (PlanConstrainedCall)
+                if (instance is ConstrainedMember.ConstrainedCall && IsCalled(access))
+                {
+                    return;
+                }
+
                 if (instance is not ConstrainedMember.Member)
                 {
                     Problems.Add(new CopyProblem(index, (instance as ConstrainedMember.Unsupported)?.Reason ??
