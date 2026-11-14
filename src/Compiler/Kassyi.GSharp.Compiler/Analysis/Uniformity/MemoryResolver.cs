@@ -22,6 +22,7 @@ internal static class MemoryResolver
 
         var memories = new HashSet<int>();
         var all = false;
+        references.StartResolution();
         CollectLocation(values, references, location, memories,
             new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default), ref all);
         resolved = all ? values.GetAllMemory() : ImmutableArray.CreateRange(memories);
@@ -41,6 +42,7 @@ internal static class MemoryResolver
 
         var memories = new HashSet<int>();
         var all = false;
+        references.StartResolution();
         CollectReference(values, references, reference, memories,
             new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default), ref all);
         resolved = all ? values.GetAllMemory() : ImmutableArray.CreateRange(memories);
@@ -114,11 +116,11 @@ internal static class MemoryResolver
     }
 
     // A flow capture refers to the references and locations captured into it (a capture of a capture is followed in
-    // turn)
+    // turn, each capture once per resolution)
     private static void CollectCaptureSources(MemoryValues values, MemoryReferences references,
         IFlowCaptureReferenceOperation capture, HashSet<int> memories, HashSet<ILocalSymbol> visited, ref bool all)
     {
-        if (!references.TryGetCaptureSources(capture.Id, out var sources) || !references.EnterCapture(capture.Id))
+        if (!references.TryGetCaptureSources(capture.Id, out var sources) || !references.VisitCapture(capture.Id))
         {
             return;
         }
@@ -134,8 +136,6 @@ internal static class MemoryResolver
                 CollectReference(values, references, source, memories, visited, ref all);
             }
         }
-
-        references.ExitCapture(capture.Id);
     }
 
     private static void CollectSources(MemoryValues values, MemoryReferences references, ILocalSymbol local,

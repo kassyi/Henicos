@@ -71,6 +71,13 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     public bool TryGetCaptureRoot(IFlowCaptureReferenceOperation reference, out int index) =>
         Values.TryGetCaptureRoot(reference, out index);
 
+    /// <summary>
+    /// The locals and parameters that the capture <paramref name="reference"/> refers to by reference (the branches of
+    /// a ref conditional).
+    /// </summary>
+    public ImmutableArray<ISymbol> GetCaptureRootAliases(IFlowCaptureReferenceOperation reference) =>
+        Values.GetRootAliases(reference);
+
     /// <summary>The value index of a flow capture, given one on first use.</summary>
     public int ValueOf(ControlFlowGraph graph, CaptureId id) => Values.ValueOf(graph, id);
 
@@ -126,6 +133,11 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         UniformityWrites.AddWritten(Nodes[node], ValueOf(graph, capture.Id));
         AddWrite(capture, graph, node);
         Memory.AddCapture(capture);
+        if (capture.Syntax.Parent is RefExpressionSyntax &&
+            UniformityWrites.GetRootSymbol(capture.Value) is { } referenced)
+        {
+            Values.AddCaptureAlias(graph, capture.Id, referenced);
+        }
     }
 
     public void OnObjectCreation(IObjectCreationOperation creation, int node) =>

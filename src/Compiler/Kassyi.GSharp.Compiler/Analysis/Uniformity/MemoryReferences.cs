@@ -14,13 +14,15 @@ internal sealed class MemoryReferences
     private readonly Dictionary<ILocalSymbol, ImmutableArray<IOperation>.Builder> _sources =
         new(SymbolEqualityComparer.Default);
 
-    // What a flow capture stands for: the values captured into it, one per branch (a conditional, a with expression).
-    // Keyed by the capture id alone: a graph spliced into the analysis more than once (a local function body at each
-    // call) adds its sources again, and an id that two graphs share would only join their sources (the safe side)
+    // What a flow capture stands for: the values captured into it, one per branch (a conditional, a with expression),
+    // each once. Keyed by the capture id alone: a graph spliced into the analysis more than once (a local function body
+    // at each call) records the same operations again, and an id that two graphs share would only join their sources
+    // (the safe side)
     private readonly Dictionary<CaptureId, ImmutableArray<IOperation>.Builder> _captureSources = new();
 
-    // The captures being resolved, so that a capture that reaches itself through another one stops there
-    private readonly HashSet<CaptureId> _capturesInProgress = new();
+    // The captures already followed by the resolution in progress: each is walked once per resolution, which also stops
+    // a capture that reaches itself
+    private readonly HashSet<CaptureId> _capturesVisited = new();
 
     // The ref locals bound to a location this class does not follow (a pointer): they may reach any memory
     private readonly HashSet<ILocalSymbol> _unknownTargets = new(SymbolEqualityComparer.Default);
@@ -53,18 +55,23 @@ internal sealed class MemoryReferences
             _captureSources.Add(capture, sources);
         }
 
-        sources.Add(source);
+        if (!sources.Contains(source))
+        {
+            sources.Add(source);
+        }
     }
 
     /// <summary>What <paramref name="capture"/> holds, when anything was captured into it.</summary>
     public bool TryGetCaptureSources(CaptureId capture, out ImmutableArray<IOperation>.Builder sources) =>
         _captureSources.TryGetValue(capture, out sources);
 
-    /// <summary>Starts resolving <paramref name="capture"/>; false when it is already being resolved.</summary>
-    public bool EnterCapture(CaptureId capture) => _capturesInProgress.Add(capture);
+    /// <summary>Starts a resolution: no capture is visited yet.</summary>
+    public void StartResolution() => _capturesVisited.Clear();
 
-    /// <summary>Ends resolving <paramref name="capture"/>.</summary>
-    public void ExitCapture(CaptureId capture) => _capturesInProgress.Remove(capture);
+    /// <summary>
+    /// Visits <paramref name="capture"/> in the resolution in progress; false when it was visited already.
+    /// </summary>
+    public bool VisitCapture(CaptureId capture) => _capturesVisited.Add(capture);
 
     /// <summary>
     /// <paramref name="refLocal"/> is bound to a location that is not followed, so it may reach any memory.

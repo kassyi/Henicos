@@ -149,6 +149,26 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
+    // A member of a flow capture written: the capture, and the locals a ref conditional lets it refer to, keep their
+    // other members, so the write only adds to them
+    private void AddToCaptureRoot(IFlowCaptureReferenceOperation capture, ThreadVariance variance,
+        ThreadVariance[] current)
+    {
+        var recorder = state.Recorder;
+        if (recorder.TryGetCaptureRoot(capture, out var captured))
+        {
+            current[captured] |= variance;
+        }
+
+        foreach (var alias in recorder.GetCaptureRootAliases(capture))
+        {
+            if (recorder.TryGetValue(alias, out var index))
+            {
+                current[index] |= variance;
+            }
+        }
+    }
+
     /// <summary>Whether <paramref name="symbol"/> is declared inside <paramref name="scope"/>.</summary>
     public static bool IsDeclaredIn(ISymbol symbol, SyntaxNode scope) =>
         symbol.DeclaringSyntaxReferences
@@ -440,11 +460,7 @@ internal sealed class UniformitySolver(UniformityState state)
         {
             if (root is IFlowCaptureReferenceOperation capture)
             {
-                if (state.Recorder.TryGetCaptureRoot(capture, out var captured))
-                {
-                    current[captured] |= variance;
-                }
-
+                AddToCaptureRoot(capture, variance, current);
                 return;
             }
 

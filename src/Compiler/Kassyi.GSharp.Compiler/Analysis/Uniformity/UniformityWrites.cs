@@ -44,6 +44,11 @@ internal static class UniformityWrites
             case IFieldReferenceOperation or IPropertyReferenceOperation
                 when GetStructRoot(operation) is IFlowCaptureReferenceOperation capture:
                 AddWritten(node, values.CaptureRootOf(capture, graph));
+                foreach (var alias in values.GetRootAliases(capture))
+                {
+                    AddWritten(node, values.ValueOf(alias));
+                }
+
                 break;
             case IFieldReferenceOperation or IPropertyReferenceOperation
                 when GetStructRoot(operation) is { } root &&

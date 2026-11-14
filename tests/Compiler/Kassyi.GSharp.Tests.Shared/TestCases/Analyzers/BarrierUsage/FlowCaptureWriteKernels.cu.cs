@@ -228,4 +228,43 @@ public static partial class FlowCaptureWriteKernels
         Gpu.SyncThreads();
         a[ThreadIndex.X] = init.V;
     }
+
+    // The same capture resolved for every call of a local function spliced at each call
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RepeatedLocalFunctionKernel(int[] a, bool flag)
+    {
+        void Write(int[] target)
+        {
+            target[ThreadIndex.X] = flag ? 1 : 2;
+        }
+
+        Write(a);
+        Write(a);
+        Write(a);
+        Write(a);
+        if (a[0] == 0)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+    }
+
+    // A member written through a ref conditional of two struct locals
+    [GpuKernel]
+    [SkipSnapshotConsistency("Analyzer case")]
+    public static void RefConditionalStructKernel(int[] a, bool flag)
+    {
+        var first = default(Holder);
+        var second = default(Holder);
+        (flag ? ref first : ref second).Offset = ThreadIndex.X;
+        if (second.Offset < 16)
+        {
+            Gpu.SyncThreads();
+        }
+
+        Gpu.SyncThreads();
+        a[ThreadIndex.X] = first.Offset;
+    }
 }
