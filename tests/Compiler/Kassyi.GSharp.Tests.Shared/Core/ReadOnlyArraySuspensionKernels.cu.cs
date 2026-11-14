@@ -42,8 +42,8 @@ public static partial class ReadOnlyArraySuspensionKernels
     [GpuKernel]
     public static void ChainedLocalKernel(ReadOnlySuspensionContext ctx, int[] output)
     {
-        int[] first = ctx.Source;
-        int[] second = first;
+        var first = ctx.Source;
+        var second = first;
         int tid = ThreadIndex.X;
         Gpu.SyncThreads();
         output[tid] = second[tid] + first[tid];
