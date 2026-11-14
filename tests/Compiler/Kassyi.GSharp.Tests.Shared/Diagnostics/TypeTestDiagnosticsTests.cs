@@ -24,10 +24,11 @@ public class TypeTestDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "variable of type object"));
         Assert.Equal(
             [(Analyzer, 18, 19, 18, 27)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'is' type test of a reference"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object"));
     }
 
-    // Lines 25 to 27 test values, which C# decides by their types; line 34 converts with as
+    // Lines 25 to 27 test values, which C# decides by their types, and the last kernel arrays and nullables, which are
+    // null tests; line 34 converts a value to an interface with as
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -38,7 +39,7 @@ public class TypeTestDiagnosticsTests
 
         Assert.Equal(
             [(Analyzer, 34, 20, 34, 43)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'as' conversion"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object"));
         Assert.Equal(3, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 }

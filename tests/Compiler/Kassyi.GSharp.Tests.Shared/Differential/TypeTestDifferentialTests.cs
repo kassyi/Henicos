@@ -28,6 +28,25 @@ public class TypeTestDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_nullTypeTest = new(
+        nameof(TypeTestDifferentialKernels) + "." + nameof(TypeTestDifferentialKernels.NullTypeTestKernel))
+    {
+        Shape = LaunchShape.ForRows(Rows, blockX: 64),
+        Inputs = static (rng, rows) => new DiffBuffers()
+            .In("inputs", DiffValues.Int32(rng, rows))
+            .Out<int>("r", rows, TypeTestDifferentialKernels.NullColumns, OutputPolicy.Exact),
+        Launch = static (b, s) => TypeTestDifferentialKernels.LaunchNullTypeTestKernel(
+            b.Get<int>("inputs"),
+            b.Get<int>("r"),
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     [SkippableFact]
     public void TypeTest_ValueOperand_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_typeTest);
+
+    [SkippableFact]
+    public void TypeTest_ArrayAndNullableOperands_MatchTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_nullTypeTest);
 }

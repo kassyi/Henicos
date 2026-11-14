@@ -133,20 +133,21 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         context.Visitor.Visit(node.Right);
     }
 
-    // x is T on a value is decided by its type (TypeTests); any other type test, and as, needs run-time type information
+    // x is T and x as T are decided by the static types where C# decides them without a run-time type (TypeTests)
     private static void TranspileTypeTest(BinaryExpressionSyntax node, ref TranspileContext context)
     {
-        if (node.IsKind(SyntaxKind.IsExpression) &&
-            TypeTests.GetConstantResult(node, context.Query.SemanticModel) is { } result)
+        var model = context.Query.SemanticModel;
+        var plan = TypeTests.Plan(
+            node.IsKind(SyntaxKind.AsExpression),
+            model.GetTypeSymbol(node.Left),
+            model.GetTypeSymbol(node.Right),
+            model.Compilation);
+        if (TypeTests.TryAppend(in plan, node.Left, ref context))
         {
-            TypeTests.AppendConstant(node, result, ref context);
             return;
         }
 
-        context.Reporter.Fail(
-            GSharpDiagnostics.UnsupportedSyntax,
-            node,
-            node.IsKind(SyntaxKind.AsExpression) ? TypeTests.AsConversion : TypeTests.ReferenceOperand);
+        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, TypeTests.RuntimeTypeNeeded);
         context.Visitor.AppendUnsupportedPlaceholder(node);
     }
 

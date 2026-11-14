@@ -33,4 +33,17 @@ public static partial class TypeTestKernels
     {
         data[0] = (point as ITypeTestShape) == null ? 0 : 1;
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ArrayAndNullableTestKernel(int[] data, int[] other, int? maybe)
+    {
+        data[0] = data is int[] ? 1 : 0;
+        data[1] = maybe is int ? 1 : 0;
+        data[2] = maybe is not null ? 1 : 0;
+        data[3] = other is { } ? 1 : 0;
+        data[4] = other is not int[] ? 1 : 0;
+        data[5] = (other as int[]) is null ? 1 : 0;
+        data[6] = maybe is long ? 1 : 0;
+    }
 }
