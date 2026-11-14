@@ -20,6 +20,33 @@ namespace App
         public int Ext() => 1;
     }
 
+    public interface IFoo
+    {
+        int M();
+    }
+
+    public interface IDefault
+    {
+        int M() => 3;
+    }
+
+    // The public M and the explicit IFoo.M differ: x.M() through the constraint runs the explicit one
+    public struct Both : IFoo
+    {
+        public int M() => 1;
+
+        int IFoo.M() => 2;
+    }
+
+    public struct Plain : IFoo
+    {
+        public int M() => 5;
+    }
+
+    public struct Defaulted : IDefault
+    {
+    }
+
     public static class Exts
     {
         public static int Ext<T>(this T value) => 2;
@@ -65,6 +92,93 @@ namespace App
             a <<= n;
             return a;
         }
+
+        public static T MinValue<T>() where T : IMinMaxValue<T> => T.MinValue;
+
+        public static T MaxValue<T>() where T : IMinMaxValue<T> => T.MaxValue;
+
+        public static T Pi<T>() where T : IFloatingPointConstants<T> => T.Pi;
+
+        public static T Abs<T>(T a) where T : INumberBase<T> => T.Abs(a);
+
+        public static T MaxMagnitude<T>(T a, T b) where T : INumberBase<T> => T.MaxMagnitude(a, b);
+
+        public static bool IsNaN<T>(T a) where T : INumberBase<T> => T.IsNaN(a);
+
+        public static int Sign<T>(T a) where T : INumber<T> => T.Sign(a);
+
+        public static T Min<T>(T a, T b) where T : INumber<T> => T.Min(a, b);
+
+        public static T OneOverZero<T>() where T : INumberBase<T> => T.One / T.Zero;
+
+        public static T CheckedMaxValuePlusOne<T>() where T : INumberBase<T>, IMinMaxValue<T> =>
+            checked(T.MaxValue + T.One);
+
+        public static T CompoundDivide<T>(T a, T b) where T : IDivisionOperators<T, T, T>
+        {
+            a /= b;
+            return a;
+        }
+
+        public static T CheckedCompoundDivide<T>(T a, T b) where T : IDivisionOperators<T, T, T>
+        {
+            checked
+            {
+                a /= b;
+            }
+
+            return a;
+        }
+
+        public static T CheckedCompoundAdd<T>(T a, T b) where T : IAdditionOperators<T, T, T>
+        {
+            checked
+            {
+                a += b;
+            }
+
+            return a;
+        }
+
+        public static T ShiftAssignRightUnsigned<T>(T a, int n) where T : IShiftOperators<T, int, T>
+        {
+            a >>>= n;
+            return a;
+        }
+
+        public static T Increment<T>(T a) where T : IIncrementOperators<T>
+        {
+            a++;
+            return a;
+        }
+
+        public static T CheckedIncrement<T>(T a) where T : IIncrementOperators<T>
+        {
+            checked
+            {
+                a++;
+            }
+
+            return a;
+        }
+
+        public static int CompareTo<T>(T a, T b) where T : IComparable<T> => a.CompareTo(b);
+
+        public static T CompoundDivideAt<T>(T[] data, int i, T b) where T : IDivisionOperators<T, T, T>
+        {
+            data[i] /= b;
+            return data[i];
+        }
+
+        public static T CompoundDivideWithEffect<T>(T[] data, int i, T b) where T : IDivisionOperators<T, T, T>
+        {
+            data[i++] /= b;
+            return data[0];
+        }
+
+        public static int CallFoo<T>(T x) where T : IFoo => x.M();
+
+        public static int CallDefault<T>(T x) where T : IDefault => x.M();
 
         public static T[] Locals<T>(T[] data) where T : unmanaged
         {

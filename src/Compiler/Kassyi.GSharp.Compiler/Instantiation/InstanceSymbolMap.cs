@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// </summary>
 /// <remarks>
 /// The symbols stay in the compilation of the declaration. Unlike <see cref="TypeArgumentMap"/>, which reads the
-/// generic structs of a kernel, every type is followed to the bottom, since the closed copy is compared with it.
+/// generic structs of a kernel, every type is followed to the bottom, since the closed copy is built from it.
 /// </remarks>
 internal sealed class InstanceSymbolMap
 {
@@ -67,7 +67,7 @@ internal sealed class InstanceSymbolMap
     /// </summary>
     /// <remarks>
     /// Locals, parameters, lambdas and local functions are left as they are: they are declared inside the declaration
-    /// and are matched with the copy by their declaration (<see cref="CopySymbolComparer"/>).
+    /// and are matched with the copy by their declaration.
     /// </remarks>
     public ISymbol? Substitute(ISymbol? symbol)
     {
@@ -92,9 +92,8 @@ internal sealed class InstanceSymbolMap
 
     /// <summary>
     /// What a member of an interface that the declaration reaches through a type parameter (a static abstract or
-    /// virtual
-    /// member, <c>T.Zero</c>, <c>a + b</c> on <c>T : INumber&lt;T&gt;</c>) is for the type argument, and how the copy
-    /// must bind it.
+    /// virtual member such as <c>T.Zero</c> or the operator of <c>a + b</c> on <c>T : INumber&lt;T&gt;</c>, or an
+    /// instance member such as <c>x.CompareTo(y)</c>) is for the type argument, and how the copy must bind it.
     /// </summary>
     /// <param name="member">The interface member, as the declaration binds it.</param>
     /// <param name="constrainedTo">The type parameter the member is reached through.</param>
@@ -103,7 +102,7 @@ internal sealed class InstanceSymbolMap
         var closed = Substitute(constrainedTo);
         return Substitute(member) is { } mapped
             ? Resolve(mapped, closed)
-            : ConstrainedMember.Unsupported(closed, "the member does not exist in the instance");
+            : new ConstrainedMember.Unsupported(closed, "the member does not exist in the instance");
     }
 
     private ConstrainedMember Resolve(ISymbol member, ITypeSymbol closed)
@@ -111,18 +110,12 @@ internal sealed class InstanceSymbolMap
         var implementation = closed.FindImplementationForInterfaceMember(member);
         if (implementation is null)
         {
-            return ConstrainedMember.Unsupported(closed, $"'{closed.Name}' does not implement '{member.Name}'");
+            return new ConstrainedMember.Unsupported(closed, $"'{closed.Name}' does not implement '{member.Name}'");
         }
 
         if (implementation.ContainingType is { TypeKind: TypeKind.Interface } interfaceType)
         {
-            // A checked operator that the type does not declare runs the default implementation of the interface,
-            // which calls the unchecked operator: the copy binds that one
-            return member is IMethodSymbol { Name: var name } &&
-                   TryGetUncheckedOperator(interfaceType, name) is { } plain
-                ? Resolve(plain, closed)
-                : ConstrainedMember.Unsupported(closed,
-                    $"'{member.Name}' runs the default implementation of '{interfaceType.Name}'");
+            return ResolveDefault(member, interfaceType, closed);
         }
 
         // A public member is bound by its name whether or not it also declares the interface member it implements
@@ -131,26 +124,80 @@ internal sealed class InstanceSymbolMap
         var target = GetExplicitTarget(implementation);
         if (implementation.DeclaredAccessibility == Accessibility.Public || target is null)
         {
-            return ConstrainedMember.Member(closed, implementation);
+            return new ConstrainedMember.Member(closed, implementation);
         }
 
-        if (BuiltinNumerics.IsBuiltinNumeric(closed))
-        {
-            // The interface declares the operator as a static abstract (or virtual) member named op_*
-            if (target is IMethodSymbol op && op.Name.StartsWith("op_", StringComparison.Ordinal))
-            {
-                return ConstrainedMember.BuiltinOperator(closed, op.Name);
-            }
-
-            if (target is IPropertySymbol property && BuiltinNumerics.TryGetIdentity(property.Name, out var identity))
-            {
-                return ConstrainedMember.IdentityConstant(closed, identity);
-            }
-        }
-
-        return ConstrainedMember.Unsupported(closed,
+        return ResolvePrivate(target, closed) ?? new ConstrainedMember.Unsupported(closed,
             $"'{closed.Name}' implements '{target.Name}' explicitly; implement it as a public member");
     }
+
+    // The type does not implement the member: its interface does, with a default implementation
+    private ConstrainedMember ResolveDefault(ISymbol member, INamedTypeSymbol interfaceType, ITypeSymbol closed)
+    {
+        // A checked operator that the type does not declare runs the default implementation of the interface, which
+        // calls the unchecked operator: the copy binds that one
+        if (member is IMethodSymbol { Name: var name } && TryGetUncheckedOperator(interfaceType, name) is { } plain)
+        {
+            return Resolve(plain, closed);
+        }
+
+        // The numeric types of the BCL leave Max, Min and Sign of char to the default implementations
+        return member is IMethodSymbol method && BuiltinNumerics.HasPrivateIdentities(closed) &&
+               ResolvePrivateMethod(method.Name, closed) is { } closedForm
+            ? closedForm
+            : new ConstrainedMember.Unsupported(closed,
+                $"'{member.Name}' runs the default implementation of '{interfaceType.Name}'");
+    }
+
+    // The BCL implements the generic math members of its numeric types privately; each has a closed form
+    private static ConstrainedMember? ResolvePrivate(ISymbol target, ITypeSymbol closed)
+    {
+        if (!BuiltinNumerics.HasPrivateIdentities(closed))
+        {
+            return null;
+        }
+
+        switch (target)
+        {
+            // The interface declares the operator as a static abstract (or virtual) member named op_*
+            case IMethodSymbol op when BuiltinNumerics.IsBuiltinNumeric(closed) &&
+                                       op.Name.StartsWith("op_", StringComparison.Ordinal):
+                return new ConstrainedMember.BuiltinOperator(closed, op.Name);
+            case IPropertySymbol property when BuiltinNumerics.TryGetIdentity(property.Name, out var identity):
+                return new ConstrainedMember.IdentityConstant(closed, identity);
+            case IPropertySymbol property when FindPublicStaticMember(closed, property.Name):
+                return new ConstrainedMember.StaticMember(closed, property.Name);
+            case IMethodSymbol method:
+                return ResolvePrivateMethod(method.Name, closed);
+            default:
+                return null;
+        }
+    }
+
+    // T.Abs and T.MaxMagnitude of an unsigned type, T.IsNaN of an integer type, T.Max, T.Min and T.Sign of char
+    private static ConstrainedMember? ResolvePrivateMethod(string name, ITypeSymbol closed)
+    {
+        var isChar = closed.SpecialType == SpecialType.System_Char;
+        return name switch
+        {
+            "Abs" when BuiltinNumerics.IsUnsigned(closed) => new ConstrainedMember.ArgumentCall(closed),
+            "MaxMagnitude" when BuiltinNumerics.IsUnsigned(closed) =>
+                new ConstrainedMember.MathCall(closed, "Max", isChar ? closed : null),
+            "MinMagnitude" when BuiltinNumerics.IsUnsigned(closed) =>
+                new ConstrainedMember.MathCall(closed, "Min", isChar ? closed : null),
+            "IsNaN" when BuiltinNumerics.IsIntegral(closed) => new ConstrainedMember.FalseCall(closed),
+            "Max" when isChar => new ConstrainedMember.MathCall(closed, "Max", closed),
+            "Min" when isChar => new ConstrainedMember.MathCall(closed, "Min", closed),
+            "Sign" when isChar => new ConstrainedMember.MathCall(closed, "Sign", null),
+            _ => null,
+        };
+    }
+
+    private static bool FindPublicStaticMember(ITypeSymbol type, string name) =>
+        type.GetMembers(name)
+            .AsStackEnumerable()
+            .Any(static member => member is { DeclaredAccessibility: Accessibility.Public, IsStatic: true } and
+                (IFieldSymbol or IPropertySymbol));
 
     // op_CheckedAddition -> op_Addition of the same interface
     private static IMethodSymbol? TryGetUncheckedOperator(INamedTypeSymbol interfaceType, string checkedName)
