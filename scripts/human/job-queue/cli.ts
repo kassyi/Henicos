@@ -17,7 +17,7 @@ import {
   type ShellName,
 } from "./constants.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
-import { cancel, place, startNow, status, stop, wait } from "./client-commands.ts";
+import { accuracy, cancel, place, startNow, status, stop, wait } from "./client-commands.ts";
 import { MachineProfile } from "./machine.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
@@ -26,7 +26,7 @@ const Usage = [
   "Usage:",
   "  node scripts/human/job-queue.js run [--weight <n>] [--gpu] [--after <id> [--keep-if-failed]] [--shell <name>]",
   '                                       [--timeout-minutes <n>] -- "<command>"',
-  "  node scripts/human/job-queue.js status [<id>] [--json | --watch]",
+  "  node scripts/human/job-queue.js status [<id>] [--json | --watch | --accuracy]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
   "  node scripts/human/job-queue.js cancel-all",
@@ -50,6 +50,7 @@ const Usage = [
   "                                   --gpu, once for the turn at the GPU and once more for the GPU lock.",
   "status      Lists the running and waiting jobs with their ids, the jobs ahead and the expected start and end;",
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
+  "            --accuracy prints how close the expected run times were, per source (own runs, similar commands).",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
   "            c cancels it, s starts, m moves and w re-weights a waiting one, ? lists the keys, q quits",
   "            (just queue-watch). Below the jobs, the agent chats that wait for you (chat-status.js); a hides them.",
@@ -99,6 +100,7 @@ interface Options extends RunOptions {
   commandFromEnv: boolean;
   json: boolean;
   watch: boolean;
+  accuracy: boolean;
   /** The job a mode acts on (status, cancel, move, set-weight, start); 0 for none. */
   jobId: number;
   moveFirst: boolean;
@@ -140,6 +142,7 @@ export function parseArgs(argv: string[]): Options {
     stateDir: "",
     json: false,
     watch: false,
+    accuracy: false,
     jobId: 0,
     after: 0,
     keepIfFailed: false,
@@ -215,6 +218,9 @@ export function parseArgs(argv: string[]): Options {
       case "--watch":
         options.watch = true;
         break;
+      case "--accuracy":
+        options.accuracy = true;
+        break;
       case "--timeout-minutes":
         options.timeoutMinutes = parsePositive("--timeout-minutes", own[++i], true);
         break;
@@ -265,6 +271,9 @@ export function parseArgs(argv: string[]): Options {
   if (options.watch && (options.mode !== "status" || options.json || options.jobId > 0)) {
     usageError("--watch goes with status alone (no <id>, no --json).");
   }
+  if (options.accuracy && (options.mode !== "status" || options.watch || options.jobId > 0)) {
+    usageError("--accuracy goes with status alone (no <id>, no --watch).");
+  }
   if (options.keepIfFailed && options.after === 0) {
     usageError("--keep-if-failed needs --after <id>.");
   }
@@ -285,7 +294,11 @@ export async function main(argv: string[]): Promise<void> {
         await run(options);
         break;
       case "status":
-        await (options.watch ? watch(options.port) : status(options.port, options.jobId, options.json));
+        await (options.accuracy
+          ? accuracy(options.json)
+          : options.watch
+            ? watch(options.port)
+            : status(options.port, options.jobId, options.json));
         break;
       case "wait":
         await wait(options, options.jobId, options.json);
