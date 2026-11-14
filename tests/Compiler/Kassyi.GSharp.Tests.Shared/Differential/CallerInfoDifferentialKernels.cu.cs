@@ -78,10 +78,10 @@ public static partial class CallerInfoDifferentialKernels
         r[o + 8] = x.LineAfter();
         r[o + 9] = LibLanguageExports.CallerLine();
         r[o + 10] = x.LibLineAfter();
+        static int LocalLine() => Line();
+
         r[o + 11] = LocalLine();
         r[o + 12] = xs.AsStackEnumerable().Take(1).Select(static v => Line()).Sum();
-
-        static int LocalLine() => Line();
     }
 
     // The managed path calls the managed version of LineWithSum; C# cannot run the kernel as written
@@ -118,7 +118,8 @@ public static partial class CallerInfoDifferentialKernels
     }
 }
 
-public static partial class CallerInfoExtensions
+// Internal, so that the generator snapshot, which compiles this file next to the test assembly, sees one LineAfter
+internal static partial class CallerInfoExtensions
 {
     [GpuDeviceFunction]
     public static int LineAfter(this int x, [CallerLineNumber] int line = 0) => (x * 1000) + line;
