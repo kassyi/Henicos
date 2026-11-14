@@ -84,4 +84,30 @@ public class LocalFunctionOrderTests : TranspilerTestBase
     public void DelegateOfRecursive_Native_ConvertsTheLocalFunctionGroup() =>
         LocalFunctionOrderScenarios.DelegateOfRecursive(s_runNative);
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallBeforeCapturedDeclaration_Native_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallBeforeCapturedDeclarationKernel(data, blockDimX: 4),
+            x => x + 5
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallTwoCapturedLocals_Native_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallTwoCapturedLocalsKernel(data, blockDimX: 4),
+            x => x + 7
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallThroughAFunction_Native_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallThroughAFunctionKernel(data, blockDimX: 4),
+            x => x + 6
+        );
 }
