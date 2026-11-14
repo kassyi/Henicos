@@ -13,9 +13,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 /// braces each section, so the block around the switch declares them: a variable as
 /// <c>&lt;type&gt; &lt;name&gt;;</c> (the prelude of its statement then writes nothing), a local function as its
 /// lambda, in front of the switch. A local that a shared local function uses, and a local function that a shared one
-/// calls, are shared too, so that the lambda captures names that are declared before it. What a switch shares is decided once, by
-/// <see cref="SharedNames"/>;
-/// the writers only follow it. A shared local function is written as a plain lambda in the order of the source.
+/// calls, are shared too, so that the lambda captures names that are declared before it. What a switch shares is
+/// decided once, by <see cref="SharedNames"/>; the writers only follow it. A shared local function is written as a
+/// plain lambda in the order of the source.
 /// </remarks>
 internal static class SwitchSectionSharedNames
 {
