@@ -342,18 +342,9 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, "<message>");
     private static void AppendNoMatchTrap(NoMatchTrap trap, ref TranspileContext context)
     {
-        var writer = context.Emitter.Writer;
-        writer.Append($"{GSharpInternalNames.Prelude.TrapAbort}(GSharpErrorCode::SwitchExpression, ");
-        if (trap.SiteId != 0u)
-        {
-            writer.Append($"{trap.SiteId}u");
-        }
-        else
-        {
-            CppStringLiteral.Append(writer, trap.Message);
-        }
-
-        writer.AppendLine(");");
+        UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.TrapAbort, "SwitchExpression", trap.SiteId,
+            trap.Message);
+        context.Emitter.Writer.AppendLine(";");
     }
 
     /// <summary>The form of a switch expression, decided before it is written.</summary>

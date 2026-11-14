@@ -366,4 +366,64 @@ public static partial class UsingFailureKernels
 
         outs[1] = 7;
     }
+
+    // A switch expression with no matching arm in the body of a using, written inline: the failure comes from the
+    // kernel's own code and no callee, so it is the check that the CUDA build writes at the place of the expression
+    [GpuKernel]
+    public static void SwitchInBodyKernel(int[] log, int[] source, int[] outs, int mode)
+    {
+        using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = 0 })
+        {
+#pragma warning disable CS8509
+            outs[0] = mode switch
+            {
+                0 => 5,
+                1 => 6,
+            };
+#pragma warning restore CS8509
+            outs[1] = 9;
+        }
+
+        outs[2] = 3;
+    }
+
+    // The same failure under two using declarations and a using statement: each resource is disposed once, the last
+    // declared first
+    [GpuKernel]
+    public static void SwitchUnderNestedKernel(int[] log, int[] source, int[] outs, int mode)
+    {
+        using var a = new FailingResource { Log = log, Source = source, Id = 1, Fail = 0 };
+        using (var b = new FailingResource { Log = log, Source = source, Id = 2, Fail = 0 })
+        {
+            using var c = new FailingResource { Log = log, Source = source, Id = 3, Fail = 0 };
+#pragma warning disable CS8509
+            outs[0] = mode switch
+            {
+                0 => 5,
+                1 => 6,
+            };
+#pragma warning restore CS8509
+            outs[1] = 9;
+        }
+
+        outs[2] = 3;
+    }
+
+    // A failed switch expression after the using ended: nothing to dispose any more
+    [GpuKernel]
+    public static void SwitchAfterUsingKernel(int[] log, int[] source, int[] outs, int mode)
+    {
+        using (var r = new FailingResource { Log = log, Source = source, Id = 1, Fail = 0 })
+        {
+            outs[0] = 4;
+        }
+
+#pragma warning disable CS8509
+        outs[1] = mode switch
+        {
+            0 => 5,
+            1 => 6,
+        };
+#pragma warning restore CS8509
+    }
 }

@@ -129,6 +129,21 @@ public struct Emitter(
     public int UsingCounter;
 
     /// <summary>
+    /// The names of the guards of the <c>using</c>s whose scope the CUDA code being written is in, the innermost last:
+    /// a failed check there disposes them before the thread ends (<see cref="UnwindingTrap"/>).
+    /// </summary>
+    internal List<string> ActiveGuards { get; } = [];
+
+    /// <summary>Forgets the guards declared after the first <paramref name="count"/>: their C++ scope has ended.</summary>
+    internal void EndGuardScope(int count)
+    {
+        if (ActiveGuards.Count > count)
+        {
+            ActiveGuards.RemoveRange(count, ActiveGuards.Count - count);
+        }
+    }
+
+    /// <summary>
     /// The <c>using</c>s whose body is being written on the CPU, the innermost last: a jump out of the body goes to an
     /// exit label of the innermost one (<see cref="UsingCpuEmitter"/>).
     /// </summary>

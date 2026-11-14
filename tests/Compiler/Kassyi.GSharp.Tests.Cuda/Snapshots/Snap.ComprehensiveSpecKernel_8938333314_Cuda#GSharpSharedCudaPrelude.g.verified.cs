@@ -38,6 +38,8 @@ template <typename T>
 struct __gsharp_using_scope {
 T& resource;
 __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+// Called by a failed check inside the scope (__gsharp_trap_unwind), where the thread ends without the destructor
+__device__ inline void __gsharp_unwind() { resource.__gsharp_dispose(); }
 };
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
@@ -310,7 +312,8 @@ asm volatile(""trap;"");
 __builtin_unreachable();
 }
 
-[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+// The record of __gsharp_trap_site, without the end of the thread (shared by it and __gsharp_record_site)
+__device__ __forceinline__ void __gsharp_record_site_body(GSharpErrorCode code, unsigned int site_id) {
 const unsigned int epoch = __gsharp_launch_epoch;
 GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
 // [WHY] Without a record (the host could not allocate it) nothing records the error, and a thread that exited would
@@ -347,6 +350,28 @@ __nanosleep(64);
 __syncwarp(active);
 #endif
 }
+}
+
+[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+__gsharp_record_site_body(code, site_id);
+__gsharp_exit_thread();
+}
+
+// Records the failure of the calling thread and returns, so that the code of a failing check can run the finally of
+// the scopes it leaves (__gsharp_trap_unwind) before the thread ends
+__device__ __noinline__ void __gsharp_record_site(GSharpErrorCode code, unsigned int site_id) {
+__gsharp_record_site_body(code, site_id);
+}
+
+// A failed check inside the scope of a using: records the failure as __gsharp_trap_site does, disposes the guards of the
+// scopes the check leaves, the innermost first, as C# runs the finally blocks while the exception leaves, and ends the
+// thread. [WHY] The thread ends with exit, which runs no destructor, so the guards are called here. The guards are the
+// ones that the C++ block of the check can see, so the call costs the code that does not fail nothing
+template <class... Guards>
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_unwind(GSharpErrorCode code, unsigned int site_id,
+Guards&... guards) {
+__gsharp_record_site(code, site_id);
+(guards.__gsharp_unwind(), ...);
 __gsharp_exit_thread();
 }
 
