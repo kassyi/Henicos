@@ -49,6 +49,24 @@ namespace StateMachineCase
             return value + 1;
         }
 
+        // The private struct only as a temporary: MakeSecret(tid) is held across the barrier of WaitInner, though no
+        // local, parameter or return value of WaitSpilled has the type: its frame is private as well
+        [GpuDeviceFunction]
+        private static Secret MakeSecret(int tid) => new Secret { V = tid };
+
+        [GpuDeviceFunction]
+        private static int UseSecret(Secret secret, int waited) => secret.V + waited;
+
+        [GpuDeviceFunction]
+        public static int WaitInner(int[] buffer, int tid)
+        {
+            Gpu.SyncThreads();
+            return buffer[tid];
+        }
+
+        [GpuDeviceFunction]
+        public static int WaitSpilled(int[] buffer, int tid) => UseSecret(MakeSecret(tid), WaitInner(buffer, tid));
+
         private struct Secret
         {
             public int V;

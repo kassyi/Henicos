@@ -6,7 +6,8 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
 /// The kernels of <see cref="PrivateFrameTypeKernels"/> on the managed fallback, whose state machines keep the private
-/// nested struct in the frames of the device functions; the values are those of <see cref="PrivateFrameTypeNativeTests"/>.
+/// nested struct in the frames of the device functions; the values are those of <see
+/// cref="PrivateFrameTypeNativeTests"/>.
 /// </summary>
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -51,6 +52,20 @@ public class PrivateFrameTypeManagedTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void PrivateStruct_UnsafeFunctionFromSafeKernel_ComputesValues() => Run(PrivateFrameTypeCases.PointerFrame);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_ParameterAndReturnValue_ComputesValues() => Run(PrivateFrameTypeCases.StructParameter);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_SpilledTemporaryFromSameClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.SpillSameClass);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_SpilledTemporaryFromAnotherClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.SpillOtherClass);
 
     private static void Run(PrivateFrameTypeCase run)
     {

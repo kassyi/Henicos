@@ -57,4 +57,19 @@ internal static class PrivateFrameTypeCases
     public static readonly PrivateFrameTypeCase PointerFrame = new(
         static (data, result) => PrivateFrameTypeCallers.LaunchPointerFrameKernel(data, result, blockDimX: 4),
         [8, 13, 18, 23]);
+
+    // 6v + 1, a private struct returned by one suspending function and passed to another
+    public static readonly PrivateFrameTypeCase StructParameter = new(
+        static (data, result) => PrivateFrameTypeKernels.LaunchStructParameterKernel(data, result, blockDimX: 4),
+        [7, 13, 19, 25]);
+
+    // 2v + v, a private struct that only a spilled temporary of the function holds
+    public static readonly PrivateFrameTypeCase SpillSameClass = new(
+        static (data, result) => PrivateFrameTypeKernels.LaunchSpillSameClassKernel(data, result, blockDimX: 4),
+        [3, 6, 9, 12]);
+
+    // The same function from a kernel of another class
+    public static readonly PrivateFrameTypeCase SpillOtherClass = new(
+        static (data, result) => PrivateFrameTypeCallers.LaunchSpillOtherClassKernel(data, result, blockDimX: 4),
+        [3, 6, 9, 12]);
 }

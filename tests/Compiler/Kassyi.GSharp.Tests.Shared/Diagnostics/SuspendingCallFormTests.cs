@@ -4,9 +4,9 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// The plan of how a managed context or frame holds the frame of a device function it calls that waits at a barrier
-/// (<see cref="ManagedStateMachineAvailability.GetCallForm"/>), without reading generated text: by the frame's type where
-/// the caller can name it, as an object run through the generated entries where the frame is private to another class,
-/// and not at all where the frame would hold a file-local type.
+/// (<see cref="ManagedStateMachineAvailability.GetCallForm"/>), without reading generated text: by the frame's type
+/// where the caller can name it, as an object run through the generated entries where the frame is private to another
+/// class, and not at all where the frame would hold a file-local type.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallFormTests
@@ -26,6 +26,8 @@ public class SuspendingCallFormTests
     [InlineData("FrameCaller", "FrameRelay", "Relays", "Direct")]
     [InlineData("FrameDerived", "FrameBase", "HoldsProtected", "Entry")]
     [InlineData("FrameBase", "FrameBase", "HoldsProtected", "Direct")]
+    [InlineData("SpillOwner", "SpillOwner", "SpillF", "Direct")]
+    [InlineData("SpillCaller", "SpillOwner", "SpillF", "Entry")]
     [InlineData("FrameCaller", "FileLocalHolder", "HoldsFileLocal", "Unavailable")]
     [InlineData("FrameCaller", "FileLocalRelay", "Relays", "Unavailable")]
     public void GetCallForm_CallerAndCallee_HoldsTheFrameThatWay(string caller, string calleeClass, string callee,
@@ -47,6 +49,7 @@ public class SuspendingCallFormTests
     [InlineData("FrameOwner", "CallsHoldsPrivate", Accessibility.Private, true)]
     [InlineData("FrameOwner", "PrivateHoldsPrivate", Accessibility.Private, false)]
     [InlineData("FrameBase", "HoldsProtected", Accessibility.Private, true)]
+    [InlineData("SpillOwner", "SpillF", Accessibility.Private, true)]
     public void GetFrameAccessibility_FrameHoldsPrivateFrame_EntriesOnlyForPrivateFrames(string calleeClass,
         string callee, Accessibility expected, bool hasEntries)
     {

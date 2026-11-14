@@ -2,8 +2,8 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-// Device functions that wait at a barrier: frames that hold a private type, which kernels of other classes reach through
-// the generated entries, and frames that would hold a file-local type, which no generated file can name
+// Device functions that wait at a barrier: frames that hold a private type, which kernels of other classes reach
+// through the generated entries, and frames that would hold a file-local type, which no generated file can name
 public static partial class FrameOwner
 {
     private struct Hidden
@@ -111,4 +111,40 @@ public partial class FrameDerived : FrameBase
 {
     [GpuKernel]
     public static void DerivedKernel(int[] data) => data[ThreadIndex.X] = HoldsProtected(data);
+}
+
+// A frame whose only private value is a temporary that the lowering spills across a barrier: SpillMake(data) is held
+// while SpillWait(data) waits, and no local, parameter or return value of SpillF has the type of the struct
+public static partial class SpillOwner
+{
+    private struct Spilled
+    {
+        public int X;
+    }
+
+    [GpuDeviceFunction]
+    private static Spilled SpillMake(int[] data) => new Spilled { X = data[ThreadIndex.X] * 2 };
+
+    [GpuDeviceFunction]
+    private static int SpillUse(Spilled spilled, int waited) => spilled.X + waited;
+
+    [GpuDeviceFunction]
+    internal static int SpillWait(int[] data)
+    {
+        var value = data[ThreadIndex.X];
+        Gpu.SyncThreads();
+        return value;
+    }
+
+    [GpuDeviceFunction]
+    internal static int SpillF(int[] data) => SpillUse(SpillMake(data), SpillWait(data));
+
+    [GpuKernel]
+    public static void SpillOwnerKernel(int[] data) => data[ThreadIndex.X] = SpillF(data);
+}
+
+public static partial class SpillCaller
+{
+    [GpuKernel]
+    public static void SpillCallerKernel(int[] data) => data[ThreadIndex.X] = SpillOwner.SpillF(data);
 }

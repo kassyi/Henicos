@@ -506,6 +506,9 @@ public class DeviceExportTests
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
         Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));
         Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitThrough(System.Int32[],System.Int32)"));
+        // Private only through a spilled temporary: the record says so as well
+        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitSpilled(System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitInner(System.Int32[],System.Int32)"));
         Assert.False(HasStateMachine("M:StateMachineCase.Closed.Open.WaitClosed(System.Int32[],System.Int32)"));
 
         var machines = string.Join("\n", result.GeneratedSources
@@ -517,9 +520,14 @@ public class DeviceExportTests
         Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
         // A frame that holds a private nested type is private to its class (#1835); the records above say that no
         // other assembly can call it
-        Assert.Contains("private static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitPrivate(", machines, StringComparison.Ordinal);
-        Assert.Contains("private class __gsharp_frame_StateMachineCase__LibSm__WaitPrivate {", machines, StringComparison.Ordinal);
-        Assert.Contains("private class __gsharp_frame_StateMachineCase__LibSm__WaitThrough {", machines, StringComparison.Ordinal);
+        Assert.Contains("private static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitPrivate(", machines,
+            StringComparison.Ordinal);
+        foreach (var name in new[] { "WaitPrivate", "WaitThrough", "WaitSpilled" })
+        {
+            Assert.Contains($"private class __gsharp_frame_StateMachineCase__LibSm__{name} {{", machines,
+                StringComparison.Ordinal);
+        }
+
         Assert.DoesNotContain("WaitClosed", machines, StringComparison.Ordinal);
         var newLine = Environment.NewLine;
         Assert.Contains($"partial class LibSm{newLine}{{{newLine}public partial class Inner", machines, StringComparison.Ordinal);

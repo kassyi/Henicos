@@ -3,8 +3,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// The kernels of <see cref="PrivateFrameTypeKernels"/> on the native target (CPU or CUDA): device functions that keep a
-/// private nested struct across a barrier. <c>PrivateFrameTypeManagedTests</c> runs the same kernels on the managed
+/// The kernels of <see cref="PrivateFrameTypeKernels"/> on the native target (CPU or CUDA): device functions that keep
+/// a private nested struct across a barrier. <c>PrivateFrameTypeManagedTests</c> runs the same kernels on the managed
 /// fallback, and both must give these values.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -49,6 +49,20 @@ public class PrivateFrameTypeNativeTests
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void PrivateStruct_UnsafeFunctionFromSafeKernel_ComputesValues() => Run(PrivateFrameTypeCases.PointerFrame);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_ParameterAndReturnValue_ComputesValues() => Run(PrivateFrameTypeCases.StructParameter);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_SpilledTemporaryFromSameClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.SpillSameClass);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PrivateStruct_SpilledTemporaryFromAnotherClass_ComputesValues() =>
+        Run(PrivateFrameTypeCases.SpillOtherClass);
 
     private static void Run(PrivateFrameTypeCase run)
     {

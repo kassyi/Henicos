@@ -3,8 +3,8 @@ using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// On the C++ dialect the context of a kernel holds the frame of every call that waits at a barrier. A frame that holds a
-/// private nested type is private to the function's class, and kernels of other classes hold it through the entries
+/// On the C++ dialect the context of a kernel holds the frame of every call that waits at a barrier. A frame that holds
+/// a private nested type is private to the function's class, and kernels of other classes hold it through the entries
 /// generated beside it; a frame that would hold a file-local type is not emitted, and a kernel that reaches one gets
 /// GSH0115 at the call. The generated C# compiles either way (#1835).
 /// </summary>

@@ -32,6 +32,50 @@ public static partial class PrivateFrameTypeKernels
         return stepped + before.X * 10;
     }
 
+    // A private struct passed as a parameter, and one returned, by suspending functions: Scale(Build(v), 3) = 6v + 1
+    [GpuDeviceFunction]
+    private static State Build(int[] data)
+    {
+        Gpu.SyncThreads();
+        return new State { X = data[ThreadIndex.X] * 2 };
+    }
+
+    [GpuDeviceFunction]
+    private static int Scale(State state, int factor)
+    {
+        Gpu.SyncThreads();
+        return state.X * factor + 1;
+    }
+
+    [GpuKernel]
+    public static void StructParameterKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = Scale(Build(data), 3);
+
+    // The struct of the class made and consumed by functions that do not suspend: SpillMake(v) is a temporary that the
+    // frame of SpillFunction keeps across SpillWait, though no local, parameter or return value of the function has the
+    // type of the struct
+    [GpuDeviceFunction]
+    private static State SpillMake(int[] data) => new State { X = data[ThreadIndex.X] * 2 };
+
+    [GpuDeviceFunction]
+    private static int SpillUse(State state, int waited) => state.X + waited;
+
+    [GpuDeviceFunction]
+    internal static int SpillWait(int[] data)
+    {
+        var value = data[ThreadIndex.X];
+        Gpu.SyncThreads();
+        return value;
+    }
+
+    // 2v + v
+    [GpuDeviceFunction]
+    internal static int SpillFunction(int[] data) => SpillUse(SpillMake(data), SpillWait(data));
+
+    [GpuKernel]
+    public static void SpillSameClassKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = SpillFunction(data);
+
     // The function, the struct and the kernel in one class
     [GpuKernel]
     public static void SameClassKernel(int[] data, int[] result) => result[ThreadIndex.X] = Step(data);
@@ -129,6 +173,11 @@ public static partial class PrivateFrameTypeCallers
         result[ThreadIndex.X] = first + second;
     }
 
+    // The frame whose only private value is a spilled temporary, from a kernel of another class
+    [GpuKernel]
+    public static void SpillOtherClassKernel(int[] data, int[] result) =>
+        result[ThreadIndex.X] = PrivateFrameTypeKernels.SpillFunction(data);
+
     // An unsafe function's private frame, a struct, held by the context of a kernel that is not unsafe
     [GpuKernel]
     public static void PointerFrameKernel(int[] data, int[] result) =>
@@ -144,8 +193,8 @@ public static unsafe partial class PrivateFramePointerOwner
         public int B;
     }
 
-    // 5v + 3, through a pointer to a private struct; the pointer into the frame is kept across the barrier, so the frame
-    // must not move between two calls of the state machine
+    // 5v + 3, through a pointer to a private struct; the pointer into the frame is kept across the barrier, so the
+    // frame must not move between two calls of the state machine
     [GpuDeviceFunction]
     internal static int Step(int[] data)
     {
