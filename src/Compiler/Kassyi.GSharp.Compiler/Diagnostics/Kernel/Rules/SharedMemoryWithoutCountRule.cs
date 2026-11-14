@@ -9,9 +9,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// </summary>
 /// <remarks>
 /// <c>new SharedMemory&lt;T&gt;()</c> needs no rule: its constructor is obsolete as an error, so the C# compiler
-/// rejects it. Two shapes are not decided, because they need the flow of the whole program: a struct member that no code
-/// assigns anywhere, and a <c>default</c> struct that another method or a field hands in. A struct local is reported
-/// only when its method never assigns the local or a member of it and never passes it by reference.
+/// rejects it. Two shapes are not decided, because they need the flow of the whole program: a struct member that
+/// no code assigns anywhere, and a <c>default</c> struct that another method or a field hands in. A struct local is
+/// reported only when its method never assigns the local or a member of it and never passes it by reference.
 /// </remarks>
 internal sealed class SharedMemoryWithoutCountRule :
     ISyntaxValidationRule<LiteralExpressionSyntax>,
