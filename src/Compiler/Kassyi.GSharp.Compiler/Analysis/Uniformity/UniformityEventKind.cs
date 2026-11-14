@@ -12,6 +12,13 @@ internal enum UniformityEventKind
     /// </summary>
     Bind,
 
+    /// <summary>
+    /// The result of a lambda receives the variance of a value it returns, with the lambda's own parameters taken as
+    /// uniform: what the lambda adds to a call it is passed to (the values it captures and the thread indices it
+    /// reads).
+    /// </summary>
+    BindLambdaResult,
+
     /// <summary>An operation writes locals, parameters or a flow capture.</summary>
     Write,
 

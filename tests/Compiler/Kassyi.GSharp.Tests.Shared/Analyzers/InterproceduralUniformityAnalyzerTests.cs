@@ -113,6 +113,27 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
             actual);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LambdaOperands_CapturedOrReadLanes_ReachTheCallResult()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs");
+
+        var warning = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+
+        // 18: a StackLinq predicate that reads the lane. 33: one that captures it. 52: a lambda passed to a device
+        // function. 81: the control, the lane read directly. Nothing at 67, where the lambdas read only their
+        // parameters and a kernel argument
+        Assert.Equal(
+            [
+                (warning, 18, 13, 18, 30),
+                (warning, 33, 13, 33, 30),
+                (warning, 52, 13, 52, 30),
+                (warning, 81, 13, 81, 30)
+            ],
+            actual);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath)
     {

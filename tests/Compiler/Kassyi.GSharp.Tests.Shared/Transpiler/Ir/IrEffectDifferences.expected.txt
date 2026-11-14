@@ -1,4 +1,4 @@
-known, a by-value extension receiver is not written	283
+known, a by-value extension receiver is not written	287
 known, a discard is written by no one	6
 known, a field of a struct temporary reads no memory	6
 known, an initializer writes the new value	181

@@ -53,6 +53,18 @@ internal sealed class UniformitySolver(UniformityState state)
                 case { Kind: UniformityEventKind.Bind, Operation: { } bound, Graph: { } boundGraph }:
                     current[flowEvent.Value] = state.Reader.Evaluate(bound, boundGraph, current);
                     break;
+                case
+                {
+                    Kind: UniformityEventKind.BindLambdaResult, Operation: { } returned, Graph: { } returnedGraph,
+                    Opaque: { } lambda
+                }:
+                    current[flowEvent.Value] = state.Reader.EvaluateWithUniformParameters(
+                        state.Recorder.GetLambdaParameters(lambda),
+                        returned,
+                        returnedGraph,
+                        current
+                    );
+                    break;
                 case { Kind: UniformityEventKind.Write, Operation: { } operation, Graph: { } graph }:
                     ApplyWrite(operation, graph, current, flowEvent.Opaque);
                     break;
@@ -146,37 +158,6 @@ internal sealed class UniformitySolver(UniformityState state)
         {
             _uniformValues = null;
             (state.In, state.Region, state.Branch, state.Observed) = (savedIn, savedRegion, savedBranch, savedObserved);
-        }
-    }
-
-    /// <summary>The local or parameter of struct type whose member target writes (p.X, p.Inner.Y), or null for any other target.</summary>
-    public static ISymbol? GetStructRoot(IOperation target)
-    {
-        var current = target;
-        while (true)
-        {
-            var instance = current switch
-            {
-                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
-                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
-                _ => null
-            };
-
-            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
-            {
-                return null;
-            }
-
-            switch (instance)
-            {
-                case ILocalReferenceOperation local:
-                    return local.Local;
-                case IParameterReferenceOperation parameter:
-                    return parameter.Parameter;
-                default:
-                    current = instance;
-                    continue;
-            }
         }
     }
 
@@ -467,7 +448,7 @@ internal sealed class UniformitySolver(UniformityState state)
 
         // A field or property of a struct local or parameter: the struct keeps its other members, so the write only
         // adds to its variance
-        if (symbol == null && GetStructRoot(target) is { } root)
+        if (symbol == null && UniformityWrites.GetStructRoot(target) is { } root)
         {
             symbol = root;
             strong = false;
