@@ -49,7 +49,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_inner={ (int*)__gsharp_allocate_smem_dynamic(0x84b31862e77be173ull, (__gsharp_ctx->__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(16,21)"") };
+__gsharp_ctx->__gsharp_id_2_inner={ (int*)__gsharp_allocate_smem_dynamic(0x84b31862e77be173ull, (long long)(__gsharp_ctx->__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(16,21)"") };
 __gsharp_ctx->__gsharp_id_2_inner[(int)threadIdx.x]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_val,2);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -88,7 +88,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_inner={ (int*)__gsharp_allocate_smem_dynamic(0x5e40b7025ff4f720ull, (__gsharp_ctx->__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(38,21)"") };
+__gsharp_ctx->__gsharp_id_2_inner={ (int*)__gsharp_allocate_smem_dynamic(0x5e40b7025ff4f720ull, (long long)(__gsharp_ctx->__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(38,21)"") };
 __gsharp_ctx->__gsharp_id_2_inner[(int)threadIdx.x]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_val,2);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -109,7 +109,7 @@ return false;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(int __gsharp_id_0_n, int __gsharp_id_1_val){
-int* __gsharp_id_2_inner = (int*)__gsharp_allocate_smem_dynamic(0x622419c8fd194e8dull, (__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(67,21)"");
+int* __gsharp_id_2_inner = (int*)__gsharp_allocate_smem_dynamic(0x622419c8fd194e8dull, (long long)(__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(67,21)"");
 __gsharp_id_2_inner[(int)threadIdx.x]=__gsharp_mul_i32(__gsharp_id_1_val,2);
 return __gsharp_id_2_inner[(int)threadIdx.x];
 }
@@ -135,7 +135,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_3_s={ (int*)__gsharp_allocate_smem_dynamic(0x8e9b2cbfc1a4ab1eull, (__gsharp_ctx->__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(88,17)"") };
+__gsharp_ctx->__gsharp_id_3_s={ (int*)__gsharp_allocate_smem_dynamic(0x8e9b2cbfc1a4ab1eull, (long long)(__gsharp_ctx->__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(88,17)"") };
 if(__gsharp_ctx->__gsharp_id_2_write)
 {
 __gsharp_ctx->__gsharp_id_3_s[(int)threadIdx.x]=__gsharp_ctx->__gsharp_id_1_val;
@@ -159,7 +159,7 @@ return false;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write){
-int* __gsharp_id_3_s = (int*)__gsharp_allocate_smem_dynamic(0x0e0c1dfb8c6d9238ull, (__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(111,17)"");
+int* __gsharp_id_3_s = (int*)__gsharp_allocate_smem_dynamic(0x0e0c1dfb8c6d9238ull, (long long)(__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(111,17)"");
 if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[(int)threadIdx.x]=__gsharp_id_1_val;
@@ -200,7 +200,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_4_s={ (int*)__gsharp_allocate_smem_dynamic(0xa9215b4dd44568e3ull, (__gsharp_ctx->__gsharp_id_0_count) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(157,17)"") };
+__gsharp_ctx->__gsharp_id_4_s={ (int*)__gsharp_allocate_smem_dynamic(0xa9215b4dd44568e3ull, (long long)(__gsharp_ctx->__gsharp_id_0_count), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(157,17)"") };
 if(__gsharp_ctx->__gsharp_id_3_tid>=__gsharp_ctx->__gsharp_id_1_writeStart&&__gsharp_ctx->__gsharp_id_3_tid<__gsharp_ctx->__gsharp_id_0_count)
 {
 __gsharp_ctx->__gsharp_id_4_s[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_val,2);
@@ -233,7 +233,7 @@ return false;
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(int __gsharp_id_0_n, int __gsharp_id_1_depth){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-int* __gsharp_id_3_s = (int*)__gsharp_allocate_smem_dynamic(0x7bd5bf3595ca0873ull, (__gsharp_id_0_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(187,17)"");
+int* __gsharp_id_3_s = (int*)__gsharp_allocate_smem_dynamic(0x7bd5bf3595ca0873ull, (long long)(__gsharp_id_0_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(187,17)"");
 if(__gsharp_id_1_depth==0)
 {
 __gsharp_id_3_s[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,1);
@@ -250,7 +250,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemor
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(){
 int __gsharp_id_0_tid = (int)threadIdx.x;
-int* __gsharp_id_1_s = (int*)__gsharp_allocate_smem_dynamic(0x1125921b811ab22cull, ((int)blockDim.x) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(280,17)"");
+int* __gsharp_id_1_s = (int*)__gsharp_allocate_smem_dynamic(0x1125921b811ab22cull, (long long)((int)blockDim.x), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(280,17)"");
 __gsharp_id_1_s[__gsharp_id_0_tid]=__gsharp_mul_i32(__gsharp_id_0_tid,3);
 return __gsharp_id_1_s[__gsharp_id_0_tid];
 }
@@ -552,7 +552,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xd8d3c5e7a76b4685ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(26,21)"") };
+__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xd8d3c5e7a76b4685ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(26,21)"") };
 __gsharp_ctx->__gsharp_id_3_outer[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -1202,7 +1202,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0x7047eeed6a045198ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(55,21)"") };
+__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0x7047eeed6a045198ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(55,21)"") };
 __gsharp_ctx->__gsharp_id_3_outer[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -1544,7 +1544,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0x3890c35093ada06bull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(76,21)"") };
+__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0x3890c35093ada06bull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(76,21)"") };
 __gsharp_ctx->__gsharp_id_3_outer[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -2818,7 +2818,7 @@ __gsharp_state=1;
 return;
 }
 __gsharp_ctx->__gsharp_id_4_h1=__gsharp_ctx->__gsharp_call_temp_0;
-__gsharp_ctx->__gsharp_id_5_outer={ (int*)__gsharp_allocate_smem_dynamic(0x03275e9f903bff9bull, (__gsharp_ctx->__gsharp_id_2_large) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(174,21)"") };
+__gsharp_ctx->__gsharp_id_5_outer={ (int*)__gsharp_allocate_smem_dynamic(0x03275e9f903bff9bull, (long long)(__gsharp_ctx->__gsharp_id_2_large), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(174,21)"") };
 __gsharp_ctx->__gsharp_id_5_outer[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
@@ -3169,7 +3169,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = (int)threadIdx.x;
-int* __gsharp_id_3_outer = (int*)__gsharp_allocate_smem_dynamic(0x514817400221aa76ull, (__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(203,21)"");
+int* __gsharp_id_3_outer = (int*)__gsharp_allocate_smem_dynamic(0x514817400221aa76ull, (long long)(__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(203,21)"");
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,100);
 int __gsharp_id_4_r = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_1_n,2);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 1075664808u)=__gsharp_add_i32(__gsharp_id_3_outer[__gsharp_id_2_tid],__gsharp_id_4_r);
@@ -3447,7 +3447,7 @@ for(int __gsharp_id_5_round = 0;__gsharp_id_5_round<2;__gsharp_id_5_round=__gsha
 {
 if(__gsharp_id_1_n>0)
 {
-int* __gsharp_id_6_a = (int*)__gsharp_allocate_smem_dynamic(0x3d770dff060c8d05ull, (__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(221,25)"");
+int* __gsharp_id_6_a = (int*)__gsharp_allocate_smem_dynamic(0x3d770dff060c8d05ull, (long long)(__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(221,25)"");
 if(__gsharp_id_5_round==0)
 {
 __gsharp_id_6_a[__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_id_2_tid,1);
@@ -3457,7 +3457,7 @@ else
 __gsharp_id_3_inner=__gsharp_id_6_a[__gsharp_id_2_tid];
 }
 }
-int* __gsharp_id_7_b = (int*)__gsharp_allocate_smem_dynamic(0x3d770cff060c8b52ull, (__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(232,21)"");
+int* __gsharp_id_7_b = (int*)__gsharp_allocate_smem_dynamic(0x3d770cff060c8b52ull, (long long)(__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(232,21)"");
 __gsharp_id_7_b[__gsharp_id_2_tid]=__gsharp_add_i32(1000,__gsharp_id_2_tid);
 __gsharp_id_4_outer=__gsharp_id_7_b[__gsharp_id_2_tid];
 }
@@ -3765,7 +3765,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_4_outer={ (int*)__gsharp_allocate_smem_dynamic(0x989c8b7d9b352ae3ull, (__gsharp_ctx->__gsharp_id_1_small) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(246,21)"") };
+__gsharp_ctx->__gsharp_id_4_outer={ (int*)__gsharp_allocate_smem_dynamic(0x989c8b7d9b352ae3ull, (long long)(__gsharp_ctx->__gsharp_id_1_small), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(246,21)"") };
 if(__gsharp_ctx->__gsharp_id_3_tid<__gsharp_ctx->__gsharp_id_1_small)
 {
 __gsharp_ctx->__gsharp_id_4_outer[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_tid,100);
@@ -4143,7 +4143,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xe9e3e359170e8a1eull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(267,21)"") };
+__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xe9e3e359170e8a1eull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(267,21)"") };
 __gsharp_ctx->__gsharp_id_3_outer[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -4729,7 +4729,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xd3a5cf7b48c876f0ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(297,21)"") };
+__gsharp_ctx->__gsharp_id_3_outer={ (int*)__gsharp_allocate_smem_dynamic(0xd3a5cf7b48c876f0ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(297,21)"") };
 __gsharp_ctx->__gsharp_id_3_outer[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,100);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -5064,10 +5064,10 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_4_first={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a526c39b2a941ull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(317,21)"") };
+__gsharp_ctx->__gsharp_id_4_first={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a526c39b2a941ull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(317,21)"") };
 __gsharp_ctx->__gsharp_id_4_first[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_ctx->__gsharp_id_3_tid;
-__gsharp_ctx->__gsharp_id_5_second={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a516c39b2a78eull, (__gsharp_ctx->__gsharp_id_2_negative) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(319,22)"") };
-__gsharp_ctx->__gsharp_id_6_third={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a506c39b2a5dbull, (__gsharp_ctx->__gsharp_id_1_n) * sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(320,21)"") };
+__gsharp_ctx->__gsharp_id_5_second={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a516c39b2a78eull, (long long)(__gsharp_ctx->__gsharp_id_2_negative), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(319,22)"") };
+__gsharp_ctx->__gsharp_id_6_third={ (int*)__gsharp_allocate_smem_dynamic(0x0c3a506c39b2a5dbull, (long long)(__gsharp_ctx->__gsharp_id_1_n), sizeof(int), alignof(int), ""DeviceDynamicSharedMemoryKernels.cs(320,21)"") };
 __gsharp_ctx->__gsharp_id_6_third[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_add_i32(1000,__gsharp_ctx->__gsharp_id_3_tid);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
