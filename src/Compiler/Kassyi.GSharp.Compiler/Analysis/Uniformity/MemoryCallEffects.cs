@@ -63,7 +63,7 @@ internal static class MemoryCallEffects
     public static MemoryCallEffect GetEffect(IInvocationOperation invocation, UniformityValueReader reader,
         Compilation compilation)
     {
-        var summary = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
+        var summary = reader.TryGetSummarizedCallee(invocation.TargetMethod, out var callee, out var declaration)
             ? reader.GetCalleeSummary(callee, declaration, default)
             : default;
         var classified = DeviceFunctionEffects.Classify(invocation.TargetMethod, compilation);
