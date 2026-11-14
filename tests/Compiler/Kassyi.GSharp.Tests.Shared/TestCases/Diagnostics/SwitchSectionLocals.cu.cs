@@ -57,4 +57,34 @@ public static partial class SwitchSectionLocalDiagnosticKernels
                 break;
         }
     }
+
+    // An out variable of a ref struct that another section assigns cannot be declared first either
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void SharedRefStructOutVarKernel(int[] a, int flag)
+    {
+        switch (flag)
+        {
+            case 0:
+                TryHold(out var holder);
+                a[0] = holder.Value;
+                break;
+            default:
+                holder = default;
+                a[1] = holder.Value;
+                break;
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static bool TryHold(out RefHolder holder)
+    {
+        holder = default;
+        return true;
+    }
+}
+
+public ref struct RefHolder
+{
+    public int Value;
 }

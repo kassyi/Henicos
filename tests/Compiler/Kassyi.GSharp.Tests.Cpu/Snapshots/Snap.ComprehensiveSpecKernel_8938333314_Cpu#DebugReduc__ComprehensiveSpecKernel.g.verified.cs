@@ -255,7 +255,7 @@ __gsharp_ctx->__gsharp_id_17_gdimY=(int)gridDim.y;
 __gsharp_ctx->__gsharp_id_18_gdimZ=(int)gridDim.z;
 __gsharp_ctx->__gsharp_id_19_tid=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_bx,__gsharp_ctx->__gsharp_id_13_bdimX));
 __gsharp_ctx->__gsharp_id_20_staticCache={ (int*)__gsharp_allocate_smem_static(0xe20e17017ad9529aull, (10000) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (__gsharp_ctx->__gsharp_id_4_particleCount) * sizeof(float), alignof(float), ""an unknown place"") };
+__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (long long)(__gsharp_ctx->__gsharp_id_4_particleCount), sizeof(float), alignof(float), ""an unknown place"") };
 __gsharp_ctx->__gsharp_id_22_targetTypedCache={ (int*)__gsharp_allocate_smem_static(0xe20e15017ad94f34ull, (256) * sizeof(int), alignof(int)) };
 if(!(__gsharp_ctx->__gsharp_id_19_tid<__gsharp_ctx->__gsharp_id_4_particleCount))
 {

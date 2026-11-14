@@ -10,6 +10,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
+    // How many var locals HoldsReadOnlyArray follows back to the array they were initialized from
+    private const int MaxReadOnlyLocalChain = 8;
+
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,
         bool isVar,
@@ -191,8 +194,59 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
         else
         {
+            if (PinsReadOnlyArray(variable, ref context))
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
         }
+    }
+
+    // fixed (T* p = a) or fixed (T* p = &a[i]) where a holds a [GpuReadOnly] array: the device holds a as a GSharpArray
+    // of const elements, so the pointer points at const T (C# forbids nothing here, and a write through the pointer is
+    // already a write to a read-only array)
+    private static bool PinsReadOnlyArray(VariableDeclaratorSyntax variable, ref TranspileContext context)
+    {
+        if (variable.Parent?.Parent is not FixedStatementSyntax || variable.Initializer is not { } initializer)
+        {
+            return false;
+        }
+
+        var pinned = initializer.Value is PrefixUnaryExpressionSyntax
+        {
+            RawKind: (int)SyntaxKind.AddressOfExpression,
+            Operand: ElementAccessExpressionSyntax element
+        }
+            ? element.Expression
+            : initializer.Value;
+        return HoldsReadOnlyArray(pinned, ref context);
+    }
+
+    // Whether the device holds the array of expression as a GSharpArray of const elements: a [GpuReadOnly] parameter,
+    // field or property, or a var local initialized from one (auto keeps the const elements)
+    private static bool HoldsReadOnlyArray(ExpressionSyntax expression, ref TranspileContext context)
+    {
+        for (var depth = 0; depth < MaxReadOnlyLocalChain; depth++)
+        {
+            switch (context.Query.SemanticModel.GetSymbol(expression))
+            {
+                case (IParameterSymbol or IFieldSymbol or IPropertySymbol) and var symbol:
+                    return symbol.HasAttribute(KnownAttributes.GpuReadOnly);
+                case ILocalSymbol local when local.DeclaringSyntaxReferences.Length == 1 &&
+                                             local.DeclaringSyntaxReferences[0].GetSyntax() is VariableDeclaratorSyntax
+                                             {
+                                                 Parent: VariableDeclarationSyntax { Type.IsVar: true },
+                                                 Initializer.Value: var value
+                                             }:
+                    expression = value;
+                    continue;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsConst(VariableDeclaratorSyntax declarator) =>
@@ -264,8 +318,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         // arguments, then the defaults of the parameters left out. One loop over the parameters would change the order.
         var provided = EmitProvidedArguments(localCppName, iteratorMethod.Parameters, annotatedParamList,
             sourceInvocation.ArgumentList.Arguments, ref hasEmittedAny, ref context);
-        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, provided, ref hasEmittedAny,
-            ref context);
+        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, sourceInvocation, provided,
+            ref hasEmittedAny, ref context);
     }
 
     // The backing local of each written argument; returns which parameters received one
@@ -301,9 +355,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         return provided;
     }
 
-    // The backing local of each parameter left out, with its default value
+    // The backing local of each parameter left out, with the call site's value of a caller-info parameter or its
+    // default value
     private static void EmitDefaultArguments(string localCppName, ImmutableArray<IParameterSymbol> parameters,
-        ParameterListSyntax annotatedParamList, bool[] provided, ref bool hasEmittedAny, ref TranspileContext context)
+        ParameterListSyntax annotatedParamList, InvocationExpressionSyntax call, bool[] provided,
+        ref bool hasEmittedAny, ref TranspileContext context)
     {
         for (var paramIdx = 0; paramIdx < parameters.Length; paramIdx++)
         {
@@ -315,7 +371,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             var paramSyntax = paramIdx < annotatedParamList.Parameters.Count
                 ? annotatedParamList.Parameters[paramIdx]
                 : null;
-            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax);
+            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax, call,
+                context.Query.SemanticModel);
             EmitBackingArgumentLocal(
                 localCppName,
                 paramIdx,
