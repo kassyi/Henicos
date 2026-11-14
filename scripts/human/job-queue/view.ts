@@ -337,7 +337,7 @@ const HelpKeys: [string, string][] = [
   ["q", "quit (also Ctrl+C)"],
 ];
 
-/** A sample drawn in its screen style and what it means, for the legend column of the help (the chats' part follows). */
+/** A sample drawn in its screen style and what it means, for the help's legend column (the chats' part follows). */
 const HelpLegend: LegendEntry[] = [
   { heading: "Timeline" },
   { sample: "█", style: "run", text: "run so far" },
