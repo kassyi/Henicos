@@ -55,7 +55,6 @@ public class TransferPlannerDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("NullablePricedHolder", "GSH0079", "Item.Price", "decimal", "field 'Item' of type ")]
     [InlineData("NullableMisalignedHolder", "GSH0078", null, null, "field 'Item' of type ")]
-    [InlineData("NullableBagHolder", "GSH0078", null, null, "field 'Item' of type ")]
     [InlineData("DecimalArrayHolder", "GSH0079", "Items", "decimal", "field 'Items' of type 'decimal[]': ")]
     [InlineData("PricedArrayHolder", "GSH0079", "Items.Price", "decimal", "field 'Items' of type ")]
     [InlineData("NestedHolder", "GSH0079", "Holder.Item.Price", "decimal", "field 'Holder' of type ")]

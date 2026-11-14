@@ -213,7 +213,8 @@ public sealed class MarshalingBoundaryDiagnosticsTests
         Assert.All(
             diagnostics.Where(static d => d.Id == GSharpDiagnostics.StructArrayConvertedPerElement.Id),
             static d => Assert.Contains(
-                "'System.Numerics.Vector2?': the value is at offset 4 on the host and 8 on the device",
+                "'System.Numerics.Vector2?' are converted element by element because its host and device layouts " +
+                "differ (the value is at offset 4 on the host and 8 on the device)",
                 d.Message,
                 System.StringComparison.Ordinal));
     }
