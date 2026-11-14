@@ -1,26 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-/// <summary>What a type test or <c>as</c> is written as (<see cref="TypeTests.Plan"/>).</summary>
-internal enum TypeTestKind
-{
-    /// <summary>The constant that the types decide; the operand is still evaluated.</summary>
-    Constant,
-
-    /// <summary>Whether the operand is not null: its array or nullable has a value.</summary>
-    NotNull,
-
-    /// <summary>The operand itself: <c>as</c> with an identity conversion gives the value, null as null.</summary>
-    Operand,
-
-    /// <summary>A form that needs run-time type information or a heap object (GSH0003).</summary>
-    Unsupported
-}
-
-/// <summary>What device code writes for a type test or <c>as</c>: the kind, and the constant of a constant test.</summary>
-/// <param name="Kind">How the test is written.</param>
-/// <param name="Value">The constant of <see cref="TypeTestKind.Constant"/>.</param>
-internal readonly record struct TypeTestPlan(TypeTestKind Kind, bool Value = false);
-
 /// <summary>
 /// What device code does with <c>x is T</c>, <c>x is T</c> as a type pattern and <c>x as T</c>. The static types decide
 /// every test that C# can decide without the run-time type of an object: a value is its own type (the constant), an
@@ -86,6 +65,72 @@ internal static class TypeTests
                 return true;
             default:
                 return false;
+        }
+    }
+
+    /// <summary>
+    /// The plan of <paramref name="pattern"/>, the declaration pattern of <c>x is T v</c> or <c>x is not T v</c>, with
+    /// the <c>is</c> expression and whether it is negated; null for a declaration pattern anywhere else (a switch case,
+    /// a nested pattern), which no rule writes.
+    /// </summary>
+    public static (TypeTestPlan Plan, IsPatternExpressionSyntax Owner, bool Negated)? PlanDeclaration(
+        DeclarationPatternSyntax pattern, SemanticModel model)
+    {
+        var negated = pattern.Parent is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern };
+        if ((negated ? pattern.Parent?.Parent : pattern.Parent) is not IsPatternExpressionSyntax owner)
+        {
+            return null;
+        }
+
+        var operand = model.GetTypeSymbol(owner.Expression);
+        var declared = model.GetTypeSymbol(pattern.Type);
+        var plan = Plan(false, operand, declared, model.Compilation);
+
+        // The variable has the operand's own type, or the underlying type of a nullable: a variable of an interface or
+        // a base type is a reference to a heap object
+        var isOwnType = operand is not null && declared is not null &&
+                        (declared.IsEqualTo(operand) || (operand is INamedTypeSymbol
+                        {
+                            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+                            TypeArguments: [var underlying]
+                        } && declared.IsEqualTo(underlying)));
+        return plan.Kind == TypeTestKind.Unsupported || !isOwnType ? null : (plan, owner, negated);
+    }
+
+    /// <summary>
+    /// Writes <c>([&amp;]() { auto t = &lt;operand&gt;; &lt;name&gt; = &lt;value&gt;; return &lt;test&gt;; })()</c> for
+    /// <c>x is T name</c>: the operand is evaluated once, the variable (declared before the statement) gets its value
+    /// when the test holds, and the lambda gives the test (negated for <c>is not</c>). A test that no value passes
+    /// (<c>n is long</c> on a nullable) assigns nothing.
+    /// </summary>
+    public static void AppendDeclaration(in TypeTestPlan plan, bool negated, ExpressionSyntax operand,
+        SingleVariableDesignationSyntax designation, ITypeSymbol declared, ITypeSymbol operandType,
+        ref TranspileContext context)
+    {
+        const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
+        var writer = context.Emitter.Writer;
+        using (writer.ImmediatelyInvokedLambda())
+        {
+            writer.Append($"auto {temp} = ");
+            context.Visitor.Visit(operand);
+            writer.AppendLine(";");
+            if (plan.Kind != TypeTestKind.Constant || plan.Value)
+            {
+                CppNameResolver.AppendDeclaredName(designation, designation.Identifier, ref context);
+                var unwrap = operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
+                             declared.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T;
+                writer.AppendLine(unwrap ? $" = {temp}.Value;" : $" = {temp};");
+            }
+
+            writer.Append("return ");
+            writer.AppendIf(negated, "!(");
+            writer.Append(plan.Kind == TypeTestKind.NotNull
+                ? operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                    ? $"{temp}.HasValue"
+                    : $"{temp}.data != nullptr"
+                : plan.Value ? "true" : "false");
+            writer.AppendIf(negated, ")");
+            writer.AppendLine(";");
         }
     }
 

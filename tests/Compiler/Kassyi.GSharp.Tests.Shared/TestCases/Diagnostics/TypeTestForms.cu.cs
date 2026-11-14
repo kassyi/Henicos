@@ -46,4 +46,12 @@ public static partial class TypeTestKernels
         data[5] = (other as int[]) is null ? 1 : 0;
         data[6] = maybe is long ? 1 : 0;
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void DeclarationPatternKernel(int[] data, TypeTestPoint point, int[] array)
+    {
+        data[0] = point is ITypeTestShape shape ? 1 : 0;
+        data[1] = array is int[] same ? same.Length : 0;
+    }
 }

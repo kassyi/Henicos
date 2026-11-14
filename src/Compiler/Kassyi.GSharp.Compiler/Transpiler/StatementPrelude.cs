@@ -51,6 +51,18 @@ internal static class StatementPrelude
                 continue;
             }
 
+            // x is T v: the variable is declared before the statement, and the test assigns it
+            if (desc is SingleVariableDesignationSyntax { Parent: DeclarationPatternSyntax pattern } patternVariable &&
+                TypeTests.PlanDeclaration(pattern, context.Query.SemanticModel) is not null &&
+                context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(patternVariable) is { } patternLocal)
+            {
+                context.Emitter.Dialect.AppendType(ref context, patternLocal.Type);
+                context.Emitter.Writer.Append(' ');
+                CppNameResolver.AppendDeclaredName(patternVariable, patternVariable.Identifier, ref context);
+                context.Emitter.Writer.AppendLine(";");
+                continue;
+            }
+
             StackAllocEmitter.DeclareStorage(desc, ref context);
             DiscardOutArgument.DeclareStorage(desc, ref context);
         }

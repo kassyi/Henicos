@@ -40,6 +40,23 @@ public class TypeTestDiagnosticsTests
         Assert.Equal(
             [(Analyzer, 34, 20, 34, 43)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object"));
-        Assert.Equal(3, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Equal(4, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
+    }
+
+    // Line 54 declares a variable of an interface, a reference to a heap object; line 55 declares an array of the
+    // operand's own type, which is fine
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task DeclarationPattern_VariableOfInterface_ReportsGsh0003AtThePattern(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 54, 19, 54, 48)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
+                .Where(static r => r.StartLine == 54)
+                .ToList());
     }
 }

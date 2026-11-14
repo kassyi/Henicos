@@ -23,8 +23,15 @@ public static partial class TypeTestDifferentialKernels
     public static readonly string[] NullColumns =
     [
         "array_is", "nullable_is", "nullable_not_null", "array_empty_pattern", "array_not_pattern", "as_array",
-        "nullable_as", "nullable_other"
+        "nullable_as", "nullable_other", "declare_array", "declare_nullable", "declare_value", "declare_not"
     ];
+
+    [GpuDeviceFunction]
+    public static int[] NextArray(int[] values, ref int calls)
+    {
+        calls++;
+        return values;
+    }
 
     [GpuDeviceFunction]
     public static int Step(ref int k)
@@ -68,7 +75,7 @@ public static partial class TypeTestDifferentialKernels
 
         int v = inputs[tid] % 1000;
         int? maybe = v % 2 == 0 ? v : null;
-        int o = tid * 8;
+        int o = tid * 12;
         r[o + 0] = inputs is int[] ? 1 : 0;
         r[o + 1] = maybe is int ? 1 : 0;
         r[o + 2] = maybe is not null ? 1 : 0;
@@ -78,5 +85,17 @@ public static partial class TypeTestDifferentialKernels
         int? same = maybe as int?;
         r[o + 6] = same.HasValue ? (same.Value + 1) : -1;
         r[o + 7] = maybe is long ? 1 : 0;
+        // The variable gets the value when the pattern holds; the operand is evaluated once
+        int k = 0;
+        r[o + 8] = (NextArray(inputs, ref k) is int[] seen) ? seen.Length + k : -1;
+        r[o + 9] = maybe is int unwrapped ? unwrapped + 1 : -1;
+        r[o + 10] = v is int plain ? plain + 2 : -1;
+        if (maybe is not int absent)
+        {
+            r[o + 11] = -7;
+            return;
+        }
+
+        r[o + 11] = absent + 3;
     }
 }

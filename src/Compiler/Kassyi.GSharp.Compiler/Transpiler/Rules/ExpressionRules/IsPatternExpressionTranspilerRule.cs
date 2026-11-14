@@ -12,6 +12,14 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
             return;
         }
 
+        // A type test that no rule writes needs the run-time type of a heap object
+        if (HasTypeTest(node.Pattern))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, TypeTests.RuntimeTypeNeeded);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         if (NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Expression)))
         {
             if (node.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax literal } &&
@@ -55,12 +63,23 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
             return true;
         }
 
-        if (pattern is not TypePatternSyntax typePattern)
+        if (pattern is DeclarationPatternSyntax { Designation: SingleVariableDesignationSyntax designation } declaration)
+        {
+            return TryTranspileDeclaration(node, declaration, designation, ref context);
+        }
+
+        var testedType = pattern switch
+        {
+            TypePatternSyntax typePattern => typePattern.Type,
+            DeclarationPatternSyntax { Designation: DiscardDesignationSyntax } discard => discard.Type,
+            _ => null
+        };
+        if (testedType is null)
         {
             return false;
         }
 
-        var plan = TypeTests.Plan(false, operandType, model.GetTypeSymbol(typePattern.Type), model.Compilation);
+        var plan = TypeTests.Plan(false, operandType, model.GetTypeSymbol(testedType), model.Compilation);
         if (!negated)
         {
             return TypeTests.TryAppend(in plan, node.Expression, ref context);
@@ -78,4 +97,27 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
                 return false;
         }
     }
+
+    // x is T v and x is not T v: the test and the assignment of v in one expression, the operand evaluated once
+    private static bool TryTranspileDeclaration(IsPatternExpressionSyntax node, DeclarationPatternSyntax declaration,
+        SingleVariableDesignationSyntax designation, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        if (TypeTests.PlanDeclaration(declaration, model) is not var (plan, owner, negated) ||
+            owner != node ||
+            model.GetDeclaredSymbol<ILocalSymbol>(designation) is not { } local ||
+            model.GetTypeSymbol(node.Expression) is not { } operandType)
+        {
+            return false;
+        }
+
+        TypeTests.AppendDeclaration(in plan, negated, node.Expression, designation, local.Type, operandType,
+            ref context);
+        return true;
+    }
+
+    // A type pattern or a declaration pattern, also under not
+    private static bool HasTypeTest(PatternSyntax pattern) =>
+        pattern is TypePatternSyntax or DeclarationPatternSyntax or
+            UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern, Pattern: TypePatternSyntax or DeclarationPatternSyntax };
 }
