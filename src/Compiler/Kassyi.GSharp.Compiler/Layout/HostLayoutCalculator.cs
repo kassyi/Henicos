@@ -5,50 +5,67 @@ internal static class HostLayoutCalculator
 {
 
     internal static HostLayout ComputeStructHostLayout(INamedTypeSymbol structType, TypeLayoutKind kind, int pack,
-        int explicitSize)
+        int explicitSize) =>
+        ComputeStructHostLayout(structType, kind, pack, explicitSize, visited: null);
+
+    internal static HostLayout ComputeStructHostLayout(INamedTypeSymbol structType, TypeLayoutKind kind, int pack,
+        int explicitSize, HashSet<INamedTypeSymbol>? visited)
     {
         if (kind == TypeLayoutKind.Auto)
         {
             return new HostLayout(false, 0, 0, ImmutableArray<FieldLayout>.Empty);
         }
 
-        var hostFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
-        var hostEnd = 0;
-        var hostMaxAlign = 1;
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var isNewEntry = visited.Add(structType);
 
-        foreach (var member in StructAbiMembers.Get(structType))
+        try
         {
-            if (!TryGetHostLayout(member.Type, out var elemHost))
+            var hostFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
+            var hostEnd = 0;
+            var hostMaxAlign = 1;
+
+            foreach (var member in StructAbiMembers.Get(structType))
             {
-                return new HostLayout(false, 0, 0, ImmutableArray<FieldLayout>.Empty);
+                if (!TryGetHostLayout(member.Type, out var elemHost, visited))
+                {
+                    return new HostLayout(false, 0, 0, ImmutableArray<FieldLayout>.Empty);
+                }
+
+                var fieldSize = elemHost.Size * member.ElementCount;
+                var effectiveAlign = pack > 0 ? Math.Min(elemHost.Alignment, pack) : elemHost.Alignment;
+
+                int offset;
+                if (kind == TypeLayoutKind.Explicit)
+                {
+                    offset = StructLayoutReader.GetFieldOffset(member.StorageField);
+                    hostEnd = Math.Max(hostEnd, offset + fieldSize);
+                }
+                else
+                {
+                    offset = TypeLayoutCalculator.AlignUp(hostEnd, effectiveAlign);
+                    hostEnd = offset + fieldSize;
+                }
+
+                hostMaxAlign = Math.Max(hostMaxAlign, effectiveAlign);
+                hostFieldsBuilder.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
             }
 
-            var fieldSize = elemHost.Size * member.ElementCount;
-            var effectiveAlign = pack > 0 ? Math.Min(elemHost.Alignment, pack) : elemHost.Alignment;
-
-            int offset;
-            if (kind == TypeLayoutKind.Explicit)
-            {
-                offset = StructLayoutReader.GetFieldOffset(member.StorageField);
-                hostEnd = Math.Max(hostEnd, offset + fieldSize);
-            }
-            else
-            {
-                offset = TypeLayoutCalculator.AlignUp(hostEnd, effectiveAlign);
-                hostEnd = offset + fieldSize;
-            }
-
-            hostMaxAlign = Math.Max(hostMaxAlign, effectiveAlign);
-            hostFieldsBuilder.Add(new FieldLayout(member, offset, new TypeLayout(fieldSize, effectiveAlign)));
+            // [WHY] The CLR takes max(StructLayout.Size, end of the last field) as it is, of any layout kind, and rounds up
+            // to the alignment only when no Size is given (EEClassLayoutInfo, CalculateSizeWithMetadataSize / AlignSize in
+            // dotnet/runtime classlayoutinfo.cpp): [StructLayout(Size = 6)] with one int is 6 bytes, with a 6-byte stride
+            var hostSize = explicitSize > 0
+                ? Math.Max(explicitSize, hostEnd)
+                : Math.Max(TypeLayoutCalculator.AlignUp(hostEnd, hostMaxAlign), 1);
+            return new HostLayout(true, hostSize, hostMaxAlign, hostFieldsBuilder.ToImmutable());
         }
-
-        // [WHY] The CLR takes max(StructLayout.Size, end of the last field) as it is, of any layout kind, and rounds up
-        // to the alignment only when no Size is given (EEClassLayoutInfo, CalculateSizeWithMetadataSize / AlignSize in
-        // dotnet/runtime classlayoutinfo.cpp): [StructLayout(Size = 6)] with one int is 6 bytes, with a 6-byte stride
-        var hostSize = explicitSize > 0
-            ? Math.Max(explicitSize, hostEnd)
-            : Math.Max(TypeLayoutCalculator.AlignUp(hostEnd, hostMaxAlign), 1);
-        return new HostLayout(true, hostSize, hostMaxAlign, hostFieldsBuilder.ToImmutable());
+        finally
+        {
+            if (isNewEntry)
+            {
+                visited.Remove(structType);
+            }
+        }
     }
 
 
@@ -61,7 +78,10 @@ internal static class HostLayoutCalculator
     /// private fields, so the answer is wrong for it (<c>decimal</c> and <c>DateTime</c> come out as 1 byte); such a
     /// struct has no device representation, so a layout that holds one is reported before this size is used.
     /// </remarks>
-    public static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout)
+    public static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout) =>
+        TryGetHostLayout(type, out layout, visited: null);
+
+    internal static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout, HashSet<INamedTypeSymbol>? visited)
     {
         if (type.IsReferenceType || type.IsArrayLikeType() || type.IsNullableArrayLike())
         {
@@ -78,7 +98,7 @@ internal static class HostLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType })
         {
-            return TryGetHostLayout(enumUnderlyingType, out layout);
+            return TryGetHostLayout(enumUnderlyingType, out layout, visited);
         }
 
         if (HostLeafLayouts.TryGet(type, out layout))
@@ -91,7 +111,7 @@ internal static class HostLayoutCalculator
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullableType)
         {
-            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout))
+            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout, visited))
             {
                 layout = default;
                 return false;
@@ -105,8 +125,14 @@ internal static class HostLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
+            if (visited != null && visited.Contains(namedStruct))
+            {
+                layout = default;
+                return false;
+            }
+
             StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-            var structHost = ComputeStructHostLayout(namedStruct, kind, pack, explicitSize);
+            var structHost = ComputeStructHostLayout(namedStruct, kind, pack, explicitSize, visited);
             if (!structHost.IsKnown)
             {
                 layout = default;

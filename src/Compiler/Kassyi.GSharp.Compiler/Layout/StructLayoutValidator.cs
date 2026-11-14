@@ -41,7 +41,12 @@ public static class StructLayoutValidator
     // overlap each other, each at an offset its alignment allows; a member must be a value the device
     // has a type for. A nested struct passes its own reason up.
     internal static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields)
+        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields) =>
+        FindUnsupportedLayout(structType, dialect, kind, explicitSize, deviceFields, visited: null);
+
+    internal static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields,
+        HashSet<INamedTypeSymbol>? visited)
     {
         // [WHY] C# accepts StructLayout.Size on an [InlineArray] struct, but the runtime refuses to load the type
         // (TypeLoadException), so there is no host layout to follow
@@ -58,56 +63,79 @@ public static class StructLayoutValidator
             return placementProblem;
         }
 
-        foreach (var member in StructAbiMembers.Get(structType))
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var isNewEntry = visited.Add(structType);
+
+        try
         {
-            if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+            foreach (var member in StructAbiMembers.Get(structType))
             {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
-                    null,
-                    null);
+                if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+                {
+                    return new UnsupportedLayout(
+                        $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
+                        null,
+                        null);
+                }
+
+                var type = member.Type;
+                if (type.IsArrayLikeType() || type.IsNullableArrayLike())
+                {
+                    continue;
+                }
+
+                if (type.IsReferenceType)
+                {
+                    return new UnsupportedLayout(
+                        $"field '{member.Name}' has the reference type '{TypeLayoutCalculator.FormatTypeName(type)}'",
+                        null,
+                        null);
+                }
+
+                if (!HasDeviceRepresentation(type, dialect))
+                {
+                    return new UnsupportedLayout(
+                        $"field '{member.Name}' has the type '{TypeLayoutCalculator.FormatTypeName(type)}', which has no device representation",
+                        member.Name,
+                        type);
+                }
+
+                if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                    TypeLayoutCalculator.IsUserStruct(nested))
+                {
+                    if (visited.Contains(nested))
+                    {
+                        return new UnsupportedLayout(
+                            $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}' causes a cycle in struct layout",
+                            member.Name,
+                            nested);
+                    }
+
+                    if (TypeLayoutCalculator.GetStructLayout(nested, dialect, visited).Unsupported is { } nestedProblem)
+                    {
+                        var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
+                            ? nestedProblem.FieldPath
+                            : $"{member.Name}.{nestedProblem.FieldPath}";
+                        return new UnsupportedLayout(
+                            $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': {nestedProblem.Reason}",
+                            path,
+                            nestedProblem.FieldType);
+                    }
+                }
             }
 
-            var type = member.Type;
-            if (type.IsArrayLikeType() || type.IsNullableArrayLike())
+            // [WHY] After the member checks: a union arm with a reference type, a type without a device representation or
+            // an unsupported nested struct is reported for that member (GSH0078 / GSH0079 with the field), not as an arm
+            // whose host and device layouts differ
+            return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect) : null;
+        }
+        finally
+        {
+            if (isNewEntry)
             {
-                continue;
-            }
-
-            if (type.IsReferenceType)
-            {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' has the reference type '{TypeLayoutCalculator.FormatTypeName(type)}'",
-                    null,
-                    null);
-            }
-
-            if (!HasDeviceRepresentation(type, dialect))
-            {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' has the type '{TypeLayoutCalculator.FormatTypeName(type)}', which has no device representation",
-                    member.Name,
-                    type);
-            }
-
-            if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                TypeLayoutCalculator.IsUserStruct(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect).Unsupported is { } nestedProblem)
-            {
-                var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
-                    ? nestedProblem.FieldPath
-                    : $"{member.Name}.{nestedProblem.FieldPath}";
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': {nestedProblem.Reason}",
-                    path,
-                    nestedProblem.FieldType);
+                visited.Remove(structType);
             }
         }
-
-        // [WHY] After the member checks: a union arm with a reference type, a type without a device representation or
-        // an unsupported nested struct is reported for that member (GSH0078 / GSH0079 with the field), not as an arm
-        // whose host and device layouts differ
-        return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect) : null;
     }
 
     // A field at an offset its device alignment does not allow, or two fields that overlap without starting at the

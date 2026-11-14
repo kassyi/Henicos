@@ -7,89 +7,122 @@ public static class TransferClassifier
     /// Describes the first difference between the host and device layouts of a <see cref="TransferClass.Convert"/>
     /// struct, as the <c>{1}</c> of GSH0080 (<c>field 'V' is at offset 4 on the host and 8 on the device</c>).
     /// </summary>
-    public static string DescribeLayoutDifference(INamedTypeSymbol structType, ITranspilerDialect dialect)
+    public static string DescribeLayoutDifference(INamedTypeSymbol structType, ITranspilerDialect dialect) =>
+        DescribeLayoutDifference(structType, dialect, visited: null);
+
+    internal static string DescribeLayoutDifference(INamedTypeSymbol structType, ITranspilerDialect dialect, HashSet<INamedTypeSymbol>? visited)
     {
-        var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect);
-        if (layout.Kind == TypeLayoutKind.Auto)
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        if (!visited.Add(structType))
         {
-            return "LayoutKind.Auto lets the runtime reorder the fields on the host";
+            return $"struct '{TypeLayoutCalculator.FormatTypeName(structType)}' has a cyclic layout";
         }
 
-        if (!layout.Host.IsKnown)
+        try
         {
-            foreach (var member in StructAbiMembers.Get(structType))
+            var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect, visited);
+            if (layout.Kind == TypeLayoutKind.Auto)
             {
-                if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+                return "LayoutKind.Auto lets the runtime reorder the fields on the host";
+            }
+
+            if (!layout.Host.IsKnown)
+            {
+                foreach (var member in StructAbiMembers.Get(structType))
                 {
-                    return $"field '{member.Name}' is an array, so the runtime may reorder the fields on the host";
+                    if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+                    {
+                        return $"field '{member.Name}' is an array, so the runtime may reorder the fields on the host";
+                    }
+
+                    if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                        !HostLayoutCalculator.TryGetHostLayout(nested, out _, visited))
+                    {
+                        return $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
+                               DescribeLayoutDifference(nested, dialect, visited);
+                    }
                 }
 
-                if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                    !HostLayoutCalculator.TryGetHostLayout(nested, out _))
+                return "the host layout is not known";
+            }
+
+            for (var i = 0; i < layout.DeviceFields.Length && i < layout.Host.Fields.Length; i++)
+            {
+                var device = layout.DeviceFields[i];
+                var host = layout.Host.Fields[i];
+                if (device.Offset != host.Offset)
                 {
-                    return $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                           DescribeLayoutDifference(nested, dialect);
+                    return $"field '{device.Member.Name}' is at offset {host.Offset} on the host " +
+                           $"and {device.Offset} on the device";
+                }
+
+                if (device.Layout.Size != host.Layout.Size)
+                {
+                    return $"field '{device.Member.Name}' is {host.Layout.Size} bytes on the host " +
+                           $"and {device.Layout.Size} bytes on the device";
+                }
+
+                if (device.Member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                    TypeLayoutCalculator.IsUserStruct(nested) &&
+                    TypeLayoutCalculator.GetStructLayout(nested, dialect, visited).Transfer != TransferClass.Identical)
+                {
+                    return $"field '{device.Member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
+                           DescribeLayoutDifference(nested, dialect, visited);
                 }
             }
 
-            return "the host layout is not known";
+            return $"the struct is {layout.Host.Size} bytes on the host and {layout.Device.Size} bytes on the device";
         }
-
-        for (var i = 0; i < layout.DeviceFields.Length && i < layout.Host.Fields.Length; i++)
+        finally
         {
-            var device = layout.DeviceFields[i];
-            var host = layout.Host.Fields[i];
-            if (device.Offset != host.Offset)
-            {
-                return $"field '{device.Member.Name}' is at offset {host.Offset} on the host " +
-                       $"and {device.Offset} on the device";
-            }
-
-            if (device.Layout.Size != host.Layout.Size)
-            {
-                return $"field '{device.Member.Name}' is {host.Layout.Size} bytes on the host " +
-                       $"and {device.Layout.Size} bytes on the device";
-            }
-
-            if (device.Member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                TypeLayoutCalculator.IsUserStruct(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect).Transfer != TransferClass.Identical)
-            {
-                return $"field '{device.Member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                       DescribeLayoutDifference(nested, dialect);
-            }
+            visited.Remove(structType);
         }
-
-        return $"the struct is {layout.Host.Size} bytes on the host and {layout.Device.Size} bytes on the device";
     }
 
     /// <summary>
     /// Finds the first array-like member of <paramref name="structType"/>, its nested structs and inline array
     /// elements, as a dotted path (<c>Inner.Values</c>): the arrays that the launcher allocates and copies for each element.
     /// </summary>
-    public static bool TryFindArrayField(INamedTypeSymbol structType, out string path)
-    {
-        foreach (var member in StructAbiMembers.Get(structType))
-        {
-            if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
-            {
-                path = member.Name;
-                return true;
-            }
+    public static bool TryFindArrayField(INamedTypeSymbol structType, out string path) =>
+        TryFindArrayField(structType, out path, visited: null);
 
-            if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                TypeLayoutCalculator.IsUserStruct(nested) &&
-                TryFindArrayField(nested, out var nestedPath))
-            {
-                path = member.Kind == StructAbiMemberKind.InlineArrayElement
-                    ? nestedPath
-                    : $"{member.Name}.{nestedPath}";
-                return true;
-            }
+    internal static bool TryFindArrayField(INamedTypeSymbol structType, out string path, HashSet<INamedTypeSymbol>? visited)
+    {
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        if (!visited.Add(structType))
+        {
+            path = string.Empty;
+            return false;
         }
 
-        path = string.Empty;
-        return false;
+        try
+        {
+            foreach (var member in StructAbiMembers.Get(structType))
+            {
+                if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+                {
+                    path = member.Name;
+                    return true;
+                }
+
+                if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                    TypeLayoutCalculator.IsUserStruct(nested) &&
+                    TryFindArrayField(nested, out var nestedPath, visited))
+                {
+                    path = member.Kind == StructAbiMemberKind.InlineArrayElement
+                        ? nestedPath
+                        : $"{member.Name}.{nestedPath}";
+                    return true;
+                }
+            }
+
+            path = string.Empty;
+            return false;
+        }
+        finally
+        {
+            visited.Remove(structType);
+        }
     }
 
 
@@ -97,7 +130,8 @@ public static class TransferClassifier
         ITranspilerDialect dialect,
         TypeLayout deviceLayout,
         ImmutableArray<FieldLayout> deviceFields,
-        HostLayout hostLayout)
+        HostLayout hostLayout,
+        HashSet<INamedTypeSymbol>? visited = null)
     {
         if (!hostLayout.IsKnown)
         {
@@ -120,7 +154,7 @@ public static class TransferClassifier
                 return TransferClass.Convert;
             }
 
-            if (!IsMemberTransferIdentical(dField.Member.Type, dialect))
+            if (!IsMemberTransferIdentical(dField.Member.Type, dialect, visited))
             {
                 return TransferClass.Convert;
             }
@@ -130,30 +164,30 @@ public static class TransferClassifier
     }
 
 
-    internal static bool IsMemberTransferIdentical(ITypeSymbol memberType, ITranspilerDialect dialect)
+    internal static bool IsMemberTransferIdentical(ITypeSymbol memberType, ITranspilerDialect dialect, HashSet<INamedTypeSymbol>? visited = null)
     {
         if (memberType is INamedTypeSymbol
             {
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullableType)
         {
-            var elemD = TypeLayoutCalculator.GetDeviceLayout(nullableType.TypeArguments[0], dialect);
-            if (!HostLayoutCalculator.TryGetHostLayout(nullableType.TypeArguments[0], out var elemH) || elemD.Size != elemH.Size)
+            var elemD = TypeLayoutCalculator.GetDeviceLayout(nullableType.TypeArguments[0], dialect, visited);
+            if (!HostLayoutCalculator.TryGetHostLayout(nullableType.TypeArguments[0], out var elemH, visited) || elemD.Size != elemH.Size)
             {
                 return false;
             }
 
-            return IsMemberTransferIdentical(nullableType.TypeArguments[0], dialect);
+            return IsMemberTransferIdentical(nullableType.TypeArguments[0], dialect, visited);
         }
 
         if (dialect.TryGetTypeLayout(memberType, out var mappedD))
         {
-            return HostLayoutCalculator.TryGetHostLayout(memberType, out var mappedH) && mappedD.Size == mappedH.Size;
+            return HostLayoutCalculator.TryGetHostLayout(memberType, out var mappedH, visited) && mappedD.Size == mappedH.Size;
         }
 
         if (memberType is INamedTypeSymbol { TypeKind: TypeKind.Struct } nestedStruct)
         {
-            return TypeLayoutCalculator.GetStructLayout(nestedStruct, dialect).Transfer == TransferClass.Identical;
+            return TypeLayoutCalculator.GetStructLayout(nestedStruct, dialect, visited).Transfer == TransferClass.Identical;
         }
 
         return true;

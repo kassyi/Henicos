@@ -67,16 +67,19 @@ internal static class TypeLayoutCalculator
     }
 
     /// <summary>Calculates the device size and alignment requirements for <paramref name="type"/> under <paramref name="dialect"/>.</summary>
-    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect) => type switch
+    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect) =>
+        GetDeviceLayout(type, dialect, visited: null);
+
+    internal static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect, HashSet<INamedTypeSymbol>? visited) => type switch
     {
         _ when type.IsArrayLikeType() => dialect.ArrayViewLayout,
         IPointerTypeSymbol or IFunctionPointerTypeSymbol
             or { SpecialType: SpecialType.System_IntPtr or SpecialType.System_UIntPtr } => dialect.PointerLayout,
-        INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } => GetDeviceLayout(underlying, dialect),
+        INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } => GetDeviceLayout(underlying, dialect, visited),
         _ when dialect.TryGetTypeLayout(type, out var mapped) => mapped,
         INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var value] } =>
-            GetNullableLayout(GetDeviceLayout(value, dialect)),
-        INamedTypeSymbol { TypeKind: TypeKind.Struct } named => GetDeviceStructLayout(named, dialect),
+            GetNullableLayout(GetDeviceLayout(value, dialect, visited)),
+        INamedTypeSymbol { TypeKind: TypeKind.Struct } named => GetDeviceStructLayout(named, dialect, visited),
         // [WHY] Type parameters (ITypeParameterSymbol) arrive during pre-substitution layout estimates
         // on open generic types/methods or analyzer parameter space checks. A 4-byte fallback suffices.
         ITypeParameterSymbol or { TypeKind: TypeKind.TypeParameter } => new TypeLayout(4, 4),
@@ -97,34 +100,65 @@ internal static class TypeLayoutCalculator
         return new TypeLayout(size, valLayout.Alignment);
     }
 
-    private static TypeLayout GetDeviceStructLayout(INamedTypeSymbol namedStruct, ITranspilerDialect dialect)
+    private static TypeLayout GetDeviceStructLayout(INamedTypeSymbol namedStruct, ITranspilerDialect dialect, HashSet<INamedTypeSymbol>? visited)
     {
-        StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-        return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        if (!visited.Add(namedStruct))
+        {
+            // [WHY] A cyclic struct (CS0523) has no finite device layout. A 4-byte fallback prevents
+            // StackOverflowException in analyzer parameter space checks and transpilation failure reporting.
+            return new TypeLayout(4, 4);
+        }
+
+        try
+        {
+            StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
+            return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null, visited);
+        }
+        finally
+        {
+            visited.Remove(namedStruct);
+        }
     }
 
 
     /// <summary>Calculates the complete device (D), host (H), and transfer classification model for <paramref name="structType"/>.</summary>
-    public static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect)
+    public static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect) =>
+        GetStructLayout(structType, dialect, visited: null);
+
+    internal static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect, HashSet<INamedTypeSymbol>? visited)
     {
-        StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
+        visited ??= new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var isNewEntry = visited.Add(structType);
 
-        // 1. Device (D)
-        var deviceFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
-        var deviceLayout =
-            ComputeDeviceStructLayout(structType, dialect, kind, pack, explicitSize, deviceFieldsBuilder);
-        var deviceFields = MarkCopiedFields(deviceFieldsBuilder.ToImmutable(), kind);
+        try
+        {
+            StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
 
-        // 2. Host (H)
-        var hostLayout = HostLayoutCalculator.ComputeStructHostLayout(structType, kind, pack, explicitSize);
+            // 1. Device (D)
+            var deviceFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
+            var deviceLayout =
+                ComputeDeviceStructLayout(structType, dialect, kind, pack, explicitSize, deviceFieldsBuilder, visited);
+            var deviceFields = MarkCopiedFields(deviceFieldsBuilder.ToImmutable(), kind);
 
-        // 3. TransferClass
-        var unsupported = StructLayoutValidator.FindUnsupportedLayout(structType, dialect, kind, explicitSize, deviceFields);
-        var transfer = unsupported.HasValue
-            ? TransferClass.Unsupported
-            : TransferClassifier.ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout);
+            // 2. Host (H)
+            var hostLayout = HostLayoutCalculator.ComputeStructHostLayout(structType, kind, pack, explicitSize, visited);
 
-        return new StructLayoutInfo(kind, pack, deviceLayout, deviceFields, hostLayout, transfer, unsupported);
+            // 3. TransferClass
+            var unsupported = StructLayoutValidator.FindUnsupportedLayout(structType, dialect, kind, explicitSize, deviceFields, visited);
+            var transfer = unsupported.HasValue
+                ? TransferClass.Unsupported
+                : TransferClassifier.ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout, visited);
+
+            return new StructLayoutInfo(kind, pack, deviceLayout, deviceFields, hostLayout, transfer, unsupported);
+        }
+        finally
+        {
+            if (isNewEntry)
+            {
+                visited.Remove(structType);
+            }
+        }
     }
 
 
@@ -132,13 +166,14 @@ internal static class TypeLayoutCalculator
     // values. StructLayout.Size, of any layout kind, is the minimum size. Either way the size is rounded up to the
     // largest alignment, as C++ sizeof is a multiple of alignof.
     private static TypeLayout ComputeDeviceStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields)
+        TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields,
+        HashSet<INamedTypeSymbol>? visited)
     {
         var end = 0;
         var maxAlign = 1;
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            var elemLayout = GetDeviceLayout(member.Type, dialect);
+            var elemLayout = GetDeviceLayout(member.Type, dialect, visited);
             var fieldSize = elemLayout.Size * member.ElementCount;
             var effectiveAlign = pack > 0 ? Math.Min(elemLayout.Alignment, pack) : elemLayout.Alignment;
             int offset;
