@@ -318,8 +318,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         // arguments, then the defaults of the parameters left out. One loop over the parameters would change the order.
         var provided = EmitProvidedArguments(localCppName, iteratorMethod.Parameters, annotatedParamList,
             sourceInvocation.ArgumentList.Arguments, ref hasEmittedAny, ref context);
-        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, provided, ref hasEmittedAny,
-            ref context);
+        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, sourceInvocation, provided,
+            ref hasEmittedAny, ref context);
     }
 
     // The backing local of each written argument; returns which parameters received one
@@ -355,9 +355,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         return provided;
     }
 
-    // The backing local of each parameter left out, with its default value
+    // The backing local of each parameter left out, with the call site's value of a caller-info parameter or its
+    // default value
     private static void EmitDefaultArguments(string localCppName, ImmutableArray<IParameterSymbol> parameters,
-        ParameterListSyntax annotatedParamList, bool[] provided, ref bool hasEmittedAny, ref TranspileContext context)
+        ParameterListSyntax annotatedParamList, InvocationExpressionSyntax call, bool[] provided,
+        ref bool hasEmittedAny, ref TranspileContext context)
     {
         for (var paramIdx = 0; paramIdx < parameters.Length; paramIdx++)
         {
@@ -369,7 +371,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             var paramSyntax = paramIdx < annotatedParamList.Parameters.Count
                 ? annotatedParamList.Parameters[paramIdx]
                 : null;
-            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax);
+            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax, call,
+                context.Query.SemanticModel);
             EmitBackingArgumentLocal(
                 localCppName,
                 paramIdx,
