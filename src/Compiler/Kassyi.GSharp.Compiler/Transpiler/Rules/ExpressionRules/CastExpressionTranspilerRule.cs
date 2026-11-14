@@ -32,6 +32,14 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
+        var delegateForm = DelegateCasts.Plan(node, model, context.Emitter.Dialect);
+        if (delegateForm == DelegateCastForm.HeapObject)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateAsHeapObject);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         var targetType = model.GetTypeSymbol(node.Type);
         var conversionMethod = operation is IConversionOperation
         {
@@ -177,9 +185,12 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
             return;
         }
 
-        using (context.Emitter.Writer.Parentheses())
+        if (delegateForm != DelegateCastForm.OmitCast)
         {
-            context.Emitter.Dialect.AppendType(ref context, targetType);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, targetType);
+            }
         }
 
         context.Visitor.Visit(node.Expression);

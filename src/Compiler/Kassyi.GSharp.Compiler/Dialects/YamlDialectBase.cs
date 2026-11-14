@@ -83,6 +83,11 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return true;
         }
 
+        if (TryAppendDelegateType(ref context, typeSymbol))
+        {
+            return true;
+        }
+
         if (typeSymbol is IFunctionPointerTypeSymbol)
         {
             // [WHY] Function pointers have no type-then-name C++ spelling and host pointers are invalid on the device.
@@ -100,6 +105,39 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         return WmmaTypeSyntaxHelper.TryAppendType(ref context, typeSymbol) ||
                TryAppendMappedType(ref context, typeSymbol);
+    }
+
+    // A delegate type that is not Func or Action of System (those are the Prelude aliases) is the std::function of its
+    // Invoke signature on the CPU: MyFn(int) returning int is std::function<int(int)>. A delegate with a ref, out or in
+    // parameter keeps its name.
+    private bool TryAppendDelegateType(ref TranspileContext context, ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Delegate,
+                DelegateInvokeMethod: { } invoke
+            } named ||
+            (named.ContainingNamespace.IsSystemNamespace() && named.Name is "Func" or "Action") ||
+            invoke.Parameters
+                .AsStackEnumerable()
+                .Any(static p => p.RefKind != RefKind.None))
+        {
+            return false;
+        }
+
+        context.Emitter.Writer.Append("std::function<");
+        AppendType(ref context, invoke.ReturnType);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            for (var i = 0; i < invoke.Parameters.Length; i++)
+            {
+                context.Emitter.Writer.AppendIf(i > 0, ", ");
+                AppendType(ref context, invoke.Parameters[i].Type);
+            }
+        }
+
+        context.Emitter.Writer.Append(">");
+        return true;
     }
 
     private bool TryAppendMappedType(ref TranspileContext context, ITypeSymbol typeSymbol)

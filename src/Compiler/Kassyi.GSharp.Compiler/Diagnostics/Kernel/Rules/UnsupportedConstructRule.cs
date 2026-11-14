@@ -21,7 +21,10 @@ internal sealed class UnsupportedConstructRule :
     ISyntaxValidationRule<AssignmentExpressionSyntax>,
     ISyntaxValidationRule<CheckedExpressionSyntax>,
     ISyntaxValidationRule<CheckedStatementSyntax>,
-    ISyntaxValidationRule<InvocationExpressionSyntax>
+    ISyntaxValidationRule<InvocationExpressionSyntax>,
+    ISyntaxValidationRule<MemberAccessExpressionSyntax>,
+    ISyntaxValidationRule<IdentifierNameSyntax>,
+    ISyntaxValidationRule<BinaryExpressionSyntax>
 {
     public static readonly UnsupportedConstructRule Instance = new();
 
@@ -94,6 +97,40 @@ internal sealed class UnsupportedConstructRule :
         }
     }
 
+    // A kernel named without a call (U.K, K) would be called through the delegate it converts to
+    public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context) =>
+        ReportKernelMethodGroup(node, ref context);
+
+    public void Analyze(IdentifierNameSyntax node, ref ValidationContext context)
+    {
+        // The name of a member access is analyzed with the access
+        if (node.Parent is not MemberAccessExpressionSyntax access || access.Name != node)
+        {
+            ReportKernelMethodGroup(node, ref context);
+        }
+    }
+
+    private static void ReportKernelMethodGroup(SyntaxNode node, ref ValidationContext context)
+    {
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol method &&
+            method.OriginalDefinition.HasAttribute(KnownAttributes.GpuKernel) &&
+            CallTargetClassifier.IsMethodGroup(node) &&
+            !RemovedCalls.IsInRemovedCall(node, context.SemanticModel))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node,
+                GpuCodeConstraints.FormatKernelNamedInDeviceCode(method));
+        }
+    }
+
+    // a + b and a - b on delegates build a multicast delegate
+    public void Analyze(BinaryExpressionSyntax node, ref ValidationContext context)
+    {
+        if (GpuCodeConstraints.IsDelegateCombination(node, context.SemanticModel))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateCombination);
+        }
+    }
+
     public void Analyze(BaseObjectCreationExpressionSyntax node, ref ValidationContext context)
     {
         if (!GpuCodeConstraints.IsSupportedObjectCreation(context.SemanticModel.GetTypeSymbol(node)))
@@ -123,6 +160,12 @@ internal sealed class UnsupportedConstructRule :
     // An operator macro is expanded only as an assignment statement (MacroTranspiler)
     public void Analyze(AssignmentExpressionSyntax node, ref ValidationContext context)
     {
+        if (GpuCodeConstraints.IsDelegateCombination(node, context.SemanticModel))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DelegateCombination);
+            return;
+        }
+
         if (node.Parent is not ExpressionStatementSyntax ||
             !OperatorMacroResolver.TryResolve(node, context.SemanticModel, out var macro))
         {
