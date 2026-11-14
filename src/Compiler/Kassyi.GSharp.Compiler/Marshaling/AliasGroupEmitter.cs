@@ -230,7 +230,7 @@ internal static class AliasGroupEmitter
         return scope;
     }
 
-    // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out parameter that is compared
+    // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out struct that holds arrays
     // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the
     // caller's value, which C# reads through the ref or in parameter that refers to the same variable (#1841)
     private static void WriteClearedOutArguments(SourceWriter writer, in ArraySharingPlan sharing)
@@ -239,7 +239,7 @@ internal static class AliasGroupEmitter
         for (var k = 0; k < plan.Candidates.Length; k++)
         {
             var shape = sharing.Parameters[plan.Candidates[k]];
-            if (shape.RefKind == RefKind.Out && !shape.IsArray)
+            if (shape.RefKind == RefKind.Out && shape.HasArrayFields)
             {
                 writer.AppendLine($"if (!({MemberTest(plan, plan.Candidates[k])})) {shape.Identifier} = default;");
             }
