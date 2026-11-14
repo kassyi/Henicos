@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SharedMemorySizeNegative",
+    "id": "GSH0117",
+    "title": "SharedMemory<T> count must not be negative",
+    "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "FileLocalTypeInManagedCopy",
     "id": "GSH0119",
     "title": "A file-local type cannot be named by the managed copy that G# generates",
