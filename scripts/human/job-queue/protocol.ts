@@ -44,6 +44,9 @@ export type ClientMessage =
   | { type: "set-weight"; id: number; weight: number }
   /** Grants a waiting job at once, over the slots and the memory pool (not a GPU turn, not before its predecessor). */
   | { type: "start"; id: number }
+  /** Grants nothing new until resume; the running jobs finish. */
+  | { type: "pause" }
+  | { type: "resume" }
   /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
@@ -113,6 +116,10 @@ export interface StatusReply {
   /** The memory pool for test runs and what the running jobs take of it, in MB (absent from older schedulers). */
   memoryCapacity?: number;
   memoryUsed?: number;
+  /** The queue is paused (pause): nothing waiting is granted, `start <id>` still is. Absent from older schedulers. */
+  paused?: boolean;
+  /** When it was paused, ms since the epoch; present while paused. */
+  pausedAt?: number;
   running: StatusJob[];
   waiting: StatusJob[];
 }
@@ -125,7 +132,9 @@ export interface Placement {
 }
 
 export type ServerMessage =
-  | ({ type: "queued"; id: number } & Outlook)
+  | ({ type: "queued"; id: number; paused?: boolean } & Outlook)
+  /** The queue was paused while the job waits (sent once to each waiting client). */
+  | { type: "paused"; at: number }
   | ({ type: "waiting"; id: number; used: number; capacity: number } & Outlook)
   /** protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). */
   | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number }
@@ -138,6 +147,8 @@ export type ServerMessage =
   | { type: "stopping"; running: number; waiting: number }
   | { type: "move-result"; id: number; position: number }
   | { type: "start-result"; id: number }
+  /** The answer of pause and resume: the queue's state now, and whether this call changed it. */
+  | { type: "pause-result"; paused: boolean; changed: boolean; running: number; waiting: number; pausedAt: number }
   | { type: "ended"; id: number; outcome: Outcome }
   | { type: "reported"; id: number }
   /** The scheduler has recorded and saved the outcome of a "done". */
@@ -155,6 +166,8 @@ export function wireVersion(message: ClientMessage): number {
     case "move":
     case "set-weight":
     case "start":
+    case "pause":
+    case "resume":
     case "await":
     case "report":
       return ProtocolVersion;
