@@ -34,7 +34,8 @@ internal static class ManagedContextFields
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
-            string kernelName)
+            string kernelName,
+            SyntaxNode? loweredBody = null)
     {
         var regularFields = ImmutableArray.CreateBuilder<ManagedContextField>();
         var localInits = ImmutableArray.CreateBuilder<ManagedContextField>();
@@ -47,6 +48,7 @@ internal static class ManagedContextFields
         }
 
         var sharedNames = FindSharedNames(contextFields);
+        var bodyNames = loweredBody == null ? [] : FindDeclaredNames(loweredBody);
         foreach (var field in contextFields)
         {
             // A held ref local gets no field: the state machine only throws (LoweredStateMachine.HeldRefLocals)
@@ -62,6 +64,16 @@ internal static class ManagedContextFields
             {
                 regularFields.Add(contextField);
                 continue;
+            }
+
+            // [WHY] A resume local is declared at the top of the state function, so a local of the same name declared
+            // in a nested scope of the body (one that no barrier crosses, a sibling of the hoisted one) is CS0136
+            if (key.Symbol != null && !renamedLocals.ContainsKey(key) &&
+                bodyNames.Contains(field.Identifier.ValueText))
+            {
+                var distinctName = GetDistinctName(key.Symbol, key.Region);
+                renamedLocals[key] = distinctName;
+                contextField = contextField with { Name = distinctName };
             }
 
             var resumeLocal = CreateResumeLocal(contextField, semanticModel);
@@ -112,6 +124,35 @@ internal static class ManagedContextFields
                 semanticModel),
             Resume = ResumeLocals.Describe(field.Declarator, field.ResolvedType, semanticModel)
         };
+
+    // The names that the locals left in the body, the parameters of its lambdas and its local functions declare
+    private static HashSet<string> FindDeclaredNames(SyntaxNode body)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in body.DescendantNodes())
+        {
+            switch (node)
+            {
+                case VariableDeclaratorSyntax declarator:
+                    names.Add(declarator.Identifier.ValueText);
+                    break;
+                case SingleVariableDesignationSyntax designation:
+                    names.Add(designation.Identifier.ValueText);
+                    break;
+                case ForEachStatementSyntax forEach:
+                    names.Add(forEach.Identifier.ValueText);
+                    break;
+                case ParameterSyntax parameter:
+                    names.Add(parameter.Identifier.ValueText);
+                    break;
+                case LocalFunctionStatementSyntax localFunction:
+                    names.Add(localFunction.Identifier.ValueText);
+                    break;
+            }
+        }
+
+        return names;
+    }
 
     // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method, or are
     // copies of one declaration that an expansion stamped with different regions

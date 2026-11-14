@@ -32,7 +32,7 @@ internal static class ManagedCSharpTranspiler
         var kernelName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedLocals, renamedLocals) =
-            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
+            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName, loweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
@@ -108,7 +108,8 @@ internal static class ManagedCSharpTranspiler
         var functionName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedLocals, renamedLocals) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
+            ManagedContextFields.ProcessContextFields(
+                lowered.ContextFields, semanticModel, functionName, lowered.LoweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||

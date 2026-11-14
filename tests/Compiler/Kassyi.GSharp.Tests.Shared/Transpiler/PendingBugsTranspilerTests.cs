@@ -111,9 +111,10 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.DoesNotContain(": size\");", cppSource, StringComparison.Ordinal);
     }
 
-    // #1084: Expect outputCompilation.GetDiagnostics() to have zero errors once ContextHoister avoids hoisting non-crossing SharedMemory<T> locals to outer scope.
-    [Fact(Skip = "#1084: ContextHoister hoists non-crossing SharedMemory locals to outer scope causing CS0136.")]
-    [Scenario(TestScenario.SadPath)]
+    // #1084: The resume local of a hoisted SharedMemory<T> gets a name of its own when a nested scope declares a local
+    // of the same name, so the sibling scopes compile in the managed C#.
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void SharedMemorySiblingScopes_LocalDeclarations_CompilesWithoutCS0136InManagedCSharp()
     {
         var source = RoslynTestUtility.ReadTestCase(
