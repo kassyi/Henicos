@@ -37,9 +37,29 @@ runs as, the full command):
 
 ![A selected job](images/selected.svg)
 
-The help (`?`): the keys and what the marks of the timeline and the wait reasons mean, drawn in their screen colors:
+The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
+screen colors:
 
 ![The help page](images/help.svg)
+
+Below the jobs, the agent chats that wait for an answer of the person (the files of
+`scripts/human/chat-status.js`, read every 2 s): one row per chat, first those that ask through a tool (`?`, a choice
+question or a permission prompt, in yellow), then those whose reply leaves a question open (`…?`); the most recent wait
+first in each. Claude Haiku decides through the Claude Code CLI which questions a reply leaves open (also one asked in
+an earlier turn and not answered yet), else a question mark in the reply's last paragraph does
+(`scripts/human/chat-status/README.md`); a chat that only reported is idle and gets no row. A row shows the agent, the
+chat's title (Antigravity's, else Haiku's, else the start of its first prompt; after the worktree unless that is the
+main checkout, the worktree alone without a title), how long it has waited, the kind, the ids of the jobs it queued
+(the client sends `CLAUDE_CODE_SESSION_ID` or `ANTIGRAVITY_CONVERSATION_ID`; a job without one counts for the chats of
+its worktree, paths compared as the queue keys them, but never in the main checkout, where every chat is), and the
+text: the start of a tool's question, Haiku's newest open question marked `≈` with `(+n)` for the others, or the end
+of the asking paragraph. The rule above counts the chats by state (`idle`: a report). The help says who decides and
+how to turn Haiku on. The job list keeps at least four rows; a terminal of fewer than 16 rows (the 70 x 13 pane above)
+shows the waiting chats in one line instead. `a` hides the panel; the rule then still says how many chats wait:
+
+![The chat panel hidden](images/chats-hidden.svg)
+
+When `chat-status.js` cannot be loaded or its directory read, the view has no panel.
 
 ## Layout
 
@@ -57,11 +77,12 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `wait`, `stop` |
-| `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, and `reduceKey`, the keys as a pure function |
+| `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
+| `view-chats.ts` | The chat panel: the chats that ask the person in order (idle reports counted), one row each or one summary line, their title, worktree and job ids, and the chat part of the help; pure |
 | `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
 | `screenshot.ts` | `--screenshots`: the ANSI lines of the live view as an SVG of a terminal, and the sample screens of this README |
-| `view-sample.ts` | The fixed sample status the view's self-test and the screenshots draw from |
+| `view-sample.ts` | The fixed sample status and chats the view's self-test and the screenshots draw from |
 | `server.ts` | `JobServer`, the scheduler process: the TCP server, the job records, outcomes, the settle step and the timers |
 | `server-observe.ts` | `DetachedObserver`: every 2 s, what the processes show of the records whose client is away, applied per epoch (`planObservation`) |
 | `server-connection.ts` | `Connection`: one client connection, the dispatch of its messages to one handler per message type, and what its close means for the job |
@@ -78,7 +99,7 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys |
+| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 
 ## How a job runs
 

@@ -19,7 +19,7 @@ import {
   type JobFacts,
 } from "./server-job-state.ts";
 import { JobServer } from "./server.ts";
-import { checkRecords } from "./server-job.ts";
+import { checkRecords, describeJob } from "./server-job.ts";
 import { connectRaw, deadPid, registration, removeDirectory } from "./self-test-support.ts";
 
 type AssertModule = typeof Assert;
@@ -392,15 +392,17 @@ export async function checkFinalOutcomeStays(assert: AssertModule): Promise<void
 
 /**
  * start refuses a waiting record whose client is away (nobody would receive the grant). A start is kept in the state
- * file with the other placement fields; a restored record that carries one is still not granted while detached.
+ * file with the other placement fields; a restored record that carries one is still not granted while detached. The
+ * chat that queued a job (session) is shown by status and kept across a restart; a job without one has none.
  */
 export async function checkStartAndRestore(assert: AssertModule): Promise<void> {
   await withServer(1, async (server, port) => {
     const holder = await connectRaw(port);
     holder.send(registration("holder", 1, process.pid));
-    assert.ok((await holder.until("granted")) !== null);
+    const holderGrant = await holder.until("granted");
+    assert.ok(holderGrant !== null);
     const away = await connectRaw(port);
-    away.send(registration("away", 1, process.pid));
+    away.send({ ...registration("away", 1, process.pid), session: "chat-1" });
     const awayId = Number((await away.until("queued"))?.id);
     away.close();
     await until("its record is detached", () => server.find(awayId)?.detached === true);
@@ -409,6 +411,11 @@ export async function checkStartAndRestore(assert: AssertModule): Promise<void> 
     assert.match(String((await refused.until("error"))?.message), /away/, "start refuses a job whose client is away");
     const record = server.find(awayId);
     assert.ok(record !== undefined && record.startNow !== true && record.phase === "waiting");
+    const holderRecord = server.find(Number(holderGrant.id));
+    assert.deepStrictEqual(
+      [describeJob(record).session, holderRecord && describeJob(holderRecord).session],
+      ["chat-1", undefined],
+    );
     // The flag as a start leaves it (it lives until the settle of its event), saved and restored with the record
     record.startNow = true;
     server.store.persist();
@@ -423,6 +430,7 @@ export async function checkStartAndRestore(assert: AssertModule): Promise<void> 
     assert.strictEqual(next.store.restore(), "current");
     const restored = next.find(awayId);
     assert.deepStrictEqual([restored?.startNow, restored?.detached, restored?.phase], [true, true, "waiting"]);
+    assert.strictEqual(restored?.session, "chat-1", "the chat of a job survives a restart");
     next.scheduler.holdUntil = 0;
     const granted = next.scheduler.grant();
     assert.ok(restored !== undefined && !granted.includes(restored), "not granted while its client is away");

@@ -55,9 +55,7 @@ internal static class StackArrayLocals
     /// </summary>
     public static void AppendView(ExpressionSyntax expression, ref TranspileContext context)
     {
-        // An empty span local is already a GSharpArray<T> (VariableDeclarationTranspilerRule)
-        if (!IsStackArrayReference(expression, context.Query.SemanticModel) ||
-            (TryGetLength(expression, context.Query.SemanticModel, out var length) && length == 0))
+        if (!NeedsView(expression, context.Query.SemanticModel))
         {
             context.Visitor.Visit(expression);
             return;
@@ -69,6 +67,15 @@ internal static class StackArrayLocals
             context.Visitor.Visit(expression);
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="expression"/> names a stack array local that is a C++ array, which a span needs
+    /// <see cref="AppendView"/> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
+    /// (<c>VariableDeclarationTranspilerRule</c>), so it is written as it is.
+    /// </summary>
+    public static bool NeedsView(ExpressionSyntax expression, SemanticModel semanticModel) =>
+        IsStackArrayReference(expression, semanticModel) &&
+        !(TryGetLength(expression, semanticModel, out var length) && length == 0);
 
     /// <summary>Whether <paramref name="expression"/> (parentheses aside) names a stack array local.</summary>
     public static bool IsStackArrayReference(ExpressionSyntax expression, SemanticModel semanticModel) =>
