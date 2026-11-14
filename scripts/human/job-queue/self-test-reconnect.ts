@@ -234,6 +234,7 @@ export async function checkReconnects(fixture: QueueFixture, port: number): Prom
     [2, checkAdoptOfAnotherClient],
   ];
   for (const [index, [slots, check]] of checks.entries()) {
+    fixture.part = `part 14 (checkReconnects: ${check.name})`;
     await freshScheduler(fixture, port + index, slots);
     await check(fixture, port + index);
     await request(port + index, { type: "stop" });

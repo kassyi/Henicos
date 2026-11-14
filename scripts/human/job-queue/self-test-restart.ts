@@ -176,6 +176,8 @@ async function checkStateFileFormats(fixture: QueueFixture, port: number): Promi
 }
 
 export async function checkRestarts(fixture: QueueFixture, port: number): Promise<void> {
+  fixture.part = "part 15 (checkRestarts: checkRestartHoldsTheJobs)";
   await checkRestartHoldsTheJobs(fixture, port);
+  fixture.part = "part 15 (checkRestarts: checkStateFileFormats)";
   await checkStateFileFormats(fixture, port + 1);
 }

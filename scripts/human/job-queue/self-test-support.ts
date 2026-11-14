@@ -25,6 +25,26 @@ import { ProcessTable } from "./system.ts";
 
 export const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+// The test schedulers listen on fixed ports (a stopped one is started again on its port, and a client starts the next
+// one there), taken from below the ports an operating system gives to outgoing connections: 32768 and up on Linux,
+// 49152 and up on Windows and macOS. Every status request of the test is such a connection, and on Linux a port one
+// of them has as its local port, or had within the last minute, cannot be listened on (EADDRINUSE): a scheduler
+// started there exits at once.
+const FirstTestPort = 20000;
+const LastTestPort = 32000;
+
+/** How many ports a self-test run uses, from its first one. */
+const TestPortSpan = 16;
+
+/** The first port of a self-test run; the run uses this one and the ports after it, `TestPortSpan` in all. */
+export function firstTestPort(): number {
+  return FirstTestPort + Math.floor(Math.random() * (LastTestPort - TestPortSpan - FirstTestPort));
+}
+
+// How long a test scheduler may take to listen. It listens within a second on an idle machine; node takes several
+// when every core is busy (a CI runner, a machine that builds), and the time only passes when it never listens.
+const SchedulerStartMs = 30000;
+
 /**
  * Stops a process the test started, with what it started: Windows ends the tree; on Unix a client stops its command's
  * process group on SIGTERM (the test does not start its children as group leaders, so a group kill would miss them).
@@ -99,6 +119,9 @@ export interface RawClient {
 export function connectRaw(port: number): Promise<RawClient> {
   return new Promise((resolve, reject) => {
     const socket = net.connect(port, "127.0.0.1");
+    // Named: a bare "connect ECONNREFUSED" does not say that the scheduler of a check is gone
+    const refused = (error: Error): void =>
+      reject(new Error(`no connection to the test scheduler on port ${port}: ${error.message}`, { cause: error }));
     const messages: Incoming[] = [];
     const wakers: (() => void)[] = [];
     const wake = (): void => wakers.splice(0).forEach((w) => w());
@@ -108,9 +131,9 @@ export function connectRaw(port: number): Promise<RawClient> {
       messages.push(message);
       wake();
     });
-    socket.once("error", reject);
+    socket.once("error", refused);
     socket.once("connect", () => {
-      socket.removeListener("error", reject);
+      socket.removeListener("error", refused);
       socket.on("error", () => socket.destroy());
       resolve({
         socket,
@@ -153,6 +176,10 @@ export class QueueFixture {
   readonly children: ChildProcess[] = [];
   readonly servers: ChildProcess[] = [];
   readonly ports: number[] = [];
+  /** The check that runs now; the self-test names it when it fails. */
+  part = "the start of the end-to-end checks";
+  /** The log of the scheduler started last. */
+  private lastLog = "";
 
   constructor() {
     this.dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-"));
@@ -173,24 +200,59 @@ export class QueueFixture {
     this.env = env;
   }
 
-  /** Starts a scheduler on a private port and resolves once it accepts connections. */
+  /**
+   * Starts a scheduler on a private port and resolves once a scheduler accepts connections there: this one, or one
+   * that a waiting client started first (this one then exits, as the port is in use). Fails, with what this scheduler
+   * logged, when none listens in time.
+   */
   readonly startScheduler = async (port: number, slots: number, env = this.env): Promise<ChildProcess> => {
+    const logPath = path.join(this.dir, `scheduler-${port}.log`);
+    const logFd = fs.openSync(logPath, "a");
+    this.lastLog = logPath;
     const server = spawn(process.execPath, [EntryScript, "serve", "--port", String(port), "--slots", String(slots)], {
-      stdio: "ignore",
+      stdio: ["ignore", logFd, logFd],
       windowsHide: true,
       env,
     });
+    fs.closeSync(logFd);
     this.servers.push(server);
-    for (let i = 0; i < 50; i++) {
+    const deadline = Date.now() + SchedulerStartMs;
+    for (;;) {
       const probe = await connect(port);
       if (probe !== null) {
         probe.destroy();
-        break;
+        return server;
+      }
+      if (Date.now() > deadline) {
+        const state =
+          server.exitCode === null && server.signalCode === null
+            ? "it still runs"
+            : `it exited with ${server.signalCode ?? `code ${server.exitCode}`}`;
+        const log = fs.readFileSync(logPath, "utf8").trim().split("\n").slice(-5).join("\n");
+        assert.fail(
+          `no scheduler listens on port ${port} ${SchedulerStartMs} ms after one was started (${state}); ` +
+            `its log:\n${log === "" ? "(empty)" : log}`,
+        );
       }
       await delay(100);
     }
-    return server;
   };
+
+  /**
+   * For a failure: the end of the log of the scheduler started last, and of server.log, which the schedulers write
+   * that clients start. The state directory is removed with the run, and what the scheduler queued, granted and ended
+   * just before says why a check saw what it saw.
+   */
+  schedulerLogTail(): string {
+    const tail = (file: string, lines: number): string => {
+      if (file === "" || !fs.existsSync(file)) {
+        return "";
+      }
+      const text = fs.readFileSync(file, "utf8").trim().split("\n").slice(-lines).join("\n");
+      return `the end of ${path.basename(file)}:\n${text}\n`;
+    };
+    return tail(this.lastLog, 40) + tail(path.join(this.dir, "server.log"), 15);
+  }
 
   /** A raw protocol connection to the scheduler on `port`. */
   readonly rawClient = (port: number): Promise<RawClient> => connectRaw(port);
