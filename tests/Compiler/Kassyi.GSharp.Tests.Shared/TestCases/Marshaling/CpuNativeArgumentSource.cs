@@ -46,6 +46,11 @@ public static partial class Arguments
     }
 
     [GpuKernel]
+    public static void ScalarKinds(bool flag, char letter, int count)
+    {
+    }
+
+    [GpuKernel]
     public static int ScalarResult(int x) => x;
 
     [GpuKernel]

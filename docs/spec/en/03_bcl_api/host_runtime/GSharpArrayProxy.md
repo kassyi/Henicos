@@ -114,6 +114,12 @@ nullable annotation of the parameter. They reject only a proxy that describes no
 A `Memory<T>?`, `ReadOnlyMemory<T>?`, `ArraySegment<T>?` or `ImmutableArray<T>?` parameter takes a `GSharpArrayProxy?`:
 `null` has no value, and a proxy has one, also a `null` proxy (`default(Memory<T>)` in C#).
 
+The CPU dialect emits the same `Launch{Kernel}Ptr` launchers, which take host addresses: `Data` points to host memory
+that stays valid for the launch (a pinned array or native memory), and the native CPU kernel reads and writes it in
+place. They run only on the native CPU path for now; on the managed path
+(`KernelExecution.Managed`, or no native library) they throw `NotSupportedException`. Every launcher passes the reserved
+`Flags` as `0`, whatever the caller's proxy holds.
+
 ## Examples
 
 ### Constructing a GSharpArrayProxy

@@ -16,15 +16,24 @@ internal static class CpuHostLaunchEmitter
     private const string ArrayPinningType = HostTypeNames.ArrayPinning;
     private const string AutoResult = GSharpInternalNames.ReturnValue.Buffer;
 
-    /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
-        string moduleName)
+    /// <summary>
+    /// Emits the managed source, the delegate declaration and the launchers of one kernel: <c>Launch{Kernel}</c>, the
+    /// pointer launcher (<see cref="CpuPointerLaunchEmitter"/>) and, for an overloaded kernel, the typed pointer
+    /// launcher (<see cref="TypedPointerLaunchEmitter"/>), as the CUDA dialect emits them.
+    /// </summary>
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
+        LauncherAccessibilities accessibilities, string moduleName)
     {
         writer.AppendLine(kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         var arguments = CpuNativeArgumentPlan.Create(kernel.Host);
         WriteCpuDelegateDeclaration(writer, kernel, arguments);
-        WriteLaunchMethodCpu(writer, kernel, arguments, accessibility, moduleName);
+        WriteLaunchMethodCpu(writer, kernel, arguments, accessibilities.Launcher, moduleName);
+        CpuPointerLaunchEmitter.Write(writer, kernel, accessibilities.Pointer, moduleName);
+        if (kernel.IsOverloaded)
+        {
+            TypedPointerLaunchEmitter.Write(writer, kernel, accessibilities.TypedPointer);
+        }
     }
 
     private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel,
@@ -86,7 +95,7 @@ internal static class CpuHostLaunchEmitter
     }
 
     // string __gsharp_dll_path = <the native library of the module for this architecture>;
-    private static void WriteDllPath(SourceWriter writer, string moduleName)
+    internal static void WriteDllPath(SourceWriter writer, string moduleName)
     {
         var fileStem = AotModuleNames.GetArtifactFileStem(moduleName);
         writer.AppendLine(
@@ -122,12 +131,18 @@ internal static class CpuHostLaunchEmitter
         writer.Append($"{delegateType} {FunctionHandle} = ");
         writer.Append($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{delegateType}>");
         writer.AppendLine($"(\"{exportName}\", {DllPath});");
+        WriteErrorSiteRegistration(writer, kernel);
+    }
+
+    // if (s_errorSites.Length > 0) { CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites); }
+    internal static void WriteErrorSiteRegistration(SourceWriter writer, in KernelEmission kernel)
+    {
         if (!kernel.ErrorSites.IsDefaultOrEmpty)
         {
             writer.AppendLine($"if ({KernelHostNames.ErrorSitesFieldName}.Length > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites" +
+                writer.AppendLine($"{HostTypeNames.CpuKernelLoader}.RegisterErrorSites" +
                                   $"({DllPath}, {KernelHostNames.ErrorSitesFieldName});");
             }
         }
@@ -416,12 +431,12 @@ internal static class CpuHostLaunchEmitter
             using (writer.Scope())
             {
                 WriteNullableProxies(writer, kernel, arguments);
-                WriteDelegateInvocation(writer, kernel, arguments);
+                CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
             }
         }
         else
         {
-            WriteDelegateInvocation(writer, kernel, arguments);
+            CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
         }
     }
 
@@ -443,83 +458,8 @@ internal static class CpuHostLaunchEmitter
             var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
             writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
             writer.Append($"{shape.Identifier}.HasValue ? ");
-            WriteArrayProxy(writer, shape, arguments.Arguments[i].Group);
+            CpuNativeCallEmitter.WriteArrayProxy(writer, shape, arguments.Arguments[i].Group);
             writer.AppendLine(" : null;");
         }
-    }
-
-    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel,
-        in CpuNativeArgumentPlan arguments)
-    {
-        writer.Append(FunctionHandle);
-        using (writer.Parentheses())
-        {
-            // The native launcher places the dynamic shared memory declarations in sharedMemBytes (#544) and runs the
-            // number of blocks that the launch check counted in 64 bits (#805)
-            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ");
-            writer.Append($"sharedMemBytes, {GridBlockCount}");
-
-            var parameters = kernel.Parameters;
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                writer.Append(", ");
-                WriteDelegateArgument(writer, parameters[i], arguments.Arguments[i]);
-            }
-
-            writer.AppendIf(arguments.ResultTypeName is not null, $", {AutoResultEmitter.PinnedAutoResult}");
-        }
-
-        writer.AppendLine(";");
-        writer.AppendLine($"global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError({DllPath});");
-    }
-
-    // The argument in the form that CpuNativeArgumentPlan chose
-    // [WHY] A switch statement, not a switch expression: each form is written straight into the writer, so no argument
-    // string is built (transpiler-emission.md section 1)
-    // <group> of the argument is the member test and buffer address of a converted member of a group of overlapping
-    // arguments, which the native kernel takes instead of the member's own shadow
-    private static void WriteDelegateArgument(SourceWriter writer, in KernelParameterShape shape,
-        in CpuNativeArgument argument)
-    {
-        switch (argument.Form)
-        {
-            case CpuNativeArgumentForm.NullableProxyAddress:
-                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape)}");
-                break;
-            case CpuNativeArgumentForm.ArrayProxy:
-                WriteArrayProxy(writer, shape, argument.Group);
-                break;
-            case CpuNativeArgumentForm.ShadowAddress:
-                writer.AppendIf(argument.Group is not null,
-                    $"{argument.Group?.Member} ? ({shape.AotStructPath}*){argument.Group?.Pointer} : ");
-                writer.Append($"&{KernelHostNames.GetLocal(LauncherLocal.Native, shape)}");
-                break;
-            case CpuNativeArgumentForm.PinnedAddress:
-                writer.Append(KernelHostNames.GetLocal(LauncherLocal.Pinned, shape));
-                break;
-            case CpuNativeArgumentForm.ValueAddress:
-                // The parameter of Launch is a value parameter, a fixed variable whose address needs no pinning
-                writer.Append($"&{shape.Identifier}");
-                break;
-            default:
-                writer.Append(shape.Identifier);
-                break;
-        }
-    }
-
-    // An argument passed as it is:
-    // new GSharpArrayProxy { Data = (IntPtr)__gsharp_p_<ord>, Length = <length> }
-    // A converted array:
-    // new GSharpArrayProxy { Data = <null test> ? IntPtr.Zero : (IntPtr)__gsharp_p_<ord>, Length = <length> }
-    // [WHY] The shadow of a null array is an empty rented array, whose pinned address is not null
-    // A converted member of a group: ... : <member> ? <buffer address> : (IntPtr)__gsharp_p_<ord> ...
-    private static void WriteArrayProxy(SourceWriter writer, in KernelParameterShape shape,
-        (string Member, string Pointer)? group)
-    {
-        var pinned = KernelHostNames.GetLocal(LauncherLocal.Pinned, shape);
-        writer.Append($"new {HostTypeNames.ArrayProxy} {{ Data = ");
-        writer.AppendIf(shape.IsCpuConvertedArray, $"{shape.NullTestExpression} ? {HostTypeNames.IntPtr}.Zero : ");
-        writer.AppendIf(group is not null, $"{group?.Member} ? {group?.Pointer} : ");
-        writer.Append($"({HostTypeNames.IntPtr}){pinned}, Length = {shape.LengthExpression} }}");
     }
 }
