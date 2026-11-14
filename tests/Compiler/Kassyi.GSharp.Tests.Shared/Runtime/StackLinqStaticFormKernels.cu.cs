@@ -188,4 +188,49 @@ public static partial class StackLinqStaticFormKernels
         results[0] = data.AsStackEnumerable().Skip(k++).Take(k).Sum();
         results[1] = k;
     }
+
+    // A zero-length stack span is a span value, not a C++ array: the static form of an unfused call takes it as it is
+    [GpuKernel]
+    public static void EmptyStackSpanStaticKernel(int seed, int[] results)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        Span<int> empty = stackalloc int[0];
+        var skipped = S.Skip(S.AsStackEnumerable(empty), 1);
+        results[0] = S.Count(skipped, x => x > seed) + 7;
+    }
+
+    // The reduced form, stored in a local before its terminal
+    [GpuKernel]
+    public static void EmptyStackSpanReducedKernel(int seed, int[] results)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        Span<int> empty = stackalloc int[0];
+        var skipped = empty.AsStackEnumerable().Skip(1);
+        results[0] = skipped.Count(x => x > seed) + 7;
+    }
+
+    // A non-empty stack span still goes through the C++ array view
+    [GpuKernel]
+    public static void NonEmptyStackSpanStaticKernel(int seed, int[] results)
+    {
+        if (ThreadIndex.X != 0)
+        {
+            return;
+        }
+
+        Span<int> values = stackalloc int[3];
+        values[0] = 1;
+        values[1] = 5;
+        values[2] = 9;
+        var skipped = S.Skip(S.AsStackEnumerable(values), 1);
+        results[0] = S.Count(skipped, x => x > seed) + 7;
+    }
 }

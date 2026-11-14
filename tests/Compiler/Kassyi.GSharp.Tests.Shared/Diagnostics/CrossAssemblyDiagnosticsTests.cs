@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Transpiler;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
@@ -366,6 +367,29 @@ public class CrossAssemblyDiagnosticsTests
 
         Assert.Equal([(Analyzer, 11, 23, 11, 51)],
             diagnostics.Ranges(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id));
+    }
+
+    // A record written before ReachesGeneratedMeaning existed has no such key; its ManagedVersion then meant that the
+    // function reaches code whose C# meaning only the generated code gives, so it reads as that. A record that has the
+    // key is read as written, also when the key says false beside ManagedVersion = true
+    [Theory]
+    [InlineData("", false)]
+    [InlineData(", ManagedVersion = true", true)]
+    [InlineData(", ManagedVersion = true, ReachesGeneratedMeaning = false", false)]
+    [InlineData(", ReachesGeneratedMeaning = true", true)]
+    [Scenario(TestScenario.Boundary)]
+    public void ImportedRecord_WithoutReachesGeneratedMeaningKey_FallsBackToManagedVersion(string traits, bool expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenTraitRecord.cs")
+                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal)
+                .Replace("TRAITS", traits, StringComparison.Ordinal));
+        var compilation = DeviceLibraryBuilder.CreateConsumer(s_consumer, library);
+
+        var assembly = Assert.IsAssignableFrom<IAssemblySymbol>(compilation.GetAssemblyOrModuleSymbol(library));
+
+        var imported = Assert.Single(DeviceExportTable.ForAssembly(assembly).Records);
+        Assert.Equal(expected, imported.Record.Traits.ReachesGeneratedMeaning);
     }
 
     // The consumer without the struct use (the hand-written library records only Twice)

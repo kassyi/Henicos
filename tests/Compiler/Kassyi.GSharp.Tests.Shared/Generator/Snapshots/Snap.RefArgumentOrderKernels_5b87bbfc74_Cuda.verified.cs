@@ -139,7 +139,7 @@ __syncthreads();
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__AddAfterChangingIndex(int* __gsharp_id_0_target, GSharpArray<int> __gsharp_id_1_idx){
-__gsharp_array_at(__gsharp_id_1_idx, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(177,9)"")=__gsharp_sub_i32(63,(int)threadIdx.x);
+__gsharp_array_at(__gsharp_id_1_idx, (int)threadIdx.x, ""G#: a null array is read at RefArgumentOrderKernels.cs(177,9)"")=63-(int)threadIdx.x;
 __syncthreads();
 (*__gsharp_id_0_target)=__gsharp_add_i32((*__gsharp_id_0_target),1000);
 }
@@ -777,7 +777,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__RefOrder
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__FieldOfElementIndexWrittenLaterKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__RefOrderCell> __gsharp_id_0_cells, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_j = __gsharp_mul_i32((int)threadIdx.x,2);
+int __gsharp_id_1_j = (int)threadIdx.x*2;
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_cells, __gsharp_id_1_j, 1783803212u).__gsharp_mb_F;
 int __gsharp_seq_1 = __gsharp_sub_i32((__gsharp_id_1_j=__gsharp_add_i32(__gsharp_id_1_j,1)),1);
@@ -1464,7 +1464,7 @@ finally
 #pragma warning restore CS8500
 public const string IndexPassedByRefLaterKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IndexPassedByRefLaterKernel(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_i = __gsharp_mul_i32((int)threadIdx.x,2);
+int __gsharp_id_1_i = (int)threadIdx.x*2;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IncrementSecondThenAdd(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_i, 1318205495u),&__gsharp_id_1_i);
 }
 ";
@@ -1586,7 +1586,7 @@ finally
 #pragma warning restore CS8500
 public const string IndexPassedByRefEarlierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IndexPassedByRefEarlierKernel(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_i = __gsharp_mul_i32((int)threadIdx.x,2);
+int __gsharp_id_1_i = (int)threadIdx.x*2;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__IncrementFirstThenAdd(&__gsharp_id_1_i,&__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_i, 56139298u));
 }
 ";
@@ -2410,7 +2410,7 @@ finally
 #pragma warning restore CS8500
 public const string NestedCallWritesIndexKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__NestedCallWritesIndexKernel(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_i = __gsharp_mul_i32((int)threadIdx.x,2);
+int __gsharp_id_1_i = (int)threadIdx.x*2;
 ([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_i, 344642019u);
 int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__RefArgumentOrderKernels__WaitAndReturnInt(__gsharp_sub_i32((__gsharp_id_1_i=__gsharp_add_i32(__gsharp_id_1_i,1)),1));

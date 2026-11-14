@@ -1,7 +1,9 @@
 // The fixed status the live view is drawn from without a scheduler: by its self-test (self-test-view.ts) and by the
-// screenshots of the README (screenshot.ts). A fixed time, so that the screens are the same on every run.
+// screenshots of the README (screenshot.ts), and the agent chats of the chat panel. A fixed time, so that the screens
+// are the same on every run.
 
 import type { StatusJob, StatusReply } from "./protocol.ts";
+import type { ChatRecord, ChatView } from "./view-chats.ts";
 
 export const Now = Date.UTC(2026, 10, 14, 5, 32, 0);
 export const Minute = 60 * 1000;
@@ -77,6 +79,66 @@ export function sampleReply(): StatusReply {
         startAt: Now + 19 * Minute,
         endAt: Now + 49 * Minute,
       }),
+    ],
+  };
+}
+
+/** The worktrees of the sample: the main checkout and two worktrees under it, spelled as git spells them. */
+export const MainCheckout = "P:/repo";
+export const PanelWorktree = "P:/repo/tmp/worktree/issue-1851-panel";
+export const LaneWorktree = "P:/repo/tmp/worktree/issue-1835";
+
+export function chat(fields: Partial<ChatRecord>): ChatRecord {
+  return {
+    agent: "claude",
+    worktree: MainCheckout,
+    cwd: MainCheckout,
+    state: "waiting",
+    kind: "reply",
+    since: Now,
+    ...fields,
+  };
+}
+
+/**
+ * Four chats that wait (a choice question, a permission, a reply that asks and one that reports; one in the main
+ * checkout) and three that do not, as listChats() returns them: the longest wait first.
+ */
+export function sampleChats(): ChatView {
+  return {
+    mainCheckout: MainCheckout,
+    ignoreCase: true,
+    chats: [
+      chat({
+        agent: "antigravity",
+        since: Now - 41 * Minute,
+        // as chat-status.js records a reply: the paragraph that asks, which agents put at the end
+        question:
+          "Both pull requests change the state file of the queue, and merging them in the wrong order would " +
+          "drop the key of the round-robin;\nwhich one goes first?",
+        asks: true,
+      }),
+      chat({
+        worktree: LaneWorktree,
+        since: Now - 2 * Minute,
+        question: "The three lanes keep running until they finish; each builds and tests through the queue.",
+        asks: false,
+      }),
+      chat({
+        worktree: PanelWorktree,
+        kind: "question",
+        since: Now - 6 * Minute,
+        question: "Where should the chat panel go: below the jobs, or in a column beside them?",
+      }),
+      chat({
+        worktree: LaneWorktree,
+        kind: "permission",
+        since: Now - 40 * 1000,
+        question: "Claude needs your permission to use Bash",
+      }),
+      chat({ state: "working", kind: null, since: Now - 3 * Minute }),
+      chat({ agent: "antigravity", state: "working", kind: null, since: Now - 2 * Minute }),
+      chat({ agent: "antigravity", state: "background", kind: null, since: Now - 8 * Minute }),
     ],
   };
 }
