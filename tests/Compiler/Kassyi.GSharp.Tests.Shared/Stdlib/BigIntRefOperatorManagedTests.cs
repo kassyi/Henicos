@@ -26,5 +26,22 @@ public class BigIntRefOperatorManagedTests : TranspilerTestBase
         Assert.Equal(BigIntRefOperatorCases.ShiftedLeft, left);
         Assert.Equal(BigIntRefOperatorCases.ShiftedRight, right);
     }
+
+    // The managed expansion calls the same C# method as the native build: the result must be that of the unshifted
+    // value. mutant: as in BigIntRefOperatorTests.ShiftOperators_ResultIsTheOperand_ShiftTheUnshiftedValue
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(BigIntRefOperatorCases.Shifts), MemberType = typeof(BigIntRefOperatorCases))]
+    public void Managed_ShiftOperators_ResultIsTheOperand_ShiftTheUnshiftedValue(int shiftBits)
+    {
+        var left = (uint[])BigIntRefOperatorCases.InPlaceInput.Clone();
+        var right = (uint[])BigIntRefOperatorCases.InPlaceInput.Clone();
+
+        ManagedKernelRun.Run(() => BigIntRefOperatorKernels.LaunchInPlaceShiftKernel(left, right, left.Length,
+            shiftBits, blockDimX: 1));
+
+        Assert.Equal(BigIntRefOperatorCases.ExpectedShiftLeft(shiftBits), left);
+        Assert.Equal(BigIntRefOperatorCases.ExpectedShiftRight(shiftBits), right);
+    }
 }
 #endif
