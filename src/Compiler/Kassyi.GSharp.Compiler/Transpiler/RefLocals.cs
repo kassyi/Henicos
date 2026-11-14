@@ -8,7 +8,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// [WHY] The uses of a ref local are already written as <c>(*a)</c> (<c>IdentifierNameTranspiler</c>); a C++ reference
 /// cannot be rebound (<c>a = ref y;</c>), so the local is a pointer. The initializer <c>ref x</c> is the address of
 /// <c>x</c> (a <c>ref</c> / <c>out</c> parameter or another ref local, already a pointer, is not wrapped twice); a
-/// conditional <c>ref (c ? ref a : ref b)</c> is the conditional of the two addresses. A ref local that a <c>goto</c>
+/// conditional <c>ref (c ? ref a : ref b)</c> is the address of the conditional, which the conditional expression
+/// already writes as the dereference of the chosen address. A ref local that a <c>goto</c>
 /// may jump past is declared and assigned apart, as the other locals are (<see cref="GotoJumpAnalysis"/>). Roslyn does
 /// the same in IL: a ref local is a managed pointer local, and the iteration variable of <c>foreach (ref ...)</c> is
 /// declared in the body of each iteration.
@@ -18,14 +19,6 @@ internal static class RefLocals
     /// <summary>Writes the pointer that the ref expression <paramref name="node"/> stands for.</summary>
     public static void AppendReferenced(RefExpressionSyntax node, ref TranspileContext context)
     {
-        // ref (c ? ref a : ref b): the branches write their own addresses
-        if (Unparenthesized(node.Expression) is ConditionalExpressionSyntax conditional &&
-            (conditional.WhenTrue is RefExpressionSyntax || conditional.WhenFalse is RefExpressionSyntax))
-        {
-            context.Visitor.Visit(node.Expression);
-            return;
-        }
-
         RefSyntaxHelper.TranspileAsByRefArgument(ref context, node.Expression);
     }
 
@@ -121,15 +114,5 @@ internal static class RefLocals
         context.Emitter.Writer.AppendIf(local.RefKind == RefKind.RefReadOnly, "const ");
         context.Emitter.Dialect.AppendType(ref context, local.Type);
         context.Emitter.Writer.Append("* ");
-    }
-
-    private static ExpressionSyntax Unparenthesized(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 }
