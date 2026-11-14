@@ -28,13 +28,13 @@ internal static class SharedMemorySiteKey
             throw new InvalidOperationException("A shared memory creation is not mapped to its source declaration.");
         }
 
-        var method = original.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>()
-                     ?? throw new InvalidOperationException("A shared memory creation is not inside a method.");
-        var methodId = model.GetDeclaredSymbol(method)?.GetDocumentationCommentId()
-                       ?? throw new InvalidOperationException("The method that creates shared memory has no symbol.");
+        var body = FindBodyOwner(original)
+                   ?? throw new InvalidOperationException("A shared memory creation is not inside a member body.");
+        var methodId = GetOwnerId(body, model)
+                       ?? throw new InvalidOperationException("The member that creates shared memory has no symbol.");
 
         var ordinal = 0;
-        foreach (var node in method.DescendantNodes())
+        foreach (var node in body.DescendantNodes())
         {
             if (node == original)
             {
@@ -50,8 +50,39 @@ internal static class SharedMemorySiteKey
             }
         }
 
-        throw new InvalidOperationException("A shared memory creation was not found in its method.");
+        throw new InvalidOperationException("A shared memory creation was not found in its member.");
     }
+
+    // The code that holds the creations a key counts: a method, an operator or a constructor, an accessor, and the
+    // expression body of a property or an indexer
+    private static SyntaxNode? FindBodyOwner(SyntaxNode creation)
+    {
+        for (var node = creation.Parent; node != null; node = node.Parent)
+        {
+            if (node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or
+                ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax or IndexerDeclarationSyntax })
+            {
+                return node;
+            }
+        }
+
+        return null;
+    }
+
+    // The documentation comment ID of the method; an accessor has none, so it takes the ID of its property or indexer
+    // and its kind (get, set, init), and the expression body of a property is its getter
+    private static string? GetOwnerId(SyntaxNode body, SemanticModel model) => body switch
+    {
+        BaseMethodDeclarationSyntax method => model.GetDeclaredSymbol(method)?.GetDocumentationCommentId(),
+        AccessorDeclarationSyntax accessor => GetMemberId(model.GetDeclaredSymbol(accessor)?.AssociatedSymbol) is { } id
+            ? $"{id}#{accessor.Keyword.ValueText}"
+            : null,
+        ArrowExpressionClauseSyntax { Parent: MemberDeclarationSyntax member } =>
+            GetMemberId(model.GetDeclaredSymbol(member)) is { } id ? $"{id}#get" : null,
+        _ => null
+    };
+
+    private static string? GetMemberId(ISymbol? member) => member?.GetDocumentationCommentId();
 
     /// <summary>Formats a key as a C++ <c>unsigned long long</c> literal.</summary>
     public static string ToCppLiteral(ulong key) => $"0x{key:x16}ull";
