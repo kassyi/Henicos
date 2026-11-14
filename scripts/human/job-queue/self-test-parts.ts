@@ -16,6 +16,7 @@ export async function checkRegrant(fixture: QueueFixture, port: number): Promise
   const hrrnDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-hrrn-"));
   const longRun = sleeper(20000);
   const shortRun = sleeper(300);
+  const wideRun = sleeper(301);
   fs.writeFileSync(
     path.join(hrrnDir, "history.json"),
     JSON.stringify({
@@ -23,6 +24,8 @@ export async function checkRegrant(fixture: QueueFixture, port: number): Promise
         [RunHistory.key(longRun)]: { runs: [20000], lastUsed: 1 },
         // typical 20 s, longest 30 s: it cannot be backfilled before the running job ends
         [RunHistory.key(shortRun)]: { runs: [10000, 20000, 30000], lastUsed: 1 },
+        // the wide job: a minute, as for a command with no record (a similar command would be guessed from these)
+        [RunHistory.key(wideRun)]: { runs: [60000], lastUsed: 1 },
       },
     }),
   );
@@ -32,7 +35,7 @@ export async function checkRegrant(fixture: QueueFixture, port: number): Promise
     await delay(StartupGraceMs);
     client(port, longRun);
     assert.strictEqual(await usedWithin(port, 1, 5000), 1, "the long job runs before the wide one arrives");
-    client(port, sleeper(301), ["--weight", "2"]); // unknown: one minute; waits for both slots
+    client(port, wideRun, ["--weight", "2"]); // one minute; waits for both slots
     await delay(4000);
     // The short job arrives behind the wide one, which has waited about 4 s longer: their ratios cross about 2 s
     // later ((t + 20) / 20 = (t + 4 + 60) / 60), so it first waits, then starts at a re-grant, not at enqueue.
