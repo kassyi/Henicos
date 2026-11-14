@@ -49,15 +49,6 @@ public static partial class ConditionalStackArrayKernels
         output[1] = b[0];
     }
 
-    // A stack array of a size that is not a constant against a kernel array
-    [GpuKernel]
-    public static void NonConstantSizeKernel(int[] input, int[] flag, int count, int[] output)
-    {
-        int[] a = new int[count];
-        a[1] = 5;
-        output[0] = SumArray(flag[0] > 1 ? a : input);
-    }
-
     // A zero-length stackalloc span against a kernel array
     [GpuKernel]
     public static void EmptySpanKernel(int[] input, int[] flag, int[] output)

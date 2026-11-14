@@ -59,9 +59,9 @@ public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp_
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__ConditionalStackArrayNullableDisabledKernels__SumArray(GSharpArray<int> __gsharp_id_0_values){
 int __gsharp_id_1_total = 0;
-for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at ConditionalStackArrayNullableDisabledKernels.cs(21,29)"").length;__gsharp_id_2_i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_array_ref(__gsharp_id_0_values, ""G#: a null array is read at ConditionalStackArrayNullableDisabledKernels.cs(24,29)"").length;__gsharp_id_2_i++)
 {
-__gsharp_id_1_total=__gsharp_add_i32(__gsharp_id_1_total,__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_2_i, ""G#: a null array is read at ConditionalStackArrayNullableDisabledKernels.cs(23,22)""));
+__gsharp_id_1_total=__gsharp_add_i32(__gsharp_id_1_total,__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_2_i, ""G#: a null array is read at ConditionalStackArrayNullableDisabledKernels.cs(26,22)""));
 }
 return __gsharp_id_1_total;
 }
@@ -91,8 +91,8 @@ public partial class ConditionalStackArrayNullableDisabledKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1787438185u, "ConditionalStackArrayNullableDisabledKernels.cs", 14, 9, "ConditionalKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2017086018u, "ConditionalStackArrayNullableDisabledKernels.cs", 14, 30, "ConditionalKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910586815u, "ConditionalStackArrayNullableDisabledKernels.cs", 17, 9, "ConditionalKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(268776046u, "ConditionalStackArrayNullableDisabledKernels.cs", 17, 30, "ConditionalKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -103,7 +103,7 @@ public const string ConditionalKernel_Source = @"extern ""C"" __global__ void __
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_a[4]{};
 __gsharp_id_3_a[1]=5;
-__gsharp_array_at(__gsharp_id_2_output, 0, 1787438185u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__ConditionalStackArrayNullableDisabledKernels__SumArray((__gsharp_array_at(__gsharp_id_1_flag, 0, 2017086018u)>1?__gsharp_stackalloc_span(__gsharp_id_3_a):__gsharp_id_0_input));
+__gsharp_array_at(__gsharp_id_2_output, 0, 1910586815u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__ConditionalStackArrayNullableDisabledKernels__SumArray((__gsharp_array_at(__gsharp_id_1_flag, 0, 268776046u)>1?__gsharp_stackalloc_span(__gsharp_id_3_a):__gsharp_id_0_input));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConditionalKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__ConditionalStackArrayNullableDisabledKernels__ConditionalKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

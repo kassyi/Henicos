@@ -1650,7 +1650,7 @@ __gsharp_id_6_sAlt1[0]=100;
 __gsharp_id_6_sAlt1[1]=200;
 int __gsharp_id_7_i1 = 0;
 ([&]() {
-auto&& __gsharp_seq_0 = (__gsharp_id_7_i1==0?__gsharp_id_5_s1:__gsharp_id_6_sAlt1);
+auto&& __gsharp_seq_0 = (__gsharp_id_7_i1==0?__gsharp_stackalloc_span(__gsharp_id_5_s1):__gsharp_stackalloc_span(__gsharp_id_6_sAlt1));
 auto __gsharp_seq_1 = (__gsharp_id_7_i1=__gsharp_add_i32(__gsharp_id_7_i1,1));
 return (__gsharp_seq_0)[__gsharp_seq_1]=__gsharp_add_i32((__gsharp_seq_0)[__gsharp_seq_1],__gsharp_id_4_v);
 }());
@@ -1664,7 +1664,7 @@ __gsharp_id_9_sAlt2[0]=100;
 __gsharp_id_9_sAlt2[1]=200;
 int __gsharp_id_10_i2 = 0;
 ([&]() {
-auto&& __gsharp_seq_2 = (__gsharp_id_10_i2==0?__gsharp_id_8_s2:__gsharp_id_9_sAlt2);
+auto&& __gsharp_seq_2 = (__gsharp_id_10_i2==0?__gsharp_stackalloc_span(__gsharp_id_8_s2):__gsharp_stackalloc_span(__gsharp_id_9_sAlt2));
 auto __gsharp_seq_3 = (__gsharp_id_10_i2=__gsharp_add_i32(__gsharp_id_10_i2,1));
 return (__gsharp_seq_2)[__gsharp_seq_3]=__gsharp_add_i32((__gsharp_seq_2)[__gsharp_seq_3],1);
 }());

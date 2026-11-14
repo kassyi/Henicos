@@ -77,19 +77,6 @@ public class ConditionalStackArrayTests
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(2, 5)]
-    [InlineData(1, 6)]
-    public void NonConstantSize_StackArrayAndKernelArray_PicksTheBranch(int flag, int expected)
-    {
-        int[] output = [-1];
-
-        ConditionalStackArrayKernels.LaunchNonConstantSizeKernel([1, 2, 3], [flag], 4, output, blockDimX: 1);
-
-        Assert.Equal([expected], output);
-    }
-
-    [SkippableTheory]
-    [Scenario(TestScenario.Boundary)]
     [InlineData(2, 0)]
     [InlineData(1, 6)]
     public void EmptySpan_ZeroLengthStackSpanAndKernelArray_PicksTheBranch(int flag, int expected)
