@@ -27,7 +27,6 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     {
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Type);
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
-        FailIfObjectVariable(node, typeSymbol, ref context);
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);
 
@@ -54,7 +53,6 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         if (variable == declaration.Variables[0])
         {
             ValidateAndTrackVariableType(typeSymbol, declaration.Type, ref context);
-            FailIfObjectVariable(declaration, typeSymbol, ref context);
         }
 
         WriteDeclaredType(variable, typeSymbol, declaration.Type.IsVar, ref context);
@@ -70,21 +68,6 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         var shouldSplit = node.Parent is LocalDeclarationStatementSyntax or FixedStatementSyntax;
 
         return new VariableMapping(typeSymbol, isVar, isPointer, shouldSplit);
-    }
-
-    // A variable of type object is a reference to a heap object (GSH0003), unless every initializer is the creation of
-    // one, which GSH0001 reports at the creation
-    private static void FailIfObjectVariable(VariableDeclarationSyntax declaration, ITypeSymbol? typeSymbol,
-        ref TranspileContext context)
-    {
-        if (GpuCodeConstraints.IsObject(typeSymbol) &&
-            !declaration.Variables
-                .AsStackEnumerable()
-                .All(static v => v.Initializer?.Value is BaseObjectCreationExpressionSyntax))
-        {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declaration.Type,
-                GpuCodeConstraints.ObjectVariable);
-        }
     }
 
     private static void ValidateAndTrackVariableType(ITypeSymbol? typeSymbol, TypeSyntax typeSyntax,

@@ -21,7 +21,7 @@ public class TypeTestDiagnosticsTests
 
         Assert.Equal(
             [(Analyzer, 17, 9, 17, 15)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "variable of type object"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate"));
         Assert.Equal(
             [(Analyzer, 18, 19, 18, 27)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
@@ -44,7 +44,9 @@ public class TypeTestDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
                 .Where(static r => r.StartLine == 34)
                 .ToList());
-        Assert.Equal(4, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Equal(
+            4,
+            diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id && d.StartLine < 62));
     }
 
     // Line 54 declares a variable of an interface, a reference to a heap object; line 55 declares an array of the
@@ -61,6 +63,35 @@ public class TypeTestDiagnosticsTests
             [(Analyzer, 54, 19, 54, 48)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
                 .Where(static r => r.StartLine == 54)
+                .ToList());
+    }
+
+    // Every place that writes object in a body is reported once, at the type, whatever the value is: a struct, an int,
+    // null, a cast, a type argument, a foreach variable. A creation of a class or an array (lines 64 and 65) is GSH0001
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ObjectType_EveryPlaceInABody_ReportsGsh0003OncePerType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 62, 9, 62, 15),
+                (Analyzer, 63, 9, 63, 15),
+                (Analyzer, 66, 9, 66, 15),
+                (Analyzer, 67, 21, 67, 27),
+                (Analyzer, 68, 14, 68, 20),
+                (Analyzer, 69, 18, 69, 24)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate")
+                .Where(static r => r.StartLine >= 62)
+                .ToList());
+        Assert.Equal(
+            [(Analyzer, 65, 29, 65, 41)],
+            diagnostics.Ranges(GSharpDiagnostics.ObjectCreationNotSupported.Id)
+                .Where(static r => r.StartLine == 65)
                 .ToList());
     }
 }

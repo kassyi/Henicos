@@ -7,7 +7,12 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
 {
     public override void Transpile(IsPatternExpressionSyntax node, ref TranspileContext context)
     {
-        if (TryTranspileTypeOrEmptyPattern(node, ref context))
+        var negated = node.Pattern is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern };
+        var pattern = node.Pattern is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern } not
+            ? not.Pattern
+            : node.Pattern;
+        if (TryTranspileEmptyPattern(node, pattern, negated, ref context) ||
+            TryTranspileTypePattern(node, pattern, negated, ref context))
         {
             return;
         }
@@ -41,28 +46,31 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
         context.Visitor.DefaultVisit(node);
     }
 
-    // x is not T and x is {} / x is not {}: the types decide them as they decide x is T (TypeTests); {} is not null
-    private static bool TryTranspileTypeOrEmptyPattern(IsPatternExpressionSyntax node, ref TranspileContext context)
+    // x is {} and x is not {}: not null for an array or a nullable
+    private static bool TryTranspileEmptyPattern(IsPatternExpressionSyntax node, PatternSyntax pattern, bool negated,
+        ref TranspileContext context)
     {
-        var model = context.Query.SemanticModel;
-        var operandType = model.GetTypeSymbol(node.Expression);
-        var negated = node.Pattern is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern };
-        var pattern = node.Pattern is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern } not
-            ? not.Pattern
-            : node.Pattern;
-        if (pattern is RecursivePatternSyntax
+        if (pattern is not RecursivePatternSyntax
             {
                 Type: null,
                 PositionalPatternClause: null,
                 Designation: null,
                 PropertyPatternClause.Subpatterns.Count: 0
-            } &&
-            NullRepresentation.IsNullComparable(operandType))
+            } ||
+            !NullRepresentation.IsNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Expression)))
         {
-            NullRepresentation.AppendNullTest(node.Expression, isNull: negated, ref context);
-            return true;
+            return false;
         }
 
+        NullRepresentation.AppendNullTest(node.Expression, isNull: negated, ref context);
+        return true;
+    }
+
+    // x is T, x is T _ and x is not T of a type that the types decide (TypeTests), and x is T v with its variable
+    private static bool TryTranspileTypePattern(IsPatternExpressionSyntax node, PatternSyntax pattern, bool negated,
+        ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
         if (pattern is DeclarationPatternSyntax { Designation: SingleVariableDesignationSyntax designation } declaration)
         {
             return TryTranspileDeclaration(node, declaration, designation, ref context);
@@ -79,45 +87,36 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
             return false;
         }
 
-        var plan = TypeTests.Plan(false, operandType, model.GetTypeSymbol(testedType), model.Compilation);
-        if (!negated)
+        var plan = TypeTests.Plan(false, model.GetTypeSymbol(node.Expression), model.GetTypeSymbol(testedType),
+            model.Compilation);
+        if (negated)
         {
-            return TypeTests.TryAppend(in plan, node.Expression, ref context);
+            plan = TypeTests.Negate(in plan);
         }
 
-        switch (plan.Kind)
-        {
-            case TypeTestKind.Constant:
-                var inverted = new TypeTestPlan(TypeTestKind.Constant, !plan.Value);
-                return TypeTests.TryAppend(in inverted, node.Expression, ref context);
-            case TypeTestKind.NotNull:
-                NullRepresentation.AppendNullTest(node.Expression, isNull: true, ref context);
-                return true;
-            default:
-                return false;
-        }
+        return TypeTests.TryAppend(in plan, node.Expression, ref context);
     }
 
     // x is T v and x is not T v: the test and the assignment of v in one expression, the operand evaluated once
     private static bool TryTranspileDeclaration(IsPatternExpressionSyntax node, DeclarationPatternSyntax declaration,
         SingleVariableDesignationSyntax designation, ref TranspileContext context)
     {
-        var model = context.Query.SemanticModel;
-        if (TypeTests.PlanDeclaration(declaration, model) is not var (plan, owner, negated) ||
-            owner != node ||
-            model.GetDeclaredSymbol<ILocalSymbol>(designation) is not { } local ||
-            model.GetTypeSymbol(node.Expression) is not { } operandType)
+        if (TypeTests.PlanDeclaration(declaration, context.Query.SemanticModel) is not var (plan, owner) ||
+            owner != node)
         {
             return false;
         }
 
-        TypeTests.AppendDeclaration(in plan, negated, node.Expression, designation, local.Type, operandType,
-            ref context);
+        TypeTests.AppendDeclaration(in plan, node.Expression, designation, ref context);
         return true;
     }
 
     // A type pattern or a declaration pattern, also under not
     private static bool HasTypeTest(PatternSyntax pattern) =>
         pattern is TypePatternSyntax or DeclarationPatternSyntax or
-            UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern, Pattern: TypePatternSyntax or DeclarationPatternSyntax };
+            UnaryPatternSyntax
+            {
+                RawKind: (int)SyntaxKind.NotPattern,
+                Pattern: TypePatternSyntax or DeclarationPatternSyntax
+            };
 }

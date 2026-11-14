@@ -60,8 +60,9 @@ internal static class GpuCodeConstraints
         _ => null
     };
 
-    /// <summary>The GSH0003 text for a variable of type <see cref="object"/>, a reference to a heap object.</summary>
-    public const string ObjectVariable = "variable of type object (a reference to a heap object)";
+    /// <summary>The GSH0003 text for the type object, Delegate or MulticastDelegate in a body.</summary>
+    public const string HeapObjectType =
+        "type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)";
 
     /// <summary>Whether <paramref name="type"/> is <see cref="object"/>, which device code cannot hold (GSH0003).</summary>
     public static bool IsObject(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_Object };

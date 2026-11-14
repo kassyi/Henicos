@@ -47,6 +47,14 @@ internal static class TypeTests
             : unsupported;
     }
 
+    /// <summary>The plan of the opposite test (<c>is not</c>); an unsupported plan stays unsupported.</summary>
+    public static TypeTestPlan Negate(in TypeTestPlan plan) => plan.Kind switch
+    {
+        TypeTestKind.Constant => plan with { Value = !plan.Value },
+        TypeTestKind.NotNull => plan with { Negated = !plan.Negated },
+        _ => plan
+    };
+
     /// <summary>
     /// Writes <paramref name="plan"/> for <paramref name="operand"/>; false, writing nothing, for an unsupported plan.
     /// </summary>
@@ -58,7 +66,7 @@ internal static class TypeTests
                 AppendConstant(plan.Value, operand, ref context);
                 return true;
             case TypeTestKind.NotNull:
-                NullRepresentation.AppendNullTest(operand, isNull: false, ref context);
+                NullRepresentation.AppendNullTest(operand, isNull: plan.Negated, ref context);
                 return true;
             case TypeTestKind.Operand:
                 context.Visitor.Visit(operand);
@@ -69,11 +77,11 @@ internal static class TypeTests
     }
 
     /// <summary>
-    /// The plan of <paramref name="pattern"/>, the declaration pattern of <c>x is T v</c> or <c>x is not T v</c>, with
-    /// the <c>is</c> expression and whether it is negated; null for a declaration pattern anywhere else (a switch case,
-    /// a nested pattern), which no rule writes.
+    /// The plan of <paramref name="pattern"/>, the declaration pattern of <c>x is T v</c> or <c>x is not T v</c>
+    /// (negated for <c>is not</c>), with the <c>is</c> expression; null for a declaration pattern anywhere else (a
+    /// switch case, a nested pattern), which no rule writes, and for a variable that is not of the operand's own type.
     /// </summary>
-    public static (TypeTestPlan Plan, IsPatternExpressionSyntax Owner, bool Negated)? PlanDeclaration(
+    public static (TypeTestPlan Plan, IsPatternExpressionSyntax Owner)? PlanDeclaration(
         DeclarationPatternSyntax pattern, SemanticModel model)
     {
         var negated = pattern.Parent is UnaryPatternSyntax { RawKind: (int)SyntaxKind.NotPattern };
@@ -85,55 +93,60 @@ internal static class TypeTests
         var operand = model.GetTypeSymbol(owner.Expression);
         var declared = model.GetTypeSymbol(pattern.Type);
         var plan = Plan(false, operand, declared, model.Compilation);
+        var isNullable = operand is INamedTypeSymbol
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+            TypeArguments: [var underlying]
+        };
 
         // The variable has the operand's own type, or the underlying type of a nullable: a variable of an interface or
         // a base type is a reference to a heap object
         var isOwnType = operand is not null && declared is not null &&
-                        (declared.IsEqualTo(operand) || (operand is INamedTypeSymbol
-                        {
-                            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-                            TypeArguments: [var underlying]
-                        } && declared.IsEqualTo(underlying)));
-        return plan.Kind == TypeTestKind.Unsupported || !isOwnType ? null : (plan, owner, negated);
+                        (declared.IsEqualTo(operand) || (isNullable && declared.IsEqualTo(underlying)));
+        if (plan.Kind == TypeTestKind.Unsupported || !isOwnType)
+        {
+            return null;
+        }
+
+        plan = plan with
+        {
+            AssignsVariable = plan.Kind != TypeTestKind.Constant || plan.Value,
+            UnwrapsNullable = isNullable && declared!.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T
+        };
+        return (negated ? Negate(in plan) : plan, owner);
     }
 
     /// <summary>
     /// Writes <c>([&amp;]() { auto __gsharp_seq_n = &lt;operand&gt;; &lt;name&gt; = &lt;value&gt;; return &lt;test&gt;; }())</c>
     /// for <c>x is T name</c> through <see cref="EvaluationOrder"/>: the operand is evaluated once, the variable
-    /// (declared before the statement) gets its value when the test holds, and the sequence gives the test (negated for
-    /// <c>is not</c>). A test that no value passes (<c>n is long</c> on a nullable) assigns nothing.
+    /// (declared before the statement) gets its value when the test holds, and the sequence gives the test.
     /// </summary>
-    public static void AppendDeclaration(in TypeTestPlan plan, bool negated, ExpressionSyntax operand,
-        SingleVariableDesignationSyntax designation, ITypeSymbol declared, ITypeSymbol operandType,
-        ref TranspileContext context)
+    public static void AppendDeclaration(in TypeTestPlan plan, ExpressionSyntax operand,
+        SingleVariableDesignationSyntax designation, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        var isNullableOperand = operandType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
         using var sequence = EvaluationOrder.BeginSequence(writer);
         var temp = EvaluationOrder.DeclareTemp(ref context, operand, reference: false);
-        if (plan.Kind != TypeTestKind.Constant || plan.Value)
+        if (plan.AssignsVariable)
         {
             CppNameResolver.AppendDeclaredName(designation, designation.Identifier, ref context);
             writer.Append(" = ");
             EvaluationOrder.AppendTempName(writer, temp);
-            writer.AppendIf(isNullableOperand && declared.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T,
-                ".Value");
+            writer.AppendIf(plan.UnwrapsNullable, ".Value");
             writer.AppendLine(";");
         }
 
         sequence.Return();
-        writer.AppendIf(negated, "!(");
-        if (plan.Kind == TypeTestKind.NotNull)
-        {
-            EvaluationOrder.AppendTempName(writer, temp);
-            writer.Append(isNullableOperand ? ".HasValue" : ".data != nullptr");
-        }
-        else
+        if (plan.Kind != TypeTestKind.NotNull)
         {
             writer.Append(plan.Value ? "true" : "false");
+            return;
         }
 
-        writer.AppendIf(negated, ")");
+        writer.AppendIf(plan.Negated, "!(");
+        EvaluationOrder.AppendTempName(writer, temp);
+        writer.Append(plan.OperandIsNullable ? ".HasValue" : ".data != nullptr");
+        writer.AppendIf(plan.Negated, ")");
     }
 
     // n is U, n is U? and n is I (an interface that U implements) are n.HasValue; n as U? is n; n is long is false
@@ -146,7 +159,7 @@ internal static class TypeTests
         }
 
         return Boxes(underlying, target, compilation)
-            ? new TypeTestPlan(TypeTestKind.NotNull)
+            ? new TypeTestPlan(TypeTestKind.NotNull, OperandIsNullable: true)
             : new TypeTestPlan(TypeTestKind.Constant, false);
     }
 

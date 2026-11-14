@@ -54,4 +54,20 @@ public static partial class TypeTestKernels
         data[0] = point is ITypeTestShape shape ? 1 : 0;
         data[1] = array is int[] same ? same.Length : 0;
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void ObjectConversionKernel(int[] data, TypeTestPoint point)
+    {
+        object fromStruct = new TypeTestPoint();
+        object fromInt = new int();
+        object fromArray = new int[3];
+        object fromObject = new object();
+        object fromNull = null;
+        var cast = (object)point;
+        Func<object, int> typed = null;
+        foreach (object item in data)
+        {
+        }
+    }
 }
