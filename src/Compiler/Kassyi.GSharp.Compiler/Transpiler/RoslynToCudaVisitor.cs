@@ -280,7 +280,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
+        // A block written without braces is in the C++ scope of the list around it, which declares its locals
+        if (!CppBlockScopes.IsWrittenWithoutBraces(node))
+        {
+            JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
+        }
+
         VisitStatements(node.Statements, 0);
     }
 
@@ -309,10 +314,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
 
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
-            // block with a using declaration or a synthesized iterator scope keeps them.
-            if (statement is BlockSyntax nested &&
-                (UsingTranspiler.DeclaresUsing(nested) ||
-                 nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind)))
+            // block with a using declaration or a synthesized iterator scope keeps them (CppBlockScopes).
+            if (statement is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
             {
                 VisitStatementOrBlock(nested);
             }

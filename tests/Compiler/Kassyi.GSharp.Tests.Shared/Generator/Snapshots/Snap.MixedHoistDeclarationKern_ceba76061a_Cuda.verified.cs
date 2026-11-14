@@ -680,8 +680,10 @@ goto __gsharp_id_8_Done;
 }
 goto __gsharp_id_5_Decl;
 __gsharp_id_5_Decl:
-int __gsharp_id_6_a = __gsharp_id_3_tid;
-int __gsharp_id_7_b = __gsharp_add_i32(__gsharp_id_6_a,1);
+int __gsharp_id_6_a;
+__gsharp_id_6_a = __gsharp_id_3_tid;
+int __gsharp_id_7_b;
+__gsharp_id_7_b = __gsharp_add_i32(__gsharp_id_6_a,1);
 __gsharp_array_at(__gsharp_id_1_p, __gsharp_id_3_tid, 897220700u)=__gsharp_id_7_b;
 __gsharp_id_8_Done:
 __gsharp_id_6_a=7;

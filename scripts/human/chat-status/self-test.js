@@ -2,7 +2,9 @@
 
 // Self-test of chat-status.js (`node scripts/human/chat-status.js --self-test`): the question extraction, every event
 // of both agents on synthetic payloads and transcripts, the PreInvocation-after-Stop rule, fullyIdle, the atomic write,
-// the 12-hour drop and the order of listChats, and the hook as a child process (exit code 0 and what it prints).
+// the 12-hour drop and the order of listChats, and the hook as a child process (exit code 0 and what it prints);
+// self-test-summary.js adds the summaries (finding the CLI, the prompt, the summarizer with a fake CLI, the guards),
+// self-test-antigravity.js what is read from Antigravity's files (subagents, titles).
 // It writes only under <repository>/tmp/chat-status-self-test-<pid>/ and removes it at the end.
 
 const assert = require('assert');
@@ -392,11 +394,11 @@ check('listChats: drops entries older than 12 hours, waiting first, the longest 
 
 // --- the hook as a process ------------------------------------------------------------------------------------------
 
-function runHook(directory, input) {
+function runHook(directory, input, env = {}) {
   return spawnSync(process.execPath, [Script, '--hook'], {
     input,
     encoding: 'utf8',
-    env: { ...process.env, GSHARP_CHAT_STATUS_DIR: directory },
+    env: { ...process.env, GSHARP_CHAT_STATUS_DIR: directory, ...env },
     timeout: 20000,
     windowsHide: true,
   });
@@ -432,7 +434,13 @@ check('hook process: a directory that cannot be created still gives exit 0 and n
   assert.deepStrictEqual([result.status, result.stdout], [0, '']);
 });
 
+const summaryHelpers = { freshDirectory, readChat, writeJsonl, claude, antigravity, runHook };
+checks.push(...require('./self-test-summary.js').summaryChecks(summaryHelpers));
+checks.push(...require('./self-test-antigravity.js').antigravityChecks(summaryHelpers));
+
 function selfTest() {
+  // No check may reach the real Claude Code CLI: summaries are off unless a check names its fake CLI
+  process.env.GSHARP_CHAT_STATUS_SUMMARY = '0';
   const root = path.join(RepositoryRoot, 'tmp', `chat-status-self-test-${process.pid}`);
   fs.rmSync(root, { recursive: true, force: true });
   fs.mkdirSync(root, { recursive: true });
