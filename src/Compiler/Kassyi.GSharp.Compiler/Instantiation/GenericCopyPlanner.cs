@@ -165,8 +165,9 @@ internal static class GenericCopyPlanner
         {
             for (var i = 0; i < Helpers.Count; i++)
             {
-                if (Helpers[i].ByReference == helper.ByReference && Helpers[i].ClosedType.IsEqualTo(helper.ClosedType) &&
-                    Helpers[i].Member.IsEqualTo(helper.Member))
+                var known = Helpers[i];
+                if (known.ByReference == helper.ByReference && known.ClosedType.IsEqualTo(helper.ClosedType) &&
+                    known.Member.IsEqualTo(helper.Member))
                 {
                     return i;
                 }
