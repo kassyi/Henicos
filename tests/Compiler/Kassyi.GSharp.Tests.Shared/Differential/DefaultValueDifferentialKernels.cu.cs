@@ -204,4 +204,48 @@ public static unsafe partial class DefaultValueDifferentialKernels
 
         dst[t] = p == null ? 1 : *p;
     }
+
+    [GpuKernel]
+    public static void DefaultConvertedToNullableKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        // The default of int is 0, which converts to a nullable that has a value; a default literal is the null nullable
+        int? q = default(int);
+        int? assigned = a[t];
+        assigned = default(int);
+        long? widened = default(int);
+        int? literal = default;
+
+        int col = t * 4;
+        dst[col + 0] = q.HasValue ? 1 : 0;
+        dst[col + 1] = assigned.HasValue ? 1 : 0;
+        dst[col + 2] = widened.HasValue ? 1 : 0;
+        dst[col + 3] = literal.HasValue ? 1 : 0;
+    }
+
+    [GpuDeviceFunction]
+    public static int AddOmittedIn(int value, in int extra = default) => value + extra + 1;
+
+    [GpuDeviceFunction]
+    public static long AddOmittedInConstant(int value, in long extra = 5) => value + extra;
+
+    [GpuKernel]
+    public static void DefaultOmittedInArgumentKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        int col = t * 3;
+        dst[col + 0] = AddOmittedIn(a[t]);
+        dst[col + 1] = AddOmittedIn(a[t], 4);
+        dst[col + 2] = (int)AddOmittedInConstant(a[t]);
+    }
 }

@@ -35,6 +35,7 @@ public class DefaultValueTests
     [InlineData(nameof(DefaultPositionCases.TypedLocalInitializer))]
     [InlineData(nameof(DefaultPositionCases.SimpleAssignmentRight))]
     [InlineData(nameof(DefaultPositionCases.TypedLocalInitializerOfDefaultExpression))]
+    [InlineData(nameof(DefaultPositionCases.NullableDeclarationOfADefaultLiteral))]
     [Scenario(TestScenario.HappyPath)]
     public void Plan_WhereABracedListMayStand_IsBraced(string caller)
     {
@@ -56,6 +57,9 @@ public class DefaultValueTests
     [InlineData(nameof(DefaultPositionCases.ReturnValue), "Int64")]
     [InlineData(nameof(DefaultPositionCases.ArgumentOfACall), "UInt64")]
     [InlineData(nameof(DefaultPositionCases.MemberAccessTarget), "DefaultPositionPair")]
+    [InlineData(nameof(DefaultPositionCases.NullableDeclarationOfADefaultExpression), "Int32")]
+    [InlineData(nameof(DefaultPositionCases.WideNullableDeclarationOfADefaultExpression), "Int32")]
+    [InlineData(nameof(DefaultPositionCases.NullableAssignmentOfADefaultExpression), "Int32")]
     [Scenario(TestScenario.HappyPath)]
     public void Plan_WhereNoBracedListMayStand_IsTheTypedValueOfTheConvertedType(string caller, string type)
     {
@@ -63,7 +67,8 @@ public class DefaultValueTests
 
         var plan = DefaultValue.Plan(node, model);
 
-        // mutant: IsBracedListPosition: return true for a compound assignment, a return, or a parenthesized right side
+        // mutant: Plan: drop the check that the default and its target have the same type, or IsBracedListPosition: return true
+        // for a compound assignment, a return, or a parenthesized right side
         Assert.Equal(DefaultValueForm.Typed, plan.Form);
         Assert.Equal(type, plan.Type?.Name);
     }
@@ -149,6 +154,26 @@ internal static class DefaultPositionCases
     public static void ComparisonOperand(byte b)
     {
         bool e = b == default(byte);
+    }
+
+    public static void NullableDeclarationOfADefaultExpression()
+    {
+        int? q = default(int);
+    }
+
+    public static void WideNullableDeclarationOfADefaultExpression()
+    {
+        long? l = default(int);
+    }
+
+    public static void NullableAssignmentOfADefaultExpression(int? n)
+    {
+        n = default(int);
+    }
+
+    public static void NullableDeclarationOfADefaultLiteral()
+    {
+        int? q = default;
     }
 
     public static long ReturnValue()

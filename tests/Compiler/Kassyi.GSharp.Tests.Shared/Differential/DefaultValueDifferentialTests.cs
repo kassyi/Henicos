@@ -77,6 +77,18 @@ public class DefaultValueDifferentialTests
         static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultPointerKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
+    internal static readonly DifferentialCase s_convertedToNullable = Case(
+        nameof(DefaultValueDifferentialKernels.DefaultConvertedToNullableKernel),
+        ["declaration", "assignment", "widened", "literal"],
+        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultConvertedToNullableKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+
+    internal static readonly DifferentialCase s_omittedIn = Case(
+        nameof(DefaultValueDifferentialKernels.DefaultOmittedInArgumentKernel),
+        ["omitted_default", "given", "omitted_constant"],
+        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultOmittedInArgumentKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
@@ -134,4 +146,18 @@ public class DefaultValueDifferentialTests
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
     public void DefaultValue_OfAPointer_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_pointer);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void DefaultValue_OfTheUnderlyingTypeConvertedToANullable_HasAValue() =>
+        DifferentialRunner.Run(s_convertedToNullable);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void DefaultValue_AsAnOmittedInArgument_PassesTheAddressOfATemporary() =>
+        DifferentialRunner.Run(s_omittedIn);
 }

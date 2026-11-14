@@ -34,14 +34,17 @@ internal static class DefaultValue
     /// </exception>
     public static DefaultValuePlan Plan(ExpressionSyntax node, SemanticModel model)
     {
-        if (IsBracedListPosition(node))
+        var type = node is DefaultExpressionSyntax
+            ? model.GetTypeSymbol(node)
+            : model.GetConvertedTypeSymbol(node);
+        // {} initializes the target, so it is the value of the default only when the target has the default's own type:
+        // int? q = {} is null, and int? q = default(int) is 0, which __gsharp_type<int>{} converts to
+        if (IsBracedListPosition(node) && (node is not DefaultExpressionSyntax || type is null ||
+                                           type.IsEqualTo(model.GetConvertedTypeSymbol(node))))
         {
             return new DefaultValuePlan(DefaultValueForm.Braced, null);
         }
 
-        var type = node is DefaultExpressionSyntax
-            ? model.GetTypeSymbol(node)
-            : model.GetConvertedTypeSymbol(node);
         if (type != null)
         {
             return new DefaultValuePlan(DefaultValueForm.Typed, type);
