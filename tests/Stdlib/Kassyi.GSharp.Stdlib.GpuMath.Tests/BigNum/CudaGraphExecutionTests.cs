@@ -339,6 +339,14 @@ public class CudaGraphExecutionTests
             ArrayPool<uint>.Shared.Return(reused);
 
             Assert.Equal(new uint[] { 1, 2, 0, 0, 0, 0, 7, 8 }, value.ToHostArray());
+
+            // A second replay clears the range again after it was overwritten
+            uint[] nines = [9, 9, 9, 9, 9, 9, 9, 9];
+            ctx.Provider.CopyHostToDevice(value.DevicePointer, nines, Words, ctx.Stream);
+            ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+            Assert.Equal(new uint[] { 9, 9, 0, 0, 0, 0, 9, 9 }, value.ToHostArray());
         }
         finally
         {
@@ -387,6 +395,58 @@ public class CudaGraphExecutionTests
         {
             ctx.Provider.DestroyGraph(graph, graphExec);
             power.Dispose();
+        }
+    }
+
+    // A captured GpuBigFloatArray.SetElement writes the exponent and the sign with their values, not a host word: the
+    // launched graph stores exponent 5 and the negative sign even after the pool handed out, and overwrote, the word
+    // SetElement used to rent.
+    // mutant: SetElement copying a word rented from ArrayPool<uint>.Shared (the old code) -> exponent and sign read
+    // 0xFFFFFFFF
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void SetElement_CapturedInGraph_WritesExponentAndSignAfterThePoolReusesItsWord()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int Words = 2;
+        using var ctx = new GpuWorkspace(Words * 8, GpuExecutionEngine.GSharpAot);
+        using var array = new GpuBigFloatArray(ctx, 2, Words);
+        // A significand as wide as the element: the copy is device to device, with no clear and no host read
+        using var value = new GpuBigFloat(new GpuBigUInt(ctx, new uint[] { 7, 3 }), 5, isNegative: true);
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+        ctx.Provider.BeginCapture(ctx.Stream);
+        array.SetElement(1, value);
+        var graph = ctx.Provider.EndCapture(ctx.Stream);
+        var graphExec = ctx.Provider.InstantiateGraph(graph);
+        try
+        {
+            for (var launch = 0; launch < 2; launch++)
+            {
+                // The words the graph writes hold something else before each launch
+                ctx.Provider.CopyHostToDevice(array.Exponents.GetElement(1).DevicePointer, new uint[] { 9 }, 1,
+                    ctx.Stream);
+                ctx.Provider.CopyHostToDevice(array.Signs.GetElement(1).DevicePointer, new uint[] { 9 }, 1, ctx.Stream);
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+                // The same size on the same thread: the pool hands back the word SetElement rented, if it rented one
+                var reused = ArrayPool<uint>.Shared.Rent(1);
+                reused.AsSpan().Fill(0xFFFFFFFFu);
+                ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+                ArrayPool<uint>.Shared.Return(reused);
+
+                Assert.Equal(new BigInteger(5), array.Exponents.GetElement(1).ToBigInteger());
+                Assert.Equal(BigInteger.One, array.Signs.GetElement(1).ToBigInteger());
+                var significand = new BigInteger(7) + (new BigInteger(3) << 32);
+                Assert.Equal(significand, array.Significands.GetElement(1).ToBigInteger());
+            }
+        }
+        finally
+        {
+            ctx.Provider.DestroyGraph(graph, graphExec);
         }
     }
 }
