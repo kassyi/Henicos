@@ -26,9 +26,23 @@ internal static class JumpedOverDeclarations
             Type: not RefTypeSyntax,
             Parent: LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.None, IsConst: false } statement
         } &&
-        IsArrayOrHasCppDefaultConstructor(declarator, statement, semanticModel) &&
-        GotoJumpAnalysis.MayBeJumpedOver(statement) &&
+        (IsHoistedByAJump(declarator, statement, semanticModel) ||
+         IsCapturedAhead(declarator, statement, semanticModel)) &&
         !SwitchSectionLocals.IsDeclaredBeforeSwitch(declarator, semanticModel);
+
+    // A type with a C++ default constructor that a goto jumps past
+    private static bool IsHoistedByAJump(VariableDeclaratorSyntax declarator, LocalDeclarationStatementSyntax statement,
+        SemanticModel semanticModel) =>
+        IsArrayOrHasCppDefaultConstructor(declarator, statement, semanticModel) &&
+        GotoJumpAnalysis.MayBeJumpedOver(statement);
+
+    // A local that a local function captures, written in front of the declaration (LocalFunctionPlan): any type that
+    // C++ declares first and assigns later
+    private static bool IsCapturedAhead(VariableDeclaratorSyntax declarator, LocalDeclarationStatementSyntax statement,
+        SemanticModel semanticModel) =>
+        semanticModel.GetDeclaredSymbol<ILocalSymbol>(declarator) is { } local &&
+        SwitchSectionLocals.CanDeclareLocal(local, declarator.Initializer?.Value) &&
+        LocalFunctionPlan.IsDeclaredAhead(statement, semanticModel);
 
     // An array alias (int[] a = input, a Span<T> over an array) is a GSharpArray<T>, which has a default constructor; a
     // stack array (new T[N], stackalloc) is a C++ array that keeps its own form (zero fill, VariableDeclarationTranspilerRule)

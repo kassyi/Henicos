@@ -81,4 +81,60 @@ public static partial class LocalFunctionOrderKernels
 
         int Next(int x) => x + 500;
     }
+
+    // The first use of the function is in unreachable code, above the declaration of the local that it captures
+    [GpuKernel]
+    public static void UnreachableCallBeforeCapturedDeclarationKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Captured();
+        }
+#pragma warning restore CS0162
+
+        int z = 5;
+        data[tid] += Captured();
+
+        int Captured() => z;
+    }
+
+    // Two captured locals of different types: a scalar and an array alias
+    [GpuKernel]
+    public static void UnreachableCallTwoCapturedLocalsKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Total();
+        }
+#pragma warning restore CS0162
+
+        int a = 3;
+        int[] alias = data;
+        data[tid] += Total();
+
+        int Total() => a + alias.Length;
+    }
+
+    // The captured local is used by a function that the unreachable use reaches only through another function
+    [GpuKernel]
+    public static void UnreachableCallThroughAFunctionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Outer();
+        }
+#pragma warning restore CS0162
+
+        int z = 2;
+        data[tid] += Outer();
+
+        int Outer() => Inner() * 2;
+        int Inner() => z + 1;
+    }
 }
