@@ -8,12 +8,15 @@ namespace Kassyi.GSharp.Tests.Shared.Instantiation;
 
 /// <summary>
 /// Verifies the closed copies of generic declarations: the planned rewrites keep each call and operator bound to what
-/// the declaration binds, and the check rejects a copy that binds something else.
+/// the declaration binds, and the copies compute what the generic methods compute.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class GenericCopiesTests
 {
     private static readonly string s_source = RoslynTestUtility.ReadTestCase("Instantiation/GenericCopySource.cs");
+
+    // The smallest set of values of a type (nuint) that a method is run with
+    private const int MinimumInputs = 9;
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -66,6 +69,39 @@ public class GenericCopiesTests
     [InlineData("CheckedMultiply", "System.UInt16")]
     [InlineData("Complement", "System.Byte")]
     [InlineData("ShiftAssign", "System.Int32")]
+    [InlineData("ShiftAssign", "System.Byte")]
+    [InlineData("ShiftAssignRightUnsigned", "System.SByte")]
+    [InlineData("CompoundDivide", "System.SByte")]
+    [InlineData("CheckedCompoundDivide", "System.Int16")]
+    [InlineData("CompoundDivideAt", "System.SByte")]
+    [InlineData("CheckedCompoundAdd", "System.Byte")]
+    [InlineData("Increment", "System.Byte")]
+    [InlineData("CheckedIncrement", "System.SByte")]
+    [InlineData("MinValue", "System.Int32")]
+    [InlineData("MaxValue", "System.UInt64")]
+    [InlineData("MaxValue", "System.Char")]
+    [InlineData("MinValue", "System.Decimal")]
+    [InlineData("Pi", "System.Single")]
+    [InlineData("Pi", "System.Double")]
+    [InlineData("Identities", "System.Decimal")]
+    [InlineData("Abs", "System.UInt32")]
+    [InlineData("Abs", "System.Int16")]
+    [InlineData("MaxMagnitude", "System.UInt64")]
+    [InlineData("MaxMagnitude", "System.Char")]
+    [InlineData("IsNaN", "System.Int32")]
+    [InlineData("IsNaN", "System.Double")]
+    [InlineData("Sign", "System.Char")]
+    [InlineData("Max", "System.Char")]
+    [InlineData("Min", "System.Char")]
+    [InlineData("OneOverZero", "System.Int32")]
+    [InlineData("CheckedMaxValuePlusOne", "System.Byte")]
+    [InlineData("CompareTo", "System.Int32")]
+    [InlineData("CompareTo", "System.Char")]
+    [InlineData("CallFoo", "App.Plain")]
+    [InlineData("Sum", "System.Int64")]
+    [InlineData("Sum", "System.IntPtr")]
+    [InlineData("Sum", "System.Decimal")]
+    [InlineData("CheckedSum", "System.UIntPtr")]
     [InlineData("Locals", "System.Int32")]
     [InlineData("Recurse", "System.Int32")]
     public void Create_SupportedForm_GivesACopyThatCompiles(string method, string typeArgument)
@@ -83,7 +119,9 @@ public class GenericCopiesTests
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("Sum", "App.Odd", "implements", "a + b")]
-    [InlineData("ShiftAssign", "System.Byte", "compound shift", "a <<= n")]
+    [InlineData("CompoundDivideWithEffect", "System.SByte", "has side effects", "data[i++] /= b")]
+    [InlineData("CallFoo", "App.Both", "explicitly", "x.M()")]
+    [InlineData("CallDefault", "App.Defaulted", "default implementation", "x.M()")]
     public void Create_FormWithoutAClosedSpelling_ReportsItsNode(
         string method,
         string typeArgument,
@@ -115,6 +153,9 @@ public class GenericCopiesTests
     [InlineData("CheckedNegate", "System.SByte")]
     [InlineData("ShiftRightUnsigned", "System.Int16")]
     [InlineData("Identities", "System.Int32")]
+    [InlineData("OneOverZero", "System.Int32")]
+    [InlineData("CompoundDivide", "System.SByte")]
+    [InlineData("MaxMagnitude", "System.Char")]
     [InlineData("Locals", "System.Int32")]
     public void Create_EveryNodeOfTheCopy_CarriesAnOriginalSpanInsideTheDeclaration(string method, string typeArgument)
     {
@@ -134,32 +175,118 @@ public class GenericCopiesTests
 
     // The emitted copy computes what the generic method computes, for every input of the small types: the narrowing
     // forms, the shift masks and the checked forms (exceptions included)
+    // The generic methods that are run with a type of 8 or 16 bits: every value of the 8-bit types, a spread of the
+    // 16-bit ones with the corners of each
+    public static TheoryData<string, string> SmallTypeCases { get; } = new()
+    {
+        { "Sum", "System.Byte" },
+        { "Sum", "System.SByte" },
+        { "CheckedSum", "System.SByte" },
+        { "CheckedSum", "System.Byte" },
+        { "CheckedMultiply", "System.Int16" },
+        { "CheckedMultiply", "System.UInt16" },
+        { "CheckedDivide", "System.SByte" },
+        { "CheckedDivide", "System.Int16" },
+        { "Negate", "System.SByte" },
+        { "Negate", "System.Byte" },
+        { "CheckedNegate", "System.SByte" },
+        { "Complement", "System.SByte" },
+        { "Complement", "System.Char" },
+        { "Shift", "System.Byte" },
+        { "Shift", "System.Int16" },
+        { "ShiftRight", "System.SByte" },
+        { "ShiftRightUnsigned", "System.SByte" },
+        { "ShiftRightUnsigned", "System.Int16" },
+        { "ShiftRightUnsigned", "System.Char" },
+        { "CompoundDivide", "System.SByte" },
+        { "CompoundDivide", "System.Int16" },
+        { "CheckedCompoundDivide", "System.SByte" },
+        { "CheckedCompoundDivide", "System.Int16" },
+        { "CheckedCompoundDivide", "System.Byte" },
+        { "CheckedCompoundAdd", "System.SByte" },
+        { "CheckedCompoundAdd", "System.UInt16" },
+        { "ShiftAssign", "System.Byte" },
+        { "ShiftAssign", "System.SByte" },
+        { "ShiftAssign", "System.Int16" },
+        { "ShiftAssign", "System.Char" },
+        { "ShiftAssignRightUnsigned", "System.SByte" },
+        { "ShiftAssignRightUnsigned", "System.Int16" },
+        { "Increment", "System.Byte" },
+        { "CheckedIncrement", "System.SByte" },
+        { "CheckedIncrement", "System.UInt16" },
+        { "MinValue", "System.SByte" },
+        { "MaxValue", "System.Int16" },
+        { "Abs", "System.Byte" },
+        { "Abs", "System.Char" },
+        { "Abs", "System.Int16" },
+        { "MaxMagnitude", "System.UInt16" },
+        { "MaxMagnitude", "System.Char" },
+        { "MaxMagnitude", "System.SByte" },
+        { "IsNaN", "System.Byte" },
+        { "IsNaN", "System.Char" },
+        { "Sign", "System.Char" },
+        { "Max", "System.Char" },
+        { "Min", "System.Char" },
+        { "OneOverZero", "System.Byte" },
+        { "CheckedMaxValuePlusOne", "System.Byte" },
+        { "CompareTo", "System.Char" },
+    };
+
+    // The same with the integer types of 32 bits or more: the corners of each width
+    public static TheoryData<string, string> WideTypeCases { get; } = new()
+    {
+        { "Negate", "System.UInt32" },
+        { "CheckedNegate", "System.UInt64" },
+        { "Identities", "System.Int32" },
+        { "MaxValue", "System.UInt64" },
+        { "Abs", "System.UInt32" },
+        { "MaxMagnitude", "System.UInt32" },
+        { "IsNaN", "System.Int32" },
+        { "Sign", "System.Int64" },
+        { "OneOverZero", "System.Int32" },
+        { "CheckedMaxValuePlusOne", "System.Int32" },
+        { "CheckedMaxValuePlusOne", "System.Int64" },
+        { "CompareTo", "System.Int32" },
+        { "Sum", "System.Int32" },
+        { "Sum", "System.Int64" },
+        { "Sum", "System.IntPtr" },
+        { "Sum", "System.UIntPtr" },
+        { "CheckedSum", "System.Int64" },
+        { "CheckedSum", "System.UIntPtr" },
+        { "Negate", "System.Int64" },
+        { "Negate", "System.UInt64" },
+        { "Negate", "System.UIntPtr" },
+        { "CheckedNegate", "System.Int32" },
+        { "CheckedDivide", "System.Int64" },
+        { "CheckedMultiply", "System.Int32" },
+        { "Shift", "System.UInt32" },
+        { "ShiftRightUnsigned", "System.Int64" },
+    };
+
+    // The same with the floating point types and decimal: NaN, infinities, signed zero, the corners
+    public static TheoryData<string, string> RealTypeCases { get; } = new()
+    {
+        { "Identities", "System.Double" },
+        { "Identities", "System.Decimal" },
+        { "MinValue", "System.Single" },
+        { "MaxValue", "System.Decimal" },
+        { "Pi", "System.Single" },
+        { "Pi", "System.Double" },
+        { "IsNaN", "System.Single" },
+        { "Max", "System.Double" },
+        { "Min", "System.Single" },
+        { "OneOverZero", "System.Decimal" },
+        { "Sum", "System.Single" },
+        { "Sum", "System.Double" },
+        { "Sum", "System.Decimal" },
+    };
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("Sum", "System.Byte")]
-    [InlineData("Sum", "System.SByte")]
-    [InlineData("CheckedSum", "System.SByte")]
-    [InlineData("CheckedSum", "System.Byte")]
-    [InlineData("CheckedMultiply", "System.Int16")]
-    [InlineData("CheckedMultiply", "System.UInt16")]
-    [InlineData("CheckedDivide", "System.SByte")]
-    [InlineData("CheckedDivide", "System.Int16")]
-    [InlineData("Negate", "System.SByte")]
-    [InlineData("Negate", "System.Byte")]
-    [InlineData("Negate", "System.UInt32")]
-    [InlineData("CheckedNegate", "System.SByte")]
-    [InlineData("CheckedNegate", "System.UInt64")]
-    [InlineData("Complement", "System.SByte")]
-    [InlineData("Complement", "System.Char")]
-    [InlineData("Shift", "System.Byte")]
-    [InlineData("Shift", "System.Int16")]
-    [InlineData("ShiftRight", "System.SByte")]
-    [InlineData("ShiftRightUnsigned", "System.SByte")]
-    [InlineData("ShiftRightUnsigned", "System.Int16")]
-    [InlineData("ShiftRightUnsigned", "System.Char")]
-    [InlineData("Identities", "System.Int32")]
-    [InlineData("Identities", "System.Double")]
-    public void Emit_NarrowedOperator_ComputesWhatGenericMathComputes(string method, string typeArgument)
+    [MemberData(nameof(SmallTypeCases))]
+    [MemberData(nameof(WideTypeCases))]
+    [MemberData(nameof(RealTypeCases))]
+    public void Emit_Copy_ComputesWhatGenericMathComputes(string method, string typeArgument)
     {
         var (copy, set) = CreateCopy(method, typeArgument);
         Assert.True(copy.IsFaithful, Describe(copy));
@@ -172,9 +299,11 @@ public class GenericCopiesTests
         var kernels = System.Reflection.Assembly.Load(stream.ToArray()).GetType("App.Kernels") ??
                       throw new InvalidOperationException("No App.Kernels in the emitted assembly.");
         var type = Type.GetType(typeArgument) ?? throw new InvalidOperationException(typeArgument);
-        var generic = kernels.GetMethod(method)?.MakeGenericMethod(type) ?? throw new InvalidOperationException(method);
+        var definition = kernels.GetMethod(method) ?? throw new InvalidOperationException(method);
+        var generic = definition.MakeGenericMethod(type);
         var closed = kernels.GetMethod(copyName) ?? throw new InvalidOperationException(copyName);
-        var takesCount = generic.GetParameters() is [_, { ParameterType: var second }] && second == typeof(int);
+        // A second parameter that is not of the type argument is a shift count
+        var takesCount = definition.GetParameters() is [_, { ParameterType.IsGenericParameter: false }];
         var arity = generic.GetParameters().Length;
 #pragma warning restore RS0030
 
@@ -185,7 +314,7 @@ public class GenericCopiesTests
             compared++;
         }
 
-        Assert.True(compared >= (arity == 0 ? 1 : 100), $"only {compared} inputs");
+        Assert.True(compared >= (arity == 0 ? 1 : MinimumInputs), $"only {compared} inputs");
     }
 
     private static string Run(System.Reflection.MethodBase method, object[] arguments)
@@ -217,7 +346,7 @@ public class GenericCopiesTests
         }
 
         var second = takesCount ? Enumerable.Range(-40, 81).Select(n => (object)n).ToArray()
-            : type == typeof(byte) || type == typeof(sbyte) ? values
+            : values.Length <= 300 ? values
             : values.Where((_, i) => i % 97 == 0).ToArray();
         return values.SelectMany(a => second.Select(b => new[] { a, b }));
     }
@@ -261,6 +390,57 @@ public class GenericCopiesTests
                 .Concat(Enumerable.Range(0, 200).Select(i => (object)(ulong)(i * 92233720368547758L)));
         }
 
+        if (type == typeof(int))
+        {
+            return new[]
+            {
+                int.MinValue, -123456789, -32769, -32768, -129, -128, -2, -1, 0, 1, 2, 7, 8, 9, 31, 32, 33, 127, 128,
+                255, 256, 32767, 32768, 65535, 65536, 123456789, int.MaxValue - 1, int.MaxValue,
+            }.Select(v => (object)v);
+        }
+
+        if (type == typeof(long))
+        {
+            return new[] { long.MinValue, int.MinValue - 1L, -2L, -1L, 0L, 1L, 2L, 63L, 64L, 65L, int.MaxValue + 1L,
+                long.MaxValue - 1, long.MaxValue }.Select(v => (object)v);
+        }
+
+        if (type == typeof(nint))
+        {
+            return new nint[] { nint.MinValue, -2, -1, 0, 1, 2, 63, 64, 65, nint.MaxValue - 1, nint.MaxValue }
+                .Select(v => (object)v);
+        }
+
+        if (type == typeof(nuint))
+        {
+            return new nuint[] { 0, 1, 2, 63, 64, 65, nuint.MaxValue / 2, nuint.MaxValue - 1, nuint.MaxValue }
+                .Select(v => (object)v);
+        }
+
+        if (type == typeof(float))
+        {
+            return new[]
+            {
+                float.NaN, float.NegativeInfinity, float.MinValue, -1.5f, -1f, -0f, 0f, float.Epsilon, 0.5f, 1f, 2f,
+                7.25f, float.MaxValue, float.PositiveInfinity,
+            }.Select(v => (object)v);
+        }
+
+        if (type == typeof(double))
+        {
+            return new[]
+            {
+                double.NaN, double.NegativeInfinity, double.MinValue, -1.5, -1d, -0d, 0d, double.Epsilon, 0.5, 1d, 2d,
+                7.25, double.MaxValue, double.PositiveInfinity,
+            }.Select(v => (object)v);
+        }
+
+        if (type == typeof(decimal))
+        {
+            return new[] { decimal.MinValue, -1.5m, -1m, 0m, 0.5m, 1m, 2m, 7.25m, decimal.MaxValue }
+                .Select(v => (object)v);
+        }
+
         throw new InvalidOperationException($"No inputs for {type}.");
     }
 
@@ -299,7 +479,7 @@ public class GenericCopiesTests
 
     // Every 61st value of a 16-bit type, and its edges
     private static IEnumerable<int> Spread() =>
-        Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528);
+        Enumerable.Range(0, 65536).Where(i => i % 61 == 0 || i < 8 || i > 65528 || i is >= 32760 and <= 32775);
 
     private static SemanticModel ModelOf(GenericCopySet set, SyntaxNode node) =>
         set.Compilation.GetSemanticModel(node.SyntaxTree);
