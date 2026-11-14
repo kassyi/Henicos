@@ -130,6 +130,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         base.VisitLiteralExpression(node);
     }
 
+    public override void VisitCastExpression(CastExpressionSyntax node)
+    {
+        Analyze(node);
+        base.VisitCastExpression(node);
+    }
+
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
     {
         Analyze(node);
