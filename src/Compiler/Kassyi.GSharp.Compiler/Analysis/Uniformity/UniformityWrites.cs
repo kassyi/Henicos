@@ -35,29 +35,45 @@ internal static class UniformityWrites
             case ITupleOperation tuple:
                 AllocateElements(values, node, tuple, graph);
                 break;
-            case ILocalReferenceOperation local:
-                AddWritten(node, values.ValueOf(local.Local));
+            case ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation:
+                AddNamedWrite(values, node, operation);
                 break;
-            case IParameterReferenceOperation parameter:
-                AddWritten(node, values.ValueOf(parameter.Parameter));
+            case IFieldReferenceOperation or IPropertyReferenceOperation:
+                AddMemberWrite(values, node, operation, graph);
                 break;
-            case IInstanceReferenceOperation { Type: { } self }:
-                AddWritten(node, values.ValueOf(self));
-                break;
-            case IFieldReferenceOperation or IPropertyReferenceOperation
-                when GetStructRoot(operation) is IFlowCaptureReferenceOperation capture:
-                AddWritten(node, values.CaptureRootOf(capture, graph));
-                foreach (var alias in values.GetRootAliases(capture))
-                {
-                    AddWritten(node, values.ValueOf(alias));
-                }
+        }
+    }
 
-                break;
-            case IFieldReferenceOperation or IPropertyReferenceOperation
-                when GetStructRoot(operation) is { } root &&
-                     GetRootSymbol(root) is { } symbol:
-                AddWritten(node, values.ValueOf(symbol));
-                break;
+    // A local, a parameter or the <c>this</c> of a struct member is written
+    private static void AddNamedWrite(UniformityValues values, UniformityNode node, IOperation operation)
+    {
+        if (GetRootSymbol(operation) is { } symbol)
+        {
+            AddWritten(node, values.ValueOf(symbol));
+        }
+    }
+
+    // A member of a struct is written (p.X, p.Inner.Y): the struct root is written, a flow capture with the locals a ref
+    // conditional lets it refer to
+    private static void AddMemberWrite(UniformityValues values, UniformityNode node, IOperation operation,
+        ControlFlowGraph graph)
+    {
+        if (GetStructRoot(operation) is not { } root)
+        {
+            return;
+        }
+
+        if (root is IFlowCaptureReferenceOperation capture)
+        {
+            AddWritten(node, values.CaptureRootOf(capture, graph));
+            foreach (var alias in values.GetRootAliases(capture))
+            {
+                AddWritten(node, values.ValueOf(alias));
+            }
+        }
+        else
+        {
+            AddNamedWrite(values, node, root);
         }
     }
 
