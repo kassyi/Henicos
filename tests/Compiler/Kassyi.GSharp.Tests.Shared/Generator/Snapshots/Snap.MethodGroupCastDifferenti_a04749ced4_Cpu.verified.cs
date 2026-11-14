@@ -37,12 +37,12 @@ public partial class MethodGroupCastDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1702392354u, "MethodGroupCastDifferentialKernels.cs", 21, 20, "MethodGroupCastKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2050225814u, "MethodGroupCastDifferentialKernels.cs", 28, 9, "MethodGroupCastKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(282182614u, "MethodGroupCastDifferentialKernels.cs", 28, 23, "MethodGroupCastKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1894287898u, "MethodGroupCastDifferentialKernels.cs", 36, 20, "UserDelegateKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(351053311u, "MethodGroupCastDifferentialKernels.cs", 41, 17, "UserDelegateKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(71774032u, "MethodGroupCastDifferentialKernels.cs", 45, 9, "UserDelegateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(742939578u, "MethodGroupCastDifferentialKernels.cs", 23, 20, "MethodGroupCastKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1575695824u, "MethodGroupCastDifferentialKernels.cs", 30, 9, "MethodGroupCastKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(573362058u, "MethodGroupCastDifferentialKernels.cs", 30, 23, "MethodGroupCastKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1626813942u, "MethodGroupCastDifferentialKernels.cs", 38, 20, "UserDelegateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2039195171u, "MethodGroupCastDifferentialKernels.cs", 43, 17, "UserDelegateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166054332u, "MethodGroupCastDifferentialKernels.cs", 47, 9, "UserDelegateKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -66,7 +66,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1702392354u).length)
+if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 742939578u).length)
 {
 __gsharp_state = -1;return;
 }
@@ -76,11 +76,11 @@ System_Func<int, int> __gsharp_id_4_assigned = __gsharp_fn_Kassyi__GSharp__Tests
 auto __gsharp_seq_0 = __gsharp_id_1_r;
 auto __gsharp_seq_1 = __gsharp_id_2_tid;
 int __gsharp_seq_2 = ([&]() {
-auto __gsharp_seq_3 = __gsharp_id_3_cast(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 282182614u)%1000);
+auto __gsharp_seq_3 = __gsharp_id_3_cast(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 573362058u)%1000);
 auto __gsharp_seq_4 = __gsharp_id_4_assigned(1);
 return __gsharp_sub_i32(__gsharp_seq_3,__gsharp_seq_4);
 }());
-return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 2050225814u) = __gsharp_seq_2;
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 1575695824u) = __gsharp_seq_2;
 }());
 __gsharp_state=-1;
 return;
@@ -361,11 +361,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1894287898u).length)
+if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1626813942u).length)
 {
 __gsharp_state = -1;return;
 }
-int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 351053311u)%1000;
+int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 2039195171u)%1000;
 std::function<int(int)> __gsharp_id_4_assigned = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__MethodGroupCastDifferentialKernels__Bump;
 auto __gsharp_id_5_cast = (std::function<int(int)>)__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__MethodGroupCastDifferentialKernels__Bump;
 auto __gsharp_id_6_fromDelegate = (std::function<int(int)>)__gsharp_id_4_assigned;
@@ -381,7 +381,7 @@ return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
 auto __gsharp_seq_6 = (__gsharp_mul_i32(__gsharp_id_6_fromDelegate(__gsharp_id_3_v),3));
 return __gsharp_add_i32(__gsharp_seq_3,__gsharp_seq_6);
 }());
-return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 71774032u) = __gsharp_seq_2;
+return __gsharp_array_at(__gsharp_seq_0, __gsharp_seq_1, 1166054332u) = __gsharp_seq_2;
 }());
 __gsharp_state=-1;
 return;
