@@ -54,7 +54,7 @@ internal static class SwitchSectionLocals
             }
         }
 
-        return declaresAny;
+        return SwitchSectionSharedNames.ReportAndFind(switchStatement, ref context) || declaresAny;
     }
 
     /// <summary>
@@ -87,6 +87,8 @@ internal static class SwitchSectionLocals
 
             context.Emitter.Writer.AppendLine(";");
         }
+
+        SwitchSectionSharedNames.WriteDeclarations(switchStatement, ref context);
     }
 
     // The one condition for a local that the block around the switch declares; ReportAndFindSharedLocals,
@@ -155,7 +157,12 @@ internal static class SwitchSectionLocals
     private static bool CanDeclareBeforeSwitch(LocalDeclarationStatementSyntax declaration,
         VariableDeclaratorSyntax declarator, SemanticModel model) =>
         declaration.Declaration.Type is not RefTypeSyntax &&
-        model.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol { IsRef: false } local &&
+        model.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol local &&
+        CanDeclareLocal(local);
+
+    // The same condition for a local of any form (an expression variable included)
+    internal static bool CanDeclareLocal(ILocalSymbol local) =>
+        local is { IsRef: false } &&
         local.Type is not { TypeKind: TypeKind.Error } &&
         local.Type is IArrayTypeSymbol or IPointerTypeSymbol or { TypeKind: TypeKind.Enum or TypeKind.Struct } &&
         !local.Type.IsRefLikeType &&
@@ -167,15 +174,23 @@ internal static class SwitchSectionLocals
     // C# forbids two locals of one name whose scopes overlap (CS0128, CS0136), so a matching name in another section
     // is a reference to this local unless it binds to something else (a member name, a lambda parameter)
     private static bool IsNamedInOtherSection(VariableDeclaratorSyntax declarator, SwitchSectionSyntax section,
-        SemanticModel semanticModel) =>
-        section.Parent is SwitchStatementSyntax switchStatement &&
-        switchStatement.Sections
-            .AsStackEnumerable()
-            .Where(section, static (other, declaring) => other != declaring)
-            .Any(LocalIdentity.Of(declarator, semanticModel), static (other, l) => other.DescendantNodes()
+        SemanticModel semanticModel)
+    {
+        if (section.Parent is not SwitchStatementSyntax switchStatement)
+        {
+            return false;
+        }
+
+        var identity = LocalIdentity.Of(declarator, semanticModel);
+        return switchStatement.Sections
                 .AsStackEnumerable()
-                .Any(l, static (node, l) => l.IsReferencedBy(node))
-            );
+                .Where(section, static (other, declaring) => other != declaring)
+                .Any(identity, static (other, l) => other.DescendantNodes()
+                    .AsStackEnumerable()
+                    .Any(l, static (node, l) => l.IsReferencedBy(node))
+                ) ||
+            SwitchSectionSharedNames.IsReferencedBySharedFunction(identity, switchStatement, semanticModel);
+    }
 
     // Each declarator of a local declaration in the C++ scope of a section of the switch, with its section and
     // statement: the one walk that ReportAndFindSharedLocals and WriteDeclarations share
@@ -233,13 +248,17 @@ internal static class SwitchSectionLocals
             node is LabeledStatementSyntax || node is BlockSyntax block && CppBlockScopes.IsWrittenWithoutBraces(block);
     }
 
-    private readonly struct LocalIdentity(string name, ISymbol? symbol, int region, SemanticModel semanticModel)
+    internal readonly struct LocalIdentity(string name, ISymbol? symbol, int region, SemanticModel semanticModel)
     {
         public static LocalIdentity Of(VariableDeclaratorSyntax declarator, SemanticModel semanticModel) =>
+            Of(declarator, declarator.Identifier.ValueText, semanticModel);
+
+        /// <summary>The identity of a declaration of any form (a designation, a local function) by its name.</summary>
+        public static LocalIdentity Of(SyntaxNode declaring, string name, SemanticModel semanticModel) =>
             new(
-                declarator.Identifier.ValueText,
-                semanticModel.GetDeclaredSymbol<ISymbol>(declarator),
-                LoweringIdentity.GetRegion(declarator),
+                name,
+                semanticModel.GetDeclaredSymbol<ISymbol>(declaring),
+                LoweringIdentity.GetRegion(declaring),
                 semanticModel
             );
 

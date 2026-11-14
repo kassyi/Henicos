@@ -65,6 +65,13 @@ internal static class SwitchStatementTranspilers
             JumpedOverDeclarations.WriteDeclarations(node.Statements, ref context);
             foreach (var stmt in node.Statements)
             {
+                // The block around the switch declares the local function that another section uses (#842)
+                if (stmt is LocalFunctionStatementSyntax function &&
+                    SwitchSectionSharedNames.IsSharedFunction(function, context.Query.SemanticModel))
+                {
+                    continue;
+                }
+
                 if (stmt is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
                 {
                     context.Visitor.VisitStatementOrBlock(nested);
