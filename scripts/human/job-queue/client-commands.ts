@@ -1,4 +1,5 @@
-// The client modes other than run: status, cancel, move and set-weight, start, wait and stop, and how they print a job.
+// The client modes other than run: status, cancel, move and set-weight, start, pause and resume, wait and stop, and
+// how they print a job.
 
 import { CancelledExitCode, LostExitCode, UsageExitCode } from "./constants.ts";
 import { OlderSchedulerHint, SchedulerLauncher, delay, exchange, request, type Endpoint } from "./client-connect.ts";
@@ -100,6 +101,13 @@ export async function status(port: number, id: number, json: boolean): Promise<v
       ? `, ${gigabytes(reply.memoryUsed)}/${gigabytes(reply.memoryCapacity)} GB of test memory in use`
       : "";
   const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots${memory}, policy ${reply.policy}`];
+  if (reply.paused === true) {
+    const since = reply.pausedAt ? ` since ${new Date(reply.pausedAt).toTimeString().slice(0, 5)}` : "";
+    lines.push(
+      `PAUSED${since}: no waiting job starts until "job-queue.js resume" (start <id> still works); the expected ` +
+        "starts below count from a resume now",
+    );
+  }
   lines.push(`running (${reply.running.length}):`);
   reply.running.forEach((job) => lines.push(formatJob(job, now)));
   lines.push(`waiting (${reply.waiting.length}):`);
@@ -178,6 +186,72 @@ export async function startNow(port: number, id: number): Promise<void> {
     return;
   }
   process.stdout.write(`#${String(reply.id)} started over the pool\n`);
+}
+
+/** The scheduler's refusal of a message it does not know, with the hint to stop the older scheduler. */
+function isOlderSchedulerReply(reply: Incoming): boolean {
+  return (
+    reply.type === "error" && typeof reply.message === "string" && reply.message.startsWith("unknown message type")
+  );
+}
+
+/**
+ * pause: the scheduler grants nothing new until resume; running jobs finish. With `untilIdle` it then blocks until no
+ * job runs (exit 0), so that `pause --until-idle && stop` restarts the scheduler once the running jobs are done.
+ */
+export async function pause(port: number, untilIdle: boolean): Promise<void> {
+  const reply = await request(port, { type: "pause" });
+  if (reply === null) {
+    process.stdout.write("no scheduler running; nothing to pause\n");
+    process.exitCode = 1;
+    return;
+  }
+  if (isOlderSchedulerReply(reply)) {
+    process.stdout.write(`scheduler: ${String(reply.message)}; ${OlderSchedulerHint}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  if (reply.type !== "pause-result") {
+    printReplyError(reply);
+    return;
+  }
+  const running = numberField(reply, "running");
+  const waiting = numberField(reply, "waiting");
+  process.stdout.write(
+    `${reply.changed === true ? "paused" : "already paused"}: ${running} running jobs finish, ` +
+      `${waiting} waiting jobs wait; "job-queue.js resume" lifts it\n`,
+  );
+  if (!untilIdle) {
+    return;
+  }
+  for (let left = running; left > 0; ) {
+    await delay(1000);
+    const raw = await request(port, { type: "status" });
+    if (raw === null || raw.type !== "status") {
+      break; // the scheduler is gone: nothing runs under it
+    }
+    left = (raw as unknown as StatusReply).running.length;
+  }
+  process.stdout.write("no job runs\n");
+}
+
+/** resume: lifts the pause; the scheduler grants the waiting jobs as usual. */
+export async function resume(port: number): Promise<void> {
+  const reply = await request(port, { type: "resume" });
+  if (reply === null) {
+    process.stdout.write("no scheduler running (not paused)\n");
+    return;
+  }
+  if (isOlderSchedulerReply(reply)) {
+    process.stdout.write(`scheduler: ${String(reply.message)}; ${OlderSchedulerHint}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  if (reply.type !== "pause-result") {
+    printReplyError(reply);
+    return;
+  }
+  process.stdout.write(reply.changed === true ? "resumed\n" : "was not paused\n");
 }
 
 /**
