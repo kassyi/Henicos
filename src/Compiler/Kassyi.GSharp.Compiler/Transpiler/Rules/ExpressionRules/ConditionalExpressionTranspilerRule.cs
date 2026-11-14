@@ -104,39 +104,13 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
         }
     }
 
-    // A stack array local is a C++ array. The C++ conditional of it and a kernel array (a GSharpArray<T>), or of two C
-    // arrays of different sizes, decays the array to a pointer, which an array parameter does not take: each branch is
-    // then written as the span it converts to. Two C arrays of one size are a C++ array lvalue as they are
-    private static bool NeedsViews(ConditionalExpressionSyntax node, ref TranspileContext context)
-    {
-        var model = context.Query.SemanticModel;
-        var whenTrue = StackArrayLocals.IsStackArrayReference(node.WhenTrue, model);
-        var whenFalse = StackArrayLocals.IsStackArrayReference(node.WhenFalse, model);
-        if (!whenTrue || !whenFalse)
-        {
-            return whenTrue || whenFalse;
-        }
-
-        return !StackArrayLocals.TryGetLength(node.WhenTrue, model, out var first) ||
-               !StackArrayLocals.TryGetLength(node.WhenFalse, model, out var second) ||
-               first != second;
-    }
-
-    private static void AppendBranch(ExpressionSyntax branch, bool asView, ref TranspileContext context)
-    {
-        if (asView)
-        {
-            StackArrayLocals.AppendView(branch, ref context);
-        }
-        else
-        {
-            context.Visitor.Visit(branch);
-        }
-    }
-
+    // A branch that is a stack array local is a C++ array, and the C++ conditional of an array and a GSharpArray<T>, or
+    // of two arrays of different sizes, decays it to a pointer, which an array parameter does not take. Even two arrays of
+    // one size would turn into a pointer or a C array under whatever surrounds the conditional (an outer conditional, a
+    // member access, auto). So every stack array branch is written as the span it converts to, and the conditional is
+    // a GSharpArray<T> in every case
     private static void TranspileBranches(ConditionalExpressionSyntax node, ref TranspileContext context)
     {
-        var asViews = NeedsViews(node, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
@@ -149,7 +123,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
             else
             {
-                AppendBranch(node.WhenTrue, asViews, ref context);
+                StackArrayLocals.AppendView(node.WhenTrue, ref context);
             }
 
             context.Emitter.Writer.Append(':');
@@ -160,7 +134,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             }
             else
             {
-                AppendBranch(node.WhenFalse, asViews, ref context);
+                StackArrayLocals.AppendView(node.WhenFalse, ref context);
             }
         }
     }

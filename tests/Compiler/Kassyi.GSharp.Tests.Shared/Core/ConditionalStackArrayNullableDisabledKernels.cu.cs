@@ -3,7 +3,10 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
-/// <summary>The same conditional as <see cref="ConditionalStackArrayKernels"/> in a file without nullable annotations.</summary>
+/// <summary>
+/// The same conditional as <see cref="ConditionalStackArrayKernels.ConditionalKernel"/> in a file without nullable
+/// annotations.
+/// </summary>
 public static partial class ConditionalStackArrayNullableDisabledKernels
 {
     [GpuKernel]
