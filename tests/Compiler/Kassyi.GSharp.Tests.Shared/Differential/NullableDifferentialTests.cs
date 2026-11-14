@@ -262,6 +262,36 @@ public class NullableDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_coalesceAssignmentValue = new(
+        $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.CoalesceAssignmentValueKernel)}")
+    {
+        Shapes = LaunchShapes.OneDimensionalMatrix(ReproRows),
+        Inputs = static (rng, rows) =>
+        {
+            var conds = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                // The boundary seed walks every combination of null and non-null targets of columns 0 to 4 and both of
+                // column 5
+                conds[k] = rng.IsBoundarySeed ? k | ((k & 1) << 6) : rng.NextInt32();
+            }
+
+            return new DiffBuffers()
+                .In("conds", conds)
+                .In("vals", DiffValues.Int32(rng, rows))
+                .Out<long>(
+                    "dst",
+                    rows,
+                    ["xor_of_value", "nullable_value", "nested_value", "widened_value", "promoted_value",
+                     "value_before_write"],
+                    OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => NullableDifferentialKernels.LaunchCoalesceAssignmentValueKernel(
+            b.Get<int>("conds"), b.Get<int>("vals"), b.Get<long>("dst"), s.Rows,
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     internal static readonly DifferentialCase s_nullLiteralCastToArray = new(
         $"{nameof(NullableDifferentialKernels)}.{nameof(NullableDifferentialKernels.NullLiteralCastToArrayKernel)}")
     {
@@ -355,6 +385,13 @@ public class NullableDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void NullableOperations_LiftedDoubleToNullableIntCast_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_liftedDoubleToNullableIntCast);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void NullableOperations_CoalesceAssignmentValue_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_coalesceAssignmentValue);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

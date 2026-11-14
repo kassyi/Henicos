@@ -461,6 +461,122 @@ public static partial class NullableDifferentialKernels
     }
 
     // -------------------------------------------------------------------------
+    // The value of ??= inside an expression: the underlying type when the right side converts to it, the nullable type
+    // otherwise. One device function per column; bit k of c says whether the target of case k starts non-null.
+    // -------------------------------------------------------------------------
+
+    // int? ??= int on a struct field, its int value an operand of ^
+    [GpuDeviceFunction]
+    public static int CoalesceAssignmentXorOfValue(int c, int v)
+    {
+        DiffNullablePairHolder holder = default;
+        if ((c & 1) != 0)
+        {
+            holder.First = v - 3;
+        }
+
+        return (holder.First ??= v + 11) ^ v;
+    }
+
+    // int? ??= int? keeps the nullable type
+    [GpuDeviceFunction]
+    public static int CoalesceAssignmentNullableValue(int c, int v)
+    {
+        int? a = default;
+        if ((c & 2) != 0)
+        {
+            a = v * 3;
+        }
+
+        int? b = default;
+        if ((c & 4) != 0)
+        {
+            b = v + 7;
+        }
+
+        int? kept = a ??= b;
+        return kept.HasValue ? kept.Value : -999;
+    }
+
+    // Nested ??=, both values int
+    [GpuDeviceFunction]
+    public static int CoalesceAssignmentNestedValue(int c, int v)
+    {
+        int? b = default;
+        if ((c & 4) != 0)
+        {
+            b = v + 7;
+        }
+
+        int? outer = default;
+        if ((c & 8) != 0)
+        {
+            outer = v >> 2;
+        }
+
+        return (outer ??= (b ??= v - 5)) * 2;
+    }
+
+    // long? ??= int converts the right side to long
+    [GpuDeviceFunction]
+    public static long CoalesceAssignmentWidenedValue(int c, int v)
+    {
+        long? wide = default;
+        if ((c & 16) != 0)
+        {
+            wide = (long)v << 33;
+        }
+
+        return (wide ??= v) + 1L;
+    }
+
+    // byte? ??= byte, the byte value promoted to int by +
+    [GpuDeviceFunction]
+    public static int CoalesceAssignmentPromotedValue(int c, int v)
+    {
+        byte? small = default;
+        if ((c & 32) != 0)
+        {
+            small = (byte)v;
+        }
+
+        return (small ??= (byte)(v >> 8)) + 1000;
+    }
+
+    // The value is read before a later operand writes the target
+    [GpuDeviceFunction]
+    public static int CoalesceAssignmentValueBeforeWrite(int c, int v)
+    {
+        DiffNullablePairHolder holder = default;
+        if ((c & 64) != 0)
+        {
+            holder.Second = v ^ 0x55;
+        }
+
+        return (holder.Second ??= v) + (holder.Second = v + 1).Value;
+    }
+
+    [GpuKernel]
+    public static void CoalesceAssignmentValueKernel(int[] conds, int[] vals, long[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        int c = conds[t];
+        int v = vals[t];
+        int col = t * 6;
+        dst[col + 0] = CoalesceAssignmentXorOfValue(c, v);
+        dst[col + 1] = CoalesceAssignmentNullableValue(c, v);
+        dst[col + 2] = CoalesceAssignmentNestedValue(c, v);
+        dst[col + 3] = CoalesceAssignmentWidenedValue(c, v);
+        dst[col + 4] = CoalesceAssignmentPromotedValue(c, v);
+        dst[col + 5] = CoalesceAssignmentValueBeforeWrite(c, v);
+    }
+
+    // -------------------------------------------------------------------------
     // A null literal cast to an array type: the empty view, whose data is null
     // -------------------------------------------------------------------------
     [GpuKernel]

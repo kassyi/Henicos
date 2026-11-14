@@ -1,7 +1,8 @@
 'use strict';
 
-// Question extraction for chat-status.js: the last question of an assistant text, the last text of a JSONL transcript
-// (read from its end, at most TranscriptTailBytes), and the questions and options of AskUserQuestion / ask_question.
+// Question extraction for chat-status.js: the paragraph of an assistant text that asks (or its last one), the last
+// text of a JSONL transcript (read from its end, at most TranscriptTailBytes), and the questions and options of
+// AskUserQuestion / ask_question.
 
 const fs = require('fs');
 const path = require('path');
@@ -19,42 +20,61 @@ function clip(text, limit) {
   return chars.length <= limit ? text : `${chars.slice(0, limit - 1).join('')}…`;
 }
 
+/** Cuts a text to its last `limit` characters, marking the cut with an ellipsis at the start. */
+function clipStart(text, limit) {
+  const chars = Array.from(text);
+  return chars.length <= limit ? text : `…${chars.slice(chars.length - limit + 1).join('')}`;
+}
+
 // An ASCII '?' ends a sentence only before a space, a line end or closing punctuation (not in `a?b` or a URL query);
 // a full-width '？' always does.
-const QuestionMark = /？|\?(?=$|[\s)\]"'*_」』）])/g;
-// What ends the sentence before the question: a line break, a full-width stop, or an ASCII stop before a space.
-const SentenceEnd = /[\n。！？]|[.!?](?=\s)/g;
-const ListMarker = /^(?:[-*+]|\d+[.)]|#+|>)\s+/;
+const QuestionMark = /？|\?(?=$|[\s)\]"'*_」』）])/;
+// A list marker, a heading or a quote at the start of a line.
+const LineMarker = /^\s*(?:[-*+]|\d+[.)]|#+|>)\s+/;
 
-/** The last sentence that ends in `?` or `？`, or else the last paragraph, cut to MaxQuestionLength. */
-function extractQuestion(text) {
+/** A paragraph without the Markdown that only takes width: list markers, headings, `**`, link targets. */
+function stripMarkdown(paragraph) {
+  return paragraph
+    .split('\n')
+    .map((line) => line.replace(LineMarker, '').trim())
+    .join('\n')
+    .replace(/\*\*/g, '')
+    .replace(/\[([^\]\n]*)\]\([^)\s]*\)/g, '$1')
+    .trim();
+}
+
+/** Whether a paragraph asks: a question mark outside its code spans. */
+function asksIn(paragraph) {
+  return QuestionMark.test(paragraph.replace(/`[^`\n]*`/g, ''));
+}
+
+/**
+ * The part of a reply the person needs: agents put their question at the end, after the summary, so the last
+ * paragraph with a question mark (outside code spans and fenced blocks), else the last paragraph; without the
+ * Markdown that only takes width, cut from its start to MaxQuestionLength so that the question stays. `asks` says
+ * whether a question mark was found.
+ */
+function extractReply(text) {
   if (typeof text !== 'string') {
     return null;
   }
-  const plain = text.replace(/```[\s\S]*?(?:```|$)/g, '\n').replace(/\r\n?/g, '\n');
-  let mark = -1;
-  for (const match of plain.matchAll(QuestionMark)) {
-    mark = match.index;
-  }
-  if (mark >= 0) {
-    let start = 0;
-    for (const match of plain.slice(0, mark).matchAll(SentenceEnd)) {
-      start = match.index + 1;
-    }
-    let end = mark + 1;
-    while (end < plain.length && '*_」』）)'.includes(plain[end])) {
-      end++;
-    }
-    const sentence = plain.slice(start, end).trim().replace(ListMarker, '').trim();
-    if (sentence !== '') {
-      return clip(sentence, MaxQuestionLength);
-    }
-  }
-  const paragraphs = plain
+  const paragraphs = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/```[\s\S]*?(?:```|$)/g, '\n\n')
     .split(/\n[ \t]*\n/)
-    .map((part) => part.trim())
+    .map(stripMarkdown)
     .filter((part) => part !== '');
-  return paragraphs.length === 0 ? null : clip(paragraphs[paragraphs.length - 1], MaxQuestionLength);
+  if (paragraphs.length === 0) {
+    return null;
+  }
+  const asking = paragraphs.findLast(asksIn);
+  const chosen = asking ?? paragraphs[paragraphs.length - 1];
+  return { question: clipStart(chosen, MaxQuestionLength), asks: asking !== undefined };
+}
+
+/** The text of extractReply alone. */
+function extractQuestion(text) {
+  return extractReply(text)?.question ?? null;
 }
 
 /** Reads the last `limit` bytes of a file as complete lines (the first, partial line is dropped). */
@@ -95,6 +115,64 @@ function lastTextOf(file, pick) {
     }
   }
   return null;
+}
+
+/** The first prompt of a chat is kept to this many characters (a title is made from it). */
+const MaxFirstPromptLength = 500;
+/** How much of the start of a transcript is searched for the first prompt. */
+const TranscriptHeadBytes = 256 * 1024;
+
+/** The text of the first record in the first TranscriptHeadBytes of a JSONL transcript that `pick` returns one for. */
+function firstTextOf(file, pick) {
+  const handle = fs.openSync(file, 'r');
+  let text;
+  try {
+    const buffer = Buffer.alloc(Math.min(fs.fstatSync(handle).size, TranscriptHeadBytes));
+    fs.readSync(handle, buffer, 0, buffer.length, 0);
+    text = buffer.toString('utf8');
+  } finally {
+    fs.closeSync(handle);
+  }
+  for (const line of text.split('\n')) {
+    let record;
+    try {
+      record = JSON.parse(line);
+    } catch {
+      continue; // a blank line, or the last one cut by the limit
+    }
+    const found = pick(record);
+    if (typeof found === 'string' && found.trim() !== '') {
+      return clip(found.trim(), MaxFirstPromptLength);
+    }
+  }
+  return null;
+}
+
+/** A user record that the person did not type: a command, its output or caveat, a background task notification. */
+const NotPrompt = /^\s*(?:<(?:command-|local-command|task-notification)|Caveat:)/;
+
+/** Claude Code: the text of a prompt the person typed (not a subagent's, not a command's output or caveat). */
+function claudeUserText(record) {
+  if (record?.type !== 'user' || record.isSidechain === true || record.isMeta === true) {
+    return null;
+  }
+  const content = record.message?.content;
+  const text = Array.isArray(content)
+    ? content
+        .filter((block) => block?.type === 'text' && typeof block.text === 'string')
+        .map((block) => block.text)
+        .join('\n\n')
+    : content;
+  return typeof text === 'string' && !NotPrompt.test(text) ? text : null;
+}
+
+/** Antigravity: the content of an input of the person, inside its <USER_REQUEST> wrapper when it has one. */
+function antigravityUserText(record) {
+  if (record?.type !== 'USER_INPUT' || typeof record.content !== 'string') {
+    return null;
+  }
+  const request = /<USER_REQUEST>([\s\S]*?)<\/USER_REQUEST>/.exec(record.content);
+  return request ? request[1].trim() : record.content;
 }
 
 /** Claude Code: the text blocks of the last assistant message of the main chain (not a subagent's). */
@@ -150,9 +228,14 @@ function joinQuestions(questions) {
 
 module.exports = {
   MaxQuestionLength,
+  MaxFirstPromptLength,
   clip,
+  extractReply,
   extractQuestion,
   lastTextOf,
+  firstTextOf,
+  claudeUserText,
+  antigravityUserText,
   claudeAssistantText,
   antigravityPlannerText,
   antigravityTranscripts,

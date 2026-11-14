@@ -21,6 +21,7 @@ import {
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
 import { CellWidth, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
 import { Minute, Now, job, sampleReply } from "./view-sample.ts";
+import { checkChats } from "./self-test-chats.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
@@ -350,7 +351,7 @@ function checkHelp(): void {
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
   const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
   assert.ok(
-    last.some((line) => /after #n +until job n has ended/.test(line)),
+    last.some((line) => /#n +a job it queued/.test(line)),
     "the last page ends the legend",
   );
   const colored = helpLines(100).map((line) => line.render(true));
@@ -403,5 +404,6 @@ export function checkView(): void {
   checkLayout();
   checkKeys();
   checkGpuPairsAndReasons();
+  checkChats();
   checkScreenshots();
 }

@@ -1439,7 +1439,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<3;__gsharp_id_2_i++)
 __gsharp_id_0_value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_value,2),__gsharp_id_2_i);
 __syncthreads();
 }
-__gsharp_array_at(__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_id_0_value,__gsharp_mul_i32((int)threadIdx.x,100));
+__gsharp_array_at(__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_id_0_value,(int)threadIdx.x*100);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ParameterInBarrierLoopKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__KernelValueParameterKernels__ParameterInBarrierLoopKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
