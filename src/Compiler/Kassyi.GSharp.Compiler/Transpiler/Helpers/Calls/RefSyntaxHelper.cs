@@ -101,8 +101,8 @@ internal static class RefSyntaxHelper
         } or RefExpressionSyntax;
 
     private static TypeInfo GetSafeTypeInfo(ExpressionSyntax expression, SemanticModel semanticModel) =>
-        semanticModel.GetOriginalNode(expression) is { } original
-            ? semanticModel.GetTypeInfo(original)
+        semanticModel.TryGetOriginalNode(expression, out var original, out var originalModel)
+            ? originalModel.GetTypeInfo(original)
             : default;
 
     private static void AppendTempAddressTypeArgument(ref TranspileContext context, ExpressionSyntax expression,
