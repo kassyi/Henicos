@@ -31,7 +31,8 @@ internal static class CudaHostLaunchEmitter
             if (!isDevicePtr)
             {
                 WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
-                WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
+                var aliases = ArraySharingPlan.ForCuda(kernel.Host, isDevicePtr: false).Aliases;
+                WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host, aliases);
             }
             else
             {

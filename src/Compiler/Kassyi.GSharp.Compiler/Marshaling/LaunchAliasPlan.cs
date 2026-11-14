@@ -97,7 +97,10 @@ internal readonly struct LaunchAliasPlan
 
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
-            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i));
+            // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
+            // refers to the same variable (#1841) and is cleared otherwise, which only the comparison can tell
+            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
+                (shape.RefKind == RefKind.Out && shape.HasArrayFields);
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly, spanView));
         }
 

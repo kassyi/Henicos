@@ -200,6 +200,31 @@ public sealed class MarshalingOverlapDifferentialTests
         },
     };
 
+    // One variable to an out and a ref parameter: the launcher does not clear the out before the kernel reads the ref
+    internal static readonly DifferentialCase s_outAndRefOneVariable = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutAndRefOneVariableKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 2, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        // C#: the ref reads the caller's 5 before and 7 after the out is assigned
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 5;
+            b.Get<int>("observed")[1] = 7;
+            b.Get<int>("final")[0] = 7;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchOutAndRefOneVariableKernel(
+                out variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
     internal static readonly DifferentialCase s_twoRefStructs = new(
         KernelName(nameof(MarshalingOverlapDifferentialKernels.TwoRefStructsKernel)))
     {
@@ -642,6 +667,11 @@ public sealed class MarshalingOverlapDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OneVariablePassedToAnOutAndARefParameter_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_outAndRefOneVariable);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void RefOverlap_OneStructPassedToTwoRefParameters_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_twoRefStructs);
 
@@ -659,4 +689,145 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void InHolders_TwoFieldsOfAnInElementShareOneArray_MatchesTheReferenceOnEveryPath() =>
         DifferentialRunner.Run(s_twoInFields);
+
+    // One variable to an out and a ref: the last write wins in both orders, and the ref reads the caller's value first
+    internal static readonly DifferentialCase s_outThenRefWrite = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutThenRefWriteKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 5;
+            b.Get<int>("final")[0] = 9;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchOutThenRefWriteKernel(
+                out variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    internal static readonly DifferentialCase s_refThenOutWrite = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.RefThenOutWriteKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 5;
+            b.Get<int>("final")[0] = 7;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchRefThenOutWriteKernel(
+                out variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    internal static readonly DifferentialCase s_outAndTwoRefsOneVariable = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutAndTwoRefsOneVariableKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 2, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 5;
+            b.Get<int>("observed")[1] = 7;
+            b.Get<int>("final")[0] = 7;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingOverlapDifferentialKernels.LaunchOutAndTwoRefsOneVariableKernel(
+                out variable,
+                ref variable,
+                ref variable,
+                b.Get<int>("observed"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    // An out element and the array that holds it
+    internal static readonly DifferentialCase s_outElementAndItsArray = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutElementAndItsArrayKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .In("backing", Backing(4), OutputPolicy.Exact)
+            .Out<int>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            int[] backing = b.Get<int>("backing");
+            MarshalingOverlapDifferentialKernels.LaunchOutElementAndItsArrayKernel(
+                out backing[1], backing, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
+    // An out struct that holds arrays and no other argument refers to: the kernel assigns default, as C# does
+    internal static readonly DifferentialCase s_outStructWithArray = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutStructWithArrayKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 2, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 1;
+            b.Get<int>("final")[0] = 1;
+            b.Get<int>("final")[1] = 0;
+        },
+        Launch = static (b, s) =>
+        {
+            var bag = new DiffDeepBag { Data = [1, 2], Tag = 3 };
+            MarshalingOverlapDifferentialKernels.LaunchOutStructWithArrayKernel(
+                out bag, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = bag.Data is null ? 1 : 0;
+            b.Get<int>("final")[1] = bag.Tag;
+        },
+    };
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OutWrittenBeforeTheRefOfTheSameVariable_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_outThenRefWrite);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OutWrittenAfterTheRefOfTheSameVariable_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_refThenOutWrite);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OneVariablePassedToAnOutAndTwoRefParameters_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_outAndTwoRefsOneVariable);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OutElementBesideItsArray_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_outElementAndItsArray);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RefOverlap_OutStructThatHoldsArrays_ReceivesWhatTheKernelAssigned() =>
+        DifferentialRunner.Run(s_outStructWithArray);
 }
