@@ -153,7 +153,11 @@ internal static class SymbolExtensions
     private static bool MayShareMemory(IParameterSymbol other, ITypeSymbol type) =>
         other.RefKind is RefKind.Ref or RefKind.Out
             ? MayShareMemory(other.Type, type)
-            : other.Type.TryGetArrayLikeElementType(out var element) && MayShareMemory(element, type);
+            // An element of the array is the in value, or holds it as a field; a value that holds the element type as a
+            // field is no memory of the array
+            : other.Type.TryGetArrayLikeElementType(out var element) &&
+              (SymbolEqualityComparer.Default.Equals(element, type) ||
+               HoldsAsField(element, type, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)));
 
     // The same type, or one that holds the other as a field, directly or through the fields of its fields
     private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
