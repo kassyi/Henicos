@@ -60,7 +60,7 @@ internal static class DefaultValue
                 DefaultValueForm.Typed,
                 type,
                 target is { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] } &&
-                !underlying.IsEqualTo(type)
+                !underlying.IsEqualTo(type) && !target.IsEqualTo(type)
                     ? target
                     : null);
         }
