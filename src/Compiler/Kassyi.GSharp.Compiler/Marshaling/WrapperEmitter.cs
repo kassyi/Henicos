@@ -383,20 +383,26 @@ internal static class WrapperEmitter
         }
     }
 
-    // Unsafe.SkipInit(out <name>);   for each out parameter that is not an array
+    // <name> = default;   for each out parameter that is not an array and that the launcher does not compare with
+    // other arguments
+    // Unsafe.SkipInit(out <name>);   for an out parameter that it compares (a candidate of the aliasing plan)
     // [WHY] The launcher must assign its out parameters before it returns, and the launch assigns them when it ends.
-    // Writing default at the start would clear the caller's variable before the kernel reads it through a ref or in
-    // parameter that refers to the same variable, which C# reads as it was
-    internal static void WriteOutParametersAssigned(SourceWriter writer, in KernelHostModel kernel)
+    // A candidate may be the variable that a ref or in parameter refers to as well, which C# reads as it was, so it is
+    // not cleared here; AliasGroupEmitter clears it after the comparison when no other argument refers to it
+    internal static void WriteOutParametersAssigned(SourceWriter writer, in KernelHostModel kernel,
+        in LaunchAliasPlan aliases)
     {
-        foreach (var p in kernel.Parameters)
+        for (var i = 0; i < kernel.Parameters.Length; i++)
         {
+            var p = kernel.Parameters[i];
             if (p.RefKind is not RefKind.Out || p.IsArray)
             {
                 continue;
             }
 
-            writer.AppendLine($"{HostTypeNames.Unsafe}.SkipInit(out {p.Identifier});");
+            writer.AppendLine(aliases.MemberIndexOf(i) >= 0
+                ? $"{HostTypeNames.Unsafe}.SkipInit(out {p.Identifier});"
+                : $"{p.Identifier} = default;");
         }
     }
 

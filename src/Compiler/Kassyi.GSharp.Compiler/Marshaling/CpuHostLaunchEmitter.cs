@@ -34,11 +34,11 @@ internal static class CpuHostLaunchEmitter
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
         using (writer.Scope())
         {
-            WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host);
+            var sharing = ArraySharingPlan.ForCpu(kernel.Host);
+            WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host, sharing.Aliases);
             LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
-            var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
             {
                 CpuArrayCopyEmitter.WriteKernelCopies(writer, sharing);

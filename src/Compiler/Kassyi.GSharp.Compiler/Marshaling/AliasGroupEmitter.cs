@@ -51,6 +51,7 @@ internal static class AliasGroupEmitter
         using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
         {
             AliasRangeEmitter.WriteFind(writer, plan.Ranges);
+            WriteClearedOutArguments(writer, sharing);
             writer.AppendLine($"if ({Aliases} != null)");
             using (writer.Scope())
             {
@@ -225,7 +226,24 @@ internal static class AliasGroupEmitter
         WriteDeclaration(writer, plan);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
         AliasRangeEmitter.WriteFind(writer, plan.Ranges);
+        WriteClearedOutArguments(writer, sharing);
         return scope;
+    }
+
+    // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out parameter that is compared
+    // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the
+    // caller's value, which C# reads through the ref or in parameter that refers to the same variable (#1841)
+    private static void WriteClearedOutArguments(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        var plan = sharing.Aliases;
+        for (var k = 0; k < plan.Candidates.Length; k++)
+        {
+            var shape = sharing.Parameters[plan.Candidates[k]];
+            if (shape.RefKind == RefKind.Out && !shape.IsArray)
+            {
+                writer.AppendLine($"if (!({MemberTest(plan, plan.Candidates[k])})) {shape.Identifier} = default;");
+            }
+        }
     }
 
     // Span: if (HostAliasCopies.TryGetHostView<T>(__gsharp_aliases, <k>, <ranges>, out Span<T> copy))
