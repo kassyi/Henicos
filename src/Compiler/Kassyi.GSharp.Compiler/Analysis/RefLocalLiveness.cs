@@ -15,9 +15,10 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// a split point.
 /// </param>
 /// <remarks>
-/// The <c>ref</c> iteration variable of a <c>foreach</c> is in neither set: GSH0039 does not track it, and it never
+/// The <c>ref</c> iteration variable of a <c>foreach</c> is in neither set: the liveness does not track it, and it never
 /// stays a local, because its loop walks a span and a span temporary across a split does not build on the managed path
-/// yet (#1005). The lowering hoists it when a barrier is in the loop, and the generator reports it (GSH0003).
+/// yet (#1005). The lowering hoists it when a barrier is in the loop, and the analyzer reports it as GSH0039 at the
+/// variable (<c>CrossBarrierChecks.ReportRefForEachAroundSplit</c>), as for a ref local that is live across the split.
 /// </remarks>
 /// <remarks>
 /// [WHY] A <c>ref</c> local cannot be a field of the managed frame class (CS9059), and the native frame would hold a

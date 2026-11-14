@@ -136,7 +136,11 @@ public static class AstLoweringPipeline
 
             var symbol = LoweringIdentity.ForDeclaration(field, bodyModel).Symbol;
             var isReportedLive = symbol != null && refLocals != null && refLocals.ReportedLive.Contains(symbol);
-            held.Add(new HeldRefLocal(field, isReportedLive));
+
+            // The variable of a foreach (ref ...) that the lowering holds is reported by the analyzer as well (#1657)
+            var isForEachVariable = symbol is { DeclaringSyntaxReferences: [var reference] } &&
+                                    reference.GetSyntax() is ForEachStatementSyntax;
+            held.Add(new HeldRefLocal(field, isReportedLive || isForEachVariable));
         }
 
         return held.ToImmutable();

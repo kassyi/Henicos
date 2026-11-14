@@ -94,6 +94,7 @@ internal static class CrossBarrierChecks
             return;
         }
 
+        ReportRefForEachAroundSplit(scan);
         StackPointerProvenance.CollectStackPointerLocals(scan);
 
         // The tracked locals, then the by-value ref struct parameters
@@ -148,6 +149,27 @@ internal static class CrossBarrierChecks
                     GSharpDiagnostics.IteratorBodyConstructNotSupported,
                     tracked.Declarator.Identifier.GetLocation(),
                     tracked.IdentifierText);
+            }
+        }
+    }
+
+    // GSH0039 at the variable of a foreach (ref ...) whose loop has a barrier or a call that suspends in it: the loop
+    // walks its source, a span or a temporary of one, across the split, which the state machine cannot keep in its
+    // frame, so the variable is held across the split like a ref local that is live there (#1657)
+    private static void ReportRefForEachAroundSplit(KernelBarrierScan scan)
+    {
+        foreach (var node in scan.Method.DescendantNodes(static n =>
+                     n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+        {
+            if (node is ForEachStatementSyntax { Type: RefTypeSyntax or ScopedTypeSyntax { Type: RefTypeSyntax } } loop &&
+                scan.Barriers
+                    .AsStackEnumerable()
+                    .Any(loop.Span, static (barrier, span) => span.Contains(barrier.Span)))
+            {
+                scan.Context.ReportDiagnostic(
+                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
+                    loop.Identifier.GetLocation(),
+                    loop.Identifier.ValueText);
             }
         }
     }
