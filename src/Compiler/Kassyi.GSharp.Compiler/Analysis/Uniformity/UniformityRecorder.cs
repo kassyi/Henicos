@@ -64,6 +64,13 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     public bool TryGetCapture(ControlFlowGraph graph, CaptureId id, out int index) =>
         Values.TryGetCapture(graph, id, out index);
 
+    /// <summary>
+    /// The value index of the flow capture whose member a write names through <paramref name="reference"/> (the struct
+    /// that an object initializer or a with expression fills).
+    /// </summary>
+    public bool TryGetCaptureRoot(IFlowCaptureReferenceOperation reference, out int index) =>
+        Values.TryGetCaptureRoot(reference, out index);
+
     /// <summary>The value index of a flow capture, given one on first use.</summary>
     public int ValueOf(ControlFlowGraph graph, CaptureId id) => Values.ValueOf(graph, id);
 
@@ -118,6 +125,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
     {
         UniformityWrites.AddWritten(Nodes[node], ValueOf(graph, capture.Id));
         AddWrite(capture, graph, node);
+        Memory.AddCapture(capture);
     }
 
     public void OnObjectCreation(IObjectCreationOperation creation, int node) =>
@@ -248,7 +256,7 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 
     private void AddWrite(IOperation operation, ControlFlowGraph graph, int node)
     {
-        UniformityWrites.AllocateTargets(Values, Nodes[node], operation);
+        UniformityWrites.AllocateTargets(Values, Nodes[node], operation, graph);
         Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Write, operation, graph, _bodies.Opaque));
     }
 

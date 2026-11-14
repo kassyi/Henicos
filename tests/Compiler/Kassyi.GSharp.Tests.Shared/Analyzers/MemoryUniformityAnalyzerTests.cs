@@ -72,4 +72,44 @@ public class MemoryUniformityAnalyzerTests : TranspilerTestBase
             ],
             actual);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task FlowCapturedValues_WritesThroughCaptures_AreFollowed()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
+            .ToList();
+
+        // 27: an element write whose value is a conditional. 40: a with expression. 57: a switch expression. 70: a
+        // compound assignment whose value is a conditional. 84: a field set by an object initializer. 98: a property
+        // set by a with expression on a local. 129: the control, a plain value. 144: a write through a local that holds
+        // one of two arrays, chosen by a conditional. 163: a field of an element written with a conditional value.
+        // 209 / 225: an auto-property and an init accessor with a body, set by an object initializer.
+        // Nothing at 115, where a barrier separates the write from the read and the initializer is uniform, nor at
+        // 177, where a with expression copies an element into a local
+        var warning = GSharpDiagnostics.LaunchDependentDivergentBarrier.Id;
+        Assert.Equal(
+            [
+                (warning, 27, 13, 27, 30),
+                (warning, 40, 13, 40, 30),
+                (warning, 57, 13, 57, 30),
+                (warning, 70, 13, 70, 30),
+                (warning, 84, 13, 84, 30),
+                (warning, 98, 13, 98, 30),
+                (warning, 129, 13, 129, 30),
+                (warning, 144, 13, 144, 30),
+                (warning, 163, 13, 163, 30),
+                (warning, 209, 13, 209, 30),
+                (warning, 225, 13, 225, 30)
+            ],
+            actual);
+    }
 }

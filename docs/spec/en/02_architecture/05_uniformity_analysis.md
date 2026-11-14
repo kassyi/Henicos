@@ -37,7 +37,7 @@ A memory is named by the variable it is reached through, and each memory is a va
 - a `SharedMemory<T>` local that is not a copy of another;
 - a `ref` or `out` parameter of a device function, so that its caller learns whether the callee left the location written.
 
-A local of array, span or `SharedMemory<T>` type that is assigned another memory refers to it (`int[] alias = buffer;`), and so does a ref local bound to an element (`ref int first = ref buffer[0];`). Writes and reads through them reach every memory they may refer to; a ref local bound to a location that is not followed (a pointer) may reach any memory. An array a local creates (a stack array) belongs to its thread and is not memory.
+A local of array, span or `SharedMemory<T>` type that is assigned another memory refers to it (`int[] alias = buffer;`, or each of `a` and `b` for `flag ? a : b`), and so does a flow capture of the control flow graph (the array of `a[i] = c ? x : y`, captured before the value branches), and so does a ref local bound to an element (`ref int first = ref buffer[0];`). Writes and reads through them reach every memory they may refer to; a ref local bound to a location that is not followed (a pointer) may reach any memory. An array a local creates (a stack array) belongs to its thread and is not memory.
 
 ### What writes and what lowers
 

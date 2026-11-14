@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using static Kassyi.GSharp.Compiler.Analysis.MemoryOperations;
 
@@ -66,6 +67,9 @@ internal static class MemoryResolver
                 when values.TryGetIndex(parameter, out var index):
                 memories.Add(index);
                 break;
+            case IFlowCaptureReferenceOperation capture:
+                CollectCaptureSources(values, references, capture, memories, visited, ref all);
+                break;
             case IInvocationOperation invocation:
                 foreach (var argument in invocation.Arguments)
                 {
@@ -87,6 +91,12 @@ internal static class MemoryResolver
     private static void CollectReference(MemoryValues values, MemoryReferences references, IOperation reference,
         HashSet<int> memories, HashSet<ILocalSymbol> visited, ref bool all)
     {
+        if (Unwrap(reference) is IFlowCaptureReferenceOperation capture)
+        {
+            CollectCaptureSources(values, references, capture, memories, visited, ref all);
+            return;
+        }
+
         if (GetName(reference) is not { } name)
         {
             return;
@@ -101,6 +111,31 @@ internal static class MemoryResolver
         {
             CollectSources(values, references, local, memories, visited, isLocation: false, ref all);
         }
+    }
+
+    // A flow capture refers to the references and locations captured into it (a capture of a capture is followed in
+    // turn)
+    private static void CollectCaptureSources(MemoryValues values, MemoryReferences references,
+        IFlowCaptureReferenceOperation capture, HashSet<int> memories, HashSet<ILocalSymbol> visited, ref bool all)
+    {
+        if (!references.TryGetCaptureSources(capture.Id, out var sources) || !references.EnterCapture(capture.Id))
+        {
+            return;
+        }
+
+        foreach (var source in sources)
+        {
+            if (IsLocation(ContainingFieldLocation(source)))
+            {
+                CollectLocation(values, references, ContainingFieldLocation(source), memories, visited, ref all);
+            }
+            else
+            {
+                CollectReference(values, references, source, memories, visited, ref all);
+            }
+        }
+
+        references.ExitCapture(capture.Id);
     }
 
     private static void CollectSources(MemoryValues values, MemoryReferences references, ILocalSymbol local,

@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Analysis;
@@ -11,27 +12,28 @@ internal static class UniformityWrites
     /// <summary>
     /// The locals and parameters that <paramref name="operation"/> writes, written at <paramref name="node"/>.
     /// </summary>
-    public static void AllocateTargets(UniformityValues values, UniformityNode node, IOperation operation)
+    public static void AllocateTargets(UniformityValues values, UniformityNode node, IOperation operation,
+        ControlFlowGraph graph)
     {
         switch (operation)
         {
             case IDeconstructionAssignmentOperation deconstruction:
-                AllocateTargets(values, node, deconstruction.Target);
+                AllocateTargets(values, node, deconstruction.Target, graph);
                 break;
             case IAssignmentOperation assignment:
-                AllocateTargets(values, node, assignment.Target);
+                AllocateTargets(values, node, assignment.Target, graph);
                 break;
             case IIncrementOrDecrementOperation increment:
-                AllocateTargets(values, node, increment.Target);
+                AllocateTargets(values, node, increment.Target, graph);
                 break;
             case IInvocationOperation invocation:
-                AllocateArguments(values, node, invocation);
+                AllocateArguments(values, node, invocation, graph);
                 break;
             case IDeclarationExpressionOperation declaration:
-                AllocateTargets(values, node, declaration.Expression);
+                AllocateTargets(values, node, declaration.Expression, graph);
                 break;
             case ITupleOperation tuple:
-                AllocateElements(values, node, tuple);
+                AllocateElements(values, node, tuple, graph);
                 break;
             case ILocalReferenceOperation local:
                 AddWritten(node, values.ValueOf(local.Local));
@@ -40,8 +42,13 @@ internal static class UniformityWrites
                 AddWritten(node, values.ValueOf(parameter.Parameter));
                 break;
             case IFieldReferenceOperation or IPropertyReferenceOperation
-                when UniformitySolver.GetStructRoot(operation) is { } root:
-                AddWritten(node, values.ValueOf(root));
+                when GetStructRoot(operation) is IFlowCaptureReferenceOperation capture:
+                AddWritten(node, values.CaptureRootOf(capture, graph));
+                break;
+            case IFieldReferenceOperation or IPropertyReferenceOperation
+                when GetStructRoot(operation) is { } root &&
+                     GetRootSymbol(root) is { } symbol:
+                AddWritten(node, values.ValueOf(symbol));
                 break;
         }
     }
@@ -55,22 +62,62 @@ internal static class UniformityWrites
         }
     }
 
-    private static void AllocateArguments(UniformityValues values, UniformityNode node, IInvocationOperation invocation)
+    private static void AllocateArguments(UniformityValues values, UniformityNode node, IInvocationOperation invocation,
+        ControlFlowGraph graph)
     {
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
             {
-                AllocateTargets(values, node, argument.Value);
+                AllocateTargets(values, node, argument.Value, graph);
             }
         }
     }
 
-    private static void AllocateElements(UniformityValues values, UniformityNode node, ITupleOperation tuple)
+    private static void AllocateElements(UniformityValues values, UniformityNode node, ITupleOperation tuple,
+        ControlFlowGraph graph)
     {
         foreach (var element in tuple.Elements)
         {
-            AllocateTargets(values, node, element);
+            AllocateTargets(values, node, element, graph);
         }
     }
+
+    /// <summary>
+    /// The local, parameter or flow capture of struct type whose member target writes (p.X, p.Inner.Y, the capture that
+    /// an object initializer or a with expression fills), or null for any other target.
+    /// </summary>
+    public static IOperation? GetStructRoot(IOperation target)
+    {
+        var current = target;
+        while (true)
+        {
+            var instance = current switch
+            {
+                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
+                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
+                _ => null
+            };
+
+            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
+            {
+                return null;
+            }
+
+            if (instance is ILocalReferenceOperation or IParameterReferenceOperation or IFlowCaptureReferenceOperation)
+            {
+                return instance;
+            }
+
+            current = instance;
+        }
+    }
+
+    /// <summary>The local or parameter that <paramref name="root"/> names, or null for a flow capture.</summary>
+    public static ISymbol? GetRootSymbol(IOperation root) => root switch
+    {
+        ILocalReferenceOperation local => local.Local,
+        IParameterReferenceOperation parameter => parameter.Parameter,
+        _ => null
+    };
 }

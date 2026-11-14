@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.FlowAnalysis;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Analysis;
 
@@ -11,6 +12,9 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
 {
     private readonly Dictionary<ISymbol, int> _symbols = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<(ControlFlowGraph Graph, CaptureId Id), int> _captures = new();
+
+    // The flow captures whose members a write names, by the reference in that write
+    private readonly Dictionary<IFlowCaptureReferenceOperation, int> _captureRoots = new();
 
     // The result of each local function call whose body is spliced where it is called
     private readonly Dictionary<SyntaxNode, int> _results = new();
@@ -41,6 +45,21 @@ internal sealed class UniformityValues(UniformityRecorder recorder)
 
         return index;
     }
+
+    /// <summary>
+    /// The value index of the flow capture that <paramref name="reference"/> names as the struct a write changes, kept
+    /// for the reference.
+    /// </summary>
+    public int CaptureRootOf(IFlowCaptureReferenceOperation reference, ControlFlowGraph graph)
+    {
+        var index = ValueOf(graph, reference.Id);
+        _captureRoots[reference] = index;
+        return index;
+    }
+
+    /// <summary>The value index that <see cref="CaptureRootOf"/> kept for <paramref name="reference"/>.</summary>
+    public bool TryGetCaptureRoot(IFlowCaptureReferenceOperation reference, out int index) =>
+        _captureRoots.TryGetValue(reference, out index);
 
     /// <summary>The value index of a local or parameter, given one on first use.</summary>
     public int ValueOf(ISymbol symbol)

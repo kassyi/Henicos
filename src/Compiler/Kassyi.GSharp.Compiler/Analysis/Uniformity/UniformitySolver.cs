@@ -149,37 +149,6 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
-    /// <summary>The local or parameter of struct type whose member target writes (p.X, p.Inner.Y), or null for any other target.</summary>
-    public static ISymbol? GetStructRoot(IOperation target)
-    {
-        var current = target;
-        while (true)
-        {
-            var instance = current switch
-            {
-                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
-                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
-                _ => null
-            };
-
-            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
-            {
-                return null;
-            }
-
-            switch (instance)
-            {
-                case ILocalReferenceOperation local:
-                    return local.Local;
-                case IParameterReferenceOperation parameter:
-                    return parameter.Parameter;
-                default:
-                    current = instance;
-                    continue;
-            }
-        }
-    }
-
     /// <summary>Whether <paramref name="symbol"/> is declared inside <paramref name="scope"/>.</summary>
     public static bool IsDeclaredIn(ISymbol symbol, SyntaxNode scope) =>
         symbol.DeclaringSyntaxReferences
@@ -465,11 +434,21 @@ internal sealed class UniformitySolver(UniformityState state)
             _ => null
         };
 
-        // A field or property of a struct local or parameter: the struct keeps its other members, so the write only
-        // adds to its variance
-        if (symbol == null && GetStructRoot(target) is { } root)
+        // A field or property of a struct local, parameter or flow capture: the struct keeps its other members, so the
+        // write only adds to its variance
+        if (symbol == null && UniformityWrites.GetStructRoot(target) is { } root)
         {
-            symbol = root;
+            if (root is IFlowCaptureReferenceOperation capture)
+            {
+                if (state.Recorder.TryGetCaptureRoot(capture, out var captured))
+                {
+                    current[captured] |= variance;
+                }
+
+                return;
+            }
+
+            symbol = UniformityWrites.GetRootSymbol(root);
             strong = false;
         }
 
