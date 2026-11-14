@@ -6,9 +6,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-/// <summary>
-/// Struct fields of every array-like type that is not an array, and their nullable forms (#1267, #1115).
-/// </summary>
+/// <summary>Struct fields of array-like types other than arrays, and their nullable forms (#1267, #1115).</summary>
 public struct ArrayViewFields
 {
     public int Tag;
