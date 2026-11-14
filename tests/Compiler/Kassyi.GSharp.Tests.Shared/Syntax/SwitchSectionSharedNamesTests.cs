@@ -68,4 +68,52 @@ public class SwitchSectionSharedNamesTests : TranspilerTestBase
     [InlineData(1, 0, 20)]
     public void NestedSwitchShared_Native_DeclaresEachSwitchsOwnVariable(int outer, int inner, int expected) =>
         SwitchSectionSharedNamesScenarios.NestedSwitchShared(s_runNative, outer, inner, expected);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 6)]
+    [InlineData(1, 8)]
+    public void SharedFunctionUsedAboveDeclaration_Native_WritesItBeforeTheSwitch(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runNative,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchSharedFunctionUsedAboveDeclarationKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 11)]
+    [InlineData(1, 20)]
+    public void FunctionCallsLaterSectionFunction_Native_DeclaresTheCalledFunctionFirst(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runNative,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchFunctionCallsLaterSectionFunctionKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 6)]
+    [InlineData(1, 24)]
+    public void SharedRecursiveFunction_Native_WritesTheGroupBeforeTheSwitch(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runNative,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchSharedRecursiveFunctionKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
 }

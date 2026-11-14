@@ -185,4 +185,53 @@ public static partial class SwitchSectionSharedNamesKernels
                 break;
         }
     }
+
+    // The shared function is used above its own declaration, in its own section
+    [GpuKernel]
+    public static void SharedFunctionUsedAboveDeclarationKernel(int[] output, int mode)
+    {
+        switch (mode)
+        {
+            case 0:
+                output[0] = Twice(3);
+                int Twice(int v) => v * 2;
+                break;
+            default:
+                output[0] = Twice(4);
+                break;
+        }
+    }
+
+    // A function of the first section calls the shared function that the second section declares
+    [GpuKernel]
+    public static void FunctionCallsLaterSectionFunctionKernel(int[] output, int mode)
+    {
+        switch (mode)
+        {
+            case 0:
+                int Add(int v) => Times(v) + 1;
+                output[0] = Add(1);
+                break;
+            default:
+                int Times(int v) => v * 10;
+                output[0] = Times(2);
+                break;
+        }
+    }
+
+    // A recursive function that two sections use
+    [GpuKernel]
+    public static void SharedRecursiveFunctionKernel(int[] output, int mode)
+    {
+        switch (mode)
+        {
+            case 0:
+                int Factorial(int n) => n <= 1 ? 1 : n * Factorial(n - 1);
+                output[0] = Factorial(3);
+                break;
+            default:
+                output[0] = Factorial(4);
+                break;
+        }
+    }
 }

@@ -73,6 +73,54 @@ public class SwitchSectionSharedNamesManagedTests : TranspilerTestBase
     public void NestedSwitchShared_Managed_DeclaresEachSwitchsOwnVariable(int outer, int inner, int expected) =>
         SwitchSectionSharedNamesScenarios.NestedSwitchShared(s_runManaged, outer, inner, expected);
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 6)]
+    [InlineData(1, 8)]
+    public void SharedFunctionUsedAboveDeclaration_Managed_WritesItBeforeTheSwitch(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runManaged,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchSharedFunctionUsedAboveDeclarationKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 11)]
+    [InlineData(1, 20)]
+    public void FunctionCallsLaterSectionFunction_Managed_DeclaresTheCalledFunctionFirst(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runManaged,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchFunctionCallsLaterSectionFunctionKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 6)]
+    [InlineData(1, 24)]
+    public void SharedRecursiveFunction_Managed_WritesTheGroupBeforeTheSwitch(int mode, int expected) =>
+        SwitchSectionSharedNamesScenarios.SharedFunction(
+            s_runManaged,
+            static (output, m) => SwitchSectionSharedNamesKernels.LaunchSharedRecursiveFunctionKernel(
+                output,
+                m,
+                blockDimX: 1
+            ),
+            mode,
+            expected
+        );
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

@@ -97,4 +97,13 @@ internal static class SwitchSectionSharedNamesScenarios
 
         Assert.Equal([expected], output);
     }
+
+    public static void SharedFunction(Action<Action> run, Action<int[], int> launch, int mode, int expected)
+    {
+        int[] output = [0];
+
+        run(() => launch(output, mode));
+
+        Assert.Equal([expected], output);
+    }
 }

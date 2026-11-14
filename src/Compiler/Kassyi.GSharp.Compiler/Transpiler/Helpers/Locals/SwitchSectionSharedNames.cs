@@ -87,15 +87,23 @@ internal static class SwitchSectionSharedNames
             context.Emitter.Writer.AppendLine(";");
         }
 
-        foreach (var function in AllFunctions(switchStatement))
+        // The plan orders the shared functions by what they call, and writes the recursive ones as groups
+        List<StatementSyntax> functions = [];
+        AllFunctions(switchStatement)
+            .AsStackEnumerable()
+            .Where(shared.Functions, static (function, set) => set.Contains(function))
+            .Select(static function => (StatementSyntax)function)
+            .AddTo(functions);
+        var order = LocalFunctionOrder.Create(functions, 0, context.Query.SemanticModel);
+        for (var i = 0; i < functions.Count; i++)
         {
-            if (shared.Functions.Contains(function))
-            {
-                context.Visitor.Visit(function);
-                context.Emitter.Writer.AppendLine();
-            }
+            order?.TryWriteStatement(i, ref context);
         }
     }
+
+    /// <summary>The local functions of the switch that the block around it declares.</summary>
+    public static HashSet<LocalFunctionStatementSyntax> GetSharedFunctions(SwitchStatementSyntax switchStatement,
+        SemanticModel model) => Find(switchStatement, model).Functions;
 
     // What the switch shares: found once per switch and kept with its syntax node
     private static SharedNames Find(SwitchStatementSyntax switchStatement, SemanticModel model)
