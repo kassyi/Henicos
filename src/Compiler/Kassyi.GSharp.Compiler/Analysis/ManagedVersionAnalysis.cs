@@ -50,8 +50,8 @@ internal static class ManagedVersionAnalysis
     /// <c>partial</c> (the version is written into them), or one of another assembly that recorded one.
     /// </summary>
     /// <remarks>
-    /// GSH0036 requires <c>partial</c> on the class of every device function; the check covers the types that contain
-    /// that class, for which nothing is emitted and nothing is routed.
+    /// GSH0036 requires <c>partial</c> on the class or struct of every device function; the check covers the types that contain
+    /// it, for which nothing is emitted and nothing is routed.
     /// </remarks>
     public static bool HasManagedVersion(IMethodSymbol method, Compilation compilation)
     {

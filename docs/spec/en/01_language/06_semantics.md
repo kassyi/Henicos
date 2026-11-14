@@ -66,10 +66,9 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
   result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
   function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
   would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
-  it. The managed path throws it too in three forms that keep the C# operator:
-  - a device function declared in a `struct` that is not `partial` (a class that holds device functions must be
-    `partial`, GSH0036): the rewritten copy of the function is written into a partial declaration of its types, and
-    such a function has none;
+  it. The managed path throws it too in two forms that keep the C# operator (a type that holds device functions must be
+  `partial`, class or struct, GSH0036: the rewritten copy of a function is written into a partial declaration of its
+  types):
   - the compound assignment (`/=`, `%=`) of an indexer whose receiver or argument writes, may throw, or reads what
     the right side writes (`g[k++] /= -1`): the getter and the setter would evaluate it twice;
   - the compound assignment of a property of a value type whose receiver is not a variable (a call that returns the

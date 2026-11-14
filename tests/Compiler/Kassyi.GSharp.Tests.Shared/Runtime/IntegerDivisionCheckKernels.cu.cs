@@ -72,4 +72,18 @@ public static partial class IntegerDivisionCheckKernels
         o[1] = j;
         a[1] /= (a[1] = d[2]);
     }
+
+    [GpuKernel]
+    public static void StructQuotientKernel(int[] a, int[] d, int[] o)
+    {
+        int i = (int)ThreadIndex.X;
+        o[i] = DivisionHolder.Quotient(a[i], d[i]);
+    }
+}
+
+// A device function of a partial struct gets its managed version like one of a class (GSH0036 requires partial)
+public partial struct DivisionHolder
+{
+    [GpuDeviceFunction]
+    public static int Quotient(int a, int d) => a / d;
 }
