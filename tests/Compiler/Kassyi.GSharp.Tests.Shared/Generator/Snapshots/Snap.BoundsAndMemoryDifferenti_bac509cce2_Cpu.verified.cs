@@ -3433,6 +3433,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS8602
 }
 }
 
@@ -3731,6 +3732,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS8602
 }
 }
 
@@ -4348,6 +4350,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS8602
 }
 }
 
@@ -7075,6 +7078,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS8604
 }
 }
 
