@@ -4,6 +4,7 @@ using System.Linq;
 using Kassyi.GSharp.Compiler.Layout;
 using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Tests.Infrastructure;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -111,6 +112,7 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
     }
 
     [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void RunJob_Execution_TransfersEnumAndArrayValues()
     {
@@ -124,6 +126,7 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
     }
 
     [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void RunByteJob_Execution_TransfersByteEnumAndArrayValues()
     {
@@ -137,6 +140,7 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
     }
 
     [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void RunLongJob_Execution_TransfersLongEnumAndArrayValues()
     {
