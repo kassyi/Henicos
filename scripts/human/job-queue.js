@@ -24,9 +24,9 @@
 // keeps arrival order without it (neither has the round-robin or the bound). `move <id> --first` / `--before <id>` put
 // a waiting job ahead of that order (backfilling still reserves the first job's start); `set-weight` changes the slots
 // a waiting job takes; `start <id>` grants a waiting job at once, over the slots and the memory pool, like a GPU holder
-// (not a GPU turn, not before --after). `pause` makes the scheduler start no waiting job (no slots, no GPU turns; running
-// jobs finish, GPU holders and `start <id>` still go at once) until `resume`; it is saved in jobs-<port>.json, so it
-// survives a restart, and `pause --until-idle` waits until no job runs.
+// (not a GPU turn, not before --after). `pause` makes the scheduler start no waiting job (no slots, no GPU turns;
+// running jobs finish, GPU holders and `start <id>` still go at once) until `resume`; it is saved in jobs-<port>.json,
+// so it survives a restart, and `pause --until-idle` waits until no job runs.
 //
 // Dependencies: `run --after <id>` starts once that job's recorded outcome lets it (succeeded, or any outcome with
 // --keep-if-failed); when it failed, was cancelled or its client was lost, the job is cancelled too (exit 4). The

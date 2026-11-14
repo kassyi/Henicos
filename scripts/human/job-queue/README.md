@@ -93,6 +93,8 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
 | `view.ts` | The screen of the live view as lines, with no I/O: header, one line per job with its timeline, the bottom line; narrow and short layouts |
 | `view-chats.ts` | The chat panel: the chats that ask the person in order (idle reports counted), one row each or one summary line, their title, worktree and job ids, and the chat part of the help; pure |
+| `view-flash.ts` | The big pause or play mark that Space flashes over the job rows for a second; pure |
+| `view-state.ts` | The state of the live view that the keys change and the screen reads (selection, scroll, prompt, message, help page, chat panel, flash) |
 | `screen-line.ts` | Styled text for the live view: the styles, the width of a string in terminal cells, `ScreenLine` |
 | `screenshot.ts` | `--screenshots`: the ANSI lines of the live view as an SVG of a terminal, and the sample screens of this README |
 | `view-sample.ts` | The fixed sample status and chats the view's self-test and the screenshots draw from |

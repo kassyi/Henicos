@@ -6,64 +6,10 @@
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { type Style, ScreenLine, displayWidth, duration, fit } from "./screen-line.ts";
 import { type ChatView, type LegendEntry, chatCounts, chatLegend, chatLines, waitingChats } from "./view-chats.ts";
+import { FlashMs, overlayFlash } from "./view-flash.ts";
+import { type Prompt, type ViewState, initialViewState } from "./view-state.ts";
 
-export { type Style, ScreenLine, displayWidth, fit };
-
-/** What the person is typing: a confirmation, or a number for move / set-weight. */
-export type Prompt =
-  | { kind: "cancel"; id: number }
-  | { kind: "start"; id: number }
-  | { kind: "move"; id: number; digits: string }
-  | { kind: "weight"; id: number; digits: string };
-
-export interface ViewState {
-  /** The selected job; kept by id across refreshes. */
-  selectedId: number | null;
-  /** The first job line shown, when the jobs do not fit. */
-  offset: number;
-  prompt: Prompt | null;
-  /** The result of the last action, shown on the bottom line until `until`. */
-  message: { text: string; until: number; style: Style } | null;
-  /** The help page shown: 0 for none, else 1 to `helpPages`. */
-  help: number;
-  /** How many pages the help takes at the current width (set by renderScreen: 1 when both columns fit). */
-  helpPages: number;
-  /** The chat panel is hidden (key a). */
-  chatsHidden: boolean;
-  /** The mark flashed over the job rows after Space (pause or play), until `until`; null when none. */
-  flash: { kind: "pause" | "resume"; until: number } | null;
-}
-
-/** How long the mark of Space stays on the screen. */
-export const FlashMs = 1000;
-
-/** The big mark of Space, as rows of block characters, as the timeline is drawn: two bars for a pause, a right-pointing triangle for a play. */
-const FlashMarks: Record<"pause" | "resume", { rows: string[]; style: Style }> = {
-  pause: {
-    rows: Array.from({ length: 5 }, () => "████   ████"),
-    style: "now",
-  },
-  resume: {
-    rows: ["██        ", "██████    ", "██████████", "██████    ", "██        "],
-    style: "run",
-  },
-};
-/** The mark's rows are this tall and it needs this many rows of the job area and columns to be drawn. */
-const FlashRows = 5;
-const FlashMinColumns = 24;
-
-export function initialViewState(): ViewState {
-  return {
-    selectedId: null,
-    offset: 0,
-    prompt: null,
-    message: null,
-    help: 0,
-    helpPages: 2,
-    chatsHidden: false,
-    flash: null,
-  };
-}
+export { type Style, ScreenLine, displayWidth, fit, FlashMs, type Prompt, type ViewState, initialViewState };
 
 export interface Screen {
   columns: number;
@@ -603,22 +549,9 @@ export function renderScreen(
   while (area.length < listRows) {
     area.push({ line: new ScreenLine(columns).padTo(), selected: false });
   }
-  // The mark of Space floats over the middle of the job area (not over the help, and not on a screen too small for it)
-  const flash = state.flash;
-  if (
-    flash !== null &&
-    flash.until > now &&
-    helpPage === 0 &&
-    listRows >= FlashRows + 2 &&
-    columns >= FlashMinColumns
-  ) {
-    const mark = FlashMarks[flash.kind];
-    const top = Math.floor((listRows - FlashRows) / 2);
-    const width = (mark.rows[0] as string).length + 4; // two cells of space around the mark
-    const left = Math.floor((columns - width) / 2);
-    mark.rows.forEach((row, offset) => {
-      (area[top + offset] as { line: ScreenLine }).line.overlay(left, `  ${row.padEnd(width - 4)}  `, mark.style);
-    });
+  // The mark of Space floats over the middle of the job area (not over the help)
+  if (helpPage === 0) {
+    overlayFlash(area, state.flash, now, columns);
   }
   area.forEach(({ line, selected }) => lines.push(line.render(color, selected)));
   const hidden = helpPage > 0 ? 0 : jobs.length - Math.min(listRows, jobs.length);

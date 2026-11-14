@@ -218,8 +218,8 @@ export async function pause(port: number, untilIdle: boolean): Promise<void> {
   const running = numberField(reply, "running");
   const waiting = numberField(reply, "waiting");
   process.stdout.write(
-    `${reply.changed === true ? "paused" : "already paused"}: ${running} running jobs finish, ${waiting} waiting jobs ` +
-      'wait; "job-queue.js resume" lifts it\n',
+    `${reply.changed === true ? "paused" : "already paused"}: ${running} running jobs finish, ` +
+      `${waiting} waiting jobs wait; "job-queue.js resume" lifts it\n`,
   );
   if (!untilIdle) {
     return;

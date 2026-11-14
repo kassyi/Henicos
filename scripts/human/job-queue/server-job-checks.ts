@@ -440,8 +440,8 @@ export async function checkStartAndRestore(assert: AssertModule): Promise<void> 
 
 /**
  * pause and resume on a scheduler in this process: the waiting clients are told once, a client that queues while
- * paused is told in its "queued", a freed slot is not taken, status shows the pause, the state file keeps it (a restored
- * scheduler is paused too), and resume grants the waiting jobs in their order.
+ * paused is told in its "queued", a freed slot is not taken, status shows the pause, the state file keeps it (a
+ * restored scheduler is paused too), and resume grants the waiting jobs in their order.
  */
 export async function checkPauseAndRestore(assert: AssertModule): Promise<void> {
   await withServer(1, async (server, port) => {

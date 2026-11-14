@@ -324,7 +324,9 @@ function checkStartKey(): void {
   );
 }
 
-/** Space pauses or resumes at once and flashes its mark for a second; the header and the wait reasons show the pause. */
+/**
+ * Space pauses or resumes at once and flashes its mark for a second; the header and the wait reasons show the pause.
+ */
 function checkPauseKey(): void {
   const reply = sampleReply();
   const paused: StatusReply = { ...reply, paused: true, pausedAt: Now - 4 * Minute };

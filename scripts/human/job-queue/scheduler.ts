@@ -110,8 +110,8 @@ export class Scheduler<J extends SchedulerJob> {
   used = 0;
   memoryUsed = 0;
   /**
-   * pause: nothing new is granted, neither slots nor GPU turns (grant). The jobs that run keep their slots, and the jobs
-   * granted at once (GPU holders, start <id>) still are. pausedAt is when it was set (0 while not paused).
+   * pause: nothing new is granted, neither slots nor GPU turns (grant). The jobs that run keep their slots, and the
+   * jobs granted at once (GPU holders, start <id>) still are. pausedAt is when it was set (0 while not paused).
    */
   paused = false;
   pausedAt = 0;
@@ -381,8 +381,9 @@ export class Scheduler<J extends SchedulerJob> {
   }
 
   /**
-   * Grants GPU holders and the jobs started by hand at once (also while paused: nothing else is), then the GPU turn to the first waiting turn in order while the GPU is free, then the
-   * first grantable waiting job while it fits, then backfills (unless fifo).
+   * Grants GPU holders and the jobs started by hand at once (also while paused: nothing else is), then the GPU turn to
+   * the first waiting turn in order while the GPU is free, then the first grantable waiting job while it fits, then
+   * backfills (unless fifo).
    */
   grant(now = Date.now()): J[] {
     const granted: J[] = [];

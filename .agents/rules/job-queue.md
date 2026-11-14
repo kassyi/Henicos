@@ -18,7 +18,7 @@ node scripts/human/job-queue.js wait <id>                   # until it ends: exi
 node scripts/human/job-queue.js move <id> --first           # a waiting job goes first (also --before <id>, --reset)
 node scripts/human/job-queue.js set-weight <id> <n>         # the slots a waiting job takes
 node scripts/human/job-queue.js start <id>                  # a waiting job starts now, over the pool (a person's call)
-node scripts/human/job-queue.js pause [--until-idle]        # start no waiting job; running ones finish (--until-idle: block until none runs)
+node scripts/human/job-queue.js pause [--until-idle]        # grant nothing new; --until-idle: wait until none runs
 node scripts/human/job-queue.js resume                      # lift the pause
 node scripts/human/job-queue.js cancel <id>                 # one job: leaves the queue or is stopped
 node scripts/human/job-queue.js cancel-all                  # every job the scheduler knows
