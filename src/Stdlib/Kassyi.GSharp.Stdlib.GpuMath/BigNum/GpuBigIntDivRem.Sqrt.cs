@@ -220,7 +220,8 @@ public static partial class GpuBigIntDivRem
 
             if (GetActualBits(currentRoot) == 0)
             {
-                currentRoot.Workspace.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Workspace.Stream);
+                var rootWorkspace = currentRoot.Workspace;
+                rootWorkspace.Provider.WriteWord(currentRoot.DevicePointer, 0, 1u, rootWorkspace.Stream);
             }
 
             return currentRoot;
@@ -263,7 +264,7 @@ public static partial class GpuBigIntDivRem
             }
 
             using var plusOne = new GpuBigUInt(leftOperand.Workspace, n);
-            plusOne.Workspace.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1, plusOne.Workspace.Stream);
+            plusOne.Workspace.Provider.WriteWord(plusOne.DevicePointer, 0, 1u, plusOne.Workspace.Stream);
             using var prevPlusOne = new GpuBigUInt(leftOperand.Workspace, n);
             GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
 
