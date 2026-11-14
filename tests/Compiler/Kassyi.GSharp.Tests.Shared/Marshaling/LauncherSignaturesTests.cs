@@ -71,10 +71,15 @@ public class LauncherSignaturesTests
         Assert.Equal(
             new LauncherParameter("out", "global::System.Int64", "ref global::System.Int64", null),
             LauncherSignatures.GetParameter(shapes[4], LauncherKind.Managed));
-        // step: in is not written
+        // step: an in beside a ref of its type is the caller's variable, written with in and compared as a by-reference
+        // parameter
         Assert.Equal(
-            new LauncherParameter("", "global::System.Int32", "global::System.Int32", null),
+            new LauncherParameter("in", "global::System.Int32", "ref global::System.Int32", null),
             LauncherSignatures.GetParameter(shapes[5], LauncherKind.Managed));
+        // narrow: any other in is a value, so it is not written
+        Assert.Equal(
+            new LauncherParameter("", "global::System.Int16", "global::System.Int16", null),
+            LauncherSignatures.GetParameter(shapes[11], LauncherKind.Managed));
         Assert.Equal(
             new LauncherParameter("", "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy?",
                 "global::System.Nullable<global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy>", null),
@@ -89,7 +94,7 @@ public class LauncherSignaturesTests
             LauncherSignatures.GetParameter(shapes[1], LauncherKind.TypedPointer));
         Assert.Equal(
             new LauncherParameter("", "global::System.Int32", "global::System.Int32", "3"),
-            LauncherSignatures.GetParameter(shapes[11], LauncherKind.Pointer));
+            LauncherSignatures.GetParameter(shapes[12], LauncherKind.Pointer));
     }
 
     // Scale and ScalePtr both produce LaunchScalePtr(IntPtr); the kernel whose name sorts first keeps it, in any order
