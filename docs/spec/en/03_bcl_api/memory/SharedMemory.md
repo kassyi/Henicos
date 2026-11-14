@@ -144,7 +144,7 @@ Managed execution runs a device function that never reaches a barrier as ordinar
 
 ### Dynamic Shared Memory
 
-A declaration whose count is a C# constant (`new SharedMemory<float>(256)`, or a `const` field) is **static**: on CUDA it becomes `__shared__ T name[N]`, its size is fixed at compile time, and [GSH0013](../diagnostics/GSH0013.md) warns above 32 KB. Any other count (a parameter, `BlockDimension.X`, a non-constant expression) makes the declaration **dynamic**. Dynamic declarations live in the dynamic shared memory of the launch, whose size the host passes as `sharedMemBytes`:
+A declaration whose count is a C# constant (`new SharedMemory<float>(256)`, or a `const` field) is **static**: on CUDA it becomes `__shared__ T name[N]`, its size is fixed at compile time, and [GSH0013](../diagnostics/GSH0013.md) warns above 32 KB. A constant count of 0 declares empty shared memory, like `new int[0]` (CUDA, which has no array of 0 elements, declares one element that C# cannot reach); a negative constant count is an error, [GSH0117](../diagnostics/GSH0117.md), as C# rejects an array of a negative constant size. Any other count (a parameter, `BlockDimension.X`, a non-constant expression) makes the declaration **dynamic**. Dynamic declarations live in the dynamic shared memory of the launch, whose size the host passes as `sharedMemBytes`:
 
 ```csharp
 // TileKernel declares two dynamic SharedMemory<float>(n) with n = 256: two 1024-byte regions, each starting at a
@@ -222,11 +222,11 @@ Declare a region that grows last, or declare it with its largest count first.
 | Condition | CUDA | CPU (native) | Managed |
 | --- | --- | --- | --- |
 | The regions end past `sharedMemBytes` | Trap | `ArgumentOutOfRangeException` naming the declaration, the bytes it needs and `sharedMemBytes` | The same exception (not for a declaration in a device function that managed execution does not rewrite, see above) |
-| A negative count | Trap | `ArgumentOutOfRangeException` (the count arrives as at least 2^63 bytes, as on CUDA) | The same exception |
+| A negative count | `ArgumentOutOfRangeException` ("the count of a shared memory declaration is negative"), in every build | The same exception, naming the count and the declaration | The same exception, naming the count and the declaration |
 | A count of 0 | Empty region | Empty region | Empty region; an element access throws `IndexOutOfRangeException` |
 | A larger count for a region that is not the last | Trap | `InvalidOperationException` | The same exception |
 
-On CUDA and the native CPU path the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, fails instead of wrapping. The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+A negative count fails on every path before anything is placed; then the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`. A static declaration of a negative constant count is a compile-time error instead ([GSH0117](../diagnostics/GSH0117.md)). The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. On sm_70 and later, a failed check records its error and ends the thread without a GPU fault: the launch throws the exception named in the table (`ArgumentOutOfRangeException`, `InvalidOperationException`) and the process keeps its CUDA context, so the next launch runs. Only a thread that cannot record its error (no error record for the launch, or before sm_70) executes a trap, which surfaces as a `CudaException` and leaves the CUDA context of the process unusable. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
 
 #### Threads must reach dynamic declarations alike
 

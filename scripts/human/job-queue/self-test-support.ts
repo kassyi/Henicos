@@ -34,7 +34,7 @@ const FirstTestPort = 20000;
 const LastTestPort = 32000;
 
 /** How many ports a self-test run uses, from its first one. */
-const TestPortSpan = 16;
+const TestPortSpan = 24;
 
 /** The first port of a self-test run; the run uses this one and the ports after it, `TestPortSpan` in all. */
 export function firstTestPort(): number {

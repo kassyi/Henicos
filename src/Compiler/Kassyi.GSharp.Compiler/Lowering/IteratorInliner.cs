@@ -198,7 +198,8 @@ internal static class IteratorInliner
             expansionStatements,
             site.IteratorMethod.Parameters,
             stampedParamList.Parameters,
-            annotatedInvocation.ArgumentList.Arguments,
+            annotatedInvocation,
+            semanticModel,
             ref argumentTempCounter);
     }
 
@@ -244,15 +245,23 @@ internal static class IteratorInliner
     }
 
     /// <summary>
-    /// Returns the default argument expression for an omitted optional iterator parameter, preserving original-span
-    /// annotations when declared in source: the default clause, or else the argument of
+    /// Returns the argument expression for an optional iterator parameter that <paramref name="call"/> omits: the
+    /// call site's value of a caller-info parameter (<see cref="CallerInfoArgument"/>), or the default value,
+    /// preserving original-span annotations when declared in source: the default clause, or else the argument of
     /// <c>[DefaultParameterValue(x)]</c>. Either one binds through its annotation, so <c>float.NaN</c> reaches the
     /// constant field path; an expression built from the value would be outside the compilation and bind to nothing.
     /// </summary>
     public static ExpressionSyntax GetDefaultArgumentExpression(
         IParameterSymbol parameter,
-        ParameterSyntax? annotatedParamSyntax)
+        ParameterSyntax? annotatedParamSyntax,
+        SyntaxNode call,
+        SemanticModel semanticModel)
     {
+        if (CallerInfoArgument.CreateDeviceArgument(parameter, call, semanticModel) is { } callerInfo)
+        {
+            return callerInfo;
+        }
+
         if (annotatedParamSyntax?.Default?.Value is { } defaultSyntax)
         {
             return defaultSyntax;
@@ -311,9 +320,11 @@ internal static class IteratorInliner
         ImmutableArray<StatementSyntax>.Builder statements,
         ImmutableArray<IParameterSymbol> parameters,
         SeparatedSyntaxList<ParameterSyntax> annotatedParameters,
-        SeparatedSyntaxList<ArgumentSyntax> arguments,
+        InvocationExpressionSyntax call,
+        SemanticModel semanticModel,
         ref int argumentTempCounter)
     {
+        var arguments = call.ArgumentList.Arguments;
         var paramIndices = MapArgumentsToParameters(parameters, arguments, out var isOutOfOrder);
         var argExpressions = new ExpressionSyntax?[parameters.Length];
         if (isOutOfOrder)
@@ -342,7 +353,8 @@ internal static class IteratorInliner
         for (var i = 0; i < annotatedParameters.Count && i < parameters.Length; i++)
         {
             var paramSyntax = annotatedParameters[i];
-            var initExpr = argExpressions[i] ?? GetDefaultArgumentExpression(parameters[i], paramSyntax);
+            var initExpr = argExpressions[i] ?? GetDefaultArgumentExpression(parameters[i], paramSyntax, call,
+                semanticModel);
             AddParameterLocalDeclaration(statements, paramSyntax, initExpr);
         }
     }

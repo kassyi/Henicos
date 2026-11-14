@@ -22,6 +22,7 @@ import { delay, firstTestPort, stopChild, QueueFixture, registration } from "./s
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
 import { checkReconnects } from "./self-test-reconnect.ts";
+import { checkPause } from "./self-test-pause.ts";
 import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
 
@@ -488,6 +489,11 @@ export async function selfTest(): Promise<void> {
     // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
     fixture.part = "part 15 (checkRestarts)";
     await checkRestarts(fixture, port + 10);
+
+    // 16. pause: nothing waiting starts, running jobs end, the pause survives a restart, start <id> still works,
+    //     pause --until-idle waits for the running jobs, resume grants.
+    fixture.part = "part 16 (checkPause)";
+    await checkPause(fixture, port + 20);
   } catch (error) {
     process.stderr.write(`${fixture.part} failed\n${fixture.schedulerLogTail()}`);
     throw error;
