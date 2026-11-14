@@ -1848,6 +1848,7 @@ __gsharp_ctx->__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS9192
 }
 }
 #pragma warning restore CS8500

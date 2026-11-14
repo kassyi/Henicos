@@ -174,6 +174,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS9193
 }
 }
 
@@ -444,6 +445,7 @@ __gsharp_ctx.__gsharp_state = -1;
 return;
 }
 }
+#pragma warning restore CS9193
 }
 }
 

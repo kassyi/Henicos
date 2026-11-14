@@ -76,8 +76,127 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         }
 
         // switch (__gsharp_state) { case 0: { ... } case 1: { ... } ... }
-        return SyntaxFactory.Block(sections.ToSwitch());
+        var body = SyntaxFactory.Block(sections.ToSwitch());
+        var trailingTrivia = GetTrailingTrivia(block);
+        return trailingTrivia.Count > 0
+            ? body.WithCloseBraceToken(body.CloseBraceToken.WithLeadingTrivia(trailingTrivia))
+            : body;
     }
+
+    private SyntaxTriviaList GetTrailingTrivia(BlockSyntax block)
+    {
+        var direct = GetPreservedTrailingDirectives(block.CloseBraceToken.LeadingTrivia);
+        if (direct.Count > 0)
+        {
+            return direct;
+        }
+
+        if (semanticModel?.SyntaxTree is { } tree)
+        {
+            var root = tree.GetRoot();
+            MethodDeclarationSyntax? lastCheckedMethod = null;
+
+            foreach (var node in block.DescendantNodesAndSelf())
+            {
+                if (node.SyntaxTree == tree)
+                {
+                    MethodDeclarationSyntax? method = null;
+                    for (var current = node; current != null; current = current.Parent)
+                    {
+                        if (current is MethodDeclarationSyntax m)
+                        {
+                            method = m;
+                            break;
+                        }
+                    }
+
+                    if (method != null && method != lastCheckedMethod)
+                    {
+                        lastCheckedMethod = method;
+                        if (method.Body is { } origBody)
+                        {
+                            var origPreserved = GetPreservedTrailingDirectives(origBody.CloseBraceToken.LeadingTrivia);
+                            if (origPreserved.Count > 0)
+                            {
+                                return origPreserved;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var ann in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                {
+                    if (LoweringAnnotations.TryParseOriginalSpanData(ann.Data, out var start, out _, out _, out _))
+                    {
+                        var originalToken = root.FindToken(start);
+                        MethodDeclarationSyntax? method = null;
+                        for (var current = originalToken.Parent; current != null; current = current.Parent)
+                        {
+                            if (current is MethodDeclarationSyntax m)
+                            {
+                                method = m;
+                                break;
+                            }
+                        }
+
+                        if (method != null && method != lastCheckedMethod)
+                        {
+                            lastCheckedMethod = method;
+                            if (method.Body is { } origBody)
+                            {
+                                var origPreserved = GetPreservedTrailingDirectives(origBody.CloseBraceToken.LeadingTrivia);
+                                if (origPreserved.Count > 0)
+                                {
+                                    return origPreserved;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return default;
+    }
+
+    private static SyntaxTriviaList GetPreservedTrailingDirectives(SyntaxTriviaList triviaList)
+    {
+        if (triviaList.Count == 0)
+        {
+            return default;
+        }
+
+        var count = 0;
+        foreach (var trivia in triviaList)
+        {
+            if (trivia.IsDirective && !IsConditionalCompilationTrivia(trivia))
+            {
+                count++;
+            }
+        }
+
+        if (count == 0)
+        {
+            return default;
+        }
+
+        var array = new SyntaxTrivia[count];
+        var index = 0;
+        foreach (var trivia in triviaList)
+        {
+            if (trivia.IsDirective && !IsConditionalCompilationTrivia(trivia))
+            {
+                array[index++] = trivia;
+            }
+        }
+
+        return SyntaxFactory.TriviaList(array);
+    }
+
+    private static bool IsConditionalCompilationTrivia(SyntaxTrivia trivia) =>
+        trivia.Kind() is SyntaxKind.IfDirectiveTrivia or SyntaxKind.ElifDirectiveTrivia
+            or SyntaxKind.ElseDirectiveTrivia or SyntaxKind.EndIfDirectiveTrivia or SyntaxKind.RegionDirectiveTrivia
+            or SyntaxKind.EndRegionDirectiveTrivia or SyntaxKind.DisabledTextTrivia;
 
     private void LowerStateLabel(LabeledStatementSyntax labeled, IReadOnlyDictionary<DeclarationKey, int> labelStates,
         HashSet<DeclarationKey> labelsReachedFromSwitch, SectionBuilder sections)
