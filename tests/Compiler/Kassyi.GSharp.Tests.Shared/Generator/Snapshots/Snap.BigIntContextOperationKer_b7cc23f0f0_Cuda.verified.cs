@@ -581,7 +581,11 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
-if (host.LeftOperand != null && native.LeftOperand.Data != global::System.IntPtr.Zero)
+if (native.LeftOperand.Data == global::System.IntPtr.Zero)
+{
+host.LeftOperand = default;
+}
+else if (host.LeftOperand != null)
 {
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -597,7 +601,11 @@ handle.Free();
 }
 }
 }
-if (host.RightOperand != null && native.RightOperand.Data != global::System.IntPtr.Zero)
+if (native.RightOperand.Data == global::System.IntPtr.Zero)
+{
+host.RightOperand = default;
+}
+else if (host.RightOperand != null)
 {
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -613,7 +621,11 @@ handle.Free();
 }
 }
 }
-if (host.TargetOperand != null && native.TargetOperand.Data != global::System.IntPtr.Zero)
+if (native.TargetOperand.Data == global::System.IntPtr.Zero)
+{
+host.TargetOperand = default;
+}
+else if (host.TargetOperand != null)
 {
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -629,7 +641,11 @@ handle.Free();
 }
 }
 }
-if (host.ResultBuffer != null && native.ResultBuffer.Data != global::System.IntPtr.Zero)
+if (native.ResultBuffer.Data == global::System.IntPtr.Zero)
+{
+host.ResultBuffer = default;
+}
+else if (host.ResultBuffer != null)
 {
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -645,7 +661,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant != null && native.Constant.Data != global::System.IntPtr.Zero)
+if (native.Constant.Data == global::System.IntPtr.Zero)
+{
+host.Constant = default;
+}
+else if (host.Constant != null)
 {
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -661,7 +681,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant3 != null && native.Constant3.Data != global::System.IntPtr.Zero)
+if (native.Constant3.Data == global::System.IntPtr.Zero)
+{
+host.Constant3 = default;
+}
+else if (host.Constant3 != null)
 {
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -677,7 +701,11 @@ handle.Free();
 }
 }
 }
-if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
+{
+host.CarryBuffer = default;
+}
+else if (host.CarryBuffer != null)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)

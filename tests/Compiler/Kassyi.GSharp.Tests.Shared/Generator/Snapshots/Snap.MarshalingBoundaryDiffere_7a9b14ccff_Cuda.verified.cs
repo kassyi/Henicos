@@ -948,7 +948,7 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 }
 __gsharp_layout_checked_BoolAllPositionsKernel = true;
 }
-ov = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out ov);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingBoundaryDifferentialKernels.BoolAllPositionsKernel");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 global::System.Boolean[] __gsharp_auto_result = new global::System.Boolean[__gsharp_total_threads];
@@ -1407,7 +1407,7 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 }
 __gsharp_layout_checked_CharAllPositionsKernel = true;
 }
-ov = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out ov);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingBoundaryDifferentialKernels.CharAllPositionsKernel");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 global::System.Char[] __gsharp_auto_result = new global::System.Char[__gsharp_total_threads];
@@ -2250,7 +2250,7 @@ public static void WarmupFunctionPointerNullableBlitScalarArgKernel() => global:
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchNullableBlitScalarArgKernel(global::System.Nullable<global::System.Int32> v, ref global::System.Nullable<global::System.Byte> rb, out global::System.Nullable<global::System.Char> oc, global::System.Int32[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-oc = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out oc);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingBoundaryDifferentialKernels.NullableBlitScalarArgKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -3594,7 +3594,7 @@ public static void WarmupFunctionPointerAutoLayoutAllPositionsKernel() => global
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[] LaunchAutoLayoutAllPositionsKernel(global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed val, global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed inVal, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed refVal, out global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed outVal, global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[] arr, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoNested nested, global::System.Int64[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-outVal = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out outVal);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[] __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Differential.DiffAutoMixed[__gsharp_total_threads];
@@ -5942,7 +5942,7 @@ public static void WarmupFunctionPointerMultiRefScalarAndRawPointerKernel() => g
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMultiRefScalarAndRawPointerKernel(global::System.Int32 inScalar, ref global::System.Int32 refA, ref global::System.Int32 refB, ref global::System.Single refF, out global::System.Int32 outSum, global::System.Int32* pValid, global::System.Int32* pNull, global::System.Int32 constFactor, global::System.Int32[] roTable, global::System.Int32[] probe, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-outSum = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out outSum);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingBoundaryDifferentialKernels.MultiRefScalarAndRawPointerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
