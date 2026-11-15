@@ -134,6 +134,18 @@ Marshal_DualNttContext(ref host.Ntt, ref native.Ntt, allocatedPtrs, hStream);
 }
 public static unsafe void Unmarshal_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, ref AotContexts.Fermat native, global::System.IntPtr hStream = default)
 {
+if (native.OperandA.Data == global::System.IntPtr.Zero)
+{
+host.OperandA = default;
+}
+if (native.OperandB.Data == global::System.IntPtr.Zero)
+{
+host.OperandB = default;
+}
+if (native.Result.Data == global::System.IntPtr.Zero)
+{
+host.Result = default;
+}
 host.Modulus = native.Modulus;
 Unmarshal_DualNttContext(ref host.Ntt, ref native.Ntt, hStream);
 }
@@ -222,6 +234,18 @@ native.Length = host.Length;
 }
 public static unsafe void Unmarshal_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, ref AotContexts.DualNtt native, global::System.IntPtr hStream = default)
 {
+if (native.Buffer1.Data == global::System.IntPtr.Zero)
+{
+host.Buffer1 = default;
+}
+if (native.Buffer2.Data == global::System.IntPtr.Zero)
+{
+host.Buffer2 = default;
+}
+if (native.Twiddles.Data == global::System.IntPtr.Zero)
+{
+host.Twiddles = default;
+}
 host.Length = native.Length;
 }
 public static void CopyArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
@@ -315,6 +339,22 @@ native.Length = host.Length;
 }
 public static unsafe void Unmarshal_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, ref AotContexts.Crypto native, global::System.IntPtr hStream = default)
 {
+if (native.OperandA.Data == global::System.IntPtr.Zero)
+{
+host.OperandA = default;
+}
+if (native.OperandB.Data == global::System.IntPtr.Zero)
+{
+host.OperandB = default;
+}
+if (native.Result.Data == global::System.IntPtr.Zero)
+{
+host.Result = default;
+}
+if (native.Scratch.Data == global::System.IntPtr.Zero)
+{
+host.Scratch = default;
+}
 host.Length = native.Length;
 }
 public static void CopyArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

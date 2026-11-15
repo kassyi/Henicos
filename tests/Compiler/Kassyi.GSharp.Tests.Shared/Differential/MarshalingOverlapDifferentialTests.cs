@@ -814,13 +814,14 @@ public sealed class MarshalingOverlapDifferentialTests
         Seeds = [0],
         Inputs = static (_, _) => new DiffBuffers()
             .Out<int>("observed", 3, OutputPolicy.Exact)
-            .Out<int>("final", 1, OutputPolicy.Exact),
+            .Out<int>("final", 2, OutputPolicy.Exact),
         Reference = static (b, _) =>
         {
             b.Get<int>("observed")[0] = 3;
             b.Get<int>("observed")[1] = 2;
             b.Get<int>("observed")[2] = 0;
             b.Get<int>("final")[0] = 0;
+            b.Get<int>("final")[1] = 1;
         },
         Launch = static (b, s) =>
         {
@@ -828,6 +829,7 @@ public sealed class MarshalingOverlapDifferentialTests
             MarshalingOverlapDifferentialKernels.LaunchOutStructAndRefOfItKernel(
                 out bag, ref bag, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = bag.Tag;
+            b.Get<int>("final")[1] = bag.Data is null ? 1 : 0;
         },
     };
 

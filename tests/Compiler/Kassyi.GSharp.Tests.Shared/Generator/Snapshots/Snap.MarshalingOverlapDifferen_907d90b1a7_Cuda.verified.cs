@@ -260,7 +260,11 @@ native.Tag = host.Tag;
 }
 public static unsafe void Unmarshal_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -354,7 +358,11 @@ native.Second.Length = host.Second.Length;
 }
 public static unsafe void Unmarshal_DiffArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffArrayPair host, ref AotContexts.DiffArrayPair native, global::System.IntPtr hStream = default)
 {
-if (host.First != null && native.First.Data != global::System.IntPtr.Zero)
+if (native.First.Data == global::System.IntPtr.Zero)
+{
+host.First = default;
+}
+else if (host.First != null)
 {
 int size = checked(host.First.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -370,7 +378,11 @@ handle.Free();
 }
 }
 }
-if (host.Second != null && native.Second.Data != global::System.IntPtr.Zero)
+if (native.Second.Data == global::System.IntPtr.Zero)
+{
+host.Second = default;
+}
+else if (host.Second != null)
 {
 int size = checked(host.Second.Length * sizeof(global::System.Int32));
 if (size > 0)
