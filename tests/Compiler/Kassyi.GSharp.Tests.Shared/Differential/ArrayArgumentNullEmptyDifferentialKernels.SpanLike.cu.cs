@@ -51,6 +51,9 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
             case ArrayArgumentReads.Length:
                 o[0] = m.Length;
                 break;
+            case ArrayArgumentReads.IsEmpty:
+                o[0] = m.IsEmpty ? 1 : 0;
+                break;
         }
     }
 
@@ -88,6 +91,15 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 break;
             case ArrayArgumentReads.Element:
                 o[0] = ia[0];
+                break;
+            case ArrayArgumentReads.IsEmpty:
+                o[0] = ia.IsEmpty ? 1 : 0;
+                break;
+            case ArrayArgumentReads.IsDefault:
+                o[0] = ia.IsDefault ? 1 : 0;
+                break;
+            case ArrayArgumentReads.IsDefaultOrEmpty:
+                o[0] = ia.IsDefaultOrEmpty ? 1 : 0;
                 break;
             case ArrayArgumentReads.ForEach:
                 o[0] = 100;
@@ -164,6 +176,9 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 break;
             case ArrayArgumentReads.Length:
                 o[0] = m.Length;
+                break;
+            case ArrayArgumentReads.IsEmpty:
+                o[0] = m.IsEmpty ? 1 : 0;
                 break;
         }
     }

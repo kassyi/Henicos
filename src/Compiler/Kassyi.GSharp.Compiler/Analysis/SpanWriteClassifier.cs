@@ -97,7 +97,20 @@ internal static class SpanWriteClassifier
                 : SpanPropertyKind.Unsupported;
         }
 
-        return SpanPropertyKind.None;
+        // [WHY] ImmutableArray<T> and Memory<T> are array views in device code: only these members have a device form here;
+        // Length is mapped by the dialect and the others are reported where they are used
+        if (property.IsStatic || !(IsImmutableArray(owner) || IsMemory(owner)))
+        {
+            return SpanPropertyKind.None;
+        }
+
+        return property.Name switch
+        {
+            "IsEmpty" => SpanPropertyKind.IsEmpty,
+            "IsDefault" when IsImmutableArray(owner) => SpanPropertyKind.IsDefault,
+            "IsDefaultOrEmpty" when IsImmutableArray(owner) => SpanPropertyKind.IsDefaultOrEmpty,
+            _ => SpanPropertyKind.None,
+        };
     }
 
     /// <summary>
@@ -239,6 +252,10 @@ internal static class SpanWriteClassifier
     private static bool IsImmutableArray(INamedTypeSymbol type) =>
         type is { IsGenericType: true, Name: "ImmutableArray" } &&
         type.ContainingNamespace.IsSystemCollectionsImmutable();
+
+    private static bool IsMemory(INamedTypeSymbol type) =>
+        type is { IsGenericType: true, Name: "Memory" or "ReadOnlyMemory" } &&
+        type.ContainingNamespace.IsSystemNamespace();
 
     private static bool IsRank1Array(ITypeSymbol type) =>
         type is IArrayTypeSymbol { Rank: 1 };

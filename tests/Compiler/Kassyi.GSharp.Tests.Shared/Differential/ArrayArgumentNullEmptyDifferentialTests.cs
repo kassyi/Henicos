@@ -130,6 +130,9 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         R.AsSpanLength => "AsSpanLength",
         R.SpanLength => "SpanLength",
         R.ToNonNullable => "ToNonNullable",
+        R.IsEmpty => "IsEmpty",
+        R.IsDefault => "IsDefault",
+        R.IsDefaultOrEmpty => "IsDefaultOrEmpty",
         _ => "InNullableFunction",
     };
 }

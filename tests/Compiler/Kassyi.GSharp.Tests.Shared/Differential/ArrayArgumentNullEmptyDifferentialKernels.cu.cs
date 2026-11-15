@@ -235,4 +235,13 @@ public static class ArrayArgumentReads
 
     /// <summary>The array read in a device function whose parameter is nullable.</summary>
     public const int InNullableFunction = 7;
+
+    /// <summary><c>IsEmpty</c> of a <c>Memory&lt;T&gt;</c> or an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsEmpty = 8;
+
+    /// <summary><c>IsDefault</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsDefault = 9;
+
+    /// <summary><c>IsDefaultOrEmpty</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsDefaultOrEmpty = 10;
 }

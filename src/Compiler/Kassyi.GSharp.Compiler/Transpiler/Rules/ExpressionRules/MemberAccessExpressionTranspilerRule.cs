@@ -53,7 +53,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         TranspileMemberAccess(node, symbol, ref context);
     }
 
-    // Span<T>.Empty, Span<T>.IsEmpty and the Span / ReadOnlySpan properties that G# does not support.
+    // Span<T>.Empty, the IsEmpty / IsDefault members of the array views, and the Span / ReadOnlySpan properties that G#
+    // does not support.
     private static bool TryTranspileSpanProperty(
         MemberAccessExpressionSyntax node,
         IPropertySymbol property,
@@ -66,7 +67,22 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 context.Emitter.Writer.Append("{}");
                 return true;
             case SpanPropertyKind.IsEmpty:
-                StackArrayLocals.AppendView(node.Expression, ref context);
+                // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array
+                AppendViewReceiver(node, property, ref context);
+                context.Emitter.Writer.Append(".IsEmpty()");
+                return true;
+            case SpanPropertyKind.IsDefault:
+                // (<array>.data==nullptr): a null array is the one with no data pointer, an empty one has it
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    AppendViewReceiver(node, property, ref context);
+                    context.Emitter.Writer.Append(".data==nullptr");
+                }
+
+                return true;
+            case SpanPropertyKind.IsDefaultOrEmpty:
+                // A default array has no element either
+                AppendViewReceiver(node, property, ref context);
                 context.Emitter.Writer.Append(".IsEmpty()");
                 return true;
             case SpanPropertyKind.Unsupported:
@@ -79,6 +95,16 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return true;
             default:
                 return false;
+        }
+    }
+
+    // The receiver as an array view; the receiver of a member that reads the array of an ImmutableArray<T> is checked
+    private static void AppendViewReceiver(MemberAccessExpressionSyntax node, IPropertySymbol property,
+        ref TranspileContext context)
+    {
+        if (!ArrayNullCheck.TryAppendMemberReceiver(node, property, ref context))
+        {
+            StackArrayLocals.AppendView(node.Expression, ref context);
         }
     }
 
