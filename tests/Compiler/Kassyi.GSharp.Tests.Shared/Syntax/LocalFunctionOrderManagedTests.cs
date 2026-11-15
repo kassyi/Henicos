@@ -88,6 +88,35 @@ public class LocalFunctionOrderManagedTests : TranspilerTestBase
     public void DelegateOfRecursive_Managed_ConvertsTheLocalFunctionGroup() =>
         LocalFunctionOrderScenarios.DelegateOfRecursive(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallBeforeCapturedDeclaration_Managed_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallBeforeCapturedDeclarationKernel(
+                data,
+                blockDimX: 4
+            ),
+            x => x + 5
+        );
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallTwoCapturedLocals_Managed_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallTwoCapturedLocalsKernel(data, blockDimX: 4),
+            x => x + 7
+        );
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallThroughAFunction_Managed_DeclaresTheCapturedLocalsFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallThroughAFunctionKernel(data, blockDimX: 4),
+            x => x + 6
+        );
 
     private static void RunManaged(Action launch)
     {
@@ -96,5 +125,23 @@ public class LocalFunctionOrderManagedTests : TranspilerTestBase
             launch();
         }
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallInSwitchSection_Managed_DeclaresTheCapturedLocalFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallInSwitchSectionKernel(data, blockDimX: 4),
+            x => x + 4
+        );
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallInLoopBody_Managed_DeclaresTheCapturedLocalFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallInLoopBodyKernel(data, blockDimX: 4),
+            x => x + 6
+        );
 }
 #endif

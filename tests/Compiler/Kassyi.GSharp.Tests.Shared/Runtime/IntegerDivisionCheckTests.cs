@@ -55,6 +55,39 @@ public class IntegerDivisionCheckTests : TranspilerTestBase
         Assert.Equal([int.MinValue, int.MinValue], o);
     }
 
+    // The device function of a partial struct has a managed version as one of a class has (#1897 (A device function of a
+    // non-partial struct gets no managed version, so the managed path differs from the GPU without GSH0036))
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Quotient_MinValueByMinusOneInStructDeviceFunction_GivesTheGpuResult(bool forceManaged)
+    {
+        int[] a = [int.MinValue, 9];
+        int[] d = [-1, 2];
+        var o = new int[2];
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchStructQuotientKernel(a, d, o, blockDimX: 2));
+
+        Assert.Equal([int.MinValue, 4], o);
+    }
+
+    // A generic, a readonly, a ref and a nested partial struct: the managed version is written into each declaration
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Quotient_MinValueByMinusOneInStructShapes_GivesTheGpuResult(bool forceManaged)
+    {
+        int[] a = [int.MinValue];
+        int[] d = [-1];
+        var o = new int[4];
+
+        Run(forceManaged, () => IntegerDivisionCheckKernels.LaunchStructShapesQuotientKernel(a, d, o, blockDimX: 1));
+
+        Assert.Equal([int.MinValue, int.MinValue, int.MinValue, int.MinValue], o);
+    }
+
     // A device function has the same result as a kernel body: its managed version calls the managed form (#711)
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]

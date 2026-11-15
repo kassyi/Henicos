@@ -21,7 +21,7 @@ internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStru
     private static readonly HashSet<string> s_droppedReferences =
     [
         "SpanEnumerator", "ParallelStackEnumerable", "CollectionsMarshal", "IAdditionOperators", "IAdditiveIdentity",
-        "Vector"
+        "Vector", "Int128", "IBinaryInteger", "IMinMaxValue"
     ];
 
     public static bool DeclaresType(SyntaxNode root)
