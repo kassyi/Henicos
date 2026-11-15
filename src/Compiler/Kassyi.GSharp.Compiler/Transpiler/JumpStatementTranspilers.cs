@@ -8,10 +8,21 @@ internal static class JumpStatementTranspilers
     /// </summary>
     public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context)
     {
-        if (!UsingCpuEmitter.TryJumpToExit(node, ref context))
+        if (UsingCpuEmitter.TryJumpToExit(node, ref context))
         {
-            context.Emitter.Writer.Append("break;");
+            return;
         }
+
+        var plan = LabeledJumps.PlanJump(node, context.Query.SemanticModel);
+        if (plan.Form == LabeledJumpForm.Goto)
+        {
+            context.Emitter.Writer.Append("goto ");
+            LabeledJumps.AppendJumpTarget(in plan, node, ref context);
+            context.Emitter.Writer.Append(';');
+            return;
+        }
+
+        context.Emitter.Writer.Append("break;");
     }
 
     /// <summary>
@@ -19,10 +30,21 @@ internal static class JumpStatementTranspilers
     /// </summary>
     public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context)
     {
-        if (!UsingCpuEmitter.TryJumpToExit(node, ref context))
+        if (UsingCpuEmitter.TryJumpToExit(node, ref context))
         {
-            context.Emitter.Writer.Append("continue;");
+            return;
         }
+
+        var plan = LabeledJumps.PlanJump(node, context.Query.SemanticModel);
+        if (plan.Form == LabeledJumpForm.Goto)
+        {
+            context.Emitter.Writer.Append("goto ");
+            LabeledJumps.AppendJumpTarget(in plan, node, ref context);
+            context.Emitter.Writer.Append(';');
+            return;
+        }
+
+        context.Emitter.Writer.Append("continue;");
     }
 
     /// <summary>
@@ -94,8 +116,15 @@ internal static class JumpStatementTranspilers
             return;
         }
 
+        var targetPlan = LabeledJumps.PlanTarget(node, context.Query.SemanticModel);
         WriteLabel(node, ref context);
         context.Visitor.Visit(node.Statement);
+
+        if (targetPlan.NeedsBreakLabel)
+        {
+            LabeledJumps.AppendBreakLabel(node, ref context);
+            context.Emitter.Writer.AppendLine(":;");
+        }
     }
 
     /// <summary>Writes the label of <paramref name="node"/> (<c>&lt;name&gt;:</c>) without its statement.</summary>
