@@ -22,22 +22,30 @@ internal sealed class LocalFunctionOrder
     private const string SelfPrefix = "__gsharp_lf_self_";
     private const string ImplPrefix = "__gsharp_lf_impl_";
 
+    private readonly IReadOnlyList<StatementSyntax> _statements;
     private readonly LocalFunctionPlan _plan;
     private readonly HashSet<int> _written = [];
 
-    private LocalFunctionOrder(LocalFunctionPlan plan, int start)
+    private LocalFunctionOrder(IReadOnlyList<StatementSyntax> statements, LocalFunctionPlan plan, int start,
+        HashSet<LocalFunctionStatementSyntax>? writtenElsewhere)
     {
+        _statements = statements;
         _plan = plan;
 
-        // The ones before start were written by the caller
-        for (var i = 0; i < start; i++)
+        // The ones before start were written by the caller, and the ones in writtenElsewhere are written there
+        for (var i = 0; i < statements.Count; i++)
         {
-            if (plan.IsFunction(i))
+            if (plan.IsFunction(i) && (i < start || IsWrittenElsewhere(statements[i], writtenElsewhere)))
             {
                 _written.Add(i);
             }
         }
     }
+
+    private static bool IsWrittenElsewhere(StatementSyntax statement,
+        HashSet<LocalFunctionStatementSyntax>? writtenElsewhere) =>
+        writtenElsewhere != null && statement is LocalFunctionStatementSyntax function &&
+        writtenElsewhere.Contains(function);
 
     /// <summary>
     /// The writer for <paramref name="statements"/> from <paramref name="start"/> on, or <see langword="null"/> when
@@ -46,18 +54,21 @@ internal sealed class LocalFunctionOrder
     /// <param name="statements">The statement list.</param>
     /// <param name="start">The first statement that the caller writes.</param>
     /// <param name="model">The semantic model of the tree of the list.</param>
-    public static LocalFunctionOrder? Create(SyntaxList<StatementSyntax> statements, int start, SemanticModel model) =>
-        LocalFunctionPlan.Create(statements, model) is { } plan ? new LocalFunctionOrder(plan, start) : null;
+    /// <param name="writtenElsewhere">The local functions of the list that another writer has written, if any.</param>
+    public static LocalFunctionOrder? Create(IReadOnlyList<StatementSyntax> statements, int start,
+        SemanticModel model, HashSet<LocalFunctionStatementSyntax>? writtenElsewhere = null) =>
+        LocalFunctionPlan.Create(statements, model) is { } plan
+            ? new LocalFunctionOrder(statements, plan, start, writtenElsewhere)
+            : null;
 
     /// <summary>
     /// Writes what the local functions of the list need before the statement at <paramref name="index"/>, and the
     /// statement itself when it is a local function. Returns <see langword="true"/> when the statement was written
     /// here or before, so the caller must not write it again.
     /// </summary>
-    /// <param name="statements">The statement list.</param>
     /// <param name="index">The statement that is about to be written.</param>
     /// <param name="context">The transpile context.</param>
-    public bool TryWriteStatement(SyntaxList<StatementSyntax> statements, int index, ref TranspileContext context)
+    public bool TryWriteStatement(int index, ref TranspileContext context)
     {
         if (_plan.IsFunction(index) && _written.Contains(index))
         {
@@ -69,7 +80,7 @@ internal sealed class LocalFunctionOrder
         {
             if (used > index && !_written.Contains(used))
             {
-                Write(statements, used, ref context);
+                Write(used, ref context);
             }
         }
 
@@ -81,14 +92,14 @@ internal sealed class LocalFunctionOrder
         // Writing the local functions that this one uses may have written its group already
         if (!_written.Contains(index))
         {
-            Write(statements, index, ref context);
+            Write(index, ref context);
         }
 
         return true;
     }
 
     // The local function with the ones of its list that its group uses first, as a lambda, or as its group
-    private void Write(SyntaxList<StatementSyntax> statements, int index, ref TranspileContext context)
+    private void Write(int index, ref TranspileContext context)
     {
         var group = _plan.Group(index);
         foreach (var member in group)
@@ -102,24 +113,24 @@ internal sealed class LocalFunctionOrder
             {
                 if (_plan.IsFunction(used) && !_written.Contains(used))
                 {
-                    Write(statements, used, ref context);
+                    Write(used, ref context);
                 }
             }
         }
 
         if (group.Count == 1 && !_plan.IsRecursive(index))
         {
-            context.Visitor.Visit(statements[index]);
+            context.Visitor.Visit(_statements[index]);
             context.Emitter.Writer.AppendLine();
             return;
         }
 
-        WriteGroup(statements, group, ref context);
+        WriteGroup(_statements, group, ref context);
     }
 
     // auto <impl> = [&](auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
     // auto <name> = [&](<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
-    private static void WriteGroup(SyntaxList<StatementSyntax> statements, IReadOnlyList<int> group,
+    private static void WriteGroup(IReadOnlyList<StatementSyntax> statements, IReadOnlyList<int> group,
         ref TranspileContext context)
     {
         foreach (var member in group)
@@ -135,7 +146,7 @@ internal sealed class LocalFunctionOrder
     }
 
     private static void WriteImplementation(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
-        SyntaxList<StatementSyntax> statements, ref TranspileContext context)
+        IReadOnlyList<StatementSyntax> statements, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var returnType = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function)?.ReturnType;
@@ -169,7 +180,7 @@ internal sealed class LocalFunctionOrder
     }
 
     private static void WriteForwarder(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
-        SyntaxList<StatementSyntax> statements, bool useSelves, ref TranspileContext context)
+        IReadOnlyList<StatementSyntax> statements, bool useSelves, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var returnType = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function)?.ReturnType;

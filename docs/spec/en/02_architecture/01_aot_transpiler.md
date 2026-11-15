@@ -161,6 +161,7 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 
 1. **Partial Class Injection**: The Source Generator enhances the user's kernel class (which must be declared with the `partial` modifier, enforced by `GSH0036`) by emitting additional launcher methods and nested interop contexts directly into `[ContainingType]` (e.g., `MyKernels`).
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]Ptr` is generated.
+    - **Both dialects**: the CUDA and the CPU dialect emit the same launchers with the same signatures and accessibility (`Launch[KernelName]`, `Launch[KernelName]Ptr`, and the typed `Launch[KernelName]Ptr` of an overloaded kernel), so code that calls them builds with either dialect. On the CPU dialect, `Launch[KernelName]Ptr` takes host addresses and calls the native CPU launcher through an unmanaged function pointer (`delegate* unmanaged[Cdecl]`, from `CpuKernelLoader.LoadAotKernelPtr`). It runs only on the native CPU path for now: on the managed path (`KernelExecution.Managed`, or no native library) it throws `NotSupportedException`, and under `KernelExecution.CSharp` it throws as the CUDA one does.
     - **Overloaded kernels**: `Launch[KernelName]` stays a C# overload with the kernel's own parameter types. Because the `IntPtr` form of `Launch[KernelName]Ptr` would erase the element types, an overloaded kernel's public `Launch[KernelName]Ptr` takes each array-like and `ref` / `out` parameter as a typed `GpuBuffer<T>` and forwards to a private `IntPtr` implementation. The other per-kernel host members are keyed `[KernelName]__o{n}`. Kernels whose launch wrappers or warmup methods still get the same name and parameter types (overloads such as `int[]` and `ref int`, or `Scale(ref S)` and `ScalePtr(nint)`, whose `LaunchScalePtr` both take an `IntPtr`) are reported as [GSH0059](../03_bcl_api/diagnostics/GSH0059.md).
 3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, `hStream` defaulting to `default`, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
@@ -312,6 +313,16 @@ The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environ
 Each time the generator writes the native module (`Kassyi.GSharp.Kernels_{assembly}.g.cu` or `.g.cpp`, with the assembly name escaped as the generated names are (`Henicos.Benchmarks` gives `Kassyi.GSharp.Kernels_Henicos_x00002eBenchmarks`), with its `.gsym.json`), it also writes `$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts`, which lists the file name of that module. An assembly without kernels gets an empty list. The `GSharpCompileCuda` and `GSharpCompileCpu` targets compile only the listed `.cu` and `.cpp` files, not every such file under `obj/`, and add them, the manifest and the symbol files to `FileWrites`.
 
 A source that an earlier build wrote and the current one did not (the other dialect after `GSharpTargetDialect` changed, an old assembly name, kernels that were all removed) is therefore not compiled again, and MSBuild's `IncrementalClean` deletes it together with its fatbin or native library at the end of the build. The generator writes nothing in an IDE design-time build, so the manifest of the last real build stays in place.
+
+### 1.5.3 Minimum .NET SDK Version Check (GS0005)
+
+G# builds its Roslyn source generator against Roslyn 5.9, which is bundled in .NET SDK 10.0.400 and later. Building a project that references G# with an older .NET SDK (such as SDK 10.0.303 / Roslyn 5.6) stops the build before C# compilation begins with error `GS0005`:
+
+```
+error GS0005: G# needs the .NET SDK 10.0.400 or later (Roslyn 5.9) because its source generator is built against Roslyn 5.9; this build uses <version>.
+```
+
+The `GSharpCheckMinimumSdkVersion` target in `Kassyi.GSharp.Compiler.targets` checks `$(NETCoreSdkVersion)` before `CoreCompile` using `[MSBuild]::VersionLessThan`.
 
 ## 1.6 Expression Lowering (IIFE)
 
