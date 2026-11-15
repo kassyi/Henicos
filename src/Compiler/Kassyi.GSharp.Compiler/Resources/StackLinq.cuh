@@ -8,11 +8,86 @@ __device__ __forceinline__ bool __gsharp_linq_equals(const T& a, const T& b) { r
 __device__ __forceinline__ bool __gsharp_linq_equals(float a, float b) { return a == b || (a != a && b != b); }
 __device__ __forceinline__ bool __gsharp_linq_equals(double a, double b) { return a == b || (a != a && b != b); }
 
-// The accumulator of a Sum: float adds in double and rounds once at the end, as System.Linq does
+// The result of an integer Sum: the exact sum, range-checked once. A Sum that does not fit throws OverflowException on
+// every path (StackLinq contract); the sum does not depend on the order of the elements, so a sequence whose running
+// sum leaves the range and comes back gives its value
+[[noreturn]] __device__ __forceinline__ void __gsharp_sum_overflow() {
+    __gsharp_trap(GSharpErrorCode::Overflow, "Arithmetic operation resulted in an overflow.");
+}
+__device__ __forceinline__ int __gsharp_sum_i32(long long sum) {
+    if (sum < -2147483647ll - 1 || sum > 2147483647ll) { __gsharp_sum_overflow(); }
+    return (int)sum;
+}
+__device__ __forceinline__ unsigned int __gsharp_sum_u32(unsigned long long sum) {
+    if (sum > 4294967295ull) { __gsharp_sum_overflow(); }
+    return (unsigned int)sum;
+}
+// The range checks of the wide total of a grid-wide int or uint sum
+__device__ __forceinline__ int __gsharp_sum_i32(__gsharp_wide_sum sum) {
+    const bool fits = (sum.hi == 0 && sum.lo <= 2147483647ull) ||
+                      (sum.hi == -1 && sum.lo >= 18446744071562067968ull);
+    if (!fits) { __gsharp_sum_overflow(); }
+    return (int)(long long)sum.lo;
+}
+__device__ __forceinline__ unsigned int __gsharp_sum_u32(__gsharp_wide_sum sum) {
+    if (sum.hi != 0 || sum.lo > 4294967295ull) { __gsharp_sum_overflow(); }
+    return (unsigned int)sum.lo;
+}
+__device__ __forceinline__ long long __gsharp_sum_i64(__gsharp_wide_sum sum) {
+    const bool fits = (sum.hi == 0 && sum.lo <= 9223372036854775807ull) ||
+                      (sum.hi == -1 && sum.lo >= 9223372036854775808ull);
+    if (!fits) { __gsharp_sum_overflow(); }
+    return (long long)sum.lo;
+}
+__device__ __forceinline__ unsigned long long __gsharp_sum_u64(__gsharp_wide_sum sum) {
+    if (sum.hi != 0) { __gsharp_sum_overflow(); }
+    return sum.lo;
+}
+
+// How the C++ Sum adds a TElement: float adds in double and rounds once at the end, as System.Linq does; an integer adds
+// exactly (a 64-bit accumulator for int and uint, 128 bits for long and ulong) and is range-checked once at the end
 template <typename T>
-struct __gsharp_linq_sum_accumulator { typedef T type; };
+struct __gsharp_linq_sum_ops {
+    typedef T acc;
+    __device__ static inline acc Zero() { return 0; }
+    __device__ static inline acc Add(acc a, T v) { return a + v; }
+    __device__ static inline T Result(acc a) { return a; }
+};
 template <>
-struct __gsharp_linq_sum_accumulator<float> { typedef double type; };
+struct __gsharp_linq_sum_ops<float> {
+    typedef double acc;
+    __device__ static inline acc Zero() { return 0; }
+    __device__ static inline acc Add(acc a, float v) { return a + v; }
+    __device__ static inline float Result(acc a) { return (float)a; }
+};
+template <>
+struct __gsharp_linq_sum_ops<int> {
+    typedef long long acc;
+    __device__ static inline acc Zero() { return 0; }
+    __device__ static inline acc Add(acc a, int v) { return a + v; }
+    __device__ static inline int Result(acc a) { return __gsharp_sum_i32(a); }
+};
+template <>
+struct __gsharp_linq_sum_ops<unsigned int> {
+    typedef unsigned long long acc;
+    __device__ static inline acc Zero() { return 0; }
+    __device__ static inline acc Add(acc a, unsigned int v) { return a + v; }
+    __device__ static inline unsigned int Result(acc a) { return __gsharp_sum_u32(a); }
+};
+template <>
+struct __gsharp_linq_sum_ops<long long> {
+    typedef __gsharp_wide_sum acc;
+    __device__ static inline acc Zero() { acc s; s.lo = 0; s.hi = 0; return s; }
+    __device__ static inline acc Add(acc a, long long v) { return __gsharp_wide_add_i64(a, v); }
+    __device__ static inline long long Result(acc a) { return __gsharp_sum_i64(a); }
+};
+template <>
+struct __gsharp_linq_sum_ops<unsigned long long> {
+    typedef __gsharp_wide_sum acc;
+    __device__ static inline acc Zero() { acc s; s.lo = 0; s.hi = 0; return s; }
+    __device__ static inline acc Add(acc a, unsigned long long v) { return __gsharp_wide_add_u64(a, v); }
+    __device__ static inline unsigned long long Result(acc a) { return __gsharp_sum_u64(a); }
+};
 
 // Whether a Max / Min element is NaN, which System.Linq places independently of its position; false for every
 // other type
@@ -549,11 +624,12 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         template <typename TSource>
         __device__ static inline auto Sum(TSource source) {
             using TElement = decltype(source.Current());
-            typename __gsharp_linq_sum_accumulator<TElement>::type sum = 0;
+            typedef __gsharp_linq_sum_ops<TElement> Ops;
+            typename Ops::acc sum = Ops::Zero();
             while (source.MoveNext()) {
-                sum += source.Current();
+                sum = Ops::Add(sum, source.Current());
             }
-            return (TElement)sum;
+            return Ops::Result(sum);
         }
 
         // Sum(selector) is Select(selector).Sum(), as in C#
