@@ -23,10 +23,10 @@ internal readonly record struct DefaultValuePlan(
 /// <c>default(T)</c> and the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the
 /// initializer of a declaration with a written type (<c>T x = {};</c>), the right side of a simple assignment
 /// (<c>x = {};</c>) and an argument the compiler built itself. Every other position gets
-/// <c>__gsharp_type&lt;T&gt;{}</c> with <c>T</c> from the semantic model (<c>c ? a : __gsharp_type&lt;int&gt;{}</c>, <c>x == __gsharp_type&lt;int&gt;{}</c>,
-/// <c>auto z = __gsharp_type&lt;int&gt;{}</c>, <c>__gsharp_type&lt;S&gt;{}.Field</c>). The alias template is one name
-/// for every type, so a type of several words (<c>long long</c>, <c>unsigned char</c>) or a pointer is a valid
-/// functional cast in every compiler.
+/// <c>__gsharp_type&lt;T&gt;{}</c> with <c>T</c> from the semantic model (<c>c ? a : __gsharp_type&lt;int&gt;{}</c>,
+/// <c>x == __gsharp_type&lt;int&gt;{}</c>, <c>auto z = __gsharp_type&lt;int&gt;{}</c>,
+/// <c>__gsharp_type&lt;S&gt;{}.Field</c>). The alias template is one name for every type, so a type of
+/// several words (<c>long long</c>, <c>unsigned char</c>) or a pointer is a valid functional cast in every compiler.
 /// </summary>
 internal static class DefaultValue
 {
@@ -59,8 +59,11 @@ internal static class DefaultValue
             return new DefaultValuePlan(
                 DefaultValueForm.Typed,
                 type,
-                target is { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] } &&
-                !underlying.IsEqualTo(type) && !target.IsEqualTo(type)
+                target is
+                {
+                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+                    TypeArguments: [var underlying]
+                } && !underlying.IsEqualTo(type) && !target.IsEqualTo(type)
                     ? target
                     : null);
         }

@@ -67,8 +67,8 @@ public class DefaultValueTests
 
         var plan = DefaultValue.Plan(node, model);
 
-        // mutant: Plan: drop the check that the default and its target have the same type, or IsBracedListPosition: return true
-        // for a compound assignment, a return, or a parenthesized right side
+        // mutant: Plan: drop the check that the default and its target have the same type, or
+        // IsBracedListPosition: return true for a compound assignment, a return, or a parenthesized right side
         Assert.Equal(DefaultValueForm.Typed, plan.Form);
         Assert.Equal(type, plan.Type?.Name);
     }
