@@ -15,8 +15,8 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// </remarks>
 internal static class KernelDeclaration
 {
-    // [WHY] TypeKind.Extension of Roslyn 5 (a C# 14 extension block); Roslyn 4.8, which the compiler builds against,
-    // does not name it
+    // [WHY] TypeKind.Extension (a C# 14 extension block), written as its value from the time the compiler built
+    // against Roslyn 4.8, which does not name it; Roslyn 5.9 does
     private const TypeKind ExtensionTypeKind = (TypeKind)14;
 
     /// <summary>Where <paramref name="kernel"/> is declared, and whether that place can have a launcher.</summary>
