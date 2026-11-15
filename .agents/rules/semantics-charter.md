@@ -29,7 +29,7 @@ Every design, compiler change and new diagnostic follows it. The full user-facin
 ## 3. Undefined behavior (treated like `1 / 0`)
 
 - A form that is certain at compile time is a compile error; the message shows the explicit form that does what the user meant.
-- A form known only at run time is a run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build. The release CUDA build does not check, except for a check placed in a branch that only an unmatched case reaches, such as the trap after the last arm of a switch expression without a discard arm: removing it would leave undefined behavior in the output.
+- A form known only at run time is a run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build. The release CUDA build does not check, except for three checks that it keeps: the divisor of an integer `/` and `%` (and `/=`, `%=`), the minimum value of an integer `Math.Abs`, and a check placed in a branch that only an unmatched case reaches, such as the trap after the last arm of a switch expression without a discard arm (removing it would leave undefined behavior in the output). Each costs one compare and a branch that normal use does not take.
 - A form the analysis can only suspect is not a compile error (never reject correct code).
 - A result a CPU path happens to produce is never treated as correct. When the CPU and GPU results differ, suspect undefined behavior on the GPU first.
 

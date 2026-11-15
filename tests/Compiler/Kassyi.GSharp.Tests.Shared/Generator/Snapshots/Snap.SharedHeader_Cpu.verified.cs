@@ -1052,9 +1052,11 @@ return a % b;
 // and CUDA gives the minimum back. Every build tests the value, as the divisor check above does, and the failing thread
 // stops. The place is the site of the kernel's error site table or, in a device function, a message that names it.
 #if defined(__CUDACC__)
-#define __GSHARP_ABS_CHECK(cond, site)     do { if (cond) { __gsharp_inline_trap(GSharpErrorCode::Overflow, __gsharp_inline_site(site)); } } while (0)
+#define __GSHARP_ABS_CHECK(cond, site) \
+do { if (cond) { __gsharp_inline_trap(GSharpErrorCode::Overflow, __gsharp_inline_site(site)); } } while (0)
 #else
-#define __GSHARP_ABS_CHECK(cond, site)     do { if (cond) { __gsharp_trap_abort(GSharpErrorCode::Overflow, site); } } while (0)
+#define __GSHARP_ABS_CHECK(cond, site) \
+do { if (cond) { __gsharp_trap_abort(GSharpErrorCode::Overflow, site); } } while (0)
 #endif
 
 template <typename S>
