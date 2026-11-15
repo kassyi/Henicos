@@ -50,8 +50,7 @@ internal static class NullRepresentation
     {
         var model = context.Query.SemanticModel;
         operand = SkipNullPreservingConversions(operand, model);
-        if (StackArrayLocals.IsStackArrayReference(operand, model) &&
-            !(StackArrayLocals.TryGetLength(operand, model, out var length) && length == 0))
+        if (StackArrayLocals.NeedsView(operand, model))
         {
             context.Emitter.Writer.Append(isNull ? "false" : "true");
             return;
@@ -91,7 +90,7 @@ internal static class NullRepresentation
 
     // Parentheses, the null-forgiving operator (a!) and casts from one array-like type to another ((int[])a) do not
     // change whether a value is null
-    private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
+    internal static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
     {
         while (true)
         {
@@ -175,8 +174,7 @@ internal static class NullRepresentation
         const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
         var model = context.Query.SemanticModel;
         var operand = SkipNullPreservingConversions(left, model);
-        if (StackArrayLocals.IsStackArrayReference(operand, model) &&
-            !(StackArrayLocals.TryGetLength(operand, model, out var length) && length == 0))
+        if (StackArrayLocals.NeedsView(operand, model))
         {
             context.Visitor.Visit(left);
             return;

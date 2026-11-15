@@ -141,7 +141,11 @@ native.Items.Length = host.Items.Length;
 }
 public static unsafe void Unmarshal_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, ref AotContexts.NullableOrderArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Items != null && native.Items.Data != global::System.IntPtr.Zero)
+if (native.Items.Data == global::System.IntPtr.Zero)
+{
+host.Items = default;
+}
+else if (host.Items != null)
 {
 int size = checked(host.Items.Length * sizeof(global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayInner>));
 if (size > 0)

@@ -2,11 +2,11 @@
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.PendingBugs;
+namespace Kassyi.GSharp.Tests.Shared.TestCases.Transpiler;
 
-// #1084: ContextHoister hoists explicit-type `SharedMemory<int> s = new(8);` to outer state-machine scope
-// while leaving sibling `var s = new SharedMemory<int>(8);` in an inner scope, causing CS0136 in the generated C#.
-[SkipSnapshotConsistency("Pending bug verification")]
+// ContextHoister hoists the explicit-type `SharedMemory<int> s = new(8);` to the state-machine scope and leaves the
+// sibling `var s = new SharedMemory<int>(8);` in an inner scope; the resume local needs a name of its own (CS0136)
+[SkipSnapshotConsistency("Generator case")]
 public static partial class SharedMemorySiblingScopeHoistKernels
 {
     [GpuKernel]

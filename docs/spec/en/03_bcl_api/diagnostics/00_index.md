@@ -18,7 +18,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0001](GSH0001.md) | Error | Object creation not supported in GPU kernels |
 | [GSH0002](GSH0002.md) | Error | String usage not supported in GPU kernels |
 | [GSH0003](GSH0003.md) | Error | Unsupported syntax in GPU kernel |
-| [GSH0004](GSH0004.md) | Error | GpuKernel return type must be void or blittable |
+| [GSH0004](GSH0004.md) | Error | GPU method return type must be void or blittable |
 | [GSH0005](GSH0005.md) | Error | GpuBigIntExpr must be assigned via .Value |
 | [GSH0006](GSH0006.md) | Error | InlinePtx argument must be a string literal |
 | [GSH0007](GSH0007.md) | Error | Foreach is not allowed in GPU kernels |
@@ -115,6 +115,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0112](GSH0112.md) | Error | Kernel parameter type has no device representation |
 | [GSH0113](GSH0113.md) | Error | G# cannot generate the launcher of a [CudaImport] declaration |
 | [GSH0114](GSH0114.md) | Warning | G# has no launch limits for a GSharpTargetArchitectures architecture |
+| [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
+| [GSH0119](GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 
