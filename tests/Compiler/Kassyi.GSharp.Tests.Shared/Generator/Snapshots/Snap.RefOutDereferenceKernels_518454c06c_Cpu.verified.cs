@@ -1337,7 +1337,7 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestS
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
-__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(const int* __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
 __gsharp_self.__gsharp_mb_Value=__gsharp_id_1_value;
@@ -1658,12 +1658,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchKernelWithInParametersPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchKernelWithInParameters, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32*, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::System.Int32*, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, scalar, &s, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &scalar, &s, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500

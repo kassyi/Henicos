@@ -10,7 +10,7 @@ internal static class CudaHostLaunchEmitter
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
         LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild)
     {
-        WriteFunctionField(writer, kernel, moduleName);
+        CudaTwoFormsLaunchEmitter.WriteFunctionFields(writer, kernel, moduleName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel);
         WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild);
@@ -56,7 +56,8 @@ internal static class CudaHostLaunchEmitter
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr, isCheckedBuild);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(
+                        writer, kernel, sharing, isDevicePtr, isCheckedBuild);
                 }
 
                 writer.AppendLine("finally");
@@ -68,22 +69,6 @@ internal static class CudaHostLaunchEmitter
 
             AutoResultEmitter.WriteReturn(writer, kernel.Host);
         }
-    }
-
-    // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
-    private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string moduleName)
-    {
-        const string FunctionType = "global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction";
-        var field = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey);
-        var moduleContextName = AotModuleNames.GetModuleContextName(moduleName);
-        writer.Append($"private static readonly {FunctionType} {field} = new {FunctionType}");
-        using (writer.Parentheses())
-        {
-            writer.Append($"\"{kernel.Host.KernelName}\", ");
-            writer.Append($"global::Kassyi.GSharp.Generated.{moduleContextName}.GetFatbin");
-        }
-
-        writer.AppendLine(";");
     }
 
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, in KernelEmission kernel)

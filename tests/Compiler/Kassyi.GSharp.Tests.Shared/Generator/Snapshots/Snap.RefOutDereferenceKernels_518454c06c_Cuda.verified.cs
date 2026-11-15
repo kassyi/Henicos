@@ -911,7 +911,14 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__Mem
 return __gsharp_self;
 }
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters(const int* __gsharp_id_0_scalar, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_1_s, GSharpArray<int> __gsharp_id_2_output, unsigned int __gsharp_epoch){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters(int __gsharp_id_0_scalar, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_1_s, GSharpArray<int> __gsharp_id_2_output, unsigned int __gsharp_epoch){
+__gsharp_launch_epoch = __gsharp_epoch;
+int __gsharp_id_3_tid = (int)threadIdx.x;
+__gsharp_array_at(__gsharp_id_2_output, __gsharp_mul_i32(__gsharp_id_3_tid,3), 393451892u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_0_scalar,__gsharp_mul_i32(__gsharp_id_1_s.__gsharp_mb_Field,100)),__gsharp_id_1_s.__gsharp_mb_Value);
+__gsharp_array_at(__gsharp_id_2_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1), 2135418348u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInInt(&__gsharp_id_0_scalar),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyInt(&__gsharp_id_0_scalar));
+__gsharp_array_at(__gsharp_id_2_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2), 2119592024u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadInStruct(&__gsharp_id_1_s),1000),__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ReadRefReadOnlyStruct(&__gsharp_id_1_s));
+}
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters__gsharp_in_by_address(const int* __gsharp_id_0_scalar, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_id_1_s, GSharpArray<int> __gsharp_id_2_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_array_at(__gsharp_id_2_output, __gsharp_mul_i32(__gsharp_id_3_tid,3), 393451892u)=__gsharp_add_i32(__gsharp_add_i32((*__gsharp_id_0_scalar),__gsharp_mul_i32(__gsharp_id_1_s.__gsharp_mb_Field,100)),__gsharp_id_1_s.__gsharp_mb_Value);
@@ -920,6 +927,7 @@ __gsharp_array_at(__gsharp_id_2_output, __gsharp_add_i32(__gsharp_mul_i32(__gsha
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_KernelWithInParameters = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_KernelWithInParameters__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_KernelWithInParameters;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernelWithInParameters() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.__gsharp_hfunc_KernelWithInParameters.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.s_errorSites);
@@ -983,6 +991,13 @@ if (__gsharp_aliases != null)
 __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 12), hStream);
 }
 }
+bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
+if (__gsharp_in_aliased)
+{
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.__gsharp_hfunc_KernelWithInParameters__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.s_errorSites);
+}
+if (__gsharp_in_aliased)
+{
 // Marshal ref/out scalar: scalar
 int __gsharp_size_0 = sizeof(global::System.Int32);
 if (__gsharp_aliases?.IsMember(0) == true)
@@ -1000,6 +1015,13 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 __gsharp_kernel_params[0] = &__gsharp_d_0;
+}
+else
+{
+// Marshal scalar: scalar
+global::System.Int32 __gsharp_val_0 = scalar;
+__gsharp_kernel_params[0] = &__gsharp_val_0;
+}
 // Marshal scalar struct: s
 __gsharp_kernel_params[1] = &s;
 // Marshal array: output
@@ -1080,7 +1102,7 @@ __gsharp_aliases?.FreeDevice(hStream);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchKernelWithInParametersPtr(global::System.IntPtr scalar, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct s, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchKernelWithInParametersPtr(global::System.Int32 scalar, global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.AotContexts.RefTestStruct s, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
@@ -1101,7 +1123,7 @@ uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextL
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[4];
-// Marshal device scalar: scalar
+// Marshal scalar: scalar
 __gsharp_kernel_params[0] = &scalar;
 // Marshal device struct: s
 __gsharp_kernel_params[1] = &s;

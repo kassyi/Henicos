@@ -12,6 +12,7 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
+    InByAddressSuffix: __gsharp_in_by_address
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).

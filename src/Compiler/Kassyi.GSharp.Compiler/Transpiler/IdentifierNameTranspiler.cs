@@ -32,7 +32,7 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
-        if (IsDereferencedReference(symbol))
+        if (IsDereferencedReference(symbol, ref context))
         {
             using (context.Emitter.Writer.Parentheses())
             {
@@ -57,7 +57,7 @@ internal static class IdentifierNameTranspiler
 
     // A ref or out parameter, a ref local, an in / ref readonly parameter of a device function, or an in parameter of a
     // kernel that also has a ref or out parameter of its type (IsKernelInPassedByAddress) is a C++ pointer
-    private static bool IsDereferencedReference([NotNullWhen(true)] ISymbol? symbol) =>
+    private static bool IsDereferencedReference([NotNullWhen(true)] ISymbol? symbol, ref TranspileContext context) =>
         symbol switch
         {
             IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true } => true,
@@ -65,7 +65,8 @@ internal static class IdentifierNameTranspiler
             {
                 RefKind: RefKind.In or RefKind.RefReadOnlyParameter,
                 ContainingSymbol: IMethodSymbol method
-            } inParameter => !method.HasAttribute(KnownAttributes.GpuKernel) || inParameter.IsKernelInPassedByAddress(),
+            } inParameter => !method.HasAttribute(KnownAttributes.GpuKernel) ||
+                context.Emitter.IsParameterPassedByAddress(inParameter),
             _ => false
         };
 

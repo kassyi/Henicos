@@ -32,6 +32,8 @@ using static GSharpInternalNames.Prelude;
 /// </remarks>
 internal static class HostLauncherTranspiler
 {
+    // [WHY] Native CPU stays single by-address form: measurements showed the performance difference between by-value
+    // and by-address on CPU is within noise (<0.001 ms).
     public static void WriteCpuLauncher(in MethodEmissionPlan plan,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {

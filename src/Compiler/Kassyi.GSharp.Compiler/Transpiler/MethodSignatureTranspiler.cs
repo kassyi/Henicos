@@ -62,6 +62,12 @@ internal static class MethodSignatureTranspiler
 
             WriteKernelMethodPrefix(ref context);
             methodName = GlobalCppNames.GetKernelName(methodSymbol);
+            if (context.Emitter.Dialect.IsCuda &&
+                context.Emitter.CurrentKernelForm == KernelFormKind.ByAddress &&
+                context.Emitter.TwoFormsPlan.HasTwoForms)
+            {
+                methodName += GSharpInternalNames.Kernel.InByAddressSuffix;
+            }
             if (hasContext)
             {
                 contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);
@@ -189,7 +195,7 @@ internal static class MethodSignatureTranspiler
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
-        var isReadOnlyRef = parameterSymbol?.IsKernelInPassedByAddress() == true ||
+        var isReadOnlyRef = context.Emitter.IsParameterPassedByAddress(parameterSymbol) ||
                             (!isKernel &&
                              (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
                               p.Modifiers.Any(SyntaxKind.InKeyword) ||

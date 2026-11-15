@@ -246,14 +246,15 @@ internal readonly record struct KernelParameterShape
         var kernelClass = parameter.ContainingSymbol?.ContainingType;
         var marshaledType = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
         var (copyIn, copyOut) = ArrayCopyDirection.Get(parameter);
+        var isInReference = parameter.IsKernelInPassedByAddress();
         var shape = new KernelParameterShape
         {
             Ordinal = parameter.Ordinal,
             Identifier = parameter.Name.ToCSharpIdentifier(),
             Name = parameter.Name,
             RefKind = parameter.RefKind,
-            IsInReference = parameter.IsKernelInPassedByAddress(),
-            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out || parameter.IsKernelInPassedByAddress()
+            IsInReference = isInReference,
+            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out || isInReference
                 ? KernelParameterKind.RefScalar
                 : KernelParameterKind.Scalar,
             Container = ArrayContainerKind.None,

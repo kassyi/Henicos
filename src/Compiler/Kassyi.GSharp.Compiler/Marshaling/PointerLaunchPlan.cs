@@ -12,7 +12,7 @@ internal static class PointerLaunchPlan
     {
         { IsArray: true, IsNullableValue: true } => PointerArgumentKind.NullableArray,
         { IsArray: true } => PointerArgumentKind.Array,
-        { IsByRef: true } => PointerArgumentKind.Reference,
+        { RefKind: RefKind.Ref or RefKind.Out } => PointerArgumentKind.Reference,
         { IsCustomStruct: true } => PointerArgumentKind.ShadowStruct,
         _ => PointerArgumentKind.Value
     };

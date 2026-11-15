@@ -118,7 +118,7 @@ internal static class LauncherSignatures
                     RefKind.Ref => "ref",
                     RefKind.Out => "out",
                     // An in parameter that the kernel receives by address is the caller's variable, as a ref one is
-                    _ when shape.IsInReference => "in",
+                    _ when shape.IsInReference && kind == LauncherKind.Managed => "in",
                     _ => string.Empty
                 };
                 var signature = modifier.Length > 0 ? "ref " + shape.TypeName : shape.TypeName;

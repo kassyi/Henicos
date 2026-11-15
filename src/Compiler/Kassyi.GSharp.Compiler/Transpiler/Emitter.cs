@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -35,6 +37,35 @@ public struct Emitter(
     /// </summary>
     public string? DynamicSharedMemorySlotScope;
     public bool IsGpuKernelEntry;
+
+    /// <summary>
+    /// The two-forms plan for kernel emission, tracking whether the kernel emits two forms on CUDA
+    /// and which parameters are passed by address.
+    /// </summary>
+    internal KernelTwoFormsPlan TwoFormsPlan = KernelTwoFormsPlan.Empty;
+
+    /// <summary>
+    /// The kernel form currently being emitted on CUDA (by-value or by-address).
+    /// </summary>
+    internal KernelFormKind CurrentKernelForm = KernelFormKind.ByValue;
+
+    /// <summary>
+    /// Evaluates whether <paramref name="parameter"/> is passed by address in the current dialect and kernel form.
+    /// </summary>
+    internal bool IsParameterPassedByAddress(IParameterSymbol? parameter)
+    {
+        if (parameter == null)
+        {
+            return false;
+        }
+
+        if (Dialect.IsCuda)
+        {
+            return CurrentKernelForm == KernelFormKind.ByAddress && TwoFormsPlan.IsPassedByAddress(parameter);
+        }
+
+        return TwoFormsPlan.IsPassedByAddress(parameter);
+    }
 
     /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>
     public bool IsSuspendingDeviceFunction;
@@ -187,4 +218,21 @@ public struct Emitter(
 
     public bool TryGetOverride(string name, ISymbol? symbol, out OverrideValue value) =>
         LocalVariableOverrides.TryGet(name, symbol, out value);
+
+    /// <summary>
+    /// Resets AST identifier and statement temporary counters between kernel emission passes.
+    /// </summary>
+    public void ResetMethodCounters()
+    {
+        SyncGridBodyCounter = 0;
+        SingleThreadBodyCounter = 0;
+        GridStrideLoopCounter = 0;
+        SwitchIdCounter = 0;
+        IteratorExpansionCounter = 0;
+        ArgumentTempCounter = 0;
+        SequenceTempCounter = 0;
+        ForEachElementCounter = 0;
+        UsingCounter = 0;
+        StackAllocCounter = 0;
+    }
 }

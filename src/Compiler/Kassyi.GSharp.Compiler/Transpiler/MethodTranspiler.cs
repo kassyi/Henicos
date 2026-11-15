@@ -96,22 +96,38 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
-        WriteStateMachineHeader(in plan, lowered, ref context);
-        try
+
+        if (context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms)
         {
-            WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+            context.Emitter.CurrentKernelForm = KernelFormKind.ByValue;
+            WriteStateMachineHeader(in plan, lowered, ref context);
+            if (!TryWriteBody(in plan, lowered, resumeLocals, ref context, out var failure))
+            {
+                requiredIncludes = [];
+                return failure;
+            }
+
+            bodyWriter.AppendLine();
+
+            context.Emitter.CurrentKernelForm = KernelFormKind.ByAddress;
+            context.Emitter.ResetMethodCounters();
+            WriteStateMachineHeader(in plan, lowered, ref context);
+            if (!TryWriteBody(in plan, lowered, resumeLocals, ref context, out failure))
+            {
+                requiredIncludes = [];
+                return failure;
+            }
+
+            context.Emitter.CurrentKernelForm = KernelFormKind.ByValue;
         }
-        catch (InsufficientExecutionStackException)
+        else
         {
-            var location = plan.Declaration.Identifier.GetLocation();
-            var methodName = plan.Declaration.Identifier.ValueText;
-            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
-            context.Reporter.Fail(
-                GSharpDiagnostics.MethodTooComplexToCompile,
-                location,
-                methodName);
-            requiredIncludes = [];
-            return Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            WriteStateMachineHeader(in plan, lowered, ref context);
+            if (!TryWriteBody(in plan, lowered, resumeLocals, ref context, out var failure))
+            {
+                requiredIncludes = [];
+                return failure;
+            }
         }
 
         // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
@@ -429,6 +445,27 @@ public static class MethodTranspiler
     internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
         context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
+
+    private static bool TryWriteBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
+        ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context,
+        [NotNullWhen(false)] out string? failureOutput)
+    {
+        try
+        {
+            WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+            failureOutput = null;
+            return true;
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            var methodName = plan.Declaration.Identifier.ValueText;
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
+            context.Reporter.Fail(GSharpDiagnostics.MethodTooComplexToCompile, location, methodName);
+            failureOutput = Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            return false;
+        }
+    }
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
         ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
