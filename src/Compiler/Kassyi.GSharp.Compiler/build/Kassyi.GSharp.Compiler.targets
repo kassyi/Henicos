@@ -85,6 +85,14 @@
     </ItemGroup>
   </Target>
 
+  <!-- G# compiles its Roslyn source generator against Roslyn 5.9 (.NET SDK 10.0.400).
+       An older .NET SDK cannot execute the source generator. Error GS0005 stops the build before compilation. -->
+  <Target Name="GSharpCheckMinimumSdkVersion" BeforeTargets="BeforeCompile;CoreCompile"
+          Condition="'$(NETCoreSdkVersion)' != '' and $([MSBuild]::VersionLessThan($(NETCoreSdkVersion), '10.0.400'))">
+    <Error Code="GS0005"
+           Text="G# needs the .NET SDK 10.0.400 or later (Roslyn 5.9) because its source generator is built against Roslyn 5.9; this build uses $(NETCoreSdkVersion)." />
+  </Target>
+
   <!-- A malformed GSharpTargetArchitectures entry fails every build (error GS0004), also where GSharpCompileCuda
        skips nvcc (GSHARP_TEST_NO_CUDA, GSharpSkipCudaCompilation, no .cu sources). It runs no nvcc and logs
        nothing when every entry is valid. -->
