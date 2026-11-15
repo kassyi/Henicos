@@ -9,6 +9,7 @@ import * as path from "node:path";
 import { readCommand } from "./command-reader.ts";
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
 import { commandKeys, type KeyContext } from "./estimate-key.ts";
+import { EstimatePlaceChecks } from "./estimate-place-checks.ts";
 import { RunHistory } from "./history.ts";
 
 type AssertModule = typeof Assert;
@@ -284,4 +285,5 @@ export const EstimateChecks: Record<string, (assert: AssertModule) => void> = {
   checkEstimateShape,
   checkEstimateFallback,
   checkEstimateAccuracy,
+  ...EstimatePlaceChecks,
 };
