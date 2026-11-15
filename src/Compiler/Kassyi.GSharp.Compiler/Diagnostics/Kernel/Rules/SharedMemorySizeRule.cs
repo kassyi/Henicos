@@ -1,14 +1,22 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
-/// <summary>Warns about a static <c>SharedMemory&lt;T&gt;</c> declaration over the recommended size (GSH0013).</summary>
-internal sealed class SharedMemorySizeRule : ISyntaxValidationRule<LocalDeclarationStatementSyntax>
+/// <summary>
+/// Warns about a static <c>SharedMemory&lt;T&gt;</c> declaration over the recommended size (GSH0013) and reports a
+/// <c>SharedMemory&lt;T&gt;</c> whose count is a negative constant (GSH0117).
+/// </summary>
+internal sealed class SharedMemorySizeRule :
+    ISyntaxValidationRule<LocalDeclarationStatementSyntax>,
+    ISyntaxValidationRule<BaseObjectCreationExpressionSyntax>
 {
     public static readonly SharedMemorySizeRule Instance = new();
 
     private const int MaxSharedMemoryWarningBytes = 32768;
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning);
+        ImmutableArray.Create(
+            GSharpDiagnostics.ExcessiveSharedMemoryWarning,
+            GSharpDiagnostics.SharedMemorySizeNegative
+        );
 
     private SharedMemorySizeRule()
     {
@@ -41,6 +49,26 @@ internal sealed class SharedMemorySizeRule : ISyntaxValidationRule<LocalDeclarat
                 context.ReportDiagnostic(GSharpDiagnostics.ExcessiveSharedMemoryWarning, size, bytes,
                     MaxSharedMemoryWarningBytes);
             }
+        }
+    }
+
+    // C# rejects an array of a negative constant size (CS0248); a shared memory declaration of a negative count has no
+    // meaning on any path either, and a constant one is known here. Every creation is checked, not only a local's
+    // initializer. A count of 0 declares empty shared memory, and a count known only at run time is checked when the
+    // kernel runs
+    public void Analyze(BaseObjectCreationExpressionSyntax node, ref ValidationContext context)
+    {
+        if (context.SemanticModel.GetTypeSymbol(node) is INamedTypeSymbol { TypeArguments.Length: 1 } type &&
+            type.IsSharedMemoryType() &&
+            DynamicSharedMemoryAnalysis.TryGetCount(
+                node,
+                context.SemanticModel,
+                out var count,
+                out var constantCount
+            ) &&
+            constantCount is int negative && negative < 0)
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.SharedMemorySizeNegative, count, negative);
         }
     }
 }
