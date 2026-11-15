@@ -15,7 +15,9 @@ internal enum SuspendingCallForm
     /// </summary>
     Entry,
 
-    /// <summary>The callee has no frame (<see cref="ManagedStateMachineAvailability.GetCallFailure(IMethodSymbol,
-    /// INamedTypeSymbol, Compilation)"/>).</summary>
+    /// <summary>
+    /// The callee has no frame: a file-local type (GSH0119), or a frame left out for a reason another diagnostic
+    /// reports.
+    /// </summary>
     Unavailable
 }

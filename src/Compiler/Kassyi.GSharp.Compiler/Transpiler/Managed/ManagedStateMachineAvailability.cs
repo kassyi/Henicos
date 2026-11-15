@@ -21,9 +21,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// number and run the frame held as an <see cref="object"/>, so a caller of any class that C# lets call the function
 /// can run it. The context of a kernel and
 /// the frame of a device function ask <see cref="GetCallForm"/> how they hold a callee's frame; a kernel whose callee
-/// has no frame at all (a file-local type) is GSH0115
-/// (<see cref="GetCallFailure(IMethodSymbol, INamedTypeSymbol, Compilation)"/>), and a device function whose callee has
-/// none has no state machine.
+/// has no frame at all (a file-local type, GSH0119) throws on the managed path, and a device function whose callee
+/// has none has no state machine.
 /// </para>
 /// </remarks>
 internal static class ManagedStateMachineAvailability
@@ -86,55 +85,6 @@ internal static class ManagedStateMachineAvailability
     /// </summary>
     public static bool HasEntries(IMethodSymbol method, Accessibility frame) =>
         frame == Accessibility.Private && method.DeclaredAccessibility != Accessibility.Private;
-
-    /// <summary>
-    /// Why a managed state machine declared in <paramref name="within"/> cannot hold the frame of
-    /// <paramref name="callee"/>, as the message argument of GSH0115; <see langword="null"/> when it can (by the
-    /// frame's type or through the entries), or when the frame is left out for a reason that another diagnostic reports
-    /// (a type that is not partial, a function of another assembly whose state machine was not emitted).
-    /// </summary>
-    public static string? GetCallFailure(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation) =>
-        GetCallFailure(callee.OriginalDefinition, within, compilation,
-            new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
-
-    private static string? GetCallFailure(IMethodSymbol callee, INamedTypeSymbol within, Compilation compilation,
-        HashSet<IMethodSymbol> visited)
-    {
-        if (GetCallForm(callee, within, compilation) != SuspendingCallForm.Unavailable ||
-            DeviceExportTable.IsOutside(callee, compilation) || !visited.Add(callee))
-        {
-            return null;
-        }
-
-        var container = callee.ContainingType;
-        if (!AreContainingTypesPartial(callee) ||
-            !TryGetFrameTypes(callee, compilation, out var body, out var frameTypes))
-        {
-            return null;
-        }
-
-        foreach (var type in frameTypes)
-        {
-            if (FindFileLocalType(type) is { } fileLocal)
-            {
-                return $"its frame would hold the file-local type '{fileLocal.Name}', which the generated code " +
-                       "cannot name; declare the type without the 'file' modifier";
-            }
-        }
-
-        foreach (var inner in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
-        {
-            if (GetCallForm(inner, container, compilation) == SuspendingCallForm.Unavailable)
-            {
-                return GetCallFailure(inner.OriginalDefinition, container, compilation, visited) is { } reason
-                    ? $"it calls '{inner.ContainingType.Name}.{inner.Name}', whose frame cannot be generated: " +
-                      reason
-                    : null;
-            }
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// The frame types that a context or frame names for <paramref name="frames"/> (<see cref="PlanCallFrames"/>):

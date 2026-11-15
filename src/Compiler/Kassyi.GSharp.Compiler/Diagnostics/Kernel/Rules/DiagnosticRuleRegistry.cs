@@ -26,7 +26,6 @@ internal static class DiagnosticRuleRegistry
         StackArrayEscapeRule.Instance,
         StaticMemberAccessRule.Instance,
         StructLayoutRule.Instance,
-        SuspendingCallFrameRule.Instance,
         UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance,
         WarpShuffleWidthRule.Instance,

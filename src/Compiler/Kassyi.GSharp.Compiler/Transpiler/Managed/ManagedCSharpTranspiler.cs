@@ -41,8 +41,8 @@ internal static class ManagedCSharpTranspiler
         var accessors = new ManagedAccessorSet(methodSymbol, compilation);
         var callees = GetCallees(lowered.CallSites, semanticModel);
 
-        // A callee without a frame (GSH0115, or the diagnostics of the callee) leaves a body that throws, and no call
-        // frames
+        // A callee without a frame (a file-local type, GSH0119, or the diagnostics of the callee) leaves a body that
+        // throws, and no call frames
         var callFrames = ManagedStateMachineAvailability.PlanCallFrames(callees, methodSymbol.ContainingType,
             compilation, out var unavailable) ?? ImmutableArray<ManagedCallFrame>.Empty;
         var bodySource = unavailable is null
@@ -100,7 +100,7 @@ internal static class ManagedCSharpTranspiler
     private static string CreateUnavailableFrameThrow(string methodName, IMethodSymbol callee) =>
         $"throw new global::System.NotSupportedException(\"{methodName} cannot run on the managed CPU path: the " +
         $"managed state machine of '{callee.ContainingType.Name}.{callee.Name}' is not generated " +
-        $"({GSharpDiagnostics.SuspendingCallFrameUnreachable.Id}, or the diagnostics of that function).\");";
+        $"({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id}, or the diagnostics of that function).\");";
 
     /// <summary>
     /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
