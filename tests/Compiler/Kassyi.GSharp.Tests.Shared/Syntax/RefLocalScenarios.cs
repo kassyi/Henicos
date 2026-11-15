@@ -83,4 +83,32 @@ internal static class RefLocalScenarios
 
         Assert.Equal([expectedFirst, 7], r);
     }
+
+    public static void RefFromRefReturn(Action<Action> run, int c, int[] expected)
+    {
+        int[] r = [0, 0];
+
+        run(() => RefLocalKernels.LaunchRefFromRefReturnKernel(r, c, blockDimX: 1));
+
+        // t = 9 and u += 100 change the same variable
+        Assert.Equal(expected, r);
+    }
+
+    public static void SharedRefLocalAcrossSections(Action<Action> run, int mode, int[] expected)
+    {
+        int[] r = [0, 0];
+
+        run(() => RefLocalKernels.LaunchSharedRefLocalAcrossSectionsKernel(r, mode, blockDimX: 1));
+
+        Assert.Equal(expected, r);
+    }
+
+    public static void RefToSpanLocal(Action<Action> run)
+    {
+        int[] r = [1, 2, 3, 4];
+
+        run(() => RefLocalKernels.LaunchRefToSpanLocalKernel(r, blockDimX: 1));
+
+        Assert.Equal([7, 4, 3, 4], r);
+    }
 }

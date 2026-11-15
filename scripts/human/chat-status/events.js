@@ -8,6 +8,7 @@ const {
   MaxQuestionLength,
   MaxFirstPromptLength,
   clip,
+  stripPromptTags,
   lastTextOf,
   firstTextOf,
   claudeUserText,
@@ -19,7 +20,7 @@ const {
   questionsOf,
   joinQuestions,
 } = require('./questions.js');
-const { prompted, endTurn } = require('./open-questions.js');
+const { prompted, withRecentPrompt, endTurn } = require('./open-questions.js');
 const { conversationFacts } = require('./antigravity.js');
 
 /**
@@ -47,7 +48,8 @@ function firstPrompt(previous, read) {
     return {};
   }
   const text = read();
-  return typeof text === 'string' && text.trim() !== '' ? { firstPrompt: clip(text.trim(), MaxFirstPromptLength) } : {};
+  const own = typeof text === 'string' ? stripPromptTags(text) : '';
+  return own !== '' ? { firstPrompt: clip(own, MaxFirstPromptLength) } : {};
 }
 
 function working(now) {
@@ -64,6 +66,7 @@ function interpretClaude(payload, now) {
         update: (previous) => ({
           ...working(now),
           ...prompted(now, payload.prompt),
+          ...withRecentPrompt(previous, payload.prompt),
           ...firstPrompt(previous, () => payload.prompt),
         }),
       };
@@ -170,7 +173,7 @@ function antigravityAction(payload, now) {
           const prompt = (file ? lastTextOf(file, antigravityUserText) : null) ?? input;
           const first = firstPrompt(previous, () => file && firstTextOf(file, antigravityUserText));
           const last = prompt === null ? {} : { lastPrompt: prompted(now, prompt).lastPrompt };
-          return { ...endTurn(previous, now, text, prompt), ...last, ...first };
+          return { ...endTurn(previous, now, text, prompt), ...last, ...withRecentPrompt(previous, prompt), ...first };
         },
       };
     case 'PreInvocation':

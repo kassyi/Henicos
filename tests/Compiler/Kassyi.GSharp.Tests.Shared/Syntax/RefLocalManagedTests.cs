@@ -59,6 +59,26 @@ public class RefLocalManagedTests : TranspilerTestBase
     public void GotoPastRefLocal_Managed_SkipsTheDeclaration(int flag, int expectedFirst) =>
         RefLocalScenarios.GotoPastRefLocal(s_runManaged, flag, expectedFirst);
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, new[] { 109, 2 })]
+    [InlineData(0, new[] { 1, 109 })]
+    public void RefFromRefReturn_Managed_BindsTheLocalToTheReturnedReference(int c, int[] expected) =>
+        RefLocalScenarios.RefFromRefReturn(s_runManaged, c, expected);
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, new[] { 10, 2 })]
+    [InlineData(1, new[] { 1, 20 })]
+    public void SharedRefLocalAcrossSections_Managed_DeclaresThePointerBeforeTheSwitch(int mode, int[] expected) =>
+        RefLocalScenarios.SharedRefLocalAcrossSections(s_runManaged, mode, expected);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefToSpanLocal_Managed_PointsToTheView() =>
+        RefLocalScenarios.RefToSpanLocal(s_runManaged);
+
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))
