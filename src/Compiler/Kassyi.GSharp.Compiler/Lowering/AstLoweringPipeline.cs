@@ -137,9 +137,15 @@ public static class AstLoweringPipeline
             var symbol = LoweringIdentity.ForDeclaration(field, bodyModel).Symbol;
             var isReportedLive = symbol != null && refLocals != null && refLocals.ReportedLive.Contains(symbol);
 
-            // The variable of a foreach (ref ...) that the lowering holds is reported by the analyzer as well (#1657)
-            var isForEachVariable = symbol is { DeclaringSyntaxReferences: [var reference] } &&
-                                    reference.GetSyntax() is ForEachStatementSyntax;
+            // The variable of a foreach (ref ...) whose loop has a split point is the one that the analyzer reports as
+            // GSH0039 (RefForEachSplit, the same rule); any other held variable stays GSH0003 (#1657)
+            var isForEachVariable = bodyModel != null &&
+                                    symbol is { DeclaringSyntaxReferences: [var reference] } &&
+                                    reference.GetSyntax() is ForEachStatementSyntax loop &&
+                                    RefForEachSplit.HoldsSplitPoint(
+                                        loop,
+                                        bodyModel.Compilation.GetSemanticModel(loop.SyntaxTree)
+                                    );
             held.Add(new HeldRefLocal(field, isReportedLive || isForEachVariable));
         }
 

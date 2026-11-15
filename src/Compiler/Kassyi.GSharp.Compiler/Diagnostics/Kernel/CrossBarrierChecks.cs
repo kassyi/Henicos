@@ -161,10 +161,9 @@ internal static class CrossBarrierChecks
         foreach (var node in scan.Method.DescendantNodes(static n =>
                      n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
         {
-            if (node is ForEachStatementSyntax { Type: RefTypeSyntax or ScopedTypeSyntax { Type: RefTypeSyntax } } loop &&
-                scan.Barriers
-                    .AsStackEnumerable()
-                    .Any(loop.Span, static (barrier, span) => span.Contains(barrier.Span)))
+            if (node is ForEachStatementSyntax loop &&
+                RefForEachSplit.IsRefLoop(loop) &&
+                RefForEachSplit.HoldsSplitPoint(loop, scan.SemanticModel))
             {
                 scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierRefStructProhibited,
