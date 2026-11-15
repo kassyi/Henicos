@@ -53,7 +53,8 @@ internal sealed class HeapObjectTypeRule :
     // Delegate and MulticastDelegate named as a type; Delegate.Combine and the like are calls, reported with their own
     public void Analyze(IdentifierNameSyntax node, ref ValidationContext context)
     {
-        if (node.Parent is MemberAccessExpressionSyntax access && access.Expression == node ||
+        // var is reported by the declaration rule above, only when no cast or creation names the type
+        if (node.IsVar || node.Parent is MemberAccessExpressionSyntax access && access.Expression == node ||
             context.SemanticModel.GetSymbol(node) is not INamedTypeSymbol
             {
                 SpecialType: SpecialType.System_Delegate or SpecialType.System_MulticastDelegate
