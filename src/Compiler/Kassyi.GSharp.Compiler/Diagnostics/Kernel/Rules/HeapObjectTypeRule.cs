@@ -38,7 +38,13 @@ internal sealed class HeapObjectTypeRule :
     // var o = Source() where Source returns object: no keyword names the type
     public void Analyze(VariableDeclarationSyntax node, ref ValidationContext context)
     {
-        if (node.Type.IsVar && GpuCodeConstraints.IsObject(context.SemanticModel.GetTypeSymbol(node.Type)))
+        // A cast names its type (reported there), a creation is GSH0001
+        if (node.Type.IsVar && GpuCodeConstraints.IsObject(context.SemanticModel.GetTypeSymbol(node.Type)) &&
+            !node.Variables
+                .AsStackEnumerable()
+                .Any(static v => v.Initializer?.Value is CastExpressionSyntax or ObjectCreationExpressionSyntax or
+                    ImplicitObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax or
+                    ImplicitArrayCreationExpressionSyntax))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node.Type, GpuCodeConstraints.HeapObjectType);
         }

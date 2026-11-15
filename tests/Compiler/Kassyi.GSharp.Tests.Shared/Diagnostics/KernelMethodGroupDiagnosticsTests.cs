@@ -47,7 +47,7 @@ public class KernelMethodGroupDiagnosticsTests
                 (Analyzer, 47, 33, 47, 48)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "delegate combination"));
-        Assert.Equal(9, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Equal(11, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
     // Every place that writes object or Delegate in a body is reported once, at the type, whatever the value is: a cast of

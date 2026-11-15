@@ -1,0 +1,231 @@
+﻿## Generator/SadPathDiagnostics.cu.cs
+(11,13)-(11,19) GSH0002 analyzer: The string type is not supported in GPU kernels
+(12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+
+## Analyzers/InvalidMappingSadPath.cs
+(12,21)-(12,52) GSH0036 analyzer: The type 'GEN_39_52_InvalidMappingSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(28,9)-(28,12) GSH0003 analyzer: The syntax 'type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)' is not supported in GSharp GPU kernels
+(28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+(29,19)-(29,36) GSH0109 analyzer: The method 'object.GetHashCode()' has no implementation in the 'GSharpCudaDialect' dialect and cannot be called from GPU code
+
+## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
+(5,21)-(5,53) GSH0036 analyzer: The type 'GSH_01_StringTernary_InGpuKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(12,9)-(12,15) GSH0002 analyzer: The string type is not supported in GPU kernels
+
+## Analyzers/DelegateEscapeSadPath.cs
+(11,21)-(11,52) GSH0036 analyzer: The type 'SYN08_DelegateEscapeSadPathCase' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(21,9)-(21,24) GSH0065 analyzer: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+
+## Diagnostics/UnsupportedSyntaxNodes.cu.cs
+(12,19)-(12,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+(13,9)-(16,10) GSH0003 analyzer: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
+(20,35)-(20,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(29,9)-(29,28) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(38,9)-(38,12) GSH0002 analyzer: The string type is not supported in GPU kernels
+(47,19)-(47,39) GSH0003 analyzer: The syntax 'UncheckedExpression' is not supported in GSharp GPU kernels
+(48,19)-(48,46) GSH0003 analyzer: The syntax 'UncheckedExpression' is not supported in GSharp GPU kernels
+
+## Diagnostics/UnsupportedSyntaxKinds.cu.cs
+(13,26)-(13,28) GSH0003 analyzer: The syntax 'IndexExpression' is not supported in GSharp GPU kernels
+(20,21)-(20,33) GSH0003 analyzer: The syntax 'TupleExpression' is not supported in GSharp GPU kernels
+(22,13)-(22,19) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+(32,9)-(35,10) GSH0003 analyzer: The syntax 'ForEachVariableStatement' is not supported in GSharp GPU kernels
+(44,23)-(44,30) GSH0003 analyzer: The syntax 'SpreadElement' is not supported in GSharp GPU kernels
+
+## Diagnostics/WithExpressionUnsupported.cu.cs
+(44,20)-(44,41) GSH0003 analyzer: The syntax 'with expression on a reference type (heap allocation)' is not supported in GSharp GPU kernels
+(62,44)-(62,49) GSH0003 analyzer: The syntax 'with expression assigning the [GpuReadOnly] member 'Fixed'' is not supported in GSharp GPU kernels
+
+## Diagnostics/ComputedPropertyGetterFailure.cu.cs
+(11,25)-(11,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+(42,17)-(42,33) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
+
+## Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs
+(12,27)-(12,80) GSH0003 analyzer: The syntax 'dynamic SharedMemory<T> reached outside a kernel or a static device function' is not supported in GSharp GPU kernels
+(37,34)-(37,41) GSH0003 analyzer: The syntax 'device function passed as a delegate (it reaches dynamic SharedMemory<T>, and a delegate call cannot pass it the table of dynamic shared memory regions)' is not supported in GSharp GPU kernels
+
+## Analyzers/DynamicStackAllocSadPath.cs
+(6,21)-(6,55) GSH0036 analyzer: The type 'SYN13_DynamicStackAllocSadPathCase' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(13,43)-(13,54) GSH0003 analyzer: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
+
+## Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs
+(5,21)-(5,57) GSH0036 analyzer: The type 'SYN_01_UnsupportedSwitch_InGpuKernel' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(16,15)-(16,28) GSH0003 analyzer: The syntax 'Switch expression arms with 'when' clauses are not supported' is not supported in GSharp GPU kernels
+(23,13)-(23,16) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+
+## Diagnostics/UnsupportedSwitchPatterns.cu.cs
+(21,13)-(21,27) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+(32,13)-(32,23) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+
+## Diagnostics/UsingBarrierScope.cu.cs
+(30,13)-(30,30) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(34,9)-(34,26) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(41,13)-(41,30) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(64,16)-(64,19) GSH0003 analyzer: The syntax 'using of a resource that is not a user struct' is not supported in GSharp GPU kernels
+(64,31)-(64,55) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+
+## Diagnostics/RuntimeOnlyTypes.cu.cs
+(14,13)-(14,20) GSH0003 analyzer: The syntax 'dynamic' is not supported in GSharp GPU kernels
+(23,13)-(23,27) GSH0003 analyzer: The syntax 'TypedReference' is not supported in GSharp GPU kernels
+(23,40)-(23,56) GSH0003 analyzer: The syntax 'MakeRefExpression' is not supported in GSharp GPU kernels
+(31,13)-(31,21) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(31,31)-(31,39) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(31,31)-(31,53) GSH0109 analyzer: The method 'GCHandle.Alloc(object?)' has no implementation in the 'GSharpCudaDialect' dialect and cannot be called from GPU code
+(32,13)-(32,16) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(50,33)-(50,37) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(51,13)-(51,20) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(51,29)-(51,33) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(52,13)-(52,16) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(52,24)-(52,29) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(53,33)-(53,37) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(53,46)-(53,50) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(57,36)-(57,43) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(57,62)-(57,67) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(63,33)-(63,45) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(63,33)-(63,45) GSH0065 analyzer: The static member 'RuntimeOnlyTypeKernels.RateProperty' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(63,56)-(63,76) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(69,23)-(69,30) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+(69,59)-(69,66) GSH0003 analyzer: The syntax 'decimal' is not supported in GSharp GPU kernels
+
+## Diagnostics/GpuFinalizer.cu.cs
+(11,5)-(11,26) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels
+(20,5)-(20,29) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroMissingTarget.cu.cs
+(36,9)-(36,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroTargets.Missing' has no overload that takes (MissingTargetValue result, MissingTargetValue a, MissingTargetValue b): no method has that name' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroContext.cu.cs
+(43,9)-(43,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but no parameter or local of that type is in scope' is not supported in GSharp GPU kernels
+(55,9)-(55,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but 2 parameters or locals of that type are in scope ('second', 'first')' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroOverload.cu.cs
+(109,9)-(109,19) GSH0003 analyzer: The syntax 'Operator macro target 'NoOverloadOps.Shift' has no overload that takes (OverloadValue result, OverloadValue value, int shift): Shift(OverloadCtx, int, int): 'OverloadValue' does not convert to 'OverloadCtx' for 'ctx'; Shift(ref OverloadCtx, uint[], uint[], int): 'OverloadValue' does not convert to 'uint[]' for 'result'' is not supported in GSharp GPU kernels
+(121,9)-(121,18) GSH0003 analyzer: The syntax 'Operator macro target 'AmbiguousOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(ref OverloadCtx, uint[], uint[], uint[])' is not supported in GSharp GPU kernels
+(132,9)-(132,18) GSH0003 analyzer: The syntax 'Operator macro target 'RefResultOps.Add' has no overload that takes (OverloadRef result, OverloadRef left, OverloadRef right): Add(ref uint[], uint[], uint[]): 'ref' parameter 'result' takes only 'uint[]', not 'OverloadRef'' is not supported in GSharp GPU kernels
+(143,9)-(143,20) GSH0003 analyzer: The syntax 'The target 'raw' of operator macro 'TargetOps.Add' does not convert to 'OneWayRef' of parameter 'result'' is not supported in GSharp GPU kernels
+(245,9)-(245,19) GSH0003 analyzer: The syntax 'Operator macro target 'ShlOps.Shl' is ambiguous between Shl(uint[], uint[], long) and Shl(uint[], uint[], ShiftCount)' is not supported in GSharp GPU kernels
+(256,9)-(256,18) GSH0003 analyzer: The syntax 'Operator macro target 'MutualOps.Add' is ambiguous between Add(uint[], uint[], uint[]) and Add(MutualRef, MutualRef, MutualRef)' is not supported in GSharp GPU kernels
+(267,9)-(267,18) GSH0003 analyzer: The syntax 'Operator macro target 'InOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], in uint[], uint[]): 'in' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
+(268,9)-(268,18) GSH0003 analyzer: The syntax 'Operator macro target 'RefReadOnlyOps.Add' has no overload that takes (ConversionValue result, ConversionValue left, ConversionValue right): Add(uint[], ref readonly uint[], uint[]): 'ref readonly' parameter 'left' takes only 'uint[]', not 'ConversionValue'' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroUnsupportedForms.cu.cs
+(19,28)-(19,29) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
+(67,9)-(67,19) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(68,9)-(68,15) GSH0003 analyzer: The syntax 'The compound assignment '+=' does not expand operator macros: give each operator macro a simple assignment of its own, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(78,9)-(78,16) GSH0003 analyzer: The syntax 'Operator macro '++' is an increment or decrement operator, which assigns its operand and is not expanded; write the assignment with a binary operator macro' is not supported in GSharp GPU kernels
+(89,9)-(89,31) GSH0003 analyzer: The syntax 'Operator macro '+' is applied to nullable operands (a lifted operator), which it does not expand; apply it to the values ('.Value')' is not supported in GSharp GPU kernels
+(101,9)-(101,18) GSH0003 analyzer: The syntax 'Operator macro target 'FormOps.Mul' has no overload that takes (FormRef result, FormRef left, FormRef right): Mul(T, T, T): generic methods are not candidates' is not supported in GSharp GPU kernels
+(112,9)-(112,18) GSH0003 analyzer: The syntax 'The target 'c' of operator macro 'FormOps.Add' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'c' first, as in 'c = default;'' is not supported in GSharp GPU kernels
+(119,9)-(119,30) GSH0003 analyzer: The syntax 'The target 'result' of operator macro 'FormOps.AddValues' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'result' first, as in 'result = default;'' is not supported in GSharp GPU kernels
+(210,9)-(210,24) GSH0003 analyzer: The syntax 'The target 'h.Inner' of operator macro 'FormOps.AddValues' is not assigned before the assignment: the target receives the result in the storage it holds, so assign 'h' first, as in 'h = default;'' is not supported in GSharp GPU kernels
+(259,9)-(259,18) GSH0003 analyzer: The syntax 'The context 'log' of operator macro 'FormCtxOps.AddCount' is not assigned before the assignment: the target receives the context variable itself, so assign 'log' first, as in 'log = default;'' is not supported in GSharp GPU kernels
+(269,9)-(269,24) GSH0003 analyzer: The syntax 'The context 'log' of operator macro 'FormCtxOps.AddCount' is not assigned before the assignment: the target receives the context variable itself, so assign 'log' first, as in 'log = default;'' is not supported in GSharp GPU kernels
+(292,9)-(292,27) GSH0003 analyzer: The syntax 'The target 'h.Computed' of operator macro 'FormOps.AddValues' is a property without storage: the target writes the result through its 'ref' parameter 'result', which would reach a copy and never the setter; compute into a variable first and assign it, as in 't = a + b; h.Computed = t;'' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroPositions.cu.cs
+(47,9)-(47,24) GSH0003 analyzer: The syntax 'Operator macro '+' is an operand of another operator macro, but its target 'PositionOps.Add' takes the result as 'uint[] result', not as a ref or out parameter of an unmanaged type, so it has no temporary to compute into; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(57,9)-(57,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(58,9)-(58,12) GSH0003 analyzer: The syntax 'Operator macro '++' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(59,23)-(59,28) GSH0003 analyzer: The syntax 'Operator macro '+' is expanded only as the right side of an assignment statement, or as an operand of an operator macro there; assign it to a variable first, as in 't = a + b;'' is not supported in GSharp GPU kernels
+(105,9)-(105,24) GSH0003 analyzer: The syntax 'Operator macro '-' returns 'NarrowValue', but the operand of '-' takes 'WideValue'; assign it to a variable first, as in 't = a + b; c = c + t;'' is not supported in GSharp GPU kernels
+(146,40)-(146,45) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
+(147,36)-(147,41) GSH0003 analyzer: The syntax 'Operator macro '-' is under a user-defined conversion, which its expansion would drop; assign it to a variable first, as in 't = a + b;', and convert the variable' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroUnreachableTarget.cu.cs
+
+## Analyzers/MacroArgumentSadPath.cs
+(5,14)-(5,41) GSH0036 analyzer: The type 'GEN_36_MacroArgumentSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
+(19,9)-(19,15) GSH0002 analyzer: The string type is not supported in GPU kernels
+(21,23)-(21,29) GSH0006 analyzer: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
+(25,9)-(25,28) GSH0030 analyzer: The method 'MyKernel' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch.
+(25,22)-(25,27) GSH0003 analyzer: The syntax 'Gpu.SyncGrid requires a lambda expression argument' is not supported in GSharp GPU kernels
+
+## Diagnostics/MacroLambdaWithoutParameter.cu.cs
+
+## Diagnostics/MacroLoopBodyRestrictions.cu.cs
+(32,25)-(32,32) GSH0003 analyzer: The syntax 'return in a Gpu.ForUnroll body' is not supported in GSharp GPU kernels
+(43,25)-(43,32) GSH0003 analyzer: The syntax 'return in a Gpu.GridStrideLoop body' is not supported in GSharp GPU kernels
+(55,25)-(55,32) GSH0003 analyzer: The syntax 'return in a Gpu.ForUnroll body' is not supported in GSharp GPU kernels
+(68,25)-(68,32) GSH0003 analyzer: The syntax 'return in a Gpu.GridStrideLoop body' is not supported in GSharp GPU kernels
+(80,13)-(80,18) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(81,13)-(81,19) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(82,13)-(82,16) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(83,13)-(83,16) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(84,18)-(84,23) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(85,19)-(85,24) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(86,13)-(86,34) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(97,13)-(97,19) GSH0003 analyzer: The syntax 'assignment to the Gpu.GridStrideLoop loop variable 'i'' is not supported in GSharp GPU kernels
+(108,31)-(108,35) GSH0003 analyzer: The syntax 'reference to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(109,28)-(109,30) GSH0003 analyzer: The syntax 'reference to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(119,31)-(119,35) GSH0003 analyzer: The syntax 'reference to the Gpu.GridStrideLoop loop variable 'i'' is not supported in GSharp GPU kernels
+
+## Analyzers/UnrollHintSadPath.cs
+(5,14)-(5,31) GSH0036 analyzer: The type 'UnrollHintSadPath' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.
+(11,9)-(11,26) GSH0017 analyzer: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
+(15,25)-(15,27) GSH0016 analyzer: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
+
+## Generator/KernelReturnTypes_SadPath.cs
+(10,27)-(10,38) GSH0004 analyzer: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
+(14,26)-(14,38) GSH0004 analyzer: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
+(30,33)-(30,52) GSH0004 analyzer: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.
+(34,39)-(34,49) GSH0004 analyzer: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.
+
+## Diagnostics/UnsafeMallocWarning.cu.cs
+(10,23)-(10,44) GSH0029 analyzer: Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.
+(18,28)-(18,48) GSH0029 analyzer: Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.
+
+## Analyzers/StructSizeDiagnostics.cs
+(65,24)-(65,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(78,23)-(78,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(104,63)-(104,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(129,63)-(129,74) GSH0013 analyzer: The kernel allocates 2400000000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(138,63)-(138,74) GSH0013 analyzer: The kernel allocates 4294967296 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+
+## Generator/DialectDiagnostics.cu.cs
+
+## Generator/AotContextName_Namespaces.cs
+(4,30)-(4,34) GSH0058 analyzer: The structs 'global::N1.Pair' and 'global::N2.Pair' both map to 'AotContexts.Pair' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/AotContextName_ContextSuffix.cs
+(7,19)-(7,22) GSH0058 analyzer: The structs 'global::AotNameTest.FooContext' and 'global::AotNameTest.Foo' both map to 'AotContexts.Foo' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/AotContextName_GenericConstructions.cs
+(5,19)-(5,22) GSH0058 analyzer: The structs 'global::AotNameTest.Box<global::System.Int32>' and 'global::AotNameTest.Box<global::System.Int64>' both map to 'AotContexts.Box' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/KernelOverload_Indistinguishable.cu.cs
+(12,28)-(12,31) GSH0059 analyzer: The [GpuKernel] method 'Run(ref global::System.Int32)' declares or makes G# generate the member 'LaunchRunPtr(global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>)', which the [GpuKernel] method 'Run(global::System.Int32[])' also declares or makes G# generate. Rename the kernel.
+
+## Analyzers/StaticMemberAccess_SadPath.cs
+(20,28)-(20,33) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,36)-(20,47) GSH0065 analyzer: The static member 'Cfg.Mutable' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,50)-(20,58) GSH0065 analyzer: The static member 'Cfg.Prop' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,61)-(20,81) GSH0065 analyzer: The static member 'K.SameClassStaticField' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,84)-(20,103) GSH0065 analyzer: The static member 'K.SameClassStaticProp' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(26,16)-(26,21) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+
+## Diagnostics/StaticMemberAccessTwice.cu.cs
+(15,23)-(15,32) GSH0065 analyzer: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(15,35)-(15,75) GSH0065 analyzer: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+
+## Analyzers/InstanceDeviceFunction_SadPath.cs
+(10,16)-(10,21) GSH0066 analyzer: The method 'S.Twice' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
+(16,16)-(16,19) GSH0066 analyzer: The method 'C.Add' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
+
+## Analyzers/SharedMemoryDisposable_SadPath.cs
+(25,40)-(25,47) GSH0069 analyzer: SharedMemory<T> cannot hold the disposable type 'Handle'. Shared memory is released with the thread block, so its elements are never disposed.
+
+## Diagnostics/DivergentDynamicSharedMemory.cu.cs
+(29,24)-(29,48) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'half'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(40,32)-(40,42) GSH0077 analyzer: Only some threads of the block reach the call to 'Scratch', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(43,18)-(43,35) GSH0077 analyzer: Only some threads of the block reach the call to 'ScratchThrough', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(54,47)-(54,54) GSH0077 analyzer: The count of the dynamic SharedMemory<T> declaration 'perThread' depends on the thread. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(66,23)-(66,47) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'row'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(90,30)-(90,54) GSH0077 analyzer: Only some threads of the block reach the dynamic SharedMemory<T> declaration 'nested'. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+(106,18)-(106,28) GSH0077 analyzer: Only some threads of the block reach the call to 'Scratch', which reaches a dynamic SharedMemory<T> declaration. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is.
+
+## Analyzers/NewList_SadPath.cs
+(11,20)-(11,35) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.
+
