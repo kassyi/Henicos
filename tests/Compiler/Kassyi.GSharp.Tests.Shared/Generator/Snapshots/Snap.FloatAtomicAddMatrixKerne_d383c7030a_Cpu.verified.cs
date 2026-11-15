@@ -71,8 +71,8 @@ int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),__gsharp_id_3_tid);
 float* __gsharp_id_5_staticStored = (float*)__gsharp_allocate_smem_static(0x44e1636ffcc27180ull, (64) * sizeof(float), alignof(float));
 float* __gsharp_id_6_staticReduction = (float*)__gsharp_allocate_smem_static(0x44e1646ffcc27333ull, (64) * sizeof(float), alignof(float));
-float* __gsharp_id_7_dynamicStored = (float*)__gsharp_allocate_smem_dynamic(0x44e1656ffcc274e6ull, ((int)blockDim.x) * sizeof(float), alignof(float), ""FloatAtomicAddMatrixKernels.cs(34,29)"");
-float* __gsharp_id_8_dynamicReduction = (float*)__gsharp_allocate_smem_dynamic(0x44e1666ffcc27699ull, ((int)blockDim.x) * sizeof(float), alignof(float), ""FloatAtomicAddMatrixKernels.cs(35,32)"");
+float* __gsharp_id_7_dynamicStored = (float*)__gsharp_allocate_smem_dynamic(0x44e1656ffcc274e6ull, (long long)((int)blockDim.x), sizeof(float), alignof(float), ""FloatAtomicAddMatrixKernels.cs(34,29)"");
+float* __gsharp_id_8_dynamicReduction = (float*)__gsharp_allocate_smem_dynamic(0x44e1666ffcc27699ull, (long long)((int)blockDim.x), sizeof(float), alignof(float), ""FloatAtomicAddMatrixKernels.cs(35,32)"");
 if(__gsharp_id_4_row>=__gsharp_array_ref(__gsharp_id_0_left, 461478231u).length)
 {
 __gsharp_state = -1;return;

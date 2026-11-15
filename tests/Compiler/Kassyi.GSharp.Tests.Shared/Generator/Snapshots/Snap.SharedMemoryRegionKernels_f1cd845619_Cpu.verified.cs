@@ -31,7 +31,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_dynamic(0xa8ee59f66f63ce77ull, (__gsharp_ctx->__gsharp_id_1_count) * sizeof(int), alignof(int), ""SharedMemoryRegionKernels.cs(46,22)"") };
+__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem_dynamic(0xa8ee59f66f63ce77ull, (long long)(__gsharp_ctx->__gsharp_id_1_count), sizeof(int), alignof(int), ""SharedMemoryRegionKernels.cs(46,22)"") };
 if(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_ctx->__gsharp_id_1_count)
 {
 __gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_0_value;

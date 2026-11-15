@@ -76,8 +76,8 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_sStatic={ (int*)__gsharp_allocate_smem_static(0x5df351f09946480full, (256) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_4_sDyn1={ (int*)__gsharp_allocate_smem_dynamic(0x5df350f09946465cull, (__gsharp_ctx->__gsharp_id_1_dynSize) * sizeof(int), alignof(int), ""ConcurrencyAndWarpKernels.cs(18,35)"") };
-__gsharp_ctx->__gsharp_id_5_sDyn2={ (float*)__gsharp_allocate_smem_dynamic(0x5df353f099464b75ull, (__gsharp_ctx->__gsharp_id_1_dynSize) * sizeof(float), alignof(float), ""ConcurrencyAndWarpKernels.cs(19,37)"") };
+__gsharp_ctx->__gsharp_id_4_sDyn1={ (int*)__gsharp_allocate_smem_dynamic(0x5df350f09946465cull, (long long)(__gsharp_ctx->__gsharp_id_1_dynSize), sizeof(int), alignof(int), ""ConcurrencyAndWarpKernels.cs(18,35)"") };
+__gsharp_ctx->__gsharp_id_5_sDyn2={ (float*)__gsharp_allocate_smem_dynamic(0x5df353f099464b75ull, (long long)(__gsharp_ctx->__gsharp_id_1_dynSize), sizeof(float), alignof(float), ""ConcurrencyAndWarpKernels.cs(19,37)"") };
 __gsharp_ctx->__gsharp_id_3_sStatic[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_2_tid, 816080162u);
 __gsharp_ctx->__gsharp_id_4_sDyn1[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_mul_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_2_tid, 1232396550u),2);
 __gsharp_ctx->__gsharp_id_5_sDyn2[__gsharp_ctx->__gsharp_id_2_tid]=3.14f;

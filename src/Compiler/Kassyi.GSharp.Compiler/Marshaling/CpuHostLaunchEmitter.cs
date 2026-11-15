@@ -24,7 +24,8 @@ internal static class CpuHostLaunchEmitter
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
         LauncherAccessibilities accessibilities, string moduleName)
     {
-        writer.AppendLine(kernel.ManagedCSharpSource);
+        // No copy for a kernel that runs as the user's method or not at all on the managed path (GSH0119)
+        writer.AppendLineIf(kernel.ManagedCSharpSource.Length > 0, kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         var arguments = CpuNativeArgumentPlan.Create(kernel.Host);
         WriteCpuDelegateDeclaration(writer, kernel, arguments);

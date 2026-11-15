@@ -419,6 +419,8 @@ The total number of words.
 
 A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride left bit-shift using `GpuBigIntContext`.
 
+When `ResultBuffer` is the same array as `LeftOperand`, one thread of the grid shifts every word and the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other threads synchronizes itself, as after the grid-stride loop of distinct buffers.
+
 ```csharp
 [GpuDeviceFunction]
 public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bitShift);
@@ -427,6 +429,8 @@ public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bit
 ## ExecuteShiftRight(GpuBigIntContext, int, int)
 
 A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride right bit-shift using `GpuBigIntContext`.
+
+When `ResultBuffer` is the same array as `LeftOperand`, one thread of the grid shifts every word and the other threads return at once; no grid synchronization follows, so a kernel that reads the result in other threads synchronizes itself, as after the grid-stride loop of distinct buffers.
 
 ```csharp
 [GpuDeviceFunction]
@@ -491,6 +495,8 @@ public static void ExecuteSub(ref GpuBigIntContext ctx, uint[] result, uint[] le
 
 A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word left bit-shift for fused expression kernels.
 
+`result` may be `left`. A negative `shiftBits` shifts the other way, as for `BigInteger` (`x << -n == x >> n`). Each calling thread processes every word; the operator of `GpuBigIntRef` is meant for one thread per value.
+
 ```csharp
 [GpuDeviceFunction]
 public static void ExecuteShiftLeft(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits);
@@ -499,6 +505,8 @@ public static void ExecuteShiftLeft(ref GpuBigIntContext ctx, uint[] result, uin
 ## ExecuteShiftRight(ref GpuBigIntContext, uint[], uint[], int)
 
 A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word right bit-shift for fused expression kernels.
+
+`result` may be `left`. A negative `shiftBits` shifts the other way, as for `BigInteger` (`x << -n == x >> n`). Each calling thread processes every word; the operator of `GpuBigIntRef` is meant for one thread per value.
 
 ```csharp
 [GpuDeviceFunction]

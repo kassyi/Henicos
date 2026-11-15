@@ -18,6 +18,7 @@
 // option, a build after a test.
 
 import type { ShellName } from "./constants.ts";
+import { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./command-reader.ts";
 
 export interface BuildStep {
   /** The builds, joined by &&: the explicit builds before the first test, then one build per test that builds. */
@@ -101,121 +102,6 @@ const BuildInlineSwitches = new Set([
   "warnaserror",
   "nowarn",
 ]);
-
-/** The words of one segment as written (quotes kept), or null when it holds syntax a plain command does not. */
-function rawWords(segment: string, shell: ShellName): string[] | null {
-  const powerShell = shell === "pwsh" || shell === "powershell";
-  // Outside quotes: separators, redirections, groups, substitutions, escapes and comments end the plain form
-  const special = shell === "cmd" ? /[&|<>()^\n\r]/ : powerShell ? /[&|<>(){};$@`#\n\r]/ : /[&|<>(){};$`\\#*?[\n\r]/;
-  const list: string[] = [];
-  let word = "";
-  let quote = "";
-  for (let i = 0; i < segment.length; i++) {
-    const ch = segment.charAt(i);
-    if (quote !== "") {
-      word += ch;
-      if (ch === "\n" || ch === "\r" || (quote === '"' && (ch === "`" || ch === "\\") && shell !== "cmd")) {
-        return null; // an escape inside double quotes: keep to the plain form
-      }
-      if (ch === quote) {
-        quote = "";
-      }
-    } else if (ch === '"' || (ch === "'" && shell !== "cmd")) {
-      quote = ch;
-      word += ch;
-    } else if (ch === " " || ch === "\t") {
-      if (word !== "") {
-        list.push(word);
-        word = "";
-      }
-    } else if (special.test(ch)) {
-      return null;
-    } else {
-      word += ch;
-    }
-  }
-  if (quote !== "") {
-    return null;
-  }
-  if (word !== "") {
-    list.push(word);
-  }
-  return list;
-}
-
-/** The segments of the command at && outside quotes (rawWords then refuses any other syntax in them). */
-function segmentsOf(command: string, shell: ShellName): string[] {
-  const segments: string[] = [];
-  let quote = "";
-  let start = 0;
-  for (let i = 0; i < command.length; i++) {
-    const ch = command.charAt(i);
-    if (quote !== "") {
-      quote = ch === quote ? "" : quote;
-    } else if (ch === '"' || (ch === "'" && shell !== "cmd")) {
-      quote = ch;
-    } else if (ch === "&" && command[i + 1] === "&") {
-      segments.push(command.slice(start, i));
-      start = i + 2;
-      i++;
-    }
-  }
-  segments.push(command.slice(start));
-  return segments.map((segment) => segment.trim());
-}
-
-/** A word without its quotes, for reading an option name or a file extension. */
-function bare(word: string): string {
-  return word.replace(/["']/g, "");
-}
-
-// Assignments and redirection targets: a quoted string without escapes or substitutions, or a plain word
-const Unsafe = "$`\\\\"; // in a character class: $, backtick, backslash
-const PlainValue = `(?:"[^"${Unsafe}]*"|'[^']*'|[^\\s"'${Unsafe};&|<>()*?]*)`;
-const Assignment = `[A-Za-z_]\\w*=${PlainValue}`;
-const Target = `(?:"[^"${Unsafe}]*"|'[^']*'|[^\\s"'${Unsafe};&|<>()*?]+)`;
-
-/** One output redirection at the end of a segment, after a space. */
-function redirectionAtEnd(shell: ShellName): RegExp {
-  if (shell === "pwsh" || shell === "powershell") {
-    return new RegExp(String.raw`\s(?:[1-6*]?>>?\s*${Target}|[2-6*]>&1)$`);
-  }
-  if (shell === "cmd") {
-    return new RegExp(String.raw`\s(?:[12]?>>?\s*(?:"[^"]*"|[^\s"&|<>()^%]+)|2>&1)$`);
-  }
-  return new RegExp(String.raw`\s(?:[12&]?>>?\s*${Target}|[12]>&[12])$`);
-}
-
-/** The prefix that sets variables for the whole command (export A=b; / $env:A='b';), or "". */
-function variablePrefix(command: string, shell: ShellName): string {
-  const pattern =
-    shell === "pwsh" || shell === "powershell"
-      ? String.raw`^(?:\$env:[A-Za-z_]\w*\s*=\s*(?:'[^']*'|"[^"$\`]*")\s*;\s*)+`
-      : shell === "cmd"
-        ? "^(?!)"
-        : String.raw`^(?:export(?:\s+${Assignment})+\s*;\s*)+`;
-  return new RegExp(pattern).exec(command)?.[0] ?? "";
-}
-
-/** A segment split into its leading assignments, its command and its trailing output redirections. */
-interface SegmentParts {
-  env: string;
-  core: string;
-  redirections: string[];
-}
-
-function segmentParts(segment: string, shell: ShellName): SegmentParts {
-  let core = segment;
-  const redirections: string[] = [];
-  const atEnd = redirectionAtEnd(shell);
-  for (let match = atEnd.exec(core); match !== null; match = atEnd.exec(core)) {
-    redirections.unshift(match[0].trim());
-    core = core.slice(0, match.index).trimEnd();
-  }
-  const env =
-    shell === "bash" || shell === "sh" ? (new RegExp(String.raw`^(?:${Assignment}\s+)+`).exec(core)?.[0] ?? "") : "";
-  return { env: env.trim(), core: core.slice(env.length), redirections };
-}
 
 /** The redirection the test writes after its build wrote the same file first: > becomes >>, so nothing is lost. */
 function appending(redirection: string): string {
