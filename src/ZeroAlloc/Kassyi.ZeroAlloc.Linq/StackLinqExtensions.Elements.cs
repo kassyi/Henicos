@@ -155,6 +155,7 @@ public static partial class StackLinqExtensions
     /// <param name="index">The zero-based index of the element to retrieve.</param>
     /// <returns>The default value of <typeparamref name="TSource"/> if <paramref name="index"/> is outside the bounds of <paramref name="source"/>; otherwise, the element at the specified position.</returns>
     /// <remarks>
+    /// <para>A negative <paramref name="index"/> returns the default value without enumerating <paramref name="source"/>, so the side effects of the operators before it do not run.</para>
     /// <para><b>Performance:</b> $O(1)$ indexing for span/array sources; otherwise $O(N)$ with zero heap allocations.</para>
     /// </remarks>
     public static TSource? ElementAtOrDefault<TEnumerator, TSource>(
