@@ -395,7 +395,10 @@ internal static class WrapperEmitter
             var fileLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.File, quote: true);
             var memberLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.MemberName, quote: true);
             var msgLit = Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.DefaultMessage, quote: true);
-            writer.AppendLine($"new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite({site.SiteId}u, {fileLit}, {site.Line}, {site.Column}, {memberLit}, {msgLit}),");
+            var typeArgument = site.ExceptionType.Length == 0
+                ? ""
+                : ", " + Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(site.ExceptionType, quote: true);
+            writer.AppendLine($"new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite({site.SiteId}u, {fileLit}, {site.Line}, {site.Column}, {memberLit}, {msgLit}{typeArgument}),");
         }
         writer.AppendLine("};");
         writer.AppendLine();

@@ -246,6 +246,7 @@ public static class GSharpErrorMapper
             GSharpErrorCode.DataRace => "Shared memory data race detected.",
             GSharpErrorCode.SwitchExpression => "Non-exhaustive switch expression failed to match its input.",
             GSharpErrorCode.ArgumentNull => "Value cannot be null.",
+            GSharpErrorCode.Throw => "An exception was thrown in device code.",
             _ => "A G# runtime error occurred."
         };
 
@@ -317,7 +318,7 @@ public static class GSharpErrorMapper
         var rawMessage = preserveRawMessageWhenNoSite ? explicitMessage : null;
         var message = FormatMessage(baseMessage, site, threadCoord, blockCoord, rawMessage);
 
-        var exception = InstantiateException(code, message, innerException);
+        var exception = InstantiateException(code, message, innerException, site);
         PopulateExceptionData(exception, code, threadCoord, blockCoord, site);
         return exception;
     }
@@ -396,9 +397,11 @@ public static class GSharpErrorMapper
         }
     }
 
-    private static Exception InstantiateException(GSharpErrorCode code, string message, Exception? innerException) =>
+    private static Exception InstantiateException(GSharpErrorCode code, string message, Exception? innerException,
+        GSharpErrorSite? site) =>
         code switch
         {
+            GSharpErrorCode.Throw => InstantiateThrown(site?.ExceptionType, message, innerException),
             GSharpErrorCode.NotSupported => new NotSupportedException(message, innerException),
             GSharpErrorCode.InvalidOperation => new InvalidOperationException(message, innerException),
             GSharpErrorCode.IndexOutOfRange => new IndexOutOfRangeException(message, innerException),
@@ -413,4 +416,31 @@ public static class GSharpErrorMapper
             GSharpErrorCode.ArgumentNull => new ArgumentNullException(message, innerException),
             _ => new InvalidOperationException(message, innerException)
         };
+
+    // The exception type that a throw names (an assembly-qualified name of the site), built with the message and the
+    // inner exception when it has such a constructor; any other case is InvalidOperationException
+    private static Exception InstantiateThrown(string? typeName, string message, Exception? innerException)
+    {
+        var type = string.IsNullOrEmpty(typeName) ? null : Type.GetType(typeName, throwOnError: false);
+        if (type is not null && typeof(Exception).IsAssignableFrom(type) && !type.IsAbstract)
+        {
+            var args = new object?[] { message, innerException };
+            if (type.GetConstructor([typeof(string), typeof(Exception)]) is { } both)
+            {
+                return (Exception)both.Invoke(args);
+            }
+
+            if (type.GetConstructor([typeof(string)]) is { } single)
+            {
+                return (Exception)single.Invoke([message]);
+            }
+
+            if (type.GetConstructor(Type.EmptyTypes) is { } none)
+            {
+                return (Exception)none.Invoke(null);
+            }
+        }
+
+        return new InvalidOperationException(message, innerException);
+    }
 }

@@ -96,7 +96,15 @@ internal sealed class UnsupportedConstructRule :
 
     public void Analyze(BaseObjectCreationExpressionSyntax node, ref ValidationContext context)
     {
-        if (!GpuCodeConstraints.IsSupportedObjectCreation(context.SemanticModel.GetTypeSymbol(node)))
+        var created = context.SemanticModel.GetTypeSymbol(node);
+        // The exception of a throw is not an object of the device: the throw keeps its type and place (ThrowTranspiler)
+        if (node.Parent is ThrowStatementSyntax or ThrowExpressionSyntax &&
+            ThrowTranspiler.IsExceptionType(created, context.SemanticModel.Compilation))
+        {
+            return;
+        }
+
+        if (!GpuCodeConstraints.IsSupportedObjectCreation(created))
         {
             context.ReportDiagnostic(GSharpDiagnostics.ObjectCreationNotSupported, node);
         }

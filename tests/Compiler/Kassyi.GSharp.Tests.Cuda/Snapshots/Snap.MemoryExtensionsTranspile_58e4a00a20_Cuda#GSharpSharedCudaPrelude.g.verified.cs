@@ -134,7 +134,8 @@ DivideByZero = 7,
 Overflow = 8,
 DataRace = 9,
 SwitchExpression = 10,
-ArgumentNull = 11
+ArgumentNull = 11,
+Throw = 12
 };
 
 // One device error record (GSharpDeviceErrorSlot of the runtime). code and epoch are one 8-byte word, which a failing
