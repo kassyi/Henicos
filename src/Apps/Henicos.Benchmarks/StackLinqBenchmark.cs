@@ -9,6 +9,7 @@ namespace Henicos.Benchmarks;
 public class StackLinqBenchmark
 {
     private int[] _data = [];
+    private int[] _smallValues = [];
     private int _targetForShortCircuit;
     private int _endMarkerForWindowing;
 
@@ -19,6 +20,13 @@ public class StackLinqBenchmark
     public void Setup()
     {
         _data = new int[Size];
+        // Values whose sum fits an int at every Size, for the integer Sum scenario
+        _smallValues = new int[Size];
+        for (var i = 0; i < Size; i++)
+        {
+            _smallValues[i] = i & 0xFF;
+        }
+
         for (var i = 0; i < Size; i++)
         {
             _data[i] = i;
@@ -178,4 +186,19 @@ public class StackLinqBenchmark
     [Benchmark(Description = "StackLinq_BoundarySpanOpt")]
     public int StackLinqBoundarySpanOpt() =>
         _data.AsStackEnumerable().TakeLast(Size / 2).Skip(10).Take(Size / 4).Sum();
+
+    // ==========================================
+    // Comprehensive Scenario 4: Integer Sum (the exact, range-checked sum of an int sequence)
+    // ==========================================
+
+    [Benchmark(Description = "SystemLinq_IntSum")]
+    public int SystemLinqIntSum() => _smallValues.Sum();
+
+    // The contiguous SIMD path
+    [Benchmark(Description = "StackLinq_IntSum")]
+    public int StackLinqIntSum() => _smallValues.AsStackEnumerable().Sum();
+
+    // The scalar path (an enumerator that is not a span)
+    [Benchmark(Description = "StackLinq_IntSumSelect")]
+    public int StackLinqIntSumSelect() => _smallValues.AsStackEnumerable().Select(x => x + 1).Sum();
 }
