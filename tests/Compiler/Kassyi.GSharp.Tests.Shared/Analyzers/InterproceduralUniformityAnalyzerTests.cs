@@ -132,6 +132,10 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
     [InlineData("ReceiverWriteKernel", 267)]
     [InlineData("ReceiverWriteMemberReadKernel", 282)]
     [InlineData("UniformReceiverWriteKernel", 0)]
+    [InlineData("IncrementOperatorKernel", 354)]
+    [InlineData("CompoundOperatorKernel", 370)]
+    [InlineData("UniformOperatorKernel", 0)]
+    [InlineData("UniformConstructorKernel", 0)]
     public async Task StructMembers_PerThreadResult_ReportTheBarrier(string kernel, int barrierLine)
     {
         var diagnostics = await GeneratorTestRunner
