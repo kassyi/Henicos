@@ -280,7 +280,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
+        // A block written without braces is in the C++ scope of the list around it, which declares its locals
+        if (!CppBlockScopes.IsWrittenWithoutBraces(node))
+        {
+            JumpedOverDeclarations.WriteDeclarations(node.Statements, ref Context);
+        }
+
         VisitStatements(node.Statements, 0);
     }
 
@@ -290,9 +295,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </summary>
     internal void VisitStatements(SyntaxList<StatementSyntax> statements, int start)
     {
+        // The local functions that a statement uses before they are declared are written in front of it
+        var localFunctions = LocalFunctionOrder.Create(statements, start, Context.Query.SemanticModel);
         for (var i = start; i < statements.Count; i++)
         {
             var statement = statements[i];
+            if (localFunctions != null && localFunctions.TryWriteStatement(i, ref Context))
+            {
+                continue;
+            }
+
             if (!Context.Emitter.Dialect.IsCuda &&
                 UsingCpuEmitter.TryGetUsingDeclaration(statement, out var declaration))
             {
@@ -309,10 +321,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
 
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
-            // block with a using declaration or a synthesized iterator scope keeps them.
-            if (statement is BlockSyntax nested &&
-                (UsingTranspiler.DeclaresUsing(nested) ||
-                 nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind)))
+            // block with a using declaration or a synthesized iterator scope keeps them (CppBlockScopes).
+            if (statement is BlockSyntax nested && !CppBlockScopes.IsWrittenWithoutBraces(nested))
             {
                 VisitStatementOrBlock(nested);
             }

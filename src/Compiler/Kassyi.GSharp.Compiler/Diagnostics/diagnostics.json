@@ -527,8 +527,8 @@
   {
     "name": "IndistinguishableKernelOverloads",
     "id": "GSH0059",
-    "title": "Kernel overloads cannot be told apart by their launch wrappers",
-    "messageFormat": "The [GpuKernel] overloads '{0}' and '{1}' produce the same {2} launch wrapper signature. Rename one of the kernels.",
+    "title": "A kernel declares or makes G# generate a member that its class already has",
+    "messageFormat": "The [GpuKernel] method '{0}' declares or makes G# generate the member '{1}', which {2}. Rename the kernel.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -908,6 +908,24 @@
     "id": "GSH0114",
     "title": "G# has no launch limits for a GSharpTargetArchitectures architecture",
     "messageFormat": "GSharpTargetArchitectures includes {0}, whose compute capability G# has no launch limits for; the launch limits of the target GPUs are taken from the other architectures only",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "SharedMemorySizeNegative",
+    "id": "GSH0117",
+    "title": "SharedMemory<T> count must not be negative",
+    "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "FileLocalTypeInManagedCopy",
+    "id": "GSH0119",
+    "title": "A file-local type cannot be named by the managed copy that G# generates",
+    "messageFormat": "'{0}' is a file-local type, which generated code cannot name. The managed path of the CPU dialect copies the body of '{1}' into a generated file because {2}, so a kernel that needs that copy cannot run on the managed path: its managed launch throws. The GPU, the native CPU path and the C# execution are not affected. Declare the type without 'file', for example as a private type nested in the class that uses it.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true

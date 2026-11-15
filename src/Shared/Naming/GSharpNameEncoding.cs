@@ -23,6 +23,8 @@ namespace Kassyi.GSharp.Naming;
 /// the <c>field</c> keyword; it decodes to <c>{name}.field</c>.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
+///   <item><description><c>__gsharp_gi_</c> followed by one encoded segment: the C# name of the closed copy of a
+/// generic kernel or device function; it decodes to the name with its type arguments.</description></item>
 ///   <item><description><c>GSharpModuleContext_{module}</c>: the generated C# class that loads the fatbin of an
 /// assembly, with the module name escaped as a segment is (an empty name included); it decodes to
 /// <c>GSharpModuleContext(module)</c>. <c>__gsharp_module_{module}</c>, the field that holds the fatbin of a module
@@ -42,6 +44,12 @@ internal static class GSharpNameEncoding
     public const string FunctionPrefix = "__gsharp_fn_";
     public const string KernelPrefix = "__gsharp_k_";
     public const string TypeParameterPrefix = "__gsharp_tp_";
+
+    /// <summary>
+    /// The prefix of the C# name of the closed copy of a generic kernel or device function, followed by one encoded
+    /// segment: the name with every type argument and the overload ordinal.
+    /// </summary>
+    public const string InstancePrefix = "__gsharp_gi_";
 
     /// <summary>The prefix of the generated C# class that loads the fatbin module of one assembly.</summary>
     public const string ModuleContextPrefix = "GSharpModuleContext_";
@@ -710,6 +718,12 @@ internal static class GSharpNameEncoding
             return true;
         }
 
+        if (TryDecodeInstance(identifier, out var instanceDisplay))
+        {
+            csharpName = instanceDisplay;
+            return true;
+        }
+
         if (identifier.StartsWith(TypeParameterPrefix, StringComparison.Ordinal))
         {
             var index = TypeParameterPrefix.Length;
@@ -938,6 +952,27 @@ internal static class GSharpNameEncoding
         }
 
         display = path.ToDisplayString();
+        return true;
+    }
+
+    // __gsharp_gi_ and exactly one segment
+    private static bool TryDecodeInstance(string identifier, out string display)
+    {
+        display = string.Empty;
+        if (!identifier.StartsWith(InstancePrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var index = InstancePrefix.Length;
+        if (!TryParseSegment(identifier, ref index, out var segment) || segment is null || index != identifier.Length)
+        {
+            return false;
+        }
+
+        var builder = new StringBuilder();
+        segment.AppendDisplay(builder);
+        display = builder.ToString();
         return true;
     }
 

@@ -68,6 +68,42 @@ public class GpuKernelAnalyzerTests
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
     }
 
+    // The type of an operator, of an accessor and of a struct, generic or inside a partial class, is reported; so is
+    // the class around an extension block (a block cannot be partial); the partial forms are not
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task EnclosingTypesMustBePartial_MembersAndStructShapes_ReportsGSH0036AtIdentifierSpan()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_Members_SadPath.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
+            .OrderBy(d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .Select(d =>
+            {
+                var span = d.Location.GetLineSpan();
+                return (
+                    span.StartLinePosition.Line,
+                    span.StartLinePosition.Character,
+                    span.EndLinePosition.Line,
+                    span.EndLinePosition.Character,
+                    d.GetMessage());
+            })
+            .ToArray();
+
+        const string Format = "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
+        Assert.Equal(
+        [
+            (5, 13, 5, 36, string.Format(Format, "NonPartialOperatorClass")),
+            (11, 13, 11, 36, string.Format(Format, "NonPartialAccessorClass")),
+            (21, 20, 21, 40, string.Format(Format, "NonPartialExtensions")),
+            (31, 14, 31, 37, string.Format(Format, "NonPartialGenericStruct")),
+            (39, 18, 39, 39, string.Format(Format, "NonPartialInnerStruct")),
+        ], actual);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task EnclosingTypesMustBePartial_NonPartialOuterTypes_ReportsGSH0036AtIdentifierSpan()
@@ -92,14 +128,16 @@ public class GpuKernelAnalyzerTests
             })
             .ToArray();
 
-        // DeviceOnlyStruct and DeviceOnlyRecordStruct are not reported, and OuterOfTwoClasses only once
+        // OuterOfTwoClasses is reported once; the partial structs are not reported
         Assert.Equal(
         [
             (4, 13, 4, 33, string.Format(ExpectedMessageFormat, "OuterNonPartialClass")),
             (6, 18, 6, 39, string.Format(ExpectedMessageFormat, "OuterNonPartialStruct")),
             (18, 14, 18, 35, string.Format(ExpectedMessageFormat, "OuterNonPartialRecord")),
+            (28, 14, 28, 30, string.Format(ExpectedMessageFormat, "DeviceOnlyStruct")),
             (35, 13, 35, 30, string.Format(ExpectedMessageFormat, "OuterOfTwoClasses")),
             (58, 14, 58, 36, string.Format(ExpectedMessageFormat, "NonPartialKernelRecord")),
+            (66, 21, 66, 43, string.Format(ExpectedMessageFormat, "DeviceOnlyRecordStruct")),
         ], actual);
     }
 

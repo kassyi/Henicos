@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -154,16 +155,13 @@ internal static class GlobalCppNames
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
         var definition = GetDefinition(method);
-        var typePath = GetTypePath(definition.ContainingType);
-        var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
-        foreach (var segment in typePath.Segments)
+        if (GenericInstanceTable.TryGet(definition, out var instance))
         {
-            segments.Add(segment);
+            return GenericInstanceNames.GetInstancePath(instance);
         }
 
-        segments.Add(new GlobalNameSegment(definition.Name, arity: definition.Arity,
-            overloadOrdinal: GetOverloadOrdinal(definition)));
-        return new GlobalNamePath(segments.MoveToImmutable());
+        return GetTypePath(definition.ContainingType).Append(new GlobalNameSegment(definition.Name,
+            arity: definition.Arity, overloadOrdinal: GetOverloadOrdinal(definition)));
     }
 
     private static IMethodSymbol GetDefinition(IMethodSymbol method)
@@ -268,7 +266,11 @@ internal static class GlobalCppNames
     public static GlobalNamePath GetTypePath(INamedTypeSymbol type) =>
         new(BuildTypeSegments(type));
 
-    private static GlobalNamePath GetTypePath(ITypeSymbol type)
+    /// <summary>
+    /// The C# path of <paramref name="type"/> with its element-type modifiers: <see cref="GetTypePath(INamedTypeSymbol)"/>
+    /// of the element type of a pointer or array, followed by <c>*</c> and the ranks.
+    /// </summary>
+    public static GlobalNamePath GetTypePath(ITypeSymbol type)
     {
         var modifiers = ImmutableArray.CreateBuilder<int>();
         var current = type;
@@ -291,6 +293,13 @@ internal static class GlobalCppNames
         }
 
         modifiers.Reverse();
+        if (current is IFunctionPointerTypeSymbol)
+        {
+            // The name grammar has no form for a signature; nothing that names a type can reach one on the device
+            throw new InvalidOperationException(
+                $"The function pointer type '{current.GetFullyQualifiedCsharpName()}' has no global C++ name.");
+        }
+
         var segments = current is INamedTypeSymbol named
             ? BuildTypeSegments(named)
             : ImmutableArray.Create(new GlobalNameSegment(current.Name));
