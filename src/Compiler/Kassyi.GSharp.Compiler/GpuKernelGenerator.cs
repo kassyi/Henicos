@@ -394,7 +394,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 out var requiredIncludesCuda, cudaStructs, errorSites));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
                 out var requiredIncludesCpp, cppStructs, errorSites));
-            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
+            // A kernel that names a file-local type has no copy: the user's method runs, or nothing (GSH0119)
+            var managedCSharpSource = host.ManagedMode == ManagedKernelMode.Copy
+                ? MethodTranspiler.GenerateManagedCSharpSource(in plan)
+                : string.Empty;
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
@@ -523,8 +526,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
+            // A private frame (one that holds a private type of the class) is run from other classes through its
+            // entries, which a consumer assembly does not know to call: the record names the frame type, which it
+            // cannot name
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
-                                         managedCSharpSource.Length > 0;
+                                         managedCSharpSource.Length > 0 &&
+                                         ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol,
+                                             compilation) != Accessibility.Private;
             var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
                                     managedCSharpSource.Length > 0;
             DeviceExportRecord export = default;

@@ -7,7 +7,7 @@ public struct ValueFieldCell
     public int F;
 }
 
-public struct ValueFieldOuter
+public partial struct ValueFieldOuter
 {
     public ValueFieldCell Inner;
     public int F;
