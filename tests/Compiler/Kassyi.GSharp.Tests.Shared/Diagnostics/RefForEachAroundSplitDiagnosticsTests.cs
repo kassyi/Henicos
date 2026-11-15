@@ -39,14 +39,15 @@ public class RefForEachAroundSplitDiagnosticsTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task RefForEach_LoopWithASplitPoint_IsNotAlsoReportedByTheGenerator()
+    public async Task RefForEach_HeldWithoutGsh0039_IsReportedByTheGeneratorAsGsh0003()
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, "Cpu");
 
-        // The held variable of such a loop is GSH0039; GSH0003 is left for a held ref local that it does not report
-        Assert.Empty(diagnostics.Ranges(
-            GSharpDiagnostics.UnsupportedSyntax.Id,
-            GpuCodeConstraints.RefLocalHeldByCpuStateMachine
-        ));
+        // The variables that GSH0039 reports are not reported twice. The one whose only barrier is in a local function
+        // of its loop is held by the lowering but is not the loop's split point, so a miss of the rule shows as GSH0003
+        Assert.Equal(
+            [(DiagnosticOrigin.Generator, 145, 26, 145, 27)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.RefLocalHeldByCpuStateMachine)
+        );
     }
 }
