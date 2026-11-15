@@ -38,7 +38,8 @@ runs as, the full command):
 ![A selected job](images/selected.svg)
 
 The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
-screen colors:
+screen colors. While it is open only `?` (next page), Esc (close), `q` and Ctrl+C act; any other key would act on jobs
+the help covers, so it only says how to leave:
 
 ![The help page](images/help.svg)
 
