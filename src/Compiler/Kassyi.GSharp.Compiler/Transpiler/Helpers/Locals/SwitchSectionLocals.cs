@@ -77,8 +77,17 @@ internal static class SwitchSectionLocals
                 context.Emitter.Writer.Append("const ");
             }
 
-            context.Emitter.Dialect.AppendType(ref context, model.GetTypeSymbol(declaration.Declaration.Type));
-            context.Emitter.Writer.Append(' ');
+            // A ref local is the pointer to its target, declared first and assigned where it is declared
+            if (model.GetDeclaredSymbol<ILocalSymbol>(declarator) is { IsRef: true } refLocal)
+            {
+                RefLocals.WriteType(refLocal, ref context);
+            }
+            else
+            {
+                context.Emitter.Dialect.AppendType(ref context, model.GetTypeSymbol(declaration.Declaration.Type));
+                context.Emitter.Writer.Append(' ');
+            }
+
             CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
             if (declaration.IsConst)
             {
@@ -156,14 +165,12 @@ internal static class SwitchSectionLocals
     // initializer at the declaration; shared memory, WMMA types and iterator locals have forms of their own
     private static bool CanDeclareBeforeSwitch(LocalDeclarationStatementSyntax declaration,
         VariableDeclaratorSyntax declarator, SemanticModel model) =>
-        declaration.Declaration.Type is not RefTypeSyntax &&
         model.GetDeclaredSymbol<ISymbol>(declarator) is ILocalSymbol local &&
         CanDeclareLocal(local, declarator.Initializer?.Value);
 
     // The same condition for a local of any form (an expression variable included). A span over an array is a view
     // that C++ declares empty and assigns later, as an array alias; a span over a stackalloc is a C++ array and is not
     internal static bool CanDeclareLocal(ILocalSymbol local, ExpressionSyntax? initializer) =>
-        local is { IsRef: false } &&
         initializer is not (
             StackAllocArrayCreationExpressionSyntax or ImplicitStackAllocArrayCreationExpressionSyntax) &&
         local.Type is not { TypeKind: TypeKind.Error } &&
