@@ -64,6 +64,10 @@ native.Scale = host.Scale;
 }
 public static unsafe void Unmarshal_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, ref AotContexts.Bag native, global::System.IntPtr hStream = default)
 {
+if (native.Values.Data == global::System.IntPtr.Zero)
+{
+host.Values = default;
+}
 host.Scale = native.Scale;
 }
 public static void CopyArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

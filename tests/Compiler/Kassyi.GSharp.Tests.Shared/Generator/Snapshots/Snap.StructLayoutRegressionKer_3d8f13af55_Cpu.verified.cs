@@ -212,6 +212,10 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -267,7 +271,11 @@ native.Elems.Length = host.Elems.Length;
 public static unsafe void Unmarshal_LayoutReproElemHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElemHolder host, ref AotContexts.LayoutReproElemHolder native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
-if (host.Elems != null && native.Elems.Data != global::System.IntPtr.Zero)
+if (native.Elems.Data == global::System.IntPtr.Zero)
+{
+host.Elems = default;
+}
+else if (host.Elems != null)
 {
 AotContexts.LayoutReproInnerBag* shadow = (AotContexts.LayoutReproInnerBag*)native.Elems.Data;
 for (int i = 0; i < host.Elems.Length; i++)
@@ -331,6 +339,10 @@ native.Items.Length = host.Items.Length;
 public static unsafe void Unmarshal_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, ref AotContexts.LayoutReproInnerBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+if (native.Items.Data == global::System.IntPtr.Zero)
+{
+host.Items = default;
+}
 }
 public static void CopyArrays_LayoutReproInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -387,6 +399,14 @@ native.B.Length = host.B.Length;
 }
 public static unsafe void Unmarshal_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, ref AotContexts.LayoutReproPair native, global::System.IntPtr hStream = default)
 {
+if (native.A.Data == global::System.IntPtr.Zero)
+{
+host.A = default;
+}
+if (native.B.Data == global::System.IntPtr.Zero)
+{
+host.B = default;
+}
 }
 public static void CopyArrays_LayoutReproPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -694,6 +714,10 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
