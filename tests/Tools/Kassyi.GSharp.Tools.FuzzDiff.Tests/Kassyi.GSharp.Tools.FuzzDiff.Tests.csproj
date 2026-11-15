@@ -33,4 +33,3 @@
     <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" />
   </ItemGroup>
 </Project>
-

@@ -446,4 +446,3 @@ The MSBuild property `<GSharpCheckedBuild>true</GSharpCheckedBuild>` configures 
 
 - [2. Compiler and Runtime Architecture](00_index.md)
 - [8. Comprehensive Example](03_comprehensive_example.md)
-

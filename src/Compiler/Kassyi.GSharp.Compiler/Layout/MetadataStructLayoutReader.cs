@@ -114,4 +114,3 @@ internal static class MetadataStructLayoutReader
         return module is not null && token != 0;
     }
 }
-

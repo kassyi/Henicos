@@ -67,9 +67,9 @@ internal static class StructPropertyPlanner
             return declaration;
         }
 
-        // [WHY] Originally written for Roslyn 4.8, which did not link the parts of a partial property (unlike partial
-        // methods). While Roslyn 5.9 supports partial property symbol linking via PartialImplementationPart, this manual
-        // search fallback is retained unchanged in this cleanup PR
+        // [WHY] Written for Roslyn 4.8, which links the parts of a partial method but not of a partial property, so the
+        // implementing part is found by name among the declarations of the type; Roslyn 5.9 links them
+        // (IPropertySymbol.PartialImplementationPart)
         return FindImplementingAccessor(property, declaration.Kind()) ?? declaration;
     }
 

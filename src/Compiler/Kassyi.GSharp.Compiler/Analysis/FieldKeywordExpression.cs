@@ -7,9 +7,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// field of the property through the implicit <c>this</c>.
 /// </summary>
 /// <remarks>
-/// [WHY] The compiler builds against Roslyn 5.9. The syntax check was originally designed for Roslyn 4.8 (which
-/// lacked <c>FieldExpressionSyntax</c>) and is retained unchanged to preserve exact behavior: an expression whose
-/// that is not a name (a local or a field named <c>field</c> is an <see cref="IdentifierNameSyntax"/>). The operation
+/// [WHY] The test was written for Roslyn 4.8, which has no <c>FieldExpressionSyntax</c> and no kind for it; the
+/// compiler now builds against Roslyn 5.9, which has both, and the test still reads the shape. The syntax is checked
+/// first, without the semantic model: an expression whose only child is the token <c>field</c> and that is not a name (a local or a field named <c>field</c> is an <see cref="IdentifierNameSyntax"/>). The operation
 /// then confirms it. The transpiler (<c>FieldKeywordInterceptor</c>) and the effect analysis
 /// (<see cref="ExpressionEffects"/>) share this one test.
 /// </remarks>
