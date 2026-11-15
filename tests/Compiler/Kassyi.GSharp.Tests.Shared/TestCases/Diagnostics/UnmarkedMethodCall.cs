@@ -8,7 +8,7 @@ using Kassyi.GSharp.Core;
 
 namespace UnmarkedMethodCallTest
 {
-    public struct Box
+    public partial struct Box
     {
         public int Value;
 

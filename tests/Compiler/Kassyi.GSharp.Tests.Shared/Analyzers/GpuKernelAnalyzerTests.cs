@@ -68,6 +68,42 @@ public class GpuKernelAnalyzerTests
         Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
     }
 
+    // The type of an operator, of an accessor and of a struct, generic or inside a partial class, is reported; so is
+    // the class around an extension block (a block cannot be partial); the partial forms are not
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task EnclosingTypesMustBePartial_MembersAndStructShapes_ReportsGSH0036AtIdentifierSpan()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/EnclosingTypeMustBePartial_Members_SadPath.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Where(d => d.Id == GSharpDiagnostics.KernelClassMustBePartial.Id)
+            .OrderBy(d => d.Location.GetLineSpan().StartLinePosition.Line)
+            .Select(d =>
+            {
+                var span = d.Location.GetLineSpan();
+                return (
+                    span.StartLinePosition.Line,
+                    span.StartLinePosition.Character,
+                    span.EndLinePosition.Line,
+                    span.EndLinePosition.Character,
+                    d.GetMessage());
+            })
+            .ToArray();
+
+        const string Format = "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods.";
+        Assert.Equal(
+        [
+            (5, 13, 5, 36, string.Format(Format, "NonPartialOperatorClass")),
+            (11, 13, 11, 36, string.Format(Format, "NonPartialAccessorClass")),
+            (21, 20, 21, 40, string.Format(Format, "NonPartialExtensions")),
+            (31, 14, 31, 37, string.Format(Format, "NonPartialGenericStruct")),
+            (39, 18, 39, 39, string.Format(Format, "NonPartialInnerStruct")),
+        ], actual);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task EnclosingTypesMustBePartial_NonPartialOuterTypes_ReportsGSH0036AtIdentifierSpan()

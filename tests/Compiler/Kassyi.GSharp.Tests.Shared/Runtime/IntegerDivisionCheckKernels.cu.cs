@@ -79,6 +79,16 @@ public static partial class IntegerDivisionCheckKernels
         int i = (int)ThreadIndex.X;
         o[i] = DivisionHolder.Quotient(a[i], d[i]);
     }
+
+    // The device functions of a generic, a readonly, a ref and a nested partial struct each get a managed version
+    [GpuKernel]
+    public static void StructShapesQuotientKernel(int[] a, int[] d, int[] o)
+    {
+        o[0] = DivisionGenericHolder<long>.Quotient(a[0], d[0]);
+        o[1] = DivisionReadonlyHolder.Quotient(a[0], d[0]);
+        o[2] = DivisionRefHolder.Quotient(a[0], d[0]);
+        o[3] = DivisionOuterHolder.Inner.Quotient(a[0], d[0]);
+    }
 }
 
 // A device function of a partial struct gets its managed version like one of a class (GSH0036 requires partial)
@@ -86,4 +96,31 @@ public partial struct DivisionHolder
 {
     [GpuDeviceFunction]
     public static int Quotient(int a, int d) => a / d;
+}
+
+public partial struct DivisionGenericHolder<T>
+{
+    [GpuDeviceFunction]
+    public static int Quotient(int a, int d) => a / d;
+}
+
+public readonly partial struct DivisionReadonlyHolder
+{
+    [GpuDeviceFunction]
+    public static int Quotient(int a, int d) => a / d;
+}
+
+public ref partial struct DivisionRefHolder
+{
+    [GpuDeviceFunction]
+    public static int Quotient(int a, int d) => a / d;
+}
+
+public partial class DivisionOuterHolder
+{
+    public partial struct Inner
+    {
+        [GpuDeviceFunction]
+        public static int Quotient(int a, int d) => a / d;
+    }
 }

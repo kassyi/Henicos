@@ -128,7 +128,7 @@ public static partial class PropertyVarianceKernels
         result[ThreadIndex.X] = 1;
     }
 
-    public struct Scale
+    public partial struct Scale
     {
         public int Factor;
 
