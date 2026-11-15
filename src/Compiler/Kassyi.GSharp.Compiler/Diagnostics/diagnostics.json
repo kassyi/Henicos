@@ -573,9 +573,9 @@
     "name": "KernelParameterSpaceExceeded",
     "id": "GSH0064",
     "title": "Kernel parameters exceed the parameter space limit",
-    "messageFormat": "The parameters of kernel '{0}' take {1} bytes, which exceeds the {2}-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.",
+    "messageFormat": "The parameters of kernel '{0}' take {1} bytes with the ones G# adds, which exceeds the {2}-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.",
     "category": "GSharpTranspiler",
-    "defaultSeverity": "Warning",
+    "defaultSeverity": "Error",
     "isEnabledByDefault": true
   },
   {

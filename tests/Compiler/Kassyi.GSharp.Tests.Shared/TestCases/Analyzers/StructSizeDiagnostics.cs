@@ -52,32 +52,85 @@ public struct Size48Struct
     public long F;
 }
 
+// Sizes around the CUDA limit of 32,764 bytes; every CUDA kernel also takes the 4-byte launch epoch last
+[System.Runtime.CompilerServices.InlineArray(32760)]
+public struct Bytes32760
+{
+    private byte _element;
+}
+
+[System.Runtime.CompilerServices.InlineArray(32761)]
+public struct Bytes32761
+{
+    private byte _element;
+}
+
+// 32,752 bytes, 8-byte aligned
+[System.Runtime.CompilerServices.InlineArray(4094)]
+public struct Longs32752
+{
+    private long _element;
+}
+
+// 8,192 bytes: above the old 4,096-byte check, which nvcc accepts
+[System.Runtime.CompilerServices.InlineArray(2048)]
+public struct Ints8192
+{
+    private int _element;
+}
+
+// 40,960 bytes, which nvcc rejects
+[System.Runtime.CompilerServices.InlineArray(10240)]
+public struct Ints40960
+{
+    private int _element;
+}
+
 public static partial class StructSizeDiagnosticKernels
 {
     [GpuKernel]
-    public static void AtLimitKernel(Block4096 s)
+    public static void AtLimitKernel(Bytes32760 s)
     {
-        int x = (int)s.A.A.A;
+        int x = s[0];
         _ = x;
     }
 
     [GpuKernel]
-    public static void OverLimitKernel(int[] data, Block4096 s)
+    public static void OverLimitKernel(Bytes32761 s)
     {
-        data[0] = (int)s.A.A.A;
-    }
-
-    [GpuKernel]
-    public static void PaddingKernel(byte flag, Block4096 s)
-    {
-        int x = flag + (int)s.A.A.A;
+        int x = s[0];
         _ = x;
     }
 
     [GpuKernel]
-    public static int ResultKernel(Block4096 s)
+    public static void ArrayAndBlockKernel(int[] data, Bytes32760 s)
     {
-        return (int)s.A.A.A;
+        data[0] = s[0];
+    }
+
+    [GpuKernel]
+    public static void PaddingKernel(byte flag, Longs32752 s, byte tail)
+    {
+        int x = flag + tail + (int)s[0];
+        _ = x;
+    }
+
+    [GpuKernel]
+    public static int ResultKernel(Longs32752 s)
+    {
+        return (int)s[0];
+    }
+
+    [GpuKernel]
+    public static void MediumKernel(int[] output, Ints8192 block)
+    {
+        output[0] = block[2047];
+    }
+
+    [GpuKernel]
+    public static void LargeKernel(int[] output, Ints40960 block)
+    {
+        output[0] = block[10239];
     }
 
     [GpuKernel]

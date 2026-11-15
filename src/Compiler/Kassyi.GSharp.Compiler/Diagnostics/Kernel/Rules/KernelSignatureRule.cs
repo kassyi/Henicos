@@ -8,8 +8,10 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 {
     public static readonly KernelSignatureRule Instance = new();
 
-    // [WHY] CUDA limits the parameters of a kernel to 4 KB (4096 bytes).
-    private const int KernelParameterSpaceLimitBytes = 4096;
+    // [WHY] The parameter space of a kernel is 32,764 bytes from CUDA 12.1 on Volta and newer, and 4,096 bytes before.
+    // G# builds with CUDA 13.0 or newer, whose oldest target is compute capability 7.5, so every build G# supports has
+    // the larger limit, and nvcc rejects a kernel above it ("Formal parameter space overflowed ... max 32764 bytes").
+    private const int KernelParameterSpaceLimitBytes = 32764;
 
     private const int DevicePointerBytes = 8;
 
@@ -109,11 +111,9 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
             offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
         }
 
-        // A kernel that returns a value takes the pointer to its result buffer as a hidden last parameter
-        if (!kernel.ReturnsVoid)
-        {
-            offset = TypeLayoutCalculator.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
-        }
+        // The parameters G# appends on CUDA (result buffer, grid aggregate scratch, launch epoch), where the limit
+        // holds; a CPU dialect build of the same kernel is checked against the GPU it is meant for
+        offset = KernelHiddenParameters.For(node, kernel, context.SemanticModel, isCuda: true).AppendTo(offset);
 
         if (offset > KernelParameterSpaceLimitBytes)
         {

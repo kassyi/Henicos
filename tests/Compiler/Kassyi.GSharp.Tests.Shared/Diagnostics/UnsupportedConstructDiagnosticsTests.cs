@@ -485,7 +485,7 @@ public class UnsupportedConstructDiagnosticsTests
     // ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
     public static TheoryData<string, string, (int, int, int, int)[]> LargeStaticSharedMemoryCases()
     {
-        (int, int, int, int)[] structSize = [(104, 63, 104, 67), (129, 63, 129, 74), (138, 63, 138, 74)];
+        (int, int, int, int)[] structSize = [(157, 63, 157, 67), (182, 63, 182, 74), (191, 63, 191, 74)];
         (int, int, int, int)[] comprehensive = [(107, 63, 107, 68)];
         return new TheoryData<string, string, (int, int, int, int)[]>
         {
