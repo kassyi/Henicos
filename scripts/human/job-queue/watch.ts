@@ -84,7 +84,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
     }
     return { state };
   }
-  // The help covers the jobs: a key that acts on them (a move, a cancel, a pause) would act on what is not on the screen
+  // The help covers the jobs: a key that acts on them (a move, a cancel, a pause) would act on what is not on screen
   if (state.help > 0 && key !== "?" && key !== "\x1b" && key !== "q") {
     return { state: note(state, "help: ? next page, Esc closes it", now) };
   }
