@@ -93,11 +93,12 @@ internal static class TypeTests
         var operand = model.GetTypeSymbol(owner.Expression);
         var declared = model.GetTypeSymbol(pattern.Type);
         var plan = Plan(false, operand, declared, model.Compilation);
+        ITypeSymbol? underlying = null;
         var isNullable = operand is INamedTypeSymbol
         {
             OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-            TypeArguments: [var underlying]
-        };
+            TypeArguments: [var nullableArgument]
+        } && (underlying = nullableArgument) is not null;
 
         // The variable has the operand's own type, or the underlying type of a nullable: a variable of an interface or
         // a base type is a reference to a heap object
