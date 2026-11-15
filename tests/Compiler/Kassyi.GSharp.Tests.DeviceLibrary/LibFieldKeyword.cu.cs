@@ -16,7 +16,7 @@ public struct LibScaled
 /// <summary>
 /// A value whose <c>+</c> is an operator macro, for a target that is an auto-property of a library struct.
 /// </summary>
-public struct LibMacroValue
+public partial struct LibMacroValue
 {
     public int V;
 

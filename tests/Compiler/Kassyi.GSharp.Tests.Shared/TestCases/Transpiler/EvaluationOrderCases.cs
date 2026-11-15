@@ -123,7 +123,7 @@ public struct OrderPair
 }
 
 // The field keyword reads the backing field of the property, a field of this; Bump writes it through the setter
-public struct OrderFieldKeyword
+public partial struct OrderFieldKeyword
 {
     public int FieldRead
     {
