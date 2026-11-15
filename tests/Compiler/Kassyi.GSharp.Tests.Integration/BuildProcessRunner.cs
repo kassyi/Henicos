@@ -45,6 +45,7 @@ internal static class BuildProcessRunner
     /// <param name="projectFile">The project to build, relative to <paramref name="workingDirectory"/>.</param>
     /// <param name="environment">Environment variables set (or, with a <see langword="null"/> value, removed) for the
     /// build only.</param>
+    /// <param name="extraArguments">Further arguments of <c>dotnet build</c>, such as targets or properties.</param>
     /// <exception cref="TimeoutException">
     /// The process did not exit in time; the whole process tree has been killed. The message holds the full output,
     /// the running dotnet / MSBuild / VBCSCompiler processes and the path of the binary log.
@@ -52,8 +53,10 @@ internal static class BuildProcessRunner
     internal static async Task<BuildResult> RunBuildAsync(
         string workingDirectory,
         string projectFile,
-        IReadOnlyDictionary<string, string?>? environment = null)
+        IReadOnlyDictionary<string, string?>? environment = null,
+        IReadOnlyList<string>? extraArguments = null)
     {
+        PinRepositorySdk(workingDirectory);
         var binaryLogPath = GetBinaryLogPath(workingDirectory, projectFile);
         var startInfo = new ProcessStartInfo
         {
@@ -74,6 +77,11 @@ internal static class BuildProcessRunner
                 $"-bl:{binaryLogPath}"
             }
         };
+        foreach (var argument in extraArguments ?? [])
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
         foreach (var (name, value) in environment ?? new Dictionary<string, string?>())
         {
             startInfo.Environment[name] = value;
@@ -109,6 +117,18 @@ internal static class BuildProcessRunner
         }
 
         return new BuildResult(process.ExitCode, await stdoutTask, await stderrTask);
+    }
+
+    // The build runs in a temporary directory, which the repository's global.json does not reach. Without a copy the
+    // child dotnet selects the newest installed SDK while it inherits the MSBuild environment of the test host's SDK,
+    // and the task host of the G# tasks cannot start (MSB4216) on a machine with a newer SDK than the pinned one.
+    private static void PinRepositorySdk(string workingDirectory)
+    {
+        var globalJson = RepositoryPaths.Combine("global.json");
+        if (File.Exists(globalJson))
+        {
+            File.Copy(globalJson, Path.Combine(workingDirectory, "global.json"), overwrite: true);
+        }
     }
 
     private static string GetBinaryLogPath(string workingDirectory, string projectFile)

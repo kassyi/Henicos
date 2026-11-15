@@ -116,36 +116,59 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 context.Emitter.Writer.AppendLine(";");
             }
 
+            hasEmittedAny = true;
             if (declaredAhead)
             {
-                // <name> = <initializer>
-                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-                DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
-                hasEmittedAny = true;
+                WriteDeclaredAheadAssignment(v, ref context);
                 continue;
             }
 
-            hasEmittedAny = true;
-            if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
+            if (!TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
             {
-                continue;
+                WriteSplitDeclarator(v, typeSymbol, isVar, ref context);
             }
+        }
+    }
 
-            // A split declaration has no initializer to deduce auto from, so it names the type
-            var splitInitialization = context.Query.SemanticModel.GetOriginalNode(v) is not ParameterSyntax &&
-                                      IsJumpedOverInitialization(v, typeSymbol);
-            WriteDeclaredType(v, typeSymbol, isVar && !splitInitialization, ref context);
-            context.Emitter.Writer.Append(' ');
-            CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-            if (splitInitialization)
-            {
-                // <type> <name>;
-                // <name> = <initializer>
-                context.Emitter.Writer.AppendLine(";");
-                CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
-            }
+    // <name> = <initializer>: the local was declared ahead of its statement
+    private static void WriteDeclaredAheadAssignment(VariableDeclaratorSyntax variable, ref TranspileContext context)
+    {
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
+    }
 
-            DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+    // <type> <name> = <initializer>, or <type> <name>; <name> = <initializer> for a local that a goto jumps over; a
+    // fixed declarator that pins through GetPinnableReference writes the copy of its receiver first, then the call
+    private static void WriteSplitDeclarator(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, bool isVar,
+        ref TranspileContext context)
+    {
+        var pin = PinnableReferenceMethod.Plan(variable, typeSymbol, context.Query.SemanticModel);
+        if (pin is { } plan)
+        {
+            PinnableReferenceMethod.WriteSpill(variable, in plan, ref context);
+        }
+
+        // A split declaration has no initializer to deduce auto from, so it names the type
+        var splitInitialization = context.Query.SemanticModel.GetOriginalNode(variable) is not ParameterSyntax &&
+                                  IsJumpedOverInitialization(variable, typeSymbol);
+        WriteDeclaredType(variable, typeSymbol, isVar && !splitInitialization, ref context);
+        context.Emitter.Writer.Append(' ');
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        if (splitInitialization)
+        {
+            // <type> <name>;
+            // <name> = <initializer>
+            context.Emitter.Writer.AppendLine(";");
+            CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
+        }
+
+        if (pin is { } pinned)
+        {
+            PinnableReferenceMethod.WriteInitializer(variable, in pinned, ref context);
+        }
+        else
+        {
+            DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
         }
     }
 
@@ -318,8 +341,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         // arguments, then the defaults of the parameters left out. One loop over the parameters would change the order.
         var provided = EmitProvidedArguments(localCppName, iteratorMethod.Parameters, annotatedParamList,
             sourceInvocation.ArgumentList.Arguments, ref hasEmittedAny, ref context);
-        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, provided, ref hasEmittedAny,
-            ref context);
+        EmitDefaultArguments(localCppName, iteratorMethod.Parameters, annotatedParamList, sourceInvocation, provided,
+            ref hasEmittedAny, ref context);
     }
 
     // The backing local of each written argument; returns which parameters received one
@@ -355,9 +378,11 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         return provided;
     }
 
-    // The backing local of each parameter left out, with its default value
+    // The backing local of each parameter left out, with the call site's value of a caller-info parameter or its
+    // default value
     private static void EmitDefaultArguments(string localCppName, ImmutableArray<IParameterSymbol> parameters,
-        ParameterListSyntax annotatedParamList, bool[] provided, ref bool hasEmittedAny, ref TranspileContext context)
+        ParameterListSyntax annotatedParamList, InvocationExpressionSyntax call, bool[] provided,
+        ref bool hasEmittedAny, ref TranspileContext context)
     {
         for (var paramIdx = 0; paramIdx < parameters.Length; paramIdx++)
         {
@@ -369,7 +394,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             var paramSyntax = paramIdx < annotatedParamList.Parameters.Count
                 ? annotatedParamList.Parameters[paramIdx]
                 : null;
-            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax);
+            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax, call,
+                context.Query.SemanticModel);
             EmitBackingArgumentLocal(
                 localCppName,
                 paramIdx,

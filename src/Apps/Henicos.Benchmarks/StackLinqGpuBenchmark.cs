@@ -17,12 +17,14 @@ public class StackLinqGpuBenchmark
         _data = new int[Size];
         for (int i = 0; i < Size; i++)
         {
-            _data[i] = i;
+            // 1 to 256, so that the sum of the elements fits an int at every Size (an integer Sum throws when it does not)
+            _data[i] = (i & 0xFF) + 1;
         }
 
         Array.Clear(_data, 0, Size / 10);
 
-        _endMarker = _data[(int)(Size * 0.9)];
+        // A value no element has, so the windowing kernels read to the end of the data
+        _endMarker = 1000;
         
         _results = new int[256];
         

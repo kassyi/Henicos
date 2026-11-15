@@ -199,6 +199,20 @@ function checkKeys(): void {
   assert.strictEqual(reduceKey({ ...state, helpPages: 1 }, "?", null, Now).state.help, 1);
   assert.strictEqual(reduceKey({ ...state, help: 1, helpPages: 1 }, "?", null, Now).state.help, 0);
   press("?");
+  // While the help is open only ?, Esc, q and Ctrl+C act: every other key leaves the jobs, the selection and the queue
+  // as they are and says how to leave the help
+  for (const key of ["\x1b[A", "\x1b[B", "j", "k", "g", "G", "c", "m", "w", "s", " ", "a", "r", "\r"]) {
+    const result = reduceKey(state, key, reply, Now);
+    assert.strictEqual(result.action, undefined, `${JSON.stringify(key)} does nothing under the help`);
+    assert.deepStrictEqual(
+      { ...result.state, message: null },
+      { ...state, message: null },
+      `${JSON.stringify(key)} keeps the state`,
+    );
+    assert.match(result.state.message?.text ?? "", /Esc closes it/);
+  }
+  assert.strictEqual(reduceKey(state, "q", reply, Now).action, "quit", "q quits from the help");
+  assert.strictEqual(reduceKey(state, "\x03", reply, Now).action, "quit", "Ctrl+C quits from the help");
   assert.strictEqual(press("\x1b").state.help, 0);
   assert.strictEqual(state.selectedId, 812, "Esc closes the help first and keeps the selection");
   assert.strictEqual(press("q").action, "quit");
@@ -357,11 +371,12 @@ function checkPauseKey(): void {
   const pauseMark = renderScreen(paused, pressed.state, size, false);
   assert.deepStrictEqual(markRows(pauseMark), Array(5).fill("████   ████"), "two equal bars with a gap");
   const playMark = renderScreen(reply, again.state, size, false);
-  assert.deepStrictEqual(
-    markRows(playMark, normal).map((row) => /^█+/.exec(row)?.[0].length),
-    [2, 6, 10, 6, 2],
-    "the play mark is a triangle pointing right",
-  );
+  // Each row holds two half rows: the upper half is drawn by █ and ▀, the lower by █ and ▄
+  const halfRows = markRows(playMark, normal).flatMap((row) => [
+    [...row].filter((c) => c === "█" || c === "▀").length,
+    [...row].filter((c) => c === "█" || c === "▄").length,
+  ]);
+  assert.deepStrictEqual(halfRows, [2, 4, 6, 8, 10, 10, 8, 6, 4, 2], "the play mark is a triangle pointing right");
   assert.ok(
     pauseMark.every((line) => displayWidth(line) <= 120),
     "inside the width",
