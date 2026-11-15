@@ -3,7 +3,6 @@
 @.agents/rules/agent-scripts.md
 @.agents/rules/agent-tool-mapping.md
 @.agents/rules/coding-style.md
-@.agents/rules/command-intent.md
 @.agents/rules/generator-invariants.md
 @.agents/rules/gsharp-naming-conventions.md
 @.agents/rules/issue-milestones.md
