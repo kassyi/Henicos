@@ -54,4 +54,23 @@ public class RefLocalTests : TranspilerTestBase
     [InlineData(1, 5)]
     public void GotoPastRefLocal_Native_SkipsTheDeclaration(int flag, int expectedFirst) =>
         RefLocalScenarios.GotoPastRefLocal(s_runNative, flag, expectedFirst);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1, new[] { 109, 2 })]
+    [InlineData(0, new[] { 1, 109 })]
+    public void RefFromRefReturn_Native_BindsTheLocalToTheReturnedReference(int c, int[] expected) =>
+        RefLocalScenarios.RefFromRefReturn(s_runNative, c, expected);
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, new[] { 10, 2 })]
+    [InlineData(1, new[] { 1, 20 })]
+    public void SharedRefLocalAcrossSections_Native_DeclaresThePointerBeforeTheSwitch(int mode, int[] expected) =>
+        RefLocalScenarios.SharedRefLocalAcrossSections(s_runNative, mode, expected);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefToSpanLocal_Native_PointsToTheView() =>
+        RefLocalScenarios.RefToSpanLocal(s_runNative);
 }

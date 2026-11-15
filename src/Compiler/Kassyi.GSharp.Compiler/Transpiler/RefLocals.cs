@@ -41,6 +41,15 @@ internal static class RefLocals
         }
 
         hasEmittedAny = true;
+
+        // The block around the switch declares the pointer that another switch section uses: <name> = <pointer>
+        if (SwitchSectionLocals.IsDeclaredBeforeSwitch(declarator, context.Query.SemanticModel))
+        {
+            CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+            DeclarationTranspilerHelper.WriteDeclaratorInitializer(declarator, ref context);
+            return true;
+        }
+
         WriteType(local, ref context);
         CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
         if (declarator.Initializer == null)
@@ -108,8 +117,33 @@ internal static class RefLocals
         }
     }
 
+    /// <summary>
+    /// Writes <c>-&gt; [const ]&lt;type&gt;&amp; </c> for the lambda of a local function that returns <c>ref</c> or
+    /// <c>ref readonly</c>, so that the lambda returns the lvalue and not a copy of it; nothing for another function.
+    /// </summary>
+    public static void AppendReferenceReturn(IMethodSymbol? method, ref TranspileContext context)
+    {
+        if (method is not { RefKind: RefKind.Ref or RefKind.RefReadOnly })
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append("-> ");
+        AppendReturnType(method, ref context);
+        context.Emitter.Writer.Append(' ');
+    }
+
+    /// <summary><c>[const ]&lt;type&gt;[&amp;]</c>: the C++ return type of a local function.</summary>
+    public static void AppendReturnType(IMethodSymbol? method, ref TranspileContext context)
+    {
+        var isReadOnly = method is { RefKind: RefKind.RefReadOnly };
+        context.Emitter.Writer.AppendIf(isReadOnly, "const ");
+        context.Emitter.Dialect.AppendType(ref context, method?.ReturnType);
+        context.Emitter.Writer.AppendIf(method is { RefKind: RefKind.Ref or RefKind.RefReadOnly }, "&");
+    }
+
     // [const ]<type>* , the type of the pointer that the ref local holds
-    private static void WriteType(ILocalSymbol local, ref TranspileContext context)
+    internal static void WriteType(ILocalSymbol local, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendIf(local.RefKind == RefKind.RefReadOnly, "const ");
         context.Emitter.Dialect.AppendType(ref context, local.Type);

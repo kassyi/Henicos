@@ -112,4 +112,71 @@ public static partial class RefLocalKernels
     skip:
         r[1] = 7;
     }
+
+    // A ref local initialized from a ref-returning device function and from a ref-returning local function
+    [GpuDeviceFunction]
+    public static ref int PickDevice(ref int x, ref int y, int c)
+    {
+        if (c != 0)
+        {
+            return ref x;
+        }
+
+        return ref y;
+    }
+
+    [GpuKernel]
+    public static void RefFromRefReturnKernel(int[] r, int c)
+    {
+        int a = 1;
+        int b = 2;
+        ref int t = ref PickDevice(ref a, ref b, c);
+        t = 9;
+        ref int u = ref Pick(ref a, ref b, c);
+        u += 100;
+        r[0] = a;
+        r[1] = b;
+
+        ref int Pick(ref int x, ref int y, int cc)
+        {
+            if (cc != 0)
+            {
+                return ref x;
+            }
+
+            return ref y;
+        }
+    }
+
+    // A ref local that one switch section declares and another assigns: the pointer is declared before the switch
+    [GpuKernel]
+    public static void SharedRefLocalAcrossSectionsKernel(int[] r, int mode)
+    {
+        int x = 1;
+        int y = 2;
+        switch (mode)
+        {
+            case 0:
+                ref int a = ref x;
+                a = 10;
+                break;
+            default:
+                a = ref y;
+                a = 20;
+                break;
+        }
+
+        r[0] = x;
+        r[1] = y;
+    }
+
+    // A ref local of a span: the pointer points to the view
+    [GpuKernel]
+    public static void RefToSpanLocalKernel(int[] r)
+    {
+        Span<int> view = r;
+        ref Span<int> alias = ref view;
+        alias[0] = 7;
+        r[1] = alias.Length;
+    }
 }
