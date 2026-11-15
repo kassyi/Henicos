@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// <para>
 /// [WHY] <c>[StructLayout]</c> and <c>[FieldOffset]</c> are pseudo-custom attributes: for a type from metadata, Roslyn's
 /// public API returns neither (<c>GetAttributes()</c> is empty, and no symbol member exposes the layout; checked with
-/// Roslyn 4.8 and 5.0), so the only public way to them is the module's metadata, which
+/// Roslyn 4.8, 5.0, and 5.9), so the only public way to them is the module's metadata, which
 /// <see cref="IModuleSymbol.GetMetadata"/> hands out. Reading it goes through <c>System.Reflection.Metadata</c>, a
 /// namespace the compiler bans (BannedSymbols.txt) because reflection would slow the compilation down. This reader only
 /// reads rows of the tables Roslyn has already loaded; it loads no type at run time.
@@ -114,3 +114,4 @@ internal static class MetadataStructLayoutReader
         return module is not null && token != 0;
     }
 }
+

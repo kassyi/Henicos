@@ -10,7 +10,8 @@
 
   <ItemGroup>
     <!-- 4.12+ parses the 'allows ref struct' anti-constraint that the exporter removes -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
   </ItemGroup>
 
 </Project>
+

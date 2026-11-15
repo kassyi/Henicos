@@ -10,8 +10,8 @@ internal enum IrOpaqueReason
     Invalid,
 
     /// <summary>
-    /// The kind of operation has no node yet (<see cref="OperationKind.None"/> included, which Roslyn 4.8 gives
-    /// <c>stackalloc</c>, collection expressions and pointer element access).
+    /// The kind of operation has no node yet (<see cref="OperationKind.None"/> included; formerly given by Roslyn 4.8 for
+    /// <c>stackalloc</c>, collection expressions and pointer element access; now typed operations in Roslyn 5.9).
     /// </summary>
     UnsupportedOperation,
 

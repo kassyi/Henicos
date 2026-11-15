@@ -313,6 +313,16 @@ Each time the generator writes the native module (`Kassyi.GSharp.Kernels_{assemb
 
 A source that an earlier build wrote and the current one did not (the other dialect after `GSharpTargetDialect` changed, an old assembly name, kernels that were all removed) is therefore not compiled again, and MSBuild's `IncrementalClean` deletes it together with its fatbin or native library at the end of the build. The generator writes nothing in an IDE design-time build, so the manifest of the last real build stays in place.
 
+### 1.5.3 Minimum .NET SDK Version Check (GS0005)
+
+G# builds its Roslyn source generator against Roslyn 5.9, which is bundled in .NET SDK 10.0.400 and later. Building a project that references G# with an older .NET SDK (such as SDK 10.0.303 / Roslyn 5.6) stops the build before C# compilation begins with error `GS0005`:
+
+```
+error GS0005: G# needs the .NET SDK 10.0.400 or later (Roslyn 5.9) because its source generator is built against Roslyn 5.9; this build uses <version>.
+```
+
+The `GSharpCheckMinimumSdkVersion` target in `Kassyi.GSharp.Compiler.targets` checks `$(NETCoreSdkVersion)` before `CoreCompile` using `[MSBuild]::VersionLessThan`.
+
 ## 1.6 Expression Lowering (IIFE)
 
 To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.
@@ -436,3 +446,4 @@ The MSBuild property `<GSharpCheckedBuild>true</GSharpCheckedBuild>` configures 
 
 - [2. Compiler and Runtime Architecture](00_index.md)
 - [8. Comprehensive Example](03_comprehensive_example.md)
+
