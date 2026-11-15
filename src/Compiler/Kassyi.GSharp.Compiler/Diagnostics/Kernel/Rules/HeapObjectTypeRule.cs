@@ -29,7 +29,7 @@ internal sealed class HeapObjectTypeRule :
 
     public void Analyze(PredefinedTypeSyntax node, ref ValidationContext context)
     {
-        if (node.Keyword.IsKind(SyntaxKind.ObjectKeyword) && !IsLeftToOtherRules(node))
+        if (node.Keyword.IsKind(SyntaxKind.ObjectKeyword) && !IsLeftToOtherRules(node, context.SemanticModel))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.HeapObjectType);
         }
@@ -58,7 +58,7 @@ internal sealed class HeapObjectTypeRule :
             {
                 SpecialType: SpecialType.System_Delegate or SpecialType.System_MulticastDelegate
             } ||
-            IsLeftToOtherRules(node))
+            IsLeftToOtherRules(node, context.SemanticModel))
         {
             return;
         }
@@ -66,17 +66,23 @@ internal sealed class HeapObjectTypeRule :
         context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.HeapObjectType);
     }
 
-    private static bool IsLeftToOtherRules(SyntaxNode type) =>
+    private static bool IsLeftToOtherRules(SyntaxNode type, SemanticModel model) =>
         UnsupportedConstructRule.IsInSignature(type) ||
         type.Parent is ObjectCreationExpressionSyntax or TypeOfExpressionSyntax or TypePatternSyntax ||
         (type.Parent is BinaryExpressionSyntax binary && binary.Right == type &&
          binary.Kind() is SyntaxKind.IsExpression or SyntaxKind.AsExpression) ||
-        IsCreatedByInitializer(type);
+        IsCreatedByInitializer(type, model);
 
-    // object o = new object() and object o = new int[3]: the creation is reported (GSH0001)
-    private static bool IsCreatedByInitializer(SyntaxNode type) =>
+    // object o = new object() and object o = new int[3]: the creation is reported (GSH0001); the creation of a struct
+    // is not, and the object that it is converted to is
+    private static bool IsCreatedByInitializer(SyntaxNode type, SemanticModel model) =>
         type.Parent is VariableDeclarationSyntax { Variables: [{ Initializer.Value: var value }] } declaration &&
         declaration.Type == type &&
-        value is ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax
-            or ImplicitArrayCreationExpressionSyntax;
+        value switch
+        {
+            ArrayCreationExpressionSyntax or ImplicitArrayCreationExpressionSyntax => true,
+            BaseObjectCreationExpressionSyntax creation =>
+                !GpuCodeConstraints.IsSupportedObjectCreation(model.GetTypeSymbol(creation)),
+            _ => false
+        };
 }
