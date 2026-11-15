@@ -75,3 +75,41 @@ __forceinline__ unsigned long long __gsharp_to_u64(double x) {
 }
 __forceinline__ unsigned long long __gsharp_to_u64(float x) { return __gsharp_to_u64((double)x); }
 #endif
+
+// The exact sum of 64-bit integers (StackLinq Sum of long and ulong): 128 bits, the low word unsigned and the high word
+// signed. [WHY] The elements are added without a check and the total is range-checked once (__gsharp_sum_i64), so the
+// result does not depend on the order of the additions, which the block and grid partial sums change; no sequence has
+// 2^63 elements, so the high word cannot overflow.
+struct __gsharp_wide_sum { unsigned long long lo; long long hi; };
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_add_i64(__gsharp_wide_sum s, long long v) {
+    const unsigned long long lo = s.lo + (unsigned long long)v;
+    s.hi = (long long)((unsigned long long)s.hi + (v < 0 ? ~0ull : 0ull) + (lo < s.lo ? 1ull : 0ull));
+    s.lo = lo;
+    return s;
+}
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_add_u64(__gsharp_wide_sum s, unsigned long long v) {
+    const unsigned long long lo = s.lo + v;
+    s.hi = (long long)((unsigned long long)s.hi + (lo < s.lo ? 1ull : 0ull));
+    s.lo = lo;
+    return s;
+}
+// A 64-bit partial sum as a wide sum (the grid combine of an int or uint Sum, which can pass 2^63 in total)
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_from_i64(long long v) {
+    __gsharp_wide_sum s;
+    s.lo = (unsigned long long)v;
+    s.hi = v < 0 ? -1ll : 0ll;
+    return s;
+}
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_from_u64(unsigned long long v) {
+    __gsharp_wide_sum s;
+    s.lo = v;
+    s.hi = 0;
+    return s;
+}
+// The sum of two partial sums (the combine of a block or grid reduction)
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_combine(__gsharp_wide_sum a, __gsharp_wide_sum b) {
+    __gsharp_wide_sum s;
+    s.lo = a.lo + b.lo;
+    s.hi = (long long)((unsigned long long)a.hi + (unsigned long long)b.hi + (s.lo < a.lo ? 1ull : 0ull));
+    return s;
+}

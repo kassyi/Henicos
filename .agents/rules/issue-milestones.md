@@ -37,6 +37,10 @@ Apply the following from the top; the first match decides the milestone.
 5. Cleanup only, with no change in behavior -> `M5`
 6. Anything else (new features, performance) -> `Future`
 
+An issue with the symptoms of two milestones takes the heavier one, which is the one higher in this list. Do not judge
+it by the symptom that shows first. For example, a bug that fails the build with one compiler and gives a wrong value
+with another is `M1`.
+
 Every open issue must have exactly one milestone. Issues without one can be listed with the following command.
 
 ```sh

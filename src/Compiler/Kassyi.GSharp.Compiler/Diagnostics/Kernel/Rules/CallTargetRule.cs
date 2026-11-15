@@ -4,7 +4,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Reports a call in GPU code, or a method group it names, whose target is a method of another assembly that the
 /// project's dialect does not implement (GSH0109), and a call of an intrinsic that the project's dialect declares it
 /// does not implement (GSH0054, a warning: the transpiler writes a runtime failure), from the decision the transpiler
-/// writes the call by (<see cref="CallTargetClassifier"/>).
+/// writes the call by (<see cref="CallTargetClassifier"/>). The calls that C# makes without a call in the source are
+/// decided the same way: the builder of a collection expression (<see cref="CollectionBuilderMethod"/>) and the
+/// <c>GetPinnableReference</c> of a <c>fixed</c> statement (<see cref="PinnableReferenceMethod"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] The analyzer runs the transpiler for the CUDA dialect only (<see cref="TranspilerFailureCheck"/>), whose
@@ -16,7 +18,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 internal sealed class CallTargetRule :
     ISyntaxValidationRule<InvocationExpressionSyntax>,
     ISyntaxValidationRule<MemberAccessExpressionSyntax>,
-    ISyntaxValidationRule<IdentifierNameSyntax>
+    ISyntaxValidationRule<IdentifierNameSyntax>,
+    ISyntaxValidationRule<CollectionExpressionSyntax>,
+    ISyntaxValidationRule<VariableDeclaratorSyntax>
 {
     public static readonly CallTargetRule Instance = new();
 
@@ -58,6 +62,26 @@ internal sealed class CallTargetRule :
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol called && CallTargetClassifier.IsMethodGroup(node))
         {
             Report(node, called, ref context, reportsUnsupportedIntrinsic: false);
+        }
+    }
+
+    // Coll c = [a, b] calls the [CollectionBuilder] method of Coll
+    public void Analyze(CollectionExpressionSyntax node, ref ValidationContext context)
+    {
+        if (CollectionBuilderMethod.Find(context.SemanticModel.GetConvertedTypeSymbol(node)) is { } builder)
+        {
+            Report(node, builder, ref context, reportsUnsupportedIntrinsic: true);
+        }
+    }
+
+    // fixed (int* p = s) calls s.GetPinnableReference()
+    public void Analyze(VariableDeclaratorSyntax node, ref ValidationContext context)
+    {
+        if (node.Parent?.Parent is FixedStatementSyntax &&
+            node.Initializer?.Value is { } value &&
+            PinnableReferenceMethod.Find(value, context.SemanticModel) is { } method)
+        {
+            Report(value, method, ref context, reportsUnsupportedIntrinsic: true);
         }
     }
 
