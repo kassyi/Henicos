@@ -672,6 +672,19 @@ s.hi = (long long)((unsigned long long)s.hi + (lo < s.lo ? 1ull : 0ull));
 s.lo = lo;
 return s;
 }
+// A 64-bit partial sum as a wide sum (the grid combine of an int or uint Sum, which can pass 2^63 in total)
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_from_i64(long long v) {
+__gsharp_wide_sum s;
+s.lo = (unsigned long long)v;
+s.hi = v < 0 ? -1ll : 0ll;
+return s;
+}
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_from_u64(unsigned long long v) {
+__gsharp_wide_sum s;
+s.lo = v;
+s.hi = 0;
+return s;
+}
 // The sum of two partial sums (the combine of a block or grid reduction)
 __device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_combine(__gsharp_wide_sum a, __gsharp_wide_sum b) {
 __gsharp_wide_sum s;
@@ -2745,6 +2758,17 @@ return (int)sum;
 __device__ __forceinline__ unsigned int __gsharp_sum_u32(unsigned long long sum) {
 if (sum > 4294967295ull) { __gsharp_sum_overflow(); }
 return (unsigned int)sum;
+}
+// The range checks of the wide total of a grid-wide int or uint sum
+__device__ __forceinline__ int __gsharp_sum_i32(__gsharp_wide_sum sum) {
+const bool fits = (sum.hi == 0 && sum.lo <= 2147483647ull) ||
+(sum.hi == -1 && sum.lo >= 18446744071562067968ull);
+if (!fits) { __gsharp_sum_overflow(); }
+return (int)(long long)sum.lo;
+}
+__device__ __forceinline__ unsigned int __gsharp_sum_u32(__gsharp_wide_sum sum) {
+if (sum.hi != 0 || sum.lo > 4294967295ull) { __gsharp_sum_overflow(); }
+return (unsigned int)sum.lo;
 }
 __device__ __forceinline__ long long __gsharp_sum_i64(__gsharp_wide_sum sum) {
 const bool fits = (sum.hi == 0 && sum.lo <= 9223372036854775807ull) ||
