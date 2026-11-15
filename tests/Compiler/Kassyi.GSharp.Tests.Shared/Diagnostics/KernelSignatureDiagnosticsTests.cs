@@ -96,9 +96,12 @@ public class KernelSignatureDiagnosticsTests
 
         Assert.Equal(
             [
-                (Analyzer, 65, 24, 65, 39),
-                (Analyzer, 71, 24, 71, 37),
-                (Analyzer, 78, 23, 78, 35)
+                (Analyzer, 100, 24, 100, 39),
+                (Analyzer, 107, 24, 107, 43),
+                (Analyzer, 113, 24, 113, 37),
+                (Analyzer, 132, 24, 132, 35),
+                (Analyzer, 199, 24, 199, 37),
+                (Analyzer, 213, 24, 213, 41)
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }
