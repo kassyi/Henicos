@@ -1,4 +1,5 @@
 using System;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using static Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteTestHelpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -155,6 +156,46 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
 
         Assert.Throws<ArgumentException>(() => Run(managed,
             () => SpanWriteKernels.LaunchArraySortPairsKernel(keys, items, gridDimX: GridDimX, blockDimX: BlockDimX)));
+    }
+
+    // .NET throws ArgumentException when index + length passes the end of the array (also for an empty array and
+    // length 0), and ArgumentOutOfRangeException only for a negative index or length (#1833 (Array.Reverse(array,
+    // index, length) past the end throws ArgumentOutOfRangeException instead of ArgumentException on the native CPU
+    // path)). mutant: ArrayReverse3 without the Argument code reports ArgumentOutOfRange for the first four cases
+    [SkippableTheory]
+    [MemberData(nameof(ReverseRangeCases))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.SadPath)]
+    public void ArrayReverse_RangeOutsideTheArray_ThrowsTheExceptionOfDotNet(int length, int index, int count,
+        bool pastEnd, bool managed)
+    {
+        Skip.If(IsCudaDialect && !DiffPaths.IsCudaCheckedBuild,
+            "The release CUDA build does not check this range; the checked build does and keeps the context usable.");
+        var a = new int[length];
+        var oracle = Record.Exception(() => Array.Reverse(new int[length], index, count));
+        Assert.IsType(pastEnd ? typeof(ArgumentException) : typeof(ArgumentOutOfRangeException), oracle);
+
+        var actual = Record.Exception(() => Run(managed,
+            () => SpanWriteKernels.LaunchArrayReverseRangeKernel(a, index, count, gridDimX: 1, blockDimX: 1)));
+
+        Assert.Equal(oracle.GetType(), actual?.GetType());
+    }
+
+    public static TheoryData<int, int, int, bool, bool> ReverseRangeCases()
+    {
+        var data = new TheoryData<int, int, int, bool, bool>();
+        foreach (var managed in (bool[])[false, true])
+        {
+            data.Add(0, 1, 0, true, managed);
+            data.Add(4, 3, 2, true, managed);
+            data.Add(4, 0, 5, true, managed);
+            data.Add(4, 5, 0, true, managed);
+            data.Add(4, -1, 2, false, managed);
+            data.Add(4, 0, -1, false, managed);
+        }
+
+        return data;
     }
 
     // A null array passed to Array.Fill, Clear, Reverse or Copy throws ArgumentNullException naming the parameter, as
