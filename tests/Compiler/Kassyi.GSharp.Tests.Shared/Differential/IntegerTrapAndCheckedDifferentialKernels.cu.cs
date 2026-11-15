@@ -425,4 +425,40 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
         dst[baseIdx + 4] = dToInt;
         dst[baseIdx + 5] = (int)(dToLong ^ (dToLong >> 32));
     }
+
+    [GpuKernel]
+    public static void MathAbsInt64Kernel(long[] vals, long[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
+
+    [GpuKernel]
+    public static void MathAbsInt16Kernel(short[] vals, short[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
+
+    [GpuKernel]
+    public static void MathAbsSByteKernel(sbyte[] vals, sbyte[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        dst[t] = Math.Abs(vals[t]);
+    }
 }

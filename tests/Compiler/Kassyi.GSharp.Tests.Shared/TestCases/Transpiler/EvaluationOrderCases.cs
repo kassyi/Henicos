@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace OrderCases;
@@ -82,6 +83,32 @@ public struct OrderView
         }
     }
 }
+// The builder of a collection expression writes memory: a collection expression is evaluated, then its builder runs
+[CollectionBuilder(typeof(OrderBagBuilder), nameof(OrderBagBuilder.Create))]
+public struct OrderBag
+{
+    public int Count;
+
+    public System.Collections.Generic.IEnumerator<int> GetEnumerator() => throw new System.NotSupportedException();
+}
+
+public static class OrderBagBuilder
+{
+    public static readonly int[] Sink = new int[1];
+
+    [GpuDeviceFunction]
+    public static OrderBag Create(System.ReadOnlySpan<int> values)
+    {
+        Sink[0] += values.Length;
+        OrderBag bag;
+        bag.Count = values.Length;
+        return bag;
+    }
+
+    [GpuDeviceFunction]
+    public static int Weigh(OrderBag bag) => bag.Count;
+}
+
 public struct OrderPair
 {
     public int X;
@@ -445,6 +472,7 @@ public static class Order
         var result = d[0] + (v with { Poke = 1 }).Stored;
     }
 
+    public static void CollectionBuilderWritingMemory(int[] d) { var result = d[0] + OrderBagBuilder.Weigh([1, 2]); }
 public static void LocalFunctionCall()
     {
         int i = 0;
