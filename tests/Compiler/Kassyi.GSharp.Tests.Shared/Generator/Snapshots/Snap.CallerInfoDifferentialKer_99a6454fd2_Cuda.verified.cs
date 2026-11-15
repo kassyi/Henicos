@@ -286,7 +286,7 @@ __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,11), 7889761
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,12), 940997348u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_xs;
 int __gsharp_stage_0_n = 1;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -299,7 +299,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CallerInfoDiffer
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 ";

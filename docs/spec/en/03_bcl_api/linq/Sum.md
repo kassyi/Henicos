@@ -28,6 +28,31 @@ Computes the sum of a sequence of numeric values.
 | [Sum\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, float\>)](#sum-overload-7) | Computes the sum of the sequence of `float` values that are obtained by invoking a transform function on each element of the input sequence. |
 | [Sum\<TEnumerator\>(StackEnumerable\<TEnumerator, double\>)](#sum-overload-8) | Computes the sum of a sequence of `double` values. |
 | [Sum\<TEnumerator, TSource\>(StackEnumerable\<TEnumerator, TSource\>, Func\<TSource, double\>)](#sum-overload-9) | Computes the sum of the sequence of `double` values that are obtained by invoking a transform function on each element of the input sequence. |
+| `Sum` for `uint`, `long` and `ulong` | The same three forms as for `int` (a sequence, a parallel sequence and a selector); see [Integer sums](#integer-sums). |
+
+## Integer sums
+
+The `Sum` of `int`, `uint`, `long` and `ulong` is **exact**: the elements are added in a wider type (64 bits for `int` and `uint`, 128 bits for `long` and `ulong`) and the total is range-checked once at the end. When the exact sum does not fit the result type, `Sum` throws `OverflowException`, on the host, on the CPU paths and in a CUDA kernel alike.
+
+The result does not depend on the order of the additions. This is why the block and grid reductions of `AsParallel().Sum()` (which add the elements in another order than a loop does) give the same value as the sequential sum.
+
+### Difference from .NET
+
+`System.Linq.Enumerable.Sum` checks every addition: it throws as soon as the running sum overflows, even when later elements would bring it back. StackLinq throws only when the mathematical sum of all the elements does not fit the result type. The two differ only on an input whose running sum overflows and whose exact sum fits: `[int.MaxValue, 1, -1]` sums to `int.MaxValue`, and `[int.MaxValue, 1, int.MinValue]` to `0`, where .NET throws. StackLinq gives the correct value there; it never returns a wrong one. An input whose exact sum does not fit throws in both.
+
+### Why the accumulators have these widths
+
+An accumulator must hold the exact sum of every sequence it can be given. A sequence has fewer than 2^31 elements on the host (an array index is an `int`) and on a device thread; a grid-wide `AsParallel()` sum can combine the partial sums of the threads of a whole grid, so its element count is bounded by 2^62 (2^31 blocks of up to 2^31 elements each, which no memory holds, but which the index arithmetic permits). The widths follow from that bound:
+
+| Element type | Largest magnitude of one element | Accumulator | Largest exact sum it holds |
+| :--- | :--- | :--- | :--- |
+| `int`, `uint` | 2^32 | 64 bits inside a thread and a block (fewer than 2^31 elements: below 2^63) | 2^63 |
+| `int`, `uint` | 2^32 | 128 bits for the total of a grid (up to 2^62 elements: 2^62 x 2^32 = 2^94 < 2^127) | 2^127 |
+| `long`, `ulong` | 2^64 | 128 bits everywhere (2^62 x 2^64 = 2^126 < 2^127) | 2^127 |
+
+On the host a 64-bit accumulator is enough for `int` and `uint` (fewer than 2^31 elements of at most 2^32 each), and 128 bits for `long` and `ulong`.
+
+`Average` is not changed: it adds in a `double` accumulator on the device and in a `long` on the host, and never overflows.
 
 <a id="sum-overload-1"></a>
 
