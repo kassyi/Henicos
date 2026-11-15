@@ -71,7 +71,6 @@ dist-ssr/
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/
 /.agents/rules/agent-tool-mapping.md
-/.agents/rules/command-intent.md
 /.agents/skills/architecture-mapper/
 /.agents/skills/ci.en/
 /.agents/skills/ci.ja/
