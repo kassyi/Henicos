@@ -30,8 +30,12 @@ public class ContextualKeywordTypeTests : SpanKernelPathTestBase
         {
             Assert.Contains(
                 outputCompilation.SyntaxTrees,
-                static tree => tree.ToString().Contains("public global::Kassyi.GSharp.Tests.Shared.Syntax.@union u;", StringComparison.Ordinal) &&
-                               tree.ToString().Contains("public global::Kassyi.GSharp.Tests.Shared.Syntax.@closed c;", StringComparison.Ordinal));
+                static tree => tree.ToString().Contains(
+                                   "public global::Kassyi.GSharp.Tests.Shared.Syntax.@union u;",
+                                   StringComparison.Ordinal) &&
+                               tree.ToString().Contains(
+                                   "public global::Kassyi.GSharp.Tests.Shared.Syntax.@closed c;",
+                                   StringComparison.Ordinal));
         }
     }
 

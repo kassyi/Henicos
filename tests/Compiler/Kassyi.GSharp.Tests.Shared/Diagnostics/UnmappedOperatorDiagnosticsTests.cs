@@ -111,14 +111,18 @@ public class UnmappedOperatorDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task UserDefinedCompoundAssignment_CSharp14CompoundOperator_ReportsGsh0060AtOperator(string dialect)
     {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/CSharp14And15UnsupportedForms.cs", dialect);
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
 
         Assert.Equal(
             [
                 (Analyzer, 73, 15, 73, 17),
                 (Analyzer, 74, 15, 74, 17)
             ],
-            diagnostics.Ranges(GSharpDiagnostics.UserDefinedOperatorNotSupported.Id, "'op_AdditionAssignment' of 'Acc'"));
+            diagnostics.Ranges(
+                GSharpDiagnostics.UserDefinedOperatorNotSupported.Id,
+                "'op_AdditionAssignment' of 'Acc'"));
         Assert.Equal(
             [(Analyzer, 75, 23, 75, 24)],
             diagnostics.Ranges(GSharpDiagnostics.UserDefinedOperatorNotSupported.Id, "'op_Addition' of 'Acc'"));

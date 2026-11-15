@@ -539,7 +539,9 @@ public class UnsupportedConstructDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task TypeUnion_BoxedValueFieldAndSwitchCases_ReportsGsh0078AndGsh0003(string dialect)
     {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/CSharp14And15UnsupportedForms.cs", dialect);
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
 
         Assert.Equal(
             [(Analyzer, 56, 13, 56, 16)],
@@ -553,7 +555,10 @@ public class UnsupportedConstructDiagnosticsTests
                 (Analyzer, 57, 31, 57, 36),
                 (Analyzer, 57, 49, 57, 54)
             ],
-            diagnostics.Where(static d => d.StartLine is 56 or 57).ToImmutableArray().Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+            diagnostics
+                .Where(static d => d.StartLine is 56 or 57)
+                .ToImmutableArray()
+                .Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
     // A C# 15 closed class hierarchy is still a class hierarchy: allocating a case in a kernel reports GSH0001 at new
@@ -563,7 +568,9 @@ public class UnsupportedConstructDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task ClosedClassHierarchy_CaseObjectCreation_ReportsGsh0001AtNew(string dialect)
     {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/CSharp14And15UnsupportedForms.cs", dialect);
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
 
         Assert.Equal(
             [
