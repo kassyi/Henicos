@@ -93,6 +93,7 @@ budget 1.2 times the largest peak of the `stress` lines, each rounded up to a mu
 
 - **Ubuntu** and **Windows** run side by side for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`. A failure on one OS does not cancel the other.
 - Each OS runs three jobs in parallel, each building only what it tests: `Tests.Cpu`, `Tests.Cuda` and `Other tests` (every other project of the solution, including the Integration tests). Every job uploads its `.trx` files as `test-results-<os>-<suite>` (kept 7 days); `node scripts/human/ci-test-durations.js <dir>` lists the slowest tests, classes and collections from them.
+- `commit-messages.yml` (job `Commit messages`) fails a pull request that carries a work-in-progress commit (`wip`) or an autosquash commit (`fixup!`, `squash!`, `amend!`), since the merge commit brings every commit of the branch into `main` as it is. Reword them before the merge.
 - A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
 
 What an agent does:
