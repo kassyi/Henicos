@@ -246,17 +246,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
             return;
         }
 
-        var zeroArray = ArrayPool<uint>.Shared.Rent(wordsToClear);
-        try
-        {
-            Array.Clear(zeroArray, 0, wordsToClear);
-            Workspace.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear,
-                Workspace.Stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(zeroArray);
-        }
+        // A memset, not a copy: a CUDA graph capture records it with no host pointer, so the launched graph clears
+        Workspace.Provider.ClearMemoryAsync(IntPtr.Add(DevicePointer, offsetWords * 4), wordsToClear, Workspace.Stream);
     }
 
     /// <summary>
@@ -395,8 +386,7 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     {
         ArgumentOutOfRangeException.ThrowIfNegative(wordIndex);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(wordIndex, NumWords);
-        var destPtr = IntPtr.Add(DevicePointer, wordIndex * 4);
-        Workspace.Provider.CopyHostToDevice(destPtr, [0], 1, Workspace.Stream);
+        Workspace.Provider.WriteWord(DevicePointer, wordIndex, 0u, Workspace.Stream);
     }
 
     // An offset may point at the end of the buffer (an empty range) but not past it
@@ -432,17 +422,8 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
         var result = new GpuBigUInt(workspace, numWords);
         var wordIndex = bitIndex / 32;
         var bitOffset = bitIndex % 32;
-        var word = ArrayPool<uint>.Shared.Rent(1);
-        try
-        {
-            word[0] = 1u << bitOffset;
-            workspace.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1,
-                workspace.Stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(word);
-        }
+        // The value travels in the command (a memset), so a CUDA graph capture records no host buffer
+        workspace.Provider.WriteWord(result.DevicePointer, wordIndex, 1u << bitOffset, workspace.Stream);
 
         return result;
     }
