@@ -81,6 +81,15 @@ internal struct EffectWalker(SemanticModel model)
             case ThisExpressionSyntax:
                 Reads.Memory = true;
                 return;
+            // The elements are evaluated, then the builder method of a [CollectionBuilder] type runs on them
+            case CollectionExpressionSyntax collection:
+                AddChildren(collection);
+                if (CollectionBuilderMethod.Find(model.GetConvertedTypeSymbol(collection)) is { } builder)
+                {
+                    CallEffects.AddCallOf(ref this, builder, null);
+                }
+
+                return;
             case RefExpressionSyntax reference:
                 AddRead(AddLocation(reference.Expression));
                 return;

@@ -21,6 +21,12 @@ internal static class StatementPrelude
         {
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
+                // The block around the switch declares the variable that another switch section uses (#842)
+                if (SwitchSectionSharedNames.IsDeclaredBeforeSwitch(singleVar, context.Query.SemanticModel))
+                {
+                    continue;
+                }
+
                 // [WHY] The C++ dialect transpiles lowered syntax trees. When a lowered declaration expression (such as
                 // an inlined 'out var x') loses its original-node annotation, GetTypeSymbol cannot locate the node in
                 // the semantic model and returns null. Instead of silently emitting invalid C++ ("void x;" or the former
@@ -40,6 +46,11 @@ internal static class StatementPrelude
             if (desc is SingleVariableDesignationSyntax { Parent: ParenthesizedVariableDesignationSyntax } variable &&
                 IsDeconstructionDeclaration(variable))
             {
+                if (SwitchSectionSharedNames.IsDeclaredBeforeSwitch(variable, context.Query.SemanticModel))
+                {
+                    continue;
+                }
+
                 var local = context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(variable)
                     ?? throw new InvalidOperationException(
                         $"The variable '{variable}' of a deconstruction could not be resolved from the semantic model.");
@@ -51,10 +62,28 @@ internal static class StatementPrelude
                 continue;
             }
 
+            // x is T v: the variable is declared before the statement, and the test assigns it
+            if (desc is SingleVariableDesignationSyntax { Parent: DeclarationPatternSyntax pattern } patternVariable &&
+                TypeTests.PlanDeclaration(pattern, context.Query.SemanticModel) is not null &&
+                context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(patternVariable) is { } patternLocal)
+            {
+                context.Emitter.Dialect.AppendType(ref context, patternLocal.Type);
+                context.Emitter.Writer.Append(' ');
+                CppNameResolver.AppendDeclaredName(patternVariable, patternVariable.Identifier, ref context);
+                context.Emitter.Writer.AppendLine(";");
+                continue;
+            }
+
             StackAllocEmitter.DeclareStorage(desc, ref context);
             DiscardOutArgument.DeclareStorage(desc, ref context);
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="designation"/> is a variable of a deconstruction declaration (<c>var (a, b) = ...</c>).
+    /// </summary>
+    internal static bool IsDeconstructionVariable(SingleVariableDesignationSyntax designation) =>
+        designation.Parent is ParenthesizedVariableDesignationSyntax && IsDeconstructionDeclaration(designation);
 
     // The designation belongs to the left side of a deconstruction assignment (not a foreach or a pattern)
     private static bool IsDeconstructionDeclaration(SyntaxNode designation)

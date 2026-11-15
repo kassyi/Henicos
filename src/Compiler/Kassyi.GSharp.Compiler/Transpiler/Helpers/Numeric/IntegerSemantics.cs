@@ -1,4 +1,5 @@
 using System.Numerics;
+using Kassyi.GSharp.Compiler.Analysis.Checks;
 using Microsoft.CodeAnalysis.Operations;
 using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 
@@ -28,6 +29,14 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 /// bounds (<see cref="BoundedLoopStep"/>). The rest costs no instruction on the GPU: the unsigned operation is the same
 /// instruction without the no-overflow assumption, and the masked shift is one funnel shift. Which definition wins:
 /// <c>docs/spec/en/01_language/06_semantics.md</c>.
+/// </para>
+/// <para>
+/// An integer <c>/</c> or <c>%</c> whose divisor may be 0 is a Prelude call (<c>IntegerDivision.hpp</c>) that throws
+/// <see cref="DivideByZeroException"/> as C# does (#718), on the native CPU build and every CUDA build.
+/// <c>MinValue / -1</c> and <c>MinValue % -1</c>, implementation-defined in C#, give the GPU result (MinValue and 0),
+/// which the native build tests for because x86 <c>idiv</c> raises a hardware exception. Whether a division needs the
+/// call is <see cref="DivisionCheckRule.Decide"/>, from the ranges of its operands (<see cref="DecideDivision"/>): a
+/// divisor whose constant or type range excludes 0 (and -1, for a dividend that may be MinValue) keeps the operator.
 /// </para>
 /// </remarks>
 internal static class IntegerSemantics
@@ -85,6 +94,13 @@ internal static class IntegerSemantics
         }
 
         var (helper, _) = Lookup(operation.OperatorKind, type.SpecialType);
+        if (IsDivision(operation.OperatorKind))
+        {
+            return DecideDivision(operation.LeftOperand, operation.RightOperand, type.SpecialType) == DivisionCheck.None
+                ? null
+                : helper;
+        }
+
         var arithmetic = operation.OperatorKind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or
             BinaryOperatorKind.Multiply;
         return arithmetic && FitsWithoutWrap(operation) ? null : helper;
@@ -110,7 +126,7 @@ internal static class IntegerSemantics
         }
 
         // -x overflows only for the minimum value of the type
-        if (TryGetRange(operation.Operand, out var min, out _) && min > MinValue(width))
+        if (OperationRanges.Of(operation.Operand) is { } range && range.Min > MinValue(width))
         {
             return null;
         }
@@ -183,10 +199,29 @@ internal static class IntegerSemantics
     /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
-    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation) =>
-        operation.OperatorMethod == null && !operation.IsLifted
-            ? Lookup(operation.OperatorKind, GetCompoundOperatorType(operation)).Helper
-            : null;
+    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation)
+    {
+        if (operation.OperatorMethod != null || operation.IsLifted)
+        {
+            return null;
+        }
+
+        var type = GetCompoundOperatorType(operation);
+        var helper = Lookup(operation.OperatorKind, type).Helper;
+        return helper != null && IsDivision(operation.OperatorKind) &&
+               DecideDivision(operation.Target, operation.Value, type) == DivisionCheck.None
+            ? null
+            : helper;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="helper"/>, from <see cref="GetBinaryHelper"/> or <see cref="GetCompoundHelper"/>, is a
+    /// division or remainder (<c>__gsharp_div_i32</c>), which takes the place of a failing divisor check as its last
+    /// argument (<see cref="DivisorCheck"/>).
+    /// </summary>
+    public static bool TakesErrorSite(string helper) =>
+        helper is Names.DivideInt32 or Names.DivideInt64 or Names.DivideUInt32 or Names.DivideUInt64 or
+            Names.RemainderInt32 or Names.RemainderInt64 or Names.RemainderUInt32 or Names.RemainderUInt64;
 
     /// <summary>
     /// The mask of the count of a compound shift that stays a C++ operator (<c>&gt;&gt;=</c>, and <c>&lt;&lt;=</c> and
@@ -230,6 +265,10 @@ internal static class IntegerSemantics
                 (Pick(width, Names.UnsignedShiftRightInt32, Names.UnsignedShiftRightInt64), 0),
             BinaryOperatorKind.LeftShift or BinaryOperatorKind.RightShift or BinaryOperatorKind.UnsignedRightShift =>
                 (null, Mask(width)),
+            BinaryOperatorKind.Divide when signed => (Pick(width, Names.DivideInt32, Names.DivideInt64), 0),
+            BinaryOperatorKind.Divide => (Pick(width, Names.DivideUInt32, Names.DivideUInt64), 0),
+            BinaryOperatorKind.Remainder when signed => (Pick(width, Names.RemainderInt32, Names.RemainderInt64), 0),
+            BinaryOperatorKind.Remainder => (Pick(width, Names.RemainderUInt32, Names.RemainderUInt64), 0),
             _ => (null, 0)
         };
     }
@@ -328,7 +367,7 @@ internal static class IntegerSemantics
     // and the value (C# spec §12.4.7.3, §12.21.4), which does not depend on whether the bound value already carries the
     // conversion to it; for a shift, the promoted type of the target (§12.11). Null for a pointer (p += n) or a
     // floating-point value, which have operators of their own.
-    private static SpecialType GetCompoundOperatorType(ICompoundAssignmentOperation operation)
+    internal static SpecialType GetCompoundOperatorType(ICompoundAssignmentOperation operation)
     {
         var target = Promote(operation.Target.Type);
         if (target == SpecialType.None || operation.OperatorKind is BinaryOperatorKind.LeftShift or
@@ -368,12 +407,35 @@ internal static class IntegerSemantics
         _ => SpecialType.None
     };
 
+    private static bool IsDivision(BinaryOperatorKind kind) =>
+        kind is BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder;
+
+    /// <summary>
+    /// The divisor check of a division or remainder whose operator works in <paramref name="operatorType"/>, from the
+    /// ranges of <paramref name="dividend"/> and <paramref name="divisor"/> (<see cref="OperationRanges"/>; an operand
+    /// whose range is not known spans the operator type): the facts of the syntax path for
+    /// <see cref="DivisionCheckRule.Decide"/>, which the transpiler and <see cref="ExpressionTraps"/> both read.
+    /// </summary>
+    internal static DivisionCheck DecideDivision(IOperation dividend, IOperation divisor, SpecialType operatorType)
+    {
+        if (IntegerRange.OfType(operatorType) is not { } operatorRange)
+        {
+            return DivisionCheck.None;
+        }
+
+        return DivisionCheckRule.Decide(
+            operatorType,
+            OperationRanges.Of(dividend) ?? operatorRange,
+            OperationRanges.Of(divisor) ?? operatorRange
+        );
+    }
+
     // Whether the operand ranges bound the exact result inside the type of the operation, so that it cannot wrap
     private static bool FitsWithoutWrap(IBinaryOperation operation)
     {
         if (GetWidth(operation.Type) is not (var width and not 0) ||
-            !TryGetRange(operation.LeftOperand, out var leftMin, out var leftMax) ||
-            !TryGetRange(operation.RightOperand, out var rightMin, out var rightMax))
+            OperationRanges.Of(operation.LeftOperand) is not { Min: var leftMin, Max: var leftMax } ||
+            OperationRanges.Of(operation.RightOperand) is not { Min: var rightMin, Max: var rightMax })
         {
             return false;
         }
@@ -400,49 +462,6 @@ internal static class IntegerSemantics
         }
 
         return min >= MinValue(width) && max <= MaxValue(width);
-    }
-
-    // The values an operand can take: its constant, the range of what an integer conversion converts (when it fits the
-    // target type, the conversion keeps the value), or the range of its type. An int or long operand of an operation of
-    // its own type spans the type, which never proves anything; the narrower types and an int or uint in a long
-    // operation ((long)i * i) do.
-    private static bool TryGetRange(IOperation operand, out BigInteger min, out BigInteger max)
-    {
-        if (operand.ConstantValue is { HasValue: true, Value: { } value } && TryGetInteger(value, out var constant))
-        {
-            min = max = constant;
-            return true;
-        }
-
-        if (!TryGetTypeRange(operand.Type, out min, out max))
-        {
-            return false;
-        }
-
-        if (operand is IConversionOperation { OperatorMethod: null } conversion &&
-            TryGetRange(conversion.Operand, out var innerMin, out var innerMax) && innerMin >= min && innerMax <= max)
-        {
-            (min, max) = (innerMin, innerMax);
-        }
-
-        return true;
-    }
-
-    private static bool TryGetTypeRange(ITypeSymbol? type, out BigInteger min, out BigInteger max)
-    {
-        (min, max) = UnderlyingOrSelf(type)?.SpecialType switch
-        {
-            SpecialType.System_SByte => (sbyte.MinValue, sbyte.MaxValue),
-            SpecialType.System_Byte => (byte.MinValue, byte.MaxValue),
-            SpecialType.System_Int16 => (short.MinValue, short.MaxValue),
-            SpecialType.System_UInt16 or SpecialType.System_Char => (ushort.MinValue, ushort.MaxValue),
-            SpecialType.System_Int32 => (int.MinValue, int.MaxValue),
-            SpecialType.System_UInt32 => (uint.MinValue, uint.MaxValue),
-            SpecialType.System_Int64 => (long.MinValue, long.MaxValue),
-            SpecialType.System_UInt64 => (ulong.MinValue, ulong.MaxValue),
-            _ => (BigInteger.One, BigInteger.Zero)
-        };
-        return min <= max;
     }
 
     /// <summary>The value of an integer constant of any integer type (char included).</summary>

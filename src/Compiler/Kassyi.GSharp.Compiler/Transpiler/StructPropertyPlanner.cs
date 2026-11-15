@@ -67,8 +67,9 @@ internal static class StructPropertyPlanner
             return declaration;
         }
 
-        // [WHY] Roslyn 4.8, which the compiler builds against, links the parts of a partial method but not of a
-        // partial property, so the implementing part is found by name among the declarations of the type
+        // [WHY] Written for Roslyn 4.8, which links the parts of a partial method but not of a partial property, so the
+        // implementing part is found by name among the declarations of the type; Roslyn 5.9 links them
+        // (IPropertySymbol.PartialImplementationPart)
         return FindImplementingAccessor(property, declaration.Kind()) ?? declaration;
     }
 

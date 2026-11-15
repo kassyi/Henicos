@@ -1,5 +1,4 @@
 #nullable enable
-using System.Collections.Generic;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -22,10 +21,6 @@ public class IntegerMinValueOverflowDifferentialTests
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv with int.MinValue / -1 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -83,10 +78,6 @@ public class IntegerMinValueOverflowDifferentialTests
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv with int.MinValue % -1 terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -144,10 +135,6 @@ public class IntegerMinValueOverflowDifferentialTests
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv with long.MinValue / -1L terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;
@@ -205,10 +192,6 @@ public class IntegerMinValueOverflowDifferentialTests
     {
         Shape = LaunchShapes.Linear(DefaultRows, 32),
         Seeds = [0, 1],
-        SkippedPaths = new Dictionary<DiffPath, string>
-        {
-            [DiffPath.Native] = "#718 (x86 idiv with long.MinValue % -1L terminates process on native)",
-        },
         Inputs = static (rng, shape) =>
         {
             int rows = shape.Rows;

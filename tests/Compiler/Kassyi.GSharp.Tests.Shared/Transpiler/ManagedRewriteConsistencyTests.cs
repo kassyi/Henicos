@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
@@ -16,8 +17,9 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// already gives: the body macros with a lambda (Kassyi.GSharp.Core runs them), the site key of a
 /// <c>SharedMemory&lt;T&gt;</c> (its caller-info constructor computes the same key), the length of an optional array,
 /// the calls that C# removes (<c>RemovedCalls</c>), which the user's method does not make either, the arm that C# adds
-/// to a switch expression that is not exhaustive, and the <c>in</c> of a variable passed to a <c>ref readonly</c>
-/// parameter without a keyword.
+/// to a switch expression that is not exhaustive, the <c>in</c> of a variable passed to a <c>ref readonly</c>
+/// parameter without a keyword, and the value of a caller-info parameter that a call omits (the value C# passes at the
+/// same call).
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Scenario(TestScenario.HappyPath)]
@@ -74,42 +76,53 @@ public class ManagedRewriteConsistencyTests
         Assert.True(checkedBodies >= 100, $"Only {checkedBodies} functions without one were compared");
     }
 
-    // The direct rewrites of the classifier are the operator macro assignments and the float/double StackLinq sums
+    // The direct rewrites of the classifier are the operator macro assignments, the float/double StackLinq sums,
+    // Gpu.InlinePtx and the int or long divisions that may divide the minimum by -1
     [Fact]
-    public void Rewrite_SemanticRewriteCandidates_IsExpandedOperatorMacro()
+    public void Rewrite_SemanticRewriteCandidate_IsAListedRewrite()
     {
         var compilation = RoslynTestUtility.SharedCompilation;
-        var macros = 0;
-        var sequentialSums = 0;
+        var kinds = new Dictionary<string, int>();
         foreach (var (_, declaration, model) in EnumerateDeviceFunctions(compilation))
         {
             foreach (var node in declaration.DescendantNodes())
             {
-                if (!ManagedRewriteClassifier.IsSemanticRewrite(node, model))
+                if (ManagedRewriteClassifier.IsSemanticRewrite(node, model))
                 {
-                    continue;
-                }
-
-                if (node is AssignmentExpressionSyntax assignment)
-                {
-                    macros++;
-                    Assert.True(ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out var macro));
-                    Assert.NotNull(macro.TargetMethod);
-                }
-                else
-                {
-                    var invocation = Assert.IsType<InvocationExpressionSyntax>(node);
-                    if (!ManagedRewriteClassifier.IsInlinePtx(invocation, model))
-                    {
-                        sequentialSums++;
-                        Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
-                    }
+                    var kind = ClassifyRewrite(node, model);
+                    kinds[kind] = kinds.GetValueOrDefault(kind) + 1;
                 }
             }
         }
 
-        Assert.True(macros > 0);
-        Assert.True(sequentialSums > 0);
+        Assert.True(kinds.GetValueOrDefault("macro") > 0);
+        Assert.True(kinds.GetValueOrDefault("sum") > 0);
+        Assert.True(kinds.GetValueOrDefault("division") > 0);
+    }
+
+    // Which listed rewrite a node the classifier reports is; fails for a node that is none of them
+    private static string ClassifyRewrite(SyntaxNode node, SemanticModel model)
+    {
+        if (ManagedDivision.Plan(node, model) is not null)
+        {
+            return "division";
+        }
+
+        if (node is AssignmentExpressionSyntax assignment)
+        {
+            Assert.True(ManagedRewriteClassifier.TryGetOperatorMacro(assignment, model, out var macro));
+            Assert.NotNull(macro.TargetMethod);
+            return "macro";
+        }
+
+        var invocation = Assert.IsType<InvocationExpressionSyntax>(node);
+        if (ManagedRewriteClassifier.IsInlinePtx(invocation, model))
+        {
+            return "ptx";
+        }
+
+        Assert.True(ManagedRewriteClassifier.IsSequentialSum(invocation, model));
+        return "sum";
     }
 
     [Fact]
@@ -218,6 +231,7 @@ public class ManagedRewriteConsistencyTests
         body.DescendantNodes().Any(node => node switch
         {
             InvocationExpressionSyntax invocation when RemovedCalls.IsRemoved(invocation, model) => true,
+            InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax when OmitsCallerInfo(node, model) => true,
             InvocationExpressionSyntax invocation =>
                 model.GetSymbolInfo(invocation).Symbol is IMethodSymbol { ContainingType.Name: "Gpu" } callee &&
                 callee.Name is "ForUnroll" or "GridStrideLoop" or "SingleThread",
@@ -237,4 +251,8 @@ public class ManagedRewriteConsistencyTests
                 },
             _ => false
         });
+
+    private static bool OmitsCallerInfo(SyntaxNode call, SemanticModel model) =>
+        model.GetSymbolInfo(call).Symbol is IMethodSymbol method &&
+        method.Parameters.Any(parameter => CallerInfoArgument.GetValue(parameter, call, model) is not null);
 }

@@ -169,6 +169,13 @@ public static partial class LibSecretOps
 /// <summary>Device functions that the kernels of another assembly call.</summary>
 public static partial class LibMath
 {
+    /// <summary>
+    /// A division of two integers, whose managed version only gives the GPU result of <c>MinValue / -1</c>: its record
+    /// says that it has a managed version, and that its C# meaning does not need the generated code (#718).
+    /// </summary>
+    [GpuDeviceFunction]
+    public static int Quotient(int a, int b) => a / b;
+
     /// <summary>The Montgomery constant <c>-n0^-1 mod 2^32</c> (the shape of <c>CooperativeMath.ComputeMontgomeryMu</c>).</summary>
     [GpuDeviceFunction]
     public static uint Mu(uint n0)
