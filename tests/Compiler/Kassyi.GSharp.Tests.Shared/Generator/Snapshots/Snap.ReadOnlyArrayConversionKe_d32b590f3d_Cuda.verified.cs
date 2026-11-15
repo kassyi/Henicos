@@ -197,7 +197,11 @@ native.Optional.Length = host.Optional.Length;
 }
 public static unsafe void Unmarshal_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, ref AotContexts.ReadOnlyArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Fixed != null && native.Fixed.Data != global::System.IntPtr.Zero)
+if (native.Fixed.Data == global::System.IntPtr.Zero)
+{
+host.Fixed = default;
+}
+else if (host.Fixed != null)
 {
 int size = checked(host.Fixed.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -213,7 +217,11 @@ handle.Free();
 }
 }
 }
-if (host.Optional != null && native.Optional.Data != global::System.IntPtr.Zero)
+if (native.Optional.Data == global::System.IntPtr.Zero)
+{
+host.Optional = default;
+}
+else if (host.Optional != null)
 {
 int size = checked(host.Optional.Length * sizeof(global::System.UInt32));
 if (size > 0)

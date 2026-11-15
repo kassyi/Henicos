@@ -215,7 +215,11 @@ native.Free.Length = host.Free.Length;
 }
 public static unsafe void Unmarshal_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, ref AotContexts.ReadOnlyWriteHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Fixed != null && native.Fixed.Data != global::System.IntPtr.Zero)
+if (native.Fixed.Data == global::System.IntPtr.Zero)
+{
+host.Fixed = default;
+}
+else if (host.Fixed != null)
 {
 int size = checked(host.Fixed.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -231,7 +235,11 @@ handle.Free();
 }
 }
 }
-if (host.Free != null && native.Free.Data != global::System.IntPtr.Zero)
+if (native.Free.Data == global::System.IntPtr.Zero)
+{
+host.Free = default;
+}
+else if (host.Free != null)
 {
 int size = checked(host.Free.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -1389,16 +1397,19 @@ finally
 #pragma warning restore CS8500
 public const string RefForEachKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyArrayWriteKernels__RefForEachKernel(GSharpArray<const unsigned int> __gsharp_id_0_r, GSharpArray<unsigned int> __gsharp_id_1_o, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-for(void __gsharp_id_2_element : __gsharp_id_0_r.AsSpan())
+for(auto& __gsharp_foreach_e_0 : __gsharp_id_0_r.AsSpan())
 {
+unsigned int* __gsharp_id_2_element = &__gsharp_foreach_e_0;
 (*__gsharp_id_2_element)=1u;
 }
-for(void __gsharp_id_3_element : __gsharp_id_1_o.AsSpan())
+for(auto& __gsharp_foreach_e_1 : __gsharp_id_1_o.AsSpan())
 {
+unsigned int* __gsharp_id_3_element = &__gsharp_foreach_e_1;
 (*__gsharp_id_3_element)=2u;
 }
-for(void __gsharp_id_4_element : __gsharp_id_0_r.AsSpan())
+for(auto& __gsharp_foreach_e_2 : __gsharp_id_0_r.AsSpan())
 {
+const unsigned int* __gsharp_id_4_element = &__gsharp_foreach_e_2;
 __gsharp_array_at(__gsharp_id_1_o, 0, 517946336u)=(*__gsharp_id_4_element);
 }
 }

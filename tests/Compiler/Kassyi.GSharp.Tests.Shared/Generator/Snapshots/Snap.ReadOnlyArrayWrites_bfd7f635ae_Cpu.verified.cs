@@ -114,6 +114,14 @@ native.Free.Length = host.Free.Length;
 }
 public static unsafe void Unmarshal_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, ref AotContexts.ReadOnlyWriteHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Fixed.Data == global::System.IntPtr.Zero)
+{
+host.Fixed = default;
+}
+if (native.Free.Data == global::System.IntPtr.Zero)
+{
+host.Free = default;
+}
 }
 public static void CopyArrays_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -2148,16 +2156,19 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-for(void __gsharp_id_2_element : __gsharp_id_0_r.AsSpan())
+for(auto& __gsharp_foreach_e_0 : __gsharp_id_0_r.AsSpan())
 {
+unsigned int* __gsharp_id_2_element = &__gsharp_foreach_e_0;
 (*__gsharp_id_2_element)=1u;
 }
-for(void __gsharp_id_3_element : __gsharp_id_1_o.AsSpan())
+for(auto& __gsharp_foreach_e_1 : __gsharp_id_1_o.AsSpan())
 {
+unsigned int* __gsharp_id_3_element = &__gsharp_foreach_e_1;
 (*__gsharp_id_3_element)=2u;
 }
-for(void __gsharp_id_4_element : __gsharp_id_0_r.AsSpan())
+for(auto& __gsharp_foreach_e_2 : __gsharp_id_0_r.AsSpan())
 {
+const unsigned int* __gsharp_id_4_element = &__gsharp_foreach_e_2;
 __gsharp_array_at(__gsharp_id_1_o, 0, 517946336u)=(*__gsharp_id_4_element);
 }
 __gsharp_state=-1;
