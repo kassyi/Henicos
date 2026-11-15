@@ -57,7 +57,7 @@ public class CrossAssemblyDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task RecordOfAnotherPrelude_MismatchedPreludeHash_ReportsGsh0089(string dialect)
     {
-        var library = BuildHandWritten("0123456789abcdef", cudaFailed: false, cppFailed: false);
+        var library = BuildHandWritten(preludeHash: "0123456789abcdef", cudaFailed: false, cppFailed: false);
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -78,7 +78,7 @@ public class CrossAssemblyDiagnosticsTests
         bool cppFailed,
         int expected)
     {
-        var library = BuildHandWritten(DeviceExportRecord.CurrentPreludeHash, cudaFailed, cppFailed);
+        var library = BuildHandWritten(preludeHash: null, cudaFailed, cppFailed);
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -151,8 +151,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenInternalError.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenInternalError.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -170,8 +169,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task UsingOfStructThatFailedInTheDialect_FailedTypeUsage_ReportsGsh0089(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenLease.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenLease.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "LeaseConsumer.cs"), library);
 
@@ -192,8 +190,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenSuspendingRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DeviceFunctionConsumer.cs"),
             library);
@@ -214,8 +211,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenSuspendingRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -246,8 +242,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task DependencyThatFailedInTheDialect_TransitiveUsage_ReportsGsh0089AtUse(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenChain.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenChain.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -359,8 +354,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task ImportedDivergentParameter_CrossAssemblyDeviceFunction_ReportsGsh0083(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenDivergentRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenDivergentRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DivergentCallConsumer.cs"),
             library);
@@ -381,8 +375,7 @@ public class CrossAssemblyDiagnosticsTests
     public void ImportedRecord_WithoutReachesGeneratedMeaningKey_FallsBackToManagedVersion(string traits, bool expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenTraitRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal)
+            HandWrittenExportRecords.Read(Folder + "HandWrittenTraitRecord.cs")
                 .Replace("TRAITS", traits, StringComparison.Ordinal));
         var compilation = DeviceLibraryBuilder.CreateConsumer(s_consumer, library);
 
@@ -398,10 +391,9 @@ public class CrossAssemblyDiagnosticsTests
             .Replace("var pair = new Pair(data[0]);", "var pair = data[0];          ", StringComparison.Ordinal)
             .Replace("data[1] = pair.A;", "data[1] = pair;  ", StringComparison.Ordinal);
 
-    private static MetadataReference BuildHandWritten(string preludeHash, bool cudaFailed, bool cppFailed) =>
+    private static MetadataReference BuildHandWritten(string? preludeHash, bool cudaFailed, bool cppFailed) =>
         DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenRecord.cs")
-                .Replace("PRELUDE_HASH", preludeHash, StringComparison.Ordinal)
+            HandWrittenExportRecords.Read(Folder + "HandWrittenRecord.cs", preludeHash: preludeHash)
                 .Replace("CUDA_FAILED", cudaFailed ? "true" : "false", StringComparison.Ordinal)
                 .Replace("CPP_FAILED", cppFailed ? "true" : "false", StringComparison.Ordinal));
 
