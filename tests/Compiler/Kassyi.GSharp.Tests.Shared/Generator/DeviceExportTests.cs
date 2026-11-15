@@ -501,15 +501,24 @@ public class DeviceExportTests
             .Select(static a => new ExportedRecord(a))
             .ToList();
         bool HasStateMachine(string id) => records.Single(r => r.Id == id).GetBool("ManagedStateMachine");
+        bool HasPrivateFrame(string id) => records.Single(r => r.Id == id).GetBool("PrivateManagedFrame");
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitPublic(System.Int32[],System.Int32)"));
+        Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.WaitPublic(System.Int32[],System.Int32)"));
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)"));
+        Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)"));
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
-        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));
-        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitThrough(System.Int32[],System.Int32)"));
+        Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));
+        Assert.True(HasPrivateFrame("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitThrough(System.Int32[],System.Int32)"));
+        Assert.True(HasPrivateFrame("M:StateMachineCase.LibSm.WaitThrough(System.Int32[],System.Int32)"));
         // Private only through a spilled temporary: the record says so as well
-        Assert.False(HasStateMachine("M:StateMachineCase.LibSm.WaitSpilled(System.Int32[],System.Int32)"));
+        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitSpilled(System.Int32[],System.Int32)"));
+        Assert.True(HasPrivateFrame("M:StateMachineCase.LibSm.WaitSpilled(System.Int32[],System.Int32)"));
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitInner(System.Int32[],System.Int32)"));
+        Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.WaitInner(System.Int32[],System.Int32)"));
         Assert.False(HasStateMachine("M:StateMachineCase.Closed.Open.WaitClosed(System.Int32[],System.Int32)"));
+        Assert.False(HasPrivateFrame("M:StateMachineCase.Closed.Open.WaitClosed(System.Int32[],System.Int32)"));
 
         var machines = string.Join("\n", result.GeneratedSources
             .Where(static s => s.HintName.EndsWith(".DeviceStateMachines.g.cs", StringComparison.Ordinal))
@@ -518,9 +527,13 @@ public class DeviceExportTests
         Assert.Contains("internal static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitHidden(", machines, StringComparison.Ordinal);
         Assert.Contains("internal class __gsharp_frame_StateMachineCase__LibSm__WaitHidden {", machines, StringComparison.Ordinal);
         Assert.DoesNotContain("unsafe", machines, StringComparison.Ordinal);
-        // A frame that holds a private nested type is private to its class (#1835); the records above say that no
-        // other assembly can call it
+        // A frame that holds a private nested type is private to its class (#1835), and the records above mark it
+        // PrivateManagedFrame so that other assemblies run it through the generated entries (#1991)
         Assert.Contains("private static bool __gsharp_statemachine_StateMachineCase__LibSm__WaitPrivate(", machines,
+            StringComparison.Ordinal);
+        Assert.Contains("public static bool __gsharp_enter_StateMachineCase__LibSm__WaitPrivate(", machines,
+            StringComparison.Ordinal);
+        Assert.Contains("public static uint __gsharp_number_frame_StateMachineCase__LibSm__WaitPrivate(", machines,
             StringComparison.Ordinal);
         foreach (var name in new[] { "WaitPrivate", "WaitThrough", "WaitSpilled" })
         {
