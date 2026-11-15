@@ -39,6 +39,10 @@ internal static class KnownAttributes
     public const string ModuleInitializer = nameof(ModuleInitializer);
     public const string CollectionBuilder = nameof(CollectionBuilder);
     public const string UnmanagedCallersOnly = nameof(UnmanagedCallersOnly);
+    public const string CallerLineNumber = nameof(CallerLineNumber);
+    public const string CallerFilePath = nameof(CallerFilePath);
+    public const string CallerMemberName = nameof(CallerMemberName);
+    public const string CallerArgumentExpression = nameof(CallerArgumentExpression);
 
     /// <summary>
     /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.
@@ -74,7 +78,8 @@ internal static class KnownAttributes
             or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap
             or GpuDeviceExport =>
             declaringNamespace.IsCoreNamespace(),
-        MethodImpl or SkipLocalsInit or InlineArray or CompilerGenerated or ModuleInitializer or CollectionBuilder =>
+        MethodImpl or SkipLocalsInit or InlineArray or CompilerGenerated or ModuleInitializer or CollectionBuilder
+            or CallerLineNumber or CallerFilePath or CallerMemberName or CallerArgumentExpression =>
             declaringNamespace.IsSystemRuntimeCompilerServices(),
         StructLayout or FieldOffset or In or Out or DefaultParameterValue or UnmanagedCallersOnly =>
             declaringNamespace.IsSystemRuntimeInteropServices(),

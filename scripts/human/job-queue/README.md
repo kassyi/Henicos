@@ -38,7 +38,8 @@ runs as, the full command):
 ![A selected job](images/selected.svg)
 
 The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
-screen colors:
+screen colors. While it is open only `?` (next page), Esc (close), `q` and Ctrl+C act; any other key would act on jobs
+the help covers, so it only says how to leave:
 
 ![The help page](images/help.svg)
 
@@ -243,7 +244,9 @@ their old meaning.
    use; until then an editor reports `Cannot find name 'process'`).
 2. Self-test: `node scripts/human/job-queue.js --self-test`. It starts schedulers on private ports with a private state
    directory and never touches the machine's queue. Run it on Windows (Git Bash and PowerShell) and Linux; CI runs it
-   on both (`.github/workflows/script-types.yml`).
+   on both (`.github/workflows/script-types.yml`). A failure prints the check or the part that failed before the
+   error. The ports are below 32768 (`firstTestPort`): Linux gives the ports from there up to outgoing connections,
+   and a scheduler cannot listen on a port one of them uses.
 3. For a change to a scheduling decision, add a case to `scheduler-checks.ts` and show that a one-line mutant of the
    changed condition fails it.
 4. Wait on state, not on time, in the self-test (`waitFor`, `runningWith`, `jobsWith`): fixed delays failed on busy

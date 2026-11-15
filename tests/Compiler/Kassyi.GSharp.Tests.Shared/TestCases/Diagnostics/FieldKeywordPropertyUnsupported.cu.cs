@@ -7,7 +7,7 @@ public struct FieldKeywordMacroContext
     public int Calls;
 }
 
-public struct FieldKeywordMacroValue
+public partial struct FieldKeywordMacroValue
 {
     public int V;
 

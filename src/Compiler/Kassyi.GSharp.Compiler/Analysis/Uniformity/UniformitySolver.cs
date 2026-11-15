@@ -149,6 +149,26 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
+    // A member of a flow capture written: the capture, and the locals a ref conditional lets it refer to, keep their
+    // other members, so the write only adds to them
+    private void AddToCaptureRoot(IFlowCaptureReferenceOperation capture, ThreadVariance variance,
+        ThreadVariance[] current)
+    {
+        var recorder = state.Recorder;
+        if (recorder.TryGetCaptureRoot(capture, out var captured))
+        {
+            current[captured] |= variance;
+        }
+
+        foreach (var alias in recorder.GetCaptureRootAliases(capture))
+        {
+            if (recorder.TryGetValue(alias, out var index))
+            {
+                current[index] |= variance;
+            }
+        }
+    }
+
     /// <summary>Whether <paramref name="symbol"/> is declared inside <paramref name="scope"/>.</summary>
     public static bool IsDeclaredIn(ISymbol symbol, SyntaxNode scope) =>
         symbol.DeclaringSyntaxReferences
@@ -310,13 +330,11 @@ internal sealed class UniformitySolver(UniformityState state)
 
     private void WriteCompound(ICompoundAssignmentOperation compound, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque) =>
-        Assign(compound.Target,
-            state.Reader.Evaluate(compound.Target, graph, current) | state.Reader.Evaluate(compound.Value, graph, current),
-            strong: true, current, opaque);
+        Assign(compound.Target, state.Reader.Evaluate(compound, graph, current), strong: true, current, opaque);
 
     private void WriteIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph,
         ThreadVariance[] current, SyntaxNode? opaque) =>
-        Assign(increment.Target, state.Reader.Evaluate(increment.Target, graph, current), strong: true, current, opaque);
+        Assign(increment.Target, state.Reader.Evaluate(increment, graph, current), strong: true, current, opaque);
 
     // (a, b) = (x, y): each element from its own value when both sides are tuples, from the whole value otherwise
     private void Deconstruct(IOperation target, IOperation value, ControlFlowGraph graph, ThreadVariance[] current,
@@ -445,11 +463,17 @@ internal sealed class UniformitySolver(UniformityState state)
             _ => null
         };
 
-        // A field or property of a struct local or parameter: the struct keeps its other members, so the write only
-        // adds to its variance
+        // A field or property of a struct local, parameter or flow capture: the struct keeps its other members, so the
+        // write only adds to its variance
         if (symbol == null && UniformityWrites.GetStructRoot(target) is { } root)
         {
-            symbol = root;
+            if (root is IFlowCaptureReferenceOperation capture)
+            {
+                AddToCaptureRoot(capture, variance, current);
+                return;
+            }
+
+            symbol = UniformityWrites.GetRootSymbol(root);
             strong = false;
         }
 
