@@ -107,12 +107,12 @@ internal static class StructBlockCopyEmitter
                 const string NativeElement = "((global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy*)pField)[k]";
                 if (toNative)
                 {
-                    StructMarshalMethodEmitter.WriteMarshalArrayMember(
+                    StructMarshalMethodEmitter.WriteMarshalArrayLikeMember(
                         writer, "host[k]", NativeElement, member.Type, dialect);
                 }
                 else
                 {
-                    StructUnmarshalMethodEmitter.WriteUnmarshalArrayMember(
+                    StructUnmarshalMethodEmitter.WriteUnmarshalArrayLikeMember(
                         writer, "host[k]", NativeElement, member.Type, dialect);
                 }
 

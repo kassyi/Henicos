@@ -71,7 +71,7 @@ internal static class StructMarshalMethodEmitter
         if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
+            WriteMarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
         else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
@@ -105,7 +105,7 @@ internal static class StructMarshalMethodEmitter
     private const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
 
     // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
-    internal static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
+    internal static void WriteMarshalArrayLikeMember(SourceWriter writer, string host, string native,
         ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
         if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })

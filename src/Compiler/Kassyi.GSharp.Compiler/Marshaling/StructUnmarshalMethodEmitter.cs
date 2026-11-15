@@ -58,7 +58,7 @@ internal static class StructUnmarshalMethodEmitter
         if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
+            WriteUnmarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
         else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
@@ -90,7 +90,7 @@ internal static class StructUnmarshalMethodEmitter
     }
 
     // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
-    internal static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
+    internal static void WriteUnmarshalArrayLikeMember(SourceWriter writer, string host, string native,
         ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
         if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })
