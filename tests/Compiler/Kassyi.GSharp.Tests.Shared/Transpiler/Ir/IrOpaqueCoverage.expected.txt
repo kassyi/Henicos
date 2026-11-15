@@ -30,7 +30,7 @@ UnsupportedOperation	None	MakeRefExpression	1
 UnsupportedOperation	None	PointerIndirectionExpression	37
 UnsupportedOperation	None	StackAllocArrayCreationExpression	68
 UnsupportedOperation	Range	RangeExpression	1
-UnsupportedOperation	SwitchExpression	SwitchExpression	46
+UnsupportedOperation	SwitchExpression	SwitchExpression	47
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
 UnsupportedOperation	Tuple	TupleExpression	1
 UnsupportedOperation	TypeOf	TypeOfExpression	2
