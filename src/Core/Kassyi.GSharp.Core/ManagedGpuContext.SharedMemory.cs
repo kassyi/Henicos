@@ -290,6 +290,7 @@ public static partial class ManagedGpuContext
     /// The grid was not initialized, or the declaration needs more bytes than a managed array holds, which the native CPU
     /// path reports with the same exception when it cannot allocate the buffer.
     /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="count"/> is negative.</exception>
     /// <remarks>
     /// [WHY] On the GPU a <c>__shared__</c> variable has static storage: one buffer per declaration per block, shared by
     /// every call of the function that declares it, from any call site and by every thread of the block. The buffer is
@@ -303,7 +304,12 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged
     {
-        if (count <= 0)
+        if (count < 0)
+        {
+            ThrowNegativeCount(count, place: null);
+        }
+
+        if (count == 0)
         {
             return [];
         }
@@ -376,7 +382,8 @@ public static partial class ManagedGpuContext
     /// The grid was not initialized, or the region grows after a later region was placed, which CUDA traps.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// The regions do not fit in the launch's <c>sharedMemBytes</c> (a negative count included), which CUDA traps.
+    /// <paramref name="count"/> is negative, or the regions do not fit in the launch's <c>sharedMemBytes</c>; CUDA
+    /// reports both with the same exception.
     /// </exception>
     /// <remarks>
     /// The rules are those of the CUDA placement and of the native CPU path (#544): regions are placed in the order the
@@ -387,14 +394,19 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateDynamicSharedMemory<T>(ulong siteKey, int count, string place) where T : unmanaged
     {
+        // Before anything is placed, as on CUDA and the native path
+        if (count < 0)
+        {
+            ThrowNegativeCount(count, place);
+        }
+
         if (s_perBlockDynamic == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
         var block = s_perBlockDynamic[CurrentDynamicIndex()] ??= new DynamicSharedMemory();
-        // A negative count arrives as at least 2^63 bytes, as on CUDA, so it fails the size check instead of wrapping
-        var bytes = unchecked((ulong)(long)count * (ulong)Unsafe.SizeOf<T>());
+        var bytes = (ulong)count * (ulong)Unsafe.SizeOf<T>();
         var index = FindDynamicRegion(block, siteKey);
         if (index < 0)
         {
@@ -426,7 +438,6 @@ public static partial class ManagedGpuContext
                 throw new InvalidOperationException($"G#: a shared memory declaration grew after a later declaration ({place})");
             }
 
-            // [WHY] bytes is checked alone first: added to the offset, a negative count would wrap to a small end
             ulong limit = s_sharedMemBytes;
             if (bytes > limit || region.Offset + bytes > limit)
             {
@@ -440,6 +451,12 @@ public static partial class ManagedGpuContext
 
         return MemoryMarshal.Cast<byte, T>(block.Bytes.AsSpan((int)region.Offset, (int)bytes));
     }
+
+    // The message of every path (the native prelude and CUDA's __gsharp_dsmem_place); CUDA has no count or place to add
+    private static void ThrowNegativeCount(int count, string? place) =>
+        throw new ArgumentOutOfRangeException(null, place == null
+            ? $"G#: the count of a shared memory declaration is negative ({count})"
+            : $"G#: the count of a shared memory declaration is negative ({count}, {place})");
 
     /// <summary>
     /// Returns the region of a dynamic <see cref="SharedMemory{T}"/> declaration that the current block has already placed,
