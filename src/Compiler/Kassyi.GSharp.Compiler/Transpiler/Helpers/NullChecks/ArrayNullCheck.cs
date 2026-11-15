@@ -256,6 +256,39 @@ internal static class ArrayNullCheck
         return false;
     }
 
+    /// <summary>The text of the error of a null array that starts a StackLinq query, as .NET words it.</summary>
+    public const string LinqSourceMessage = "Value cannot be null. (Parameter 'source')";
+
+    private const string LinqSourceTrapKind = "LinqSourceNull";
+
+    /// <summary>
+    /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws
+    /// <see cref="ArgumentNullException"/> for a null array as <c>AsStackEnumerable</c> does: <see langword="null"/>
+    /// when the source cannot be null or is not a C# array.
+    /// </summary>
+    public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        return model.GetTypeSymbol(source) is IArrayTypeSymbol && NeedsCheck(source, model)
+            ? PlanSite(source, null, LinqSourceMessage, LinqSourceTrapKind, ref context)
+            : null;
+    }
+
+    /// <summary>
+    /// Writes <paramref name="source"/> as <c>__gsharp_source_argument(&lt;source&gt;, &lt;site&gt;)</c> when
+    /// <see cref="PlanLinqSource"/> says it needs the check, as it is otherwise.
+    /// </summary>
+    public static void AppendLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        if (PlanLinqSource(source, ref context) is not { } site)
+        {
+            context.Visitor.Visit(source);
+            return;
+        }
+
+        AppendHelperCall(GSharpInternalNames.Prelude.SourceArgument, source, site, ref context);
+    }
+
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
     public static void AppendCheck(ExpressionSyntax receiver, NullCheckSite site, ref TranspileContext context) =>
         AppendHelperCall(GSharpInternalNames.Prelude.ArrayRef, receiver, site, ref context);

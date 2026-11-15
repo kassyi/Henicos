@@ -191,6 +191,8 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1513719289u, "StackLinqDif
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(752440477u, "StackLinqDifferentialKernels.cs", 665, 9, "StackLinqTakeWhileSideEffectCountKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(221656169u, "StackLinqDifferentialKernels.cs", 673, 37, "StackLinqSkipWhileSideEffectCountKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1764528629u, "StackLinqDifferentialKernels.cs", 681, 9, "StackLinqSkipWhileSideEffectCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(321415881u, "StackLinqDifferentialKernels.cs", 688, 24, "ParallelSumStackLinqKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1644618677u, "StackLinqDifferentialKernels.cs", 689, 27, "ParallelSumStackLinqKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(126818969u, "StackLinqDifferentialKernels.cs", 690, 19, "ParallelSumStackLinqKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1562960188u, "StackLinqDifferentialKernels.cs", 692, 13, "ParallelSumStackLinqKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1605184798u, "StackLinqDifferentialKernels.cs", 693, 13, "ParallelSumStackLinqKernel", "G#: a null array is read"),
@@ -9570,7 +9572,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 int __gsharp_id_3_blockSum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_xs;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_xs, 321415881u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -9582,7 +9584,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 int __gsharp_id_4_filteredSum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_xs;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_xs, 1644618677u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;

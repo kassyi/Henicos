@@ -152,7 +152,22 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
+            // A query over a C# array starts at AsStackEnumerable, which rejects a null array
+            var sourceSite = methodName == "AsStackEnumerable"
+                ? ArrayNullCheck.PlanLinqSource(receiver, ref context)
+                : null;
+            if (sourceSite is not null)
+            {
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.SourceArgument}(");
+            }
+
             AppendSource(receiver, in sequence, ref context);
+            if (sourceSite is { } closeSite)
+            {
+                context.Emitter.Writer.Append(", ");
+                ArrayNullCheck.AppendSite(context.Emitter.Writer, closeSite);
+                context.Emitter.Writer.Append(')');
+            }
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)
@@ -192,7 +207,21 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
+            var sourceSite = methodName == "AsStackEnumerable"
+                ? ArrayNullCheck.PlanLinqSource(sourceArg.Expression, ref context)
+                : null;
+            if (sourceSite is not null)
+            {
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.SourceArgument}(");
+            }
+
             AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
+            if (sourceSite is { } closeSite)
+            {
+                context.Emitter.Writer.Append(", ");
+                ArrayNullCheck.AppendSite(context.Emitter.Writer, closeSite);
+                context.Emitter.Writer.Append(')');
+            }
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)

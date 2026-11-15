@@ -83,9 +83,13 @@ public partial class StackLinqFusionTestCases
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(775518873u, "StackLinqFusionTestCases.cs", 16, 23, "SimpleWhereSelectSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1857405461u, "StackLinqFusionTestCases.cs", 20, 13, "SimpleWhereSelectSum", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2072074421u, "StackLinqFusionTestCases.cs", 30, 23, "MultipleWhere", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1009514089u, "StackLinqFusionTestCases.cs", 34, 13, "MultipleWhere", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1452113565u, "StackLinqFusionTestCases.cs", 44, 23, "MultipleSelect", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(225596269u, "StackLinqFusionTestCases.cs", 48, 13, "MultipleSelect", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1637891529u, "StackLinqFusionTestCases.cs", 59, 23, "HellPattern", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(281468141u, "StackLinqFusionTestCases.cs", 71, 13, "HellPattern", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -99,7 +103,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 775518873u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -248,7 +252,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2072074421u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -399,7 +403,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1452113565u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -546,7 +550,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1637891529u);
 int __gsharp_stage_0_n = 2;
 int __gsharp_stage_1_n = 95;
 int __gsharp_stage_2_n = 3;

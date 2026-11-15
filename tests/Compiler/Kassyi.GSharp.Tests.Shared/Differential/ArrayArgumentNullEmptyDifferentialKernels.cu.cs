@@ -3,6 +3,7 @@ using System;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -52,6 +53,18 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 break;
             case ArrayArgumentReads.InNullableFunction:
                 o[0] = NullableLength(a);
+                break;
+            case ArrayArgumentReads.StackLinqSum:
+                o[0] = a.AsStackEnumerable().Sum();
+                break;
+            case ArrayArgumentReads.StackLinqStoredSum:
+            {
+                var sequence = a.AsStackEnumerable();
+                o[0] = sequence.Sum();
+                break;
+            }
+            case ArrayArgumentReads.StackLinqIndexedSum:
+                o[0] = a.AsStackEnumerable().Where((v, i) => i >= 0).Sum();
                 break;
         }
     }
@@ -235,4 +248,13 @@ public static class ArrayArgumentReads
 
     /// <summary>The array read in a device function whose parameter is nullable.</summary>
     public const int InNullableFunction = 7;
+
+    /// <summary><c>a.AsStackEnumerable().Sum()</c>: StackLinq over an array.</summary>
+    public const int StackLinqSum = 11;
+
+    /// <summary>The same query from a sequence stored in a local, which is not fused into one loop.</summary>
+    public const int StackLinqStoredSum = 12;
+
+    /// <summary><c>a.AsStackEnumerable().Where((v, i) =&gt; i &gt;= 0).Sum()</c>: an indexed lambda, not fused.</summary>
+    public const int StackLinqIndexedSum = 13;
 }

@@ -77,7 +77,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1340185312u, "ThreadStopKe
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1278508384u, "ThreadStopKernels.cs", 121, 9, "FirstOfEmptyKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1789152672u, "ThreadStopKernels.cs", 128, 9, "FusedFirstKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1542231296u, "ThreadStopKernels.cs", 129, 9, "FusedFirstKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1222735375u, "ThreadStopKernels.cs", 129, 18, "FusedFirstKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(790900600u, "ThreadStopKernels.cs", 136, 9, "FusedSelectorFailsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(172093619u, "ThreadStopKernels.cs", 137, 19, "FusedSelectorFailsKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(249422352u, "ThreadStopKernels.cs", 138, 9, "FusedSelectorFailsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(220927728u, "ThreadStopKernels.cs", 144, 9, "DeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(225517844u, "ThreadStopKernels.cs", 146, 9, "DeviceFunctionKernel", "G#: a null array is read"),
@@ -1709,7 +1711,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_dst, 0, 1789152672u)=1;
 __gsharp_array_at(__gsharp_id_1_dst, 1, 1542231296u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_source;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_source, 1222735375u);
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
 int __gsharp_fusion_lo = 0;
@@ -2038,7 +2040,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_dst, 0, 790900600u)=1;
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_source;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_source, 172093619u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;

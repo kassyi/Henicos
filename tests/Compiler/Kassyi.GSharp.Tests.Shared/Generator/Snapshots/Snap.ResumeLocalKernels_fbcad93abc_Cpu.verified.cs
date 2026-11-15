@@ -63,6 +63,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(279939178u, "ResumeLocalKe
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(339825441u, "ResumeLocalKernels.cs", 244, 9, "LambdaBeforeBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1694813381u, "ResumeLocalKernels.cs", 246, 9, "LambdaBeforeBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1050520825u, "ResumeLocalKernels.cs", 257, 9, "StackLinqBeforeBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(583225142u, "ResumeLocalKernels.cs", 257, 23, "StackLinqBeforeBarrierKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(540882473u, "ResumeLocalKernels.cs", 259, 9, "StackLinqBeforeBarrierKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -6492,7 +6493,7 @@ __gsharp_stack___gsharp_id_3_p[__gsharp_resume_fill]={};
 }
 __gsharp_id_3_p[0]=__gsharp_ctx->__gsharp_id_2_tid;
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_result, __gsharp_ctx->__gsharp_id_2_tid, 1050520825u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_ctx->__gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_ctx->__gsharp_id_0_data, 583225142u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;

@@ -33,48 +33,79 @@ private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_er
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(108390976u, "CpuDialectLibraryCallKernels.cs", 12, 9, "ElementAtKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166699080u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(459168073u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1795060548u, "CpuDialectLibraryCallKernels.cs", 18, 9, "ElementAtIndexKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(14685589u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(514484313u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(128457812u, "CpuDialectLibraryCallKernels.cs", 30, 9, "SelectAtRepeatedCurrentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(527262482u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(547335861u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2020813314u, "CpuDialectLibraryCallKernels.cs", 39, 9, "UnfusedFirstKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1085811562u, "CpuDialectLibraryCallKernels.cs", 39, 21, "UnfusedFirstKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(530370725u, "CpuDialectLibraryCallKernels.cs", 39, 22, "UnfusedFirstKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(463082336u, "CpuDialectLibraryCallKernels.cs", 45, 9, "UnfusedLastKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1069777737u, "CpuDialectLibraryCallKernels.cs", 45, 21, "UnfusedLastKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(383863637u, "CpuDialectLibraryCallKernels.cs", 45, 22, "UnfusedLastKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1960203570u, "CpuDialectLibraryCallKernels.cs", 51, 9, "UnfusedSingleKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(812093582u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains no elements"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(943075897u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2051172869u, "CpuDialectLibraryCallKernels.cs", 51, 21, "UnfusedSingleKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1191440658u, "CpuDialectLibraryCallKernels.cs", 57, 9, "UnfusedSingleOrDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1413694742u, "CpuDialectLibraryCallKernels.cs", 57, 21, "UnfusedSingleOrDefaultKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(427678101u, "CpuDialectLibraryCallKernels.cs", 57, 21, "UnfusedSingleOrDefaultKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1761471756u, "CpuDialectLibraryCallKernels.cs", 63, 9, "FusedFirstKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2028479105u, "CpuDialectLibraryCallKernels.cs", 63, 21, "FusedFirstKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(94749228u, "CpuDialectLibraryCallKernels.cs", 69, 9, "FusedFirstPredicateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(624652973u, "CpuDialectLibraryCallKernels.cs", 69, 21, "FusedFirstPredicateKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2098752610u, "CpuDialectLibraryCallKernels.cs", 75, 9, "FusedLastKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(578001005u, "CpuDialectLibraryCallKernels.cs", 75, 21, "FusedLastKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(683829256u, "CpuDialectLibraryCallKernels.cs", 81, 9, "FusedLastPredicateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(919321269u, "CpuDialectLibraryCallKernels.cs", 81, 21, "FusedLastPredicateKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1043214456u, "CpuDialectLibraryCallKernels.cs", 87, 9, "FusedMaxKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(241686137u, "CpuDialectLibraryCallKernels.cs", 87, 21, "FusedMaxKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(715797522u, "CpuDialectLibraryCallKernels.cs", 93, 9, "FusedMinKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368874213u, "CpuDialectLibraryCallKernels.cs", 93, 21, "FusedMinKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(664553234u, "CpuDialectLibraryCallKernels.cs", 99, 9, "FusedAverageKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(224416253u, "CpuDialectLibraryCallKernels.cs", 99, 21, "FusedAverageKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1072287310u, "CpuDialectLibraryCallKernels.cs", 105, 9, "FusedSeedlessAggregateKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(819283513u, "CpuDialectLibraryCallKernels.cs", 105, 21, "FusedSeedlessAggregateKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810657914u, "CpuDialectLibraryCallKernels.cs", 111, 9, "UnfusedMaxKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(65685545u, "CpuDialectLibraryCallKernels.cs", 111, 21, "UnfusedMaxKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1917702005u, "CpuDialectLibraryCallKernels.cs", 111, 22, "UnfusedMaxKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(861775138u, "CpuDialectLibraryCallKernels.cs", 117, 9, "UnfusedMinKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(609991563u, "CpuDialectLibraryCallKernels.cs", 117, 21, "UnfusedMinKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(600954825u, "CpuDialectLibraryCallKernels.cs", 117, 22, "UnfusedMinKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(486679630u, "CpuDialectLibraryCallKernels.cs", 123, 9, "UnfusedAverageKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1593698141u, "CpuDialectLibraryCallKernels.cs", 123, 21, "UnfusedAverageKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(395880403u, "CpuDialectLibraryCallKernels.cs", 123, 22, "UnfusedAverageKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1279446610u, "CpuDialectLibraryCallKernels.cs", 129, 9, "UnfusedSeedlessAggregateKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1843304260u, "CpuDialectLibraryCallKernels.cs", 129, 21, "UnfusedSeedlessAggregateKernel", "Sequence contains no elements"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1746098375u, "CpuDialectLibraryCallKernels.cs", 129, 22, "UnfusedSeedlessAggregateKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(398544911u, "CpuDialectLibraryCallKernels.cs", 135, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1593779689u, "CpuDialectLibraryCallKernels.cs", 135, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1837645467u, "CpuDialectLibraryCallKernels.cs", 136, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(116997695u, "CpuDialectLibraryCallKernels.cs", 136, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(484154463u, "CpuDialectLibraryCallKernels.cs", 137, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1745862725u, "CpuDialectLibraryCallKernels.cs", 137, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(8148739u, "CpuDialectLibraryCallKernels.cs", 138, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(926578807u, "CpuDialectLibraryCallKernels.cs", 138, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(479195671u, "CpuDialectLibraryCallKernels.cs", 139, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(261289681u, "CpuDialectLibraryCallKernels.cs", 139, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1149032795u, "CpuDialectLibraryCallKernels.cs", 140, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(856362845u, "CpuDialectLibraryCallKernels.cs", 140, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(957035247u, "CpuDialectLibraryCallKernels.cs", 141, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(756842567u, "CpuDialectLibraryCallKernels.cs", 141, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1933089327u, "CpuDialectLibraryCallKernels.cs", 142, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1931126294u, "CpuDialectLibraryCallKernels.cs", 142, 22, "EmptySequenceBoundaryKernel", "Sequence contains more than one element"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(156638493u, "CpuDialectLibraryCallKernels.cs", 142, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1078854603u, "CpuDialectLibraryCallKernels.cs", 143, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1498915683u, "CpuDialectLibraryCallKernels.cs", 143, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(667266963u, "CpuDialectLibraryCallKernels.cs", 144, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2102814885u, "CpuDialectLibraryCallKernels.cs", 144, 22, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(112639151u, "CpuDialectLibraryCallKernels.cs", 145, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(456901791u, "CpuDialectLibraryCallKernels.cs", 145, 24, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(757078111u, "CpuDialectLibraryCallKernels.cs", 146, 9, "EmptySequenceBoundaryKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(500396669u, "CpuDialectLibraryCallKernels.cs", 146, 24, "EmptySequenceBoundaryKernel", "Value cannot be null. (Parameter 'source')"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -97,7 +128,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_1_result, 0, 108390976u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),1,1166699080u);
+__gsharp_array_at(__gsharp_id_1_result, 0, 108390976u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 459168073u)),1,1166699080u);
 __gsharp_state=-1;
 return;
 }
@@ -403,7 +434,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 1795060548u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_index,14685589u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 1795060548u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 514484313u)),__gsharp_id_1_index,14685589u);
 __gsharp_state=-1;
 return;
 }
@@ -1004,7 +1035,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_1_result, 0, 128457812u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),[&](auto __gsharp_id_2_x, auto __gsharp_id_3_i) {
+__gsharp_array_at(__gsharp_id_1_result, 0, 128457812u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAt(Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 547335861u)),[&](auto __gsharp_id_2_x, auto __gsharp_id_3_i) {
 return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_2_x,10),__gsharp_id_3_i);
 }
 ),[&](auto __gsharp_id_4_v) {
@@ -1316,7 +1347,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 2020813314u)=Kassyi::ZeroAlloc::Linq::StackLinq::First((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1085811562u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 2020813314u)=Kassyi::ZeroAlloc::Linq::StackLinq::First((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 530370725u)),__gsharp_id_1_takeCount)),1085811562u);
 __gsharp_state=-1;
 return;
 }
@@ -1623,7 +1654,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 463082336u)=Kassyi::ZeroAlloc::Linq::StackLinq::Last((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1069777737u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 463082336u)=Kassyi::ZeroAlloc::Linq::StackLinq::Last((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 383863637u)),__gsharp_id_1_takeCount)),1069777737u);
 __gsharp_state=-1;
 return;
 }
@@ -1930,7 +1961,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 1960203570u)=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),812093582u,943075897u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 1960203570u)=Kassyi::ZeroAlloc::Linq::StackLinq::Single(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 2051172869u)),__gsharp_id_1_takeCount),812093582u,943075897u);
 __gsharp_state=-1;
 return;
 }
@@ -2237,7 +2268,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 1191440658u)=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount),1413694742u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 1191440658u)=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 427678101u)),__gsharp_id_1_takeCount),1413694742u);
 __gsharp_state=-1;
 return;
 }
@@ -2545,7 +2576,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 1761471756u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2028479105u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
@@ -2868,7 +2899,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 94749228u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 624652973u);
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
 int __gsharp_fusion_lo = 0;
@@ -3193,7 +3224,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 2098752610u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 578001005u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
@@ -3516,7 +3547,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 683829256u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 919321269u);
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_found = false;
 int __gsharp_fusion_lo = 0;
@@ -3841,7 +3872,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 1043214456u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 241686137u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
@@ -4169,7 +4200,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 715797522u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 368874213u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
@@ -4497,7 +4528,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 664553234u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 224416253u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_res_count = 0;
@@ -4823,7 +4854,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, 0, 1072287310u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 819283513u);
 int __gsharp_stage_0_n = __gsharp_id_1_takeCount;
 int __gsharp_fusion_res = {};
 bool __gsharp_fusion_res_init = false;
@@ -5152,7 +5183,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 810657914u)=Kassyi::ZeroAlloc::Linq::StackLinq::Max((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),65685545u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 810657914u)=Kassyi::ZeroAlloc::Linq::StackLinq::Max((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 1917702005u)),__gsharp_id_1_takeCount)),65685545u);
 __gsharp_state=-1;
 return;
 }
@@ -5459,7 +5490,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 861775138u)=Kassyi::ZeroAlloc::Linq::StackLinq::Min((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),609991563u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 861775138u)=Kassyi::ZeroAlloc::Linq::StackLinq::Min((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 600954825u)),__gsharp_id_1_takeCount)),609991563u);
 __gsharp_state=-1;
 return;
 }
@@ -5766,7 +5797,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 486679630u)=Kassyi::ZeroAlloc::Linq::StackLinq::Average((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),1593698141u);
+__gsharp_array_at(__gsharp_id_2_result, 0, 486679630u)=Kassyi::ZeroAlloc::Linq::StackLinq::Average((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 395880403u)),__gsharp_id_1_takeCount)),1593698141u);
 __gsharp_state=-1;
 return;
 }
@@ -6073,7 +6104,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_2_result, 0, 1279446610u)=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),__gsharp_id_1_takeCount)),[&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
+__gsharp_array_at(__gsharp_id_2_result, 0, 1279446610u)=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 1746098375u)),__gsharp_id_1_takeCount)),[&](int __gsharp_id_3_acc, int __gsharp_id_4_x) {
 return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
 ,1843304260u);
@@ -6384,7 +6415,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_results, 0, 398544911u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1593779689u);
 int __gsharp_stage_0_n = 0;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -6398,7 +6429,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_1_results, 1, 1837645467u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 116997695u);
 int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -6412,7 +6443,7 @@ __gsharp_fusion_res++;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_results, 2, 484154463u)=(([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1745862725u);
 int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
 int __gsharp_fusion_lo = 0;
@@ -6426,7 +6457,7 @@ __gsharp_fusion_res = true; break;
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_array_at(__gsharp_id_1_results, 3, 8148739u)=(([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 926578807u);
 int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = true;
 int __gsharp_fusion_lo = 0;
@@ -6444,7 +6475,7 @@ return __gsharp_id_2_x>0;
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_array_at(__gsharp_id_1_results, 4, 479195671u)=(([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 261289681u);
 int __gsharp_stage_0_n = 0;
 bool __gsharp_fusion_res = false;
 int __gsharp_fusion_res_target = 7;
@@ -6460,7 +6491,7 @@ if (__gsharp_linq_equals(__gsharp_val_0, __gsharp_fusion_res_target))
 return __gsharp_fusion_res;
 }())?1:0);
 __gsharp_array_at(__gsharp_id_1_results, 5, 1149032795u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 856362845u);
 int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = {};
 int __gsharp_fusion_lo = 0;
@@ -6474,7 +6505,7 @@ __gsharp_fusion_res = __gsharp_val_0; break;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_results, 6, 957035247u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 756842567u);
 int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = {};
 int __gsharp_fusion_lo = 0;
@@ -6487,10 +6518,10 @@ __gsharp_fusion_res = __gsharp_val_0;
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_array_at(__gsharp_id_1_results, 7, 1933089327u)=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),1931126294u);
-__gsharp_array_at(__gsharp_id_1_results, 8, 1078854603u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0),0);
+__gsharp_array_at(__gsharp_id_1_results, 7, 1933089327u)=Kassyi::ZeroAlloc::Linq::StackLinq::SingleOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 156638493u)),0),1931126294u);
+__gsharp_array_at(__gsharp_id_1_results, 8, 1078854603u)=Kassyi::ZeroAlloc::Linq::StackLinq::ElementAtOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 1498915683u)),0),0);
 __gsharp_array_at(__gsharp_id_1_results, 9, 667266963u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2102814885u);
 int __gsharp_stage_0_n = 0;
 int __gsharp_fusion_res = 42;
 int __gsharp_fusion_lo = 0;
@@ -6506,8 +6537,8 @@ return __gsharp_add_i32(__gsharp_id_3_acc,__gsharp_id_4_x);
 }
 return __gsharp_fusion_res;
 }());
-__gsharp_array_at(__gsharp_id_1_results, 10, 112639151u)=Kassyi::ZeroAlloc::Linq::StackLinq::Sum((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0)));
-__gsharp_array_at(__gsharp_id_1_results, 11, 757078111u)=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),0)),42,[&](int __gsharp_id_5_acc, int __gsharp_id_6_x) {
+__gsharp_array_at(__gsharp_id_1_results, 10, 112639151u)=Kassyi::ZeroAlloc::Linq::StackLinq::Sum((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 456901791u)),0)));
+__gsharp_array_at(__gsharp_id_1_results, 11, 757078111u)=Kassyi::ZeroAlloc::Linq::StackLinq::Aggregate((Kassyi::ZeroAlloc::Linq::StackLinq::Take(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 500396669u)),0)),42,[&](int __gsharp_id_5_acc, int __gsharp_id_6_x) {
 return __gsharp_add_i32(__gsharp_id_5_acc,__gsharp_id_6_x);
 }
 );

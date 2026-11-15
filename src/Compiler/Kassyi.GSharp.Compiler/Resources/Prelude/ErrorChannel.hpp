@@ -289,6 +289,17 @@ inline A __gsharp_array_ref(A&& array, S site)
     return static_cast<A&&>(array);
 }
 
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException ("source"). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_source_argument(A&& array, S site)
+{
+    if (array.data == nullptr)
+    {
+        __gsharp_trap_abort(GSharpErrorCode::ArgumentNull, site);
+    }
+    return static_cast<A&&>(array);
+}
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>

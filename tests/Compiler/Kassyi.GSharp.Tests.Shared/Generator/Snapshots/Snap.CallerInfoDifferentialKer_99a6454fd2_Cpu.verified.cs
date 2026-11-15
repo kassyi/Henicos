@@ -205,6 +205,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810532960u, "CallerInfoDif
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(331731828u, "CallerInfoDifferentialKernels.cs", 80, 9, "CallerLineKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(788976138u, "CallerInfoDifferentialKernels.cs", 83, 9, "CallerLineKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940997348u, "CallerInfoDifferentialKernels.cs", 84, 9, "CallerLineKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1226024750u, "CallerInfoDifferentialKernels.cs", 84, 21, "CallerLineKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1417588917u, "CallerInfoDifferentialKernels.cs", 92, 20, "CallerLineManagedVersionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1159802896u, "CallerInfoDifferentialKernels.cs", 93, 9, "CallerLineManagedVersionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(158106789u, "CallerInfoDifferentialKernels.cs", 93, 30, "CallerLineManagedVersionKernel", "G#: a null array is passed where it is not nullable"),
@@ -278,7 +279,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CallerInfoDiffer
 ;
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,11), 788976138u)=__gsharp_id_5_LocalLine();
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,12), 940997348u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_xs;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_xs, 1226024750u);
 int __gsharp_stage_0_n = 1;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;

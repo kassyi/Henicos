@@ -80,6 +80,7 @@ public partial class ParallelReductionExecutionKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(518412535u, "ParallelReductionExecutionKernels.cs", 12, 19, "IntParallelSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(227499212u, "ParallelReductionExecutionKernels.cs", 16, 13, "IntParallelSum", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -90,7 +91,7 @@ public static partial class AotContexts
 public const string IntParallelSum_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Runtime__ParallelReductionExecutionKernels__IntParallelSum(GSharpArray<int> __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 518412535u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
