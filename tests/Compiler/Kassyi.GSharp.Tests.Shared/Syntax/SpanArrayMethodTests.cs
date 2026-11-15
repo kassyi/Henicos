@@ -1,4 +1,5 @@
 using System;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using static Kassyi.GSharp.Tests.Shared.Syntax.SpanWriteTestHelpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -163,14 +164,14 @@ public class SpanArrayMethodTests : SpanKernelPathTestBase
     // path)). mutant: ArrayReverse3 without the Argument code reports ArgumentOutOfRange for the first four cases
     [SkippableTheory]
     [MemberData(nameof(ReverseRangeCases))]
-    [TestTarget(ExecutionTarget.CpuExecution)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.SadPath)]
     public void ArrayReverse_RangeOutsideTheArray_ThrowsTheExceptionOfDotNet(int length, int index, int count,
         bool pastEnd, bool managed)
     {
-        Skip.If(IsCudaDialect,
-            "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
+        Skip.If(IsCudaDialect && !DiffPaths.IsCudaCheckedBuild,
+            "The release CUDA build does not check this range; the checked build does and keeps the context usable.");
         var a = new int[length];
         var oracle = Record.Exception(() => Array.Reverse(new int[length], index, count));
         Assert.IsType(pastEnd ? typeof(ArgumentException) : typeof(ArgumentOutOfRangeException), oracle);

@@ -271,15 +271,15 @@ CopyTo(destination);
 }
 // The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
 // count and ArgumentException when the range passes the end
-inline GSharpArray<T> AsSpanOfArray(int start, int count, const char* outOfRangeMessage, const char* argumentMessage) const {
+inline GSharpArray<T> AsSpanOfArray(
+int start,
+int count,
+const char* outOfRangeMessage,
+const char* argumentMessage) const {
 if (start < 0 || count < 0) {
 __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, outOfRangeMessage);
 }
-if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
-static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
-__gsharp_trap(GSharpErrorCode::Argument, argumentMessage);
-}
-return GSharpArray<T>(data + start, count);
+return Slice<GSharpErrorCode::Argument>(start, count, argumentMessage);
 }
 inline GSharpArray<T> AsSpan() const { return *this; }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
