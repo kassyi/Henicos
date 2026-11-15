@@ -62,6 +62,11 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
     private static bool IsDefinedOnDevice(string methodName) => s_deviceOperators.Contains(methodName);
 
+    // The check of the array a query starts from: AsStackEnumerable rejects a null array as C# does (null: no check)
+    private static NullCheckSite? PlanSourceCheck(string methodName, ExpressionSyntax source,
+        ref TranspileContext context) =>
+        methodName == "AsStackEnumerable" ? ArrayNullCheck.PlanLinqSource(source, ref context) : null;
+
     // Registers the error sites of a trapping terminal; the ids are appended after its arguments (zero: no site)
     private static (uint First, uint Second) RegisterErrorSites(
         InvocationExpressionSyntax node,
@@ -152,21 +157,21 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            // A query over a C# array starts at AsStackEnumerable, which rejects a null array
-            var sourceSite = methodName == "AsStackEnumerable"
-                ? ArrayNullCheck.PlanLinqSource(receiver, ref context)
-                : null;
-            if (sourceSite is not null)
+            // __gsharp_source_argument(<source>, <site>) when the source needs the check, else <source>
+            if (PlanSourceCheck(methodName, receiver, ref context) is { } sourceSite)
             {
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.SourceArgument}(");
+                var writer = context.Emitter.Writer;
+                writer.Append(GSharpInternalNames.Prelude.SourceArgument);
+                using (writer.Parentheses())
+                {
+                    AppendSource(receiver, in sequence, ref context);
+                    writer.Append(", ");
+                    ArrayNullCheck.AppendSite(writer, sourceSite);
+                }
             }
-
-            AppendSource(receiver, in sequence, ref context);
-            if (sourceSite is { } closeSite)
+            else
             {
-                context.Emitter.Writer.Append(", ");
-                ArrayNullCheck.AppendSite(context.Emitter.Writer, closeSite);
-                context.Emitter.Writer.Append(')');
+                AppendSource(receiver, in sequence, ref context);
             }
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
@@ -207,20 +212,21 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            var sourceSite = methodName == "AsStackEnumerable"
-                ? ArrayNullCheck.PlanLinqSource(sourceArg.Expression, ref context)
-                : null;
-            if (sourceSite is not null)
+            // __gsharp_source_argument(<source>, <site>) when the source needs the check, else <source>
+            if (PlanSourceCheck(methodName, sourceArg.Expression, ref context) is { } sourceSite)
             {
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.SourceArgument}(");
+                var writer = context.Emitter.Writer;
+                writer.Append(GSharpInternalNames.Prelude.SourceArgument);
+                using (writer.Parentheses())
+                {
+                    AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
+                    writer.Append(", ");
+                    ArrayNullCheck.AppendSite(writer, sourceSite);
+                }
             }
-
-            AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
-            if (sourceSite is { } closeSite)
+            else
             {
-                context.Emitter.Writer.Append(", ");
-                ArrayNullCheck.AppendSite(context.Emitter.Writer, closeSite);
-                context.Emitter.Writer.Append(')');
+                AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
             }
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
