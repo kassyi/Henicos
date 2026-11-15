@@ -6,6 +6,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node ../scripts/agent/check-issue-refs.js --hook",
+            "timeout": 30
+          },
+          {
+            "type": "command",
             "command": "node ../scripts/agent/check-queued-command.js --hook",
             "timeout": 10
           }

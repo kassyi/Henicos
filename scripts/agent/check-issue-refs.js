@@ -5,7 +5,7 @@
 //   node scripts/agent/check-issue-refs.js --text "<text>"      check the numbers in the text
 //   node scripts/agent/check-issue-refs.js --file <path>...     check the numbers in the files
 //   node scripts/agent/check-issue-refs.js --stdin              check the numbers in standard input
-//   node scripts/agent/check-issue-refs.js --hook               Claude Code PreToolUse hook (reads the hook JSON on stdin)
+//   node scripts/agent/check-issue-refs.js --hook               PreToolUse hook of Claude Code and Antigravity
 //   --repo <owner/name>   repository to look the numbers up in (default: the origin remote)
 // Prints one line per number: number, kind (issue / PR), state, milestone and title. A "#n" inside an inline code span or
 // a fenced code block is not a reference (GitHub does not link it) and is not checked.
@@ -189,7 +189,10 @@ function runHook(options) {
     } catch (error) {
         fail(`check-issue-refs --hook: invalid hook input: ${error.message}`);
     }
-    const command = input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '';
+    const antigravity = input.toolCall !== undefined;
+    const command = antigravity
+        ? String((input.toolCall.args && input.toolCall.args.CommandLine) || '')
+        : (input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '');
     if (!publishingCommand.test(command)) process.exit(0);
     const cwd = input.cwd || process.cwd();
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
@@ -197,6 +200,13 @@ function runHook(options) {
     const { lines, problems } = check(text, repo);
     if (lines.length === 0) process.exit(0);
     const table = `Issue / PR numbers in this command:\n${lines.join('\n')}`;
+    if (antigravity) {
+        if (problems.length > 0) {
+            const reason = `${problems.join('\n')}\n${table}\nFix the number and run the command again.`;
+            process.stdout.write(JSON.stringify({ decision: 'deny', reason }));
+        }
+        process.exit(0);
+    }
     const output = problems.length > 0
         ? {
             hookSpecificOutput: {
