@@ -173,6 +173,57 @@ public sealed class DeviceErrorChannelTests
 
     [Fact]
     [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_MessageEndingInAnEmptyParameterName_KeepsItsText()
+    {
+        // new ArgumentException(message, "") drops the suffix, so an empty name must not be taken from the text
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            "test-module-empty-param-name",
+            [new GSharpErrorSite(3u, "MyKernels.cu.cs", 9, 1, "MyKernel", "Destination is too short. (Parameter '')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.Argument | GSharpErrorMapper.CompletionBit,
+            SiteId = 3u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsType<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
+        Assert.Contains("(Parameter '')", ex.Message);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(GSharpErrorCode.Argument, true)]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, false)]
+    [InlineData(GSharpErrorCode.ArgumentNull, false)]
+    public void ErrorMapper_ArgumentErrorWithAnInnerException_KeepsParamNameOnlyWhereTheConstructorTakesBoth(
+        GSharpErrorCode code,
+        bool keepsParamName)
+    {
+        // ArgumentException(message, paramName, innerException) exists; the other two types have no such constructor
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-inner-{code}",
+            [new GSharpErrorSite(4u, "MyKernels.cu.cs", 11, 5, "MyKernel", "Bad value. (Parameter 'count')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 4u,
+            ModuleId = moduleId,
+        };
+        var inner = new InvalidOperationException("inner");
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot, inner));
+
+        Assert.Equal(keepsParamName ? "count" : null, ex.ParamName);
+        Assert.Contains("(Parameter 'count')", ex.Message);
+        Assert.Same(inner, ex.InnerException);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
     public void CoordinatePacking_ThreeDimensionalCoordinates_PacksAndUnpacksCoordinates()
     {
