@@ -139,19 +139,9 @@ public readonly struct GpuBigFloatArray : IDisposable, IEquatable<GpuBigFloatArr
             isNegative = rounded.IsNegative;
         }
 
-        var meta = ArrayPool<uint>.Shared.Rent(1);
-        try
-        {
-            meta[0] = unchecked((uint)exponent);
-            provider.CopyHostToDevice(destExp.DevicePointer, meta, 1, stream);
-
-            meta[0] = isNegative ? 1u : 0u;
-            provider.CopyHostToDevice(destSign.DevicePointer, meta, 1, stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(meta);
-        }
+        // The values travel in the commands (memsets), so a CUDA graph capture records no host buffer
+        provider.WriteWord(destExp.DevicePointer, 0, unchecked((uint)exponent), stream);
+        provider.WriteWord(destSign.DevicePointer, 0, isNegative ? 1u : 0u, stream);
     }
 
     /// <summary>

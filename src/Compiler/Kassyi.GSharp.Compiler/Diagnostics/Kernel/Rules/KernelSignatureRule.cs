@@ -15,6 +15,9 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 
     private const int DevicePointerBytes = 8;
 
+    // The limit is the CUDA one, so every user parameter is laid out as CUDA lays it out, whatever dialect the build has
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
         GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
@@ -104,9 +107,9 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
         var offset = 0;
         foreach (var parameter in kernel.Parameters)
         {
-            var layout = parameter.RefKind != RefKind.None
+            var layout = parameter.IsPassedByPointer(isKernel: true)
                 ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
-                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, context.Dialect);
+                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, s_cudaDialect);
 
             offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
         }

@@ -24,6 +24,10 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("PaddingKernel", "GSH0064", "32768 bytes")]
     // 16 + 40960 + 4 = 40980 bytes: nvcc rejects it ("max 32764 bytes allowed").
     [InlineData("LargeKernel", "GSH0064", "40980 bytes")]
+    // An `in` struct is passed by value, the same 40980 bytes (not an 8-byte pointer).
+    [InlineData("InLargeKernel", "GSH0064", "40980 bytes")]
+    // 32760 + 8 (grid aggregate scratch) + 4 (epoch) = 32772 bytes; the mutant that leaves the scratch out gives 32764.
+    [InlineData("GridScratchKernel", "GSH0064", "32772 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.
     [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
     // The byte count is computed in long: 2,400,000,000 and 2^32 bytes would wrap in int to a negative number and to 0
@@ -52,6 +56,10 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("ResultKernel", "GSH0064")]
     // 16 + 8192 + 4 = 8212 bytes: above the old 4,096-byte check, accepted by nvcc and run on the GPU (#1168).
     [InlineData("MediumKernel", "GSH0064")]
+    // A `ref` struct is an 8-byte pointer, whatever its size.
+    [InlineData("RefLargeKernel", "GSH0064")]
+    // The parameters of GridScratchKernel without the aggregate: exactly 32764 bytes.
+    [InlineData("NoGridScratchKernel", "GSH0064")]
     // A 48-byte struct by value: the retired GSH0014 warned, GSH0064 does not.
     [InlineData("SmallStructKernel", "GSH0064")]
     [InlineData("SmallStructKernel", "GSH0014")]

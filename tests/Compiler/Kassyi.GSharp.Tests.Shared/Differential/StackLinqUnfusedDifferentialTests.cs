@@ -15,13 +15,14 @@ public class StackLinqUnfusedDifferentialTests
     private const int SliceLen = StackLinqUnfusedDifferentialKernels.SliceLength;
     private const int TrapRows = 32;
 
-    // Rows of the boundary seed: wrapping sums, a single repeated value, signs that select different elements
+    // Rows of the boundary seed: the ends of int32 with elements that keep every sum in range (a Sum is exact and throws
+    // when the exact sum does not fit, and the oracle must not throw), signs that select different elements
     private static readonly int[][] s_boundaryRows =
     [
         [1, 2, 3, 4],
-        [int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue],
-        [int.MinValue, int.MinValue, int.MinValue, int.MinValue],
-        [int.MaxValue, int.MinValue, int.MaxValue, -1],
+        [int.MaxValue, 0, 0, -10],
+        [int.MinValue, 0, 0, 10],
+        [int.MaxValue, int.MinValue, 0, 0],
         [-10, -20, -30, -40],
         [0, -1, 1, 0],
         [5, -5, 5, -5],
@@ -166,6 +167,12 @@ public class StackLinqUnfusedDifferentialTests
     private static int[] BuildSlices(DiffRandom rng, int rows)
     {
         var values = DiffValues.Int32(rng, rows * SliceLen);
+        for (int i = 0; i < values.Length; i++)
+        {
+            // Keeps the sign and the varied bits, and no sum of the elements of a slice leaves the range of int32
+            values[i] >>= 6;
+        }
+
         if (rng.IsBoundarySeed)
         {
             for (int r = 0; r < s_boundaryRows.Length && r < rows; r++)

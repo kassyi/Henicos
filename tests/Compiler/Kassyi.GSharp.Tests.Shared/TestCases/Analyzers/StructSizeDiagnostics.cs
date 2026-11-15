@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
 
@@ -192,4 +193,39 @@ public static partial class StructSizeDiagnosticKernels
         cache[0] = 1.0;
         data[0] = (int)cache[0];
     }
+
+    // A kernel receives an `in` struct by value (the whole struct, not a pointer): 16 + 40960 + 4 = 40980 bytes
+    [GpuKernel]
+    public static void InLargeKernel(int[] output, in Ints40960 block)
+    {
+        output[0] = block[10239];
+    }
+
+    // `ref` is a pointer: 16 + 8 + 4 = 28 bytes
+    [GpuKernel]
+    public static void RefLargeKernel(int[] output, ref Ints40960 block)
+    {
+        output[0] = block[10239];
+    }
+
+    // 16 + 32744 = 32760; the grid aggregate scratch pointer (8) makes 32768 and the epoch 32772
+    [GpuKernel(Cooperative = true)]
+    public static void GridScratchKernel(long[] data, Longs32744 pad)
+    {
+        data[0] = data.AsStackEnumerable().AsParallel().Sum() + pad[0];
+    }
+
+    // The same parameters without the aggregate: 32760 + 4 (epoch) = 32764, exactly the limit
+    [GpuKernel(Cooperative = true)]
+    public static void NoGridScratchKernel(long[] data, Longs32744 pad)
+    {
+        data[0] = pad[0];
+    }
+}
+
+// 32,744 bytes, 8-byte aligned: with the 16-byte array header 32,760, which leaves room for the epoch alone
+[System.Runtime.CompilerServices.InlineArray(4093)]
+public struct Longs32744
+{
+    private long _element;
 }

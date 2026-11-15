@@ -56,6 +56,7 @@ internal static class BuildProcessRunner
         IReadOnlyDictionary<string, string?>? environment = null,
         IReadOnlyList<string>? extraArguments = null)
     {
+        PinRepositorySdk(workingDirectory);
         var binaryLogPath = GetBinaryLogPath(workingDirectory, projectFile);
         var startInfo = new ProcessStartInfo
         {
@@ -116,6 +117,18 @@ internal static class BuildProcessRunner
         }
 
         return new BuildResult(process.ExitCode, await stdoutTask, await stderrTask);
+    }
+
+    // The build runs in a temporary directory, which the repository's global.json does not reach. Without a copy the
+    // child dotnet selects the newest installed SDK while it inherits the MSBuild environment of the test host's SDK,
+    // and the task host of the G# tasks cannot start (MSB4216) on a machine with a newer SDK than the pinned one.
+    private static void PinRepositorySdk(string workingDirectory)
+    {
+        var globalJson = RepositoryPaths.Combine("global.json");
+        if (File.Exists(globalJson))
+        {
+            File.Copy(globalJson, Path.Combine(workingDirectory, "global.json"), overwrite: true);
+        }
     }
 
     private static string GetBinaryLogPath(string workingDirectory, string projectFile)

@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Transpiler;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
@@ -9,6 +10,40 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 [Category(TestCategory.Compiler)]
 public class KernelHiddenParametersTests
 {
+    private static readonly Compilation s_compilation = RoslynTestUtility.CreateCompilation(
+        RoslynTestUtility.ReadTestCase("Transpiler/KernelHiddenParameterCases.cs")
+    );
+
+    // The record each kernel gets from its own syntax: a value return takes the result pointer, a grid aggregate of a
+    // cooperative kernel the scratch, CUDA the epoch (and the scratch); a CPU dialect none of the last two.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("VoidKernel", true, false, false, true)]
+    [InlineData("ValueKernel", true, true, false, true)]
+    [InlineData("GridSumKernel", true, false, true, true)]
+    [InlineData("VoidKernel", false, false, false, false)]
+    [InlineData("ValueKernel", false, true, false, false)]
+    [InlineData("GridSumKernel", false, false, false, false)]
+    public void For_Kernel_ListsTheHiddenParametersTheSignatureTakes(
+        string name,
+        bool isCuda,
+        bool resultBuffer,
+        bool gridScratch,
+        bool launchEpoch)
+    {
+        var kernel = (s_compilation.GetTypeByMetadataName("KernelHiddenParameterCases.Kernels") ??
+                      throw new InvalidOperationException("Type 'Kernels' not found."))
+            .GetMembers(name)
+            .OfType<IMethodSymbol>()
+            .First();
+        var syntax = (MethodDeclarationSyntax)kernel.DeclaringSyntaxReferences[0].GetSyntax();
+        var model = s_compilation.GetSemanticModel(syntax.SyntaxTree);
+
+        var hidden = KernelHiddenParameters.For(syntax, kernel, model, isCuda);
+
+        Assert.Equal(new KernelHiddenParameters(resultBuffer, gridScratch, launchEpoch), hidden);
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     // CUDA, void, no grid aggregate: only the epoch

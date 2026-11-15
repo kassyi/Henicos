@@ -159,6 +159,29 @@ internal static class GeneratedMemberAccessibility
         public NamedTypes With(ITypeSymbol type) => new(Domain.Intersect(GetTypeDomain(type)));
 
         /// <summary>
+        /// These types and <paramref name="type"/>, named by an <c>internal</c> member (a field of a frame): only a
+        /// type that part of the assembly cannot name narrows them.
+        /// </summary>
+        public NamedTypes WithInternalMember(ITypeSymbol type) => WithInternalMember(GetTypeDomain(type));
+
+        /// <summary>
+        /// These types and a type that G# generates into <paramref name="container"/> with
+        /// <paramref name="accessibility"/> (<c>public</c>, <c>internal</c> or <c>private</c>), such as the frame of a
+        /// device function, named by an <c>internal</c> member (<see cref="WithInternalMember(ITypeSymbol)"/>).
+        /// </summary>
+        public NamedTypes WithGenerated(INamedTypeSymbol container, Accessibility accessibility) =>
+            WithInternalMember(GetTypeDomain(container).Intersect(accessibility switch
+            {
+                Accessibility.Public => AccessibilityDomain.Everywhere,
+                Accessibility.Internal => AccessibilityDomain.Assembly,
+                _ => AccessibilityDomain.Within(container)
+            }));
+
+        // An internal member's domain is at most the assembly, so a type the whole assembly can name never narrows it
+        private NamedTypes WithInternalMember(AccessibilityDomain domain) =>
+            domain.Contains(AccessibilityDomain.Assembly) ? this : new(Domain.Intersect(domain));
+
+        /// <summary>
         /// The widest accessibility under which a member declared in <paramref name="container"/> can name these
         /// types; <see cref="Accessibility.Private"/> when none can.
         /// </summary>
