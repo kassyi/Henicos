@@ -55,7 +55,7 @@ statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	127
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	10
-statement UnsupportedOperation	Switch	SwitchStatement	51
+statement UnsupportedOperation	Switch	SwitchStatement	53
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
