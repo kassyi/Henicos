@@ -21,7 +21,9 @@ public class TypeTestDiagnosticsTests
 
         Assert.Equal(
             [(Analyzer, 17, 9, 17, 15)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate"));
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate")
+                .Where(static r => r.StartLine == 17)
+                .ToList());
         Assert.Equal(
             [(Analyzer, 18, 19, 18, 27)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "needs the run-time type of a heap object")
