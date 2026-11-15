@@ -59,12 +59,40 @@ public class ModPowCpuFallbackTests
         Assert.Throws<DivideByZeroException>(() => RunModPow(words, 3, 3, 0));
     }
 
-    private static BigInteger RunModPow(int words, BigInteger baseValue, BigInteger exponent, BigInteger modulus)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(4, 1)]
+    [InlineData(4, 64)]
+    [InlineData(64, 1)]
+    public void ModPow_CpuFallbackExponentOfAnotherWidth_MatchesBigInteger(int words, int exponentWords)
+    {
+        // The exponent may have another width than the base, modulus and result; the host code reads its own words.
+        // A 64-word exponent of a 4-word base is far wider than the base. The exponent is a full-width value so that
+        // reading the base's word count instead of the exponent's gives another power.
+        // mutant: CSharpCpuBigIntProvider.cs ModPow reading the exponent with `baseValue.NumWords` instead of
+        // `exponent.NumWords`
+        var random = new Random(1338 + 31 * words + exponentWords);
+        var baseValue = RandomValue(random, words * 32);
+        var exponent = RandomValue(random, exponentWords * 32);
+        var modulus = RandomValue(random, words * 32 - 1) | 1;
+
+        Assert.Equal(
+            BigInteger.ModPow(baseValue, exponent, modulus),
+            RunModPow(words, baseValue, exponent, modulus, exponentWords)
+        );
+    }
+
+    private static BigInteger RunModPow(
+        int words,
+        BigInteger baseValue,
+        BigInteger exponent,
+        BigInteger modulus,
+        int? exponentWords = null)
     {
         using var fallback = CpuFallbackScope.Enter();
         using var workspace = new GpuWorkspace(words * 4);
         using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, words);
-        using var gpuExponent = GpuBigUInt.FromBigInteger(workspace, exponent, words);
+        using var gpuExponent = GpuBigUInt.FromBigInteger(workspace, exponent, exponentWords ?? words);
         using var gpuModulus = GpuBigUInt.FromBigInteger(workspace, modulus, words);
         using var result = new GpuBigUInt(workspace, words);
         GpuBigIntDivRem.ModPow(gpuBase, gpuExponent, gpuModulus, result);
