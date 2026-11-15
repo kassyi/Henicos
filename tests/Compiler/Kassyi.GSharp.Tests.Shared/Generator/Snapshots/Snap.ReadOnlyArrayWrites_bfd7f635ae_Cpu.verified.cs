@@ -70,6 +70,11 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(908593753u, "ReadOnlyArray
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2059783314u, "ReadOnlyArrayWrites.cs", 46, 29, "ConvertedKernel", "G#: Gpu.NotNull was given a null array"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(55391853u, "ReadOnlyArrayWrites.cs", 50, 9, "ConvertedKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2091624160u, "ReadOnlyArrayWrites.cs", 50, 16, "ConvertedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(396555032u, "ReadOnlyArrayWrites.cs", 58, 9, "MethodKernel", "length must be a non-negative value. (Parameter 'length')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1195903399u, "ReadOnlyArrayWrites.cs", 58, 9, "MethodKernel", "sourceIndex must be greater than or equal to '0'. (Parameter 'sourceIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(677971985u, "ReadOnlyArrayWrites.cs", 58, 9, "MethodKernel", "Source array was not long enough. Check the source index, length, and the array's lower bounds. (Parameter 'sourceArray')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(894877056u, "ReadOnlyArrayWrites.cs", 58, 9, "MethodKernel", "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1609142084u, "ReadOnlyArrayWrites.cs", 58, 9, "MethodKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(912144147u, "ReadOnlyArrayWrites.cs", 71, 9, "DeviceFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(29040306u, "ReadOnlyArrayWrites.cs", 79, 9, "StructAliasKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(544618009u, "ReadOnlyArrayWrites.cs", 81, 9, "StructAliasKernel", "G#: a null array is read"),
@@ -1171,7 +1176,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_id_0_r.AsSpan().Fill(5u);
 __gsharp_array_argument(__gsharp_id_0_r).Fill(6u);
-__gsharp_copy_arguments(__gsharp_id_1_o,__gsharp_id_0_r).AsSpan<GSharpErrorCode::Argument>(0,1, ""G#: offset and length were out of bounds for the array at ReadOnlyArrayWrites.cs(58,9)"").CopyTo(__gsharp_id_0_r.AsSpan<GSharpErrorCode::Argument>(0,1, ""G#: offset and length were out of bounds for the array at ReadOnlyArrayWrites.cs(58,9)""));
+__gsharp_copy_arguments(__gsharp_id_1_o,__gsharp_id_0_r).CopySlice(0,1, 396555032u, 1195903399u, 677971985u).CopyTo(__gsharp_id_0_r.CopySlice(0,1, 396555032u, 894877056u, 1609142084u));
 __gsharp_id_1_o.AsSpan().CopyTo(__gsharp_id_0_r.AsSpan());
 __gsharp_id_0_r.AsSpan().CopyTo(__gsharp_id_1_o.AsSpan());
 __gsharp_array_argument(__gsharp_id_0_r).Reverse();
@@ -1421,6 +1426,10 @@ __gsharp_first_failure?.Throw();
 return;
 }
 __gsharp_delegate_MethodKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MethodKernel>("__gsharp_launch_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyArrayWriteKernels__MethodKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(r))
 fixed (global::System.UInt32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(o))
 {
@@ -1459,6 +1468,10 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 throw new global::System.NotSupportedException("LaunchMethodKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchMethodKernel, which runs on both paths.");
 }
 delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyArrayWriteKernels__MethodKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = r.Data, Length = r.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = o.Data, Length = o.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
