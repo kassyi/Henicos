@@ -214,8 +214,7 @@ public static unsafe partial class DefaultValueDifferentialKernels
             return;
         }
 
-        // The default of int is 0, which converts to a nullable that has a value; a default literal is the null
-        // nullable
+        // The default of int is 0, which converts to a nullable with a value; a default literal is the null nullable
         int? q = default(int);
         int? assigned = a[t];
         assigned = default(int);
