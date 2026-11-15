@@ -80,4 +80,31 @@ public class UnsupportedSyntaxKindDiagnosticsTests
                 "#error \"\"(44,23): GSH0003: The syntax 'SpreadElement' is not supported in GSharp GPU kernels\"\"",
                 StringComparison.Ordinal));
     }
+
+    // A C# 15 collection expression argument (with(...)) is reported as GSH0003 'WithElement' at the element and
+    // becomes #error in the kernel's native source
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task CollectionExpressionWithElement_CSharp15WithElement_ReportsGsh0003FromAnalyzer(string dialect)
+    {
+        const string TestCase = "Diagnostics/CSharp14And15UnsupportedForms.cs";
+        var source = RoslynTestUtility.ReadTestCase(TestCase);
+        var compilation = RoslynTestUtility.CreateCompilationAt(TestCase, source);
+        Assert.Empty(compilation.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 48, 26, 48, 33)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'WithElement'"));
+
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
+        Assert.Contains(
+            output.SyntaxTrees,
+            static tree => tree.ToString().Contains(
+                "#error \"\"(48,26): GSH0003: The syntax 'WithElement' is not supported in GSharp GPU kernels\"\"",
+                StringComparison.Ordinal));
+    }
 }
