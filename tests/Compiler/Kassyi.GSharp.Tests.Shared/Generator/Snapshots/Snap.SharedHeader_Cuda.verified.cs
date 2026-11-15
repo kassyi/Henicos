@@ -362,9 +362,9 @@ __device__ __noinline__ void __gsharp_record_site(GSharpErrorCode code, unsigned
 __gsharp_record_site_body(code, site_id);
 }
 
-// A failed check inside the scope of a using: records the failure as __gsharp_trap_site does, disposes the guards of the
-// scopes the check leaves, the innermost first, as C# runs the finally blocks while the exception leaves, and ends the
-// thread. [WHY] The thread ends with exit, which runs no destructor, so the guards are called here. The guards are the
+// A failed check inside the scope of a using: records the failure as __gsharp_trap_site does, disposes the guards of
+// the scopes the check leaves, the innermost first, as C# runs the finally blocks while the exception leaves, and ends
+// the thread. [WHY] The thread ends with exit, which runs no destructor, so the guards are called here. The guards are the
 // ones that the C++ block of the check can see, so the call costs the code that does not fail nothing
 template <class... Guards>
 [[noreturn]] __device__ __forceinline__ void __gsharp_trap_unwind(GSharpErrorCode code, unsigned int site_id,
