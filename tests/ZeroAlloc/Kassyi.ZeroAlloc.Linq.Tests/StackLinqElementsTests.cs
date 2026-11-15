@@ -172,7 +172,11 @@ public class StackLinqElementsTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             data.AsStackEnumerable()
-                .Select(x => { selectCalls++; return throwingSelector ? throw new InvalidOperationException() : x * 2; })
+                .Select(x =>
+                {
+                    selectCalls++;
+                    return throwingSelector ? throw new InvalidOperationException() : x * 2;
+                })
                 .ElementAt(-1));
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
