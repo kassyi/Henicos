@@ -100,7 +100,7 @@ if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -118,7 +118,7 @@ return __gsharp_mul_i32(__gsharp_id_4_x,2);
 __gsharp_fusion_res += __gsharp_val_1;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_0_data, 0, 1857405461u)=__gsharp_id_2_sum;
 }
@@ -249,7 +249,7 @@ if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -269,7 +269,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 }
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_0_data, 0, 1009514089u)=__gsharp_id_2_sum;
 }
@@ -400,7 +400,7 @@ if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -416,7 +416,7 @@ return __gsharp_add_i32(__gsharp_id_4_x,1);
 )(__gsharp_val_1);
 __gsharp_fusion_res += __gsharp_val_2;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_0_data, 0, 225596269u)=__gsharp_id_2_sum;
 }
@@ -552,7 +552,7 @@ int __gsharp_stage_1_n = 95;
 int __gsharp_stage_2_n = 3;
 int __gsharp_stage_3_n = 90;
 bool __gsharp_stage_5_skipping = true;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -596,7 +596,7 @@ __gsharp_fusion_res += __gsharp_val_2;
 }
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_0_data, 0, 281468141u)=__gsharp_id_2_sum;
 }
