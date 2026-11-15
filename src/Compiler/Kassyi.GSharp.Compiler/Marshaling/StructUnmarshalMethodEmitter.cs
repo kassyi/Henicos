@@ -98,8 +98,9 @@ internal static class StructUnmarshalMethodEmitter
             return;
         }
 
+        WriteNullArrayAssigned(writer, host, native);
         writer.AppendLine(
-            $"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
+            $"else if ({host} != null)");
         using (writer.Scope())
         {
             StructBlockCopyEmitter.WriteArrayElementSize(writer, host, elementType);
@@ -128,6 +129,20 @@ internal static class StructUnmarshalMethodEmitter
         }
     }
 
+    // if (<native>.Data == IntPtr.Zero) <host> = default;
+    // [WHY] The kernel assigned a null array to the field (a null array has no address). The marshaled arrays are
+    // pinned or copied in place, so the host array keeps its elements, but the field itself must become what the
+    // kernel wrote, as C# does (#1841). An array the launcher marshaled is never at address 0: an empty array gets
+    // EmptyArrayData and a null host array stays null.
+    private static void WriteNullArrayAssigned(SourceWriter writer, string host, string native)
+    {
+        writer.AppendLine($"if ({native}.Data == global::System.IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{host} = default;");
+        }
+    }
+
     // if (<host> != null) {
     //   List<IntPtr> pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException("allocatedPtrs");
     //   [<element shadow>[] shadow = new <element shadow>[<host>.Length];
@@ -139,12 +154,13 @@ internal static class StructUnmarshalMethodEmitter
     private static void WriteCpuUnmarshalArrayMember(SourceWriter writer, string host, string native,
         ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        WriteNullArrayAssigned(writer, host, native);
         if (!KernelParameterShape.IsConverted(elementType, dialect))
         {
             return;
         }
 
-        writer.AppendLine($"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
+        writer.AppendLine($"else if ({host} != null)");
         using (writer.Scope())
         {
             writer.AppendAotStructPath(elementType);
