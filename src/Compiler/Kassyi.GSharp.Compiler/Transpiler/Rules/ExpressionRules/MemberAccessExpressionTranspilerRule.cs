@@ -66,8 +66,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 context.Emitter.Dialect.AppendType(ref context, property.Type);
                 context.Emitter.Writer.Append("{}");
                 return true;
-            case SpanPropertyKind.IsEmpty:
-                // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array
+            case SpanPropertyKind.IsEmpty or SpanPropertyKind.IsDefaultOrEmpty:
+                // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array;
+                // IsDefaultOrEmpty reads no array, and a default array has no element either
                 AppendViewReceiver(node, property, ref context);
                 context.Emitter.Writer.Append(".IsEmpty()");
                 return true;
@@ -79,11 +80,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                     context.Emitter.Writer.Append(".data==nullptr");
                 }
 
-                return true;
-            case SpanPropertyKind.IsDefaultOrEmpty:
-                // A default array has no element either
-                AppendViewReceiver(node, property, ref context);
-                context.Emitter.Writer.Append(".IsEmpty()");
                 return true;
             case SpanPropertyKind.Unsupported:
                 context.Reporter.Fail(
