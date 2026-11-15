@@ -149,33 +149,22 @@ internal sealed class UniformitySolver(UniformityState state)
         }
     }
 
-    /// <summary>The local or parameter of struct type whose member target writes (p.X, p.Inner.Y), or null for any other target.</summary>
-    public static ISymbol? GetStructRoot(IOperation target)
+    // A member of a flow capture written: the capture, and the locals a ref conditional lets it refer to, keep their
+    // other members, so the write only adds to them
+    private void AddToCaptureRoot(IFlowCaptureReferenceOperation capture, ThreadVariance variance,
+        ThreadVariance[] current)
     {
-        var current = target;
-        while (true)
+        var recorder = state.Recorder;
+        if (recorder.TryGetCaptureRoot(capture, out var captured))
         {
-            var instance = current switch
-            {
-                IFieldReferenceOperation { Instance: { } fieldOwner } => fieldOwner,
-                IPropertyReferenceOperation { Instance: { } propertyOwner } => propertyOwner,
-                _ => null
-            };
+            current[captured] |= variance;
+        }
 
-            if (instance is not { Type: { IsValueType: true, IsRefLikeType: false } })
+        foreach (var alias in recorder.GetCaptureRootAliases(capture))
+        {
+            if (recorder.TryGetValue(alias, out var index))
             {
-                return null;
-            }
-
-            switch (instance)
-            {
-                case ILocalReferenceOperation local:
-                    return local.Local;
-                case IParameterReferenceOperation parameter:
-                    return parameter.Parameter;
-                default:
-                    current = instance;
-                    continue;
+                current[index] |= variance;
             }
         }
     }
@@ -341,13 +330,11 @@ internal sealed class UniformitySolver(UniformityState state)
 
     private void WriteCompound(ICompoundAssignmentOperation compound, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque) =>
-        Assign(compound.Target,
-            state.Reader.Evaluate(compound.Target, graph, current) | state.Reader.Evaluate(compound.Value, graph, current),
-            strong: true, current, opaque);
+        Assign(compound.Target, state.Reader.Evaluate(compound, graph, current), strong: true, current, opaque);
 
     private void WriteIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph,
         ThreadVariance[] current, SyntaxNode? opaque) =>
-        Assign(increment.Target, state.Reader.Evaluate(increment.Target, graph, current), strong: true, current, opaque);
+        Assign(increment.Target, state.Reader.Evaluate(increment, graph, current), strong: true, current, opaque);
 
     // (a, b) = (x, y): each element from its own value when both sides are tuples, from the whole value otherwise
     private void Deconstruct(IOperation target, IOperation value, ControlFlowGraph graph, ThreadVariance[] current,
@@ -436,11 +423,21 @@ internal sealed class UniformitySolver(UniformityState state)
         }
 
         var reader = state.Reader;
-        var written = reader.TryGetDeviceFunction(invocation.TargetMethod, out var callee, out var declaration)
-            ? reader.GetCallVariance(callee, declaration, invocation, graph, current).ByReference
-            : UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
-                ? ThreadVariance.Block
-                : reader.EvaluateOperands(invocation, graph, current);
+        CalleeVariance? summary =
+            reader.TryGetSummarizedCallee(invocation.TargetMethod, out var callee, out var declaration)
+                ? reader.GetCallVariance(callee, declaration, invocation, graph, current)
+                : null;
+        var written = summary?.ByReference ??
+                      (UniformityValueReader.IsThreadVariantCall(invocation.TargetMethod)
+                          ? ThreadVariance.Block
+                          : reader.EvaluateOperands(invocation, graph, current));
+
+        // A member of a struct writes its receiver through this: the receiver keeps what the member did not write
+        if (summary is { } called && UniformityWrites.WritesReceiver(invocation) && invocation.Instance is { } receiver)
+        {
+            Assign(receiver, called.This, strong: false, current, opaque);
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.RefKind is RefKind.Ref or RefKind.Out)
@@ -462,14 +459,21 @@ internal sealed class UniformitySolver(UniformityState state)
         {
             ILocalReferenceOperation local => local.Local,
             IParameterReferenceOperation parameter => parameter.Parameter,
+            IInstanceReferenceOperation { Type: { } self } => self,
             _ => null
         };
 
-        // A field or property of a struct local or parameter: the struct keeps its other members, so the write only
-        // adds to its variance
-        if (symbol == null && GetStructRoot(target) is { } root)
+        // A field or property of a struct local, parameter or flow capture: the struct keeps its other members, so the
+        // write only adds to its variance
+        if (symbol == null && UniformityWrites.GetStructRoot(target) is { } root)
         {
-            symbol = root;
+            if (root is IFlowCaptureReferenceOperation capture)
+            {
+                AddToCaptureRoot(capture, variance, current);
+                return;
+            }
+
+            symbol = UniformityWrites.GetRootSymbol(root);
             strong = false;
         }
 

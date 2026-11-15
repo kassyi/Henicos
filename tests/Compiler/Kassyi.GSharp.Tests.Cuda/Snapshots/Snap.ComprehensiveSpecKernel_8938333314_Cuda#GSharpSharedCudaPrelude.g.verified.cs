@@ -557,6 +557,21 @@ template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 __device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
 template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
 __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+// The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
+// count and ArgumentException when the range passes the end
+__device__ inline GSharpArray<T> AsSpanOfArray(
+int start,
+int count,
+const char* outOfRangeMessage,
+const char* argumentMessage) const {
+#ifdef GSHARP_CHECKED
+if (start < 0 || count < 0) {
+__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, outOfRangeMessage);
+return GSharpArray<T>();
+}
+#endif
+return Slice<GSharpErrorCode::Argument>(start, count, argumentMessage);
+}
 __device__ inline bool IsEmpty() const { return length <= 0; }
 
 // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
@@ -1168,6 +1183,40 @@ __GSHARP_DIVISOR_CHECK(b, site);
 return a % b;
 }
 
+// Math.Abs of a signed integer throws OverflowException for the minimum value in C# (#947); C++ abs of it is undefined
+// and CUDA gives the minimum back. Every build tests the value, as the divisor check above does, and the failing thread
+// stops. The place is the site of the kernel's error site table or, in a device function, a message that names it.
+#if defined(__CUDACC__)
+#define __GSHARP_ABS_CHECK(cond, site) \
+do { if (cond) { __gsharp_inline_trap(GSharpErrorCode::Overflow, __gsharp_inline_site(site)); } } while (0)
+#else
+#define __GSHARP_ABS_CHECK(cond, site) \
+do { if (cond) { __gsharp_trap_abort(GSharpErrorCode::Overflow, site); } } while (0)
+#endif
+
+template <typename S>
+__device__ __forceinline__ int __gsharp_abs_i32(int a, S site) {
+__GSHARP_ABS_CHECK(a == (-2147483647 - 1), site);
+return a < 0 ? -a : a;
+}
+template <typename S>
+__device__ __forceinline__ long long __gsharp_abs_i64(long long a, S site) {
+__GSHARP_ABS_CHECK(a == (-9223372036854775807LL - 1), site);
+return a < 0 ? -a : a;
+}
+template <typename S>
+__device__ __forceinline__ short __gsharp_abs_i16(short a, S site) {
+__GSHARP_ABS_CHECK(a == -32768, site);
+return static_cast<short>(a < 0 ? -a : a);
+}
+template <typename S>
+__device__ __forceinline__ signed char __gsharp_abs_i8(signed char a, S site) {
+__GSHARP_ABS_CHECK(a == -128, site);
+return static_cast<signed char>(a < 0 ? -a : a);
+}
+
+#undef __GSHARP_ABS_CHECK
+
 #undef __GSHARP_DIVISOR_CHECK
 
 
@@ -1414,6 +1463,11 @@ for (int i = 0; i < TDsmem::Slots; i++) { s->offset[i] = __GSHARP_DSMEM_UNSET; s
 template <int Slot, typename TDsmem>
 __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsigned long long bytes, unsigned int align) {
 static_assert(Slot >= 0 && Slot < TDsmem::Slots, ""G#: shared memory declaration has no slot in this kernel"");
+// The count is widened through long long, so only a negative count arrives as 2^63 bytes or more; it fails before
+// anything is placed, with the exception of the CPU paths (the record has no room for the count)
+if (bytes >= 0x8000000000000000ull) {
+__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""G#: the count of a shared memory declaration is negative"");
+}
 unsigned int offset = s->offset[Slot];
 if (offset == __GSHARP_DSMEM_UNSET) {
 offset = (s->cursor + align - 1) & ~(align - 1);
@@ -1425,8 +1479,7 @@ s->cursor = offset;
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: a shared memory declaration grew after a later declaration"");
 }
 if (bytes > s->size[Slot]) {
-// [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to
-// it would wrap past 2^64 to a small end
+// bytes is below 2^63 here and the offset below 2^32, so their sum cannot wrap
 unsigned long long limit = __gsharp_dynamic_smem_size();
 if (bytes > limit || (unsigned long long)offset + bytes > limit) {
 __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""G#: dynamic shared memory exceeds sharedMemBytes"");

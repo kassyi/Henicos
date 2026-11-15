@@ -46,6 +46,7 @@ internal sealed class TranspilerRuleRegistry
             new MemoryExtensionsTranspilerRule(),
             new SpanMemberTranspilerRule(),
             new NullableGetValueOrDefaultRule(),
+            new MathAbsTranspilerRule(),
             new StackLinqFusionRule(),
             new StackLinqTranspilerRule()
         );

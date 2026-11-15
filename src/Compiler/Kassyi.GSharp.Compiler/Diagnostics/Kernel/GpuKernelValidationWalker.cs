@@ -76,6 +76,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         base.VisitIdentifierName(node);
     }
 
+    public override void VisitGenericName(GenericNameSyntax node)
+    {
+        Analyze(node);
+        base.VisitGenericName(node);
+    }
+
     public override void VisitParameter(ParameterSyntax node)
     {
         Analyze(node);
@@ -170,6 +176,12 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     {
         Analyze(node);
         base.VisitLocalDeclarationStatement(node);
+    }
+
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
+    {
+        Analyze(node);
+        base.VisitCollectionExpression(node);
     }
 
     private void Analyze<TNode>(TNode node) where TNode : SyntaxNode
