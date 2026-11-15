@@ -99,7 +99,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1971677767u, "StackLinqUnf
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(121532519u, "StackLinqUnfusedDifferentialKernels.cs", 70, 9, "UnfusedOperatorKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1768730405u, "StackLinqUnfusedDifferentialKernels.cs", 71, 9, "UnfusedOperatorKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(659426427u, "StackLinqUnfusedDifferentialKernels.cs", 72, 9, "UnfusedOperatorKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1440675186u, "StackLinqUnfusedDifferentialKernels.cs", 72, 21, "UnfusedOperatorKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1440675186u, "StackLinqUnfusedDifferentialKernels.cs", 72, 21, "UnfusedOperatorKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(218146635u, "StackLinqUnfusedDifferentialKernels.cs", 76, 9, "UnfusedOperatorKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1843329413u, "StackLinqUnfusedDifferentialKernels.cs", 77, 9, "UnfusedOperatorKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(587360583u, "StackLinqUnfusedDifferentialKernels.cs", 78, 9, "UnfusedOperatorKernel", "G#: a null array is read"),

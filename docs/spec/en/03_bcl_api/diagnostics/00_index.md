@@ -77,7 +77,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0061](GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive |
 | [GSH0062](GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context |
 | [GSH0063](GSH0063.md) | Warning | Shared memory declarations on one line share a buffer in managed execution |
-| [GSH0064](GSH0064.md) | Warning | Kernel parameters exceed the parameter space limit |
+| [GSH0064](GSH0064.md) | Error | Kernel parameters exceed the parameter space limit |
 | [GSH0065](GSH0065.md) | Error | Non-const static fields and properties are not supported in GPU code |
 | [GSH0066](GSH0066.md) | Error | Instance [GpuDeviceFunction] methods are not supported |
 | [GSH0067](GSH0067.md) | Error | Disposable resource is created and discarded |
@@ -117,6 +117,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0114](GSH0114.md) | Warning | G# has no launch limits for a GSharpTargetArchitectures architecture |
 | [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
 | [GSH0119](GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates |
+| [GSH0118](GSH0118.md) | Error | A [GpuReadOnly] array is written |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 

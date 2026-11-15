@@ -166,7 +166,7 @@ examples:
 | [**GSH0061**](../03_bcl_api/diagnostics/GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive | Triggered when a recursive device function reaches a barrier. |
 | [**GSH0062**](../03_bcl_api/diagnostics/GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context | Triggered when a suspending call is made from an unsupported context. |
 | [**GSH0063**](../03_bcl_api/diagnostics/GSH0063.md) | Warning | Shared memory declarations on one line share a buffer in managed execution | Triggered when multi-variable shared memory declarations share a buffer. |
-| [**GSH0064**](../03_bcl_api/diagnostics/GSH0064.md) | Warning | Kernel parameters exceed the parameter space limit | Triggered when the total byte footprint of a kernel's parameters exceeds 4,096 bytes. |
+| [**GSH0064**](../03_bcl_api/diagnostics/GSH0064.md) | Error | Kernel parameters exceed the parameter space limit | Triggered when a kernel's parameters, with the ones G# adds, take more than the 32,764 bytes of the CUDA parameter space; nvcc would reject the kernel. |
 | [**GSH0065**](../03_bcl_api/diagnostics/GSH0065.md) | Error | Non-const static fields and properties are not supported in GPU code | Triggered when non-const static state is referenced in device code. |
 | [**GSH0066**](../03_bcl_api/diagnostics/GSH0066.md) | Error | Instance [GpuDeviceFunction] methods are not supported | Triggered when `[GpuDeviceFunction]` is declared on an instance method. |
 | [**GSH0067**](../03_bcl_api/diagnostics/GSH0067.md) | Error | Disposable resource is created and discarded | Triggered when a disposable resource is allocated without being assigned or returned. |

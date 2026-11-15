@@ -99,7 +99,9 @@ internal static class MethodSignatureTranspiler
             }
 
             var written = method.ParameterList.Parameters.Count > 0 || contextName != null;
-            if (plan.HasAutoResult)
+            var hidden = KernelHiddenParameters.For(method, methodSymbol, context.Query.SemanticModel,
+                context.Emitter.Dialect.IsCuda);
+            if (hidden.ResultBuffer)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
@@ -109,8 +111,7 @@ internal static class MethodSignatureTranspiler
 
             // The scratch of the grid strategy of AsParallel() aggregates, which the CUDA launcher allocates
             // (KernelHostModel.GridScratchSlotBytes, ParallelAggregatePlanner)
-            if (context.Emitter.Dialect.IsCuda &&
-                ParallelAggregatePlanner.GetGridScratchSlotBytes(method, context.Query.SemanticModel) > 0)
+            if (hidden.GridScratch)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Writer.Append($"unsigned char* __restrict__ {GSharpInternalNames.StackLinq.GridScratch}");
@@ -119,7 +120,7 @@ internal static class MethodSignatureTranspiler
 
             // The epoch of the launch, last: the record and the abort word of a failing thread (Prelude.cu,
             // __gsharp_launch_epoch), which the CUDA launcher passes (KernelLaunchEmitter)
-            if (context.Emitter.Dialect.IsCuda)
+            if (hidden.LaunchEpoch)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Writer.Append($"unsigned int {GSharpInternalNames.Launcher.Epoch}");
