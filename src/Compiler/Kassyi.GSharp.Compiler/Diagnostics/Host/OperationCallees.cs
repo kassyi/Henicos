@@ -9,8 +9,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 /// </summary>
 /// <remarks>
 /// The <c>Dispose</c> of a <c>using</c>, the <c>GetPinnableReference</c> of a <c>fixed</c>, the <c>EnterScope</c> of a
-/// <c>lock</c> and the builder and <c>Add</c> calls of a collection expression have no public form in Roslyn 4.8, so a
-/// rule that needs them checks the declaration of the method instead. The operations to register for are
+/// <c>lock</c> and the builder and <c>Add</c> calls of a collection expression have no public form in Roslyn 4.8, which
+/// the compiler built against when this was written, so a rule that needs them checks the declaration of the method
+/// instead. The operations to register for are
 /// <see cref="Kinds"/>.
 /// </remarks>
 internal static class OperationCallees

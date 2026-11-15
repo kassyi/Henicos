@@ -89,7 +89,10 @@ public class LocalFunctionOrderTests : TranspilerTestBase
     public void UnreachableCallBeforeCapturedDeclaration_Native_DeclaresTheCapturedLocalsFirst() =>
         LocalFunctionOrderScenarios.Run(
             s_runNative,
-            static data => LocalFunctionOrderKernels.LaunchUnreachableCallBeforeCapturedDeclarationKernel(data, blockDimX: 4),
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallBeforeCapturedDeclarationKernel(
+                data,
+                blockDimX: 4
+            ),
             x => x + 5
         );
 
@@ -108,6 +111,24 @@ public class LocalFunctionOrderTests : TranspilerTestBase
         LocalFunctionOrderScenarios.Run(
             s_runNative,
             static data => LocalFunctionOrderKernels.LaunchUnreachableCallThroughAFunctionKernel(data, blockDimX: 4),
+            x => x + 6
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallInSwitchSection_Native_DeclaresTheCapturedLocalFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallInSwitchSectionKernel(data, blockDimX: 4),
+            x => x + 4
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UnreachableCallInLoopBody_Native_DeclaresTheCapturedLocalFirst() =>
+        LocalFunctionOrderScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionOrderKernels.LaunchUnreachableCallInLoopBodyKernel(data, blockDimX: 4),
             x => x + 6
         );
 }

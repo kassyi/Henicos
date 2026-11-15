@@ -4,6 +4,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
+    // The kind of the type of a C# 14 extension block, which the Roslyn API of the analyzer does not name yet
+    private const TypeKind ExtensionTypeKind = (TypeKind)14;
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         GSharpDiagnostics.Reported;
 
@@ -24,6 +27,15 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             var reportedTypes = new ConcurrentDictionary<TypeDeclarationSyntax, byte>();
             start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect, exports, reportedTypes),
                 SyntaxKind.MethodDeclaration);
+            // An operator or an accessor that is GPU code is a method of its type as well: that type is reopened too
+            start.RegisterSyntaxNodeAction(context => AnalyzeOtherMember(context, reportedTypes),
+                SyntaxKind.OperatorDeclaration,
+                SyntaxKind.ConversionOperatorDeclaration,
+                SyntaxKind.GetAccessorDeclaration,
+                SyntaxKind.SetAccessorDeclaration,
+                SyntaxKind.InitAccessorDeclaration,
+                SyntaxKind.AddAccessorDeclaration,
+                SyntaxKind.RemoveAccessorDeclaration);
             start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports),
                 SyntaxKind.DestructorDeclaration);
         });
@@ -45,10 +57,56 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         walker.Visit(destructor);
     }
 
-    // A class or a record class, which the generator reopens; not a struct or a record struct
-    private static bool IsClassDeclaration(SyntaxNode? node) =>
-        node is ClassDeclarationSyntax ||
-        (node is RecordDeclarationSyntax record && !record.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword));
+    // A class, struct or record: the generator reopens it with a partial declaration (the managed version of a device
+    // function is written there). An interface is not reopened.
+    private static bool IsReopenedDeclaration(SyntaxNode? node) =>
+        node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;
+
+    // An operator or an accessor marked as GPU code: only the types that hold it must be partial
+    private static void AnalyzeOtherMember(SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
+    {
+        if (context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(context.Node) is { } symbol &&
+            GpuExecutionSpace.IsGpuFunction(symbol))
+        {
+            ReportNonPartialTypes(context, context.Node, symbol, reportedTypes);
+        }
+    }
+
+    // The generator adds members to the type that holds GPU code (the managed version of a device function, the
+    // launch wrappers), so that type and every type enclosing it must be partial (#941, #1897). The type of an
+    // accessor is the one around its property, indexer or event; an extension block cannot be partial, so the
+    // class around it is the one that is reopened.
+    private static void ReportNonPartialTypes(SyntaxNodeAnalysisContext context, SyntaxNode member,
+        IMethodSymbol symbol, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
+    {
+        var holder = member.Parent;
+        while (holder is AccessorListSyntax or BasePropertyDeclarationSyntax)
+        {
+            holder = holder.Parent;
+        }
+
+        if (symbol.ContainingType?.TypeKind == ExtensionTypeKind && holder is TypeDeclarationSyntax block)
+        {
+            holder = block.Parent;
+        }
+
+        if (!IsReopenedDeclaration(holder))
+        {
+            return;
+        }
+
+        for (var parent = holder; parent is TypeDeclarationSyntax typeDecl; parent = parent.Parent)
+        {
+            if (!typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword) && reportedTypes.TryAdd(typeDecl, 0))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.KernelClassMustBePartial,
+                    typeDecl.Identifier.GetLocation(),
+                    typeDecl.Identifier.Text);
+            }
+        }
+    }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
         ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
@@ -65,20 +123,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // The generator adds members to the class that holds GPU code, so that class and every type enclosing it must be
-        // partial (#941). A struct that holds device functions is not reopened, so it is not reported; a record class
-        // is.
-        var reopened = IsClassDeclaration(methodDeclaration.Parent) ? methodDeclaration.Parent : null;
-        for (var parent = reopened; parent is TypeDeclarationSyntax typeDecl; parent = parent.Parent)
-        {
-            if (!typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword) && reportedTypes.TryAdd(typeDecl, 0))
-            {
-                context.ReportDiagnostic(
-                    GSharpDiagnostics.KernelClassMustBePartial,
-                    typeDecl.Identifier.GetLocation(),
-                    typeDecl.Identifier.Text);
-            }
-        }
+        ReportNonPartialTypes(context, methodDeclaration, methodSymbol, reportedTypes);
 
         // The generator transpiles the defining declaration of a partial method from its implementing declaration,
         // which this analyzer visits on its own. A device function that is a partial method without an implementing

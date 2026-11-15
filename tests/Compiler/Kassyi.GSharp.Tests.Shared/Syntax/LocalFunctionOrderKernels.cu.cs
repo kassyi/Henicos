@@ -137,4 +137,51 @@ public static partial class LocalFunctionOrderKernels
         int Outer() => Inner() * 2;
         int Inner() => z + 1;
     }
+
+    // The pattern inside a switch section: the captured local is declared at the start of the section
+    [GpuKernel]
+    public static void UnreachableCallInSwitchSectionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        switch (tid & 1)
+        {
+            case 0:
+#pragma warning disable CS0162 // The call under test is unreachable
+                if (false)
+                {
+                    data[tid] = Captured();
+                }
+#pragma warning restore CS0162
+
+                int z = 4;
+                data[tid] += Captured();
+                break;
+
+                int Captured() => z;
+            default:
+                data[tid] += 4;
+                break;
+        }
+    }
+
+    // The pattern in a loop body: the captured local is declared again on every iteration
+    [GpuKernel]
+    public static void UnreachableCallInLoopBodyKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        for (int i = 0; i < 3; i++)
+        {
+#pragma warning disable CS0162 // The call under test is unreachable
+            if (false)
+            {
+                data[tid] = Captured();
+            }
+#pragma warning restore CS0162
+
+            int z = i + 1;
+            data[tid] += Captured();
+
+            int Captured() => z;
+        }
+    }
 }

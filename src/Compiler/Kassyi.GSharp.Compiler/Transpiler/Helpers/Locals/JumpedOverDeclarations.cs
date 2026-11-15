@@ -1,9 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 
 /// <summary>
-/// Declares at the start of their C++ scope (<see cref="CppBlockScopes"/>) the locals that a <c>goto</c> jumps past
-/// (<see cref="GotoJumpAnalysis"/>) and whose C++ type has a default constructor: an array alias
-/// (<c>GSharpArray&lt;T&gt;</c>) or such a struct.
+/// Declares at the start of their C++ scope (<see cref="CppBlockScopes"/>) two kinds of locals: those that a
+/// <c>goto</c> jumps past (<see cref="GotoJumpAnalysis"/>) and whose C++ type has a default constructor (an array alias,
+/// <c>GSharpArray&lt;T&gt;</c>, or such a struct), and those that a local function captures when the function is written
+/// in front of the declaration (<see cref="LocalFunctionPlan"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] A declaration that a goto jumps past is split into <c>&lt;type&gt; &lt;name&gt;;</c> and an assignment (#768). C++
@@ -15,6 +16,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 /// written without braces is declared at the start of the scope around it. C# makes sure that it is assigned before it
 /// is read, so the earlier default construction is not observable. A goto from another switch section enters the
 /// section past its start, so such a local is declared before the switch instead (<see cref="SwitchSectionLocals"/>).
+/// <para>
+/// [WHY] A local function becomes a C++ lambda written in front of its first user (LocalFunctionOrder). When that user
+/// is in unreachable code above the declaration of a local the function captures, the lambda would name the local
+/// before C++ declares it (C2065). Such a local, of any type that C++ can declare first and assign later
+/// (<see cref="SwitchSectionLocals.CanDeclareLocal"/>), is declared at the start of its C++ scope the same way, and its
+/// declaration becomes an assignment in place, so the order of its initializer is unchanged.
+/// </para>
 /// </remarks>
 internal static class JumpedOverDeclarations
 {
