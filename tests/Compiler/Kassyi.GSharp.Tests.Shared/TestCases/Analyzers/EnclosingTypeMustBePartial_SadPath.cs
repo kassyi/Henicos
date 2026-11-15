@@ -25,7 +25,7 @@ public record OuterNonPartialRecord
     }
 }
 
-// A struct that holds device functions is not reopened by the generator: no GSH0036
+// A struct that holds device functions is reopened like a class (its managed version is written there): GSH0036
 public struct DeviceOnlyStruct
 {
     [GpuDeviceFunction]
@@ -55,7 +55,7 @@ public class OuterOfTwoClasses
     }
 }
 
-// A record class is reopened like a class; a record struct that holds device functions is not
+// A record class and a record struct are reopened like a class
 public record NonPartialKernelRecord
 {
     [GpuKernel]
@@ -65,6 +65,19 @@ public record NonPartialKernelRecord
 }
 
 public record struct DeviceOnlyRecordStruct
+{
+    [GpuDeviceFunction]
+    public static int Twice(int x) => x * 2;
+}
+
+// Partial structs that hold device functions are not reported
+public partial struct PartialDeviceStruct
+{
+    [GpuDeviceFunction]
+    public static int Twice(int x) => x * 2;
+}
+
+public partial record struct PartialDeviceRecordStruct
 {
     [GpuDeviceFunction]
     public static int Twice(int x) => x * 2;
