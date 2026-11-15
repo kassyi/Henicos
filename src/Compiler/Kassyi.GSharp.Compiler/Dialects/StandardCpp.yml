@@ -13,6 +13,8 @@ Types:
   System.UInt32: { cpp: "unsigned int", size: 4, align: 4 }
   System.Int64: { cpp: "long long", size: 8, align: 8 }
   System.UInt64: { cpp: "unsigned long long", size: 8, align: 8 }
+  System.IntPtr: { cpp: "long long", size: 8, align: 8 }
+  System.UIntPtr: { cpp: "unsigned long long", size: 8, align: 8 }
   System.Single: { cpp: "float", size: 4, align: 4 }
   System.Double: { cpp: "double", size: 8, align: 8 }
   void: "void"
@@ -26,6 +28,8 @@ Types:
   uint: { cpp: "unsigned int", size: 4, align: 4 }
   long: { cpp: "long long", size: 8, align: 8 }
   ulong: { cpp: "unsigned long long", size: 8, align: 8 }
+  nint: { cpp: "long long", size: 8, align: 8 }
+  nuint: { cpp: "unsigned long long", size: 8, align: 8 }
   float: { cpp: "float", size: 4, align: 4 }
   double: { cpp: "double", size: 8, align: 8 }
   System.Numerics.Vector2: { cpp: "float2", size: 8, align: 4 }

@@ -249,6 +249,7 @@ internal static class IntegerSemantics
     // leaves undefined, or the mask of the count of a shift that stays a C++ operator. Neither for any other operator.
     private static (string? Helper, int ShiftMask) Lookup(BinaryOperatorKind kind, SpecialType type)
     {
+        type = Canonical(type);
         if (GetWidth(type) is not (var width and not 0))
         {
             return (null, 0);
@@ -306,7 +307,7 @@ internal static class IntegerSemantics
         }
 
         var integral = UnderlyingOrSelf(target) ?? target;
-        string? helper = integral.SpecialType switch
+        string? helper = Canonical(integral.SpecialType) switch
         {
             SpecialType.System_Int32 => Names.ConvertToInt32,
             SpecialType.System_UInt32 => Names.ConvertToUInt32,
@@ -397,7 +398,7 @@ internal static class IntegerSemantics
     }
 
     // The integral promotions: an integer type narrower than int is int; None for any type that is not an integer
-    private static SpecialType Promote(ITypeSymbol? type) => UnderlyingOrSelf(type)?.SpecialType switch
+    private static SpecialType Promote(ITypeSymbol? type) => Canonical(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None) switch
     {
         SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
             SpecialType.System_Char or SpecialType.System_Int32 => SpecialType.System_Int32,
@@ -418,6 +419,7 @@ internal static class IntegerSemantics
     /// </summary>
     internal static DivisionCheck DecideDivision(IOperation dividend, IOperation divisor, SpecialType operatorType)
     {
+        operatorType = Canonical(operatorType);
         if (IntegerRange.OfType(operatorType) is not { } operatorRange)
         {
             return DivisionCheck.None;
@@ -485,7 +487,18 @@ internal static class IntegerSemantics
     /// <summary>32 or 64 for int, uint, long and ulong; 0 for any other type.</summary>
     internal static int GetWidth(ITypeSymbol? type) => GetWidth(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None);
 
-    private static int GetWidth(SpecialType type) => type switch
+    /// <summary>
+    /// The integer type that a native-sized integer is for the operators: <c>nint</c> is <c>long</c> and <c>nuint</c> is
+    /// <c>ulong</c> (G# targets 64-bit devices, <c>Pointer</c> layout of 8 bytes); any other type as it is.
+    /// </summary>
+    internal static SpecialType Canonical(SpecialType type) => type switch
+    {
+        SpecialType.System_IntPtr => SpecialType.System_Int64,
+        SpecialType.System_UIntPtr => SpecialType.System_UInt64,
+        _ => type
+    };
+
+    private static int GetWidth(SpecialType type) => Canonical(type) switch
     {
         SpecialType.System_Int32 or SpecialType.System_UInt32 => 32,
         SpecialType.System_Int64 or SpecialType.System_UInt64 => 64,
@@ -495,7 +508,8 @@ internal static class IntegerSemantics
     /// <summary>Whether the type is int or long.</summary>
     internal static bool IsSigned(ITypeSymbol? type) => IsSigned(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None);
 
-    private static bool IsSigned(SpecialType type) => type is SpecialType.System_Int32 or SpecialType.System_Int64;
+    private static bool IsSigned(SpecialType type) =>
+        Canonical(type) is SpecialType.System_Int32 or SpecialType.System_Int64;
 
     private static ITypeSymbol? UnderlyingOrSelf(ITypeSymbol? type) =>
         type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } ? underlying : type;

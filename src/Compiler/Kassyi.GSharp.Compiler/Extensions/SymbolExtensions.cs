@@ -111,8 +111,8 @@ internal static class SymbolExtensions
 
     /// <summary>
     /// Whether <paramref name="type"/> is a primitive value type that device code supports: <c>bool</c>, <c>char</c>,
-    /// the eight integer types, <c>float</c> and <c>double</c> (not <c>nint</c> / <c>nuint</c>, <c>decimal</c> or
-    /// <c>Half</c>). The default sort order, the <c>[GpuConstexpr]</c> literals and the arithmetic conversions read it.
+    /// the eight integer types, <c>nint</c> and <c>nuint</c> (64-bit, as <c>long</c> and <c>ulong</c>), <c>float</c>
+    /// and <c>double</c> (not <c>decimal</c> or <c>Half</c>). The default sort order, the <c>[GpuConstexpr]</c> literals and the arithmetic conversions read it.
     /// </summary>
     public static bool IsPrimitiveValue(this SpecialType type) =>
         type == SpecialType.System_Boolean || type.IsArithmetic();
@@ -125,6 +125,7 @@ internal static class SymbolExtensions
         SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or SpecialType.System_UInt16 or
         SpecialType.System_Int32 or SpecialType.System_UInt32 or
         SpecialType.System_Int64 or SpecialType.System_UInt64 or
+        SpecialType.System_IntPtr or SpecialType.System_UIntPtr or
         SpecialType.System_Single or SpecialType.System_Double;
 
     /// <summary>

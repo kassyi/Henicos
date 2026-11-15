@@ -959,7 +959,7 @@ public class MathDifferentialTests
 
     // BclMappings maps all 6 BitOperations nuint overloads, but CppTypeNameWriter emits
     // undeclared System_UIntPtr for nuint locals/casts so AOT C++/CUDA compilation would fail with C2065 (#983)
-    [Fact(Skip = "Blocked by #983 (nint and nuint constants and casts in kernels build wrong or not at all)")]
+    [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]

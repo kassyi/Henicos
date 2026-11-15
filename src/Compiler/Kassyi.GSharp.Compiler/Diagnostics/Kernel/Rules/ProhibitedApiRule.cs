@@ -126,15 +126,7 @@ internal sealed class ProhibitedApiRule :
             return;
         }
 
-        if (TakesNativeInteger(method))
-        {
-            // A nint or nuint value does not build in GPU code yet (#983); the overloads are enabled there
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{method.ContainingType.Name}.{method.FormatSignature()} (nint and nuint are not supported)");
-        }
-        else if (!IsInvoked(locationNode))
+        if (!IsInvoked(locationNode))
         {
             ReportMethodGroup(method, locationNode, ref context);
         }
@@ -146,11 +138,6 @@ internal sealed class ProhibitedApiRule :
             GSharpDiagnostics.UnsupportedSyntax,
             locationNode,
             $"{method.ContainingType.Name}.{method.FormatSignature()} (used as a method group)");
-
-    private static bool TakesNativeInteger(IMethodSymbol method) =>
-        method.Parameters
-            .AsStackEnumerable()
-            .Any(static p => p.Type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr);
 
     // Whether the node is a call or the method it calls (Math.Abs in Math.Abs(x)); otherwise a method group
     private static bool IsInvoked(SyntaxNode node) =>
