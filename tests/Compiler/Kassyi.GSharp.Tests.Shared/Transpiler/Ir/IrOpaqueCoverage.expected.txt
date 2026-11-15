@@ -23,6 +23,7 @@ UnsupportedOperation	DelegateCreation	SimpleLambdaExpression	299
 UnsupportedOperation	DelegateCreation	SimpleMemberAccessExpression	11
 UnsupportedOperation	InlineArrayAccess	ElementAccessExpression	82
 UnsupportedOperation	InterpolatedString	InterpolatedStringExpression	1
+UnsupportedOperation	IsType	IsExpression	17
 UnsupportedOperation	None	ElementAccessExpression	93
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
@@ -38,9 +39,10 @@ UnsupportedShape	ArrayCreation	ArrayCreationExpression	2
 UnsupportedShape	ArrayElementReference	ElementAccessExpression	8
 UnsupportedShape	Binary	AddExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
+UnsupportedShape	Conversion	AsExpression	4
 UnsupportedShape	Invocation	InvocationExpression	99
-UnsupportedShape	IsPattern	IsPatternExpression	2
-UnsupportedShape	ObjectCreation	ObjectCreationExpression class	8
+UnsupportedShape	IsPattern	IsPatternExpression	13
+UnsupportedShape	ObjectCreation	ObjectCreationExpression class	9
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
@@ -48,12 +50,12 @@ statement UnsupportedOperation	Labeled	LabeledStatement	19
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	57
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
-statement UnsupportedOperation	Loop	ForEachStatement	144
+statement UnsupportedOperation	Loop	ForEachStatement	145
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
 statement UnsupportedOperation	Loop	ForStatement	127
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	10
-statement UnsupportedOperation	Switch	SwitchStatement	50
+statement UnsupportedOperation	Switch	SwitchStatement	51
 statement UnsupportedOperation	Try	TryStatement	3
 statement UnsupportedOperation	Using	UsingStatement	14
 statement UnsupportedOperation	UsingDeclaration	LocalDeclarationStatement	15
