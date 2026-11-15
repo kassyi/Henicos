@@ -2,9 +2,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 
 /// <summary>
 /// Declares at the start of their C++ scope (<see cref="CppBlockScopes"/>) two kinds of locals: those that a
-/// <c>goto</c> jumps past (<see cref="GotoJumpAnalysis"/>) and whose C++ type has a default constructor (an array alias,
-/// <c>GSharpArray&lt;T&gt;</c>, or such a struct), and those that a local function captures when the function is written
-/// in front of the declaration (<see cref="LocalFunctionPlan"/>).
+/// <c>goto</c> jumps past (<see cref="GotoJumpAnalysis"/>) and whose C++ type has a default constructor (an array
+/// alias, <c>GSharpArray&lt;T&gt;</c>, or such a struct), and those that a local function captures when the function
+/// is written in front of the declaration (<see cref="LocalFunctionPlan"/>).
 /// </summary>
 /// <remarks>
 /// [WHY] A declaration that a goto jumps past is split into <c>&lt;type&gt; &lt;name&gt;;</c> and an assignment (#768). C++
