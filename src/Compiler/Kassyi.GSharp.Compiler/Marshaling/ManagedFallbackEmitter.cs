@@ -41,6 +41,17 @@ internal static class ManagedFallbackEmitter
             $"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution({DllPath}))");
         using (writer.Scope())
         {
+            switch (kernel.ManagedMode)
+            {
+                case ManagedKernelMode.UserMethod:
+                    WriteUserMethodRun(writer, kernel);
+                    return;
+                case ManagedKernelMode.Unavailable:
+                    writer.AppendLine(
+                        $"throw new global::System.NotSupportedException({Literal(kernel.ManagedUnavailableReason)});");
+                    return;
+            }
+
             WriteManagedContextAllocation(writer, kernel);
             WriteManagedGridLoop(writer, kernel);
             AutoResultEmitter.WriteReturn(writer, kernel);
@@ -50,6 +61,26 @@ internal static class ManagedFallbackEmitter
             }
         }
     }
+
+    // The body names a file-local type, so there is no copy: the user's method runs one GPU thread after another as in
+    // the C# execution, on the arguments after the copies that the launcher made (GSH0119). A kernel that the C#
+    // execution cannot run (a ref struct parameter) throws
+    private static void WriteUserMethodRun(SourceWriter writer, in KernelHostModel kernel)
+    {
+        var plan = CSharpExecutionPlan.Create(kernel, isDevicePtr: false);
+        if (plan.CannotRunReason is { } reason)
+        {
+            writer.AppendLine("throw new global::System.NotSupportedException(" +
+                              Literal($"{kernel.Name} cannot run on the managed path of the CPU dialect: its body " +
+                                      "names a file-local type, which no generated copy can name, and the C# " +
+                                      $"execution cannot run it: {reason}.") + ");");
+            return;
+        }
+
+        CSharpExecutionEmitter.WriteBranchBody(writer, plan, asManagedFallback: true);
+    }
+
+    private static string Literal(string? value) => SymbolDisplay.FormatLiteral(value ?? string.Empty, quote: true);
 
     // The contexts of every thread of the grid, the shared memory of the grid and the barrier waits
     private static void WriteManagedContextAllocation(SourceWriter writer, in KernelHostModel kernel)

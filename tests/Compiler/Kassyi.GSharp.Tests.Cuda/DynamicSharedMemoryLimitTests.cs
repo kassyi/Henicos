@@ -257,6 +257,76 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
         Assert.Equal(before, Occupancy(hfunc, 1024));
     }
 
+    // The result of the query of device attribute 150 and its value; the value is meaningful only on success
+    private static (CUresult Result, int Value) QueryOversizedLimit()
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxGetDevice(out var device));
+        var result = CudaDriverApi.cuDeviceGetAttribute(out var value,
+            CudaDriverApi.CuDeviceAttribute.MaxOversizedSharedMemoryPerBlock, device);
+        return (result, value);
+    }
+
+    private static bool DeviceHasOversizedSharedMemory()
+    {
+        var (result, value) = QueryOversizedLimit();
+        return result == CUresult.CudaSuccess && value > OptInLimit;
+    }
+
+    private static void PrepareAllowingOversized(IntPtr hfunc, uint bytes)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        DynamicSharedMemoryOptIn.Prepare(hfunc, bytes, "DynamicSharedMemoryLimitKernels.FillAndSumKernel",
+            allowsOversizedSharedMemory: true);
+    }
+
+    // A GPU without an oversized configuration answers the query with its opt-in limit, not with an error or 0 (seen on
+    // an RTX 3070 Ti with driver 621.24), so only a value above the opt-in limit means an oversized configuration
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void OversizedLimitQuery_ComputeCapability86_ReturnsTheOptInLimit()
+    {
+        Skip.If(DeviceComputeCapability() != "86", "The recorded answer is that of a compute capability 8.6 GPU.");
+
+        var (result, value) = QueryOversizedLimit();
+
+        Assert.Equal(CUresult.CudaSuccess, result);
+        Assert.Equal(OptInLimit, value);
+    }
+
+    // On a GPU without an oversized shared memory configuration, a kernel that allows it opts in and is rejected at the
+    // same bytes as one that does not, and never sets the shared memory mode
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void PrepareAllowingOversized_WithoutOversizedConfiguration_BehavesAsUnmarked()
+    {
+        SkipIfOptInNotAboveDefault();
+        Skip.If(DeviceHasOversizedSharedMemory(), "The GPU has an oversized shared memory configuration.");
+        var hfunc = GetFunction(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel));
+        var maxBytes = (uint)(OptInLimit - StaticBytes(nameof(DynamicSharedMemoryLimitKernels.FillAndSumKernel)));
+
+        foreach (var bytes in new[] { DefaultLimitBytes + 1, maxBytes })
+        {
+            PrepareAllowingOversized(hfunc, bytes);
+            AssertLaunchSums(s_fillAndSum, bytes, 0);
+        }
+
+        var output = new uint[BlockSize];
+        var marked = Assert.Throws<ArgumentOutOfRangeException>(() => PrepareAllowingOversized(hfunc, maxBytes + 1));
+        var unmarked = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            s_fillAndSum(output, (int)((maxBytes + 1) / 4), maxBytes + 1));
+
+        Assert.Equal(unmarked.ParamName, marked.ParamName);
+        Assert.Equal(unmarked.Message, marked.Message);
+        Assert.DoesNotContain("AllowOversizedSharedMemory", marked.Message);
+        Assert.Equal(1, DynamicSharedMemoryOptIn.GetOptInCount(hfunc));
+        Assert.Equal(0, DynamicSharedMemoryOptIn.GetModeSetCount(hfunc));
+    }
+
     private static int Occupancy(IntPtr hfunc, nuint dynamicBytes)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
