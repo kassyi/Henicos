@@ -38,8 +38,8 @@
   {
     "name": "KernelReturnMustBeVoidOrBlittable",
     "id": "GSH0004",
-    "title": "GpuKernel return type must be void or blittable",
-    "messageFormat": "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
+    "title": "GPU method return type must be void or blittable",
+    "messageFormat": "Method '{0}' returns unsupported type '{1}'. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
