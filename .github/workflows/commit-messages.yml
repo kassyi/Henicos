@@ -1,9 +1,9 @@
 name: Commit messages
 
-# Fails a pull request that carries a work-in-progress commit (wip) or an autosquash commit (fixup!, squash!, amend!).
-# Pull requests are merged with a merge commit, so every commit of the branch reaches main as it is. A workflow of its
-# own, without the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked too; it needs
-# no build, only Node.
+# Fails a pull request with a commit whose subject is not a Conventional Commits subject (so no wip or fixup! commit
+# either). Pull requests are merged with a merge commit, so every commit of the branch reaches main as it is. A
+# workflow of its own, without the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked
+# too; it needs no build, only Node.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Reject work-in-progress commits
+      - name: Check the commit subjects
         env:
           BASE_REF: ${{ github.base_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}

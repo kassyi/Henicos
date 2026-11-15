@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Fails when a pull request carries a commit that was never meant to stay in the history: a work-in-progress commit
-// (`wip`, `WIP: ...`) or a commit that `git rebase --autosquash` would fold into another (`fixup!`, `squash!`,
-// `amend!`). Pull requests are merged with a merge commit, so every commit of the branch reaches `main` as it is.
-// Merge commits (main merged into the branch) are not checked.
+// Fails when a pull request carries a commit whose subject is not a Conventional Commits subject,
+// `<type>[(<scope>)][!]: <description>` with one of the types of this repository, or the `Revert "..."` subject that
+// `git revert` writes. Work-in-progress commits (`wip ...`) and the commits that `git rebase --autosquash` folds
+// (`fixup!`, `squash!`, `amend!`) fail with it. Pull requests are merged with a merge commit, so every commit of the
+// branch reaches `main` as it is. Merge commits (main merged into the branch) are not checked.
 // Usage: node scripts/human/check-commit-messages.js --base <ref> [--head <ref>] [--github] [--self-test]
 'use strict';
 
@@ -18,27 +19,38 @@ const helpText = [
     '  --self-test  Check the subject rules and exit.',
     '  --help       Show this help.',
     '',
-    'Rejected subjects: "wip" as the first word (any case, with or without a colon), and "fixup!", "squash!",',
-    '"amend!". Reword such commits (git rebase -i, or a new branch) before the pull request is merged.',
+    'Accepted subjects: <type>[(<scope>)][!]: <description>, with a type of feat, fix, docs, style, refactor, perf,',
+    'test, build, ci, chore or revert, and the Revert "..." subject of git revert. Reword any other commit',
+    '(git rebase -i, or a new branch) before the pull request is merged.',
 ].join('\n');
 
-const rejectedSubject = /^\s*(?:wip\b|fixup!|squash!|amend!)/i;
+const types = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
+const conventionalSubject = new RegExp(String.raw`^(?:${types.join('|')})(?:\([^()\s][^()]*\))?!?: \S`);
+const revertSubject = /^Revert ".+"$/;
 
 function isRejected(subject) {
-    return rejectedSubject.test(subject);
+    return !conventionalSubject.test(subject) && !revertSubject.test(subject);
 }
 
 function selfTest() {
     const cases = [
         ['wip 643 review', true],
-        ['WIP: in-place shifts (in progress)', true],
         ['wip: escape module identifier parts', true],
+        ['WIP: in-place shifts (in progress)', true],
         ['fixup! fix(compiler): keep nested break', true],
         ['squash! test: add cases', true],
         ['amend! docs: wording', true],
+        ['﻿test(shared): isolate global state tests', true],
+        ['Fix the build', true],
+        ['feat: ', true],
+        ['fix(): empty scope', true],
+        ['refactor(lowering) missing colon', true],
+        ['Feat: capital type', true],
         ['test: resolve WIP skips in snapshot generator tests', false],
         ['fix(generator): wipe the stale artifacts', false],
         ['chore(merge): merge main into the branch', false],
+        ['feat(api)!: drop the old launcher', false],
+        ['Revert "test(differential): drop an unused local"', false],
     ];
     let failed = 0;
     for (const [subject, expected] of cases) {
@@ -90,12 +102,12 @@ function main(argv) {
         .filter((commit) => isRejected(commit.subject));
 
     if (rejected.length === 0) {
-        console.log(`No work-in-progress or fixup commits in ${base}..${head}.`);
+        console.log(`Every commit of ${base}..${head} has a Conventional Commits subject.`);
         return 0;
     }
     for (const commit of rejected) {
-        const text = `${commit.sha.slice(0, 9)} "${commit.subject}" must be reworded before the merge`;
-        console.log(github ? `::error title=Work-in-progress commit::${text}` : text);
+        const text = `${commit.sha.slice(0, 9)} "${commit.subject}" is not a Conventional Commits subject`;
+        console.log(github ? `::error title=Commit message::${text}` : text);
     }
     console.log(
         `${rejected.length} commit(s) would reach main as they are (pull requests are merged with a merge commit). ` +
