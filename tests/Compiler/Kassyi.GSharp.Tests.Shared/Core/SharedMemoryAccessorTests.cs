@@ -7,8 +7,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 /// <summary>
-/// Runs <see cref="SharedMemoryAccessorKernels"/> on CUDA and on both CPU paths (#564): a struct whose getter and setter
-/// each declare a <c>SharedMemory&lt;T&gt;</c> has one buffer per accessor, like a method.
+/// Runs <see cref="SharedMemoryAccessorKernels"/> on CUDA and on both CPU paths (#564): a struct whose getter and
+/// setter each declare a <c>SharedMemory&lt;T&gt;</c> has one buffer per accessor, like a method.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]

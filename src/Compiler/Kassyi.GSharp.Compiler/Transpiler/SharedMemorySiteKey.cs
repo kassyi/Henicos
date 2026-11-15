@@ -11,9 +11,11 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// would give a callee called from two places two buffers, or give a caller and a callee the same one, and the results
 /// would differ from the GPU.
 /// <para>
-/// The key is the FNV-1a 64-bit hash of <c>"&lt;documentation comment id of the method&gt;#&lt;ordinal&gt;"</c>, where the
-/// ordinal counts the <c>SharedMemory&lt;T&gt;</c> creations of the method in source order. The ordinal, unlike a source
-/// position, does not change when unrelated lines of the file are edited.
+/// The key is the FNV-1a 64-bit hash of <c>"&lt;documentation comment id of the member body&gt;#&lt;ordinal&gt;"</c>, where
+/// the ordinal counts the <c>SharedMemory&lt;T&gt;</c> creations of that body in source order. The body is a method, an
+/// operator, a constructor or an accessor (its ID is the one of its property or indexer plus <c>#get</c>, <c>#set</c>
+/// or <c>#init</c>); the expression body of a property is its getter. The ordinal, unlike a source position, does not
+/// change when unrelated lines of the file are edited.
 /// </para>
 /// </remarks>
 internal static class SharedMemorySiteKey
@@ -30,7 +32,7 @@ internal static class SharedMemorySiteKey
 
         var body = FindBodyOwner(original)
                    ?? throw new InvalidOperationException("A shared memory creation is not inside a member body.");
-        var methodId = GetOwnerId(body, model)
+        var ownerId = GetOwnerId(body, model)
                        ?? throw new InvalidOperationException("The member that creates shared memory has no symbol.");
 
         var ordinal = 0;
@@ -40,8 +42,8 @@ internal static class SharedMemorySiteKey
             {
                 return constructedStructType is { IsGenericType: true }
                     ? HashHelper.ComputeFnv1A64(
-                        $"{methodId}@{constructedStructType.GetFullyQualifiedCsharpName()}#{ordinal}")
-                    : HashHelper.ComputeFnv1A64($"{methodId}#{ordinal}");
+                        $"{ownerId}@{constructedStructType.GetFullyQualifiedCsharpName()}#{ordinal}")
+                    : HashHelper.ComputeFnv1A64($"{ownerId}#{ordinal}");
             }
 
             if (node is BaseObjectCreationExpressionSyntax other && model.GetTypeInfo(other).Type.IsSharedMemoryType())
@@ -69,7 +71,7 @@ internal static class SharedMemorySiteKey
         return null;
     }
 
-    // The documentation comment ID of the method; an accessor has none, so it takes the ID of its property or indexer
+    // The documentation comment ID of the member; an accessor has none, so it takes the ID of its property or indexer
     // and its kind (get, set, init), and the expression body of a property is its getter
     private static string? GetOwnerId(SyntaxNode body, SemanticModel model) => body switch
     {
