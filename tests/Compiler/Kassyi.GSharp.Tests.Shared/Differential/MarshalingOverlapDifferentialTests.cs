@@ -806,6 +806,31 @@ public sealed class MarshalingOverlapDifferentialTests
         },
     };
 
+    // The same out struct and a ref to its variable: the ref reads the caller's arrays and tag before the assignment
+    internal static readonly DifferentialCase s_outStructAndRefOfIt = new(
+        KernelName(nameof(MarshalingOverlapDifferentialKernels.OutStructAndRefOfItKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 3, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 3;
+            b.Get<int>("observed")[1] = 2;
+            b.Get<int>("observed")[2] = 0;
+            b.Get<int>("final")[0] = 0;
+        },
+        Launch = static (b, s) =>
+        {
+            var bag = new DiffDeepBag { Data = [1, 2], Tag = 3 };
+            MarshalingOverlapDifferentialKernels.LaunchOutStructAndRefOfItKernel(
+                out bag, ref bag, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = bag.Tag;
+        },
+    };
+
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void RefOverlap_OutWrittenBeforeTheRefOfTheSameVariable_MatchesTheReferenceOnEveryPath() =>
@@ -830,4 +855,9 @@ public sealed class MarshalingOverlapDifferentialTests
     [Scenario(TestScenario.HappyPath)]
     public void RefOverlap_OutStructThatHoldsArrays_ReceivesWhatTheKernelAssigned() =>
         DifferentialRunner.Run(s_outStructWithArray);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RefOverlap_OutStructThatHoldsArraysBesideARefOfIt_ReadsTheCallersValueFirst() =>
+        DifferentialRunner.Run(s_outStructAndRefOfIt);
 }
