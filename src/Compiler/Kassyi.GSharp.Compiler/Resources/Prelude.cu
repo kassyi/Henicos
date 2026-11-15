@@ -1000,7 +1000,19 @@ struct __gsharp_plus
     __device__ __forceinline__ T operator()(T a, T b) const { return a + b; }
     __device__ __forceinline__ int operator()(int a, int b) const { return (int)((unsigned int)a + (unsigned int)b); }
     __device__ __forceinline__ long long operator()(long long a, long long b) const { return (long long)((unsigned long long)a + (unsigned long long)b); }
+    __device__ __forceinline__ __gsharp_wide_sum operator()(__gsharp_wide_sum a, __gsharp_wide_sum b) const { return __gsharp_wide_combine(a, b); }
 };
+
+// The shuffle of a value that __shfl_down_sync does not take: the wide sum goes as its two words
+template <typename T>
+__device__ __forceinline__ T __gsharp_shfl_down(unsigned int mask, T value, unsigned int offset) { return __shfl_down_sync(mask, value, offset); }
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_shfl_down(unsigned int mask, __gsharp_wide_sum value, unsigned int offset)
+{
+    __gsharp_wide_sum other;
+    other.lo = __shfl_down_sync(mask, value.lo, offset);
+    other.hi = __shfl_down_sync(mask, value.hi, offset);
+    return other;
+}
 
 // [WHY] The last warp of a block whose size is not a multiple of 32 is partial: the shuffle mask names only the lanes that
 // exist, and a value shuffled from past the last valid lane is not combined (CUB WarpReduceShfl::ReduceStep).
@@ -1011,7 +1023,7 @@ __device__ __forceinline__ T __gsharp_warp_reduce(T value, unsigned int lane, un
     #pragma unroll
     for (unsigned int offset = 16u; offset > 0u; offset >>= 1)
     {
-        const T other = __shfl_down_sync(mask, value, offset);
+        const T other = __gsharp_shfl_down(mask, value, offset);
         if (lane + offset < valid) { value = op(value, other); }
     }
     return value;

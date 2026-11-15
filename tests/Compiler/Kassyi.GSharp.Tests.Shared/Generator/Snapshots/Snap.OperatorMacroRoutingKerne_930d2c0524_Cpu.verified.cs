@@ -1261,7 +1261,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_result, 0, 1975120283u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1273,7 +1273,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKe
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_state=-1;
 return;
@@ -1542,7 +1542,7 @@ __gsharp_switch_1_state_0:
 GSharpArray<int> __gsharp_id_4_x = __gsharp_id_1_ten;
 __gsharp_array_at(__gsharp_id_3_result, 0, 1381027323u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1551,13 +1551,13 @@ auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = ([__gsharp_id_0_x = (__gsharp_id_4_x)](int __gsharp_id_1_a) { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteGroupExtensions__AddElement(__gsharp_id_0_x, __gsharp_id_1_a); })(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 System_Func<int, int> __gsharp_id_5_addTen = [__gsharp_id_0_x = (__gsharp_id_4_x)](int __gsharp_id_1_a) { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteGroupExtensions__AddElement(__gsharp_id_0_x, __gsharp_id_1_a); };
 __gsharp_id_4_x=__gsharp_id_2_ninetyNine;
 __gsharp_array_at(__gsharp_id_3_result, 1, 1451451327u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1566,7 +1566,7 @@ auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 auto __gsharp_val_1 = (__gsharp_id_5_addTen)(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_state=-1;
 return;
