@@ -13,6 +13,8 @@ internal static class StatementTranspilers
         context.Emitter.Writer.Append(" = [&]");
         context.Visitor.Visit(node.ParameterList);
         context.Emitter.Writer.Append(' ');
+        RefLocals.AppendReferenceReturn(context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(node),
+            ref context);
 
         LambdaTranspilerHelper.TranspileLambdaBody(ref context, node.Body, node.ExpressionBody?.Expression);
 
