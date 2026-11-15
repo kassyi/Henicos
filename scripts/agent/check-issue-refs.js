@@ -5,7 +5,8 @@
 //   node scripts/agent/check-issue-refs.js --text "<text>"      check the numbers in the text
 //   node scripts/agent/check-issue-refs.js --file <path>...     check the numbers in the files
 //   node scripts/agent/check-issue-refs.js --stdin              check the numbers in standard input
-//   node scripts/agent/check-issue-refs.js --hook               Claude Code PreToolUse hook (reads the hook JSON on stdin)
+//   node scripts/agent/check-issue-refs.js --hook               PreToolUse hook of Claude Code and Antigravity
+//   node scripts/agent/check-issue-refs.js --self-test          runs the hook on fixed payloads, GitHub lookup stubbed
 //   --repo <owner/name>   repository to look the numbers up in (default: the origin remote)
 // Prints one line per number: number, kind (issue / PR), state, milestone and title. A "#n" inside an inline code span or
 // a fenced code block is not a reference (GitHub does not link it) and is not checked.
@@ -20,7 +21,8 @@ const { execFileSync } = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
-const usage = 'Usage: check-issue-refs.js (--text <text> | --file <path>... | --stdin | --hook) [--repo <owner/name>]';
+const usage = 'Usage: check-issue-refs.js (--text <text> | --file <path>... | --stdin | --hook | --self-test) '
+    + '[--repo <owner/name>]';
 
 // "#1234" not preceded by a word character, "&" (HTML entity) or "/" (owner/repo#1234, a URL fragment).
 const refPattern = /(?<![\w&\/])#(\d{1,6})\b/g;
@@ -39,7 +41,7 @@ function fail(message) {
 }
 
 function parseArgs(argv) {
-    const options = { texts: [], files: [], stdin: false, hook: false, repo: null };
+    const options = { texts: [], files: [], stdin: false, hook: false, selfTest: false, repo: null };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         const value = () => {
@@ -52,13 +54,15 @@ function parseArgs(argv) {
             case '--file': options.files.push(value()); break;
             case '--stdin': options.stdin = true; break;
             case '--hook': options.hook = true; break;
+            case '--self-test': options.selfTest = true; break;
             case '--repo': options.repo = value(); break;
             case '--help':
             case '-h': console.log(usage); process.exit(0); break;
             default: fail(`Unknown option: ${arg}\n${usage}`);
         }
     }
-    if (!options.hook && !options.stdin && options.texts.length === 0 && options.files.length === 0) fail(usage);
+    const hasInput = options.stdin || options.texts.length > 0 || options.files.length > 0;
+    if (!options.hook && !options.selfTest && !hasInput) fail(usage);
     return options;
 }
 
@@ -134,7 +138,7 @@ function lookUp(repo, numbers) {
 }
 
 // Returns the table lines and the problems found.
-function check(text, repo) {
+function check(text, repo, lookUpNumbers = lookUp) {
     const prose = withoutCode(text);
     const numbers = new Set([
         ...collect(prose, refPattern),
@@ -144,7 +148,7 @@ function check(text, repo) {
     const closing = collect(prose, closingPattern);
     if (numbers.size === 0) return { lines: [], problems: [] };
     const sorted = [...numbers].sort((a, b) => a - b);
-    const found = lookUp(repo, sorted);
+    const found = lookUpNumbers(repo, sorted);
     const lines = [];
     const problems = [];
     for (const n of sorted) {
@@ -182,27 +186,44 @@ function referencedFiles(command, cwd) {
     return texts;
 }
 
-function runHook(options) {
-    let input;
-    try {
-        input = JSON.parse(readStdin());
-    } catch (error) {
-        fail(`check-issue-refs --hook: invalid hook input: ${error.message}`);
+// The directory the command runs in. Claude Code passes `cwd`. Antigravity passes none: its run_command carries `Cwd`
+// in the tool arguments and the payload lists the workspace folders, and the hook process itself starts in `.agents/`
+// (hooks.json runs `node ../scripts/...`), so its own directory would resolve `--body-file tmp/x.md` wrongly.
+function commandDirectory(input, antigravity, processCwd) {
+    if (input.cwd) return input.cwd;
+    if (antigravity) {
+        const args = input.toolCall.args || {};
+        if (typeof args.Cwd === 'string' && args.Cwd !== '') return args.Cwd;
+        if (Array.isArray(input.workspacePaths) && typeof input.workspacePaths[0] === 'string') return input.workspacePaths[0];
     }
-    const command = input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '';
-    if (!publishingCommand.test(command)) process.exit(0);
-    const cwd = input.cwd || process.cwd();
+    return processCwd;
+}
+
+// The hook's answer to one PreToolUse payload: the JSON to print, or null to print nothing (the command goes on to the
+// normal permission check). `env` holds what the self-test replaces: the repository, the lookup and the process cwd.
+function hookAnswer(input, env) {
+    const antigravity = input.toolCall !== undefined;
+    const command = antigravity
+        ? String((input.toolCall.args && input.toolCall.args.CommandLine) || '')
+        : (input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '');
+    if (!publishingCommand.test(command)) return null;
+    const cwd = commandDirectory(input, antigravity, env.processCwd);
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
-    const repo = options.repo || defaultRepo(cwd);
-    const { lines, problems } = check(text, repo);
-    if (lines.length === 0) process.exit(0);
+    const repo = env.repo || defaultRepo(cwd);
+    const { lines, problems } = check(text, repo, env.lookUp);
+    if (lines.length === 0) return null;
     const table = `Issue / PR numbers in this command:\n${lines.join('\n')}`;
-    const output = problems.length > 0
+    const reason = `${problems.join('\n')}\n${table}\nFix the number and run the command again.`;
+    if (antigravity) {
+        // An Antigravity "allow" would skip the permission prompt, so an allowed command gets no output.
+        return problems.length > 0 ? { decision: 'deny', reason } : null;
+    }
+    return problems.length > 0
         ? {
             hookSpecificOutput: {
                 hookEventName: 'PreToolUse',
                 permissionDecision: 'deny',
-                permissionDecisionReason: `${problems.join('\n')}\n${table}\nFix the number and run the command again.`,
+                permissionDecisionReason: reason,
             },
         }
         : {
@@ -211,12 +232,93 @@ function runHook(options) {
                 additionalContext: `${table}\nCheck that each title is the one you meant.`,
             },
         };
-    process.stdout.write(JSON.stringify(output));
+}
+
+function runHook(options) {
+    let input;
+    try {
+        input = JSON.parse(readStdin());
+    } catch (error) {
+        fail(`check-issue-refs --hook: invalid hook input: ${error.message}`);
+    }
+    const answer = hookAnswer(input, { repo: options.repo, lookUp, processCwd: process.cwd() });
+    if (answer !== null) process.stdout.write(JSON.stringify(answer));
     process.exit(0);
+}
+
+// Runs hookAnswer on fixed payloads with the GraphQL lookup replaced (#1 exists and is open, every other number does
+// not), from a process cwd that is not the command's directory, as the Antigravity hook starts in `.agents/`.
+function selfTest() {
+    const assert = require('assert');
+    const os = require('os');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-issue-refs-'));
+    const hookDir = path.join(root, '.agents');
+    fs.mkdirSync(path.join(root, 'tmp'), { recursive: true });
+    fs.mkdirSync(hookDir);
+    const missing = '#' + '999999';
+    fs.writeFileSync(path.join(root, 'tmp', 'body.md'), `Body. Fixes ${missing}\n`);
+    fs.writeFileSync(path.join(root, 'tmp', 'good.md'), 'Body. Refers to #1\n');
+    const fakeLookUp = (repo, numbers) => new Map(numbers.map(n => [
+        n,
+        n === 1 ? { __typename: 'Issue', title: 'An issue', state: 'OPEN', milestone: null } : null,
+    ]));
+    const env = { repo: 'owner/name', lookUp: fakeLookUp, processCwd: hookDir };
+    const create = ['gh', 'pr', 'create'].join(' ');
+    const antigravity = (commandLine, extra = {}) => ({
+        toolCall: { name: 'run_command', args: { CommandLine: commandLine, ...extra } },
+    });
+    const cases = [];
+    const test = (name, body) => cases.push({ name, body });
+    try {
+        test('Antigravity: a missing number inline is denied', () => {
+            const answer = hookAnswer(antigravity(`${create} --title x --body "see ${missing}"`), env);
+            assert.strictEqual(answer && answer.decision, 'deny');
+        });
+        test('Antigravity: --body-file resolves against args.Cwd', () => {
+            const answer = hookAnswer(antigravity(`${create} --title x --body-file tmp/body.md`, { Cwd: root }), env);
+            assert.strictEqual(answer && answer.decision, 'deny');
+        });
+        test('Antigravity: --body-file resolves against workspacePaths without args.Cwd', () => {
+            const payload = { workspacePaths: [root], ...antigravity(`${create} --title x --body-file tmp/body.md`) };
+            const answer = hookAnswer(payload, env);
+            assert.strictEqual(answer && answer.decision, 'deny');
+        });
+        test('Antigravity: an existing number prints nothing (no allow, the prompt still runs)', () => {
+            assert.strictEqual(hookAnswer(antigravity(`${create} --body-file tmp/good.md`, { Cwd: root }), env), null);
+        });
+        test('Antigravity: a command that publishes nothing prints nothing', () => {
+            assert.strictEqual(hookAnswer(antigravity(`git status ${missing}`), env), null);
+        });
+        test('Claude Code: --body-file resolves against cwd and is denied', () => {
+            const payload = { cwd: root, tool_input: { command: `${create} --title x --body-file tmp/body.md` } };
+            const answer = hookAnswer(payload, env);
+            assert.strictEqual(answer.hookSpecificOutput.permissionDecision, 'deny');
+        });
+        test('Claude Code: an existing number is passed back as context', () => {
+            const payload = { cwd: root, tool_input: { command: `${create} --body-file tmp/good.md` } };
+            const answer = hookAnswer(payload, env);
+            assert.match(answer.hookSpecificOutput.additionalContext, /#1\tissue\tOPEN/);
+        });
+        let failed = 0;
+        for (const { name, body } of cases) {
+            try {
+                body();
+                console.log(`ok   ${name}`);
+            } catch (error) {
+                failed++;
+                console.log(`FAIL ${name}: ${error.message}`);
+            }
+        }
+        console.log(`${cases.length - failed} passed, ${failed} failed`);
+        process.exitCode = failed === 0 ? 0 : 1;
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
 }
 
 function main() {
     const options = parseArgs(process.argv.slice(2));
+    if (options.selfTest) return selfTest();
     if (options.hook) return runHook(options);
     const texts = [...options.texts];
     for (const file of options.files) {
