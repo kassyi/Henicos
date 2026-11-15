@@ -509,6 +509,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(248305208u, "LanguageConve
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376381546u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 341, 51, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is passed where it is not nullable"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(44509624u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 344, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1610070458u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 346, 24, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(800337397u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 352, 29, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "Negating the minimum value of a twos complement number is invalid."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1905599566u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 359, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(410388266u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 360, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1540718082u, "LanguageConversionsAndMacrosDifferentialKernels.cs", 361, 9, "OperatorMacroAcrossBarrierAndUsingStaticKernel", "G#: a null array is read"),
@@ -2343,7 +2344,7 @@ __gsharp_switch_1_state_4:
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_5_x,0,32,""LanguageConversionsAndMacrosDifferentialKernels.cs(350,25)"");
 int __gsharp_id_10_laneZeroX = __gsharp_warp_temp_1;
 int __gsharp_id_11_lzc = __gsharp_lzc_32((unsigned int)__gsharp_ctx->__gsharp_id_5_x|1u);
-int __gsharp_id_12_clamped = __gsharp_clamp(abs(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y)),0,500);
+int __gsharp_id_12_clamped = __gsharp_clamp(__gsharp_abs_i32(__gsharp_sub_i32(__gsharp_ctx->__gsharp_id_5_x,__gsharp_ctx->__gsharp_id_6_y),800337397u),0,500);
 int __gsharp_id_13_shadowAcc = 10;
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__LocalGpuShadow__SyncThreads(&__gsharp_id_13_shadowAcc);
 int __gsharp_id_14_o = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_4_globalTid,5);
