@@ -98,15 +98,21 @@ function slashes(text: string): string {
   return unified.startsWith("./") ? unified.slice(2) : unified;
 }
 
+/** A project or script argument as the key spells it, and whether it lies outside the job's worktree. */
+interface KeyPath {
+  text: string;
+  outside: boolean;
+}
+
 /**
- * A project or script argument as the path from the worktree root when it lies inside the worktree, else as written. A
- * relative argument is resolved against the step's directory (the job's, or the target of a `cd` before it); without a
- * directory (an entry of the history that has none) it stays as written.
+ * A project or script argument as the path from the worktree root when it lies inside the worktree, else as written
+ * and marked outside. A relative argument is resolved against the step's directory (the job's, or the target of a `cd`
+ * before it); without a directory (an entry of the history that has none) it stays as written, not marked.
  */
-function relativeToWorktree(argument: string, context: KeyContext): string {
+function relativeToWorktree(argument: string, context: KeyContext): KeyPath {
   const base = context.cwd !== "" ? context.cwd : context.worktree;
   if (base === "") {
-    return slashes(argument);
+    return { text: slashes(argument), outside: false };
   }
   const style = WindowsPath.test(base) ? path.win32 : path.posix;
   // Git Bash (/c/x) and WSL (/mnt/c/x) spell a Windows path
@@ -116,10 +122,16 @@ function relativeToWorktree(argument: string, context: KeyContext): string {
   const root = context.worktree !== "" ? context.worktree : base;
   const relative = style.relative(root, absolute);
   if (relative === ".." || relative.startsWith(`..${style.sep}`) || style.isAbsolute(relative)) {
-    return slashes(argument);
+    return { text: slashes(argument), outside: context.worktree !== "" };
   }
-  return relative === "" ? "." : slashes(relative);
+  return { text: relative === "" ? "." : slashes(relative), outside: false };
 }
+
+/**
+ * The kind of a step whose project or script lies outside the worktree (a scratch project, a probe script): such a
+ * step is not the repository's work, so the kind keeps it apart from the repository's builds and tests.
+ */
+const OutsideKind = ":outside";
 
 /** The program of a step: its file name in lower case without `.exe`. */
 function programOf(word: string): string {
@@ -143,6 +155,7 @@ interface StepKeys {
 function dotnetKeys(words: string[], context: KeyContext): StepKeys {
   const verb = words[1] ?? "";
   const projects: string[] = [];
+  let outside = false;
   const options: string[] = [];
   let extra: string[] = [];
   let noBuild = false;
@@ -175,16 +188,19 @@ function dotnetKeys(words: string[], context: KeyContext): StepKeys {
         options.push(word);
       }
     } else {
-      projects.push(relativeToWorktree(word, context));
+      const project = relativeToWorktree(word, context);
+      projects.push(project.text);
+      outside = outside || project.outside;
     }
   }
   const named = [...projects.map(nameOf)].sort().join("+");
   const work = ["dotnet", verb, ...projects, ...options.sort(), ...(extra.length > 0 ? ["--", ...extra] : [])];
+  const where = outside ? OutsideKind : "";
   if (verb !== "build" && verb !== "test") {
-    return { normalized: work.join(" "), shape: `dotnet:${verb}`, kind: "dotnet" };
+    return { normalized: work.join(" "), shape: `dotnet:${verb}`, kind: `dotnet${where}` };
   }
   const flags = `${noBuild ? ":nb" : ""}${verb === "test" && filtered ? ":f" : ""}`;
-  return { normalized: work.join(" "), shape: `${verb}:${named}${flags}`, kind: verb };
+  return { normalized: work.join(" "), shape: `${verb}:${named}${flags}`, kind: `${verb}${where}` };
 }
 
 function stepKeys(step: ReadStep, context: KeyContext): StepKeys {
@@ -198,10 +214,18 @@ function stepKeys(step: ReadStep, context: KeyContext): StepKeys {
     return { normalized: words.join(" "), shape: `just:${recipe}`, kind: "just" };
   }
   if (program === "node") {
+    // Code given inline (-e, -p) is no script of the repository: a probe or a sleep, its own kind
+    if (words.some((word, i) => i > 0 && /^(?:-e|-p|--eval|--print)$/.test(word))) {
+      return { normalized: words.join(" "), shape: "node:eval", kind: "node:eval" };
+    }
     const at = words.findIndex((word, i) => i > 0 && !word.startsWith("-"));
-    const script = at > 0 ? relativeToWorktree(words[at] as string, context) : "";
+    const script = at > 0 ? relativeToWorktree(words[at] as string, context) : { text: "", outside: false };
     const rest = at > 0 ? words.slice(at + 1) : words.slice(1);
-    return { normalized: ["node", script, ...rest].join(" "), shape: `node:${nameOf(script)}`, kind: "node" };
+    return {
+      normalized: ["node", script.text, ...rest].join(" "),
+      shape: `node:${nameOf(script.text)}`,
+      kind: `node${script.outside ? OutsideKind : ""}`,
+    };
   }
   return { normalized: words.join(" "), shape: program, kind: program };
 }
