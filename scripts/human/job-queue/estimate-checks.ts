@@ -257,6 +257,10 @@ export function checkEstimateAccuracy(assert: AssertModule): void {
       "errors 0% and 75%: median 37.5, one of two within 50%",
     );
     assert.strictEqual(rows.find((r) => r.level === "none")?.medianErrorPercent, 5900);
+    // Times off counts both ways alike: 100 for 400 is x4, 60000 for 1000 is x60
+    assert.strictEqual(shape?.medianFactor, 2.5, "x1 and x4: median 2.5");
+    assert.strictEqual(rows.find((r) => r.level === "none")?.medianFactor, 60);
+    assert.ok(formatAccuracy(rows).includes("x60.0"), "the table shows times off");
     assert.ok(formatAccuracy(rows).includes("shape"), "the table names the levels");
     assert.ok(formatAccuracy([]).includes("no estimate"), "an empty log says so");
 
