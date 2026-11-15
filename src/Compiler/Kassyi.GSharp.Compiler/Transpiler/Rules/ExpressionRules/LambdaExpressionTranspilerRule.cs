@@ -18,6 +18,14 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <inheritdoc />
     public override void Transpile(AnonymousFunctionExpressionSyntax node, ref TranspileContext context)
     {
+        // An expression tree is a graph of objects on the heap, which device code cannot build
+        if (GpuCodeConstraints.IsExpressionTreeLambda(node, context.Query.SemanticModel))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.ExpressionTreeLambda);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         switch (node)
         {
             case SimpleLambdaExpressionSyntax simpleLambda:
