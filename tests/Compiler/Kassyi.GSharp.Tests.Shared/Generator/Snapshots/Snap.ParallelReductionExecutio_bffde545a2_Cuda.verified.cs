@@ -91,7 +91,7 @@ public const string IntParallelSum_Source = @"extern ""C"" __global__ void __gsh
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_sum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(); __gsharp_i < __gsharp_fusion_hi; __gsharp_i += __gsharp_block_size())
@@ -99,7 +99,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 if((int)threadIdx.x==0)
 {

@@ -196,7 +196,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -206,13 +206,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -222,7 +222,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -233,7 +233,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -243,13 +243,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -259,7 +259,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -270,7 +270,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -280,13 +280,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -296,7 +296,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -307,7 +307,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -317,13 +317,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -333,7 +333,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -344,7 +344,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -354,13 +354,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -370,7 +370,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -381,7 +381,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -391,13 +391,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -407,7 +407,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -418,7 +418,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -428,13 +428,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -444,7 +444,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -455,7 +455,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -465,13 +465,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -481,7 +481,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -492,7 +492,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -502,13 +502,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -518,7 +518,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -529,7 +529,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -539,13 +539,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -555,7 +555,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -566,7 +566,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -576,13 +576,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -592,7 +592,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 else
@@ -603,7 +603,7 @@ __gsharp_id_6_sequential=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -613,13 +613,13 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_id_7_parallel=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_2_a;
 int __gsharp_stage_1_n = __gsharp_id_3_b;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -629,7 +629,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 }
@@ -836,7 +836,7 @@ __gsharp_array_at(__gsharp_id_2_result, 0, 482605533u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(__gsharp_id_1_counter);
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -852,12 +852,12 @@ __gsharp_stage_1_count++;
 __gsharp_fusion_res += __gsharp_val_0;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_2_result, 1, 1068191645u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Runtime__StackLinqRangeKernels__CountedThree(__gsharp_id_1_counter);
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -870,7 +870,7 @@ return __gsharp_mul_i32(__gsharp_id_4_x,10);
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -1101,7 +1101,7 @@ __gsharp_array_at(__gsharp_id_2_result, 0, 690712025u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = 3;
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1116,7 +1116,7 @@ if (__gsharp_stage_1_count < __gsharp_stage_1_n)
 continue;
 }__gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -1346,7 +1346,7 @@ if(((int)threadIdx.x|(int)threadIdx.y|(int)threadIdx.z|(int)blockIdx.x|(int)bloc
 __gsharp_array_at(__gsharp_id_1_result, 0, 1078748565u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = 1;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_1_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -1359,13 +1359,13 @@ return __gsharp_id_2_x/2;
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_1_result, 1, 2120921973u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = 1;
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1380,7 +1380,7 @@ if (__gsharp_stage_1_count < __gsharp_stage_1_n)
 continue;
 }__gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -1559,7 +1559,7 @@ __gsharp_array_at(__gsharp_id_2_result, 0, 476368303u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = 1;
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1574,7 +1574,7 @@ if (__gsharp_stage_1_count < __gsharp_stage_1_n)
 continue;
 }__gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -1805,7 +1805,7 @@ __gsharp_array_at(__gsharp_id_3_result, 0, 1713125983u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1819,13 +1819,13 @@ return __gsharp_add_i32(__gsharp_atomicAdd(&__gsharp_array_at(__gsharp_id_1_coun
 __gsharp_stage_1_count++;
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_3_result, 1, 1692742005u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -1841,7 +1841,7 @@ __gsharp_stage_1_count++;
 __gsharp_fusion_res += __gsharp_val_0;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -2079,7 +2079,7 @@ int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
 int __gsharp_stage_2_n = __gsharp_id_3_skip;
 int __gsharp_stage_2_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2096,7 +2096,7 @@ if (__gsharp_stage_2_count < __gsharp_stage_2_n)
 continue;
 }__gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, 1, 1574301991u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
@@ -2104,7 +2104,7 @@ int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
 int __gsharp_stage_2_n = __gsharp_id_3_skip;
 int __gsharp_stage_2_count = 0;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2123,14 +2123,14 @@ continue;
 }__gsharp_fusion_res += __gsharp_val_0;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, 2, 1950240245u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_1_n = __gsharp_id_2_take;
 int __gsharp_stage_1_count = 0;
 bool __gsharp_stage_2_skipping = true;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2151,7 +2151,7 @@ return __gsharp_id_8_x<=__gsharp_id_3_skip;
 }__gsharp_stage_2_skipping = false;
 }__gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 }
 }
@@ -2392,7 +2392,7 @@ auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2403,14 +2403,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),1), 1703531916u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2421,14 +2421,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),2), 2000421236u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2439,14 +2439,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),3), 1473300428u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2457,14 +2457,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),4), 708146408u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2475,14 +2475,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),5), 9899524u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2493,14 +2493,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),6), 432223232u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2511,14 +2511,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),7), 532246092u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo += __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2529,14 +2529,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),8), 1654759744u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2547,14 +2547,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),9), 529568612u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2565,14 +2565,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),10), 1202228728u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2583,14 +2583,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),11), 1427600492u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2601,14 +2601,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),12), 1748025464u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2619,14 +2619,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),13), 357830500u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2637,14 +2637,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),14), 920305712u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2655,14 +2655,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),15), 1472173512u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi = __gsharp_fusion_lo + __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2673,14 +2673,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),16), 2000995380u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2691,14 +2691,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),17), 931072724u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2709,14 +2709,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),18), 539177720u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2727,14 +2727,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),19), 269345792u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2745,14 +2745,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),20), 1289003156u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2763,14 +2763,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),21), 823242420u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2781,14 +2781,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),22), 83404080u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2799,14 +2799,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),23), 419205300u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2817,14 +2817,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),24), 1927919564u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2835,14 +2835,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),25), 2130541196u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2853,14 +2853,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),26), 1338771076u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2871,14 +2871,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),27), 1677741204u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2889,14 +2889,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),28), 1232549436u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2907,14 +2907,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),29), 340551276u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2925,14 +2925,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),30), 174935220u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2943,14 +2943,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),31), 459200164u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2961,14 +2961,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),32), 1430608268u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2979,14 +2979,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),33), 28936564u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -2997,14 +2997,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),34), 990343704u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3015,14 +3015,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),35), 73354480u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3033,14 +3033,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),36), 1505658836u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3051,14 +3051,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),37), 1942466308u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3069,14 +3069,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),38), 26371440u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3087,14 +3087,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),39), 876769128u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_hi -= __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3105,14 +3105,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),40), 371940148u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3123,14 +3123,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),41), 1040308244u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3141,14 +3141,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),42), 2073444536u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3159,14 +3159,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),43), 1689260340u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3177,14 +3177,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),44), 75512372u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3195,14 +3195,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),45), 1394815060u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3213,14 +3213,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),46), 483430900u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3231,14 +3231,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),47), 618605396u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3249,14 +3249,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),48), 1849755204u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3267,14 +3267,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),49), 796914084u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3285,14 +3285,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),50), 1553728260u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3303,14 +3303,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),51), 333819572u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3321,14 +3321,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),52), 1281664020u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3339,14 +3339,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),53), 273692784u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3357,14 +3357,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),54), 817287528u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3375,14 +3375,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),55), 762879812u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3393,14 +3393,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),56), 1751989812u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3411,14 +3411,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),57), 1645560008u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3429,14 +3429,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),58), 84874096u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3447,14 +3447,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),59), 1645813684u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3465,14 +3465,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),60), 423722948u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3483,14 +3483,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),61), 65669904u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3501,14 +3501,14 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),62), 1427550968u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3519,14 +3519,14 @@ for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsh
 auto __gsharp_val_0 = __gsharp_fusion_src[__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_4_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_5_g,64),63), 1545585352u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
 int __gsharp_stage_0_n = __gsharp_id_1_a;
 int __gsharp_stage_1_n = __gsharp_id_2_b;
 int __gsharp_stage_2_n = __gsharp_id_3_c;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 __gsharp_fusion_lo = __gsharp_fusion_hi - __gsharp_clamp_count(__gsharp_stage_0_n, __gsharp_fusion_hi - __gsharp_fusion_lo);
@@ -3537,7 +3537,7 @@ for (long long __gsharp_i = __gsharp_fusion_lo + (long long)__gsharp_block_rank(
 auto __gsharp_val_0 = __gsharp_fusion_src[(int)__gsharp_i];
 __gsharp_fusion_res += __gsharp_val_0;
 }
-return __gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{});
+return __gsharp_sum_i32(__gsharp_block_reduce(__gsharp_fusion_res, __gsharp_plus{}));
 }());
 }
 ";

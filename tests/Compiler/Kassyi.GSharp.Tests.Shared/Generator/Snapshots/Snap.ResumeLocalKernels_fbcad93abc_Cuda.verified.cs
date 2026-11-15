@@ -2652,7 +2652,7 @@ int* __gsharp_id_3_p = __gsharp_stack___gsharp_id_3_p;
 __gsharp_id_3_p[0]=__gsharp_id_2_tid;
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_id_2_tid, 1050520825u)=([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2666,7 +2666,7 @@ return __gsharp_id_4_x>__gsharp_id_3_p[0];
 __gsharp_fusion_res += __gsharp_val_0;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __syncthreads();
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_id_2_tid, 540882473u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_1_result, __gsharp_id_2_tid, 540882473u),100);
