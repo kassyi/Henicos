@@ -250,7 +250,11 @@ Marshal_DualNttContext(ref host.Ntt, ref native.Ntt, deviceArrays, hStream);
 }
 public static unsafe void Unmarshal_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, ref AotContexts.Fermat native, global::System.IntPtr hStream = default)
 {
-if (host.OperandA != null && native.OperandA.Data != global::System.IntPtr.Zero)
+if (native.OperandA.Data == global::System.IntPtr.Zero)
+{
+host.OperandA = default;
+}
+else if (host.OperandA != null)
 {
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -266,7 +270,11 @@ handle.Free();
 }
 }
 }
-if (host.OperandB != null && native.OperandB.Data != global::System.IntPtr.Zero)
+if (native.OperandB.Data == global::System.IntPtr.Zero)
+{
+host.OperandB = default;
+}
+else if (host.OperandB != null)
 {
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -282,7 +290,11 @@ handle.Free();
 }
 }
 }
-if (host.Result != null && native.Result.Data != global::System.IntPtr.Zero)
+if (native.Result.Data == global::System.IntPtr.Zero)
+{
+host.Result = default;
+}
+else if (host.Result != null)
 {
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -414,7 +426,11 @@ native.Length = host.Length;
 }
 public static unsafe void Unmarshal_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, ref AotContexts.DualNtt native, global::System.IntPtr hStream = default)
 {
-if (host.Buffer1 != null && native.Buffer1.Data != global::System.IntPtr.Zero)
+if (native.Buffer1.Data == global::System.IntPtr.Zero)
+{
+host.Buffer1 = default;
+}
+else if (host.Buffer1 != null)
 {
 int size = checked(host.Buffer1.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -430,7 +446,11 @@ handle.Free();
 }
 }
 }
-if (host.Buffer2 != null && native.Buffer2.Data != global::System.IntPtr.Zero)
+if (native.Buffer2.Data == global::System.IntPtr.Zero)
+{
+host.Buffer2 = default;
+}
+else if (host.Buffer2 != null)
 {
 int size = checked(host.Buffer2.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -446,7 +466,11 @@ handle.Free();
 }
 }
 }
-if (host.Twiddles != null && native.Twiddles.Data != global::System.IntPtr.Zero)
+if (native.Twiddles.Data == global::System.IntPtr.Zero)
+{
+host.Twiddles = default;
+}
+else if (host.Twiddles != null)
 {
 int size = checked(host.Twiddles.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -610,7 +634,11 @@ native.Length = host.Length;
 }
 public static unsafe void Unmarshal_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, ref AotContexts.Crypto native, global::System.IntPtr hStream = default)
 {
-if (host.OperandA != null && native.OperandA.Data != global::System.IntPtr.Zero)
+if (native.OperandA.Data == global::System.IntPtr.Zero)
+{
+host.OperandA = default;
+}
+else if (host.OperandA != null)
 {
 int size = checked(host.OperandA.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -626,7 +654,11 @@ handle.Free();
 }
 }
 }
-if (host.OperandB != null && native.OperandB.Data != global::System.IntPtr.Zero)
+if (native.OperandB.Data == global::System.IntPtr.Zero)
+{
+host.OperandB = default;
+}
+else if (host.OperandB != null)
 {
 int size = checked(host.OperandB.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -642,7 +674,11 @@ handle.Free();
 }
 }
 }
-if (host.Result != null && native.Result.Data != global::System.IntPtr.Zero)
+if (native.Result.Data == global::System.IntPtr.Zero)
+{
+host.Result = default;
+}
+else if (host.Result != null)
 {
 int size = checked(host.Result.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -658,7 +694,11 @@ handle.Free();
 }
 }
 }
-if (host.Scratch != null && native.Scratch.Data != global::System.IntPtr.Zero)
+if (native.Scratch.Data == global::System.IntPtr.Zero)
+{
+host.Scratch = default;
+}
+else if (host.Scratch != null)
 {
 int size = checked(host.Scratch.Length * sizeof(global::System.UInt32));
 if (size > 0)

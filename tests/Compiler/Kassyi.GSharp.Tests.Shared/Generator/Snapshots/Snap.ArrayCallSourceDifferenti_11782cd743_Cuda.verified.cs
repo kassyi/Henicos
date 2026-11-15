@@ -331,7 +331,11 @@ native.Tag = host.Tag;
 }
 public static unsafe void Unmarshal_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, ref AotContexts.ArrayCallHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)

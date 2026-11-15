@@ -69,6 +69,10 @@ native.Items.Length = host.Items.Length;
 }
 public static unsafe void Unmarshal_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, ref AotContexts.NullableOrderArrayHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Items.Data == global::System.IntPtr.Zero)
+{
+host.Items = default;
+}
 }
 public static void CopyArrays_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
