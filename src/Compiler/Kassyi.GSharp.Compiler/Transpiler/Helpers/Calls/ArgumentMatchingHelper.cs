@@ -109,56 +109,14 @@ internal static class ArgumentMatchingHelper
     }
 
     /// <summary>
-    /// Appends the C++ representation of an omitted optional parameter: <c>{}</c> for default, or the constant literal.
+    /// Creates the C# argument for an optional parameter that <paramref name="call"/> omits: the call site's value of a
+    /// caller-info parameter (<see cref="CallerInfoArgument"/>), or <see cref="CreateDefaultArgument"/>.
     /// </summary>
-    /// <remarks>
-    /// The value itself: an expression built for it (<see cref="CreateDefaultArgument"/>) is outside the compilation,
-    /// so a member access such as float.NaN would bind to nothing. default is {}; an enum is its base type in C++,
-    /// whose literal ConstexprLiteral writes.
-    /// </remarks>
-    public static void AppendDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
-    {
-        var byAddress = BeginOmittedArgument(parameter, ref context);
-        if (parameter.ExplicitDefaultValue is not { } value)
-        {
-            context.Emitter.Writer.Append("{}");
-        }
-        else
-        {
-            context.Emitter.Writer.Append(ConstexprLiteral.FormatCppConstant(parameter.Type, value));
-        }
-
-        EndOmittedArgument(byAddress, ref context);
-    }
-
-    /// <summary>
-    /// Starts the value of an omitted argument. An <c>in</c> or <c>ref readonly</c> parameter is a C++ pointer, and C#
-    /// passes a reference to a temporary that holds the default, so the value is wrapped in
-    /// <c>__gsharp_temp_address&lt;T&gt;(</c>; <see cref="EndOmittedArgument"/> closes it.
-    /// </summary>
-    /// <returns>Whether the value is passed by the address of a temporary.</returns>
-    public static bool BeginOmittedArgument(IParameterSymbol parameter, ref TranspileContext context)
-    {
-        if (parameter.RefKind is not (RefKind.In or RefKind.RefReadOnlyParameter))
-        {
-            return false;
-        }
-
-        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
-        context.Emitter.Writer.Append('<');
-        context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-        context.Emitter.Writer.Append(">(");
-        return true;
-    }
-
-    /// <summary>Ends the value started by <see cref="BeginOmittedArgument"/>.</summary>
-    public static void EndOmittedArgument(bool byAddress, ref TranspileContext context)
-    {
-        if (byAddress)
-        {
-            context.Emitter.Writer.Append(')');
-        }
-    }
+    public static ExpressionSyntax CreateOmittedArgument(IParameterSymbol parameter, SyntaxNode call,
+        SemanticModel semanticModel) =>
+        CallerInfoArgument.GetValue(parameter, call, semanticModel) is { } value
+            ? CallerInfoArgument.CreateLiteral(value)
+            : CreateDefaultArgument(parameter);
 
     // (-<max> - 1)
     private static ExpressionSyntax CreateMinValue(SyntaxToken max, SyntaxToken one) =>

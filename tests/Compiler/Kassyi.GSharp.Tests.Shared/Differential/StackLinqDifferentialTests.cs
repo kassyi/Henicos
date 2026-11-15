@@ -13,21 +13,23 @@ public class StackLinqDifferentialTests
 
     // Deliberately crafted 4-element int32 rows for seed 0:
     // Row 0: normal positive values
-    // Row 1: four int.MaxValue -> sum = 4L * int.MaxValue (overflows int32 twice!)
-    // Row 2: four int.MinValue -> sum = 4L * int.MinValue (overflows int32!)
-    // Row 3: alternating int.MaxValue and int.MinValue
+    // Row 1: int.MaxValue with elements that cancel part of it
+    // Row 2: int.MinValue with elements that cancel part of it
+    // Row 3: int.MaxValue and int.MinValue
+    // A StackLinq Sum is exact and throws when the exact sum does not fit, and the oracle must not throw, so no sum of
+    // any elements of a row leaves the range of int32 (the Sum overflow itself is tested by ParallelAggregateTests)
     // Row 4: all negative
     // Row 5: zeros and ones
     private static readonly int[][] s_int32Seed0Rows =
     [
         [1, 2, 3, 4],
-        [int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue],
-        [int.MinValue, int.MinValue, int.MinValue, int.MinValue],
-        [int.MaxValue, int.MinValue, int.MaxValue, -1],
+        [int.MaxValue, 0, 0, -1],
+        [int.MinValue, 0, 0, 1],
+        [int.MaxValue, int.MinValue, 0, 0],
         [-10, -20, -30, -40],
         [0, -1, 1, 0],
-        [int.MaxValue, 1, 1, 1],
-        [int.MinValue, -1, -1, -1],
+        [int.MaxValue, -1, -1, -1],
+        [int.MinValue, 1, 1, 1],
     ];
 
     // Deliberately crafted 4-element float rows for seed 0:
@@ -521,6 +523,7 @@ public class StackLinqDifferentialTests
     private static int[] BuildInt32Slices(DiffRandom rng, int rows)
     {
         var values = DiffValues.Int32(rng, rows * SliceLen);
+        ShrinkToSummable(values);
         if (rng.IsBoundarySeed)
         {
             for (int r = 0; r < s_int32Seed0Rows.Length && r < rows; r++)
@@ -530,6 +533,15 @@ public class StackLinqDifferentialTests
         }
 
         return values;
+    }
+
+    // Keeps the sign and the varied bits, and no sum of the elements of a slice leaves the range of int32
+    private static void ShrinkToSummable(int[] values)
+    {
+        for (int i = 0; i < values.Length; i++)
+        {
+            values[i] >>= 6;
+        }
     }
 
     private static float[] BuildSingleSlices(DiffRandom rng, int rows)

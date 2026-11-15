@@ -26,11 +26,37 @@ export const OlderSchedulerHint =
   'the running scheduler comes from an older checkout and lacks this operation; run "job-queue.js stop" when no job ' +
   "runs (running jobs re-register with the next one), or wait until it exits after 30 idle minutes";
 
+/**
+ * Whether a connection reached itself: on Linux, connecting to a port of the ephemeral range on which nothing listens
+ * can pick that same port as the local one (a TCP self-connect). Such a socket echoes what it sends, and while it lasts
+ * no scheduler can listen on the port.
+ */
+export function isSelfConnection(socket: {
+  localAddress?: string;
+  localPort?: number;
+  remoteAddress?: string;
+  remotePort?: number;
+}): boolean {
+  return (
+    socket.localPort !== undefined &&
+    socket.localPort === socket.remotePort &&
+    socket.localAddress !== undefined &&
+    socket.localAddress === socket.remoteAddress
+  );
+}
+
 /** Connects to the scheduler; resolves to the socket, or null when no scheduler listens. */
 export function connect(port: number): Promise<net.Socket | null> {
   return new Promise((resolve, reject) => {
     const socket = net.connect(port, "127.0.0.1");
     socket.once("connect", () => {
+      if (isSelfConnection(socket)) {
+        // Nobody listens. Close with a reset: a plain close leaves the connection in TIME_WAIT, which keeps the
+        // port from the scheduler for a minute on Linux
+        socket.resetAndDestroy();
+        resolve(null);
+        return;
+      }
       socket.removeAllListeners("error");
       // A reset after the caller is done with the socket must not crash the process; callers add their own handlers.
       socket.on("error", () => socket.destroy());

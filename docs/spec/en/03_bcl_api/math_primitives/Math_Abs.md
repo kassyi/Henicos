@@ -27,6 +27,9 @@ Returns the absolute value of a specified number.
 | [Abs(float)](#abs-float) | Returns the absolute value of a specified number. |
 | [Abs(double)](#abs-double) | Returns the absolute value of a specified number. |
 | [Abs(int)](#abs-int) | Returns the absolute value of a 32-bit signed integer. |
+| [Abs(long)](#abs-long) | Returns the absolute value of a 64-bit signed integer. |
+| [Abs(short)](#abs-short) | Returns the absolute value of a 16-bit signed integer. |
+| [Abs(sbyte)](#abs-sbyte) | Returns the absolute value of an 8-bit signed integer. |
 
 ## Abs(float)
 
@@ -95,7 +98,76 @@ The absolute value of `value`.
 #### Exceptions
 
 `OverflowException`<br>
-`value` is `int.MinValue`. The managed path throws it as C# does. The native CPU build and the checked CUDA build are to throw it with the source location, and the release CUDA build does not check ([6. Semantics](../../01_language/06_semantics.md)); today the native CPU build and CUDA return `int.MinValue` instead (#947).
+`value` is `int.MinValue`. Every path throws it as C# does: the managed path from .NET, the native CPU build and CUDA (the release build included) with the source location ([6. Semantics](../../01_language/06_semantics.md)).
+
+## Abs(long)
+
+Returns the absolute value of a 64-bit signed integer.
+
+```csharp
+public static long Abs(long value);
+```
+
+#### Parameters
+
+`value` <i>long</i><br>
+A 64-bit signed integer.
+
+#### Returns
+
+<i>long</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+`value` is `long.MinValue`. Every path throws it, the release CUDA build included, as for `Abs(int)`.
+
+## Abs(short)
+
+Returns the absolute value of a 16-bit signed integer.
+
+```csharp
+public static short Abs(short value);
+```
+
+#### Parameters
+
+`value` <i>short</i><br>
+A 16-bit signed integer.
+
+#### Returns
+
+<i>short</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+`value` is `short.MinValue`. Every path throws it, the release CUDA build included, as for `Abs(int)`.
+
+## Abs(sbyte)
+
+Returns the absolute value of a 8-bit signed integer.
+
+```csharp
+public static sbyte Abs(sbyte value);
+```
+
+#### Parameters
+
+`value` <i>sbyte</i><br>
+A 8-bit signed integer.
+
+#### Returns
+
+<i>sbyte</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+`value` is `sbyte.MinValue`. Every path throws it, the release CUDA build included, as for `Abs(int)`.
 
 ## Examples
 
