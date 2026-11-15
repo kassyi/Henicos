@@ -18,7 +18,7 @@ import { ClientChecks } from "./self-test-client.ts";
 import { checkBuildSplit } from "./self-test-build-split.ts";
 import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
-import { delay, stopChild, QueueFixture, registration } from "./self-test-support.ts";
+import { delay, firstTestPort, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
 import { checkReconnects } from "./self-test-reconnect.ts";
@@ -121,25 +121,25 @@ function checkCpuOnlyProjects(): void {
   }
 }
 
+/** Runs one check; a failure names it before the error, which alone does not say which check it came from. */
+async function named(name: string, check: () => void | Promise<void>): Promise<void> {
+  try {
+    await check();
+  } catch (error) {
+    process.stderr.write(`${name} failed\n`);
+    throw error;
+  }
+}
+
 export async function selfTest(): Promise<void> {
   for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
-    try {
-      check(assert);
-    } catch (error) {
-      process.stderr.write(`${name} failed\n`);
-      throw error;
-    }
+    await named(name, () => check(assert));
   }
-  checkShellHelpers();
+  await named("checkShellHelpers", checkShellHelpers);
   for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
-    try {
-      await check(assert);
-    } catch (error) {
-      process.stderr.write(`${name} failed\n`);
-      throw error;
-    }
+    await named(name, () => check(assert));
   }
-  checkView();
+  await named("checkView", checkView);
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
@@ -147,7 +147,8 @@ export async function selfTest(): Promise<void> {
   const { statusOf, usedWithin, waitFor, jobWith, runningWith, jobsWith, rawClient } = fixture;
   try {
     // 1. At most 2 jobs at once, in arrival order; a client killed with its command frees its slot.
-    const port = 20000 + Math.floor(Math.random() * 20000);
+    fixture.part = "part 1 (at most 2 jobs at once, in arrival order)";
+    const port = firstTestPort();
     ports.push(port);
     await startScheduler(port, 2);
     await delay(StartupGraceMs);
@@ -225,8 +226,11 @@ export async function selfTest(): Promise<void> {
     assert.strictEqual(view.state, "waiting");
     assert.ok(Number.isFinite(view.endAt), "status <id> --json gives the expected end");
     open(gate);
-    stopChild(holder);
+    // The holder keeps its slot until the four jobs have ended, so that they run one after another, each granted when
+    // the one before it has ended: the times they log are then in the order of the grants. Two free slots are granted
+    // milliseconds apart, and commands that take longer than that to start log their starts in either order.
     assert.deepStrictEqual(await Promise.all(runs), [0, 0, 0, 0]);
+    stopChild(holder);
     const events = fs
       .readFileSync(marker, "utf8")
       .trim()
@@ -240,7 +244,7 @@ export async function selfTest(): Promise<void> {
       concurrent += event.kind === "start" ? 1 : -1;
       peak = Math.max(peak, concurrent);
     }
-    assert.ok(peak <= 2, `at most 2 jobs ran at once, saw ${peak}`);
+    assert.ok(peak <= 1, `one job at a time ran beside the holder (2 slots), saw ${peak}`);
     assert.deepStrictEqual(
       events.filter((e) => e.kind === "start").map((e) => e.i),
       [0, 1, 2, 3],
@@ -249,6 +253,7 @@ export async function selfTest(): Promise<void> {
     assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "every slot came back");
 
     // 2. A client killed alone (its command keeps running) keeps the slot until the command exits.
+    fixture.part = "part 2 (a client killed alone keeps its slot)";
     const loneStarted = path.join(dir, "started-2");
     const lone = client(port, started(8000, loneStarted));
     await whenExists(loneStarted);
@@ -261,6 +266,7 @@ export async function selfTest(): Promise<void> {
     assert.strictEqual(await usedWithin(port, 0, 8000 + OrphanReleaseMs), 0, "the slot comes back when it exits");
 
     // 3. cancel-all stops running jobs and empties the queue; the clients exit with 4.
+    fixture.part = "part 3 (cancel-all, recorded run times)";
     const r1 = client(port, sleeper(60000));
     const r2 = client(port, sleeper(60000));
     const w1 = client(port, sleeper(60000));
@@ -300,6 +306,7 @@ export async function selfTest(): Promise<void> {
 
     // 4. After a scheduler restart, running jobs re-register before waiting ones are granted: never over capacity.
     //    The two running commands wait for a gate, so that they still run whenever the next scheduler is up.
+    fixture.part = "part 4 (running jobs re-register after a scheduler restart)";
     const restartGate = path.join(dir, "gate-restart");
     const k1 = client(port, gated(0, restartGate));
     const k2 = client(port, gated(0, restartGate));
@@ -329,6 +336,7 @@ export async function selfTest(): Promise<void> {
 
     // 6. The command runs in the chosen shell and its exit code comes back: PowerShell passes the code of the last
     //    native program on; bash and sh understand their own syntax.
+    fixture.part = "part 6 (the chosen shell and its exit code)";
     const exitOf = async (shell: string, command: string): Promise<number | null> =>
       client(port, command, ["--shell", shell]).done;
     const node = `"${process.execPath.replace(/\\/g, "/")}"`;
@@ -343,6 +351,7 @@ export async function selfTest(): Promise<void> {
 
     // 7. Several words after `--` arrive as argv already split by the caller's shell; each reaches the command as it
     // was.
+    fixture.part = "part 7 (argv after --)";
     const argvExit = (shell: string): Promise<number | null> =>
       new Promise((resolve) => {
         // The command compares its own argv with the words, so each word makes the round trip through the shell
@@ -389,6 +398,7 @@ export async function selfTest(): Promise<void> {
 
     // 8. A client that lost only its connection re-registers: its kept slot is replaced under the same id, and a
     //    waiting job does not get it in between (capacity 2: A weighs 2, W waits with 2).
+    fixture.part = "part 8 (a client that lost its connection re-registers)";
     await usedWithin(port, 0, 5000);
     // Unix: a group leader, as the command a client starts, so that the scheduler sees its group alive
     const sleeperProcess = spawn(process.execPath, ["-e", "setTimeout(function(){},20000)"], {
@@ -426,7 +436,10 @@ export async function selfTest(): Promise<void> {
     stopChild(sleeperProcess);
 
     // 5. A job whose client was lost before a restart still holds its slot after it (restored from jobs-<port>.json).
-    await usedWithin(port, 0, 5000);
+    fixture.part = "part 5 (the job of a lost client is restored after a restart)";
+    // Part 8 closed A's connection and stopped its command: both slots come back once the scheduler has observed the
+    // processes, as for any lost client (OrphanReleaseMs), and the job below cannot start before that
+    assert.strictEqual(await usedWithin(port, 0, OrphanReleaseMs), 0, "the slots of part 8 came back");
     const lostStarted = path.join(dir, "started-5");
     const lost = client(port, started(8000, lostStarted));
     await whenExists(lostStarted);
@@ -448,31 +461,42 @@ export async function selfTest(): Promise<void> {
 
     // 9. hrrn re-grants while jobs wait, not only when a job ends: a short job that overtakes the waiting wide one
     //    starts within RegrantMs, although nothing ends before the running job (20 s).
+    fixture.part = "part 9 (checkRegrant)";
     await checkRegrant(fixture, port + 1);
 
     // 10. move, set-weight and --after end to end, and their survival across a scheduler restart.
+    fixture.part = "part 10 (checkPlacementAndDependencies)";
     await checkPlacementAndDependencies(fixture, port + 2);
 
     // 11. --gpu jobs wait for their GPU turn in the scheduler: in order, visible and cancellable while they wait.
+    fixture.part = "part 11 (checkGpuTurnsEndToEnd)";
     await checkGpuTurnsEndToEnd(fixture, port + 3);
 
     // 12. wait <id> exits with the outcome of a job: when a running job ends (also across a restart), at once for an
     //     ended one, with 2 for an unknown id.
+    fixture.part = "part 12 (checkWait)";
     await checkWait(fixture, port + 4);
 
     // 13. start <id> runs a waiting job beside the running ones, over the pool.
+    fixture.part = "part 13 (checkStart)";
     await checkStart(fixture, port + 5);
 
     // 14. A client that comes back: re-registrations that race with the old connection's close or the observation of
     //     its processes, and another process that reuses its pid.
+    fixture.part = "part 14 (checkReconnects)";
     await checkReconnects(fixture, port + 6);
 
     // 15. A restarted scheduler holds every job of its state file from the first event; an older file keeps the grace.
+    fixture.part = "part 15 (checkRestarts)";
     await checkRestarts(fixture, port + 10);
 
     // 16. pause: nothing waiting starts, running jobs end, the pause survives a restart, start <id> still works,
     //     pause --until-idle waits for the running jobs, resume grants.
+    fixture.part = "part 16 (checkPause)";
     await checkPause(fixture, port + 20);
+  } catch (error) {
+    process.stderr.write(`${fixture.part} failed\n${fixture.schedulerLogTail()}`);
+    throw error;
   } finally {
     await fixture.cleanup();
   }

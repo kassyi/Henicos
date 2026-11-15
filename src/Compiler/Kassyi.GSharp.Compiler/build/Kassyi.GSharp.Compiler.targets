@@ -94,8 +94,12 @@
   </Target>
 
   <!-- Define the target to compile CUDA sources -->
-  <!-- It runs after CoreCompile (so source generators have emitted .cu files) -->
+  <!-- It runs after CoreCompile (so source generators have emitted .cu files). Not in a design-time build: an IDE
+       (Visual Studio, Rider, the C# Dev Kit, MSBuildWorkspace) runs one on every edit, and the generator writes no
+       native source then (AotArtifactWriter), so the native targets would compile what the last real build left in
+       obj/ and race with it. -->
   <Target Name="GSharpCompileCuda" AfterTargets="CoreCompile" DependsOnTargets="GSharpReadArtifactManifest"
+          Condition="'$(DesignTimeBuild)' != 'true'"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpFatbins\_always_run_.marker">
     
@@ -124,7 +128,9 @@
     </ItemGroup>
   </Target>
 
+  <!-- Not in a design-time build, as GSharpCompileCuda -->
   <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile" DependsOnTargets="GSharpReadArtifactManifest"
+          Condition="'$(DesignTimeBuild)' != 'true'"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpNativeDlls\_always_run_.marker">
     
