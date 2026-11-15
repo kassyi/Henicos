@@ -15,7 +15,16 @@ const FormatVersion = 1;
 const StaleMs = 12 * 60 * 60 * 1000;
 const ErrorLogLimitBytes = 1024 * 1024;
 /** The fields of a chat that a new state keeps unless it sets them (the rest are written anew by every state). */
-const ChatFields = ['firstPrompt', 'title', 'agentTitle', 'openQuestions', 'lastPrompt', 'promptedAt', 'stoppedAt'];
+const ChatFields = [
+  'firstPrompt',
+  'recentPrompts',
+  'title',
+  'agentTitle',
+  'openQuestions',
+  'lastPrompt',
+  'promptedAt',
+  'stoppedAt',
+];
 
 /**
  * The main checkout from the `.git` entry of this script's checkout, without starting git (a hook runs on every
