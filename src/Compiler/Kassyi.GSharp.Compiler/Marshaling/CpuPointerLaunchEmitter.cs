@@ -113,38 +113,15 @@ internal static class CpuPointerLaunchEmitter
     {
         if (!AutoResultEmitter.TryWriteCpuFixed(writer, kernel))
         {
-            WriteNullableProxies(writer, kernel, arguments);
+            CpuNativeCallEmitter.WriteNullableProxies(writer, kernel, arguments, copyCallerProxy: true);
             CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
             return;
         }
 
         using (writer.Scope())
         {
-            WriteNullableProxies(writer, kernel, arguments);
+            CpuNativeCallEmitter.WriteNullableProxies(writer, kernel, arguments, copyCallerProxy: true);
             CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
-        }
-    }
-
-    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <copy of <name>.Value> : null;
-    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address, so the caller's value is copied into
-    // a local whose address the call passes
-    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel,
-        in CpuNativeArgumentPlan arguments)
-    {
-        var parameters = kernel.Parameters;
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            if (arguments.Arguments[i].Form != CpuNativeArgumentForm.NullableProxyAddress)
-            {
-                continue;
-            }
-
-            var shape = parameters[i];
-            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
-            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
-            writer.Append($"{shape.Identifier}.HasValue ? ");
-            CpuNativeCallEmitter.WriteProxyCopy(writer, shape.Identifier + ".Value");
-            writer.AppendLine(" : null;");
         }
     }
 }

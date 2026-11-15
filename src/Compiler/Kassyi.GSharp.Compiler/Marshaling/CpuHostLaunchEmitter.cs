@@ -430,36 +430,13 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
-                WriteNullableProxies(writer, kernel, arguments);
+                CpuNativeCallEmitter.WriteNullableProxies(writer, kernel, arguments, copyCallerProxy: false);
                 CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
             }
         }
         else
         {
             CpuNativeCallEmitter.WriteCall(writer, kernel, arguments);
-        }
-    }
-
-    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the
-    // like)
-    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
-    // default Memory<T> passes as a null array that has a value
-    private static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel,
-        in CpuNativeArgumentPlan arguments)
-    {
-        for (var i = 0; i < kernel.Parameters.Length; i++)
-        {
-            var shape = kernel.Parameters[i];
-            if (shape is not { IsArray: true, IsNullableValue: true })
-            {
-                continue;
-            }
-
-            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
-            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
-            writer.Append($"{shape.Identifier}.HasValue ? ");
-            CpuNativeCallEmitter.WriteArrayProxy(writer, shape, arguments.Arguments[i].Group);
-            writer.AppendLine(" : null;");
         }
     }
 }

@@ -85,6 +85,39 @@ internal static class CpuNativeCallEmitter
         }
     }
 
+    // Nullable<GSharpArrayProxy> __gsharp_nullable_<ord> = <name>.HasValue ? <proxy> : null;   (Memory<T>? and the like)
+    // <proxy> is the pinned array's proxy of Launch{Kernel}, or with <copyCallerProxy> the copy of <name>.Value of
+    // Launch{Kernel}Ptr
+    // [WHY] The native launcher takes System_Nullable<GSharpArray<T>> by address; HasValue is the C# value's own, so a
+    // default Memory<T> passes as a null array that has a value
+    internal static void WriteNullableProxies(SourceWriter writer, in KernelHostModel kernel,
+        in CpuNativeArgumentPlan arguments, bool copyCallerProxy)
+    {
+        var parameters = kernel.Parameters;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (arguments.Arguments[i].Form != CpuNativeArgumentForm.NullableProxyAddress)
+            {
+                continue;
+            }
+
+            var shape = parameters[i];
+            var local = KernelHostNames.GetLocal(LauncherLocal.NullableProxy, shape);
+            writer.Append($"global::System.Nullable<{HostTypeNames.ArrayProxy}> {local} = ");
+            writer.Append($"{shape.Identifier}.HasValue ? ");
+            if (copyCallerProxy)
+            {
+                WriteProxyCopy(writer, shape.Identifier + ".Value");
+            }
+            else
+            {
+                WriteArrayProxy(writer, shape, arguments.Arguments[i].Group);
+            }
+
+            writer.AppendLine(" : null;");
+        }
+    }
+
     // new GSharpArrayProxy { Data = <proxy>.Data, Length = <proxy>.Length }
     // [WHY] The reserved Flags of the caller's proxy stay behind: every launcher passes them as 0
     internal static void WriteProxyCopy(SourceWriter writer, string proxy) =>
