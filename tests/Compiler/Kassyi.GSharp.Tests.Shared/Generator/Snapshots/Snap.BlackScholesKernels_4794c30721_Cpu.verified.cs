@@ -143,8 +143,28 @@ native.N = host.N;
 }
 public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
 {
+if (native.S.Data == global::System.IntPtr.Zero)
+{
+host.S = default;
+}
+if (native.X.Data == global::System.IntPtr.Zero)
+{
+host.X = default;
+}
+if (native.T.Data == global::System.IntPtr.Zero)
+{
+host.T = default;
+}
 host.R = native.R;
 host.V = native.V;
+if (native.CallResult.Data == global::System.IntPtr.Zero)
+{
+host.CallResult = default;
+}
+if (native.PutResult.Data == global::System.IntPtr.Zero)
+{
+host.PutResult = default;
+}
 host.N = native.N;
 }
 public static void CopyArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

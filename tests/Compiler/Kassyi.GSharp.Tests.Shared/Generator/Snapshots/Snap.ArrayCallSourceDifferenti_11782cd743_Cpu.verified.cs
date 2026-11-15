@@ -170,6 +170,10 @@ native.Tag = host.Tag;
 }
 public static unsafe void Unmarshal_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, ref AotContexts.ArrayCallHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Tag = native.Tag;
 }
 public static void CopyArrays_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
