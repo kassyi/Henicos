@@ -62,6 +62,31 @@ internal static class GpuCodeConstraints
         _ => null
     };
 
+    /// <summary>Whether <paramref name="type"/> is a delegate type.</summary>
+    public static bool IsDelegate(ITypeSymbol? type) => type is { TypeKind: TypeKind.Delegate };
+
+    /// <summary>
+    /// Whether <paramref name="node"/> combines delegates (GSH0003): <c>a + b</c> and <c>a - b</c> with a delegate
+    /// result (the result type decides: <c>null + f</c> has no type on its left), and <c>a += b</c> and
+    /// <c>a -= b</c> on a delegate.
+    /// </summary>
+    public static bool IsDelegateCombination(SyntaxNode node, SemanticModel model) => node switch
+    {
+        BinaryExpressionSyntax binary when binary.Kind() is SyntaxKind.AddExpression or SyntaxKind.SubtractExpression =>
+            IsDelegate(model.GetTypeSymbol(binary)),
+        AssignmentExpressionSyntax assignment
+            when assignment.Kind() is SyntaxKind.AddAssignmentExpression or SyntaxKind.SubtractAssignmentExpression =>
+            IsDelegate(model.GetTypeSymbol(assignment.Left)),
+        _ => false
+    };
+
+    /// <summary>The GSH0003 text for the type object, Delegate or MulticastDelegate in a body.</summary>
+    public const string HeapObjectType =
+        "type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)";
+
+    /// <summary>Whether <paramref name="type"/> is <see cref="object"/>, which device code cannot hold (GSH0003).</summary>
+    public static bool IsObject(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_Object };
+
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
 
@@ -188,6 +213,23 @@ internal static class GpuCodeConstraints
     public static string FormatKernelCalledFromDeviceCode(IMethodSymbol kernel) =>
         $"call of the [GpuKernel] method '{kernel.Name}' from device code (a kernel runs only through its launcher; " +
         "move its body to a [GpuDeviceFunction] method and call that from both)";
+
+    /// <summary>
+    /// The GSH0003 text for a <c>[GpuKernel]</c> method named without a call (<c>Action&lt;int[]&gt; f = K;</c>): a
+    /// delegate to a kernel would call it from device code.
+    /// </summary>
+    public static string FormatKernelNamedInDeviceCode(IMethodSymbol kernel) =>
+        $"the [GpuKernel] method '{kernel.Name}' used as a method group in device code (a kernel runs only through " +
+        "its launcher; move its body to a [GpuDeviceFunction] method and name that instead)";
+
+    /// <summary>
+    /// The GSH0003 text for <c>+</c>, <c>-</c>, <c>+=</c> or <c>-=</c> on delegates, which builds a multicast
+    /// delegate: device code has no list of targets that is built at run time, so only a combination whose targets
+    /// are known at compile time can run.
+    /// </summary>
+    public const string DelegateCombination =
+        "delegate combination (+, -, +=, -=) is not supported in GPU code, because its targets are not known at " +
+        "compile time; call each method in turn";
 
     /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
     public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";
