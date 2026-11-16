@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class SharedMemoryLimitTests : TranspilerTestBase
+public partial class SharedMemoryLimitTests : TranspilerTestBase
 {
     private const string LimitMessage = "G#: dynamic shared memory exceeds sharedMemBytes";
 
@@ -257,23 +257,6 @@ public class SharedMemoryLimitTests : TranspilerTestBase
                 sharedMemBytes: sharedMemBytes);
         }
     }
-
-#if GSHARP_CPU
-    // A static declaration of 2^32 + 128 bytes: the managed path computed the size in int, got 128 bytes and threw
-    // IndexOutOfRangeException at an element inside the declared count. It now fails as the native path does when it
-    // cannot allocate the buffer, before allocating anything (#1280 review)
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void StaticDeclaration_MoreThanIntMaxValueBytesManaged_ThrowsInvalidOperationException()
-    {
-        var output = new double[1];
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            Run(true, () => SharedMemoryHugeStaticKernels.LaunchHugeStaticKernel(output, blockDimX: 1)));
-
-        Assert.Equal("G#: the static shared memory of a declaration could not be allocated", exception.Message);
-    }
-#endif
 
     // The managed path exists only on the CPU dialects
     private void Run(bool forceManaged, Action launch)

@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Generators;
 
-/// <summary>Represents a diagnostic definition entry deserialized from diagnostics.json.</summary>
+/// <summary>Represents a diagnostic definition entry read from diagnostics.yml.</summary>
 public sealed class DiagnosticDefinition
 {
     /// <summary>Gets or sets the identifier name for the diagnostic descriptor property.</summary>
