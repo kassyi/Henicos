@@ -6,7 +6,9 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 /// </summary>
 /// <remarks>
 /// The checks are syntactic. They catch direct uses (<c>Append(node.Identifier.Text)</c>, <c>$"{field.Name}"</c>) but not
-/// a name copied into a local first; the execution tests and the generated-name leak scan cover those.
+/// a name copied into a local first; the execution tests and the generated-name leak scan cover those. The name of a
+/// symbol in the text of a message for people goes through <c>MessageText.Name</c>, a call that this check does not
+/// report, so that message text needs no entry of its own here.
 /// </remarks>
 public partial class NamingArchitectureTests
 {
@@ -66,7 +68,8 @@ public partial class NamingArchitectureTests
         }
 
         Assert.True(violations.Count == 0,
-            "Route these user identifiers through CppNameResolver:" + Environment.NewLine +
+            "Route these user identifiers through CppNameResolver (C++ names) or MessageText.Name (message text):" +
+            Environment.NewLine +
             string.Join(Environment.NewLine, violations));
     }
 

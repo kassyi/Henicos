@@ -1,9 +1,4 @@
 // --- Thread & Block State ---
-thread_local uint3 threadIdx;
-thread_local uint3 blockIdx;
-thread_local dim3 blockDim;
-thread_local dim3 gridDim;
-
 extern "C" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
     threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
     blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;

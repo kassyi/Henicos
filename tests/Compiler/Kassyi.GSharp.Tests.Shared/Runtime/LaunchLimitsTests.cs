@@ -183,4 +183,45 @@ public class LaunchLimitsTests
     {
         Assert.Null(Record.Exception(() => LaunchLimits.CheckTargetSharedMemory(0u, 0, 101376, "sm_86", Kernel)));
     }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(232448u, 0, 232448, 334848)]
+    [InlineData(228352u, 4096, 232448, 334848)]
+    public void CheckTargetSharedMemory_WithOversizedHint_AtTheLimit_DoesNotThrow(
+        uint sharedMemBytes,
+        int staticBytes,
+        int maxBytes,
+        int oversizedBytes)
+    {
+        Assert.Null(Record.Exception(() =>
+            LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, staticBytes, maxBytes, "sm_107", Kernel,
+                oversizedBytes)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void CheckTargetSharedMemory_WithOversizedHint_OneByteAboveTheLimit_ThrowsWithHint()
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            LaunchLimits.CheckTargetSharedMemory(232449u, 0, 232448, "sm_107", Kernel, 334848));
+
+        Assert.Equal("sharedMemBytes", exception.ParamName);
+        Assert.Contains(
+            "; this GPU holds up to 334848 bytes for a kernel with [GpuKernel(AllowOversizedSharedMemory = true)]",
+            exception.Message);
+        Assert.Contains("(Kernels.TestKernel)", exception.Message);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CheckTargetSharedMemory_WithoutHint_DoesNotContainHintPhrase()
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            LaunchLimits.CheckTargetSharedMemory(101377u, 0, 101376, "sm_86", Kernel));
+
+        Assert.Equal("sharedMemBytes", exception.ParamName);
+        Assert.DoesNotContain("AllowOversizedSharedMemory", exception.Message);
+        Assert.Contains("CUDA_ERROR_INVALID_VALUE (Kernels.TestKernel).", exception.Message);
+    }
 }

@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/*.cs"
-description: Naming at the GPU / C# boundary - kernels, device functions, generated launch wrappers, no underscores or prefixes.
+trigger: model_decision
+description: Read before naming a kernel, a device function or a generated launch wrapper in C# - suffixes, no underscores or prefixes.
+paths: "**/*.cs"
 ---
 
 # GSharp (Henicos) Naming Conventions: GPU/C# Boundary

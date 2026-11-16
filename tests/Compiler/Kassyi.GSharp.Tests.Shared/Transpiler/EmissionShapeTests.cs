@@ -129,14 +129,18 @@ public partial class EmissionShapeTests
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("Cpu", "")]
-    [InlineData("Cuda", " __device__")]
-    public void MethodImplOptions_SelectTheInliningKeyword(string dialect, string deviceKeyword)
+    [InlineData("Cpu", "", "inline __noinline__")]
+    [InlineData("Cuda", " __device__", "__noinline__")]
+    public void MethodImplOptions_SelectTheInliningKeyword(
+        string dialect, string deviceKeyword, string noInlineKeyword)
     {
         var source = Generate("SignatureShapeKernels", dialect);
 
         Assert.Contains($"\ninline{deviceKeyword} int {Signatures}DefaultImpl(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
-        Assert.Contains($"\n__noinline__{deviceKeyword} int {Signatures}ShortNoInlining(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
+        Assert.Contains(
+            $"\n{noInlineKeyword}{deviceKeyword} int {Signatures}ShortNoInlining(int __gsharp_id_0_x){{",
+            source,
+            StringComparison.Ordinal);
         Assert.Contains($"\n__forceinline__{deviceKeyword} int {Signatures}EnumAggressiveInlining(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
     }
 

@@ -27,8 +27,9 @@ internal static class GpuArchitectureLimits
         new(10, 0, 227 * KiB),
         new(10, 3, 227 * KiB),
         // 327 KB on 10.7 needs the oversized shared memory mode of the function; an unmarked kernel's limit is 227 KB
-        // (Programming Guide Table 35, footnote [5])
-        new(10, 7, 227 * KiB),
+        // (Programming Guide Table 35, footnote [5]). The oversized column is used only for kernels with
+        // [GpuKernel(AllowOversizedSharedMemory = true)].
+        new(10, 7, 227 * KiB, MaxOversizedSharedMemoryPerBlock: 327 * KiB),
         new(11, 0, 227 * KiB),
         new(12, 0, 99 * KiB),
         new(12, 1, 99 * KiB)
@@ -102,17 +103,28 @@ internal static class GpuArchitectureLimits
             return new TargetLimits(
                 ImmutableArray<GpuArchitecture>.Empty.AsEquatableArray(),
                 0,
-                unknown.AsEquatableArray()
+                unknown.AsEquatableArray(),
+                0
             );
         }
 
+        var optInMin = rows
+            .AsStackEnumerable()
+            .Select(static row => row.MaxSharedMemoryPerBlockOptIn)
+            .Min();
+
+        var oversizedMin = rows
+            .AsStackEnumerable()
+            .Select(static row => row.MaxOversizedSharedMemoryPerBlock > row.MaxSharedMemoryPerBlockOptIn
+                ? row.MaxOversizedSharedMemoryPerBlock
+                : row.MaxSharedMemoryPerBlockOptIn)
+            .Min();
+
         return new TargetLimits(
             rows.AsEquatableArray(),
-            rows
-                .AsStackEnumerable()
-                .Select(static row => row.MaxSharedMemoryPerBlockOptIn)
-                .Min(),
-            unknown.AsEquatableArray()
+            optInMin,
+            unknown.AsEquatableArray(),
+            oversizedMin
         );
     }
 }

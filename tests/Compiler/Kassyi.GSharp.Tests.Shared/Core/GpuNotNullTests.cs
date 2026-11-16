@@ -17,12 +17,8 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class GpuNotNullTests : TranspilerTestBase
+public partial class GpuNotNullTests : TranspilerTestBase
 {
-    private const string KernelFile = "GpuNotNullKernels.cu.cs";
-    private const string SiteMessage = "G#: Gpu.NotNull was given a null array in ";
-    private const string DeviceFunctionMessage = "G#: Gpu.NotNull was given a null array at ";
-
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
@@ -90,70 +86,6 @@ public class GpuNotNullTests : TranspilerTestBase
         Run(forceManaged, () => GpuNotNullKernels.LaunchOptionalKernel(o, [1, 2, 3]));
 
         Assert.Equal([3], o);
-    }
-
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Sum_NullField_ThrowsAtTheCall(bool forceManaged)
-    {
-        var o = new[] { -1, -1 };
-
-        AssertNullAtCall(forceManaged, "(20,22)",
-            () => GpuNotNullKernels.LaunchSumKernel(new NotNullHolder { Data = null, Offset = 10 }, o));
-        Assert.Equal([-1, -1], o);
-    }
-
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DeviceFunction_NullField_ThrowsWithThePlaceInTheMessage(bool forceManaged)
-    {
-        var o = new[] { -1 };
-
-        AssertNullAtCall(forceManaged, "(49,52)",
-            () => GpuNotNullKernels.LaunchDeviceFunctionKernel(new NotNullHolder { Data = null }, o),
-            inDeviceFunction: true);
-        Assert.Equal([-1], o);
-    }
-
-    // The launchers pass a null optional argument as an empty array, whose Length reads 0; Gpu.NotNull still sees null
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Optional_NullArgument_ThrowsAtTheCall(bool forceManaged)
-    {
-        var o = new[] { -1 };
-
-        AssertNullAtCall(forceManaged, "(42,16)", () => GpuNotNullKernels.LaunchOptionalKernel(o, null));
-        Assert.Equal([-1], o);
-    }
-
-    // The native CPU build names the place of the call: in a kernel body as the site of the kernel's error site table
-    // (GSharp.SourceLocation), in a device function in the message. The managed path runs the C# method
-    private void AssertNullAtCall(bool forceManaged, string place, Action launch, bool inDeviceFunction = false)
-    {
-        Skip.If(IsCudaDialect,
-            "The CUDA null cases run as a differential case (NullValidation_GpuNotNull_ThrowsAtTheCall).");
-
-        var exception = Assert.Throws<NullReferenceException>(() => Run(forceManaged, launch));
-        if (forceManaged)
-        {
-            Assert.Equal("Gpu.NotNull was given a null array", exception.Message);
-            return;
-        }
-
-        if (inDeviceFunction)
-        {
-            Assert.Equal(DeviceFunctionMessage + KernelFile + place, exception.Message);
-            return;
-        }
-
-        Assert.Equal(KernelFile + place, exception.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith(SiteMessage, exception.Message, StringComparison.Ordinal);
     }
 
     // The managed execution path exists only on the CPU dialects

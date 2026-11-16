@@ -95,7 +95,10 @@ internal static class AotArtifactWriter
             foreach (var (path, content) in files)
             {
                 currentPath = path;
-                File.WriteAllText(path, content);
+                if (!HasSameContent(path, content))
+                {
+                    File.WriteAllText(path, content);
+                }
             }
         }
         catch (Exception ex)
@@ -110,6 +113,16 @@ internal static class AotArtifactWriter
         }
 #pragma warning restore RS1035
     }
+
+#pragma warning disable RS1035 // Do not do file IO in analyzers
+    private static bool HasSameContent(string path, string content)
+    {
+        var info = new FileInfo(path);
+        return info.Exists &&
+               info.Length == Encoding.UTF8.GetByteCount(content) &&
+               string.Equals(File.ReadAllText(path), content, StringComparison.Ordinal);
+    }
+#pragma warning restore RS1035
 
     /// <summary>Whether <paramref name="compilation"/> runs in an IDE worker, which must not overwrite the artifacts.</summary>
     public static bool IsDesignTimeCompilation(Compilation compilation)

@@ -195,7 +195,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1823837722u, "LabeledJumpD
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1130909638u, "LabeledJumpDifferentialKernels.cs", 962, 17, "SuspendingCallInALabeledLoop", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2067761124u, "LabeledJumpDifferentialKernels.cs", 963, 17, "SuspendingCallInALabeledLoop", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(642891018u, "LabeledJumpDifferentialKernels.cs", 964, 9, "SuspendingCallInALabeledLoop", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(781875338u, "LabeledJumpDifferentialKernels.cs", 969, 28, "SuspendingCallInALabeledLoop", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(781875338u, "LabeledJumpDifferentialKernels.cs", 969, 28, "SuspendingCallInALabeledLoop", "G#: a null array is passed to the non-nullable parameter 'r' of SuspendingStep. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(161866097u, "LabeledJumpDifferentialKernels.cs", 974, 21, "SuspendingCallInALabeledLoop", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(419507799u, "LabeledJumpDifferentialKernels.cs", 980, 21, "SuspendingCallInALabeledLoop", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(135778741u, "LabeledJumpDifferentialKernels.cs", 984, 17, "SuspendingCallInALabeledLoop", "G#: a null array is read"),

@@ -129,7 +129,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         for (var j = 0; j < arguments.Count; j++)
         {
             checks.Add(callee.FindParameter(arguments, j) is { } parameter
-                ? ArrayNullCheck.PlanArgument(arguments[j].Expression, parameter, ref context)
+                ? ArgumentNullCheck.PlanArgument(arguments[j].Expression, parameter, ref context)
                 : ArgumentCheck.None);
         }
 
@@ -285,11 +285,11 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 }
                 else
                 {
-                    context.Emitter.Writer.Append(ArrayNullCheck.GetArgumentCheckHelper(check));
+                    context.Emitter.Writer.Append(ArgumentNullCheck.GetArgumentCheckHelper(check));
                     using (context.Emitter.Writer.Parentheses())
                     {
                         sequence.AppendArgument(arguments[j], parameter, ref context, convertArguments);
-                        ArrayNullCheck.AppendArgumentCheckTail(check, ref context);
+                        ArgumentNullCheck.AppendArgumentCheckTail(check, ref context);
                     }
                 }
 

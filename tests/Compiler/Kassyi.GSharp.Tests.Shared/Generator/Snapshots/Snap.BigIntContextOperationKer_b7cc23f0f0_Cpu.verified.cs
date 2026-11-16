@@ -257,8 +257,10 @@ public partial class BigIntContextOperationKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(710364627u, "BigIntContextOperationKernels.cs", 15, 43, "ShiftLeftKernel", "G#: a null array is passed where it is not nullable"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(319892393u, "BigIntContextOperationKernels.cs", 21, 44, "ShiftRightKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(701080431u, "BigIntContextOperationKernels.cs", 15, 43, "ShiftLeftKernel", "G#: a null array is passed to the non-nullable field 'ctx.Operands.TargetOperand' of parameter 'ctx' of ExecuteShiftLeft. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the field nullable (uint[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1467557312u, "BigIntContextOperationKernels.cs", 15, 43, "ShiftLeftKernel", "G#: a null array is passed to the non-nullable field 'ctx.Operands.ResultBuffer' of parameter 'ctx' of ExecuteShiftLeft. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the field nullable (uint[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(5352045u, "BigIntContextOperationKernels.cs", 21, 44, "ShiftRightKernel", "G#: a null array is passed to the non-nullable field 'ctx.Operands.TargetOperand' of parameter 'ctx' of ExecuteShiftRight. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the field nullable (uint[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1396283366u, "BigIntContextOperationKernels.cs", 21, 44, "ShiftRightKernel", "G#: a null array is passed to the non-nullable field 'ctx.Operands.ResultBuffer' of parameter 'ctx' of ExecuteShiftRight. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the field nullable (uint[]?) to keep the C# behavior."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -532,7 +534,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 710364627u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, [](const auto& s) { return __gsharp_array_ref(s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, 701080431u); }, [](const auto& s) { return __gsharp_array_ref(s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, 1467557312u); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 __gsharp_state=-1;
 return;
 }
@@ -873,7 +875,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, 319892393u, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand); }, [](const auto& s) -> decltype(auto) { return (s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_struct_ref(__gsharp_id_0_ctx, [](const auto& s) { return __gsharp_array_ref(s.__gsharp_mb_Operands.__gsharp_mb_TargetOperand, 5352045u); }, [](const auto& s) { return __gsharp_array_ref(s.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, 1396283366u); }),__gsharp_id_1_wordShift,__gsharp_id_2_bitShift);
 __gsharp_state=-1;
 return;
 }

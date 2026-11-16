@@ -324,7 +324,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(197360316u, "InArgumentAli
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716716819u, "InArgumentAliasDifferentialKernels.cs", 128, 9, "IndexMovedByCalleeKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(75285435u, "InArgumentAliasDifferentialKernels.cs", 136, 17, "ValueElementKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1910584499u, "InArgumentAliasDifferentialKernels.cs", 138, 9, "ValueElementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1628498710u, "InArgumentAliasDifferentialKernels.cs", 138, 47, "ValueElementKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1628498710u, "InArgumentAliasDifferentialKernels.cs", 138, 47, "ValueElementKernel", "G#: a null array is passed to the non-nullable parameter 'calls' of MakeInline. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1646642017u, "InArgumentAliasDifferentialKernels.cs", 147, 14, "PointerIndirectionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(370468107u, "InArgumentAliasDifferentialKernels.cs", 148, 9, "PointerIndirectionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(538669117u, "InArgumentAliasDifferentialKernels.cs", 156, 16, "PointerElementKernel", "G#: a null array is read"),

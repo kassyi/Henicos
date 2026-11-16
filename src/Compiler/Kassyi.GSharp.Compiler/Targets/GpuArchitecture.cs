@@ -13,11 +13,16 @@ namespace Kassyi.GSharp.Compiler.Targets;
 /// Whether the GPUs are Tegra (integrated) parts, which run no SASS of another compute capability, and whose SASS no
 /// other GPU runs.
 /// </param>
+/// <param name="MaxOversizedSharedMemoryPerBlock">
+/// The most shared memory (static and dynamic), in bytes, one block may use when configured for oversized shared
+/// memory, or 0 when the compute capability has no oversized shared memory configuration.
+/// </param>
 internal readonly record struct GpuArchitecture(
     int Major,
     int Minor,
     int MaxSharedMemoryPerBlockOptIn,
-    bool IsTegra = false)
+    bool IsTegra = false,
+    int MaxOversizedSharedMemoryPerBlock = 0)
 {
     /// <summary>The SASS name of the compute capability (<c>sm_86</c>).</summary>
     public string Name => $"sm_{Major}{Minor}";

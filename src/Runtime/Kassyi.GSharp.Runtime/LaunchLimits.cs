@@ -10,10 +10,11 @@ namespace Kassyi.GSharp.Runtime;
 /// <remarks>
 /// The CPU paths accept every launch that the GPU accepts and reject what any of the declared target GPUs rejects:
 /// <see cref="CheckLaunch"/> checks the dimension limits shared by every GPU, and
-/// <see cref="CheckTargetSharedMemory"/> checks the per-block shared memory limit of the target GPUs from
-/// <c>GSharpTargetArchitectures</c> (on CUDA, <see cref="Aot.DynamicSharedMemoryOptIn"/> checks the real device). The
-/// run time or the memory of the machine never adds a limit. The managed path still keeps a context for every thread of
-/// the grid in one array (<see cref="GetManagedContextCount"/>), a limit of that implementation, not of the launch.
+/// <see cref="CheckTargetSharedMemory(uint, int, int, string, string)"/> checks the per-block shared memory limit of
+/// the target GPUs from <c>GSharpTargetArchitectures</c> (on CUDA, <see cref="Aot.DynamicSharedMemoryOptIn"/> checks
+/// the real device). The run time or the memory of the machine never adds a limit. The managed path still keeps a
+/// context for every thread of the grid in one array (<see cref="GetManagedContextCount"/>), a limit of that
+/// implementation, not of the launch.
 /// </remarks>
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class LaunchLimits
@@ -96,14 +97,42 @@ public static class LaunchLimits
     /// <paramref name="maxSharedMemoryPerBlock"/>.
     /// </exception>
     public static void CheckTargetSharedMemory(uint sharedMemBytes, int staticSharedBytes, int maxSharedMemoryPerBlock,
-        string architecture, string kernelName)
+        string architecture, string kernelName) =>
+        CheckTargetSharedMemory(sharedMemBytes, staticSharedBytes, maxSharedMemoryPerBlock, architecture, kernelName,
+            oversizedSharedMemoryPerBlock: 0);
+
+    /// <summary>
+    /// Checks that the dynamic and static shared memory of a launch does not exceed the limit of the strictest target
+    /// GPU of <c>GSharpTargetArchitectures</c>, with a hint when an oversized shared memory configuration is available.
+    /// </summary>
+    /// <param name="sharedMemBytes">The dynamic shared memory per block that the launch requests.</param>
+    /// <param name="staticSharedBytes">The static shared memory per block of the kernel, in bytes.</param>
+    /// <param name="maxSharedMemoryPerBlock">
+    /// The per-block shared memory limit of the strictest target GPU, in bytes.
+    /// </param>
+    /// <param name="architecture">The compute capability of that target GPU (such as <c>sm_86</c>).</param>
+    /// <param name="kernelName">The kernel as <c>Type.Method</c>, for the exception message.</param>
+    /// <param name="oversizedSharedMemoryPerBlock">
+    /// The oversized shared memory limit of the target GPU, in bytes, when the kernel could use it by enabling
+    /// <c>[GpuKernel(AllowOversizedSharedMemory = true)]</c>, or 0 when no hint is shown.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="sharedMemBytes"/> plus <paramref name="staticSharedBytes"/> exceeds
+    /// <paramref name="maxSharedMemoryPerBlock"/>.
+    /// </exception>
+    public static void CheckTargetSharedMemory(uint sharedMemBytes, int staticSharedBytes, int maxSharedMemoryPerBlock,
+        string architecture, string kernelName, int oversizedSharedMemoryPerBlock)
     {
         if ((long)sharedMemBytes + staticSharedBytes > maxSharedMemoryPerBlock)
         {
+            var hint = oversizedSharedMemoryPerBlock > 0
+                ? $"; this GPU holds up to {oversizedSharedMemoryPerBlock} bytes for a kernel with " +
+                  "[GpuKernel(AllowOversizedSharedMemory = true)]"
+                : "";
             throw new ArgumentOutOfRangeException(nameof(sharedMemBytes),
                 $"G#: sharedMemBytes {sharedMemBytes} plus {staticSharedBytes} bytes of static shared memory exceeds " +
                 $"the {maxSharedMemoryPerBlock} bytes of shared memory per block of the target GPU {architecture} " +
-                "(GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE " +
+                $"(GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE{hint} " +
                 $"({kernelName}).");
         }
     }

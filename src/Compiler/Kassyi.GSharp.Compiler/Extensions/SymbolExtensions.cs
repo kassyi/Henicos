@@ -451,6 +451,16 @@ internal static class SymbolExtensions
             .Any(static namedArg => namedArg is { Key: "Cooperative", Value.Value: true });
 
     /// <summary>
+    /// Whether <paramref name="method"/> is a <c>[GpuKernel(AllowOversizedSharedMemory = true)]</c> kernel, which is
+    /// allowed to request oversized shared memory on GPUs that support it (such as compute capability 10.7).
+    /// </summary>
+    public static bool AllowsOversizedSharedMemory(this IMethodSymbol method) =>
+        method.GetAttribute(KnownAttributes.GpuKernel) is { } kernelAttr &&
+        kernelAttr.NamedArguments
+            .AsStackEnumerable()
+            .Any(static namedArg => namedArg is { Key: "AllowOversizedSharedMemory", Value.Value: true });
+
+    /// <summary>
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, string shortName) =>
