@@ -1,7 +1,4 @@
 using Xunit;
-#if GSHARP_CPU
-using Kassyi.GSharp.Tests.Shared.Helpers;
-#endif
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -11,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class ManagedCallSpellingTests : TranspilerTestBase
+public partial class ManagedCallSpellingTests : TranspilerTestBase
 {
     private static readonly int[] s_values = [1, 2, 3, 4];
 
@@ -45,35 +42,6 @@ public class ManagedCallSpellingTests : TranspilerTestBase
 
         Assert.Equal(s_targetTypedSlotExpected, result);
     }
-
-#if GSHARP_CPU
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void InThisExtension_ReceiverFieldOfValueAndVariablesManaged_ExecutesSuccessfully()
-    {
-        var result = new int[4];
-        var cells = CreateCells();
-
-        ManagedKernelRun.Run(() => ManagedCallSpellingKernels.LaunchInReceiverKernel(s_values, cells, result,
-            blockDimX: 4));
-
-        Assert.Equal(s_inReceiverExpected, result);
-    }
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void TargetTypedNew_GenericStructWithSharedMemoryManaged_ExecutesSuccessfully()
-    {
-        var result = new int[4];
-
-        ManagedKernelRun.Run(() => ManagedCallSpellingKernels.LaunchTargetTypedSlotKernel(s_values, result,
-            blockDimX: 4));
-
-        Assert.Equal(s_targetTypedSlotExpected, result);
-    }
-#endif
 
     // 100v in each cell
     private static SpellingCell[] CreateCells()

@@ -108,6 +108,7 @@ public static unsafe void LaunchMemoryCopyKernel(global::System.Single[] src, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MemoryCopyKernels.MemoryCopyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MemoryCopyKernels.MemoryCopyKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = src;
 global::System.Single[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;

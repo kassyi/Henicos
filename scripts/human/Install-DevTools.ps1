@@ -92,7 +92,7 @@ $tools = @(
         Name        = "Node.js (LTS)"
         Command     = "node"
         Category    = "Core"
-        Description = "Roadmap UI / npx ツール実行"
+        Description = "scripts/ の Node スクリプト / npx ツール実行"
     },
 
     # --- 高速CLI & 構文操作ツール (gemini.md 規定) ---

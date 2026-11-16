@@ -575,4 +575,59 @@ public static partial class NullableDifferentialKernels
         dst[col + 4] = CoalesceAssignmentPromotedValue(c, v);
         dst[col + 5] = CoalesceAssignmentValueBeforeWrite(c, v);
     }
+
+    // -------------------------------------------------------------------------
+    // A null literal cast to an array type: the empty view, whose data is null
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void NullLiteralCastToArrayKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        int[] cast = (int[])null!;
+        int[] picked = a[t] > 0 ? (int[])null! : a;
+        int[] parenthesized = ((int[])(null))!;
+        int[] viaCoalesce = (int[]?)null ?? a;
+        int[] fromDefault = (int[]?)default;
+        int[] fromDefaultExpression = (int[]?)default(int[]);
+
+        int col = t * 6;
+        dst[col + 0] = cast == null ? 1 : 0;
+        dst[col + 1] = picked == null ? 1 : 0;
+        dst[col + 2] = parenthesized == null ? 1 : 0;
+        dst[col + 3] = viaCoalesce.Length == a.Length ? 1 : 0;
+        dst[col + 4] = fromDefault == null ? 1 : 0;
+        dst[col + 5] = fromDefaultExpression == null ? 1 : 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // An empty array from the host is not null: a null array is told apart by its data pointer, so the empty array must
+    // reach the device with a data pointer
+    // -------------------------------------------------------------------------
+    [GpuKernel]
+    public static void EmptyArrayIsNotNullKernel(int[] empty, int[] other, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        bool isNull = empty == null;
+        bool isNullPattern = empty is null;
+        int[] chosen = empty ?? other;
+        Span<int> slice = other.AsSpan(0, 0);
+
+        int col = t * 6;
+        dst[col + 0] = isNull ? 1 : 0;
+        dst[col + 1] = isNullPattern ? 1 : 0;
+        dst[col + 2] = chosen.Length;
+        dst[col + 3] = empty.Length;
+        dst[col + 4] = slice.Length;
+        dst[col + 5] = slice == null ? 1 : 0;
+    }
 }

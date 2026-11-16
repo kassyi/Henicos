@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
@@ -20,6 +20,7 @@
     <Using Include="Xunit" />
     <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\*.cs" Exclude="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Differential\Harness\KnownDivergences.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Cpu\Differential\Harness\*.Cpu.cs" />
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\ManagedKernelRun.cs" />
     <!-- Kernel sources that the tests read as input; they are not compiled into the test assembly -->
     <Compile Remove="TestCases\**\*.cs" />

@@ -11,7 +11,7 @@ When creating or modifying test code (xUnit) in this project (Henicos / GSharp),
 
 When you start an implementation, **always generate the test code before writing any production code (the implementation)** (for transpiler-related tasks a Golden Master / Snapshot Test is required; otherwise write an appropriate Unit Test).
 
-- This is the "common first phase" when starting a roadmap task.
+- This is the "common first phase" when starting work on an issue.
 - Based not only on the normal path but also on the "Sad Path tests" described below and the QA quality criteria, **design even which exceptions should be thrown** before starting the implementation.
 
 ## 1. Data-Driven Edge Case Testing
@@ -50,7 +50,7 @@ Verify that when input or a situation that should produce an error is given, the
 ## 5. Test naming rules and consistent use of domain natural language
 
 Because the codebase has grown large, **hard-coding Feature IDs / ticket numbers in C# code has been abolished**.
-Name test code in natural language that directly expresses the domain intent, in line with the C# Framework Design Guidelines. The link between roadmap tasks and tests is managed in external metadata (JSON / `roadmap.json`), not in the code.
+Name test code in natural language that directly expresses the domain intent, in line with the C# Framework Design Guidelines. The issue and the pull request link to the tests; the tests do not name the issue.
 
 - **Applying the orthogonal 3-axis metadata attributes (`TestTarget` / `Category` / `Scenario`)**:
     - Do **not** attach a ticket number or Feature ID as a `[Trait]`.

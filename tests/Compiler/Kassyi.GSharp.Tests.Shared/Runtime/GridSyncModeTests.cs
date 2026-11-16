@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Runtime)]
-public sealed class GridSyncModeTests
+public partial class GridSyncModeTests
 {
     private const int Untouched = -7;
     private const int BlockSize = 128;
@@ -80,9 +80,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void GridSyncMode_FastInsideBody_OrdersWritesOfEveryBlock()
     {
-#if GSHARP_CUDA
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-#endif
+        RequireDevice();
         int threads = Blocks * BlockSize;
         var values = new int[threads];
         var result = new int[threads];
@@ -99,9 +97,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void GridSyncMode_EveryModeSpelling_OrdersWritesOfEveryBlock()
     {
-#if GSHARP_CUDA
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-#endif
+        RequireDevice();
         int threads = Blocks * BlockSize;
         var values = new int[threads];
         var result = new int[threads];
@@ -119,9 +115,7 @@ public sealed class GridSyncModeTests
     [Scenario(TestScenario.HappyPath)]
     public void FastBarrier_ThousandRounds_ExecutesExactly()
     {
-#if GSHARP_CUDA
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-#endif
+        RequireDevice();
         const int Rounds = 1000;
         int threads = Blocks * BlockSize;
         var buffer = new int[2 * threads];
@@ -135,61 +129,13 @@ public sealed class GridSyncModeTests
         }
     }
 
-#if GSHARP_CUDA
-    // [WHY] Every thread of block 1 fails, so block 1 never arrives and the Fast barrier never completes either: the
-    // waiters must leave through the abort word of their launch. The timeout fails the test instead of waiting for a
-    // hang that the driver would end only by resetting the GPU.
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task FastMode_WholeBlockFails_WaitersLeaveAndLaunchThrows()
+    private static void RequireDevice()
     {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        var keys = new int[Blocks * BlockSize];
-        for (int t = 0; t < BlockSize; t++)
+        if (AssemblyDialect.Current.IsCuda)
         {
-            keys[BlockSize + t] = GridSyncModeKernels.FailKey;
-        }
-
-        int[] result = Filled(keys.Length);
-        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
-            GridSyncModeKernels.LaunchFailBeforeFastGridSyncKernel(keys, result, gridDimX: Blocks,
-                blockDimX: BlockSize)));
-        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
-
-        Assert.Equal("(1,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-        Assert.All(result, static value => Assert.Equal(Untouched, value));
-    }
-
-    // [WHY] Only thread 5 of block 0 fails; the other threads of block 0 reach the barrier after it exited. In Fast
-    // mode block 0 arrives and then leaves, and its arrival may complete the barrier for blocks 1 to 3, which then
-    // write their results: whether they do depends on the order of arrival. The launch throws either way, and no
-    // block waits.
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task FastMode_OneThreadFails_LaunchThrowsAndNoBlockWaits()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-        var keys = new int[Blocks * BlockSize];
-        keys[5] = GridSyncModeKernels.FailKey;
-        int[] result = Filled(keys.Length);
-
-        var launch = Task.Run(() => Assert.Throws<SwitchExpressionException>(() =>
-            GridSyncModeKernels.LaunchFailBeforeFastGridSyncKernel(keys, result, gridDimX: Blocks,
-                blockDimX: BlockSize)));
-        var ex = await launch.WaitAsync(TimeSpan.FromSeconds(30));
-
-        Assert.Equal("(5,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-        // Block 0 saw the failure after its arrival and left; a thread of another block wrote its own value or nothing
-        Assert.All(result.Take(BlockSize), static value => Assert.Equal(Untouched, value));
-        for (int i = BlockSize; i < result.Length; i++)
-        {
-            Assert.True(result[i] == Untouched || result[i] == i, $"result[{i}] = {result[i]}");
+            CudaCapability.EnsureGpuAvailable();
         }
     }
-#endif
 
     // The grid barrier calls of the generated source, in order, each line without its indentation
     private static string[] GridBarriers(string source)

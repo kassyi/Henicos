@@ -127,6 +127,7 @@ public static unsafe void LaunchNegationKernel(global::System.UInt32[] us, globa
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UIntNegationAndConditionalKernels.NegationKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UIntNegationAndConditionalKernels.NegationKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = us;
 global::System.Int64[] __gsharp_csharp_arg_1 = values;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.UIntNegationAndConditionalKernels.NegationKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -300,6 +301,7 @@ public static unsafe void LaunchConditionalKernel(global::System.UInt32[] us, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UIntNegationAndConditionalKernels.ConditionalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UIntNegationAndConditionalKernels.ConditionalKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = us;
 global::System.Int32[] __gsharp_csharp_arg_1 = ns;
 global::System.Int64[] __gsharp_csharp_arg_2 = longs;

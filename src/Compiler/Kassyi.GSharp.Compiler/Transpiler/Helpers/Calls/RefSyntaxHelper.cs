@@ -134,11 +134,16 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static CppLocation ClassifyLocation(ExpressionSyntax expression, SemanticModel model)
     {
-        if (IsConverted(expression, model))
-        {
-            return CppLocation.None;
-        }
+        return IsConverted(expression, model) ? CppLocation.None : ClassifyStorage(expression, model);
+    }
 
+    /// <summary>
+    /// <see cref="ClassifyLocation"/> of <paramref name="expression"/> itself, whatever C# converts its value to: the
+    /// receiver of a <c>GetPinnableReference</c> that a <c>fixed</c> statement calls, whose value C# converts to the
+    /// pointer.
+    /// </summary>
+    public static CppLocation ClassifyStorage(ExpressionSyntax expression, SemanticModel model)
+    {
         return Unparenthesize(expression) switch
         {
             DeclarationExpressionSyntax => CppLocation.Storage,

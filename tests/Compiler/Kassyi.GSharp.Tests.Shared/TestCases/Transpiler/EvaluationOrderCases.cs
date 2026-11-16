@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace OrderCases;
@@ -31,6 +32,7 @@ public struct OrderStructWithGetters
     public OrderInner ComputedInner => new OrderInner { V = Value };
     public OrderInner MutatingInner => new OrderInner { V = ++Value };
     public OrderInner this[int step] => new OrderInner { V = Value += step };
+    public int this[ulong step] => Value;
 
     // Properties of the implicit this
     public void ImplicitThisMutatingGetterRead() { var result = Value + MutatingNext; }
@@ -82,6 +84,32 @@ public struct OrderView
         }
     }
 }
+// The builder of a collection expression writes memory: a collection expression is evaluated, then its builder runs
+[CollectionBuilder(typeof(OrderBagBuilder), nameof(OrderBagBuilder.Create))]
+public struct OrderBag
+{
+    public int Count;
+
+    public System.Collections.Generic.IEnumerator<int> GetEnumerator() => throw new System.NotSupportedException();
+}
+
+public static class OrderBagBuilder
+{
+    public static readonly int[] Sink = new int[1];
+
+    [GpuDeviceFunction]
+    public static OrderBag Create(System.ReadOnlySpan<int> values)
+    {
+        Sink[0] += values.Length;
+        OrderBag bag;
+        bag.Count = values.Length;
+        return bag;
+    }
+
+    [GpuDeviceFunction]
+    public static int Weigh(OrderBag bag) => bag.Count;
+}
+
 public struct OrderPair
 {
     public int X;
@@ -96,7 +124,7 @@ public struct OrderPair
 }
 
 // The field keyword reads the backing field of the property, a field of this; Bump writes it through the setter
-public struct OrderFieldKeyword
+public partial struct OrderFieldKeyword
 {
     public int FieldRead
     {
@@ -445,6 +473,7 @@ public static class Order
         var result = d[0] + (v with { Poke = 1 }).Stored;
     }
 
+    public static void CollectionBuilderWritingMemory(int[] d) { var result = d[0] + OrderBagBuilder.Weigh([1, 2]); }
 public static void LocalFunctionCall()
     {
         int i = 0;
@@ -496,4 +525,10 @@ public static void LocalFunctionCall()
         var result = s[i];
     }
     public static void ElementTargetWithCheckedIndex(int[] d, int[] a) { var result = d[a.Length]; }
+    public static void ElementTargetWithUIntIndex(int[] d, uint i) { var result = d[i]; }
+    public static void ElementTargetWithLongIndex(int[] d, long i) { var result = d[i]; }
+    public static void ElementTargetWithULongIndex(int[] d, ulong i) { var result = d[i]; }
+    public static void SpanElementWithIntIndex(System.Span<int> s, int i) { var result = s[i]; }
+    public static void StructIndexerWithULongIndex(OrderStructWithGetters s, ulong i) { var result = s[i]; }
+    public static unsafe void PointerElementWithULongIndex(int* p, ulong i) { var result = p[i]; }
 }

@@ -13,6 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public static partial class DifferentialRunner
 {
+    static partial void EnsureEnvironmentReady();
     private readonly record struct CaseRun(
         DifferentialCase Case,
         IReadOnlyList<DiffPathRunner> Paths,
@@ -39,9 +40,7 @@ public static partial class DifferentialRunner
     /// <param name="seeds">The seeds to run instead of the default ones, e.g. the seeds a failure printed.</param>
     public static void Run(DifferentialCase testCase, IReadOnlyList<int>? seeds = null)
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
+        EnsureEnvironmentReady();
         var effectiveSeeds = seeds ?? testCase.Seeds;
         string? testSeed = effectiveSeeds is null ? DifferentialSeeds.TestSeed : null;
         var report = Evaluate(
@@ -362,7 +361,12 @@ public static partial class DifferentialRunner
             expected = RunOracleOrders(testCase, oracle, initial, shape, seed, out var thrown);
             if (thrown is not null)
             {
-                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths);
+                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths)
+                {
+                    // C# names the parameter of an argument exception, or none; every path has to do the same
+                    ParamName = (thrown as ArgumentException)?.ParamName,
+                    ParamNameIsExact = thrown is ArgumentException,
+                };
                 afterException = expected;
                 return null;
             }

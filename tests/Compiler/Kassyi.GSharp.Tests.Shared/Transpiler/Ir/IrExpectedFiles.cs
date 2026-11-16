@@ -2,25 +2,25 @@
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
-/// The expected files of the IR corpus tests (<c>&lt;name&gt;.expected.txt</c> next to the tests) and the received
-/// files a run writes under <c>tmp/</c>, one per test assembly: Tests.Cpu and Tests.Cuda both compile these tests and
-/// may run together.
+/// The expected files of the IR corpus tests (<c>&lt;name&gt;.expected.txt</c> or <c>&lt;name&gt;.expected.yml</c>
+/// next to the tests) and the received files a run writes under <c>tmp/</c>, one per test assembly: Tests.Cpu and
+/// Tests.Cuda both compile these tests and may run together.
 /// </summary>
 internal static class IrExpectedFiles
 {
-    private const string ExpectedSuffix = ".expected.txt";
+    private const string ExpectedInfix = ".expected";
 
     /// <summary>The lines sorted by ordinal, each ended by <c>\n</c>.</summary>
     public static string SortedLines(IEnumerable<string> lines) =>
         string.Join("\n", lines.OrderBy(static line => line, StringComparer.Ordinal)) + "\n";
 
     /// <summary>
-    /// <c>tmp/&lt;name&gt;.&lt;test assembly&gt;.received.txt</c>, with its folder created.
+    /// <c>tmp/&lt;name&gt;.&lt;test assembly&gt;.received&lt;extension&gt;</c>, with its folder created.
     /// </summary>
-    public static string ReceivedPath(string name)
+    public static string ReceivedPath(string name, string extension = ".txt")
     {
         var assembly = typeof(IrExpectedFiles).Assembly.GetName().Name;
-        var path = RepositoryPaths.Combine("tmp", $"{name}.{assembly}.received.txt");
+        var path = RepositoryPaths.Combine("tmp", $"{name}.{assembly}.received{extension}");
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
         return path;
     }
@@ -37,7 +37,9 @@ internal static class IrExpectedFiles
         var expected = File.Exists(expectedPath) ? string.Join("\n", File.ReadAllLines(expectedPath)) + "\n" : "";
         if (expected != actual)
         {
-            var receivedPath = ReceivedPath(expectedFile[..^ExpectedSuffix.Length]);
+            var receivedPath = ReceivedPath(
+                expectedFile[..expectedFile.IndexOf(ExpectedInfix, StringComparison.Ordinal)],
+                Path.GetExtension(expectedFile));
             File.WriteAllText(receivedPath, actual);
             output.WriteLine("Received: " + receivedPath);
         }

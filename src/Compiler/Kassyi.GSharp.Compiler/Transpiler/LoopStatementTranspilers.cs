@@ -42,7 +42,7 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
     }
 
     /// <summary>
@@ -106,13 +106,21 @@ internal static class LoopStatementTranspilers
             StructOrdering.RegisterUsedStructIfApplicable(elementType, ref context);
         }
 
+        var compilation = context.Query.SemanticModel.Compilation;
+        var forEachForExpansion =
+            compilation.ContainsSyntaxTree(node.SyntaxTree) && node.Parent is LabeledStatementSyntax labeledParent
+                ? (ForEachStatementSyntax)LoweringAnnotations
+                    .AnnotateOriginalSpans(labeledParent, compilation)
+                    .Statement
+                : node;
+
         var expandedBlock = IteratorInliner.Expand(
-            node,
+            forEachForExpansion,
             iteratorMethod,
             sourceInvocation,
             new IteratorExpansionContext(context.Query.SemanticModel, context.Emitter.Dialect, context.Reporter),
-            ref context.Emitter.IteratorExpansionCounter,
-            ref context.Emitter.ArgumentTempCounter);
+            ref context.Emitter.Counters.IteratorExpansion,
+            ref context.Emitter.Counters.ArgumentTemp);
 
         context.Visitor.VisitBlock(expandedBlock);
     }
@@ -130,12 +138,18 @@ internal static class LoopStatementTranspilers
             : null;
         var targetType = ForEachElementConversion.GetTarget(node, sourceElementType, model);
         var conversionHelper = IntegerSemantics.GetConversionHelper(sourceElementType, targetType, out var needsCast);
-        var rawElement = conversionHelper != null ? context.Emitter.ForEachElementCounter++ : -1;
+        var isRefElement = node.Type is RefTypeSyntax;
+        var rawElement = conversionHelper != null || isRefElement ? context.Emitter.ForEachElementCounter++ : -1;
 
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
-            if (conversionHelper != null)
+            if (isRefElement)
+            {
+                // The variable is a pointer to the element, declared in the body (RefLocals)
+                context.Emitter.Writer.Append($"auto& {GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
+            }
+            else if (conversionHelper != null)
             {
                 context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
             }
@@ -160,9 +174,15 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
+        if (isRefElement)
+        {
+            RefLocals.WriteForEachElementBody(node, rawElement, ref context);
+            return;
+        }
+
         if (conversionHelper == null)
         {
-            context.Visitor.VisitStatementOrBlock(node.Statement);
+            LoopBodyWriter.Write(node, node.Statement, ref context);
             return;
         }
 
@@ -194,15 +214,7 @@ internal static class LoopStatementTranspilers
             }
 
             context.Emitter.Writer.AppendLine(";");
-            if (node.Statement is BlockSyntax block)
-            {
-                context.Visitor.VisitBlock(block);
-            }
-            else
-            {
-                context.Visitor.Visit(node.Statement);
-                context.Emitter.Writer.AppendLine();
-            }
+            LoopBodyWriter.WriteInOpenScope(node, node.Statement, visitBlockDirectlyWhenUnlabeled: true, ref context);
         }
     }
 
@@ -258,7 +270,7 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
     }
 
     /// <summary>
@@ -270,7 +282,7 @@ internal static class LoopStatementTranspilers
         context.Emitter.Writer
             .Append("do")
             .AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
         context.Emitter.Writer.Append("while");
         using (context.Emitter.Writer.Parentheses())
         {

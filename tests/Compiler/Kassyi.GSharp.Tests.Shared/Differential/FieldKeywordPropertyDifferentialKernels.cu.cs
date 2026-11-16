@@ -192,7 +192,7 @@ public struct DiffFieldKeywordPair
 /// <summary>
 /// A getter that reads the backing field and then calls a member that writes it: C# reads the field first.
 /// </summary>
-public struct DiffFieldKeywordOrder
+public partial struct DiffFieldKeywordOrder
 {
     public int X { get => field + Bump(ref this); set => field = value; }
 

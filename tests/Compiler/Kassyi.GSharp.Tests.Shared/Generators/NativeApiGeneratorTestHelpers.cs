@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.NativeApi;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -139,12 +140,21 @@ internal static class NativeApiGeneratorTestHelpers
     /// </summary>
     internal static async Task VerifyGenerated(GeneratorDriverRunResult result, string testName)
     {
+        // Both assemblies compare with the one set of snapshots kept beside the Tests.Cpu generator tests
+        var snapshotsDir = RepositoryPaths.Combine(
+            "tests",
+            "Compiler",
+            "Kassyi.GSharp.Tests.Cpu",
+            "Generators",
+            "Snapshots"
+        );
+
         Assert.NotEmpty(result.GeneratedTrees);
         foreach (var tree in result.GeneratedTrees.OrderBy(t => Path.GetFileName(t.FilePath), StringComparer.Ordinal))
         {
             var hintName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(tree.FilePath));
             await Verifier.Verify(tree.ToString(), "cs")
-                .UseDirectory("Snapshots")
+                .UseDirectory(snapshotsDir)
                 .UseFileName($"Snap.{testName}#{hintName}");
         }
     }

@@ -25,6 +25,9 @@ enum class GSharpErrorCode : int32_t {
 // attributes are on the definition only: GCC warns when a declaration that is not a definition combines inline and
 // noinline
 [[noreturn]] void __gsharp_trap(GSharpErrorCode code, const char* message);
+// The same with the place of the check in the kernel's error site table (ErrorChannel.hpp). Declared here as well:
+// the calls of GSharpArray below have a non-dependent argument type, which g++ binds where it reads them
+[[noreturn]] void __gsharp_trap(GSharpErrorCode code, uint32_t site_id);
 
 template <GSharpErrorCode ErrorCode>
 inline const char* __gsharp_range_message() {
@@ -84,10 +87,47 @@ struct GSharpArray {
         return GSharpArray<T>(data + start, length - start);
     }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
-        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
-            static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+    inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countMessage != nullptr ? countMessage : message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+        }
+        return GSharpArray<T>(data + start, count);
+    }
+    // The same with error sites (ErrorSiteTable) that carry the message and the parameter name C# gives each failure: a
+    // start outside the array reports startSite, a count past its end countSite (startSite when countSite is 0)
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> Slice(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+            __gsharp_trap(ErrorCode, startSite);
+            return GSharpArray<T>();
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countSite != 0u ? countSite : startSite);
+            return GSharpArray<T>();
+        }
+        return GSharpArray<T>(data + start, count);
+    }
+    // One side of Array.Copy, in the order of CopyImpl of .NET 10 (the source side first: length, source index, source
+    // range; then the destination side: destination index, destination range; .NET 8 and 9 check both indexes before
+    // both ranges). A negative length is ArgumentOutOfRange (length), a negative index ArgumentOutOfRange (sourceIndex
+    // or destinationIndex), a range past the end Argument (sourceArray or destinationArray). Each failure is an error
+    // site (uint32_t) or a message (const char*)
+    template <typename S>
+    inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
+        if (count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, lengthSite);
+            return GSharpArray<T>();
+        }
+        if (start < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, indexSite);
+            return GSharpArray<T>();
+        }
+        if (start > length || count > length - start) {
+            __gsharp_trap(GSharpErrorCode::Argument, longSite);
+            return GSharpArray<T>();
         }
         return GSharpArray<T>(data + start, count);
     }
@@ -132,7 +172,7 @@ struct GSharpArray {
     template <typename U>
     inline void CopyTo(GSharpArray<U> destination) const {
         if (!TryCopyTo(destination)) {
-            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
+            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short. (Parameter 'destination')");
         }
     }
     // Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
@@ -164,18 +204,43 @@ struct GSharpArray {
             __gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
             return;
         }
+        if (IfDestinationNull == GSharpErrorCode::ArgumentNull) {
+            // The destination is an array, which C# copies into through Array.Copy and names destinationArray
+            if (!TryCopyTo(destination)) {
+                __gsharp_trap(GSharpErrorCode::Argument, "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')");
+            }
+            return;
+        }
         CopyTo(destination);
+    }
+    // The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
+    // count and ArgumentException when the range passes the end
+    inline GSharpArray<T> AsSpanOfArray(
+        int start,
+        int count,
+        const char* outOfRangeMessage,
+        const char* argumentMessage) const {
+        if (start < 0 || count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, outOfRangeMessage);
+        }
+        return Slice<GSharpErrorCode::Argument>(start, count, argumentMessage);
     }
     inline GSharpArray<T> AsSpan() const { return *this; }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
     inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+    inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const { return Slice<ErrorCode>(start, count, message, countMessage); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    inline GSharpArray<T> AsSpan(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const { return Slice<ErrorCode>(start, count, startSite, countSite); }
     inline bool IsEmpty() const { return length <= 0; }
     
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    // Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
+    // const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
+    // element, so the const is removed here and the code that only reads builds. [GpuReadOnly] promises that no
+    // thread writes the array during the launch, through any alias; G# reports the writes it sees (GSH0118)
     template <typename U>
-    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
+    inline GSharpArray(const GSharpArray<U>& other)
+        : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
     inline T* begin() { return data; }
     inline T* end() { return data + length; }
     inline const T* begin() const { return data; }
@@ -183,9 +248,45 @@ struct GSharpArray {
     inline int size() const { return length; }
     inline T& operator[](int index) { return data[index]; }
     inline const T& operator[](int index) const { return data[index]; }
+    // An element at a C# index of type uint, long or ulong. The index is compared with the length at its own width:
+    // narrowing it to int first would wrap 2^32 to element 0. An exact match also wins over the built-in pointer subscript
+    // reached through operator T*(), which made a long long index ambiguous (MSVC C2666, nvcc)
+    inline T& operator[](unsigned int index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline const T& operator[](unsigned int index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline T& operator[](long index) { return data[ElementIndex(static_cast<long long>(index))]; }
+    inline const T& operator[](long index) const { return data[ElementIndex(static_cast<long long>(index))]; }
+    inline T& operator[](unsigned long index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline const T& operator[](unsigned long index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline T& operator[](long long index) { return data[ElementIndex(index)]; }
+    inline const T& operator[](long long index) const { return data[ElementIndex(index)]; }
+    inline T& operator[](unsigned long long index) { return data[ElementIndex(index)]; }
+    inline const T& operator[](unsigned long long index) const { return data[ElementIndex(index)]; }
+    // IndexOutOfRangeException outside the array, as C# throws it at ldelem / stelem; a negative index is a large unsigned one
+    inline int ElementIndex(long long index) const {
+        if (static_cast<unsigned long long>(index) >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+        return static_cast<int>(index);
+    }
+    inline int ElementIndex(unsigned long long index) const {
+        if (index >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+        return static_cast<int>(index);
+    }
     inline operator T*() { return data; }
     inline operator const T*() const { return data; }
 };
+
+// The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988): C#
+// converts the index with conv.ovf.i.un when it is evaluated, so an index above long.MaxValue throws OverflowException
+// before a null check or the right side of an assignment
+inline long long __gsharp_array_index_u64(unsigned long long index) {
+    if (index > 0x7FFFFFFFFFFFFFFFull) {
+        __gsharp_trap(GSharpErrorCode::Overflow, "Arithmetic operation resulted in an overflow.");
+    }
+    return static_cast<long long>(index);
+}
 
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>

@@ -104,37 +104,88 @@ public class StackLinqElementsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 20).ElementAt(10));
     }
 
-    [Fact]
-    public void ElementAt_NegativeIndex_ThrowsArgumentOutOfRangeException()
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-2)]
+    [InlineData(int.MinValue)]
+    public void ElementAt_NegativeIndex_ThrowsArgumentOutOfRangeException(int index)
     {
         int[] data = { 10, 20, 30, 40, 50 };
-        Span<int> span = data;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().ElementAt(-1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 10).ElementAt(-1));
-
-        bool spanElementAtThrew = false;
-        try
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().ElementAt(index));
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 10).ElementAt(index));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            span.AsStackEnumerable().ElementAt(-1);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            spanElementAtThrew = true;
-        }
-
-        Assert.True(spanElementAtThrew);
+            Span<int> span = data;
+            return span.AsStackEnumerable().ElementAt(index);
+        });
     }
 
-    [Fact]
-    public void ElementAtOrDefault_NegativeIndex_ReturnsDefault()
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-2)]
+    [InlineData(int.MinValue)]
+    public void ElementAtOrDefault_NegativeIndex_ReturnsDefault(int index)
     {
         int[] data = { 10, 20, 30, 40, 50 };
         Span<int> span = data;
 
-        Assert.Equal(0, data.AsStackEnumerable().ElementAtOrDefault(-1));
-        Assert.Equal(0, span.AsStackEnumerable().ElementAtOrDefault(-1));
-        Assert.Equal(0, data.AsStackEnumerable().Where(x => x > 10).ElementAtOrDefault(-1));
+        Assert.Equal(0, data.AsStackEnumerable().ElementAtOrDefault(index));
+        Assert.Equal(0, span.AsStackEnumerable().ElementAtOrDefault(index));
+        Assert.Equal(0, data.AsStackEnumerable().Where(x => x > 10).ElementAtOrDefault(index));
+    }
+
+    // The selector that throws shows that the upstream is not even started, not only that its side effects are skipped
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.Boundary)]
+    public void ElementAtOrDefault_NegativeIndex_DoesNotEnumerateOrExecuteUpstreamSideEffects(bool throwingSelector)
+    {
+        int[] data = [10, 20, 30, 40];
+        int selectCalls = 0;
+        int whereCalls = 0;
+
+        int selectResult = data.AsStackEnumerable()
+            .Select(x => { selectCalls++; return throwingSelector ? throw new InvalidOperationException() : x * 2; })
+            .ElementAtOrDefault(-1);
+
+        int whereResult = data.AsStackEnumerable()
+            .Where(x => { whereCalls++; return x > 20; })
+            .ElementAtOrDefault(-1);
+
+        Assert.Equal(0, selectResult);
+        Assert.Equal(0, selectCalls);
+        Assert.Equal(0, whereResult);
+        Assert.Equal(0, whereCalls);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Scenario(TestScenario.Boundary)]
+    public void ElementAt_NegativeIndex_ThrowsWithoutEnumeratingOrExecutingUpstreamSideEffects(bool throwingSelector)
+    {
+        int[] data = [10, 20, 30, 40];
+        int selectCalls = 0;
+        int whereCalls = 0;
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            data.AsStackEnumerable()
+                .Select(x =>
+                {
+                    selectCalls++;
+                    return throwingSelector ? throw new InvalidOperationException() : x * 2;
+                })
+                .ElementAt(-1));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            data.AsStackEnumerable()
+                .Where(x => { whereCalls++; return x > 20; })
+                .ElementAt(-1));
+
+        Assert.Equal(0, selectCalls);
+        Assert.Equal(0, whereCalls);
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// and evaluation order (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
+public partial class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
 {
     [SkippableTheory]
     [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
@@ -110,65 +110,6 @@ public class SpanWriteDiagnosticsTests : SpanKernelPathTestBase
             Assert.Contains("410", exception.Message);
         }
     }
-
-#if GSHARP_CUDA
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void ArrayFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
-    {
-        Skip.If(true,
-            "CUDA checks out-of-range slice and span members only when built with " +
-            "GSharpCheckedBuild (-DGSHARP_CHECKED); unskip once #716 lands.");
-        var a = new int[] { 7, 7, 7, 7 };
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
-            SpanWriteKernels.LaunchOutOfRangeArrayFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX));
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void ArrayCopy_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
-    {
-        Skip.If(true,
-            "CUDA checks out-of-range slice and span members only when built with " +
-            "GSharpCheckedBuild (-DGSHARP_CHECKED); unskip once #716 lands.");
-        var src = new int[] { 7, 7, 7, 7 };
-        var dst = new int[] { 7, 7, 7, 7 };
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
-            SpanWriteKernels.LaunchOutOfRangeArrayCopyKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX));
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void AsSpanFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
-    {
-        Skip.If(true,
-            "CUDA checks out-of-range slice and span members only when built with " +
-            "GSharpCheckedBuild (-DGSHARP_CHECKED); unskip once #716 lands.");
-        var a = new int[] { 7, 7, 7, 7 };
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
-            SpanWriteKernels.LaunchOutOfRangeAsSpanFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX));
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void SliceFill_OutOfRangeParametersInCuda_TrapsExecutionWithCudaException()
-    {
-        Skip.If(true,
-            "CUDA checks out-of-range slice and span members only when built with " +
-            "GSharpCheckedBuild (-DGSHARP_CHECKED); unskip once #716 lands.");
-        var a = new int[] { 7, 7, 7, 7 };
-        Assert.Throws<Kassyi.GSharp.Runtime.Interop.CudaException>(() =>
-            SpanWriteKernels.LaunchOutOfRangeSliceFillKernel(a, gridDimX: GridDimX, blockDimX: BlockDimX));
-    }
-#endif
 
     [SkippableTheory]
     [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]

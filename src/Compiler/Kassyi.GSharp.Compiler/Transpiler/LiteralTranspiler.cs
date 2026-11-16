@@ -20,9 +20,18 @@ internal static class LiteralTranspiler
             return false;
         }
 
+        AppendEmptyView(type, ref context);
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the empty view of the array-like <paramref name="type"/>, <c>GSharpArray&lt;int&gt;()</c>: its <c>data</c>
+    /// is <c>nullptr</c>, which is how a null array is represented.
+    /// </summary>
+    public static void AppendEmptyView(ITypeSymbol type, ref TranspileContext context)
+    {
         context.Emitter.Dialect.AppendType(ref context, type);
         context.Emitter.Writer.Append("()");
-        return true;
     }
 
     /// <summary>Writes <paramref name="node"/> as a C++ literal.</summary>
@@ -56,26 +65,29 @@ internal static class LiteralTranspiler
         }
     }
 
-    private static void AppendNumeric(SyntaxToken token, SourceWriter writer)
+    /// <summary>
+    /// Writes the C# numeric literal <paramref name="text"/>, whose value has the type <paramref name="literalType"/>
+    /// (<see cref="GetLiteralType"/>), as the C++ literal of that type.
+    /// </summary>
+    internal static void AppendNumeric(string text, SpecialType literalType, SourceWriter writer)
     {
-        var text = token.Text;
-        switch (token.Value)
+        switch (literalType)
         {
             // C# long/ulong are always 64-bit, but C++ 'L'/'UL' are 32-bit under LLP64 (MSVC, Windows nvcc).
-            case long or ulong:
-                AppendInt64Literal(text, token.Value is ulong, writer);
+            case SpecialType.System_Int64 or SpecialType.System_UInt64:
+                AppendInt64Literal(text, literalType == SpecialType.System_UInt64, writer);
                 return;
             // An unsuffixed decimal C# literal from 2^31 to 2^32 - 1 is uint, but C++ gives a decimal literal the first
             // of int, long and long long that holds it, a signed 64-bit type under LP64 (g++), so it carries the 'u' of
             // its C# type. A hexadecimal or binary literal of that value is unsigned int in C++ as well.
-            case uint when IsUnsuffixedDecimal(text):
+            case SpecialType.System_UInt32 when IsUnsuffixedDecimal(text):
                 AppendWithoutSeparators(text, text.Length, writer);
                 writer.Append('u');
                 return;
             // C# accepts "2f" and "2d", but C++ treats "2" as an integer literal (so "f" is an unknown suffix) and has
             // no "d" suffix.
-            case float or double:
-                AppendFloatingPointLiteral(text, token.Value is float, writer);
+            case SpecialType.System_Single or SpecialType.System_Double:
+                AppendFloatingPointLiteral(text, literalType == SpecialType.System_Single, writer);
                 return;
             // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
             default:
@@ -83,6 +95,25 @@ internal static class LiteralTranspiler
                 return;
         }
     }
+
+    /// <summary>
+    /// The type of the value of a numeric literal token: Int64, UInt64, UInt32, Single, Double or Int32; None for any
+    /// other.
+    /// </summary>
+    internal static SpecialType GetLiteralType(object? value) =>
+        value switch
+        {
+            long => SpecialType.System_Int64,
+            ulong => SpecialType.System_UInt64,
+            uint => SpecialType.System_UInt32,
+            float => SpecialType.System_Single,
+            double => SpecialType.System_Double,
+            int => SpecialType.System_Int32,
+            _ => SpecialType.None
+        };
+
+    private static void AppendNumeric(SyntaxToken token, SourceWriter writer) =>
+        AppendNumeric(token.Text, GetLiteralType(token.Value), writer);
 
     private static bool HasNonAscii(string value)
     {

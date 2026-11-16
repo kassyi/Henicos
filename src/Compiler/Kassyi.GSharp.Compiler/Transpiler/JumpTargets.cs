@@ -16,8 +16,8 @@ internal static class JumpTargets
         (kind, target) = jump switch
         {
             ReturnStatementSyntax => (UsingExitKind.Return, FunctionOf(jump) ?? jump.SyntaxTree.GetRoot()),
-            BreakStatementSyntax => (UsingExitKind.Break, EnclosingTarget(jump, includesSwitch: true)),
-            ContinueStatementSyntax => (UsingExitKind.Continue, EnclosingTarget(jump, includesSwitch: false)),
+            BreakStatementSyntax => (UsingExitKind.Break, LabeledJumpSyntax.FindEnclosingTarget(jump)),
+            ContinueStatementSyntax => (UsingExitKind.Continue, LabeledJumpSyntax.FindEnclosingTarget(jump)),
             GotoStatementSyntax { RawKind: (int)SyntaxKind.GotoStatement } label =>
                 (UsingExitKind.Goto, FindLabel(label)),
             GotoStatementSyntax => (UsingExitKind.GotoCase, EnclosingSwitch(jump)),
@@ -43,22 +43,6 @@ internal static class JumpTargets
     private static bool IsFunction(SyntaxNode node) =>
         node is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax
             or AccessorDeclarationSyntax;
-
-    // The innermost loop (or switch, for a break) around the jump in its function
-    private static SyntaxNode? EnclosingTarget(SyntaxNode jump, bool includesSwitch)
-    {
-        for (var current = jump.Parent; current != null && !IsFunction(current); current = current.Parent)
-        {
-            if (current is ForStatementSyntax or CommonForEachStatementSyntax or WhileStatementSyntax
-                    or DoStatementSyntax ||
-                (includesSwitch && current is SwitchStatementSyntax))
-            {
-                return current;
-            }
-        }
-
-        return null;
-    }
 
     private static SyntaxNode? EnclosingSwitch(SyntaxNode jump)
     {

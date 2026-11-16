@@ -12,8 +12,10 @@ internal static class PointerLaunchPlan
     {
         { IsArray: true, IsNullableValue: true } => PointerArgumentKind.NullableArray,
         { IsArray: true } => PointerArgumentKind.Array,
-        { IsByRef: true } => PointerArgumentKind.Reference,
-        { IsCustomStruct: true } => PointerArgumentKind.ShadowStruct,
+        { RefKind: RefKind.Ref or RefKind.Out } => PointerArgumentKind.Reference,
+        // An int? keeps its type: only a Nullable<T> whose CUDA layout differs is taken as its shadow struct
+        { IsCustomStruct: true, IsNullableStruct: false } or { IsCustomStruct: true, Cuda.IsIdenticalStruct: false } =>
+            PointerArgumentKind.ShadowStruct,
         _ => PointerArgumentKind.Value
     };
 

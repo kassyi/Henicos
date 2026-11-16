@@ -24,7 +24,7 @@ public interface IConstantProvider_OpTest
     static abstract int GetMagic();
 }
 
-public struct ConstantImpl_OpTest : IConstantProvider_OpTest
+public partial struct ConstantImpl_OpTest : IConstantProvider_OpTest
 {
     public int Value;
     [Kassyi.GSharp.Core.GpuDeviceFunction]

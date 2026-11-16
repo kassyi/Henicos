@@ -19,33 +19,6 @@ internal static class TypeLayoutCalculator
                !named.ContainingNamespace.IsCoreNamespace();
     }
 
-    /// <summary>Recursively collects all user structs referenced within the type tree.</summary>
-    /// <remarks>
-    /// The element of an array field is collected too: its shadow carries the array's elements to the device.
-    /// </remarks>
-    public static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
-    {
-        if (!IsUserStruct(type))
-        {
-            return;
-        }
-
-        var named = (INamedTypeSymbol)type;
-
-        if (!structs.Add(named))
-        {
-            return;
-        }
-
-        foreach (var member in StructAbiMembers.Get(named))
-        {
-            var memberType = member.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying] }
-                ? underlying
-                : member.Type;
-            CollectStructs(memberType.TryGetArrayLikeElementType(out var element) ? element : memberType, structs);
-        }
-    }
-
     /// <summary>
     /// The C# spelling of <paramref name="type"/> for a diagnostic message (<c>decimal</c>, <c>N.Pair</c>).
     /// </summary>

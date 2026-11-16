@@ -149,6 +149,7 @@ __gsharp_layout_checked_EvaluatePacketsKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EnumTypeKernels.EvaluatePacketsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "EnumTypeKernels.EvaluatePacketsKernel");
 global::Kassyi.GSharp.Tests.Shared.Syntax.PacketItem[] __gsharp_csharp_arg_0 = items;
 global::Kassyi.GSharp.Tests.Shared.Syntax.PacketColor __gsharp_csharp_arg_1 = bonusColor;
 global::System.Int32[] __gsharp_csharp_arg_2 = output;

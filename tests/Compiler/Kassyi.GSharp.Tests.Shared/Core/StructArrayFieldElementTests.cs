@@ -8,14 +8,11 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class StructArrayFieldElementTests
 {
     // CPU passes the struct in its managed layout until L4
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
-    [Fact]
-#endif
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void ArrayFieldOfUserStructs_ByRef_IsCopiedBothWays()
     {
+        Skip.If(!AssemblyDialect.Current.IsCuda, "L4");
         var h = new ElemArrayHolder
         {
             Tag = 3,

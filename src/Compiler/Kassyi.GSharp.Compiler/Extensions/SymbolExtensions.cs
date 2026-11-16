@@ -132,6 +132,60 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
 
+    /// <summary>
+    /// Whether <paramref name="parameter"/> is an <c>in</c> or <c>ref readonly</c> parameter of a kernel that the
+    /// kernel receives by address: the kernel also has a <c>ref</c> or <c>out</c> parameter, or an array or span
+    /// parameter, whose memory the caller may pass the same variable, or a field of it, or a variable that holds it as
+    /// a field, or an element of the array (the types are the same, or one is a field of the other, at any depth; for
+    /// an array or span, its element type), and a write through it must show through the <c>in</c> parameter as in C#.
+    /// Any other <c>in</c> parameter of a kernel is a value.
+    /// </summary>
+    public static bool IsKernelInPassedByAddress(this IParameterSymbol parameter) =>
+        parameter is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol kernel } &&
+        kernel.HasAttribute(KnownAttributes.GpuKernel) &&
+        !parameter.Type.IsArrayLikeType() &&
+        !parameter.Type.IsRefLikeType &&
+        kernel.Parameters
+            .AsStackEnumerable()
+            .Any(parameter.Type, static (other, type) => MayShareMemory(other, type));
+
+    // A ref or out parameter, or the elements of an array or span parameter
+    private static bool MayShareMemory(IParameterSymbol other, ITypeSymbol type) =>
+        other.RefKind is RefKind.Ref or RefKind.Out
+            ? MayShareMemory(other.Type, type)
+            // An element of the array is the in value, or holds it as a field; a value that holds the element type as a
+            // field is no memory of the array
+            : other.Type.TryGetArrayLikeElementType(out var element) &&
+              (SymbolEqualityComparer.Default.Equals(element, type) ||
+               HoldsAsField(element, type, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)));
+
+    // The same type, or one that holds the other as a field, directly or through the fields of its fields
+    private static bool MayShareMemory(ITypeSymbol first, ITypeSymbol second) =>
+        SymbolEqualityComparer.Default.Equals(first, second) ||
+        HoldsAsField(first, second, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)) ||
+        HoldsAsField(second, first, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default));
+
+    // A struct is a value that holds its instance fields, so a field of a field type is memory inside it, at any depth.
+    // No struct holds itself, but a primitive type declares a field of its own type (and a type with an error may be
+    // cyclic), so each struct is entered once
+    private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, HashSet<ITypeSymbol> entered)
+    {
+        if (holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named ||
+            !entered.Add(holder))
+        {
+            return false;
+        }
+
+        return named.GetMembers()
+            .AsStackEnumerable()
+            .OfType<IFieldSymbol>()
+            .Any((field, entered), static (member, state) =>
+                !member.IsStatic && !member.IsConst &&
+                (SymbolEqualityComparer.Default.Equals(member.Type, state.field) ||
+                    HoldsAsField(member.Type, state.field, state.entered))
+            );
+    }
+
     /// <summary>T of <see cref="Nullable{T}"/>, or <paramref name="type"/> itself.</summary>
     public static ITypeSymbol UnwrapNullable(this ITypeSymbol type) =>
         type is INamedTypeSymbol
@@ -373,6 +427,17 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsConstexprParameter(this IParameterSymbol parameter) =>
         parameter.HasAttribute(KnownAttributes.GpuConstexpr);
+
+    /// <summary>
+    /// Whether the emitted signature passes <paramref name="parameter"/> as a pointer: <c>ref</c> and <c>out</c> always,
+    /// <c>in</c> and <c>ref readonly</c> for a device function or for a kernel whose parameter is passed by address
+    /// (<see cref="IsKernelInPassedByAddress"/>), as the emitter (<c>YamlDialectBase.AppendParameter</c>) writes it. The
+    /// kernel parameter space check (<c>KernelSignatureRule</c>) counts both entry points of such a kernel instead.
+    /// </summary>
+    public static bool IsPassedByPointer(this IParameterSymbol parameter, bool isKernel) =>
+        parameter.RefKind is RefKind.Ref or RefKind.Out ||
+        (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter &&
+         (!isKernel || parameter.IsKernelInPassedByAddress()));
 
     /// <summary>
     /// Whether <paramref name="method"/> is a <c>[GpuKernel(Cooperative = true)]</c> kernel, which the launcher starts

@@ -143,8 +143,19 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// </summary>
     public string InternalError { get; set; } = "";
 
-    /// <summary>Gets or sets whether the assembly holds the managed state machine of a suspending function.</summary>
+    /// <summary>
+    /// Gets or sets whether the assembly holds the managed state machine of a suspending function (the frame struct,
+    /// or a <c>private</c> frame struct with <c>__gsharp_enter_</c> and <c>__gsharp_number_frame_</c> entries when
+    /// <see cref="PrivateManagedFrame"/> is set).
+    /// </summary>
     public bool ManagedStateMachine { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the managed frame of a suspending function is <c>private</c> to its declaring type; a
+    /// consumer then holds the frame as <c>object?</c> and runs the function through its <c>__gsharp_enter_</c> and
+    /// <c>__gsharp_number_frame_</c> entries (#1991).
+    /// </summary>
+    public bool PrivateManagedFrame { get; set; }
 
     /// <summary>
     /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and holds a
