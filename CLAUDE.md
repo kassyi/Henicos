@@ -5,6 +5,7 @@
 @.agents/rules/coding-style.md
 @.agents/rules/generator-invariants.md
 @.agents/rules/gsharp-naming-conventions.md
+@.agents/rules/issue-labels.md
 @.agents/rules/issue-milestones.md
 @.agents/rules/job-queue.md
 @.agents/rules/model-routing.md
