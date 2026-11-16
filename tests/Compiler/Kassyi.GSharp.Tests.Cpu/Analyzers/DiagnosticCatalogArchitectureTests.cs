@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Tests.Shared.Helpers;
@@ -8,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
-/// <summary>Guards that every diagnostic is defined in <c>diagnostics.json</c> and nowhere else.</summary>
+/// <summary>Guards that every diagnostic is defined in <c>diagnostics.yml</c> and nowhere else.</summary>
 [Category(TestCategory.Compiler)]
 public class DiagnosticCatalogArchitectureTests
 {
@@ -19,7 +18,7 @@ public class DiagnosticCatalogArchitectureTests
     // The catalog generator itself cites an example ID in its schema-error message.
     private const string CatalogGeneratorFile = "DiagnosticGenerator.cs";
 
-    // Every ID that diagnostics.json defines, obsolete ones included: GSharpDiagnostics.Reported leaves those out, and
+    // Every ID that diagnostics.yml defines, obsolete ones included: GSharpDiagnostics.Reported leaves those out, and
     // a literal that names an obsolete ID is still a literal ID
     private static readonly string[] s_catalogIds = ReadCatalogIds();
 
@@ -52,7 +51,7 @@ public class DiagnosticCatalogArchitectureTests
         }
 
         Assert.True(violations.Count == 0,
-            "Diagnostic IDs must come from diagnostics.json (GSharpDiagnostics), not string literals:" +
+            "Diagnostic IDs must come from diagnostics.yml (GSharpDiagnostics), not string literals:" +
             Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
 
@@ -84,7 +83,7 @@ public class DiagnosticCatalogArchitectureTests
         }
 
         Assert.True(violations.Count == 0,
-            "DiagnosticDescriptor instances must be generated from diagnostics.json:" +
+            "DiagnosticDescriptor instances must be generated from diagnostics.yml:" +
             Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
 
@@ -123,18 +122,7 @@ public class DiagnosticCatalogArchitectureTests
             _ => false,
         };
 
-    private static string[] ReadCatalogIds()
-    {
-        using var catalog = JsonDocument.Parse(
-            File.ReadAllText(Path.Combine(RepositoryPaths.CompilerProject, "Diagnostics", "diagnostics.json")));
-        return
-        [
-            .. catalog.RootElement
-                .EnumerateArray()
-                .Select(static entry => entry.GetProperty("id").GetString())
-                .OfType<string>()
-        ];
-    }
+    private static string[] ReadCatalogIds() => [.. DiagnosticCatalogFile.Read().Select(static entry => entry.Id)];
 
     private static IEnumerable<string> EnumerateSourceFiles()
     {

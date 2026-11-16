@@ -1,11 +1,11 @@
 using System.Linq;
-using System.Text.Json;
+using System.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Compiler.Generators.Tests;
 
 /// <summary>
-/// The <c>diagnostics</c> mode: the strings of <c>diagnostics.json</c> reach the generated descriptors exactly, and a
+/// The <c>diagnostics</c> mode: the strings of <c>diagnostics.yml</c> reach the generated descriptors exactly, and a
 /// file that is not a list of diagnostics fails the run instead of leaving the earlier output in place.
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
@@ -24,6 +24,7 @@ public class DiagnosticGeneratorTests
         "line separator\u2028and next line\u0085",
         "{0} and {{literal}}",
         "non-ASCII: \u00e9\u4e2d",
+        "a colon: and a # mark, [brackets] and {braces}",
     ];
 
     [Theory]
@@ -32,18 +33,17 @@ public class DiagnosticGeneratorTests
     public void Strings_ReachTheDescriptorExactly(string text)
     {
         using var scratch = new ScratchDirectory();
-        var entry = new Dictionary<string, object>
-        {
-            ["name"] = "Probe",
-            ["id"] = "GSH9999",
-            ["title"] = text,
-            ["messageFormat"] = text,
-            ["category"] = text,
-            ["description"] = text,
-            ["defaultSeverity"] = "Error",
-            ["isEnabledByDefault"] = true,
-        };
-        var input = scratch.Write("diagnostics.json", JsonSerializer.Serialize(new[] { entry }));
+        var quoted = Quote(text);
+        var input = scratch.Write(
+            "diagnostics.yml",
+            "- name: Probe\n" +
+            "  id: GSH9999\n" +
+            $"  title: {quoted}\n" +
+            $"  messageFormat: {quoted}\n" +
+            $"  category: {quoted}\n" +
+            $"  description: {quoted}\n" +
+            "  defaultSeverity: Error\n" +
+            "  isEnabledByDefault: true\n");
 
         var result = GeneratorRun.Run("diagnostics", input, scratch.Combine("out"));
 
@@ -59,7 +59,7 @@ public class DiagnosticGeneratorTests
     public void RepositoryDiagnostics_GenerateParsableSource()
     {
         using var scratch = new ScratchDirectory();
-        var input = RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", "Diagnostics", "diagnostics.json");
+        var input = RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", "Diagnostics", "diagnostics.yml");
 
         var result = GeneratorRun.Run("diagnostics", input, scratch.Combine("out"));
 
@@ -71,20 +71,21 @@ public class DiagnosticGeneratorTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("null", 0, "The file must hold a JSON array of diagnostics")]
-    [InlineData("[\n  { \"name\": \"Probe\",\n    \"id\": }\n]", 3, "")]
-    [InlineData("{ \"name\": \"Probe\" }", 1, "")]
-    public void FileThatIsNotAList_FailsWithFileAndLine(string json, int line, string message)
+    [InlineData("name: Probe\n", 1, "The file must hold a YAML list of diagnostics.")]
+    [InlineData("- Probe\n", 1, "Each diagnostic must be a mapping.")]
+    [InlineData("- name: Probe\n  id: GSH9999\n  name: Again\n", 3, "Duplicate key 'name'.")]
+    [InlineData("- name: Probe\n  severity: Error\n", 2, "Unknown key 'severity'.")]
+    [InlineData("- name: Probe\n  isObsolete: yes\n", 2, "The value of 'isObsolete' must be true or false, not 'yes'.")]
+    public void FileThatIsNotAList_FailsWithFileAndLine(string yaml, int line, string message)
     {
         using var scratch = new ScratchDirectory();
-        var input = scratch.Write("diagnostics.json", json);
+        var input = scratch.Write("diagnostics.yml", yaml);
         var stale = scratch.Write("out/GSharpDiagnostics.g.cs", "// stale");
 
         var result = GeneratorRun.Run("diagnostics", input, scratch.Combine("out"));
 
         Assert.Equal(1, result.ExitCode);
-        var location = line > 0 ? $"{input}({line})" : input;
-        Assert.Contains($"{location}: error : {message}", result.StandardError, StringComparison.Ordinal);
+        Assert.Contains($"{input}({line}): error : {message}", result.StandardError, StringComparison.Ordinal);
         Assert.Equal("// stale", File.ReadAllText(stale));
     }
 
@@ -95,7 +96,7 @@ public class DiagnosticGeneratorTests
         var source = DiagnosticGenerator.GenerateSource([Definition("Probe", "GSH9999", "Fatal")]);
 
         Assert.Contains(
-            "#error Invalid defaultSeverity 'Fatal' in diagnostics.json (ID: GSH9999).",
+            "#error Invalid defaultSeverity 'Fatal' in diagnostics.yml (ID: GSH9999).",
             source,
             StringComparison.Ordinal);
     }
@@ -123,6 +124,27 @@ public class DiagnosticGeneratorTests
             .ToList();
         Assert.Contains("Current", listed);
         Assert.DoesNotContain("Retired", listed);
+    }
+
+    // A YAML double-quoted scalar with the escapes the compiler's YAML parser reads
+    private static string Quote(string text)
+    {
+        var quoted = new StringBuilder("\"");
+        foreach (var c in text)
+        {
+            quoted.Append(c switch
+            {
+                '\\' => "\\\\",
+                '"' => "\\\"",
+                '\n' => "\\n",
+                '\r' => "\\r",
+                '\t' => "\\t",
+                '\0' => "\\0",
+                _ => c.ToString(),
+            });
+        }
+
+        return quoted.Append('"').ToString();
     }
 
     private static DiagnosticDefinition Definition(string name, string id, string severity, bool isObsolete = false) =>
