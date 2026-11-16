@@ -308,6 +308,10 @@ internal static class MethodSignatureTranspiler
         }
     }
 
+    // On the CPU a function that must not be inlined is still declared inline, so that each translation unit that
+    // includes it holds a weak definition instead of a second strong one; CUDA keeps one module per unit
+    private static string NoInlineKeyword(bool isCuda) => isCuda ? "__noinline__" : "inline __noinline__";
+
     private static string GetInliningKeyword(IMethodSymbol? methodSymbol, bool isCuda)
     {
         if (methodSymbol == null)
@@ -324,7 +328,7 @@ internal static class MethodSignatureTranspiler
 
             if (attr.IsAttribute(KnownAttributes.GpuNoInline))
             {
-                return isCuda ? "__noinline__" : "inline __noinline__";
+                return NoInlineKeyword(isCuda);
             }
 
             if (attr.IsAttribute(KnownAttributes.MethodImpl))
@@ -337,7 +341,7 @@ internal static class MethodSignatureTranspiler
 
                 if ((opt & MethodImplOptions.NoInlining) != 0)
                 {
-                    return isCuda ? "__noinline__" : "inline __noinline__";
+                    return NoInlineKeyword(isCuda);
                 }
             }
         }
