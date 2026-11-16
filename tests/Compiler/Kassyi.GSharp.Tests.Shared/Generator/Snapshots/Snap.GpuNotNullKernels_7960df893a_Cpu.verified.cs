@@ -96,6 +96,10 @@ native.Offset = host.Offset;
 }
 public static unsafe void Unmarshal_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, ref AotContexts.NotNullHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Offset = native.Offset;
 }
 public static void CopyArrays_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

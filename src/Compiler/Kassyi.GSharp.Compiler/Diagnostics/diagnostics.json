@@ -573,9 +573,9 @@
     "name": "KernelParameterSpaceExceeded",
     "id": "GSH0064",
     "title": "Kernel parameters exceed the parameter space limit",
-    "messageFormat": "The parameters of kernel '{0}' take {1} bytes, which exceeds the {2}-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.",
+    "messageFormat": "The parameters of kernel '{0}' take {1} bytes with the ones G# adds, which exceeds the {2}-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.",
     "category": "GSharpTranspiler",
-    "defaultSeverity": "Warning",
+    "defaultSeverity": "Error",
     "isEnabledByDefault": true
   },
   {
@@ -917,6 +917,15 @@
     "id": "GSH0117",
     "title": "SharedMemory<T> count must not be negative",
     "messageFormat": "SharedMemory<T> cannot have a negative count ({0})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ReadOnlyArrayWritten",
+    "id": "GSH0118",
+    "title": "A [GpuReadOnly] array is written",
+    "messageFormat": "The [GpuReadOnly] array '{0}' is written: {1}. [GpuReadOnly] promises that no thread writes the array while the kernel runs, through any alias. Remove the write, or remove the attribute.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

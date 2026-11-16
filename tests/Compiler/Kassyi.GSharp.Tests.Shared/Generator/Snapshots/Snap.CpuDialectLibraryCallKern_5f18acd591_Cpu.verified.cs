@@ -32,11 +32,11 @@ public partial class CpuDialectLibraryCallKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(108390976u, "CpuDialectLibraryCallKernels.cs", 12, 9, "ElementAtKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166699080u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166699080u, "CpuDialectLibraryCallKernels.cs", 12, 21, "ElementAtKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1795060548u, "CpuDialectLibraryCallKernels.cs", 18, 9, "ElementAtIndexKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(14685589u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(14685589u, "CpuDialectLibraryCallKernels.cs", 18, 21, "ElementAtIndexKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(128457812u, "CpuDialectLibraryCallKernels.cs", 30, 9, "SelectAtRepeatedCurrentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(527262482u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(527262482u, "CpuDialectLibraryCallKernels.cs", 30, 21, "SelectAtRepeatedCurrentKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2020813314u, "CpuDialectLibraryCallKernels.cs", 39, 9, "UnfusedFirstKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1085811562u, "CpuDialectLibraryCallKernels.cs", 39, 21, "UnfusedFirstKernel", "Sequence contains no elements"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(463082336u, "CpuDialectLibraryCallKernels.cs", 45, 9, "UnfusedLastKernel", "G#: a null array is read"),

@@ -130,12 +130,18 @@ internal static class LoopStatementTranspilers
             : null;
         var targetType = ForEachElementConversion.GetTarget(node, sourceElementType, model);
         var conversionHelper = IntegerSemantics.GetConversionHelper(sourceElementType, targetType, out var needsCast);
-        var rawElement = conversionHelper != null ? context.Emitter.ForEachElementCounter++ : -1;
+        var isRefElement = node.Type is RefTypeSyntax;
+        var rawElement = conversionHelper != null || isRefElement ? context.Emitter.ForEachElementCounter++ : -1;
 
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
-            if (conversionHelper != null)
+            if (isRefElement)
+            {
+                // The variable is a pointer to the element, declared in the body (RefLocals)
+                context.Emitter.Writer.Append($"auto& {GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
+            }
+            else if (conversionHelper != null)
             {
                 context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.ForEachElementPrefix}{rawElement}");
             }
@@ -160,6 +166,12 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
+        if (isRefElement)
+        {
+            RefLocals.WriteForEachElementBody(node, rawElement, ref context);
+            return;
+        }
+
         if (conversionHelper == null)
         {
             context.Visitor.VisitStatementOrBlock(node.Statement);
