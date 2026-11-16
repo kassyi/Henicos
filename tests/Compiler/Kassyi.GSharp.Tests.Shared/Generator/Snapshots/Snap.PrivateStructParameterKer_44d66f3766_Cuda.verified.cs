@@ -135,7 +135,11 @@ native.Scale = host.Scale;
 }
 public static unsafe void Unmarshal_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, ref AotContexts.Bag native, global::System.IntPtr hStream = default)
 {
-if (host.Values != null && native.Values.Data != global::System.IntPtr.Zero)
+if (native.Values.Data == global::System.IntPtr.Zero)
+{
+host.Values = default;
+}
+else if (host.Values != null)
 {
 int size = checked(host.Values.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -185,6 +189,7 @@ private static unsafe void LaunchScaleKernel(global::Kassyi.GSharp.Tests.Shared.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateStructParameterKernels.ScaleKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateStructParameterKernels.ScaleKernel");
 global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag __gsharp_csharp_arg_0 = bag;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.ScaleKernel(__gsharp_csharp_arg_0));
 return;

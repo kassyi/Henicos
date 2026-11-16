@@ -125,6 +125,7 @@ public static unsafe void LaunchDelayedWriteKernel(global::System.Int32[] keys, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchEpochKernels.DelayedWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchEpochKernels.DelayedWriteKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = keys;
 global::System.Int64 __gsharp_csharp_arg_1 = cycles;
 global::System.Int32[] __gsharp_csharp_arg_2 = result;
@@ -493,6 +494,7 @@ public static unsafe void LaunchFillUnlessFailKernel(global::System.Int32 failin
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchEpochKernels.FillUnlessFailKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchEpochKernels.FillUnlessFailKernel");
 global::System.Int32 __gsharp_csharp_arg_0 = failingThread;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Cuda.LaunchEpochKernels.FillUnlessFailKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

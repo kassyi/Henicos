@@ -176,6 +176,30 @@ internal static class StackLinqHelper
     public static bool HasPredicateOrSelector(InvocationExpressionSyntax invocation, IMethodSymbol symbol) =>
         GetStageArgumentCount(symbol) > 0;
 
+    // <result> = <helper>(<result>, <element or selector(element)>);  (the 128-bit sum of a long or ulong Sum)
+    public static void EmitWideAccumulateElement(
+        ref TranspileContext context,
+        in LinqStage stage,
+        string resultVar,
+        int valIndex,
+        string helper)
+    {
+        context.Emitter.Writer.Append($"{resultVar} = {helper}({resultVar}, ");
+        if (HasPredicateOrSelector(stage.Invocation, stage.Symbol))
+        {
+            var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
+            context.Emitter.Writer.Append("(");
+            context.Visitor.Visit(arg.Expression);
+            context.Emitter.Writer.Append($")({ValuePrefix}{valIndex})");
+        }
+        else
+        {
+            context.Emitter.Writer.Append($"{ValuePrefix}{valIndex}");
+        }
+
+        context.Emitter.Writer.AppendLine(");");
+    }
+
     public static void EmitAccumulateElement(
         ref TranspileContext context,
         in LinqStage stage,

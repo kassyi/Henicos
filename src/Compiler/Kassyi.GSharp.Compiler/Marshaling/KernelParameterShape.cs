@@ -62,6 +62,12 @@ internal readonly record struct KernelParameterShape
     public bool IsNullableValue { get; init; }
 
     /// <summary>
+    /// A <c>Nullable&lt;T&gt;</c> of a value that is not array-like, which crosses through its own shadow struct like a
+    /// user struct (<see cref="HostShadowStructs.TryGetNullableValue"/>).
+    /// </summary>
+    public bool IsNullableStruct { get; init; }
+
+    /// <summary>
     /// A <c>ref struct</c> type such as <c>Span&lt;T&gt;</c>, which a lambda cannot capture (the C# execution of the
     /// launcher passes a span through a pinned pointer).
     /// </summary>
@@ -136,8 +142,31 @@ internal readonly record struct KernelParameterShape
     public bool MarshalsCudaArrays =>
         (IsCustomStruct && HasArrayFields) || (IsCudaConvertedArray && Cuda.ConvertedElementHasArrayFields);
 
-    /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
-    public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
+    /// <summary>
+    /// Whether the parameter is an <c>in</c> or <c>ref readonly</c> parameter that the kernel receives by address
+    /// (<c>SymbolExtensions.IsKernelInPassedByAddress</c>): a write through a <c>ref</c> or <c>out</c> parameter that
+    /// refers to the same variable shows through it. The launchers handle it as a <c>ref</c> parameter that is copied
+    /// in and never copied back.
+    /// </summary>
+    public bool IsInReference { get; init; }
+
+    /// <summary>
+    /// Whether the kernel receives the parameter by address: <c>ref</c>, <c>out</c>, or an <c>in</c> parameter that is
+    /// <see cref="IsInReference"/>.
+    /// </summary>
+    public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out || IsInReference;
+
+    /// <summary>
+    /// The argument of a <c>ref</c> parameter of a generated helper that takes this parameter's variable, spelled
+    /// <c>ref</c> <see cref="ReferenceExpression"/>.
+    /// </summary>
+    public string RefArgument => $"ref {ReferenceExpression}";
+
+    /// <summary>
+    /// The variable of a by-reference parameter as a <c>ref</c> value: the parameter, or <c>Unsafe.AsRef(in x)</c> for
+    /// an <c>in</c> parameter, which C# does not pass as <c>ref</c> or take a <c>ref</c> to.
+    /// </summary>
+    public string ReferenceExpression => IsInReference ? $"{HostTypeNames.Unsafe}.AsRef(in {Identifier})" : Identifier;
 
     /// <summary>Whether the parameter is a by-value user struct with <see cref="TransferClass.Identical"/> on CUDA, passed directly via <c>&amp;host</c>.</summary>
     public bool IsDirectCudaValueStruct => IsCustomStruct && !IsByRef && Cuda.IsIdenticalStruct;
@@ -223,13 +252,15 @@ internal readonly record struct KernelParameterShape
         var kernelClass = parameter.ContainingSymbol?.ContainingType;
         var marshaledType = parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type;
         var (copyIn, copyOut) = ArrayCopyDirection.Get(parameter);
+        var isInReference = parameter.IsKernelInPassedByAddress();
         var shape = new KernelParameterShape
         {
             Ordinal = parameter.Ordinal,
             Identifier = parameter.Name.ToCSharpIdentifier(),
             Name = parameter.Name,
             RefKind = parameter.RefKind,
-            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out
+            IsInReference = isInReference,
+            Kind = parameter.RefKind is RefKind.Ref or RefKind.Out || isInReference
                 ? KernelParameterKind.RefScalar
                 : KernelParameterKind.Scalar,
             Container = ArrayContainerKind.None,
@@ -247,21 +278,25 @@ internal readonly record struct KernelParameterShape
             IsCopiedOut = copyOut
         };
 
-        // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
-        if (TypeLayoutCalculator.IsUserStruct(marshaledType))
+        // A user struct or a Nullable<T> wins over by-reference: ref MyStruct goes through the native shadow struct as
+        // well
+        if (HostShadowStructs.Has(marshaledType))
         {
-            var hasArrayFields = marshaledType is INamedTypeSymbol named &&
-                TransferClassifier.TryFindArrayField(named, out _);
+            var hasArrayFields = HostShadowStructs.HoldsArrayFields(marshaledType);
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
+                IsNullableStruct = HostShadowStructs.TryGetNullableValue(marshaledType, out _),
                 CudaAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cuda) : 0,
                 CpuAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cpu) : 0,
                 AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
-                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
-                IsShadowStructBuffer = shape.IsByRef && IsShadowStructElement(parameter.Type),
+                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                    : null,
+                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                    IsShadowStructElement(parameter.Type),
                 HasArrayFields = hasArrayFields,
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
@@ -294,10 +329,13 @@ internal readonly record struct KernelParameterShape
         return shape.IsByRef
             ? shape with
             {
-                BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass),
+                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                    : null,
                 CudaAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cuda),
                 CpuAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cpu),
-                IsShadowStructBuffer = IsShadowStructElement(parameter.Type)
+                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                    IsShadowStructElement(parameter.Type)
             }
             : shape;
     }
@@ -318,9 +356,7 @@ internal readonly record struct KernelParameterShape
     /// user struct whose host and device layouts differ (any class but <see cref="TransferClass.Identical"/>).
     /// </summary>
     public static bool IsConverted(ITypeSymbol element, ITranspilerDialect dialect) =>
-        element is INamedTypeSymbol named &&
-        TypeLayoutCalculator.IsUserStruct(named) &&
-        TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
+        HostShadowStructs.IsConverted(element, dialect);
 
     /// <summary>
     /// Whether the auto result array of a kernel returning <paramref name="returnType"/> is read back element by element
@@ -333,12 +369,14 @@ internal readonly record struct KernelParameterShape
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element, INamedTypeSymbol? kernelClass) =>
         !element.IsUnmanagedType ? null
-        : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
+        : IsShadowStructElement(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
         : element.GetFullyQualifiedCsharpName();
 
-    // The GpuBuffer element that GetBufferElementTypeName spells as an AotContexts path
+    // The GpuBuffer element that GetBufferElementTypeName spells as an AotContexts path: a user struct, and a
+    // Nullable<T> whose CUDA layout differs from the host's (a GpuBuffer<int?> keeps its element type)
     private static bool IsShadowStructElement(ITypeSymbol element) =>
-        element.IsUnmanagedType && TypeLayoutCalculator.IsUserStruct(element);
+        element.IsUnmanagedType &&
+        (TypeLayoutCalculator.IsUserStruct(element) || HostShadowStructs.IsConverted(element, HostDialects.Cuda));
 
     // The default as C# in the launcher's signature, whatever the build host's culture
     private static string FormatDefaultValue(ITypeSymbol type, object? value) => value switch
@@ -354,7 +392,8 @@ internal readonly record struct KernelParameterShape
 
     // Only reached for an array-like type, which TryGetArrayLikeElementType has already checked by namespace
 #pragma warning disable HNT0003 // The namespace check is in TryGetArrayLikeElementType, the caller's guard
-    private static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
+    /// <summary>The container of <paramref name="arrayLike"/>, an array-like type.</summary>
+    internal static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
     {
         IArrayTypeSymbol => ArrayContainerKind.Array,
         { Name: TypeConstants.SpanType } => ArrayContainerKind.Span,

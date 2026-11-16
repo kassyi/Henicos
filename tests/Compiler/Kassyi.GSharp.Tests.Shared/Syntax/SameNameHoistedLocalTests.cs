@@ -1,7 +1,4 @@
 using System;
-#if GSHARP_CPU
-using Kassyi.GSharp.Runtime.Aot;
-#endif
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 using Kassyi.GSharp.Runtime;
@@ -10,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>Locals of the same name in sibling scopes keep separate context fields when they live across a suspension.</summary>
 [Category(TestCategory.Syntax)]
-public class SameNameHoistedLocalTests : TranspilerTestBase
+public partial class SameNameHoistedLocalTests : TranspilerTestBase
 {
     private const int Length = 64;
     private const int PlainLoopBound = 40;
@@ -38,40 +35,6 @@ public class SameNameHoistedLocalTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void PlainLoopBesideBarrierLoopKernel_BesideBarrierLoop_StartsPlainLoopAtItsInitializer() =>
         AssertPlainLoopBesideBarrierLoop(static data => SameNameHoistedLocalKernels.LaunchPlainLoopBesideBarrierLoopKernel(data, PlainLoopBound, blockDimX: Length));
-
-#if GSHARP_CPU
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void SiblingLoopBarrierKernel_ManagedSiblingLoopsAcrossBarrier_KeepsEachLoopLocal() =>
-        RunManaged(() => AssertSiblingLoopBarrier(static (first, second) => SameNameHoistedLocalKernels.LaunchSiblingLoopBarrierKernel(first, second, blockDimX: Length)));
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.Boundary)]
-    public void PartlyHoistedNameKernel_ManagedPartlyHoistedScopes_KeepsEachBlockLocal() =>
-        RunManaged(() => AssertPartlyHoistedName(static (first, second) => SameNameHoistedLocalKernels.LaunchPartlyHoistedNameKernel(first, second, blockDimX: Length)));
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void WarpPrefixAndTotalKernel_ManagedWarpPrefixComputation_ComputesPrefixAndTotalPerWarp() =>
-        RunManaged(() => AssertWarpPrefixAndTotal(static (first, second) => SameNameHoistedLocalKernels.LaunchWarpPrefixAndTotalKernel(first, second, blockDimX: Length)));
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.Boundary)]
-    public void PlainLoopBesideBarrierLoopKernel_ManagedBesideBarrierLoop_StartsPlainLoopAtItsInitializer() =>
-        RunManaged(() => AssertPlainLoopBesideBarrierLoop(static data => SameNameHoistedLocalKernels.LaunchPlainLoopBesideBarrierLoopKernel(data, PlainLoopBound, blockDimX: Length)));
-
-    private static void RunManaged(Action run)
-    {
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            run();
-        }
-    }
-#endif
 
     private static void AssertSiblingLoopBarrier(Action<int[], uint[]> launch)
     {

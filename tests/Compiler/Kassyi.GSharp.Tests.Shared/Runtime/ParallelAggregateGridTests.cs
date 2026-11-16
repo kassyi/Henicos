@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 /// <summary>
 /// The grid strategy of <c>AsParallel().Sum()</c> in cooperative kernels (#624 F1). Expected values come from the input
-/// the test holds, summed on the host with wrapping addition.
+/// the test holds, summed on the host; an integer sum is exact and throws <see cref="OverflowException"/> when it does not fit.
 /// </summary>
 /// <remarks>
 /// Properties: (1) every thread of the grid receives the whole sum; (2) every thread receives the same value; (3) the
@@ -61,20 +61,30 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void GridLongSum_EveryThreadInGrid_ReceivesWrappedSum(bool managed)
+    public void GridLongSum_RunningSumLeavesTheRange_EveryThreadInGridReceivesTheExactSum(bool managed)
     {
         long[] data = [long.MaxValue, 5, -3, long.MinValue, 1L << 40, 7, 9, 11];
         var result = new long[4 * 32];
 
         Run(managed, () => ParallelAggregateGridKernels.LaunchGridLongSumKernel(data, result, gridDimX: 4, blockDimX: 32));
 
-        long expected = 0;
-        foreach (var value in data)
-        {
-            expected = unchecked(expected + value);
-        }
-
+        // The exact sum fits (long.MaxValue + long.MinValue = -1), though the block partial sums leave the range
+        long expected = (1L << 40) + 5 - 3 - 1 + 7 + 9 + 11;
         Assert.All(result, value => Assert.Equal(expected, value));
+    }
+
+    // The block totals add exactly too: the sum of the grid does not fit long
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void GridLongSum_ExactSumDoesNotFit_ThrowsOverflowException(bool managed)
+    {
+        long[] data = [long.MaxValue, 5, -3, long.MaxValue, 1L << 40, 7, 9, 11];
+
+        Assert.Throws<OverflowException>(() => Run(managed, () =>
+            ParallelAggregateGridKernels.LaunchGridLongSumKernel(data, new long[4 * 32], gridDimX: 4, blockDimX: 32)));
     }
 
     // G4
@@ -168,13 +178,11 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     private void Run(bool managed, Action launch)
     {
         Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");
-#if GSHARP_CPU
         if (managed)
         {
             ManagedKernelRun.Run(launch);
             return;
         }
-#endif
         launch();
     }
 

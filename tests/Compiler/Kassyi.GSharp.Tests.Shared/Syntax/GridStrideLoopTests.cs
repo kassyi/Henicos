@@ -10,9 +10,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
-public class GridStrideLoopTests : TranspilerTestBase
+public partial class GridStrideLoopTests : TranspilerTestBase
 {
-    private static readonly Action<Action> s_runNative = launch => launch();
+    internal static readonly Action<Action> s_runNative = launch => launch();
 
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
@@ -33,14 +33,4 @@ public class GridStrideLoopTests : TranspilerTestBase
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Execute_CountCall_RunsOncePerThread() => GridStrideLoopScenarios.CountCallOnce(s_runNative);
-
-#if !GSHARP_CPU
-    // 2^31 and 2^32 threads: too many for the CPU paths, which run every thread
-    [SkippableTheory]
-    [Scenario(TestScenario.Boundary)]
-    [InlineData(1u << 21, 5000)]
-    [InlineData(1u << 22, 5000)]
-    public void Execute_HugeLaunch_VisitsEveryIndexOnce(uint gridX, int count) =>
-        GridStrideLoopScenarios.CountVisitsOnAHugeLaunch(s_runNative, gridX, count);
-#endif
 }

@@ -12,6 +12,8 @@ namespace Kassyi.GSharp.Compiler;
 /// </remarks>
 internal static class GpuCodeConstraints
 {
+    private const string ExpressionTypeMetadataName = "System.Linq.Expressions.Expression";
+
     /// <summary>
     /// Whether a GPU function returns <see langword="void"/>, an unmanaged type with a device representation, or is a
     /// valid device iterator (GSH0004). A kernel cannot return a ref struct: its launcher returns the result of each
@@ -60,6 +62,31 @@ internal static class GpuCodeConstraints
         _ => null
     };
 
+    /// <summary>Whether <paramref name="type"/> is a delegate type.</summary>
+    public static bool IsDelegate(ITypeSymbol? type) => type is { TypeKind: TypeKind.Delegate };
+
+    /// <summary>
+    /// Whether <paramref name="node"/> combines delegates (GSH0003): <c>a + b</c> and <c>a - b</c> with a delegate
+    /// result (the result type decides: <c>null + f</c> has no type on its left), and <c>a += b</c> and
+    /// <c>a -= b</c> on a delegate.
+    /// </summary>
+    public static bool IsDelegateCombination(SyntaxNode node, SemanticModel model) => node switch
+    {
+        BinaryExpressionSyntax binary when binary.Kind() is SyntaxKind.AddExpression or SyntaxKind.SubtractExpression =>
+            IsDelegate(model.GetTypeSymbol(binary)),
+        AssignmentExpressionSyntax assignment
+            when assignment.Kind() is SyntaxKind.AddAssignmentExpression or SyntaxKind.SubtractAssignmentExpression =>
+            IsDelegate(model.GetTypeSymbol(assignment.Left)),
+        _ => false
+    };
+
+    /// <summary>The GSH0003 text for the type object, Delegate or MulticastDelegate in a body.</summary>
+    public const string HeapObjectType =
+        "type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)";
+
+    /// <summary>Whether <paramref name="type"/> is <see cref="object"/>, which device code cannot hold (GSH0003).</summary>
+    public static bool IsObject(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_Object };
+
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
 
@@ -71,6 +98,34 @@ internal static class GpuCodeConstraints
         type is null or IErrorTypeSymbol ||
         type.TypeKind is TypeKind.Error or TypeKind.Struct ||
         type.IsSharedMemoryType();
+
+    /// <summary>
+    /// The GSH0003 text for a lambda converted to an expression tree, which builds objects of
+    /// <c>System.Linq.Expressions</c> on the heap.
+    /// </summary>
+    public const string ExpressionTreeLambda = "lambda converted to an expression tree (heap allocation)";
+
+    /// <summary>
+    /// Whether <paramref name="lambda"/> is converted to an expression tree (<c>Expression&lt;Func&lt;int&gt;&gt; e =
+    /// () =&gt; 1</c>, also <c>LambdaExpression</c> and <c>Expression</c>) rather than a delegate (GSH0003).
+    /// </summary>
+    public static bool IsExpressionTreeLambda(AnonymousFunctionExpressionSyntax lambda, SemanticModel model)
+    {
+        if (model.Compilation.GetTypeByMetadataName(ExpressionTypeMetadataName) is not { } expression)
+        {
+            return false;
+        }
+
+        for (var type = model.GetConvertedTypeSymbol(lambda); type is not null; type = type.BaseType)
+        {
+            if (type.OriginalDefinition.IsEqualTo(expression))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>The GSH0003 text for <c>with</c> on a class or record class, which allocates a new object.</summary>
     public const string WithOnReferenceType = "with expression on a reference type (heap allocation)";
@@ -159,6 +214,23 @@ internal static class GpuCodeConstraints
         $"call of the [GpuKernel] method '{kernel.Name}' from device code (a kernel runs only through its launcher; " +
         "move its body to a [GpuDeviceFunction] method and call that from both)";
 
+    /// <summary>
+    /// The GSH0003 text for a <c>[GpuKernel]</c> method named without a call (<c>Action&lt;int[]&gt; f = K;</c>): a
+    /// delegate to a kernel would call it from device code.
+    /// </summary>
+    public static string FormatKernelNamedInDeviceCode(IMethodSymbol kernel) =>
+        $"the [GpuKernel] method '{kernel.Name}' used as a method group in device code (a kernel runs only through " +
+        "its launcher; move its body to a [GpuDeviceFunction] method and name that instead)";
+
+    /// <summary>
+    /// The GSH0003 text for <c>+</c>, <c>-</c>, <c>+=</c> or <c>-=</c> on delegates, which builds a multicast
+    /// delegate: device code has no list of targets that is built at run time, so only a combination whose targets
+    /// are known at compile time can run.
+    /// </summary>
+    public const string DelegateCombination =
+        "delegate combination (+, -, +=, -=) is not supported in GPU code, because its targets are not known at " +
+        "compile time; call each method in turn";
+
     /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
     public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";
 
@@ -193,6 +265,33 @@ internal static class GpuCodeConstraints
     public const string RefLocalHeldByCpuStateMachine =
         "ref local that the CPU state machine keeps across a barrier or a call that may suspend " +
         "(rebound with '= ref', used in another switch section, or a ref foreach variable)";
+
+    /// <summary>
+    /// The GSH0003 text for <c>default</c> of <c>SharedMemory&lt;T&gt;</c>: the language cannot block it, and shared
+    /// memory has no size until it is declared with a count.
+    /// </summary>
+    public const string SharedMemoryWithoutCount =
+        "SharedMemory<T> without an element count (default); declare it with new SharedMemory<T>(count)";
+
+    /// <summary>The GSH0003 text for a <c>SharedMemory&lt;T&gt;</c> local declared without an initializer.</summary>
+    public const string SharedMemoryLocalWithoutInitializer =
+        "SharedMemory<T> local without an initializer; declare it with new SharedMemory<T>(count)";
+
+    /// <summary>
+    /// The GSH0003 text for a struct local whose <c>SharedMemory&lt;T&gt;</c> member no code of the method assigns: the
+    /// local is <c>default</c> or <c>new T()</c>, so the member has no size.
+    /// </summary>
+    public const string SharedMemoryHolderWithoutMemory =
+        "struct local with a SharedMemory<T> member that the method never assigns (default or new T()); " +
+        "assign the member a SharedMemory<T> declared with new SharedMemory<T>(count)";
+
+    /// <summary>
+    /// The GSH0003 text for a call of a generic method that uses <c>default</c> of a type parameter, instantiated with
+    /// <c>SharedMemory&lt;T&gt;</c>.
+    /// </summary>
+    public const string SharedMemoryGenericDefault =
+        "generic method that uses default of a type parameter, instantiated with SharedMemory<T> " +
+        "(a SharedMemory<T> has no size until it is declared with new SharedMemory<T>(count))";
 
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";
@@ -421,7 +520,7 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// The loop that the <c>Gpu.Hint.Unroll</c> statement <paramref name="hint"/> applies to: the next statement of the same
-    /// block or switch section, when it is a <c>for</c>, <c>while</c> or <c>do</c> loop (GSH0017).
+    /// block or switch section (unwrapping any labels), when it is a <c>for</c>, <c>while</c> or <c>do</c> loop (GSH0017).
     /// </summary>
     public static StatementSyntax? GetUnrolledLoop(ExpressionStatementSyntax hint)
     {
@@ -445,6 +544,11 @@ internal static class GpuCodeConstraints
         }
 
         var nextStmt = statements[index + 1];
+        while (nextStmt is LabeledStatementSyntax labeled)
+        {
+            nextStmt = labeled.Statement;
+        }
+
         return nextStmt is ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax ? nextStmt : null;
     }
 

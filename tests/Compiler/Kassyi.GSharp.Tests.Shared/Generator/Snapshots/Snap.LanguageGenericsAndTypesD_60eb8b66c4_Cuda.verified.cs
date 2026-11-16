@@ -434,6 +434,7 @@ public static unsafe void LaunchGenericStructScopeUsingKernel(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.GenericStructScopeUsingKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.GenericStructScopeUsingKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -741,6 +742,7 @@ public static unsafe void LaunchGenericStructPrimitivesAndNestingKernel(global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.GenericStructPrimitivesAndNestingKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.GenericStructPrimitivesAndNestingKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -992,6 +994,7 @@ public static unsafe void LaunchReadonlyStructWeightedSumKernel(global::System.I
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.ReadonlyStructWeightedSumKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.ReadonlyStructWeightedSumKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -1250,6 +1253,7 @@ public static unsafe void LaunchNestedTypesInNamespaceAndClassKernel(global::Sys
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.NestedTypesInNamespaceAndClassKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.NestedTypesInNamespaceAndClassKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -1507,6 +1511,7 @@ public static unsafe void LaunchValueReceiverExtensionMethodKernel(global::Syste
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.ValueReceiverExtensionMethodKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.ValueReceiverExtensionMethodKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -1761,6 +1766,7 @@ public static unsafe void LaunchInReceiverExtensionMethodKernel(global::System.I
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.InReceiverExtensionMethodKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.InReceiverExtensionMethodKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -2018,6 +2024,7 @@ public static unsafe void LaunchRefReceiverExtensionMethodKernel(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.RefReceiverExtensionMethodKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.RefReceiverExtensionMethodKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -2252,6 +2259,7 @@ public static unsafe void LaunchStaticMethodGroupConversionKernel(global::System
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.StaticMethodGroupConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.StaticMethodGroupConversionKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -2488,6 +2496,7 @@ public static unsafe void LaunchReducedExtensionMethodGroupKernel(global::System
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.ReducedExtensionMethodGroupKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.ReducedExtensionMethodGroupKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -2767,6 +2776,7 @@ public static unsafe void LaunchReadonlyPropertyAccessOnInAndFieldKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.ReadonlyPropertyAccessOnInAndFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.ReadonlyPropertyAccessOnInAndFieldKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -3021,6 +3031,7 @@ public static unsafe void LaunchTupleDeconstructionSwapAndRotationKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.TupleDeconstructionSwapAndRotationKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.TupleDeconstructionSwapAndRotationKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -3261,6 +3272,7 @@ public static unsafe void LaunchDeconstructionSideEffectingTargetOrderKernel(glo
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.DeconstructionSideEffectingTargetOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.DeconstructionSideEffectingTargetOrderKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -3498,6 +3510,7 @@ public static unsafe void LaunchDeconstructionDuplicateTargetOverwriteKernel(glo
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.DeconstructionDuplicateTargetOverwriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.DeconstructionDuplicateTargetOverwriteKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -3736,6 +3749,7 @@ public static unsafe void LaunchDeconstructionImplicitWideningKernel(global::Sys
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.DeconstructionImplicitWideningKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.DeconstructionImplicitWideningKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -4006,6 +4020,7 @@ public static unsafe void LaunchReadonlyRecordStructWithExpressionKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.ReadonlyRecordStructWithExpressionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.ReadonlyRecordStructWithExpressionKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -4251,6 +4266,7 @@ public static unsafe void LaunchPatternMatchingAndSwitchExpressionKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LanguageGenericsAndTypesDifferentialKernels.PatternMatchingAndSwitchExpressionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LanguageGenericsAndTypesDifferentialKernels.PatternMatchingAndSwitchExpressionKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;

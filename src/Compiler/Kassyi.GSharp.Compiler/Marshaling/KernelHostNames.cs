@@ -159,6 +159,7 @@ internal static class KernelHostNames
         LauncherLocal.Pinned => GSharpInternalNames.Launcher.PinnedPrefix,
         LauncherLocal.PinnedTemp => GSharpInternalNames.Launcher.PinnedTempPrefix,
         LauncherLocal.ScalarPointer => GSharpInternalNames.Launcher.ScalarPointerPrefix,
+        LauncherLocal.InValue => GSharpInternalNames.Launcher.InValuePrefix,
         LauncherLocal.Size => GSharpInternalNames.Launcher.SizePrefix,
         LauncherLocal.Shadow => GSharpInternalNames.Launcher.ShadowPrefix,
         LauncherLocal.SharedShadow => GSharpInternalNames.Launcher.SharedShadowPrefix,

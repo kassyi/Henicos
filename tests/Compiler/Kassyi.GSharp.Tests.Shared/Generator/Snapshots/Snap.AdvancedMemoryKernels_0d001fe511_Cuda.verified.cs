@@ -120,6 +120,7 @@ public static unsafe void LaunchFixedBufferKernel(global::System.UInt32[] data, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AdvancedMemoryKernels.FixedBufferKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AdvancedMemoryKernels.FixedBufferKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = data;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.FixedBufferKernel(__gsharp_csharp_arg_0));
 return;
@@ -252,6 +253,7 @@ public static unsafe void LaunchPointerIncrementKernel(global::System.UInt32[] s
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AdvancedMemoryKernels.PointerIncrementKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AdvancedMemoryKernels.PointerIncrementKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = src;
 global::System.UInt32[] __gsharp_csharp_arg_1 = dest;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.PointerIncrementKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -432,6 +434,7 @@ public static unsafe void LaunchPointerDecrementKernel(global::System.UInt32[] s
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AdvancedMemoryKernels.PointerDecrementKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AdvancedMemoryKernels.PointerDecrementKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = src;
 global::System.UInt32[] __gsharp_csharp_arg_1 = dest;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.PointerDecrementKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -612,6 +615,7 @@ public static unsafe void LaunchPointerComplexAssignmentKernel(global::System.UI
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AdvancedMemoryKernels.PointerComplexAssignmentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AdvancedMemoryKernels.PointerComplexAssignmentKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = idx;
 global::System.UInt32[] __gsharp_csharp_arg_1 = val;
 global::System.UInt32[] __gsharp_csharp_arg_2 = dest;
@@ -844,6 +848,7 @@ public static unsafe void LaunchReadOnlyPinKernel(global::System.UInt32[] src, g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AdvancedMemoryKernels.ReadOnlyPinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AdvancedMemoryKernels.ReadOnlyPinKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = src;
 global::System.UInt32[] __gsharp_csharp_arg_1 = other;
 global::System.UInt32[] __gsharp_csharp_arg_2 = dest;

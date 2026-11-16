@@ -62,8 +62,8 @@ internal readonly struct LaunchAliasPlan
             var shape = parameters[i];
             if (IsCandidate(shape))
             {
-                var copiesIn = shape.IsArray ? sharing.CopiesIn(i) : shape.RefKind == RefKind.Ref;
-                var copiesBack = !shape.IsArray || sharing.CopiesBack(i);
+                var copiesIn = shape.IsArray ? sharing.CopiesIn(i) : shape.RefKind != RefKind.Out;
+                var copiesBack = shape.IsArray ? sharing.CopiesBack(i) : !shape.IsInReference;
                 builder.Add(i, GetTraits(shape, copiesIn, copiesBack, spanView: false));
             }
         }
@@ -97,8 +97,11 @@ internal readonly struct LaunchAliasPlan
 
             var readOnly = shape.IsArray && (sharing.NeedsKernelCopy(i) || shape.IsReadOnlyContainer);
             var spanView = shape.Container is ArrayContainerKind.Span or ArrayContainerKind.ReadOnlySpan;
-            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i));
-            builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly, spanView));
+            // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
+            // refers to the same variable (#1841) and is cleared otherwise, which only the comparison can tell
+            copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
+                (shape.RefKind == RefKind.Out && shape.HasArrayFields);
+            builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
         return copies ? builder.ToPlan() : default;
@@ -170,7 +173,7 @@ internal readonly struct LaunchAliasPlan
             _traits.Add(traits);
             _ranges.Add(shape.IsArray
                 ? AliasRange.ForArray(pinned, shape.SpanExpression, shape.LengthExpression, element, traits, shape.Name)
-                : AliasRange.ForReference(pinned, shape.Identifier, element, traits, shape.Name));
+                : AliasRange.ForReference(pinned, shape.ReferenceExpression, element, traits, shape.Name));
         }
 
         public LaunchAliasPlan ToPlan() =>

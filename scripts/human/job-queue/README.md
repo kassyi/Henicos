@@ -38,7 +38,8 @@ runs as, the full command):
 ![A selected job](images/selected.svg)
 
 The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
-screen colors:
+screen colors. While it is open only `?` (next page), Esc (close), `q` and Ctrl+C act; any other key would act on jobs
+the help covers, so it only says how to leave:
 
 ![The help page](images/help.svg)
 
@@ -212,7 +213,7 @@ The scheduler runs in `tmp/job-queue` of the main checkout (never a worktree, so
 | `accuracy.json` | The last 1000 estimates with the run times that followed: time, source of the estimate, expected ms, actual ms |
 | `jobs-<port>.json` | `format` 2, the next id, every record (`jobs`: running, `waiting`, `provisional`), the ids of all records (`pending`, for an older scheduler) and the last 500 final outcomes (`ended`), and `paused` / `pausedAt` while the queue is paused; written to a temporary file and renamed, and not written once the scheduler is stopping |
 
-Estimates: a command with no record of its own is estimated from the others of `history.json`, narrow to wide: `normalized` (the steps as the reader reads them, with the projects resolved against the job's directory and written relative to its worktree, the options that change the work (`-c`, `-f`, `-r`, `-p:`, `--no-build`, `--filter` and its value) and nothing else: no redirections, logger or MSBuild node options, assignments, comment, quotes or pipe into a filter), `shape` (each step's kind, the projects it names, `--no-build`, a filter present), `kind` (the kinds of step alone), else `none` (`UnknownTypicalMs`). The estimate is the median of the matched commands' typical times (longest: of their longest times). Each run that ends by itself adds [time, source, expected, actual] to `accuracy.json`; `status --accuracy` prints the median error and the share within 50% per source. A command the reader cannot read (a substitution, a heredoc, a group, an unbalanced quote) has no `normalized` key and no shape, only the kind of its first program. The keys are made when a run is recorded, in the job's directory and worktree, and kept with the entry in `history.json` (`keys`); an entry without them (an older history) has its keys made from its text with its paths as written. The levels and the median were chosen by a leave-one-out check over a real `history.json`.
+Estimates: a command with no record of its own is estimated from the others of `history.json`, narrow to wide: `normalized` (the steps as the reader reads them, with the projects and scripts resolved against the step's directory (the job's, after a `cd`, `Set-Location` or `Push-Location`, back after `Pop-Location`) and written relative to the root of the worktree that holds them, so that a project of another worktree shares its runs, the options that change the work (`-c`, `-f`, `-r`, `-p:`, `--no-build`, `--filter` and its value) and nothing else: no redirections, logger or MSBuild node options, assignments, comment, quotes or pipe into a filter), `shape` (each step's kind, the projects it names, `--no-build`, a filter present), `kind` (the kinds of step alone; a step whose project or script no worktree holds (`:outside`, a scratch project in a temporary folder) or the worktree that holds it ignores (`:ignored`, a probe in an ignored folder), and inline `node -e` code each have a kind of their own, so they never take the repository's times), else `none` (`UnknownTypicalMs`). The estimate is the median of the matched commands' typical times (longest: of their longest times). Each run that ends by itself adds [time, source, expected, actual] to `accuracy.json`; `status --accuracy` prints per source the median error, the share within 50% and how many times off the estimate was (the median of the larger of expected / actual and actual / expected; the error in percent has no bound for a short run estimated long). A command the reader cannot read (a substitution, a heredoc, a group, an unbalanced quote) has no `normalized` key and no shape, only the kind of its first program. The client looks up where each project and script lies when it queues the job (`path-places.ts`: the nearest folder above it that holds `.git`, and one `git check-ignore` per worktree) and sends it with the job (`places`), so the keys need no file system and follow the repository's own `.gitignore`; a job from an older client is judged against its worktree alone. The keys are made when a run is recorded, in the job's directory and worktree, and kept with the entry in `history.json` (`keys`); an entry without them (an older history) has its keys made from its text with its paths as written. The levels and the median were chosen by a leave-one-out check over a real `history.json`.
 
 A restarted scheduler restores every record as held and detached: running jobs count their slots whether their client
 lives or not, waiting jobs keep their place, provisional ones wait for a report; a client's `adopt`, `request` or
@@ -243,7 +244,9 @@ their old meaning.
    use; until then an editor reports `Cannot find name 'process'`).
 2. Self-test: `node scripts/human/job-queue.js --self-test`. It starts schedulers on private ports with a private state
    directory and never touches the machine's queue. Run it on Windows (Git Bash and PowerShell) and Linux; CI runs it
-   on both (`.github/workflows/script-types.yml`).
+   on both (`.github/workflows/script-types.yml`). A failure prints the check or the part that failed before the
+   error. The ports are below 32768 (`firstTestPort`): Linux gives the ports from there up to outgoing connections,
+   and a scheduler cannot listen on a port one of them uses.
 3. For a change to a scheduling decision, add a case to `scheduler-checks.ts` and show that a one-line mutant of the
    changed condition fails it.
 4. Wait on state, not on time, in the self-test (`waitFor`, `runningWith`, `jobsWith`): fixed delays failed on busy

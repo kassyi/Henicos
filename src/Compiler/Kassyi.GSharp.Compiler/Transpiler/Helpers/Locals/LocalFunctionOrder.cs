@@ -149,7 +149,8 @@ internal sealed class LocalFunctionOrder
         IReadOnlyList<StatementSyntax> statements, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        var returnType = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function)?.ReturnType;
+        var method = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function);
+        var returnType = method?.ReturnType;
         writer.Append("auto ");
         AppendGroupName(function, useSelves: false, ref context);
         writer.Append(" = [&](");
@@ -162,7 +163,7 @@ internal sealed class LocalFunctionOrder
 
         AppendParameters(function, ref context);
         writer.Append(") -> ");
-        context.Emitter.Dialect.AppendType(ref context, returnType);
+        RefLocals.AppendReturnType(method, ref context);
         writer.AppendLine();
         using (writer.Scope())
         {
@@ -183,13 +184,14 @@ internal sealed class LocalFunctionOrder
         IReadOnlyList<StatementSyntax> statements, bool useSelves, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        var returnType = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function)?.ReturnType;
+        var method = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function);
+        var returnType = method?.ReturnType;
         writer.Append("auto ");
         CppNameResolver.AppendDeclaredName(function, function.Identifier, ref context);
         writer.Append(" = [&](");
         AppendParameters(function, ref context);
         writer.Append(") -> ");
-        context.Emitter.Dialect.AppendType(ref context, returnType);
+        RefLocals.AppendReturnType(method, ref context);
         writer.AppendLine();
         using (writer.Scope())
         {

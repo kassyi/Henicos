@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -36,6 +38,42 @@ public struct Emitter(
     public string? DynamicSharedMemorySlotScope;
     public bool IsGpuKernelEntry;
 
+    /// <summary>
+    /// The two-forms plan for kernel emission, tracking whether the kernel emits two forms on CUDA
+    /// and which parameters are passed by address.
+    /// </summary>
+    internal KernelTwoFormsPlan TwoFormsPlan = KernelTwoFormsPlan.Empty;
+
+    /// <summary>
+    /// The kernel form currently being emitted on CUDA (by-value or by-address).
+    /// </summary>
+    internal KernelFormKind CurrentKernelForm = KernelFormKind.ByValue;
+
+    /// <summary>
+    /// Evaluates whether <paramref name="parameter"/> is passed by address in the current dialect and kernel form.
+    /// </summary>
+    internal bool IsParameterPassedByAddress(IParameterSymbol? parameter)
+    {
+        if (parameter == null || !IsGpuKernelEntry || MethodSymbol == null)
+        {
+            return false;
+        }
+
+        // Only parameters directly belonging to the kernel entry point are passed by address under TwoFormsPlan.
+        // Parameters of struct constructors, local functions, and device functions must never be affected.
+        if (!SymbolEqualityComparer.Default.Equals(parameter.ContainingSymbol, MethodSymbol))
+        {
+            return false;
+        }
+
+        if (Dialect.IsCuda)
+        {
+            return CurrentKernelForm == KernelFormKind.ByAddress && TwoFormsPlan.IsPassedByAddress(parameter.Ordinal);
+        }
+
+        return TwoFormsPlan.IsPassedByAddress(parameter.Ordinal);
+    }
+
     /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>
     public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
@@ -55,24 +93,56 @@ public struct Emitter(
     internal string? CurrentMemberName;
 
     /// <summary>
+    /// Packed method-scoped identifier and temporary counters.
+    /// </summary>
+    public struct MethodCounters
+    {
+        public int SyncGridBody;
+        public int SingleThreadBody;
+        public int GridStrideLoop;
+        public int SwitchId;
+        public int IteratorExpansion;
+        public int ArgumentTemp;
+        public int SequenceTemp;
+        public int ForEachElement;
+        public int Using;
+        public int StackAlloc;
+    }
+
+    /// <summary>The packed counters of the method being transpiled.</summary>
+    public MethodCounters Counters;
+
+    /// <summary>
     /// Numbers each <c>Gpu.SyncGrid(body)</c> body as it is emitted, for its done flag and labels
     /// (<c>__gsharp_sg_done_&lt;n&gt;</c>, <c>__gsharp_sg_next_&lt;n&gt;_&lt;statement&gt;</c>); a body emitted again (an
     /// unrolled loop) gets a new number, so the names stay unique in the C++ function.
     /// </summary>
-    public int SyncGridBodyCounter;
+    public int SyncGridBodyCounter
+    {
+        readonly get => Counters.SyncGridBody;
+        set => Counters.SyncGridBody = value;
+    }
 
     /// <summary>
     /// Numbers each <c>Gpu.SingleThread</c> body with a <c>return</c> as it is emitted, for the label after it
     /// (<c>__gsharp_st_end_&lt;n&gt;</c>); a body emitted again (an unrolled loop) gets a new number.
     /// </summary>
-    public int SingleThreadBodyCounter;
+    public int SingleThreadBodyCounter
+    {
+        readonly get => Counters.SingleThreadBody;
+        set => Counters.SingleThreadBody = value;
+    }
 
     /// <summary>
     /// Numbers each <c>Gpu.GridStrideLoop</c> as it is emitted, for its index and count locals
     /// (<c>__gsharp_gsl_&lt;n&gt;</c>, <c>__gsharp_gsl_n_&lt;n&gt;</c>); a loop emitted again (an unrolled loop) gets a new
     /// number.
     /// </summary>
-    public int GridStrideLoopCounter;
+    public int GridStrideLoopCounter
+    {
+        readonly get => Counters.GridStrideLoop;
+        set => Counters.GridStrideLoop = value;
+    }
 
     /// <summary>
     /// The label after the <c>Gpu.SingleThread</c> body being emitted, when the body has a <c>return</c>; a
@@ -107,26 +177,50 @@ public struct Emitter(
     /// </summary>
     public SyntaxNode? SuppressImplicitConversionNode;
 
-    public int SwitchIdCounter;
+    public int SwitchIdCounter
+    {
+        readonly get => Counters.SwitchId;
+        set => Counters.SwitchId = value;
+    }
     public Stack<int> ActiveSwitchIds = activeSwitchIds;
 
     /// <summary>Monotonically increasing region counter for inlined <c>foreach</c> iterator expansions in the current method.</summary>
-    public int IteratorExpansionCounter;
+    public int IteratorExpansionCounter
+    {
+        readonly get => Counters.IteratorExpansion;
+        set => Counters.IteratorExpansion = value;
+    }
 
     /// <summary>Monotonically increasing ordinal for <c>__gsharp_arg_temp_&lt;n&gt;</c> temporaries synthesized for out-of-order named arguments.</summary>
-    public int ArgumentTempCounter;
+    public int ArgumentTempCounter
+    {
+        readonly get => Counters.ArgumentTemp;
+        set => Counters.ArgumentTemp = value;
+    }
 
     /// <summary>
     /// Numbers the <c>__gsharp_seq_&lt;n&gt;</c> temporaries that keep the C# order of evaluation in the method
     /// (<see cref="EvaluationOrder"/>).
     /// </summary>
-    public int SequenceTempCounter;
+    public int SequenceTempCounter
+    {
+        readonly get => Counters.SequenceTemp;
+        set => Counters.SequenceTemp = value;
+    }
 
     /// <summary>Numbers the <c>__gsharp_foreach_e_&lt;n&gt;</c> raw elements of converting range-for loops in the method.</summary>
-    public int ForEachElementCounter;
+    public int ForEachElementCounter
+    {
+        readonly get => Counters.ForEachElement;
+        set => Counters.ForEachElement = value;
+    }
 
     /// <summary>Numbers the guards and the resource temporaries of the <c>using</c>s of the method (UsingTranspiler).</summary>
-    public int UsingCounter;
+    public int UsingCounter
+    {
+        readonly get => Counters.Using;
+        set => Counters.Using = value;
+    }
 
     /// <summary>
     /// The names of the guards of the <c>using</c>s whose scope the CUDA code being written is in, the innermost last:
@@ -161,7 +255,11 @@ public struct Emitter(
     /// Numbers the storages <c>__gsharp_stackalloc_&lt;n&gt;</c> that the statement prelude declares for the stack arrays
     /// outside a declaration (StackAllocEmitter).
     /// </summary>
-    public int StackAllocCounter;
+    public int StackAllocCounter
+    {
+        readonly get => Counters.StackAlloc;
+        set => Counters.StackAlloc = value;
+    }
 
     /// <summary>The storage number of each node that the statement prelude declared a storage for, read where the node is written.</summary>
     public Dictionary<SyntaxNode, int> StackAllocStorages { get; } = new();
@@ -204,4 +302,9 @@ public struct Emitter(
 
     public bool TryGetOverride(string name, ISymbol? symbol, out OverrideValue value) =>
         LocalVariableOverrides.TryGet(name, symbol, out value);
+
+    /// <summary>
+    /// Resets AST identifier and statement temporary counters between kernel emission passes.
+    /// </summary>
+    public void ResetMethodCounters() => Counters = default;
 }

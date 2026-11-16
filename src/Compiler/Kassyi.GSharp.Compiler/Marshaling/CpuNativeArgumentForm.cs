@@ -24,5 +24,20 @@ internal enum CpuNativeArgumentForm
     PinnedAddress,
 
     /// <summary>The address of a struct value parameter: <c>&amp;&lt;name&gt;</c>.</summary>
-    ValueAddress
+    ValueAddress,
+
+    /// <summary>
+    /// A copy of the caller's proxy without its reserved flags:
+    /// <c>new GSharpArrayProxy { Data = &lt;name&gt;.Data, Length = &lt;name&gt;.Length }</c>.
+    /// </summary>
+    ProxyCopy,
+
+    /// <summary>The caller's <c>IntPtr</c> cast to the native type: <c>(&lt;type&gt;)&lt;name&gt;</c>.</summary>
+    PointerCast,
+
+    /// <summary>A <see langword="bool"/> as a C++ <c>bool</c> byte: <c>&lt;name&gt; ? (byte)1 : (byte)0</c>.</summary>
+    BooleanByte,
+
+    /// <summary>A <see langword="char"/> as its UTF-16 code unit: <c>(ushort)&lt;name&gt;</c>.</summary>
+    CharCode
 }

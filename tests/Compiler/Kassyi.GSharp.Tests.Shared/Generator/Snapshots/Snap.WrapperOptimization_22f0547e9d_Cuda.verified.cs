@@ -149,10 +149,11 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 }
 __gsharp_layout_checked_ComplexSignatureKernel = true;
 }
-scalarOut = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out scalarOut);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperOptimizationKernels.ComplexSignatureKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
 global::System.UInt32 __gsharp_csharp_arg_4 = constantVal;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &scalarRef)

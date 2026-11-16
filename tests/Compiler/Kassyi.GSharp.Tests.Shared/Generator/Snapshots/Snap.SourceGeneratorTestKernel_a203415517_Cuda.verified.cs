@@ -105,6 +105,7 @@ public static unsafe void LaunchMyTestKernel(global::System.Int32[] a, global::S
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SourceGeneratorTestKernels.MyTestKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SourceGeneratorTestKernels.MyTestKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = b;
 global::System.Int32[] __gsharp_csharp_arg_2 = c;

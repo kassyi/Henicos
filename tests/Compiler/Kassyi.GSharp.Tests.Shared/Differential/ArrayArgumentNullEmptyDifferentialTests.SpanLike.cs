@@ -24,7 +24,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         new Span<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length])
+            foreach (int read in (int[])[R.IsNull, R.Length, R.IsEmpty])
             {
                 yield return Create(nameof(K.MemoryKernel), valueName, read,
                     (o, s) => K.LaunchMemoryKernel(
@@ -37,7 +37,8 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 }
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach])
+            foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach, R.IsEmpty, R.IsDefault,
+                         R.IsDefaultOrEmpty, R.DefaultLiteral])
             {
                 yield return Create(nameof(K.ImmutableKernel), valueName, read,
                     (o, s) => K.LaunchImmutableKernel(
@@ -51,7 +52,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         new ReadOnlySpan<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length])
+            foreach (int read in (int[])[R.IsNull, R.Length, R.IsEmpty])
             {
                 yield return Create(nameof(K.ReadOnlyMemoryKernel), valueName, read,
                     (o, s) => K.LaunchReadOnlyMemoryKernel(

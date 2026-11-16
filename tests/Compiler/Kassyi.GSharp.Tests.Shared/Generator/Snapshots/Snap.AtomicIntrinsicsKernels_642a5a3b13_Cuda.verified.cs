@@ -201,6 +201,7 @@ public static unsafe void LaunchAtomicArithmeticKernel(global::System.Int32[] in
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AtomicIntrinsicsKernels.AtomicArithmeticKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AtomicIntrinsicsKernels.AtomicArithmeticKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = intState;
 global::System.UInt32[] __gsharp_csharp_arg_1 = uintState;
 global::System.UInt64[] __gsharp_csharp_arg_2 = ulongState;
@@ -481,6 +482,7 @@ public static unsafe void LaunchAtomicIncDecWrapKernel(global::System.UInt32[] s
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AtomicIntrinsicsKernels.AtomicIncDecWrapKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AtomicIntrinsicsKernels.AtomicIncDecWrapKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = state;
 global::System.UInt32 __gsharp_csharp_arg_1 = limit;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicIntrinsicsKernels.AtomicIncDecWrapKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -609,6 +611,7 @@ public static unsafe void LaunchAtomicFloatAddStressKernel(global::System.Single
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AtomicIntrinsicsKernels.AtomicFloatAddStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AtomicIntrinsicsKernels.AtomicFloatAddStressKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = globalSum;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicIntrinsicsKernels.AtomicFloatAddStressKernel(__gsharp_csharp_arg_0));
 return;
@@ -732,6 +735,7 @@ public static unsafe void LaunchAtomicRefParameterKernel(global::System.Int32[] 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AtomicIntrinsicsKernels.AtomicRefParameterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AtomicIntrinsicsKernels.AtomicRefParameterKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = counter;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicIntrinsicsKernels.AtomicRefParameterKernel(__gsharp_csharp_arg_0));
 return;
@@ -888,6 +892,7 @@ public static unsafe void LaunchAtomicOldValueKernel(global::System.Int32[] ints
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "AtomicIntrinsicsKernels.AtomicOldValueKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "AtomicIntrinsicsKernels.AtomicOldValueKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = ints;
 global::System.Int32[] __gsharp_csharp_arg_1 = intOld;
 global::System.UInt32[] __gsharp_csharp_arg_2 = uints;
