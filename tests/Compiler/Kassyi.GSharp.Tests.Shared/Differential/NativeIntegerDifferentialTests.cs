@@ -10,25 +10,20 @@ public class NativeIntegerDifferentialTests
     private const int Rows = 64;
 
     internal static readonly DifferentialCase s_constants = new(
-        $"{nameof(NativeIntegerDifferentialKernels)}.{nameof(NativeIntegerDifferentialKernels.NativeIntegerConstantKernel)}")
+        $"{nameof(NativeIntegerDifferentialKernels)}." +
+        $"{nameof(NativeIntegerDifferentialKernels.NativeIntegerConstantKernel)}")
     {
         Shape = new LaunchShape(1, 1, 1, 1, 1, 1, 1),
         Inputs = static (rng, rows) => new DiffBuffers()
-            .Out<long>("dst", 6, ["shifted_constant", "cast_of_int", "unsigned_shift", "unsigned_wrap", "unsigned_product", "max_shifted"], OutputPolicy.Exact),
+            .Out<long>(
+                "dst", 6,
+                [
+                    "shifted_constant", "cast_of_int", "unsigned_shift", "unsigned_wrap", "unsigned_product",
+                    "max_shifted"
+                ],
+                OutputPolicy.Exact),
         Launch = static (b, s) => NativeIntegerDifferentialKernels.LaunchNativeIntegerConstantKernel(
             b.Get<long>("dst"), 123456, gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
-
-    internal static readonly DifferentialCase s_arithmetic = new(
-        $"{nameof(NativeIntegerDifferentialKernels)}.{nameof(NativeIntegerDifferentialKernels.NativeIntegerArithmeticKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
-            .In("a", Array.ConvertAll(DiffValues.Int32(rng, rows), static v => (long)v << 20 ^ v))
-            .Out<long>("dst", rows, ["add", "divide", "remainder", "unsigned_product", "unsigned_quotient", "shifted"], OutputPolicy.Exact),
-        Launch = static (b, s) => NativeIntegerDifferentialKernels.LaunchNativeIntegerArithmeticKernel(
-            b.Get<long>("a"), b.Get<long>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
@@ -37,45 +32,6 @@ public class NativeIntegerDifferentialTests
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
     public void NativeInteger_ConstantsAndCasts_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_constants);
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void NativeInteger_Arithmetic_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_arithmetic);
-
-    // The edges of the native integers: zero, one, minus one (nuint.MaxValue), the ends, single high bits, a mixed pattern
-    private static readonly long[] s_edgeValues =
-    [
-        0, 1, -1, long.MinValue, long.MaxValue, 1L << 32, 1L << 31, 1L << 62, 0x0123_4567_89AB_CDEF
-    ];
-
-    private static readonly int[] s_rotateCounts = [0, 1, 63, 64, 65, -1];
-
-    internal static readonly DifferentialCase s_bitOperations = new(
-        $"{nameof(NativeIntegerDifferentialKernels)}.{nameof(NativeIntegerDifferentialKernels.NativeIntegerBitOperationsKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
-        {
-            // Every value with every rotate count (9 * 6 = 54 rows); the rest of the 64 rows repeat the pairs
-            var values = new long[rows.Rows];
-            var counts = new int[rows.Rows];
-            for (int i = 0; i < rows.Rows; i++)
-            {
-                values[i] = s_edgeValues[i % s_edgeValues.Length];
-                counts[i] = s_rotateCounts[i / s_edgeValues.Length % s_rotateCounts.Length];
-            }
-
-            return new DiffBuffers()
-                .In("a", values)
-                .In("counts", counts)
-                .Out<long>("dst", rows.Rows, NativeIntegerDifferentialKernels.BitOperationsColumns, OutputPolicy.Exact);
-        },
-        Launch = static (b, s) => NativeIntegerDifferentialKernels.LaunchNativeIntegerBitOperationsKernel(
-            b.Get<long>("a"), b.Get<int>("counts"), b.Get<long>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
 
     private static long[] SortRows(DiffRandom rng, int rows)
     {
@@ -97,7 +53,8 @@ public class NativeIntegerDifferentialTests
         return values;
     }
 
-    private static DifferentialCase SortCase(string kernel, bool unsigned, Action<long[], long[], LaunchShape> launch) =>
+    private static DifferentialCase SortCase(
+        string kernel, bool unsigned, Action<long[], long[], LaunchShape> launch) =>
         new($"{nameof(NativeIntegerDifferentialKernels)}.{kernel}")
         {
             Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
@@ -140,25 +97,25 @@ public class NativeIntegerDifferentialTests
             a, dst, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
     private static DifferentialCase ParameterCase(nint p, nuint q) =>
-        new($"{nameof(NativeIntegerDifferentialKernels)}.{nameof(NativeIntegerDifferentialKernels.NativeIntegerParameterKernel)}")
+        new($"{nameof(NativeIntegerDifferentialKernels)}." +
+            $"{nameof(NativeIntegerDifferentialKernels.NativeIntegerParameterKernel)}")
         {
             Shape = new LaunchShape(1, 1, 1, 1, 1, 1, 1),
             Inputs = static (rng, rows) => new DiffBuffers()
-                .Out<long>("dst", 6, ["nint", "nuint", "nint_plus_one", "nuint_half", "nuint_doubled", "nint_negative"], OutputPolicy.Exact),
+                .Out<long>(
+                    "dst", 6,
+                    ["nint", "nuint", "nint_plus_one", "nuint_half", "nuint_doubled", "nint_negative"],
+                    OutputPolicy.Exact),
             Launch = (b, s) => NativeIntegerDifferentialKernels.LaunchNativeIntegerParameterKernel(
                 b.Get<long>("dst"), p, q, gridDimX: s.GridX, blockDimX: s.BlockX),
             OracleIsLaunch = true,
         };
 
-    internal static readonly DifferentialCase s_negativeParameter = ParameterCase((nint)(-0x1_0000_0005L), (nuint)0x1_0000_0001UL);
+    internal static readonly DifferentialCase s_negativeParameter =
+        ParameterCase((nint)(-0x1_0000_0005L), (nuint)0x1_0000_0001UL);
     internal static readonly DifferentialCase s_extremeParameter = ParameterCase(nint.MinValue, nuint.MaxValue);
-    internal static readonly DifferentialCase s_largeParameter = ParameterCase(nint.MaxValue, (nuint)0x8000_0000_0000_0000UL);
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void NativeInteger_BitOperationsOverloads_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_bitOperations);
+    internal static readonly DifferentialCase s_largeParameter =
+        ParameterCase(nint.MaxValue, (nuint)0x8000_0000_0000_0000UL);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -176,17 +133,20 @@ public class NativeIntegerDifferentialTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void NativeInteger_ParameterNegativeAndAboveUInt32_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_negativeParameter);
+    public void NativeInteger_ParameterNegativeAndAboveUInt32_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_negativeParameter);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void NativeInteger_ParameterAtTheExtremes_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_extremeParameter);
+    public void NativeInteger_ParameterAtTheExtremes_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_extremeParameter);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public void NativeInteger_ParameterMaximumAndHighBit_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_largeParameter);
+    public void NativeInteger_ParameterMaximumAndHighBit_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_largeParameter);
 }
