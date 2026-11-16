@@ -60,6 +60,17 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
     {
         foreach (var (valueName, create) in s_arrayValues)
         {
+            foreach (int read in (int[])
+                     [
+                         R.StackLinqSum, R.StackLinqStoredSum, R.StackLinqIndexedSum, R.StackLinqInDeviceFunction,
+                         R.StackLinqStaticSum,
+                     ])
+            {
+                yield return Create(nameof(K.NullableArrayKernel), valueName, read,
+                    (o, s) => K.LaunchNullableArrayKernel(
+                        create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
+            }
+
             foreach (int read in s_arrayReads)
             {
                 yield return Create(nameof(K.NullableArrayKernel), valueName, read,
@@ -134,6 +145,11 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         R.IsDefault => "IsDefault",
         R.IsDefaultOrEmpty => "IsDefaultOrEmpty",
         R.DefaultLiteral => "DefaultLiteral",
+        R.StackLinqSum => "StackLinqSum",
+        R.StackLinqStoredSum => "StackLinqStoredSum",
+        R.StackLinqIndexedSum => "StackLinqIndexedSum",
+        R.StackLinqInDeviceFunction => "StackLinqInDeviceFunction",
+        R.StackLinqStaticSum => "StackLinqStaticSum",
         _ => "InNullableFunction",
     };
 }

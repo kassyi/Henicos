@@ -29,6 +29,9 @@ internal enum LauncherLocal
     /// <summary>The <c>fixed</c> copy-back pointer local of a <c>ref</c> / <c>out</c> scalar parameter, <c>__gsharp_ptr_{ordinal}</c>.</summary>
     ScalarPointer,
 
+    /// <summary>The temporary local of an in scalar parameter when passed by value, <c>__gsharp_in_val_{ordinal}</c>.</summary>
+    InValue,
+
     /// <summary>The byte size local of a parameter, <c>__gsharp_size_{ordinal}</c>.</summary>
     Size,
 

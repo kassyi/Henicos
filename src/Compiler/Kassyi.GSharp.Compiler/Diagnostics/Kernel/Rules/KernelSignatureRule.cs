@@ -104,19 +104,13 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
     private static void CheckKernelParameterSpace(MethodDeclarationSyntax node, IMethodSymbol kernel,
         ref ValidationContext context)
     {
-        var offset = 0;
-        foreach (var parameter in kernel.Parameters)
-        {
-            var layout = parameter.IsPassedByPointer(isKernel: true)
-                ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
-                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, s_cudaDialect);
-
-            offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
-        }
-
-        // The parameters G# appends on CUDA (result buffer, grid aggregate scratch, launch epoch), where the limit
-        // holds; a CPU dialect build of the same kernel is checked against the GPU it is meant for
-        offset = KernelHiddenParameters.For(node, kernel, context.SemanticModel, isCuda: true).AppendTo(offset);
+        // A kernel whose in parameter may share memory with another parameter is emitted twice, with the in parameter
+        // by value and by address, and each entry point must fit: the larger of the two is checked
+        var hidden = KernelHiddenParameters.For(node, kernel, context.SemanticModel, isCuda: true);
+        var offset = Math.Max(
+            hidden.AppendTo(GetParameterSpace(kernel, inByAddress: false)),
+            hidden.AppendTo(GetParameterSpace(kernel, inByAddress: true))
+        );
 
         if (offset > KernelParameterSpaceLimitBytes)
         {
@@ -128,5 +122,24 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                 offset,
                 KernelParameterSpaceLimitBytes);
         }
+    }
+
+    // The bytes of the declared parameters in one entry point: ref and out by pointer always, an in parameter that may
+    // share memory by pointer only in the by-address entry point (SymbolExtensions.IsKernelInPassedByAddress)
+    private static int GetParameterSpace(IMethodSymbol kernel, bool inByAddress)
+    {
+        var offset = 0;
+        foreach (var parameter in kernel.Parameters)
+        {
+            var byPointer = parameter.RefKind is RefKind.Ref or RefKind.Out ||
+                (inByAddress && parameter.IsKernelInPassedByAddress());
+            var layout = byPointer
+                ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
+                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, s_cudaDialect);
+
+            offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
+        }
+
+        return offset;
     }
 }

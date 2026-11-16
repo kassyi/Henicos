@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
@@ -22,15 +24,15 @@ internal static class CpuHostLaunchEmitter
     /// launcher (<see cref="TypedPointerLaunchEmitter"/>), as the CUDA dialect emits them.
     /// </summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
-        LauncherAccessibilities accessibilities, string moduleName)
+        LauncherAccessibilities accessibilities, string moduleName, in TargetLimits targetLimits)
     {
         // No copy for a kernel that runs as the user's method or not at all on the managed path (GSH0119)
         writer.AppendLineIf(kernel.ManagedCSharpSource.Length > 0, kernel.ManagedCSharpSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         var arguments = CpuNativeArgumentPlan.Create(kernel.Host);
         WriteCpuDelegateDeclaration(writer, kernel, arguments);
-        WriteLaunchMethodCpu(writer, kernel, arguments, accessibilities.Launcher, moduleName);
-        CpuPointerLaunchEmitter.Write(writer, kernel, accessibilities.Pointer, moduleName);
+        WriteLaunchMethodCpu(writer, kernel, arguments, accessibilities.Launcher, moduleName, targetLimits);
+        CpuPointerLaunchEmitter.Write(writer, kernel, accessibilities.Pointer, moduleName, targetLimits);
         if (kernel.IsOverloaded)
         {
             TypedPointerLaunchEmitter.Write(writer, kernel, accessibilities.TypedPointer);
@@ -38,7 +40,8 @@ internal static class CpuHostLaunchEmitter
     }
 
     private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel,
-        in CpuNativeArgumentPlan arguments, Accessibility accessibility, string moduleName)
+        in CpuNativeArgumentPlan arguments, Accessibility accessibility, string moduleName,
+        in TargetLimits targetLimits)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
@@ -46,7 +49,7 @@ internal static class CpuHostLaunchEmitter
         {
             var sharing = ArraySharingPlan.ForCpu(kernel.Host);
             WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host, sharing.Aliases);
-            LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
+            LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host, targetLimits);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: false));
             using (AliasGroupEmitter.WriteCpuGroups(writer, sharing))
@@ -271,8 +274,9 @@ internal static class CpuHostLaunchEmitter
         switch (shape)
         {
             case { IsCpuConvertedStruct: true, MarshalMethodName: { } marshal }:
-                writer.AppendLine(
-                    $"{marshal}(ref {shape.Identifier}, ref {KernelHostNames.GetLocal(LauncherLocal.Native, shape)}, {KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape)}, hStream);");
+                var nativeShadow = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
+                var allocated = KernelHostNames.GetLocal(LauncherLocal.AllocatedPointers, shape);
+                writer.AppendLine($"{marshal}({shape.RefArgument}, ref {nativeShadow}, {allocated}, hStream);");
                 break;
             case { IsCpuConvertedArray: true } when sharing.HasShadowSource(index):
                 var sharedShadow = KernelHostNames.GetLocal(LauncherLocal.SharedShadow, shape);
@@ -341,13 +345,13 @@ internal static class CpuHostLaunchEmitter
     {
         var shape = sharing.Parameters[index];
         var member = AliasGroupEmitter.CpuBufferPointer(sharing.Aliases, index);
-        var unmarshals = shape.IsCpuConvertedStruct ||
+        var unmarshals = (shape.IsCpuConvertedStruct && !shape.IsInReference) ||
             shape is { IsCpuConvertedArray: true, IsCopiedOut: true, IsReadOnlyContainer: false };
         writer.AppendLineIf(member is not null && unmarshals, $"if (!({member?.Member}))");
         using var notMember = member is not null && unmarshals ? writer.Scope() : default;
         switch (shape)
         {
-            case { IsCpuConvertedStruct: true, UnmarshalMethodName: { } unmarshal }:
+            case { IsCpuConvertedStruct: true, IsInReference: false, UnmarshalMethodName: { } unmarshal }:
                 var native = KernelHostNames.GetLocal(LauncherLocal.Native, shape);
                 writer.AppendLine($"{unmarshal}(ref {shape.Identifier}, ref {native}, hStream);");
                 break;

@@ -112,6 +112,7 @@ public static unsafe void LaunchUnsuffixedUIntLiteralKernel(global::System.UInt3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UnsignedLiteralKernels.UnsuffixedUIntLiteralKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UnsignedLiteralKernels.UnsuffixedUIntLiteralKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = a;
 global::System.UInt32[] __gsharp_csharp_arg_1 = quotients;
 global::System.Int32[] __gsharp_csharp_arg_2 = comparisons;

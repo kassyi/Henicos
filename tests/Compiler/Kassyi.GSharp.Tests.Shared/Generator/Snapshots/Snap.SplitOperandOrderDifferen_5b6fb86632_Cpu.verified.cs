@@ -1834,6 +1834,7 @@ private unsafe delegate void __gsharp_delegate_OperandOrderKernel(uint gridDimX,
 public static unsafe void LaunchOperandOrderKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] d, global::System.Int32[] e, global::System.Int32[] f, global::System.Int32[] counter, global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Boolean flag, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.OperandOrderKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.OperandOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.OperandOrderKernel", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
@@ -2060,6 +2061,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.OperandOrderKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.OperandOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.OperandOrderKernel", "LaunchOperandOrderKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchOperandOrderKernel");
@@ -2788,6 +2790,7 @@ private unsafe delegate void __gsharp_delegate_CompoundOrderKernel(uint gridDimX
 public static unsafe void LaunchCompoundOrderKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] d, global::System.Int32[] e, global::System.Int32 x, global::System.Int32 y, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.CompoundOrderKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.CompoundOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.CompoundOrderKernel", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
@@ -2984,6 +2987,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.CompoundOrderKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.CompoundOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.CompoundOrderKernel", "LaunchCompoundOrderKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCompoundOrderKernel");
@@ -3189,6 +3193,7 @@ private unsafe delegate void __gsharp_delegate_SpanElementTargetChecksFirstKerne
 public static unsafe void LaunchSpanElementTargetChecksFirstKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -3334,6 +3339,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstKernel", "LaunchSpanElementTargetChecksFirstKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSpanElementTargetChecksFirstKernel");
@@ -3490,6 +3496,7 @@ private unsafe delegate void __gsharp_delegate_SpanElementTargetChecksFirstTwinK
 public static unsafe void LaunchSpanElementTargetChecksFirstTwinKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -3639,6 +3646,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel", "LaunchSpanElementTargetChecksFirstTwinKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSpanElementTargetChecksFirstTwinKernel");
@@ -3848,6 +3856,7 @@ private unsafe delegate void __gsharp_delegate_FieldOfElementTargetChecksFirstKe
 public static unsafe void LaunchFieldOfElementTargetChecksFirstKernel(global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -4006,6 +4015,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstKernel", "LaunchFieldOfElementTargetChecksFirstKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFieldOfElementTargetChecksFirstKernel");
@@ -4176,6 +4186,7 @@ private unsafe delegate void __gsharp_delegate_FieldOfElementTargetChecksFirstTw
 public static unsafe void LaunchFieldOfElementTargetChecksFirstTwinKernel(global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] __gsharp_csharp_arg_0 = cells;
@@ -4338,6 +4349,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel", "LaunchFieldOfElementTargetChecksFirstTwinKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFieldOfElementTargetChecksFirstTwinKernel");
@@ -4539,6 +4551,7 @@ private unsafe delegate void __gsharp_delegate_RefElementArgumentChecksFirstKern
 public static unsafe void LaunchRefElementArgumentChecksFirstKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -4688,6 +4701,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstKernel", "LaunchRefElementArgumentChecksFirstKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefElementArgumentChecksFirstKernel");
@@ -4846,6 +4860,7 @@ private unsafe delegate void __gsharp_delegate_RefElementArgumentChecksFirstTwin
 public static unsafe void LaunchRefElementArgumentChecksFirstTwinKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -4999,6 +5014,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel", "LaunchRefElementArgumentChecksFirstTwinKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefElementArgumentChecksFirstTwinKernel");
@@ -5195,6 +5211,7 @@ private unsafe delegate void __gsharp_delegate_ElementTargetChecksAtStoreKernel(
 public static unsafe void LaunchElementTargetChecksAtStoreKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -5344,6 +5361,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreKernel", "LaunchElementTargetChecksAtStoreKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchElementTargetChecksAtStoreKernel");
@@ -5498,6 +5516,7 @@ private unsafe delegate void __gsharp_delegate_ElementTargetChecksAtStoreTwinKer
 public static unsafe void LaunchElementTargetChecksAtStoreTwinKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -5651,6 +5670,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel", "LaunchElementTargetChecksAtStoreTwinKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchElementTargetChecksAtStoreTwinKernel");
@@ -5868,6 +5888,7 @@ private unsafe delegate void __gsharp_delegate_FieldOfElementBeforeDivisionKerne
 public static unsafe void LaunchFieldOfElementBeforeDivisionKernel(global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] cells, global::System.Int32[] counts, global::System.Int32 i, global::System.Int32 zero, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -6026,6 +6047,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.FieldOfElementBeforeDivisionKernel", "LaunchFieldOfElementBeforeDivisionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFieldOfElementBeforeDivisionKernel");
@@ -6226,6 +6248,7 @@ private unsafe delegate void __gsharp_delegate_ElementBeforeDivisionKernel(uint 
 public static unsafe void LaunchElementBeforeDivisionKernel(global::System.Int32[] data, global::System.Int32[] counts, global::System.Int32 i, global::System.Int32 zero, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -6375,6 +6398,7 @@ if (counts.Data == global::System.IntPtr.Zero && counts.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "counts");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SplitOperandOrderDifferentialKernels.ElementBeforeDivisionKernel", "LaunchElementBeforeDivisionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchElementBeforeDivisionKernel");

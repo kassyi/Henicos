@@ -52,17 +52,44 @@ public class TargetArchitectureDiagnosticTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cuda")]
     [InlineData("Cpu")]
-    public void Generator_TargetArchitectures_LeaveTheGeneratedSourcesAsTheyAre(string dialect)
+    public void Generator_TargetArchitectures_SetTheSharedMemoryLimitOfTheLaunchers(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_MyKernel.cu.cs");
 
-        var byDefault = GeneratedSources(source, dialect, null);
-        var hopper = GeneratedSources(source, dialect, "compute_90,sm_90");
-        var unknown = GeneratedSources(source, dialect, "compute_130,sm_130");
+        var byDefault = string.Join("\n", GeneratedSources(source, dialect, null));
+        var hopper = string.Join("\n", GeneratedSources(source, dialect, "compute_90,sm_90"));
+        var blackwell107 = string.Join("\n", GeneratedSources(source, dialect, "sm_107a"));
+        var unknown = string.Join("\n", GeneratedSources(source, dialect, "compute_130,sm_130"));
 
-        Assert.NotEmpty(byDefault);
-        Assert.Equal(byDefault, hopper);
-        Assert.Equal(byDefault, unknown);
+        const string check = "global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, ";
+        const string defaultCall = check + "101376, \"sm_86\", \"MyKernel.Run\");";
+        Assert.Contains(defaultCall, byDefault);
+        Assert.Contains(check + "232448, \"sm_90\", \"MyKernel.Run\");", hopper);
+        Assert.Contains(check + "232448, \"sm_107\", \"MyKernel.Run\");", blackwell107);
+        Assert.DoesNotContain("CheckTargetSharedMemory", unknown);
+
+        // LaunchRun comes first, then LaunchRunPtr
+        var ptrIndex = byDefault.IndexOf("public static unsafe void LaunchRunPtr(", StringComparison.Ordinal);
+        Assert.True(ptrIndex > 0);
+        var callIndex = byDefault.IndexOf(defaultCall, StringComparison.Ordinal);
+        Assert.InRange(callIndex, 0, ptrIndex);
+        var ptrCallIndex = byDefault.IndexOf(defaultCall, ptrIndex, StringComparison.Ordinal);
+        if (dialect == "Cuda")
+        {
+            // In the C# execution branch of LaunchRun, before the kernel runs; the pointer launcher's branch throws
+            var branchIndex = byDefault.IndexOf(
+                "if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == " +
+                "global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)",
+                StringComparison.Ordinal);
+            var runnerIndex = byDefault.IndexOf(
+                "global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(", StringComparison.Ordinal);
+            Assert.True(branchIndex >= 0 && callIndex > branchIndex && runnerIndex > callIndex);
+            Assert.Equal(-1, ptrCallIndex);
+        }
+        else
+        {
+            Assert.True(ptrCallIndex > ptrIndex);
+        }
     }
 
     private static ImmutableArray<Diagnostic> Run(string testCase, string dialect, string? architectures)

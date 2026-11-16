@@ -289,7 +289,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
         var isRefPointer = parameterSymbol is not null
-            ? parameterSymbol.IsPassedByPointer(isKernel)
+            ? (isKernel
+                ? parameterSymbol.RefKind is RefKind.Ref or RefKind.Out || context.Emitter.IsParameterPassedByAddress(parameterSymbol)
+                : parameterSymbol.IsPassedByPointer(isKernel: false))
             : p.Modifiers.Any(SyntaxKind.RefKeyword) ||
               p.Modifiers.Any(SyntaxKind.OutKeyword) ||
               (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));

@@ -88,7 +88,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         using (writer.ImmediatelyInvokedLambda("auto"))
         {
             writer.Append($"auto&& {FusionSource} = ");
-            context.Visitor.Visit(chain.SourceArrayExpression);
+            ArrayNullCheck.AppendLinqSource(chain.SourceArrayExpression, ref context);
             writer.AppendLine(";");
 
             EmitInitializations(in chain, folded, ref context, terminalStrategy, in terminalStage);

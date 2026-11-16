@@ -138,6 +138,7 @@ global::System.Runtime.CompilerServices.Unsafe.SkipInit(out outVal);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.AllocationTestKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperAllocationKernels.AllocationTestKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
 global::System.UInt32 __gsharp_csharp_arg_3 = constantVal;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &ioVal)
@@ -392,6 +393,7 @@ public static unsafe void LaunchSingleArrayKernel(global::System.Int32[] a, uint
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.SingleArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperAllocationKernels.SingleArrayKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.SingleArrayKernel(__gsharp_csharp_arg_0));
 return;
@@ -519,6 +521,7 @@ public static unsafe void LaunchTwoArraysKernel(global::System.Int32[] a, global
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.TwoArraysKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperAllocationKernels.TwoArraysKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = b;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.WrapperAllocationKernels.TwoArraysKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -716,6 +719,7 @@ __gsharp_layout_checked_StructAndTwoArraysKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.StructAndTwoArraysKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperAllocationKernels.StructAndTwoArraysKernel");
 global::System.Int32[] __gsharp_csharp_arg_1 = a;
 global::System.Int32[] __gsharp_csharp_arg_2 = b;
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_pin_0 = &counter)
@@ -1011,6 +1015,7 @@ __gsharp_layout_checked_ArrayFreeStructKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperAllocationKernels.ArrayFreeStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperAllocationKernels.ArrayFreeStructKernel");
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_pin_0 = &counter)
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.ArrayFreeCounter* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;

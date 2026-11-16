@@ -113,7 +113,9 @@ internal readonly struct CpuNativeArgumentPlan
             PointerArgumentKind.NullableArray => new(NullableProxyPointer, CpuNativeArgumentForm.NullableProxyAddress),
             PointerArgumentKind.Reference => new(GetTypeName(shape), CpuNativeArgumentForm.PointerCast),
             PointerArgumentKind.ShadowStruct => new(GetShadowPath(shape) + "*", CpuNativeArgumentForm.ValueAddress),
-            _ => GetScalarArgument(shape)
+            _ => shape.IsInReference
+                ? new(GetTypeName(shape), CpuNativeArgumentForm.ValueAddress)
+                : GetScalarArgument(shape)
         };
 
     // [WHY] An unmanaged function pointer marshals bool as a 4-byte BOOL and char as one ANSI byte, so they go in the

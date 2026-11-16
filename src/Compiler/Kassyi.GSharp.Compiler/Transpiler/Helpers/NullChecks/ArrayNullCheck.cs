@@ -41,6 +41,9 @@ internal static class ArrayNullCheck
 
     private const string ArgumentTrapKind = "ArrayNullArgument";
 
+    // The trap kind of the check of the array a StackLinq query starts from
+    private const string LinqSourceTrapKind = "LinqSourceNull";
+
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
@@ -254,6 +257,44 @@ internal static class ArrayNullCheck
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws
+    /// <see cref="ArgumentNullException"/> for a null array as <c>AsStackEnumerable</c> does: <see langword="null"/>
+    /// when the source cannot be null or is not a C# array.
+    /// </summary>
+    /// <remarks>
+    /// A method without an error site table (a device function) passes the message itself, with no place, as
+    /// <see cref="ArgumentCheckSite"/> does: the message must end with <c>(Parameter 'source')</c> for the mapper to
+    /// give the exception its <see cref="ArgumentException.ParamName"/>.
+    /// </remarks>
+    public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !NeedsCheck(source, model))
+        {
+            return null;
+        }
+
+        return context.Emitter.ErrorSites is null
+            ? new NullCheckSite(0u, ArgumentExceptionMessages.LinqSource)
+            : PlanSite(source, null, ArgumentExceptionMessages.LinqSource, LinqSourceTrapKind, ref context);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="source"/> as <c>__gsharp_source_argument(&lt;source&gt;, &lt;site&gt;)</c> when
+    /// <see cref="PlanLinqSource"/> says it needs the check, as it is otherwise.
+    /// </summary>
+    public static void AppendLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        if (PlanLinqSource(source, ref context) is not { } site)
+        {
+            context.Visitor.Visit(source);
+            return;
+        }
+
+        AppendHelperCall(GSharpInternalNames.Prelude.SourceArgument, source, site, ref context);
     }
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
