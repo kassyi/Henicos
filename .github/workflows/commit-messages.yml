@@ -1,10 +1,11 @@
 name: Commit messages
 
-# Fails a pull request with a commit whose subject is not a Conventional Commits subject (so no wip or fixup! commit
-# either). Pull requests are merged with a merge commit, so every commit of the branch reaches main as it is. A
-# workflow of its own, without the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked
-# too; it needs no build, only Node. The title of the pull request is checked by the same rule, and `edited` runs the
-# check again when the title is renamed.
+# Fails a pull request with a commit whose message does not follow the repository's Conventional Commits format
+# (<type>(<scope>)[!]: <description> with the required body sections; so no wip or fixup! commit either). Pull requests
+# are merged with a merge commit, so every commit of the branch reaches main as it is. A workflow of its own, without
+# the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked too; it needs no build, only
+# Node. The title of the pull request is checked by the header rule, and `edited` runs the check again when the title is
+# renamed.
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
