@@ -40,6 +40,7 @@ Purple belongs to the process tier because it carries no verdict: green reads as
 | found-by:audit | pink | FFC6CC | 10 / 45 / 85 |
 | found-by:matrix | cream | FFD889 | 85 / 45 / 88 |
 | found-by:differential | mint | 95EDD8 | 180 / 38 / 88 |
+| found-by:review | lime | BBE183 | 130 / 45 / 85 |
 | dependencies, github_actions | gray | 969699 | 260 / 4 / 62 |
 
 ## 3. Adding a label
