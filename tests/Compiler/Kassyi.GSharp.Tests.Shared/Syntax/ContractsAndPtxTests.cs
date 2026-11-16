@@ -3,7 +3,7 @@ using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public class ContractsAndPtxTests : TranspilerTestBase
+public partial class ContractsAndPtxTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -19,52 +19,6 @@ public class ContractsAndPtxTests : TranspilerTestBase
         }
         else
         {
-            var ex = Assert.Throws<NotSupportedException>(
-                () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data));
-            Assert.Contains("Gpu.InlinePtx", ex.Message);
-        }
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void InlinePtx_FollowedByWriteOnCpuDialect_HaltsBeforeSubsequentStatements()
-    {
-        Skip.If(IsCudaDialect, "This test verifies CPU-dialect halts before subsequent statements after Gpu.InlinePtx.");
-
-        uint[] data = [42u];
-        var ex = Assert.Throws<NotSupportedException>(
-            () => ContractsAndPtxKernels.LaunchInlinePtxFollowedByWriteKernel(data));
-        Assert.Contains("Gpu.InlinePtx", ex.Message);
-        Assert.Equal(42u, data[0]);
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void InlinePtx_MultiThreadCpuLaunch_PropagatesSingleNotSupportedException()
-    {
-        Skip.If(IsCudaDialect, "This test verifies CPU-dialect OpenMP parallel error propagation.");
-
-        uint[] data = new uint[256];
-        var ex = Assert.Throws<NotSupportedException>(
-            () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data, gridDimX: 4, blockDimX: 64));
-        Assert.Contains("Gpu.InlinePtx", ex.Message);
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void InlinePtx_ManagedFallbackLaunch_PropagatesNotSupportedException()
-    {
-        Skip.If(IsCudaDialect, "This test verifies CPU-dialect managed fallback error propagation.");
-
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            uint[] data = [0];
             var ex = Assert.Throws<NotSupportedException>(
                 () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data));
             Assert.Contains("Gpu.InlinePtx", ex.Message);
