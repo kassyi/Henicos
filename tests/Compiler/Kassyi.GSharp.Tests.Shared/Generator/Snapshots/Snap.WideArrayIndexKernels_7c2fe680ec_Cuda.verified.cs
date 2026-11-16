@@ -430,6 +430,13 @@ handle.Free();
 }
 }
 }
+public static void AliasHeldArrays_WideIndexHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.WideIndexHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string ExerciseSByteIndexKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WideIndexHolder__

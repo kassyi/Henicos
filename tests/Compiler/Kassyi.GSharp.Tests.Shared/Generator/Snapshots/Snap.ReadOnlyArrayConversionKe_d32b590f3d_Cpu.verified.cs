@@ -107,6 +107,17 @@ if (native.Optional.Data == global::System.IntPtr.Zero)
 host.Optional = default;
 }
 }
+public static void AliasHeldArrays_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Fixed != null)
+{
+held.Add(host.Fixed, 4, 0, false);
+}
+if (host.Optional != null)
+{
+held.Add(host.Optional, 4, 0, false);
+}
+}
 public static void CopyArrays_ReadOnlyArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.Fixed);

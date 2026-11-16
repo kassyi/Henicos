@@ -263,6 +263,13 @@ host.Data = default;
 }
 host.Tag = native.Tag;
 }
+public static void AliasHeldArrays_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
+}
 public static void CopyArrays_ArrayCallHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayCallHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.Data);

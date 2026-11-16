@@ -226,6 +226,13 @@ handle.Free();
 host.Skip = native.Skip;
 host.Limit = native.Limit;
 }
+public static void AliasHeldArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Base != null)
+{
+held.Add(host.Base, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string BlockExclusiveScan_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntVectorKernels__ElementCountContext__
