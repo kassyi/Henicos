@@ -380,11 +380,8 @@ internal static class ThrowTranspiler
         var arguments = new List<ITypeSymbol>();
         for (var i = 0; i < chain.Count; i++)
         {
-            builder.Append(i > 0 ? "+" : "").Append(chain[i].Name);
-            if (chain[i].Arity > 0)
-            {
-                builder.Append('`').Append(chain[i].Arity);
-            }
+            // MetadataName is the CLR name of the type itself, with its arity (Name`1)
+            builder.Append(i > 0 ? "+" : "").Append(chain[i].MetadataName);
 
             arguments.AddRange(chain[i].TypeArguments);
         }
@@ -411,7 +408,7 @@ internal static class ThrowTranspiler
             builder.Append(']');
         }
 
-        builder.Append(", ").Append(type.ContainingAssembly.Name);
+        builder.Append(", ").Append(type.ContainingAssembly.MetadataName);
         return true;
     }
 }
