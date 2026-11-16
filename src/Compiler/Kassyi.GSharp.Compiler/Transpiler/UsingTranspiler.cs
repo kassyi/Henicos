@@ -115,6 +115,7 @@ internal static class UsingTranspiler
             return;
         }
 
+        var guards = context.Emitter.ActiveGuards.Count;
         using (context.Emitter.Writer.Scope())
         {
             if (node.Declaration != null)
@@ -136,6 +137,8 @@ internal static class UsingTranspiler
                 context.Emitter.Writer.AppendLine();
             }
         }
+
+        context.Emitter.EndGuardScope(guards);
     }
 
     /// <summary>
@@ -231,7 +234,9 @@ internal static class UsingTranspiler
     {
         context.Emitter.Writer.Append($"{GSharpInternalNames.Using.ScopeGuard}<");
         context.Emitter.Dialect.AppendType(ref context, resourceType);
-        context.Emitter.Writer.Append($"> {GSharpInternalNames.Using.GuardPrefix}{context.Emitter.UsingCounter++}");
+        var name = GSharpInternalNames.Using.GuardPrefix + context.Emitter.UsingCounter++;
+        context.Emitter.Writer.Append($"> {name}");
+        context.Emitter.ActiveGuards.Add(name);
     }
 
     // Records the struct whose Dispose the method calls, or reports why the using cannot dispose its resource
