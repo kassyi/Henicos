@@ -56,6 +56,9 @@ internal readonly record struct KernelHostModel
     /// <summary>A <c>[GpuKernel(Cooperative = true)]</c> kernel.</summary>
     public bool IsCooperative { get; init; }
 
+    /// <summary>A <c>[GpuKernel(AllowOversizedSharedMemory = true)]</c> kernel.</summary>
+    public bool AllowsOversizedSharedMemory { get; init; }
+
     /// <summary>Whether the kernel is a static method, which the C# execution can call without an object.</summary>
     public bool IsStatic { get; init; }
 
@@ -193,6 +196,7 @@ internal readonly record struct KernelHostModel
             CudaReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cuda, kernel.ContainingType),
             CpuReturn = ParameterTransfer.CreateForReturn(kernel.ReturnType, HostDialects.Cpu, kernel.ContainingType),
             IsCooperative = kernel.IsCooperativeKernel(),
+            AllowsOversizedSharedMemory = kernel.AllowsOversizedSharedMemory(),
             IsStatic = kernel.IsStatic,
             ReachesWarpShuffle = model != null && SuspensionAnalysis.ReachesWarpShuffle(kernel, model.Compilation),
             WaitsForArrivals = kernel.IsCooperativeKernel() ||
