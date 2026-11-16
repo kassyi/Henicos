@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -56,6 +57,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true, long.MinValue)]
     public void LongIndex_OutOfRangeReadAndWrite_ThrowsIndexOutOfRange(bool forceManaged, long index)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] o = [-1];
 
@@ -82,6 +84,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true, 1UL << 32)]
     public void ULongIndex_AboveLengthWithinLongMax_ThrowsIndexOutOfRange(bool forceManaged, ulong index)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] o = [-1];
 
@@ -109,6 +112,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true, 0x80000001u)]
     public void UIntIndex_OutOfRange_ThrowsIndexOutOfRange(bool forceManaged, uint index)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] o = [-1];
 
@@ -135,6 +139,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true, (ulong)long.MaxValue + 1UL)]
     public void ULongIndex_AboveLongMax_ThrowsOverflow(bool forceManaged, ulong index)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] o = [-1];
 
@@ -157,6 +162,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true, ulong.MaxValue)]
     public void ULongIndex_LoweredAcrossBarrierOrShuffle_ThrowsOverflow(bool forceManaged, ulong index)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] o = [-1];
 
@@ -191,6 +197,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true)]
     public void NullArray_ULongOverflowAndLongOutOfRange_ThrowsInCSharpOrder(bool forceManaged)
     {
+        SkipOnReleaseCuda();
         int[] o = [-1];
 
         // C# evaluates conv.ovf.i.un on the ulong index before ldelem checks the array reference for null
@@ -221,6 +228,7 @@ public class WideArrayIndexTests : TranspilerTestBase
     [InlineData(true)]
     public void AssignmentOrder_ULongOverflowAndWideOutOfRange_EvaluatesRhsInCSharpOrder(bool forceManaged)
     {
+        SkipOnReleaseCuda();
         int[] a = [10, 20, 30];
         int[] side = [0];
 
@@ -261,6 +269,12 @@ public class WideArrayIndexTests : TranspilerTestBase
         Assert.Equal([100, 107, 0], h.Data);
         Assert.Equal([10, 36, 14], o);
     }
+
+    // The release CUDA build does not check an index (semantics charter: it keeps three checks); the checked build
+    // checks it as C# does
+    private void SkipOnReleaseCuda() =>
+        Skip.If(IsCudaDialect && !DiffPaths.IsCudaCheckedBuild,
+            "The release CUDA build does not check the index; the checked build does and keeps the context usable.");
 
     private void Run(bool forceManaged, Action launch)
     {
