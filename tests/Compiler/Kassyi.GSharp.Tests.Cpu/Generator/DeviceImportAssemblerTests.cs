@@ -160,7 +160,6 @@ public class DeviceImportAssemblerTests
 
     private static MetadataReference BuildHandWritten(string assemblyName, string file, string marker) =>
         DeviceLibraryBuilder.Build(assemblyName, s_noExport,
-            RoslynTestUtility.ReadTestCase(Folder + file)
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal)
+            HandWrittenExportRecords.Read(Folder + file)
                 .Replace("ASSEMBLY_NAME", marker, StringComparison.Ordinal));
 }

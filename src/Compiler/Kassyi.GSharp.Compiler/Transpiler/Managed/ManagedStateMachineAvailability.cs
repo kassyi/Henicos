@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// built on main (CUDA, without kernels) must not stop building for them. A state machine is left out, and its record
 /// says so (<c>DeviceExportRecord.ManagedStateMachine</c>, GSH0089 for a consumer on the C++ dialect), when it could not
 /// compile: a containing type that is not partial, a file-local type that its body names, that its frame would hold
-/// or that contains it (<see cref="FileLocalNames"/>), or a suspending callee whose frame it cannot name.
+/// or that contains it (<see cref="FileLocalNames"/>), or a suspending callee that has no state machine.
 /// </para>
 /// <para>
 /// The frame is as visible as the function (public or internal), narrowed to what the types it holds allow
@@ -181,13 +181,17 @@ internal static class ManagedStateMachineAvailability
     {
         var widest = IsEffectivelyPublic(method) ? Accessibility.Public : Accessibility.Internal;
 
-        // A function of another assembly: what its assembly emitted, as visible as the function
+        // A function of another assembly: what its assembly emitted (a private frame with entries, or a frame as
+        // visible as the function)
         if (DeviceExportTable.IsOutside(method, compilation))
         {
-            return DeviceExportTable.TryFindFunction(method, compilation, out var imported) &&
-                   imported.Record.Traits.ManagedStateMachine
-                ? widest
-                : Accessibility.NotApplicable;
+            if (!DeviceExportTable.TryFindFunction(method, compilation, out var imported) ||
+                !imported.Record.Traits.ManagedStateMachine)
+            {
+                return Accessibility.NotApplicable;
+            }
+
+            return imported.Record.Traits.PrivateManagedFrame ? Accessibility.Private : widest;
         }
 
         if (!AreContainingTypesPartial(method) ||
