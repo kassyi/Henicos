@@ -23,6 +23,11 @@ internal static class BuildProcessRunner
 
     private const int DefaultTimeoutSeconds = 300;
 
+    // A short grace period for the redirected stdout and stderr pipes to reach end of file after the build process
+    // exits or is killed. When a surviving grandchild (such as a stalled task host or compiler server) inherits the
+    // write ends of those pipes, EOF never arrives; bounding the drain prevents the test from hanging without a limit.
+    private static readonly TimeSpan s_defaultOutputDrainTimeout = TimeSpan.FromSeconds(30);
+
     // Processes that a stalled build may wait on; on Linux the compiler server runs as "dotnet"
     private static readonly string[] s_buildProcessNames = ["dotnet", "MSBuild", "VBCSCompiler"];
 
@@ -47,8 +52,9 @@ internal static class BuildProcessRunner
     /// build only.</param>
     /// <param name="extraArguments">Further arguments of <c>dotnet build</c>, such as targets or properties.</param>
     /// <exception cref="TimeoutException">
-    /// The process did not exit in time; the whole process tree has been killed. The message holds the full output,
-    /// the running dotnet / MSBuild / VBCSCompiler processes and the path of the binary log.
+    /// The process did not exit in time, or its output pipes did not close after it exited; on a process timeout the
+    /// whole process tree has been killed. The message holds the output collected so far, the running dotnet / MSBuild
+    /// / VBCSCompiler processes and the path of the binary log.
     /// </exception>
     internal static async Task<BuildResult> RunBuildAsync(
         string workingDirectory,
@@ -88,12 +94,22 @@ internal static class BuildProcessRunner
         }
 
         var commandLine = "dotnet " + string.Join(' ', startInfo.ArgumentList);
+        return await RunProcessAsync(startInfo, commandLine, binaryLogPath, Timeout, s_defaultOutputDrainTimeout);
+    }
 
-        var timeout = Timeout;
+    internal static async Task<BuildResult> RunProcessAsync(
+        ProcessStartInfo startInfo,
+        string commandLine,
+        string binaryLogPath,
+        TimeSpan timeout,
+        TimeSpan outputDrainTimeout)
+    {
         var stopwatch = Stopwatch.StartNew();
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
+        var stdoutBuffer = new OutputBuffer();
+        var stderrBuffer = new OutputBuffer();
+        var stdoutTask = ReadLinesAsync(process.StandardOutput, stdoutBuffer);
+        var stderrTask = ReadLinesAsync(process.StandardError, stderrBuffer);
 
         using var cts = new CancellationTokenSource(timeout);
         try
@@ -108,15 +124,51 @@ internal static class BuildProcessRunner
             // Kill the MSBuild node and compiler server children too, or they keep the temp directory locked.
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync();
+            await DrainOutputAsync(stdoutTask, stderrTask, outputDrainTimeout);
             throw new TimeoutException(
                 $"Build process '{commandLine}' timed out after {stopwatch.Elapsed.TotalSeconds:F1} s " +
                 $"(limit {timeout.TotalSeconds:F0} s, override with {TimeoutEnvironmentVariable}).\n" +
                 $"Binary log: {binaryLogPath}\n" +
                 $"Running build processes at the timeout:\n{processes}" +
-                $"STDOUT:\n{await stdoutTask}\nSTDERR:\n{await stderrTask}");
+                $"STDOUT:\n{stdoutBuffer.Snapshot()}\nSTDERR:\n{stderrBuffer.Snapshot()}");
         }
 
-        return new BuildResult(process.ExitCode, await stdoutTask, await stderrTask);
+        if (!await DrainOutputAsync(stdoutTask, stderrTask, outputDrainTimeout))
+        {
+            var processes = DescribeBuildProcesses(process.Id);
+            throw new TimeoutException(
+                $"Build process '{commandLine}' exited with code {process.ExitCode}, " +
+                $"but reading its output did not finish within {outputDrainTimeout.TotalSeconds:F1} s " +
+                $"(elapsed {stopwatch.Elapsed.TotalSeconds:F1} s).\n" +
+                $"Binary log: {binaryLogPath}\n" +
+                $"Running build processes:\n{processes}" +
+                $"STDOUT:\n{stdoutBuffer.Snapshot()}\nSTDERR:\n{stderrBuffer.Snapshot()}");
+        }
+
+        return new BuildResult(process.ExitCode, stdoutBuffer.Snapshot(), stderrBuffer.Snapshot());
+    }
+
+    private static async Task ReadLinesAsync(StreamReader reader, OutputBuffer buffer)
+    {
+        while (await reader.ReadLineAsync() is { } line)
+        {
+            buffer.AppendLine(line);
+        }
+    }
+
+    private static async Task<bool> DrainOutputAsync(Task stdoutTask, Task stderrTask, TimeSpan timeout)
+    {
+        var bothTasks = Task.WhenAll(stdoutTask, stderrTask);
+        using var cts = new CancellationTokenSource();
+        var completed = await Task.WhenAny(bothTasks, Task.Delay(timeout, cts.Token));
+        if (!ReferenceEquals(completed, bothTasks))
+        {
+            return false;
+        }
+
+        await cts.CancelAsync();
+        await bothTasks;
+        return true;
     }
 
     // The build runs in a temporary directory, which the repository's global.json does not reach. Without a copy the
@@ -185,6 +237,28 @@ internal static class BuildProcessRunner
         catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException)
         {
             return $"n/a ({ex.GetType().Name})";
+        }
+    }
+
+    private sealed class OutputBuffer
+    {
+        private readonly Lock _sync = new();
+        private readonly StringBuilder _builder = new();
+
+        public void AppendLine(string line)
+        {
+            lock (_sync)
+            {
+                _builder.AppendLine(line);
+            }
+        }
+
+        public string Snapshot()
+        {
+            lock (_sync)
+            {
+                return _builder.ToString();
+            }
         }
     }
 }
