@@ -23,17 +23,12 @@ internal readonly record struct ErrorSiteArgument
     /// <summary>Creates an argument for a site ID registered in the error site table.</summary>
     public static ErrorSiteArgument FromSiteId(uint siteId) => new(siteId, string.Empty);
 
-    /// <summary>Creates an argument for a site ID registered in the error site table.</summary>
-    public static ErrorSiteArgument FromSiteId(int siteId) => FromSiteId((uint)siteId);
+    /// <summary>
+    /// Creates an argument for a site ID as the error site table returns it (<c>int</c>), read as the unsigned ID that
+    /// the C++ output writes.
+    /// </summary>
+    public static ErrorSiteArgument FromSiteId(int siteId) => FromSiteId(unchecked((uint)siteId));
 
     /// <summary>Creates an argument for a fallback message literal.</summary>
-    public static ErrorSiteArgument FromMessage(string message)
-    {
-        if (message is null)
-        {
-            throw new ArgumentNullException(nameof(message));
-        }
-
-        return new(0u, message);
-    }
+    public static ErrorSiteArgument FromMessage(string message) => new(0u, message);
 }
