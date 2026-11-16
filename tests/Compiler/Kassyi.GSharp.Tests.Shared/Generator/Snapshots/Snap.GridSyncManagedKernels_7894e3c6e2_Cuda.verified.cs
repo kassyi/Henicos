@@ -82,6 +82,7 @@ public partial class GridSyncManagedKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1672095611u, "GridSyncManagedKernels.cs", 15, 9, "GlobalBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1292850098u, "GridSyncManagedKernels.cs", 22, 22, "GlobalBarrierKernel", "Attempted to divide by zero."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(560802332u, "GridSyncManagedKernels.cs", 23, 23, "GlobalBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(897397045u, "GridSyncManagedKernels.cs", 29, 9, "GlobalBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1931366523u, "GridSyncManagedKernels.cs", 38, 21, "GlobalReductionKernel", "G#: a null array is read"),
@@ -100,7 +101,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 int __gsharp_id_2_totalThreads = __gsharp_mul_i32((int)gridDim.x,(int)blockDim.x);
 __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, 1672095611u)=__gsharp_add_i32(__gsharp_id_1_tid,1);
 __gsharp_grid_sync();
-int __gsharp_id_3_nextId = (__gsharp_add_i32(__gsharp_id_1_tid,1))%__gsharp_id_2_totalThreads;
+int __gsharp_id_3_nextId = __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_1_tid,1),__gsharp_id_2_totalThreads,1292850098u);
 int __gsharp_id_4_nextVal = __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_3_nextId, 560802332u);
 __gsharp_grid_sync();
 __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, 897397045u)=__gsharp_id_4_nextVal;

@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: Issue priority by milestone (M1 to M5, Future), how to assign one, the order of work, and what agents may change without approval.
+trigger: model_decision
+description: Read before filing or triaging an issue, choosing a milestone, or picking what to work on next - milestones M1 to M5 and Future, how to assign one, the order of work.
 ---
 
 # Issue Priority (GitHub Milestones)
@@ -37,6 +37,10 @@ Apply the following from the top; the first match decides the milestone.
 5. Cleanup only, with no change in behavior -> `M5`
 6. Anything else (new features, performance) -> `Future`
 
+An issue with the symptoms of two milestones takes the heavier one, which is the one higher in this list. Do not judge
+it by the symptom that shows first. For example, a bug that fails the build with one compiler and gives a wrong value
+with another is `M1`.
+
 Every open issue must have exactly one milestone. Issues without one can be listed with the following command.
 
 ```sh
@@ -52,6 +56,7 @@ The order within a milestone is decided by sorting on the GitHub milestone page.
 ## 5. What agents do
 
 - When filing an issue (`/issue`), propose a milestone together with the labels and attach it with `gh issue create --milestone "<name>"`.
+- A parent issue of sub-issues gets the `tracking` label and a title ending in `(tracking)`; the bug curve skips it.
 - Changing a milestone, and creating or closing a milestone, are public actions, so get the user's approval first.
 - When an `M3` issue is investigated and reproduced, propose where to move it (`M1` or `M2`).
 - Ask the user before closing a milestone whose issues are all done. When creating a new one, use the next free number (`M6 ...`).

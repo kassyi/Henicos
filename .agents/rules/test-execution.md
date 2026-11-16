@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: Which just command runs which tests, GPU fault tests, memory budgets of the test hosts, and what CI runs and what an agent does with pull requests.
+trigger: model_decision
+description: Read before running tests, fuzzing or mutation testing, or acting on a pull request (CI, review labels, merging) - just recipes, GPU fault tests, memory budgets, CI.
 ---
 
 # Test Execution Rules (`just`)
@@ -93,6 +93,7 @@ budget 1.2 times the largest peak of the `stress` lines, each rounded up to a mu
 
 - **Ubuntu** and **Windows** run side by side for every pull request (every base branch, so a stacked PR is tested too) and every push to `main`. A failure on one OS does not cancel the other.
 - Each OS runs three jobs in parallel, each building only what it tests: `Tests.Cpu`, `Tests.Cuda` and `Other tests` (every other project of the solution, including the Integration tests). Every job uploads its `.trx` files as `test-results-<os>-<suite>` (kept 7 days); `node scripts/human/ci-test-durations.js <dir>` lists the slowest tests, classes and collections from them.
+- `commit-messages.yml` (job `Commit messages`) fails a pull request with a commit whose message does not follow Conventional Commits (`<type>(<scope>)[!]: <description>` with required `[a-z0-9-]+` scope, types `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, plus `- Details of changes:` and `- Technical background:` in the body, and `- Symptom:`, `- Cause:`, `- Solution:` for `fix`; or `Revert "..."`; a commit that does not descend from the commit that brought this rule in keeps the earlier one, a subject with an optional scope), so no `wip` or `fixup!` commit either: the merge commit brings every commit into `main` as it is. Reword such commits before the merge. The same job checks the pull request title by the header rule and runs again when the title is renamed.
 - A new run for the same pull request cancels the one still running. A change to `docs/**`, `.agents/**` or Markdown files alone runs nothing.
 
 What an agent does:

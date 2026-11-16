@@ -143,12 +143,25 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// </summary>
     public string InternalError { get; set; } = "";
 
-    /// <summary>Gets or sets whether the assembly holds the managed state machine of a suspending function.</summary>
+    /// <summary>
+    /// Gets or sets whether the assembly holds the managed state machine of a suspending function (the frame struct,
+    /// or a <c>private</c> frame struct with <c>__gsharp_enter_</c> and <c>__gsharp_number_frame_</c> entries when
+    /// <see cref="PrivateManagedFrame"/> is set).
+    /// </summary>
     public bool ManagedStateMachine { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and expands an
-    /// operator macro, directly or through a call, which the managed path of a consumer calls instead of the function.
+    /// Gets or sets whether the managed frame of a suspending function is <c>private</c> to its declaring type; a
+    /// consumer then holds the frame as <c>object?</c> and runs the function through its <c>__gsharp_enter_</c> and
+    /// <c>__gsharp_number_frame_</c> entries (#1991).
+    /// </summary>
+    public bool PrivateManagedFrame { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the assembly holds the managed version of a function that does not suspend and holds a
+    /// managed-only rewrite (an operator macro, a float or double StackLinq Sum, Gpu.InlinePtx, or an int or long
+    /// division that may divide the minimum by -1), directly or through a call, which the managed path of a consumer
+    /// calls instead of the function.
     /// </summary>
     public bool ManagedVersion { get; set; }
 
@@ -182,4 +195,13 @@ public sealed class GpuDeviceExportAttribute : Attribute
     /// dynamic; a kernel that calls it cannot run as C# one GPU thread at a time (<c>KernelExecution.CSharp</c>).
     /// </summary>
     public bool ReachesSharedMemory { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the device function reaches code whose C# meaning only the generated code gives (an
+    /// operator macro, a float or double StackLinq Sum, Gpu.InlinePtx); a kernel that calls it cannot run as C#
+    /// (<c>KernelExecution.CSharp</c>). Unlike <see cref="ManagedVersion"/>, it does not count an int or long division
+    /// that may divide the minimum by -1, whose C# meaning the C# execution keeps; a record without it reads
+    /// <see cref="ManagedVersion"/> in its place.
+    /// </summary>
+    public bool ReachesGeneratedMeaning { get; set; }
 }

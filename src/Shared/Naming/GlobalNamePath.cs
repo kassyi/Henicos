@@ -32,6 +32,22 @@ internal sealed class GlobalNamePath : IEquatable<GlobalNamePath>
     /// <summary>Element-type modifiers after the last segment, innermost first: 0 for a pointer, n for an array of rank n.</summary>
     public IReadOnlyList<int> Modifiers { get; }
 
+    /// <summary>
+    /// The path of a member of what this path names: its segments followed by <paramref name="member"/>, without
+    /// modifiers.
+    /// </summary>
+    public GlobalNamePath Append(GlobalNameSegment member)
+    {
+        var segments = new GlobalNameSegment[Segments.Count + 1];
+        for (var i = 0; i < Segments.Count; i++)
+        {
+            segments[i] = Segments[i];
+        }
+
+        segments[Segments.Count] = member;
+        return new GlobalNamePath(segments);
+    }
+
     /// <summary>Formats the path like a C# name, for example <c>N.G&lt;System.Int32, System.Single[]&gt;</c>.</summary>
     public string ToDisplayString()
     {

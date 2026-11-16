@@ -8,86 +8,6 @@ internal static class WrapperEmitter
     private const string NegativeLengthMessage = "The array length must not be negative.";
     private const string InconsistentProxyMessage = "A null array has no elements, so its length must be 0.";
 
-    internal readonly struct InteropParameterInfo(
-        string modifier,
-        string? typeName,
-        bool isIntPtr,
-        string? defaultValue = null)
-    {
-        private string Modifier { get; } = modifier;
-        private string? TypeName { get; } = typeName;
-        private bool IsIntPtr { get; } = isIntPtr;
-        private string? DefaultValue { get; } = defaultValue;
-
-        public void WriteTo(SourceWriter writer, string name)
-        {
-            if (IsIntPtr)
-            {
-                writer.Append("global::System.IntPtr ");
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(Modifier))
-                {
-                    writer.Append(Modifier);
-                    writer.Append(' ');
-                }
-
-                if (TypeName != null)
-                {
-                    writer.Append(TypeName);
-                    writer.Append(' ');
-                }
-            }
-
-            writer.Append(name);
-
-            if (DefaultValue == null)
-            {
-                return;
-            }
-
-            writer.Append(" = ");
-            writer.Append(DefaultValue);
-        }
-    }
-
-    internal static InteropParameterInfo GetInteropParameterInfo(in KernelParameterShape shape, bool isDevicePtr)
-    {
-        switch (isDevicePtr ? PointerLaunchPlan.Classify(shape) : PointerArgumentKind.Value)
-        {
-            case PointerArgumentKind.Array:
-                return new InteropParameterInfo(
-                    string.Empty,
-                    HostTypeNames.ArrayProxy,
-                    false,
-                    shape.HasExplicitDefault ? "default" : null
-                );
-            case PointerArgumentKind.NullableArray:
-                return new InteropParameterInfo(
-                    string.Empty,
-                    HostTypeNames.ArrayProxy + "?",
-                    false,
-                    shape.HasExplicitDefault ? "default" : null
-                );
-            case PointerArgumentKind.Reference:
-                return new InteropParameterInfo(string.Empty, null, true, shape.HasExplicitDefault ? "default" : null);
-            case PointerArgumentKind.ShadowStruct:
-                return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
-            default:
-            {
-                var modifier = shape.RefKind switch
-                {
-                    RefKind.Ref => "ref",
-                    RefKind.Out => "out",
-                    _ => string.Empty
-                };
-
-                return new InteropParameterInfo(modifier, shape.DeclaredTypeName, false, shape.DefaultValueLiteral);
-            }
-        }
-    }
-
     // CS0162 = Lowered state machines emit statements or 'goto case' transitions immediately after unconditional throw or goto
     // CS0164 = Lowered state machines preserve user labels (e.g. sync:) or synthesized branch targets (__gsharp_sg_next_<n>) that no jump targets
     // CS0219 = Lowered state machines declare locals (e.g. int unused = 0) that are assigned but never read
@@ -214,50 +134,67 @@ internal static class WrapperEmitter
         writer.AppendLine();
 
         WriteClassDeclaration(writer, model.Class, config.IsCuda ? model.WarmupRelays : default);
-        using (writer.Scope())
+        if (model.OmitsClassMembers)
         {
-            WriteErrorSiteTableField(writer, model.ErrorSites);
-            writer.AppendGeneratedCodeAttributes();
-            var aotContexts = GeneratedMemberAccessibility.ToKeyword(model.AotContextsAccessibility);
-            writer.AppendLine($"{aotContexts} static partial class {AotHostNames.AotContextsClassName}");
+            // GSH0059: a kernel is named like a member of every kernel class; the class gets an empty part
+            writer.AppendLine("{}");
+        }
+        else
+        {
             using (writer.Scope())
             {
-                StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs, config.IsCuda);
-            }
-
-            foreach (var kernel in model.Kernels)
-            {
-                // GSH0059 / GSH0106: the analyzer reports the overload or reserved launch parameter name; its wrappers would not compile.
-                if (kernel.IsIndistinguishable || kernel.Host.HasReservedLaunchParameterName)
-                {
-                    continue;
-                }
-
-                // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
-                // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
-                var accessibilities = model.GetLauncherAccessibilities(kernel);
-                if (kernel.Host.LauncherUnavailableReason is { } reason)
-                {
-                    WriteUnavailableLaunchMethod(writer, kernel, accessibilities.Launcher, reason);
-                    continue;
-                }
-
-                WriteKernelSource(writer, kernel, config);
-
-                if (config.IsCuda)
-                {
-                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
-                        config.IsCheckedBuild);
-                }
-                else
-                {
-                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities.Launcher, moduleName);
-                }
+                WriteClassMembers(writer, model, config, moduleName);
             }
         }
 
         CloseClassDeclaration(writer, model.Class);
         return writer.ToString();
+    }
+
+    // The error site table, AotContexts and the host members of each kernel
+    private static void WriteClassMembers(SourceWriter writer, in KernelClassModel model, GeneratorConfig config,
+        string moduleName)
+    {
+        WriteErrorSiteTableField(writer, model.ErrorSites);
+        writer.AppendGeneratedCodeAttributes();
+        var aotContexts = GeneratedMemberAccessibility.ToKeyword(model.AotContextsAccessibility);
+        writer.AppendLine($"{aotContexts} static partial class {AotHostNames.AotContextsClassName}");
+        using (writer.Scope())
+        {
+            StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs, config.IsCuda);
+        }
+
+        foreach (var kernel in model.Kernels)
+        {
+            // GSH0059 / GSH0106: the analyzer reports the overload or reserved launch parameter name; its wrappers
+            // would not compile
+            if (kernel.IsIndistinguishable || kernel.Host.HasReservedLaunchParameterName)
+            {
+                continue;
+            }
+
+            // GSH0108: the analyzer reports the field type the launcher cannot name; a launcher that throws keeps
+            // the callers compiling, so that the build shows GSH0108 rather than errors in generated code
+            var accessibilities = model.GetLauncherAccessibilities(kernel);
+            if (kernel.Host.LauncherUnavailableReason is { } reason)
+            {
+                WriteUnavailableLaunchMethod(writer, kernel, accessibilities.Launcher, reason);
+                continue;
+            }
+
+            WriteKernelSource(writer, kernel, config);
+
+            if (config.IsCuda)
+            {
+                CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
+                    config.IsCheckedBuild, config.TargetLimits);
+            }
+            else
+            {
+                CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
+                    config.TargetLimits);
+            }
+        }
     }
 
     // public static unsafe <return> Launch<Name>(<parameters>, <launch options>)
@@ -280,7 +217,7 @@ internal static class WrapperEmitter
         }
 
         var key = kernel.MemberKey;
-        writer.Append($"public const string {key}_Source = @\"");
+        writer.Append($"public const string {KernelHostNames.GetSourceConstantName(key)} = @\"");
         writer.AppendVerbatimLiteral(kernel.GetSource(config.IsCuda));
         writer.AppendLine("\";");
         writer.AppendLine();
@@ -300,7 +237,9 @@ internal static class WrapperEmitter
         {
             foreach (var p in kernel.Host.Parameters)
             {
-                GetInteropParameterInfo(p, isDevicePtr).WriteTo(writer, p.Identifier);
+                LauncherSignatures
+                    .GetParameter(p, isDevicePtr ? LauncherKind.Pointer : LauncherKind.Managed)
+                    .WriteTo(writer, p.Identifier);
                 writer.Append(", ");
             }
 
@@ -383,16 +322,27 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static void WriteOutParameterDefaults(SourceWriter writer, in KernelHostModel kernel)
+    // Unsafe.SkipInit(out <name>);   for each out parameter that is not an array
+    // <name> = default;   instead, for an out struct that holds arrays and that the launcher does not compare
+    // [WHY] The launcher must assign its out parameters before it returns, and the launch assigns them when it ends.
+    // Writing default at the start would clear the caller's variable before the kernel reads it through a ref or in
+    // parameter that refers to the same variable, which C# reads as it was. An out struct that holds arrays is also
+    // marshaled from the caller's value, which would copy the caller's arrays, so it is cleared unless another
+    // argument may refer to it (a candidate of the aliasing plan, cleared after the comparison when none does)
+    internal static void WriteOutParametersAssigned(SourceWriter writer, in KernelHostModel kernel,
+        in LaunchAliasPlan aliases)
     {
-        foreach (var p in kernel.Parameters)
+        for (var i = 0; i < kernel.Parameters.Length; i++)
         {
+            var p = kernel.Parameters[i];
             if (p.RefKind is not RefKind.Out || p.IsArray)
             {
                 continue;
             }
 
-            writer.AppendLine($"{p.Identifier} = default;");
+            writer.AppendLine(p.HasArrayFields && aliases.MemberIndexOf(i) < 0
+                ? $"{p.Identifier} = default;"
+                : $"{HostTypeNames.Unsafe}.SkipInit(out {p.Identifier});");
         }
     }
 
@@ -448,7 +398,9 @@ internal static class WrapperEmitter
             return;
         }
 
-        writer.AppendLine("private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]");
+        const string ErrorSiteType = "global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite";
+        writer.AppendLine(
+            $"private static readonly {ErrorSiteType}[] {KernelHostNames.ErrorSitesFieldName} = new {ErrorSiteType}[]");
         writer.AppendLine("{");
         foreach (var site in errorSites)
         {

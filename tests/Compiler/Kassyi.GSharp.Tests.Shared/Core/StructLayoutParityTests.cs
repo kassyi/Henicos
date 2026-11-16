@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Alignment)]
-public class StructLayoutParityTests
+public partial class StructLayoutParityTests
 {
     private static Type GetShadowType(string structName)
     {
@@ -111,15 +111,7 @@ public class StructLayoutParityTests
         Assert.Equal((char)('\u03A9' + 2), charItems[1].Ch);
         Assert.Equal(-30, charItems[1].Value);
 
-#if !GSHARP_CPU
-        var boolCharInput = new BoolAndCharSequential { Flag1 = false, Flag2 = true, Ch = '\u3042', Value = 10 };
-        var boolCharOut = new BoolAndCharSequential[1];
-        StructLayoutParityKernels.LaunchRoundtripBoolAndCharByValueKernel(boolCharInput, boolCharOut);
-        Assert.True(boolCharOut[0].Flag1);
-        Assert.False(boolCharOut[0].Flag2);
-        Assert.Equal((char)('\u3042' + 1), boolCharOut[0].Ch);
-        Assert.Equal(52, boolCharOut[0].Value);
-#endif
+        AssertBoolCharByValue();
 
         var boolCharItems = new[]
         {
@@ -204,17 +196,7 @@ public class StructLayoutParityTests
             nameof(SystemNumericsVectorsStruct.Tag3),
             nameof(SystemNumericsVectorsStruct.V4));
 
-#if GSHARP_CPU
-        Assert.Equal(Unsafe.SizeOf<SystemNumericsVectorsStruct>(), layout[0]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag1), layout[1]);
-        Assert.Equal(HostOffset(ref s, ref s.V2), layout[2]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag2), layout[3]);
-        Assert.Equal(HostOffset(ref s, ref s.V3), layout[4]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag3), layout[5]);
-        Assert.Equal(HostOffset(ref s, ref s.V4), layout[6]);
-#else
-        Assert.True(layout[0] > Unsafe.SizeOf<SystemNumericsVectorsStruct>());
-#endif
+        AssertSystemNumericsVectorsLayout(ref s, layout);
 
         Assert.Equal((byte)2, s.Tag1);
         Assert.Equal(new Vector2(11.0f, 22.0f), s.V2);
@@ -260,23 +242,7 @@ public class StructLayoutParityTests
             nameof(CoreVectorsFloatIntUIntStruct.U3),
             nameof(CoreVectorsFloatIntUIntStruct.U4));
 
-#if GSHARP_CPU
-        Assert.Equal(Unsafe.SizeOf<CoreVectorsFloatIntUIntStruct>(), layout[0]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag1), layout[1]);
-        Assert.Equal(HostOffset(ref s, ref s.F2), layout[2]);
-        Assert.Equal(HostOffset(ref s, ref s.F3), layout[3]);
-        Assert.Equal(HostOffset(ref s, ref s.F4), layout[4]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag2), layout[5]);
-        Assert.Equal(HostOffset(ref s, ref s.I2), layout[6]);
-        Assert.Equal(HostOffset(ref s, ref s.I3), layout[7]);
-        Assert.Equal(HostOffset(ref s, ref s.I4), layout[8]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag3), layout[9]);
-        Assert.Equal(HostOffset(ref s, ref s.U2), layout[10]);
-        Assert.Equal(HostOffset(ref s, ref s.U3), layout[11]);
-        Assert.Equal(HostOffset(ref s, ref s.U4), layout[12]);
-#else
-        Assert.True(layout[0] > Unsafe.SizeOf<CoreVectorsFloatIntUIntStruct>());
-#endif
+        AssertCoreVectorsFloatIntUIntLayout(ref s, layout);
 
         Assert.Equal((byte)11, s.Tag1);
         Assert.Equal(2.0f, s.F2.X);
@@ -331,23 +297,7 @@ public class StructLayoutParityTests
             nameof(CoreVectors64BitStruct.UL3),
             nameof(CoreVectors64BitStruct.UL4));
 
-#if GSHARP_CPU
-        Assert.Equal(Unsafe.SizeOf<CoreVectors64BitStruct>(), layout[0]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag1), layout[1]);
-        Assert.Equal(HostOffset(ref s, ref s.D2), layout[2]);
-        Assert.Equal(HostOffset(ref s, ref s.D3), layout[3]);
-        Assert.Equal(HostOffset(ref s, ref s.D4), layout[4]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag2), layout[5]);
-        Assert.Equal(HostOffset(ref s, ref s.L2), layout[6]);
-        Assert.Equal(HostOffset(ref s, ref s.L3), layout[7]);
-        Assert.Equal(HostOffset(ref s, ref s.L4), layout[8]);
-        Assert.Equal(HostOffset(ref s, ref s.Tag3), layout[9]);
-        Assert.Equal(HostOffset(ref s, ref s.UL2), layout[10]);
-        Assert.Equal(HostOffset(ref s, ref s.UL3), layout[11]);
-        Assert.Equal(HostOffset(ref s, ref s.UL4), layout[12]);
-#else
-        Assert.True(layout[0] > Unsafe.SizeOf<CoreVectors64BitStruct>());
-#endif
+        AssertCoreVectors64BitLayout(ref s, layout);
 
         Assert.Equal((byte)2, s.Tag1);
         Assert.Equal(2.0, s.D2.X);
@@ -423,26 +373,6 @@ public class StructLayoutParityTests
         Assert.Equal((short)5, items[1].Last);
     }
 
-    // CPU passes the struct in its managed layout until L4
-#if GSHARP_CPU
-    [Fact(Skip = "L4")]
-#else
-    [Fact]
-#endif
-    public void InlineArrayOfArrays_ByRef_CopiesEachElementArray()
-    {
-        var h = new ArrayFieldPairHolder { Tag = 3 };
-        h.Arrays[0] = [10, 20];
-        h.Arrays[1] = [30, 40, 50];
-        var o = new int[3];
-
-        StructLayoutParityKernels.LaunchInlineArrayOfArraysKernel(ref h, o);
-
-        Assert.Equal([3, 20, 3], o);
-        Assert.Equal(77, h.Arrays[1][0]);
-        Assert.Equal([10, 20], h.Arrays[0]);
-    }
-
     [Fact]
     public void ExplicitAutoProperties_LocalAndArgument_KeepSeparateFields()
     {
@@ -486,4 +416,9 @@ public class StructLayoutParityTests
         Assert.Equal((byte)4, s.Head);
         Assert.Equal(2.5, s.Value);
     }
+
+    partial void AssertBoolCharByValue();
+    partial void AssertSystemNumericsVectorsLayout(ref SystemNumericsVectorsStruct s, int[] layout);
+    partial void AssertCoreVectorsFloatIntUIntLayout(ref CoreVectorsFloatIntUIntStruct s, int[] layout);
+    partial void AssertCoreVectors64BitLayout(ref CoreVectors64BitStruct s, int[] layout);
 }

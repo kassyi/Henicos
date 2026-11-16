@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class DeepStructMarshalingGuideTests : TranspilerTestBase
+public partial class DeepStructMarshalingGuideTests : TranspilerTestBase
 {
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -24,26 +24,6 @@ public class DeepStructMarshalingGuideTests : TranspilerTestBase
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void ModernKernel_ContextArrayFieldsPinnedByFixed_PassesThemAsPointers() => RunModernKernel();
-
-#if GSHARP_CPU
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void FermatMegaKernel_ManagedExecution_WritesEveryArrayField() => RunManaged(RunFermatMegaKernel);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ModernKernel_ManagedExecution_PassesThePinnedFieldsAsPointers() => RunManaged(RunModernKernel);
-
-    private static void RunManaged(Action run)
-    {
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            run();
-        }
-    }
-#endif
 
     private static void RunFermatMegaKernel()
     {

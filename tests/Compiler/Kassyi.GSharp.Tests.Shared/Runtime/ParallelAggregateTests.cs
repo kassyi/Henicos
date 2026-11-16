@@ -3,8 +3,8 @@ using System;
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 /// <summary>
-/// <c>AsParallel().Sum()</c> in kernels (#624). Expected values come from the input the test holds, summed on the host with
-/// wrapping addition (StackLinq's <c>Sum</c> wraps; System.Linq's is checked).
+/// <c>AsParallel().Sum()</c> in kernels (#624). Expected values come from the input the test holds, summed on the host.
+/// An integer sum is exact and throws <see cref="OverflowException"/> when the exact sum does not fit the result type.
 /// </summary>
 /// <remarks>
 /// Properties: (1) every calling thread receives the sum of the whole sequence; (2) every thread receives the same value;
@@ -60,20 +60,38 @@ public class ParallelAggregateTests : TranspilerTestBase
         }
     }
 
-    // The sum wraps as in StackLinq: two int.MaxValue elements give -2
+    // The exact sum of two int.MaxValue elements does not fit: every path throws, as System.Linq does
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void EveryThreadSum_OverflowingSum_ThrowsOverflowException(bool managed)
+    {
+        int[] data = [int.MaxValue, int.MaxValue, 7];
+        var result = new int[2 * 64];
+
+        Assert.Throws<OverflowException>(
+            () => Run(managed, () => ParallelAggregateKernels.LaunchEveryThreadSumKernel(data, result, gridDimX: 2, blockDimX: 64)));
+    }
+
+    // The sum is exact, so a running sum that leaves the range and comes back gives its value: System.Linq throws at the
+    // element that overflows, StackLinq does not (the order of the additions would otherwise change the result of the
+    // block and grid reductions). mutant: an int accumulator checked at every element
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void EveryThreadSum_OverflowingSum_WrapsOnOverflow(bool managed)
+    public void EveryThreadSum_RunningSumLeavesTheRangeAndComesBack_ReturnsTheExactSum(bool managed)
     {
-        int[] data = [int.MaxValue, int.MaxValue, 7];
+        int[] data = [int.MaxValue, 1, -1, int.MinValue, -1, 5];
         var result = new int[2 * 64];
 
         Run(managed, () => ParallelAggregateKernels.LaunchEveryThreadSumKernel(data, result, gridDimX: 2, blockDimX: 64));
 
-        Assert.All(result, value => Assert.Equal(WrappingSum(data), value));
+        // The exact sum is int.MaxValue + 1 - 1 + int.MinValue - 1 + 5 = 3
+        Assert.All(result, value => Assert.Equal(3, value));
     }
 
     // A call in a branch that only thread 0 of each block takes: no thread waits for the others
@@ -177,17 +195,17 @@ public class ParallelAggregateTests : TranspilerTestBase
         Assert.All(result, value => Assert.Equal(expected, value));
     }
 
-    // K7: long, uint and ulong share the elements and wrap as StackLinq does
+    // K7: long, uint and ulong share the elements and add exactly; the running sum of the long elements leaves the range
     [SkippableTheory]
     [MemberData(nameof(Paths))]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
-    public void OtherIntegerSums_VariousIntegerTypes_EveryThreadReceivesWrappedSum(bool managed)
+    public void OtherIntegerSums_VariousIntegerTypes_EveryThreadReceivesTheExactSum(bool managed)
     {
         long[] longs = [long.MaxValue, 5, -3, long.MinValue, 1L << 40];
-        uint[] uints = [uint.MaxValue, 2, 7, 1u << 31];
-        ulong[] ulongs = [ulong.MaxValue, 3, 1UL << 63];
+        uint[] uints = [uint.MaxValue - 9, 2, 7];
+        ulong[] ulongs = [ulong.MaxValue - 4, 3, 1];
         var longResult = new long[2 * 64];
         var uintResult = new uint[2 * 64];
         var ulongResult = new ulong[2 * 64];
@@ -201,8 +219,31 @@ public class ParallelAggregateTests : TranspilerTestBase
 
         // mutant: the accumulator declared as int (long and ulong sums lose their high bits)
         Assert.All(longResult, value => Assert.Equal(unchecked(long.MaxValue + 5 - 3 + long.MinValue + (1L << 40)), value));
-        Assert.All(uintResult, value => Assert.Equal(unchecked(uint.MaxValue + 2u + 7u + (1u << 31)), value));
-        Assert.All(ulongResult, value => Assert.Equal(unchecked(ulong.MaxValue + 3UL + (1UL << 63)), value));
+        Assert.All(uintResult, value => Assert.Equal(uint.MaxValue, value));
+        Assert.All(ulongResult, value => Assert.Equal(ulong.MaxValue, value));
+    }
+
+    // K7: an exact sum that does not fit the type throws, for every integer type
+    [SkippableTheory]
+    [MemberData(nameof(Paths))]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void OtherIntegerSums_ExactSumDoesNotFit_ThrowsOverflowException(bool managed)
+    {
+        long[] longs = [long.MaxValue, 5, -3, long.MaxValue];
+        long[] belowLongs = [long.MinValue, -1];
+        uint[] uints = [uint.MaxValue, 2, 7, 1u << 31];
+        ulong[] ulongs = [ulong.MaxValue, 3, 1UL << 63];
+
+        Assert.Throws<OverflowException>(() => Run(managed, () =>
+            ParallelAggregateKernels.LaunchLongSumKernel(longs, new long[2 * 64], gridDimX: 2, blockDimX: 64)));
+        Assert.Throws<OverflowException>(() => Run(managed, () =>
+            ParallelAggregateKernels.LaunchLongSumKernel(belowLongs, new long[2 * 64], gridDimX: 2, blockDimX: 64)));
+        Assert.Throws<OverflowException>(() => Run(managed, () =>
+            ParallelAggregateKernels.LaunchUIntSumKernel(uints, new uint[2 * 64], gridDimX: 2, blockDimX: 64)));
+        Assert.Throws<OverflowException>(() => Run(managed, () =>
+            ParallelAggregateKernels.LaunchULongSumKernel(ulongs, new ulong[2 * 64], gridDimX: 2, blockDimX: 64)));
     }
 
     // K7 (float), K8, K10, K11: summed in each thread; the value is still the C# one
@@ -346,13 +387,11 @@ public class ParallelAggregateTests : TranspilerTestBase
     private void Run(bool managed, Action launch)
     {
         Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");
-#if GSHARP_CPU
         if (managed)
         {
             ManagedKernelRun.Run(launch);
             return;
         }
-#endif
         launch();
     }
 

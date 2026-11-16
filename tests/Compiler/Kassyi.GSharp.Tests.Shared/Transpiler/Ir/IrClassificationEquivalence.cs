@@ -44,6 +44,9 @@ internal sealed class IrClassificationEquivalence
     /// </summary>
     public IReadOnlyDictionary<string, ConcurrentBag<string>> EffectMismatches => _effectMismatches;
 
+    /// <summary>The effect differences counted per method and reason, for the expected file.</summary>
+    public IrCorpusCounts EffectCounts { get; } = new();
+
     public int CallsCompared => _callsCompared;
 
     public int SplitCallsCompared => _splitCallsCompared;
@@ -89,7 +92,7 @@ internal sealed class IrClassificationEquivalence
         }
 
         CompareSplits(method, body, compilation, where);
-        CompareEffects(method, body.SyntaxTree, compilation, where);
+        CompareEffects(method, body.SyntaxTree, compilation, where, IrCoverageInputs.Locate(body.SyntaxTree, symbol));
     }
 
     // Every invocation outside the opaque nodes is a call of the IR with the split the lowering annotates, every call
@@ -210,7 +213,8 @@ internal sealed class IrClassificationEquivalence
     }
 
     // The effects of the outermost node of each span that has the span of an expression of the source
-    private void CompareEffects(IrMethod method, SyntaxTree tree, Compilation compilation, string where)
+    private void CompareEffects(IrMethod method, SyntaxTree tree, Compilation compilation, string where,
+        IrCorpusMethod located)
     {
         var model = compilation.GetSemanticModel(tree);
         var root = tree.GetRoot();
@@ -240,16 +244,17 @@ internal sealed class IrClassificationEquivalence
             {
                 found.Add(new EffectDifference(expression, kind, old, ir,
                     $"{where}: {syntax} ({(isLocation ? "location" : "value")}): " +
-                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}"));
+                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}, " +
+                    $"syntax throws {old.MayThrow}, IR throws {ir.MayThrow}"));
             }
         }
 
-        Report(found, compilation);
+        Report(found, compilation, located);
     }
 
     // The innermost differences by their reason; an outer difference by its own reason unless the differences of its
     // operands explain it
-    private void Report(List<EffectDifference> found, Compilation compilation)
+    private void Report(List<EffectDifference> found, Compilation compilation, IrCorpusMethod located)
     {
         var differing = found.ToDictionary(static f => (IrNode)f.Node);
         foreach (var difference in found)
@@ -264,6 +269,7 @@ internal sealed class IrClassificationEquivalence
             var reason = IrEffectDifferences.Reason(difference.Node, difference.Kind, difference.Old, difference.Ir,
                              compilation) ?? "unexplained, " + difference.Kind;
             _effectMismatches.GetOrAdd(reason, static _ => []).Add(difference.Message);
+            EffectCounts.Add(located, ("reason", reason));
         }
     }
 

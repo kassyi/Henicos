@@ -129,14 +129,18 @@ public partial class EmissionShapeTests
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData("Cpu", "")]
-    [InlineData("Cuda", " __device__")]
-    public void MethodImplOptions_SelectTheInliningKeyword(string dialect, string deviceKeyword)
+    [InlineData("Cpu", "", "inline __noinline__")]
+    [InlineData("Cuda", " __device__", "__noinline__")]
+    public void MethodImplOptions_SelectTheInliningKeyword(
+        string dialect, string deviceKeyword, string noInlineKeyword)
     {
         var source = Generate("SignatureShapeKernels", dialect);
 
         Assert.Contains($"\ninline{deviceKeyword} int {Signatures}DefaultImpl(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
-        Assert.Contains($"\n__noinline__{deviceKeyword} int {Signatures}ShortNoInlining(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
+        Assert.Contains(
+            $"\n{noInlineKeyword}{deviceKeyword} int {Signatures}ShortNoInlining(int __gsharp_id_0_x){{",
+            source,
+            StringComparison.Ordinal);
         Assert.Contains($"\n__forceinline__{deviceKeyword} int {Signatures}EnumAggressiveInlining(int __gsharp_id_0_x){{", source, StringComparison.Ordinal);
     }
 
@@ -267,7 +271,7 @@ public partial class EmissionShapeTests
 
     // What the transpiler cannot emit is stated as #error in the generated source, once per failure, at the place the
     // analyzer reports it: an instance device function, a function pointer parameter (of a suspending device function
-    // on the CPU), a device function returning a managed type, a host static field read by a kernel and a ref local
+    // on the CPU), a device function returning a managed type, and a host static field read by a kernel
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
@@ -285,8 +289,7 @@ public partial class EmissionShapeTests
                 ("(16,60): GSH0003", true),
                 ("(24,26): GSH0004", true),
                 ("(30,23): GSH0065", true),
-                ("(31,9): GSH0002", true),
-                ("(38,25): GSH0003", true)
+                ("(31,9): GSH0002", true)
             ],
             KernelDiagnostics.FindStatedFailures(run).OrderBy(static f => f.Failure, StringComparer.Ordinal));
         var generated = string.Join("\n", run.Output.SyntaxTrees.Where(t => !run.Input.SyntaxTrees.Contains(t)).Select(static t => t.ToString()));
@@ -299,11 +302,6 @@ public partial class EmissionShapeTests
             generated,
             StringComparison.Ordinal);
         Assert.Contains("(16,60): GSH0003: The syntax 'FunctionPointerType' is not supported", generated, StringComparison.Ordinal);
-        var refLocal = Assert.Single(run.Analyzer, static d => d.Location.GetLineSpan().StartLinePosition.Line + 1 == 38);
-        var span = refLocal.Location.GetLineSpan().Span;
-        Assert.Equal(
-            (GSharpDiagnostics.UnsupportedSyntax.Id, 38, 25, 38, 38),
-            (refLocal.Id, span.Start.Line + 1, span.Start.Character + 1, span.End.Line + 1, span.End.Character + 1));
     }
 
     // A call qualified with the type name and a call in an expanded iterator pass the dynamic shared memory table

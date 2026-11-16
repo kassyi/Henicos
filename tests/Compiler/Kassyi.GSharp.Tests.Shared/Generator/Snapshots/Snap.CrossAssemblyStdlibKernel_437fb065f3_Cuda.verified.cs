@@ -166,6 +166,7 @@ public static unsafe void LaunchMontgomeryMuKernel(global::System.UInt32[] modul
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = moduli;
 global::System.UInt32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.CrossAssemblyStdlibKernels.MontgomeryMuKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

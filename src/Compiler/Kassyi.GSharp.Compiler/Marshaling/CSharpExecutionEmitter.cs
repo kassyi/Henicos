@@ -27,18 +27,41 @@ internal static class CSharpExecutionEmitter
         writer.AppendLine($"if ({GpuExecutionType}.Current == {KernelExecutionType}.CSharp)");
         using (writer.Scope())
         {
-            if (plan.CannotRunReason is { } reason)
-            {
-                var kernel = SymbolDisplay.FormatLiteral(plan.MessageName, quote: true);
-                var because = SymbolDisplay.FormatLiteral(reason, quote: true);
-                writer.AppendLine($"throw {RunnerType}.CannotRun({kernel}, {because});");
-                return;
-            }
-
-            WriteCopies(writer, plan);
-            WritePinnedRun(writer, plan);
-            writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
+            WriteBranchBody(writer, plan);
         }
+    }
+
+    /// <summary>
+    /// Writes the run of <paramref name="plan"/> and the return that ends it, or the throw of a kernel that cannot run
+    /// as C#: the body of <see cref="WriteBranch"/>, which the managed fallback of a kernel that names a file-local type
+    /// writes in the branch of its own (GSH0119).
+    /// </summary>
+    /// <param name="writer">The writer.</param>
+    /// <param name="plan">The plan of the launcher.</param>
+    /// <param name="asManagedFallback">
+    /// Whether the managed fallback writes it: the runner then words an operation that cannot run one GPU thread at a time
+    /// for that path (<c>CSharpKernelRunner.RunAsManagedFallback</c>).
+    /// </param>
+    public static void WriteBranchBody(SourceWriter writer, in CSharpExecutionPlan plan,
+        bool asManagedFallback = false)
+    {
+        if (plan.CannotRunReason is { } reason)
+        {
+            var kernel = SymbolDisplay.FormatLiteral(plan.MessageName, quote: true);
+            var because = SymbolDisplay.FormatLiteral(reason, quote: true);
+            writer.AppendLine($"throw {RunnerType}.CannotRun({kernel}, {because});");
+            return;
+        }
+
+        if (plan.TargetCheck is { } check)
+        {
+            LaunchLimitEmitter.WriteTargetSharedMemoryCheck(writer, check.MaxBytes, check.Architecture,
+                plan.MessageName, check.HintMaxBytes);
+        }
+
+        WriteCopies(writer, plan);
+        WritePinnedRun(writer, plan, asManagedFallback);
+        writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
     }
 
     // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
@@ -63,7 +86,7 @@ internal static class CSharpExecutionEmitter
     // [WHY] A lambda can capture neither a span nor a fixed local; it captures a copy of the pointer, which stays valid
     // while the caller waits in the fixed statement for the run to end. The pinned reference is null only for a span
     // over no array, so a span over an empty array stays one (fixed (T* p = <span>) would make it default)
-    private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan)
+    private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan, bool asManagedFallback)
     {
         var pins = 0;
         foreach (var argument in plan.Arguments)
@@ -92,15 +115,17 @@ internal static class CSharpExecutionEmitter
                 }
             }
 
-            WriteRun(writer, plan);
+            WriteRun(writer, plan, asManagedFallback);
         }
     }
 
     // CSharpKernelRunner.Run(gridDimX, ..., blockDimZ,
     //     __gsharp_csharp_thread => [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
-    private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan)
+    // (RunAsManagedFallback for the managed fallback)
+    private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan, bool asManagedFallback)
     {
-        writer.Append($"{RunnerType}.Run({LaunchDimensions}, {ThreadParameter} => ");
+        var run = asManagedFallback ? "RunAsManagedFallback" : "Run";
+        writer.Append($"{RunnerType}.{run}({LaunchDimensions}, {ThreadParameter} => ");
         writer.AppendIf(plan.ReturnsValue, $"{Result}[{ThreadParameter}] = ");
         writer.Append(plan.Method);
         using (writer.Parentheses())
@@ -125,6 +150,9 @@ internal static class CSharpExecutionEmitter
             case CSharpArgumentKind.Ref:
                 writer.Append($"ref *{argument.Local}");
                 break;
+            case CSharpArgumentKind.InReference:
+                writer.Append($"in *{argument.Local}");
+                break;
             case CSharpArgumentKind.Out:
                 writer.Append($"out *{argument.Local}");
                 break;
@@ -145,7 +173,8 @@ internal static class CSharpExecutionEmitter
     // [WHY] A ref or out argument is passed through the pinned caller's variable, never a copy: two parameters that
     // receive one variable, or a ref to an element of an array argument, are one memory in C# (#1061)
     private static bool IsPinned(in CSharpArgument argument) =>
-        IsSpan(argument) || argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out;
+        IsSpan(argument) ||
+        argument.Kind is CSharpArgumentKind.Ref or CSharpArgumentKind.Out or CSharpArgumentKind.InReference;
 
     private static bool IsSpan(in CSharpArgument argument) =>
         argument.Kind is CSharpArgumentKind.Span or CSharpArgumentKind.ReadOnlySpan;

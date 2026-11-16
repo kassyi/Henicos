@@ -119,6 +119,7 @@ public static unsafe void LaunchVector2AddKernel(global::System.Numerics.Vector2
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "VectorBuiltinKernels.Vector2AddKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "VectorBuiltinKernels.Vector2AddKernel");
 global::System.Numerics.Vector2[] __gsharp_csharp_arg_0 = a;
 global::System.Numerics.Vector2[] __gsharp_csharp_arg_1 = b;
 global::System.Numerics.Vector2[] __gsharp_csharp_arg_2 = result;
@@ -353,6 +354,7 @@ public static unsafe void LaunchVector3AddKernel(global::System.Numerics.Vector3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "VectorBuiltinKernels.Vector3AddKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "VectorBuiltinKernels.Vector3AddKernel");
 global::System.Numerics.Vector3[] __gsharp_csharp_arg_0 = a;
 global::System.Numerics.Vector3[] __gsharp_csharp_arg_1 = b;
 global::System.Numerics.Vector3[] __gsharp_csharp_arg_2 = result;
@@ -587,6 +589,7 @@ public static unsafe void LaunchVector4AddKernel(global::System.Numerics.Vector4
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "VectorBuiltinKernels.Vector4AddKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "VectorBuiltinKernels.Vector4AddKernel");
 global::System.Numerics.Vector4[] __gsharp_csharp_arg_0 = a;
 global::System.Numerics.Vector4[] __gsharp_csharp_arg_1 = b;
 global::System.Numerics.Vector4[] __gsharp_csharp_arg_2 = result;

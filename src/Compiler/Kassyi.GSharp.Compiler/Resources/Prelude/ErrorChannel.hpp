@@ -1,7 +1,8 @@
 // --- Runtime Error Channel (CPU Dialect) ---
-extern thread_local uint3 threadIdx;
-extern thread_local uint3 blockIdx;
-extern thread_local dim3 gridDim;
+inline thread_local uint3 threadIdx;
+inline thread_local uint3 blockIdx;
+inline thread_local dim3 blockDim;
+inline thread_local dim3 gridDim;
 
 // GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
@@ -285,6 +286,18 @@ inline A __gsharp_array_ref(A&& array, S site)
     if (array.data == nullptr)
     {
         __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
+    }
+    return static_cast<A&&>(array);
+}
+
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException ("source"). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_source_argument(A&& array, S site)
+{
+    if (array.data == nullptr)
+    {
+        __gsharp_trap_abort(GSharpErrorCode::ArgumentNull, site);
     }
     return static_cast<A&&>(array);
 }

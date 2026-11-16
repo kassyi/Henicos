@@ -29,6 +29,13 @@ public static partial class GpuBigIntDivRem
     {
         ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
 
+        if (GpuKernelLoader.IsCpuFallbackMode)
+        {
+            // The buffers are host memory: both device paths below launch CUDA kernels and would fail on them
+            CSharpCpuBigIntProvider.Instance.ModPow(baseVal, exp, mod, resultBuffer);
+            return;
+        }
+
         var bitLength = baseVal.NumWords * 32;
 
         if (bitLength <= baseVal.Workspace.PolyAlgorithmThreshold)

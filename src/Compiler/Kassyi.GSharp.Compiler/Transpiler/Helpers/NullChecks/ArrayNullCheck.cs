@@ -41,6 +41,9 @@ internal static class ArrayNullCheck
 
     private const string ArgumentTrapKind = "ArrayNullArgument";
 
+    // The trap kind of the check of the array a StackLinq query starts from
+    private const string LinqSourceTrapKind = "LinqSourceNull";
+
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
@@ -49,7 +52,7 @@ internal static class ArrayNullCheck
         IsCheckedType(semanticModel.GetTypeSymbol(receiver)) && MayBeNull(receiver, semanticModel);
 
     // A C# array, or an ImmutableArray<T>, whose default holds a null array
-    private static bool IsCheckedType(ITypeSymbol? type) =>
+    internal static bool IsCheckedType(ITypeSymbol? type) =>
         type is IArrayTypeSymbol || IsImmutableArray(type);
 
     private static bool IsImmutableArray(ITypeSymbol? type) =>
@@ -141,7 +144,11 @@ internal static class ArrayNullCheck
         var site = PlanSite(node.Expression, ref context);
         var writer = context.Emitter.Writer;
         if (EvaluationOrder.LastSpilledOperand(
-                [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
+                [
+                    ExpressionEffects.Of(node.Expression, model),
+                    ExpressionEffects.Of(argument.Expression, model)
+                        .WithThrow(ArrayElementIndex.NeedsOverflowCheck(node, model))
+                ]) < 0)
         {
             AppendElementCall(node.Expression, argument.Expression, site, ref context);
             return true;
@@ -149,7 +156,9 @@ internal static class ArrayNullCheck
 
         using var sequence = EvaluationOrder.BeginSequence(writer, "decltype(auto)");
         var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
-        var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
+        var index = EvaluationOrder.BeginDeclaration(ref context);
+        ArrayElementIndex.Append(argument.Expression, ref context);
+        writer.AppendLine(";");
         sequence.Return();
         AppendElementCall(writer, receiver, index, site);
         return true;
@@ -223,7 +232,7 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(receiver);
             writer.Append(", ");
-            context.Visitor.Visit(index);
+            ArrayElementIndex.Append(index, ref context);
             writer.Append(", ");
             AppendSite(writer, site);
         }
@@ -254,6 +263,44 @@ internal static class ArrayNullCheck
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws
+    /// <see cref="ArgumentNullException"/> for a null array as <c>AsStackEnumerable</c> does: <see langword="null"/>
+    /// when the source cannot be null or is not a C# array.
+    /// </summary>
+    /// <remarks>
+    /// A method without an error site table (a device function) passes the message itself, with no place, as
+    /// <see cref="ArgumentCheckSite"/> does: the message must end with <c>(Parameter 'source')</c> for the mapper to
+    /// give the exception its <see cref="ArgumentException.ParamName"/>.
+    /// </remarks>
+    public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !NeedsCheck(source, model))
+        {
+            return null;
+        }
+
+        return context.Emitter.ErrorSites is null
+            ? new NullCheckSite(0u, ArgumentExceptionMessages.LinqSource)
+            : PlanSite(source, null, ArgumentExceptionMessages.LinqSource, LinqSourceTrapKind, ref context);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="source"/> as <c>__gsharp_source_argument(&lt;source&gt;, &lt;site&gt;)</c> when
+    /// <see cref="PlanLinqSource"/> says it needs the check, as it is otherwise.
+    /// </summary>
+    public static void AppendLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        if (PlanLinqSource(source, ref context) is not { } site)
+        {
+            context.Visitor.Visit(source);
+            return;
+        }
+
+        AppendHelperCall(GSharpInternalNames.Prelude.SourceArgument, source, site, ref context);
     }
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
@@ -299,6 +346,23 @@ internal static class ArrayNullCheck
             context.Emitter.CurrentMemberName);
 
     /// <summary>
+    /// Plans the error site of a check at <paramref name="location"/> (a report location, or
+    /// <c>IrSource.ToLocation</c>): an entry of <paramref name="table"/> in a kernel, or the message and place in a
+    /// device function, which has no table.
+    /// </summary>
+    internal static NullCheckSite PlanSite(Location location, string? place, string message, string trapKind,
+        Compilation compilation, ErrorSiteTable? table, string? currentMemberName)
+    {
+        if (table is null)
+        {
+            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(location)));
+        }
+
+        var memberName = GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
+        return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
+    }
+
+    /// <summary>
     /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
     /// context it reads: the model, the error site table of the method (<see langword="null"/> in a device function) and
     /// the name of the method being emitted.
@@ -311,23 +375,33 @@ internal static class ArrayNullCheck
             return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
-        var memberName = GetSourceMemberName(node, model) ?? currentMemberName ?? "";
-        return new NullCheckSite(table.Register(node, model, memberName, message, trapKind), "");
+        var location = model.GetReportLocation(node);
+        var memberName = GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
+        return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
+
+    /// <summary>Plans the error site of an array read (element or Length) from a report location.</summary>
+    internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
+        string? currentMemberName) =>
+        PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
+
+    /// <summary>Plans the error site of an argument check from a report location.</summary>
+    internal static NullCheckSite PlanArgumentSite(Location location, Compilation compilation,
+        ErrorSiteTable? table, string? currentMemberName) =>
+        PlanSite(location, null, ArgumentSiteMessage, ArgumentTrapKind, compilation, table, currentMemberName);
 
     // The method that holds the receiver in the user's source, past lambdas and local functions.
     // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
     // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
     // would give one site ID two entries (GSH0103)
-    private static string? GetSourceMemberName(ExpressionSyntax receiver, SemanticModel model)
+    private static string? GetSourceMemberName(Location location, Compilation compilation)
     {
-        if (model.GetReportLocation(receiver) is not { SourceTree: { } tree } location ||
-            !model.Compilation.ContainsSyntaxTree(tree))
+        if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
         {
             return null;
         }
 
-        var symbol = model.Compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
+        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
         while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
         {
             symbol = symbol.ContainingSymbol;
@@ -367,6 +441,17 @@ internal static class ArrayNullCheck
         }
     }
 
+    /// <summary>The kind of check a device function parameter needs.</summary>
+    internal static ArgumentCheckKind GetArgumentCheckKind(IParameterSymbol parameter)
+    {
+        if (!NonNullProof.NeedsBoundaryCheck(parameter))
+        {
+            return ArgumentCheckKind.None;
+        }
+
+        return parameter.Type is IArrayTypeSymbol ? ArgumentCheckKind.Array : ArgumentCheckKind.Struct;
+    }
+
     /// <summary>
     /// The check an argument of a device function call needs (#1409): none when the parameter has no non-nullable array
     /// to guard or the argument is proven (<see cref="NonNullProof"/>), otherwise the array or the struct fields to check
@@ -380,11 +465,11 @@ internal static class ArrayNullCheck
             return ArgumentCheck.None;
         }
 
+        // ChecksArgument has decided the kind is not None; the parameter type alone tells the two apart
+        var site = PlanArgumentSite(argument, ref context);
         return parameter.Type is IArrayTypeSymbol
-            ? new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
-                ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
-            : new ArgumentCheck(ArgumentCheckKind.Struct, PlanArgumentSite(argument, ref context),
-                NonNullProof.GetNonNullableArrayFields(parameter.Type));
+            ? new ArgumentCheck(ArgumentCheckKind.Array, site, ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
+            : new ArgumentCheck(ArgumentCheckKind.Struct, site, NonNullProof.GetNonNullableArrayFields(parameter.Type));
     }
 
     /// <summary>
@@ -392,8 +477,8 @@ internal static class ArrayNullCheck
     /// the call (<see cref="PlanArgument"/>): the parameter asks for it and the argument is not proven.
     /// </summary>
     public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
-        NonNullProof.NeedsBoundaryCheck(parameter) &&
-        !(parameter.Type is IArrayTypeSymbol
+        GetArgumentCheckKind(parameter) is var kind && kind != ArgumentCheckKind.None &&
+        !(kind == ArgumentCheckKind.Array
             ? NonNullProof.IsProvenNonNull(argument, model)
             : NonNullProof.IsProvenStruct(argument, model));
 
@@ -401,8 +486,8 @@ internal static class ArrayNullCheck
     private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
         PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
-    // <site>u for a registered site, "<message>" otherwise
-    private static void AppendSite(SourceWriter writer, NullCheckSite site)
+    /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
+    internal static void AppendSite(SourceWriter writer, NullCheckSite site)
     {
         if (site.SiteId != 0u)
         {
@@ -413,15 +498,18 @@ internal static class ArrayNullCheck
         CppStringLiteral.Append(writer, site.Message);
     }
 
+    // Whether type is System.Index or System.Range
+    internal static bool IsIndexOrRangeType(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { Name: "Index" or "Range" } named &&
+        named.ContainingNamespace.IsSystemNamespace();
+
     // a[^1] and a[1..]: an argument of type System.Index or System.Range
     private static bool IsIndexOrRange(ExpressionSyntax argument, SemanticModel model) =>
-        argument is RangeExpressionSyntax ||
-        model.GetTypeSymbol(argument) is INamedTypeSymbol { Name: "Index" or "Range" } type &&
-        type.ContainingNamespace.IsSystemNamespace();
+        argument is RangeExpressionSyntax || IsIndexOrRangeType(model.GetTypeSymbol(argument));
 
     // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as
     // AsSpan), or Length / IsEmpty of ImmutableArray<T>, which read its array (IsDefault and AsSpan do not)
-    private static bool IsArrayMember(ISymbol? member) =>
+    internal static bool IsArrayMember(ISymbol? member) =>
         member is { IsStatic: false, ContainingType.SpecialType: SpecialType.System_Array } &&
         member is not IMethodSymbol { MethodKind: MethodKind.ReducedExtension } ||
         member is IPropertySymbol { IsStatic: false, Name: "Length" or "IsEmpty" } property &&

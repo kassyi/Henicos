@@ -60,8 +60,11 @@ internal static class MethodSignatureTranspiler
                 return;
             }
 
+            NullableLayoutAssertEmitter.Write(methodSymbol, ref context);
             WriteKernelMethodPrefix(ref context);
-            methodName = GlobalCppNames.GetKernelName(methodSymbol);
+            methodName = context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms
+                ? context.Emitter.TwoFormsPlan.GetKernelName(context.Emitter.CurrentKernelForm)
+                : GlobalCppNames.GetKernelName(methodSymbol);
             if (hasContext)
             {
                 contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);
@@ -98,7 +101,9 @@ internal static class MethodSignatureTranspiler
             }
 
             var written = method.ParameterList.Parameters.Count > 0 || contextName != null;
-            if (plan.HasAutoResult)
+            var hidden = KernelHiddenParameters.For(method, methodSymbol, context.Query.SemanticModel,
+                context.Emitter.Dialect.IsCuda);
+            if (hidden.ResultBuffer)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
@@ -108,8 +113,7 @@ internal static class MethodSignatureTranspiler
 
             // The scratch of the grid strategy of AsParallel() aggregates, which the CUDA launcher allocates
             // (KernelHostModel.GridScratchSlotBytes, ParallelAggregatePlanner)
-            if (context.Emitter.Dialect.IsCuda &&
-                ParallelAggregatePlanner.GetGridScratchSlotBytes(method, context.Query.SemanticModel) > 0)
+            if (hidden.GridScratch)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Writer.Append($"unsigned char* __restrict__ {GSharpInternalNames.StackLinq.GridScratch}");
@@ -118,7 +122,7 @@ internal static class MethodSignatureTranspiler
 
             // The epoch of the launch, last: the record and the abort word of a failing thread (Prelude.cu,
             // __gsharp_launch_epoch), which the CUDA launcher passes (KernelLaunchEmitter)
-            if (context.Emitter.Dialect.IsCuda)
+            if (hidden.LaunchEpoch)
             {
                 context.Emitter.Writer.AppendIf(written, ", ");
                 context.Emitter.Writer.Append($"unsigned int {GSharpInternalNames.Launcher.Epoch}");
@@ -139,7 +143,8 @@ internal static class MethodSignatureTranspiler
         var methodName = CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
             ? GlobalCppNames.GetFunctionName(methodSymbol)
             : method.Identifier.Text;
-        context.Emitter.Writer.Append($"template <typename TRoot> {GetInliningKeyword(methodSymbol)} bool {methodName}");
+        var inlineKeyword = GetInliningKeyword(methodSymbol, context.Emitter.Dialect.IsCuda);
+        context.Emitter.Writer.Append($"template <typename TRoot> {inlineKeyword} bool {methodName}");
         using (context.Emitter.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, true, ref context, copiedParameters);
@@ -189,10 +194,11 @@ internal static class MethodSignatureTranspiler
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
-        var isReadOnlyRef = !isKernel &&
-                            (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
-                             p.Modifiers.Any(SyntaxKind.InKeyword) ||
-                             p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        var isReadOnlyRef = context.Emitter.IsParameterPassedByAddress(parameterSymbol) ||
+                            (!isKernel &&
+                             (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
+                              p.Modifiers.Any(SyntaxKind.InKeyword) ||
+                              p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)));
         var isArray = typeSymbol.IsArrayLikeType();
 
         if ((isReadOnly && !isArray) || isReadOnlyRef)
@@ -277,7 +283,7 @@ internal static class MethodSignatureTranspiler
 
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
-        var inlineKeyword = GetInliningKeyword(methodSymbol);
+        var inlineKeyword = GetInliningKeyword(methodSymbol, context.Emitter.Dialect.IsCuda);
         context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda ? $"{inlineKeyword} __device__ " : $"{inlineKeyword} ");
 
         var returnType = methodSymbol?.ReturnType;
@@ -302,7 +308,11 @@ internal static class MethodSignatureTranspiler
         }
     }
 
-    private static string GetInliningKeyword(IMethodSymbol? methodSymbol)
+    // On the CPU a function that must not be inlined is still declared inline, so that each translation unit that
+    // includes it holds a weak definition instead of a second strong one; CUDA keeps one module per unit
+    private static string NoInlineKeyword(bool isCuda) => isCuda ? "__noinline__" : "inline __noinline__";
+
+    private static string GetInliningKeyword(IMethodSymbol? methodSymbol, bool isCuda)
     {
         if (methodSymbol == null)
         {
@@ -318,7 +328,7 @@ internal static class MethodSignatureTranspiler
 
             if (attr.IsAttribute(KnownAttributes.GpuNoInline))
             {
-                return "__noinline__";
+                return NoInlineKeyword(isCuda);
             }
 
             if (attr.IsAttribute(KnownAttributes.MethodImpl))
@@ -331,7 +341,7 @@ internal static class MethodSignatureTranspiler
 
                 if ((opt & MethodImplOptions.NoInlining) != 0)
                 {
-                    return "__noinline__";
+                    return NoInlineKeyword(isCuda);
                 }
             }
         }

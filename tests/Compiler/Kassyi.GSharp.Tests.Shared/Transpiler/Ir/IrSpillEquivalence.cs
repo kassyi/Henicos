@@ -34,6 +34,10 @@ internal sealed class IrSpillEquivalence
     private int _statementsCompared;
     private int _statementsWithACheck;
     private int _statementsRewritten;
+    private int _loopConditions;
+
+    /// <summary>The while loop conditions planned on the IR, not compared with the syntax passes.</summary>
+    public int LoopConditions => _loopConditions;
 
     /// <summary>Statements where the reduced plan and the syntax passes differ.</summary>
     public IReadOnlyCollection<string> Unexplained => _unexplained;
@@ -89,7 +93,7 @@ internal sealed class IrSpillEquivalence
         var hoisted = AstLoweringPipeline.HoistSplitPoints(body, !symbol.ReturnsVoid,
             compilation.GetSemanticModel(body.SyntaxTree));
         var syntax = Group(IrSpillTrace.Of(hoisted.Statements, method.Text), method.Root);
-        var (planned, fallbacks) = PlanByStatement(plan, method);
+        var (planned, fallbacks, loopConditions) = PlanByStatement(plan, method);
         foreach (var (key, statement) in planned)
         {
             if (!fallbacks.Contains(key))
@@ -98,7 +102,7 @@ internal sealed class IrSpillEquivalence
             }
         }
 
-        ReportUnplanned(built, method, syntax, planned, fallbacks);
+        ReportUnplanned(built, method, syntax, planned, fallbacks, loopConditions);
         Rewrite(plan, method.Where, compilation);
     }
 
@@ -147,14 +151,21 @@ internal sealed class IrSpillEquivalence
                                  (step is IrSpillConditional conditional && conditional.Branches.Any(HasCheck)));
 
     // The plans by the statement of the source they belong to (a declaration of several locals has one per local)
-    private (Dictionary<TextSpan, StatementPlan> Planned, HashSet<TextSpan> Fallbacks) PlanByStatement(
-        IrSpillPlan plan, MethodContext method)
+    private (Dictionary<TextSpan, StatementPlan> Planned, HashSet<TextSpan> Fallbacks,
+        HashSet<TextSpan> LoopConditions) PlanByStatement(IrSpillPlan plan, MethodContext method)
     {
         var planned = new Dictionary<TextSpan, StatementPlan>();
         var fallbacks = new HashSet<TextSpan>();
+        var loopConditions = new HashSet<TextSpan>();
         foreach (var statementPlan in plan.Statements)
         {
             var key = StatementOf(method.Root, statementPlan.Statement.Source.Span).Span;
+            if (statementPlan.Statement is IrWhile)
+            {
+                loopConditions.Add(key);
+                continue;
+            }
+
             if (statementPlan.Fallback != IrSpillFallback.None)
             {
                 fallbacks.Add(key);
@@ -173,7 +184,8 @@ internal sealed class IrSpillEquivalence
             entry.Steps.AddRange(statementPlan.Steps);
         }
 
-        return (planned, fallbacks);
+        Interlocked.Add(ref _loopConditions, loopConditions.Count);
+        return (planned, fallbacks, loopConditions);
     }
 
     private void CompareStatement(MethodContext method, TextSpan key, StatementPlan statement,
@@ -204,11 +216,12 @@ internal sealed class IrSpillEquivalence
     // A statement the syntax passes hoist from that the plan has no split for
     private void ReportUnplanned(IrMethod built, MethodContext method,
         Dictionary<TextSpan, List<IrSpillTrace.Token>> syntax, Dictionary<TextSpan, StatementPlan> planned,
-        HashSet<TextSpan> fallbacks)
+        HashSet<TextSpan> fallbacks, HashSet<TextSpan> loopConditions)
     {
         foreach (var (key, tokens) in syntax)
         {
-            if (!planned.ContainsKey(key) && !fallbacks.Contains(key) && IsIrStatement(built, key, method.Root))
+            if (!planned.ContainsKey(key) && !fallbacks.Contains(key) && !loopConditions.Contains(key) &&
+                IsIrStatement(built, key, method.Root))
             {
                 _unexplained.Add($"{method.Where}: {IrSpillTrace.Squeeze(method.Text.ToString(key))}\n" +
                                  $"    ir: (no plan)\n    syntax: {IrSpillTrace.Print(tokens)}");

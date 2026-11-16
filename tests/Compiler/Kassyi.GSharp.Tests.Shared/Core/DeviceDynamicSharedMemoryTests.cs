@@ -10,9 +10,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
-public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
+public partial class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 {
-    private static readonly Action<Action> s_runNative = launch => launch();
+    protected static readonly Action<Action> s_runNative = launch => launch();
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
@@ -62,17 +62,6 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
         DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runNative);
     }
 
-#if GSHARP_CPU
-    // CUDA traps when a region that is not the last one grows; the native CPU path throws (#544, C10)
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void GrowingHelper_AfterCallerDeclarationNative_ThrowsOnCpuAndTrapsOnCuda()
-    {
-        EnsureCapability(DialectCapabilities.SharedMemory);
-        DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclarationThrows(s_runNative);
-    }
-#endif
-
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void RecursiveHelper_NativeExecution_SharesOneBufferAndDoesNotOverlapCaller()
@@ -120,23 +109,4 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.HelpersCalledFromLocalFunctionAndLambda(s_runNative);
     }
-
-#if GSHARP_CUDA
-    [SkippableTheory]
-    [InlineData(-1)]
-    [InlineData(-32)]
-    [Scenario(TestScenario.SadPath)]
-    public void NegativeCount_AfterRegionNative_ThrowsInvalidOperationException(int negative)
-    {
-        EnsureCapability(DialectCapabilities.SharedMemory);
-        var output = new int[DeviceDynamicSharedMemoryScenarios.Length];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceDynamicSharedMemoryKernels.LaunchNegativeCountKernel(output, DeviceDynamicSharedMemoryScenarios.Length,
-                negative, blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
-                sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)));
-        Assert.Contains("G#: dynamic shared memory exceeds sharedMemBytes", ex.Message);
-        Assert.Null(ex.InnerException);
-    }
-#endif
 }

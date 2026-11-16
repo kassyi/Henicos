@@ -1,14 +1,10 @@
-#if GSHARP_CPU
-using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Runtime;
-#endif
-
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class RefStructConversionTests : TranspilerTestBase
+public partial class RefStructConversionTests : TranspilerTestBase
 {
+    static partial void RunManagedPathIfSupported(Action check);
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void ImplicitRefStructConversion_ValidInputValues_RunsBodyAndComputesExpectedValues() =>
@@ -83,11 +79,6 @@ public class RefStructConversionTests : TranspilerTestBase
     private static void OnEveryPath(Action check)
     {
         check();
-#if GSHARP_CPU
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            check();
-        }
-#endif
+        RunManagedPathIfSupported(check);
     }
 }

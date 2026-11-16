@@ -13,11 +13,11 @@ internal static class IrCoverage
 {
     /// <summary>
     /// Builds every <c>[GpuKernel]</c> and <c>[GpuDeviceFunction]</c> method declared in <paramref name="trees"/>,
-    /// checks the invariants and the spans, and adds each opaque node to <paramref name="opaque"/> by
-    /// <c>reason, operation kind, syntax kind</c>.
+    /// checks the invariants and the spans, and adds each opaque node to <paramref name="opaque"/> under its method by
+    /// node kind, reason, operation kind and syntax kind.
     /// </summary>
-    public static int BuildAll(Compilation compilation, IEnumerable<SyntaxTree> trees,
-        ConcurrentDictionary<string, int> opaque, ConcurrentBag<string> violations)
+    public static int BuildAll(Compilation compilation, IEnumerable<SyntaxTree> trees, IrCorpusCounts opaque,
+        ConcurrentBag<string> violations)
     {
         var built = 0;
         foreach (var tree in trees)
@@ -38,7 +38,7 @@ internal static class IrCoverage
                 built++;
                 var where = Path.GetFileName(tree.FilePath) + " " + symbol.ContainingType.Name + "." + symbol.Name;
                 Check(method, compilation, where, violations);
-                Tally(method, opaque);
+                Tally(method, IrCoverageInputs.Locate(tree, symbol), opaque);
             }
         }
 
@@ -62,23 +62,44 @@ internal static class IrCoverage
         {
             violations.Add(where + ": " + problem);
         }
+
+        CheckSpellingParentheses(method, where, violations);
     }
 
-    // Counts the opaque nodes of one built method by reason, operation kind and syntax kind
-    private static void Tally(IrMethod method, ConcurrentDictionary<string, int> opaque)
+    private static void CheckSpellingParentheses(IrMethod method, string where, ConcurrentBag<string> violations)
+    {
+        foreach (var parent in IrNodeChildren.DescendantsAndSelf(method.Body))
+        {
+            if (parent is IrExpression parentExpr && !parentExpr.Source.Synthesized && parentExpr.Parentheses > 0)
+            {
+                foreach (var child in IrNodeChildren.Of(parent))
+                {
+                    if (child is IrExpression childExpr && !childExpr.Source.Synthesized && childExpr.Parentheses > 0 &&
+                        childExpr.Source.Span == parentExpr.Source.Span)
+                    {
+                        violations.Add(
+                            $"{where}: spelling at {parentExpr.Source.Start}.." +
+                            $"{parentExpr.Source.Start + parentExpr.Source.Length}: " +
+                            "a parent and its child with the same syntax both have parentheses");
+                    }
+                }
+            }
+        }
+    }
+
+    // Counts the opaque nodes of one built method by node kind, reason, operation kind and syntax kind
+    private static void Tally(IrMethod method, IrCorpusMethod where, IrCorpusCounts opaque)
     {
         foreach (var node in IrNodeChildren.DescendantsAndSelf(method.Body))
         {
-            var key = node switch
+            switch (node)
             {
-                IrOpaqueExpression expression => Key(expression.Reason, expression.Operation, expression.Syntax),
-                IrOpaqueStatement statement => "statement " + Key(statement.Reason, statement.Operation,
-                    statement.Syntax),
-                _ => null
-            };
-            if (key is not null)
-            {
-                opaque.AddOrUpdate(key, 1, static (_, count) => count + 1);
+                case IrOpaqueExpression expression:
+                    Add(opaque, where, "expression", expression.Reason, expression.Operation, expression.Syntax);
+                    break;
+                case IrOpaqueStatement statement:
+                    Add(opaque, where, "statement", statement.Reason, statement.Operation, statement.Syntax);
+                    break;
             }
         }
     }
@@ -99,20 +120,28 @@ internal static class IrCoverage
             .ToList();
     }
 
-    private static string Key(IrOpaqueReason reason, IOperation? operation, SyntaxNode syntax) =>
-        $"{reason}\t{operation?.Kind.ToString() ?? "-"}\t{syntax.Kind()}{Detail(operation)}";
+    private static void Add(IrCorpusCounts opaque, IrCorpusMethod where, string node, IrOpaqueReason reason,
+        IOperation? operation, SyntaxNode syntax)
+    {
+        (string Key, string Value)[] fields =
+        [
+            ("node", node), ("reason", reason.ToString()), ("operation", operation?.Kind.ToString() ?? "-"),
+            ("syntax", syntax.Kind().ToString())
+        ];
+        opaque.Add(where, Detail(operation) is { } detail ? [.. fields, ("detail", detail)] : fields);
+    }
 
     // The struct creations kept opaque by their initializer are counted apart: nested member initializers are to be
     // built as nodes, and their count is followed until it is 0
-    private static string Detail(IOperation? operation) => operation switch
+    private static string? Detail(IOperation? operation) => operation switch
     {
-        IObjectCreationOperation { Type.IsValueType: false } => " class",
+        IObjectCreationOperation { Type.IsValueType: false } => "class",
         IObjectCreationOperation { Initializer: { } initializer }
             when initializer.Initializers.Any(static member => member is IMemberInitializerOperation) =>
-            " nested-member-initializer",
+            "nested-member-initializer",
         IObjectCreationOperation { Initializer: { } initializer }
             when initializer.Initializers.Any(static member => member is not ISimpleAssignmentOperation) =>
-            " collection-initializer",
-        _ => ""
+            "collection-initializer",
+        _ => null
     };
 }

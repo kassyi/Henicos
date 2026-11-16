@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
@@ -8,13 +9,14 @@ internal static class CudaHostLaunchEmitter
 
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
-        LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild)
+        LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild,
+        in TargetLimits targetLimits)
     {
-        WriteFunctionField(writer, kernel, moduleName);
+        CudaTwoFormsLaunchEmitter.WriteFunctionFields(writer, kernel, moduleName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel);
-        WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild);
-        WriteLaunchMethod(writer, kernel, true, accessibilities.Pointer, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild, targetLimits);
+        WriteLaunchMethod(writer, kernel, true, accessibilities.Pointer, isCheckedBuild, targetLimits);
         if (kernel.IsOverloaded)
         {
             TypedPointerLaunchEmitter.Write(writer, kernel, accessibilities.TypedPointer);
@@ -22,7 +24,7 @@ internal static class CudaHostLaunchEmitter
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr,
-        Accessibility accessibility, bool isCheckedBuild)
+        Accessibility accessibility, bool isCheckedBuild, in TargetLimits targetLimits)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr, accessibility);
@@ -31,7 +33,8 @@ internal static class CudaHostLaunchEmitter
             if (!isDevicePtr)
             {
                 WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
-                WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
+                var aliases = ArraySharingPlan.ForCuda(kernel.Host, isDevicePtr: false).Aliases;
+                WrapperEmitter.WriteOutParametersAssigned(writer, kernel.Host, aliases);
             }
             else
             {
@@ -40,7 +43,8 @@ internal static class CudaHostLaunchEmitter
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
-            CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
+            CSharpExecutionEmitter.WriteBranch(writer,
+                CSharpExecutionPlan.CreateForCuda(kernel.Host, isDevicePtr, targetLimits));
 
             writer.AppendLine(
                 $"using ({HostTypeNames.CudaContextScope} {GSharpInternalNames.Launcher.CudaContextScope} = new())");
@@ -55,7 +59,8 @@ internal static class CudaHostLaunchEmitter
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, sharing, isDevicePtr, isCheckedBuild);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(
+                        writer, kernel, sharing, isDevicePtr, isCheckedBuild);
                 }
 
                 writer.AppendLine("finally");
@@ -67,22 +72,6 @@ internal static class CudaHostLaunchEmitter
 
             AutoResultEmitter.WriteReturn(writer, kernel.Host);
         }
-    }
-
-    // private static readonly CudaKernelFunction <field> = new CudaKernelFunction("<kernel>", <context>.GetFatbin);
-    private static void WriteFunctionField(SourceWriter writer, in KernelEmission kernel, string moduleName)
-    {
-        const string FunctionType = "global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction";
-        var field = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey);
-        var moduleContextName = AotModuleNames.GetModuleContextName(moduleName);
-        writer.Append($"private static readonly {FunctionType} {field} = new {FunctionType}");
-        using (writer.Parentheses())
-        {
-            writer.Append($"\"{kernel.Host.KernelName}\", ");
-            writer.Append($"global::Kassyi.GSharp.Generated.{moduleContextName}.GetFatbin");
-        }
-
-        writer.AppendLine(";");
     }
 
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, in KernelEmission kernel)
@@ -125,7 +114,7 @@ internal static class CudaHostLaunchEmitter
         {
             if (!kernel.ErrorSites.IsDefaultOrEmpty)
             {
-                writer.Append($"{className}.s_errorSites");
+                writer.Append($"{className}.{KernelHostNames.ErrorSitesFieldName}");
             }
         }
     }
@@ -139,8 +128,16 @@ internal static class CudaHostLaunchEmitter
 
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in; a request the device cannot hold is rejected
         // with the kernel's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE (#545)
-        writer.AppendLine(
-            $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare({Func}, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)});");
+        // A kernel marked [GpuKernel(AllowOversizedSharedMemory = true)] also asks for the oversized configuration
+        writer.Append("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare");
+        using (writer.Parentheses())
+        {
+            writer.Append(
+                $"{Func}, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)}");
+            writer.AppendIf(kernel.Host.AllowsOversizedSharedMemory, ", allowsOversizedSharedMemory: true");
+        }
+
+        writer.AppendLine(";");
         writer.AppendLine();
     }
 

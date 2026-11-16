@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/tests/**"
-description: Test tiers, snapshot rules, test attributes and names, the test analyzers, and the APIs banned in tests.
+trigger: model_decision
+description: Read before writing or changing a test - test tiers, snapshot rules, test attributes and names, the test analyzers, the APIs banned in tests.
+paths: "tests/**"
 ---
 
 # G# Test Framework & Tier 1-3 Architecture Guidelines
@@ -201,6 +201,9 @@ public abstract class StateMachineTestBase
 | HNT0007 | Error | `catch` or `catch (Exception)` without a `when` filter in a test method whose handler drops the exception: it neither assigns it, passes it to a method other than a Console / test output / Debug / Trace writer, asserts, nor ends in a `throw` (not a skip) with no `return`, `break` or `continue` before it |
 | HNT0008 | Error | Raw `[Trait]` (`Xunit.TraitAttribute`) on a class or method in a test assembly; use `[Category]`, `[TestTarget]` or `[Scenario]` instead |
 | HNT0009 | Error | A test method starting with `Test` or `Test_`, or whose name does not match `<Unit>_<Condition>[_<Expected>]`; attributes (HNT0002) already state that it is a test and classify it |
+| HNT0010 | Error | `#if` or `#elif` referencing `GSHARP_CPU` or `GSHARP_CUDA` in a shared test file under `tests/Compiler/Kassyi.GSharp.Tests.Shared/` |
+
+Where shared and dialect tests belong: tests under `tests/Compiler/Kassyi.GSharp.Tests.Shared/` run in both `Tests.Cpu` and `Tests.Cuda` without dialect preprocessor branches. Dialect-specific tests and dialect-only members must reside under `tests/Compiler/Kassyi.GSharp.Tests.Cpu/` or `tests/Compiler/Kassyi.GSharp.Tests.Cuda/`, splitting shared test classes across files as `partial` classes when private state must be shared.
 
 HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
 
@@ -251,7 +254,7 @@ a suppression there follows the procedure of [transpiler-emission.md](transpiler
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)
 
 This project strictly adheres to **Test-Driven AI Vibe Coding**.
-When picking up tasks from the roadmap, you MUST follow this fundamental workflow:
+When picking up an issue (in the order of [issue-milestones.md](issue-milestones.md)), you MUST follow this workflow:
 
 1. **Phase 1: Golden Master / Snapshot Test Generation First**
     - Before writing ANY implementation code, you must create the necessary test cases.

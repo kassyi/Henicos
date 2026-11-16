@@ -3,17 +3,16 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Fatbin;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-public class FatbinParserTests
+public partial class FatbinParserTests
 {
     // Real NVCC/fatbinary compiled outputs (CUDA 13.4, Sm_80, Sm_86)
-    private static readonly byte[] RealNvcc_DummyFatbin = new byte[]
-    {
+    internal static readonly byte[] RealNvcc_DummyFatbin =
+    [
         0x50, 0xed, 0x55, 0xba, 0x01, 0x00, 0x10, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x01, 0x01, 0x50, 0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x6a, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x50, 0x00, 0x00, 0x00,
@@ -27,10 +26,10 @@ public class FatbinParserTests
         0x45, 0x1b, 0xbb, 0xf1, 0x08, 0x41, 0xad, 0x52, 0x7c, 0x77, 0x0c, 0x7c, 0x42, 0x6d, 0xee, 0x5e,
         0x53, 0x42, 0x3e, 0x73, 0xe4, 0x5a, 0x6c, 0x2f, 0x28, 0x6a, 0x3e, 0xe3, 0x03, 0xd9, 0x41, 0xad,
         0x5e, 0x71, 0x02, 0x00, 0x3b, 0x05, 0xa9, 0xf8, 0x98, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    ];
 
-    private static readonly byte[] RealNvcc_MultiFatbin = new byte[]
-    {
+    private static readonly byte[] RealNvcc_MultiFatbin =
+    [
         0x50, 0xed, 0x55, 0xba, 0x01, 0x00, 0x10, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x01, 0x01, 0x50, 0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x6a, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x50, 0x00, 0x00, 0x00,
@@ -56,10 +55,10 @@ public class FatbinParserTests
         0x45, 0x1b, 0xbb, 0xf1, 0x08, 0x41, 0xad, 0x52, 0x7c, 0x77, 0x0c, 0x7c, 0x42, 0x6d, 0xee, 0x5e,
         0x53, 0x42, 0x3e, 0x73, 0xe4, 0x5a, 0x6c, 0x2f, 0x28, 0x6a, 0x3e, 0xe3, 0x03, 0xd9, 0x41, 0xad,
         0x5e, 0x71, 0x02, 0x00, 0x3b, 0x05, 0xa9, 0xf8, 0x98, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    ];
 
-    private static readonly byte[] RealNvcc_IdentFatbin = new byte[]
-    {
+    private static readonly byte[] RealNvcc_IdentFatbin =
+    [
         0x50, 0xed, 0x55, 0xba, 0x01, 0x00, 0x10, 0x00, 0xd0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x01, 0x00, 0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x6a, 0x00, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x50, 0x00, 0x00, 0x00,
@@ -74,7 +73,7 @@ public class FatbinParserTests
         0x45, 0x1b, 0xbb, 0xf1, 0x08, 0x41, 0xad, 0x52, 0x7c, 0x77, 0x0c, 0x7c, 0x42, 0x6d, 0xee, 0x5e,
         0x53, 0x42, 0x3e, 0x73, 0xe4, 0x5a, 0x6c, 0x2f, 0x28, 0x6a, 0x3e, 0xe3, 0x03, 0xd9, 0x41, 0xad,
         0x5e, 0x71, 0x02, 0x00, 0x3b, 0x05, 0xa9, 0xf8, 0x98, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    };
+    ];
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -139,213 +138,6 @@ public class FatbinParserTests
         Assert.NotNull(image);
         Assert.Single(image.Items);
         Assert.Equal("my_kernel", image.Items[0].ObjectName);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void VerifySignature_Rfc8032TestVector_MatchesSpecification()
-    {
-        // RFC 8032 Section 7.1 Test Vector 1 (Empty message)
-        byte[] secretKeySeed = Convert.FromHexString("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60");
-        byte[] expectedPublicKey = Convert.FromHexString("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
-        byte[] expectedSignature = Convert.FromHexString("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b");
-
-        byte[] actualPublicKey = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(secretKeySeed);
-        Assert.Equal(expectedPublicKey, actualPublicKey);
-
-        byte[] actualSignature = Kassyi.GSharp.Cryptography.Ed25519.Sign(ReadOnlySpan<byte>.Empty, secretKeySeed);
-        Assert.Equal(expectedSignature, actualSignature);
-
-        bool isValid = Kassyi.GSharp.Cryptography.Ed25519.Verify(ReadOnlySpan<byte>.Empty, actualSignature, actualPublicKey);
-        Assert.True(isValid);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TryParse_SignedFatbinWithEd25519Signature_VerifiesSuccessfully()
-    {
-        // Generate a 32-byte secret key seed and corresponding Ed25519 signature
-        byte[] secretKeySeed = new byte[32];
-        Array.Fill(secretKeySeed, (byte)0x42);
-        byte[] publicKey = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(secretKeySeed);
-
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, secretKeySeed);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-
-        Assert.True(success);
-        Assert.NotNull(image);
-        Assert.True(image.HasGSharpSignature);
-        Assert.Equal(64, image.Signature.Length);
-        Assert.True(signature.AsSpan().SequenceEqual(image.Signature.Span));
-        Assert.Equal(RealNvcc_DummyFatbin.Length, image.Payload.Length);
-        Assert.True(RealNvcc_DummyFatbin.AsSpan().SequenceEqual(image.Payload.Span));
-
-        // Verify signature against public key
-        Assert.True(image.VerifySignature(publicKey));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void VerifySignature_CorruptedPayload_ReturnsFalse()
-    {
-        byte[] secretKeySeed = new byte[32];
-        Array.Fill(secretKeySeed, (byte)0x42);
-        byte[] publicKey = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(secretKeySeed);
-
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, secretKeySeed);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        // Tamper 1 byte in the payload data (offset 150, beyond headers) and construct corrupted fatbin image
-        byte[] corruptedPayload = (byte[])RealNvcc_DummyFatbin.Clone();
-        corruptedPayload[150] ^= 0xFF;
-
-        byte[] corruptedBinary = corruptedPayload.Concat(signature).ToArray();
-        bool parseCorrupted = FatbinParser.TryParse(corruptedBinary, out FatbinImage? corruptedImage);
-        Assert.True(parseCorrupted);
-        Assert.NotNull(corruptedImage);
-
-        // Verification must strictly fail
-        Assert.False(corruptedImage.VerifySignature(publicKey));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void VerifySignature_WrongPublicKey_ReturnsFalse()
-    {
-        byte[] secretKeySeed = new byte[32];
-        Array.Fill(secretKeySeed, (byte)0x42);
-        byte[] wrongSeed = new byte[32];
-        Array.Fill(wrongSeed, (byte)0x99);
-
-        byte[] wrongPublicKey = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(wrongSeed);
-
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, secretKeySeed);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        Assert.False(image.VerifySignature(wrongPublicKey));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void VerifySignature_AuthorizedKeysWhitelist_ReturnsTrue()
-    {
-        byte[] seed1 = new byte[32]; Array.Fill(seed1, (byte)0x11);
-        byte[] seed2 = new byte[32]; Array.Fill(seed2, (byte)0x22);
-        byte[] seed3 = new byte[32]; Array.Fill(seed3, (byte)0x33);
-
-        byte[] pubKey1 = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(seed1);
-        byte[] pubKey2 = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(seed2);
-        byte[] pubKey3 = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(seed3);
-
-        // Concatenate keys into a single continuous buffer (authorized_keys model)
-        byte[] authorizedKeys = pubKey1.Concat(pubKey2).Concat(pubKey3).ToArray();
-
-        // Sign with key2
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, seed2);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        // Verify against whitelist
-        Assert.True(image.VerifySignature(authorizedKeys));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void GpuSecurityPolicy_EmbeddedKeys_IsNotEmpty()
-    {
-        ReadOnlySpan<byte> embedded = GpuSecurityPolicy.EmbeddedKeys;
-        Assert.False(embedded.IsEmpty);
-        Assert.True(embedded.Length >= 32);
-        Assert.True(embedded.Length % 32 == 0);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void GpuSecurityPolicy_DynamicKeyRegistration_VerifiesImage()
-    {
-        byte[] dynamicSeed = new byte[32];
-        Array.Fill(dynamicSeed, (byte)0x77);
-        byte[] dynamicPubKey = Kassyi.GSharp.Cryptography.Ed25519.GetPublicKey(dynamicSeed);
-
-        // Sign dummy fatbin with dynamic key
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, dynamicSeed);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        // Before registration, if dynamic key is not in embedded, verify may fail (or check specifically for unknown key)
-        // Register key dynamically
-        GpuSecurityPolicy.RegisterTrustedKey(dynamicPubKey);
-
-        // After registration, VerifyImage must succeed
-        Assert.True(GpuSecurityPolicy.VerifyImage(image));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void GpuSecurityPolicy_VerifyImageWithUntrustedKey_ReturnsFalse()
-    {
-        byte[] unknownSeed = new byte[32];
-        Array.Fill(unknownSeed, (byte)0xEE);
-
-        byte[] signature = Kassyi.GSharp.Cryptography.Ed25519.Sign(RealNvcc_DummyFatbin, unknownSeed);
-        byte[] signedBinary = RealNvcc_DummyFatbin.Concat(signature).ToArray();
-
-        bool success = FatbinParser.TryParse(signedBinary, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        // An unknown key must not be verified by default
-        Assert.False(GpuSecurityPolicy.VerifyImage(image));
-    }
-
-    [Theory]
-    [Scenario(TestScenario.HappyPath)]
-    [InlineData(8, 0, true)]   // Exact match for sm_80 PTX
-    [InlineData(8, 6, true)]   // Forward compatible (SM 8.6 can run sm_80 PTX)
-    [InlineData(9, 0, true)]   // Forward compatible (SM 9.0 can run sm_80 PTX)
-    [InlineData(7, 5, false)]  // Older architecture cannot run sm_80 PTX
-    [InlineData(6, 1, false)]  // Older architecture cannot run sm_80 PTX
-    public void IsCompatibleWith_PtxForwardCompatibility_ReturnsTrue(int deviceMajor, int deviceMinor, bool expected)
-    {
-        bool success = FatbinParser.TryParse(RealNvcc_DummyFatbin, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        bool compatible = image.IsCompatibleWith(deviceMajor, deviceMinor);
-        Assert.Equal(expected, compatible);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void IsCompatibleWith_CubinSameMajorNewerMinor_ReturnsFalse()
-    {
-        // Synthesize a CUBIN item (Type = 2) for sm_80
-        byte[] cubinItem = CreateMockFatbin(type: FatbinItemInfo.TypeCubin, computeVersion: 80, major: 8, minor: 0);
-        bool success = FatbinParser.TryParse(cubinItem, out FatbinImage? image);
-        Assert.True(success);
-        Assert.NotNull(image);
-
-        // A cubin runs on devices of the same major version with an equal or newer minor version
-        Assert.True(image.IsCompatibleWith(8, 0));
-        Assert.True(image.IsCompatibleWith(8, 6));
-        Assert.False(image.IsCompatibleWith(9, 0)); // Another major version needs PTX
-        Assert.False(image.IsCompatibleWith(7, 5));
     }
 
     [Fact]
@@ -472,146 +264,13 @@ public class FatbinParserTests
         Assert.Equal(imageMem.Items.Count, imageSpan.Items.Count);
     }
 
-    [Theory]
-    [Scenario(TestScenario.HappyPath)]
-    [InlineData(8, 0, 8, 0, true)]  // Exact match
-    [InlineData(8, 0, 8, 6, true)]  // Newer minor
-    [InlineData(8, 0, 9, 0, true)]  // Newer major
-    [InlineData(8, 6, 8, 0, false)] // Target older minor
-    [InlineData(8, 0, 7, 5, false)] // Target older major
-    [InlineData(8, 6, 8, 6, true)]  // Default compute_86 PTX on its own architecture
-    [InlineData(8, 6, 9, 0, true)]  // Default compute_86 PTX is JIT-compiled on Hopper
-    [InlineData(8, 6, 12, 0, true)] // Default compute_86 PTX is JIT-compiled on Blackwell
-    public void IsCompatibleWith_PtxTarget_PermitsForwardCompatibility(
-        ushort ptxMajor,
-        ushort ptxMinor,
-        int deviceMajor,
-        int deviceMinor,
-        bool expected)
-    {
-        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, (uint)(ptxMajor * 10 + ptxMinor), ptxMajor, ptxMinor);
-        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
-
-        Assert.True(parsed);
-        Assert.NotNull(image);
-        Assert.Equal(expected, image.IsCompatibleWith(deviceMajor, deviceMinor));
-    }
-
-    [Theory]
-    [Scenario(TestScenario.HappyPath)]
-    [InlineData(8, 6, 8, 6, true)]   // Exact match
-    [InlineData(8, 6, 8, 9, true)]   // Newer minor of the same major (sm_86 cubin on an RTX 40xx)
-    [InlineData(8, 0, 8, 6, true)]   // Newer minor of the same major
-    [InlineData(8, 6, 8, 0, false)]  // Older minor
-    [InlineData(8, 6, 9, 0, false)]  // Newer major (a cubin is not forward compatible across major versions)
-    [InlineData(8, 6, 12, 0, false)] // Newer major
-    [InlineData(8, 0, 7, 5, false)]  // Older major
-    public void IsCompatibleWith_CubinSameMajorNewerMinorVersion_RejectsIncompatible(
-        ushort cubinMajor,
-        ushort cubinMinor,
-        int deviceMajor,
-        int deviceMinor,
-        bool expected)
-    {
-        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypeCubin, (uint)(cubinMajor * 10 + cubinMinor), cubinMajor, cubinMinor);
-        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
-
-        Assert.True(parsed);
-        Assert.NotNull(image);
-        Assert.Equal(expected, image.IsCompatibleWith(deviceMajor, deviceMinor));
-    }
-
-    [Theory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(-1, 0)]
-    [InlineData(8, -1)]
-    [InlineData(-1, -1)]
-    public void IsCompatibleWith_NegativeArchitecture_ReturnsFalse(int deviceMajor, int deviceMinor)
-    {
-        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, 80, 8, 0);
-        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
-
-        Assert.True(parsed);
-        Assert.NotNull(image);
-        Assert.False(image.IsCompatibleWith(deviceMajor, deviceMinor));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    public void IsCompatibleWith_MultipleFatbinItems_MatchesAnyCompatibleItem()
-    {
-        // FATBIN containing sm_86 CUBIN and sm_80 PTX
-        byte[] fatbinBytes = CreateMockFatbin(
-            (FatbinItemInfo.TypeCubin, 86u, (ushort)8, (ushort)6),
-            (FatbinItemInfo.TypePtx, 80u, (ushort)8, (ushort)0)
-        );
-
-        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
-        Assert.True(parsed);
-        Assert.NotNull(image);
-
-        // On sm_86: Matches CUBIN (and PTX)
-        Assert.True(image.IsCompatibleWith(8, 6));
-
-        // On sm_80: Matches PTX
-        Assert.True(image.IsCompatibleWith(8, 0));
-
-        // On sm_90: Matches PTX forward compatibility
-        Assert.True(image.IsCompatibleWith(9, 0));
-
-        // On sm_75: Neither matches
-        Assert.False(image.IsCompatibleWith(7, 5));
-    }
-
-#if GSHARP_CUDA
-    [SkippableTheory]
-    [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.HappyPath)]
-    [InlineData("Kassyi.GSharp.Tests.Cuda")]
-    [InlineData("Kassyi.GSharp.Stdlib.GpuMath")]
-    public void BuiltFatbin_DefaultArchitectures_HoldsSass86AndPtx86(string moduleName)
-    {
-        var fileName = Kassyi.GSharp.Compiler.Marshaling.AotModuleNames.GetArtifactFileStem(moduleName) + ".gfatbin";
-        // The default GSharpTargetArchitectures keeps the sm_86 SASS and adds compute_86 PTX, so that GPUs newer than
-        // the 8.x family JIT-compile the module instead of failing to load it.
-        // The build skips the fatbins only without nvcc or with GSHARP_TEST_NO_CUDA=1; otherwise a missing file is a failure
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "GSHARP_TEST_NO_CUDA=1 skips the fatbins.");
-        Skip.IfNot(IsNvccOnPath(), "nvcc is not on PATH, so the build skipped the fatbins.");
-        var path = Path.Combine(AppContext.BaseDirectory, fileName);
-        Assert.True(File.Exists(path), $"'{path}' was not built.");
-
-        bool parsed = FatbinParser.TryParse(File.ReadAllBytes(path), out FatbinImage? image);
-
-        Assert.True(parsed);
-        Assert.NotNull(image);
-        Assert.Contains(image.Items, i => i.Type == FatbinItemInfo.TypeCubin && i.ComputeVersion == 86);
-        Assert.Contains(image.Items, i => i.Type == FatbinItemInfo.TypePtx && i.ComputeVersion == 86);
-        Assert.True(image.IsCompatibleWith(12, 0));
-    }
-
-    private static bool IsNvccOnPath()
-    {
-        var fileName = OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
-        var path = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).AsSpan();
-        foreach (var range in path.Split(Path.PathSeparator))
-        {
-            var directory = path[range].Trim('"');
-            if (!directory.IsEmpty && File.Exists(Path.Combine(directory.ToString(), fileName)))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-#endif
-
     internal static byte[] CreateMockFatbin(ushort type, uint computeVersion, ushort major, ushort minor)
     {
         return CreateMockFatbin([(type, computeVersion, major, minor)]);
     }
 
-    internal static byte[] CreateMockFatbin(params (ushort type, uint computeVersion, ushort major, ushort minor)[] items)
+    internal static byte[] CreateMockFatbin(
+        params (ushort type, uint computeVersion, ushort major, ushort minor)[] items)
     {
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);

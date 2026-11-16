@@ -57,7 +57,7 @@ BenchmarkDotNet.Artifacts/
 
 TestResults/
 
-# Node.js / Frontend (tools/roadmap-ui)
+# Node.js
 node_modules/
 dist/
 dist-ssr/
@@ -71,7 +71,6 @@ dist-ssr/
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/
 /.agents/rules/agent-tool-mapping.md
-/.agents/rules/command-intent.md
 /.agents/skills/architecture-mapper/
 /.agents/skills/ci.en/
 /.agents/skills/ci.ja/
@@ -99,11 +98,18 @@ dist-ssr/
 /.agents/skills/write-csharp-xml-comment.ja/
 /.claude/commands/issue.prompt.md
 /.claude/commands/report-pr.ja.prompt.md
-/.claude/commands/roadmap.ja.prompt.md
 /.claude/commands/sync-spec.ja.prompt.md
 /.claude/commands/test-failed.ja.prompt.md
 /.claude/commands/write-bcl-xml-comment.en.prompt.md
 /.claude/commands/write-bcl-xml-comment.ja.prompt.md
+/.claude/rules/agent-scripts.md
+/.claude/rules/coding-style.md
+/.claude/rules/generator-invariants.md
+/.claude/rules/gsharp-naming-conventions.md
+/.claude/rules/job-queue.md
+/.claude/rules/semantics-charter.md
+/.claude/rules/test-architecture.md
+/.claude/rules/transpiler-emission.md
 /.claude/skills/architecture-mapper/
 /.claude/skills/ci.en/
 /.claude/skills/ci.ja/

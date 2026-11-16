@@ -7,14 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public abstract class TranspilerTestBase
 {
-    protected ITranspilerDialect CurrentDialect { get; } =
-#if GSHARP_CUDA
-        new GSharpCudaDialect();
-#elif GSHARP_CPU
-        new StandardCppDialect();
-#else
-        new StandardCppDialect();
-#endif
+    protected ITranspilerDialect CurrentDialect { get; } = AssemblyDialect.Current;
 
     protected bool IsCudaDialect => CurrentDialect.IsCuda;
     protected bool IsCpuDialect => !CurrentDialect.IsCuda;

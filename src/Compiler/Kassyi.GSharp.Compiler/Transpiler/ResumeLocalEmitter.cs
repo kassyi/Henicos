@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -6,6 +8,11 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class ResumeLocalEmitter
 {
+    /// <summary>Whether a hoisted local stays a field of the native frame rather than being declared again on every
+    /// resume.</summary>
+    internal static bool StaysInFrame(VariableDeclaratorSyntax field, ITypeSymbol type, DeclarationKey key) =>
+        key.Symbol == null || !ResumeLocals.IsRedeclared(field, type, sharedMemoryInFrame: true);
+
     /// <summary>
     /// Takes the hoisted locals that are declared again on every resume out of the frame, turns their context accesses in
     /// the body back into locals, and leaves their initialization where they are declared. <c>SharedMemory&lt;T&gt;</c>
@@ -24,7 +31,7 @@ internal static class ResumeLocalEmitter
         {
             var type = HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName);
             var key = LoweringIdentity.ForDeclaration(field, semanticModel);
-            if (key.Symbol == null || !ResumeLocals.IsRedeclared(field, type, sharedMemoryInFrame: true))
+            if (StaysInFrame(field, type, key))
             {
                 frameFields.Add(field);
                 continue;
@@ -65,19 +72,42 @@ internal static class ResumeLocalEmitter
     /// &lt;element&gt;* &lt;name&gt;;                                           (a stackalloc pointer of length 0: set to nullptr there)
     /// </code>
     /// </remarks>
-    public static void WriteDeclarations(ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
+    public static void WriteDeclarations(
+        StateMachineFrame frame,
+        ImmutableArray<ResumeLocal> resumeLocals,
+        ref TranspileContext context)
     {
-        foreach (var local in resumeLocals)
+        var resumeSlotCount = frame.Slots
+            .AsStackEnumerable()
+            .Count(IsResumeLocal);
+        if (resumeSlotCount != resumeLocals.Length)
         {
-            switch (local)
+            throw new InvalidOperationException(
+                $"The frame has {resumeSlotCount} resume locals, the separated body {resumeLocals.Length}.");
+        }
+
+        var i = 0;
+        foreach (var slot in frame.Slots)
+        {
+            if (!IsResumeLocal(slot))
             {
-                case { Kind: ResumeLocalKind.Unsupported, Unsupported: { } node }:
-                    context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, GpuCodeConstraints.DynamicArraySize);
+                continue;
+            }
+
+            var local = resumeLocals[i++];
+            switch (slot.Kind)
+            {
+                case FrameSlotKind.Unsupported:
+                    context.Reporter.Fail(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        slot.UnsupportedLocation
+                        ?? throw new InvalidOperationException("An unsupported resume local has no location."),
+                        GpuCodeConstraints.DynamicArraySize);
                     break;
-                case { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType }:
-                    WriteStackAllocStorage(local, elementType, ref context);
+                case FrameSlotKind.RedeclaredStack:
+                    WriteStackAllocStorage(slot, ref context);
                     break;
-                default:
+                case FrameSlotKind.Redeclared:
                     if (local.Declarator.Parent is VariableDeclarationSyntax declaration)
                     {
                         context.Visitor.Visit(SyntaxFactory.LocalDeclarationStatement(
@@ -146,20 +176,27 @@ internal static class ResumeLocalEmitter
         }
     }
 
+    // The slots declared before the state switch, in the order of the resume locals that Separate took out
+    private static bool IsResumeLocal(FrameSlot slot) =>
+        slot.Kind is FrameSlotKind.Redeclared or FrameSlotKind.RedeclaredStack or FrameSlotKind.Unsupported;
+
     // <element> <name>[<length>]; for a span, the pointer storage for a pointer; <type> <name>{}; for an empty span
     // [WHY] The array is not const even for a ReadOnlySpan<T>: its elements are written where the local is declared.
-    private static void WriteStackAllocStorage(ResumeLocal local, ITypeSymbol elementType, ref TranspileContext context)
+    private static void WriteStackAllocStorage(FrameSlot slot, ref TranspileContext context)
     {
-        var name = CppNameResolver.Resolve(local.Declarator, context.Query.SemanticModel, context.Emitter.Dialect).ToString();
-        if (local.Type is IPointerTypeSymbol pointerType)
+        var name = slot.Name;
+        if (slot.Type is IPointerTypeSymbol pointerType)
         {
-            WriteStackAllocPointer(name, pointerType, local.Length, elements: null, zeroed: false, bind: false, ref context);
+            WriteStackAllocPointer(name, pointerType, slot.Length, elements: null, zeroed: false, bind: false,
+                ref context);
             context.Emitter.Writer.AppendLine(";");
             return;
         }
 
-        context.Emitter.Dialect.AppendType(ref context, local.Length == 0 ? local.Type : elementType);
-        if (local.Length == 0)
+        var elementType = slot.ElementType
+                          ?? throw new InvalidOperationException($"The stackalloc slot '{name}' has no element type.");
+        context.Emitter.Dialect.AppendType(ref context, slot.Length == 0 ? slot.Type : elementType);
+        if (slot.Length == 0)
         {
             // A zero-length array is ill-formed in C++: the span is empty
             context.Emitter.Writer.AppendLine($" {name}{{}};");
@@ -169,7 +206,7 @@ internal static class ResumeLocalEmitter
         context.Emitter.Writer.Append($" {name}");
         using (context.Emitter.Writer.Brackets())
         {
-            context.Emitter.Writer.Append(local.Length);
+            context.Emitter.Writer.Append(slot.Length);
         }
 
         context.Emitter.Writer.AppendLine(";");

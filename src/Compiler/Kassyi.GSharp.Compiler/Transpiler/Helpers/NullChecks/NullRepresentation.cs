@@ -1,17 +1,87 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
+/// <summary>How a value of a type is null in the emitted C++.</summary>
+internal enum NullForm
+{
+    /// <summary>The type has no null of its own in C++ (a reference to a class, a pointer, ...).</summary>
+    None,
+    /// <summary>An array or span: data == nullptr.</summary>
+    ArrayView,
+    /// <summary>A <c>Nullable&lt;T&gt;</c>: !HasValue.</summary>
+    NullableValue
+}
+
 /// <summary>
 /// How C# <c>null</c> is represented in the emitted C++: an array-like value is null when its <c>data</c> pointer is
 /// <c>nullptr</c>, and a <c>Nullable&lt;T&gt;</c> exposes <c>HasValue</c> / <c>Value</c>.
 /// </summary>
 internal static class NullRepresentation
 {
+    /// <summary>How a value of <paramref name="type"/> is represented as null in C++.</summary>
+    public static NullForm GetNullForm(ITypeSymbol? type)
+    {
+        if (type == null)
+        {
+            return NullForm.None;
+        }
+
+        if (type.IsArrayLikeType())
+        {
+            return NullForm.ArrayView;
+        }
+
+        if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+        {
+            return NullForm.NullableValue;
+        }
+
+        return NullForm.None;
+    }
+
     /// <summary>
     /// Whether a <c>null</c> test on <paramref name="type"/> becomes a <c>data</c> pointer or <c>HasValue</c> test: an
     /// array-like type or a <c>Nullable&lt;T&gt;</c>.
     /// </summary>
     public static bool IsNullComparable([NotNullWhen(true)] ITypeSymbol? type) =>
-        type != null && (type.IsArrayLikeType() || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T);
+        GetNullForm(type) != NullForm.None;
+
+    /// <summary>
+    /// Whether a cast of a value of <paramref name="operandType"/> to <paramref name="castType"/> keeps whether it is
+    /// null: both types are null-comparable.
+    /// </summary>
+    public static bool PreservesNull(ITypeSymbol? castType, ITypeSymbol? operandType) =>
+        IsNullComparable(castType) && IsNullComparable(operandType);
+
+    /// <summary>
+    /// Whether the two branches of a <c>??</c> whose left is not an array are cast to
+    /// <paramref name="resultType"/>: they are, unless the left (or its underlying type) and the right already have
+    /// that type.
+    /// </summary>
+    public static bool CoalesceCastsToResult(ITypeSymbol? leftType, ITypeSymbol? rightType, ITypeSymbol? resultType)
+    {
+        if (resultType == null)
+        {
+            return false;
+        }
+
+        var unwrappedLeft = leftType is INamedTypeSymbol
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
+        } nullableLeft
+            ? nullableLeft.TypeArguments[0]
+            : leftType;
+
+        return !(leftType.IsEqualTo(resultType) && rightType.IsEqualTo(resultType)) &&
+               !(unwrappedLeft.IsEqualTo(resultType) && rightType.IsEqualTo(resultType));
+    }
+
+    /// <summary>
+    /// Whether a <c>??=</c> on a <paramref name="targetType"/> target yields its underlying type
+    /// <paramref name="valueType"/>, so that the result reads <c>.Value</c>.
+    /// </summary>
+    public static bool CoalesceAssignmentReadsUnderlying(ITypeSymbol targetType, ITypeSymbol valueType) =>
+        !targetType.IsArrayLikeType() && !valueType.IsEqualTo(targetType) &&
+        valueType.IsEqualTo(targetType.UnwrapNullable());
 
     /// <summary>
     /// The operand that <paramref name="node"/> compares with the <c>null</c> literal when it is written as a null test
@@ -26,15 +96,22 @@ internal static class NullRepresentation
             return null;
         }
 
-        if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Right)))
+        if (IsNullValue(node.Left, model) && IsNullComparable(model.GetTypeSymbol(node.Right)))
         {
             return node.Right;
         }
 
-        return node.Right.IsKind(SyntaxKind.NullLiteralExpression) && IsNullComparable(model.GetTypeSymbol(node.Left))
+        return IsNullValue(node.Right, model) && IsNullComparable(model.GetTypeSymbol(node.Left))
             ? node.Left
             : null;
     }
+
+    // null, the default literal and default(T) of a null-comparable type: n == default is the lifted comparison with
+    // null, the HasValue test of n, and arr == default compares the array with null, as C# converts the literal to
+    // object there. The caller checks that the other operand is null-comparable, so the literal needs no type here.
+    private static bool IsNullValue(ExpressionSyntax operand, SemanticModel model) =>
+        operand.IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.DefaultLiteralExpression) ||
+        (operand is DefaultExpressionSyntax && IsNullComparable(model.GetTypeSymbol(operand)));
 
     /// <summary>
     /// Emits <c>(&lt;operand&gt;.data == nullptr)</c> (or <c>(!&lt;operand&gt;.HasValue)</c> for a
@@ -50,17 +127,13 @@ internal static class NullRepresentation
     {
         var model = context.Query.SemanticModel;
         operand = SkipNullPreservingConversions(operand, model);
-        if (StackArrayLocals.IsStackArrayReference(operand, model) &&
-            !(StackArrayLocals.TryGetLength(operand, model, out var length) && length == 0))
+        if (StackArrayLocals.NeedsView(operand, model))
         {
             context.Emitter.Writer.Append(isNull ? "false" : "true");
             return;
         }
 
-        var isNullableStruct = model.GetTypeSymbol(operand) is INamedTypeSymbol
-        {
-            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-        };
+        var isNullableStruct = GetNullForm(model.GetTypeSymbol(operand)) == NullForm.NullableValue;
 
         using (context.Emitter.Writer.Parentheses())
         {
@@ -91,7 +164,7 @@ internal static class NullRepresentation
 
     // Parentheses, the null-forgiving operator (a!) and casts from one array-like type to another ((int[])a) do not
     // change whether a value is null
-    private static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
+    internal static ExpressionSyntax SkipNullPreservingConversions(ExpressionSyntax operand, SemanticModel model)
     {
         while (true)
         {
@@ -104,8 +177,8 @@ internal static class NullRepresentation
                     when suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression):
                     operand = suppressed.Operand;
                     break;
-                case CastExpressionSyntax cast when IsNullComparable(model.GetTypeSymbol(cast)) &&
-                                                    IsNullComparable(model.GetTypeSymbol(cast.Expression)):
+                case CastExpressionSyntax cast when PreservesNull(model.GetTypeSymbol(cast),
+                                                    model.GetTypeSymbol(cast.Expression)):
                     operand = cast.Expression;
                     break;
                 default:
@@ -133,15 +206,7 @@ internal static class NullRepresentation
             return;
         }
 
-        var unwrappedLeft = leftType is INamedTypeSymbol
-        {
-            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
-        } nullableLeft
-            ? nullableLeft.TypeArguments[0]
-            : leftType;
-        var castResult = resultType != null &&
-                         !(leftType.IsEqualTo(resultType) && rightType.IsEqualTo(resultType)) &&
-                         !(unwrappedLeft.IsEqualTo(resultType) && rightType.IsEqualTo(resultType));
+        var castResult = CoalesceCastsToResult(leftType, rightType, resultType);
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda())
         {
@@ -175,8 +240,7 @@ internal static class NullRepresentation
         const string temp = GSharpInternalNames.Lowering.CoalesceTemp;
         var model = context.Query.SemanticModel;
         var operand = SkipNullPreservingConversions(left, model);
-        if (StackArrayLocals.IsStackArrayReference(operand, model) &&
-            !(StackArrayLocals.TryGetLength(operand, model, out var length) && length == 0))
+        if (StackArrayLocals.NeedsView(operand, model))
         {
             context.Visitor.Visit(left);
             return;
@@ -202,34 +266,44 @@ internal static class NullRepresentation
 
     /// <summary>
     /// Emits <c>&lt;left&gt; ??= &lt;right&gt;</c>:
-    /// <c>([&amp;]() -> decltype(auto) {
-    /// auto&amp; t = &lt;left&gt;; return !t.HasValue ? (t = &lt;right&gt;) : t.Value;
-    /// })()</c>.
+    /// <c>([&amp;]() {
+    /// auto&amp; t = &lt;left&gt;; return !t.HasValue ? (t = &lt;right&gt;).Value : t.Value;
+    /// })()</c>, whose value has the type C# gives it: the underlying type when <paramref name="node"/> is a
+    /// <c>Nullable&lt;T&gt;</c> target whose right side converts to <c>T</c> (#1101), the nullable type otherwise
+    /// (<c>!t.HasValue ? (t = &lt;right&gt;) : t</c>). The lambda returns a copy, as C# reads the value once.
     /// </summary>
     /// <remarks>
     /// An array is tested by its <c>data</c> pointer and is the value itself (#880):
     /// <c>return t.data == nullptr ? (t = &lt;right&gt;) : t;</c>.
     /// </remarks>
-    public static void AppendCoalesceAssignment(ExpressionSyntax left, ExpressionSyntax right,
-        ref TranspileContext context)
+    public static void AppendCoalesceAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         const string target = GSharpInternalNames.Lowering.CoalesceTarget;
-        var isArray = context.Query.SemanticModel.GetTypeSymbol(left) is { } leftType && leftType.IsArrayLikeType();
-        using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
+        var model = context.Query.SemanticModel;
+        // No type, no shape: writing the nullable form for an unresolved type would fail the C++ build far from the cause
+        var targetType = model.GetTypeSymbol(node.Left) ?? throw new InvalidOperationException(
+            $"The type of the ??= target '{node.Left}' did not resolve.");
+        var valueType = model.GetTypeSymbol(node) ?? throw new InvalidOperationException(
+            $"The type of the ??= expression '{node}' did not resolve.");
+        var isArray = targetType.IsArrayLikeType();
+        var valueIsUnderlying = CoalesceAssignmentReadsUnderlying(targetType, valueType);
+        var nullTest = isArray ? $"{target}.data == nullptr" : $"!{target}.HasValue";
+        var valueSuffix = valueIsUnderlying ? ".Value" : "";
+
+        using (context.Emitter.Writer.ImmediatelyInvokedLambda(isArray ? "decltype(auto)" : null))
         {
             context.Emitter.Writer.Append($"auto& {target} = ");
-            context.Visitor.Visit(left);
+            context.Visitor.Visit(node.Left);
             context.Emitter.Writer.AppendLine(";");
 
-            context.Emitter.Writer.Append(
-                $"return {(isArray ? "" : "!")}{target}{(isArray ? ".data == nullptr" : ".HasValue")} ? ");
+            context.Emitter.Writer.Append($"return {nullTest} ? ");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Emitter.Writer.Append($"{target} = ");
-                context.Visitor.Visit(right);
+                context.Visitor.Visit(node.Right);
             }
 
-            context.Emitter.Writer.AppendLine($" : {target}{(isArray ? "" : ".Value")};");
+            context.Emitter.Writer.AppendLine($"{valueSuffix} : {target}{valueSuffix};");
         }
     }
 }

@@ -246,7 +246,7 @@ return 1;
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__SyncThenDivide(GSharpArray<int> __gsharp_id_0_counts, int __gsharp_id_1_zero){
 __syncthreads();
 __gsharp_array_at(__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)"")=__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_counts, 0, ""G#: a null array is read at SplitOperandOrderDifferentialKernels.cs(282,9)""),1);
-return 1/__gsharp_id_1_zero;
+return __gsharp_div_i32(1,__gsharp_id_1_zero,""Attempted to divide by zero. at SplitOperandOrderDifferentialKernels.cs(283,16)"");
 }
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__SplitOperandOrderDifferentialKernels__StoreValue(int* __gsharp_id_0_target, int __gsharp_id_1_value){
@@ -2164,6 +2164,7 @@ public static unsafe void LaunchSpanElementTargetChecksFirstTwinKernel(global::S
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.SpanElementTargetChecksFirstTwinKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = counts;
 global::System.Int32 __gsharp_csharp_arg_2 = i;
@@ -2562,6 +2563,7 @@ __gsharp_layout_checked_FieldOfElementTargetChecksFirstTwinKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.FieldOfElementTargetChecksFirstTwinKernel");
 global::Kassyi.GSharp.Tests.Shared.Differential.SplitOrderCell[] __gsharp_csharp_arg_0 = cells;
 global::System.Int32[] __gsharp_csharp_arg_1 = counts;
 global::System.Int32 __gsharp_csharp_arg_2 = i;
@@ -2918,6 +2920,7 @@ public static unsafe void LaunchRefElementArgumentChecksFirstTwinKernel(global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.RefElementArgumentChecksFirstTwinKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = counts;
 global::System.Int32 __gsharp_csharp_arg_2 = i;
@@ -3266,6 +3269,7 @@ public static unsafe void LaunchElementTargetChecksAtStoreTwinKernel(global::Sys
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SplitOperandOrderDifferentialKernels.ElementTargetChecksAtStoreTwinKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = counts;
 global::System.Int32 __gsharp_csharp_arg_2 = i;

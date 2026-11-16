@@ -475,6 +475,7 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, AttributeNames.Cuda.Failed, record.Cuda.Failed);
             AppendBoolProperty(writer, AttributeNames.Cpp.Failed, record.Cpp.Failed);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedStateMachine, traits.ManagedStateMachine);
+            AppendBoolProperty(writer, AttributeNames.Traits.PrivateManagedFrame, traits.PrivateManagedFrame);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);
             AppendStringProperty(writer, AttributeNames.InternalError, record.InternalError);
             AppendIntProperty(writer, AttributeNames.Traits.DivergentConditionParameters,
@@ -484,6 +485,13 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, AttributeNames.Traits.HasExitOnlyBarrier, traits.HasExitOnlyBarrier);
             AppendBoolProperty(writer, AttributeNames.Traits.ReachesArrivalBarrier, traits.ReachesArrivalBarrier);
             AppendBoolProperty(writer, AttributeNames.Traits.ReachesSharedMemory, traits.ReachesSharedMemory);
+            // [WHY] Written whenever ManagedVersion is, also as false: a reader takes a record without the key for one
+            // of an older G#, whose ManagedVersion meant exactly this trait (DeviceExportTable)
+            if (traits.ManagedVersion || traits.ReachesGeneratedMeaning)
+            {
+                writer.Append($", {AttributeNames.Traits.ReachesGeneratedMeaning} = ");
+                writer.Append(traits.ReachesGeneratedMeaning ? "true" : "false");
+            }
         }
 
         writer.AppendLine("]");

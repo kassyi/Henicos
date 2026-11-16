@@ -27,5 +27,5 @@ internal sealed class IrArrayCreation(ITypeSymbol elementType, IrExpression leng
     public IrArrayCreation Update(IrExpression length, ImmutableArray<IrExpression> elements) =>
         length == Length && elements == Elements
             ? this
-            : new IrArrayCreation(ElementType, length, elements, Type, Category, Source);
+            : KeepSpelling(new IrArrayCreation(ElementType, length, elements, Type, Category, Source));
 }

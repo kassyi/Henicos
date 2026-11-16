@@ -255,7 +255,7 @@ __gsharp_ctx->__gsharp_id_17_gdimY=(int)gridDim.y;
 __gsharp_ctx->__gsharp_id_18_gdimZ=(int)gridDim.z;
 __gsharp_ctx->__gsharp_id_19_tid=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_7_tx,__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_10_bx,__gsharp_ctx->__gsharp_id_13_bdimX));
 __gsharp_ctx->__gsharp_id_20_staticCache={ (int*)__gsharp_allocate_smem_static(0xe20e17017ad9529aull, (10000) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (__gsharp_ctx->__gsharp_id_4_particleCount) * sizeof(float), alignof(float), ""an unknown place"") };
+__gsharp_ctx->__gsharp_id_21_dynamicCache={ (float*)__gsharp_allocate_smem_dynamic(0xe20e18017ad9544dull, (long long)(__gsharp_ctx->__gsharp_id_4_particleCount), sizeof(float), alignof(float), ""an unknown place"") };
 __gsharp_ctx->__gsharp_id_22_targetTypedCache={ (int*)__gsharp_allocate_smem_static(0xe20e15017ad94f34ull, (256) * sizeof(int), alignof(int)) };
 if(!(__gsharp_ctx->__gsharp_id_19_tid<__gsharp_ctx->__gsharp_id_4_particleCount))
 {
@@ -322,11 +322,11 @@ if(__gsharp_ctx->__gsharp_id_7_tx==0)
 atomicAdd(&(*__gsharp_id_1_totalMagnitude),__gsharp_ctx->__gsharp_id_21_dynamicCache[0]);
 (*__gsharp_id_2_successFlag)=true;
 }
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8>();
 __gsharp_id_31_inlineVec[0]=123;
 __gsharp_id_31_inlineVec[1]=456;
 {
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState>();
 __gsharp_id_32_state.__gsharp_mb_Buffer[0]=__gsharp_id_31_inlineVec[0];
 __gsharp_id_32_state.__gsharp_mb_Buffer[1]=__gsharp_id_31_inlineVec[1];
 unsigned long long __gsharp_id_33_carry = 0;
@@ -650,8 +650,9 @@ private unsafe delegate void __gsharp_delegate_ProcessPhysics(uint gridDimX, uin
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-successFlag = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out successFlag);
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ComprehensiveSpecKernel.ProcessPhysics");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.ProcessPhysics", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -807,6 +808,39 @@ fixed (global::System.Boolean* __gsharp_p_2 = &successFlag)
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (particles?.Length ?? 0) }, __gsharp_p_1, __gsharp_p_2, &largeStructVal, particleCount, unrollFactor);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchProcessPhysicsPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy particles, global::System.IntPtr totalMagnitude, global::System.IntPtr successFlag, global::DebugReduc.ComprehensiveSpecKernel.AotContexts.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (particles.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("particles", particles.Length, "The array length must not be negative.");
+}
+if (particles.Data == global::System.IntPtr.Zero && particles.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "particles");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ComprehensiveSpecKernel.ProcessPhysics");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.ProcessPhysics", "LaunchProcessPhysicsPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchProcessPhysics");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchProcessPhysicsPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchProcessPhysics, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Single*, global::System.Boolean*, global::DebugReduc.ComprehensiveSpecKernel.AotContexts.SpecTypes*, global::System.Int32, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Single*, global::System.Boolean*, global::DebugReduc.ComprehensiveSpecKernel.AotContexts.SpecTypes*, global::System.Int32, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = particles.Data, Length = particles.Length }, (global::System.Single*)totalMagnitude, (global::System.Boolean*)successFlag, &largeStructVal, particleCount, unrollFactor);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 public const string CooperativePhysicsProcess_Source = @"struct __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess {
@@ -1006,6 +1040,7 @@ private unsafe delegate void __gsharp_delegate_CooperativePhysicsProcess(uint gr
 public static unsafe void LaunchCooperativePhysicsProcess(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ComprehensiveSpecKernel.CooperativePhysicsProcess");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.CooperativePhysicsProcess", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
@@ -1161,6 +1196,39 @@ fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Inter
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (data?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchCooperativePhysicsProcessPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.CooperativePhysicsProcess");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ComprehensiveSpecKernel.CooperativePhysicsProcess");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ComprehensiveSpecKernel.CooperativePhysicsProcess", "LaunchCooperativePhysicsProcessPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCooperativePhysicsProcess");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchCooperativePhysicsProcessPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchCooperativePhysicsProcess, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 }

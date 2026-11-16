@@ -15,6 +15,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Literals;
 internal static class ConstantAtUse
 {
     /// <summary>
+    /// The type C# gives a constant of <paramref name="ownType"/> where it is used: <paramref name="conversionTarget"/>
+    /// when the constant is converted implicitly, by a built-in numeric or constant-expression conversion
+    /// (<paramref name="isNumericOrConstantConversion"/>), to a primitive value type; otherwise
+    /// <paramref name="ownType"/>.
+    /// </summary>
+    public static ITypeSymbol GetTypeAtUse(ITypeSymbol ownType, ITypeSymbol? conversionTarget,
+        bool isNumericOrConstantConversion) =>
+        conversionTarget is { } t && t.SpecialType.IsPrimitiveValue() && isNumericOrConstantConversion
+            ? t
+            : ownType;
+
+    /// <summary>
     /// The type C# gives the constant <paramref name="expression"/> where it is used: the target of an implicit numeric
     /// or constant conversion applied to it when that is a primitive value type, otherwise <paramref name="ownType"/> (no
     /// conversion, an enum or user-defined conversion, or a node whose binding cannot be found).
@@ -22,16 +34,19 @@ internal static class ConstantAtUse
     private static ITypeSymbol GetTypeAtUse(ExpressionSyntax expression, ITypeSymbol ownType, SemanticModel model)
     {
         // C# binds no operation for parentheses: the conversion of (ByteMax) is the parent of the field reference
-        return model.GetSafeOperation(expression)?.Parent is IConversionOperation
-               {
-                   IsImplicit: true,
-                   OperatorMethod: null,
-                   Type: { } target
-               } conversion &&
-               target.SpecialType.IsPrimitiveValue() &&
-               conversion.GetConversion() is { IsNumeric: true } or { IsConstantExpression: true }
-            ? target
-            : ownType;
+        if (model.GetSafeOperation(expression)?.Parent is IConversionOperation
+            {
+                IsImplicit: true,
+                OperatorMethod: null,
+                Type: { } target
+            } conversion)
+        {
+            var isNumericOrConstant =
+                conversion.GetConversion() is { IsNumeric: true } or { IsConstantExpression: true };
+            return GetTypeAtUse(ownType, target, isNumericOrConstant);
+        }
+
+        return GetTypeAtUse(ownType, null, false);
     }
 
     /// <summary>

@@ -244,7 +244,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__ManagedQu
 int __gsharp_id_2_outside = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Thrice(4);
 return __gsharp_add_i32(__gsharp_add_i32(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values.AsSpan();
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -262,7 +262,7 @@ return __gsharp_add_i32(__gsharp_id_4_x,4);
 __gsharp_fusion_res += __gsharp_val_1;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }()),__gsharp_id_1_tid),__gsharp_id_2_outside);
 }
 
@@ -440,6 +440,7 @@ public static unsafe void LaunchUsingDirectiveKernel(global::System.Int32[] valu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedQualificationKernels.UsingDirectiveKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedQualificationKernels.UsingDirectiveKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = values;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.ManagedQualificationKernels.UsingDirectiveKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -612,6 +613,7 @@ public static unsafe void LaunchUsingStaticKernel(global::System.Int32[] values,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedQualificationKernels.UsingStaticKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedQualificationKernels.UsingStaticKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = values;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.ManagedQualificationKernels.UsingStaticKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1207,6 +1209,7 @@ public static unsafe void LaunchTypeFormsKernel(global::System.Int32[] values, g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedQualificationKernels.TypeFormsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedQualificationKernels.TypeFormsKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = values;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.ManagedQualificationKernels.TypeFormsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1401,6 +1404,7 @@ public static unsafe void LaunchExtensionCallKernel(global::System.Int32[] value
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedQualificationKernels.ExtensionCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedQualificationKernels.ExtensionCallKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = values;
 global::System.Int32[] __gsharp_csharp_arg_1 = result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.ManagedQualificationKernels.ExtensionCallKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3301,7 +3305,7 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_outside = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Qualification__QualifyMath__Thrice(4);
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_id_2_tid, 1071218512u)=__gsharp_add_i32(__gsharp_add_i32(([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_values.AsSpan();
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -3319,7 +3323,7 @@ return __gsharp_add_i32(__gsharp_id_5_x,4);
 __gsharp_fusion_res += __gsharp_val_1;
 }
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }()),__gsharp_id_2_tid),__gsharp_id_3_outside);
 }
 ";

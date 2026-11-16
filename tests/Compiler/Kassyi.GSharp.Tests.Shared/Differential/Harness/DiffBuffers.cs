@@ -259,6 +259,7 @@ public sealed class DiffBuffer<T> : DiffBuffer
         {
             OutputPolicyKind.Bitwise or OutputPolicyKind.Multiset => BitsEqual(in expected, in actual) || (IsNaN(in expected) && IsNaN(in actual)),
             OutputPolicyKind.Ulp => UlpEqualValue(in expected, in actual, policy.MaxUlp, policy.AllowInfinityBoundary),
+            OutputPolicyKind.Absolute => AbsoluteEqualValue(in expected, in actual, policy.MaxAbsoluteError),
             _ => BitsEqual(in expected, in actual),
         };
     }
@@ -493,6 +494,55 @@ public sealed class DiffBuffer<T> : DiffBuffer
 
         static long ToLinearIndex32(int bits) => bits < 0 ? -(long)(bits & 0x7FFF_FFFF) : bits;
         static Int128 ToLinearIndex64(long bits) => bits < 0 ? -(Int128)(bits & 0x7FFF_FFFF_FFFF_FFFFL) : bits;
+    }
+
+    /// <summary>
+    /// Compares <paramref name="x"/> and <paramref name="y"/> within <paramref name="maxAbsoluteError"/>,
+    /// rejecting one-sided <c>NaN</c>. <see cref="float"/> and <see cref="Half"/> widen to <see cref="double"/>
+    /// exactly, so the difference is taken once, in <see cref="double"/>. Other types compare bitwise.
+    /// </summary>
+    internal static bool AbsoluteEqualValue(in T x, in T y, double maxAbsoluteError)
+    {
+        if (!TryWidenToDouble(in x, out double dx) || !TryWidenToDouble(in y, out double dy))
+        {
+            return BitsEqual(in x, in y);
+        }
+
+        if (double.IsNaN(dx) || double.IsNaN(dy))
+        {
+            return double.IsNaN(dx) && double.IsNaN(dy);
+        }
+
+        if (double.IsInfinity(dx) || double.IsInfinity(dy))
+        {
+            return dx == dy;
+        }
+
+        return Math.Abs(dy - dx) <= maxAbsoluteError;
+    }
+
+    private static bool TryWidenToDouble(in T value, out double widened)
+    {
+        if (typeof(T) == typeof(float))
+        {
+            widened = Unsafe.As<T, float>(ref Unsafe.AsRef(in value));
+            return true;
+        }
+
+        if (typeof(T) == typeof(double))
+        {
+            widened = Unsafe.As<T, double>(ref Unsafe.AsRef(in value));
+            return true;
+        }
+
+        if (typeof(T) == typeof(Half))
+        {
+            widened = (double)Unsafe.As<T, Half>(ref Unsafe.AsRef(in value));
+            return true;
+        }
+
+        widened = 0;
+        return false;
     }
 
     // A primitive prints as the hex of its value (the bytes from the most significant); a struct prints its bytes in

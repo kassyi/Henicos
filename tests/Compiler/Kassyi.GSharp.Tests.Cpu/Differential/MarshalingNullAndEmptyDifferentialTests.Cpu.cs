@@ -1,0 +1,12 @@
+#nullable enable
+using System;
+
+namespace Kassyi.GSharp.Tests.Shared.Differential;
+
+public partial class MarshalingNullAndEmptyDifferentialTests
+{
+    private static partial OutputPolicy GetAfterThrowPolicy(int[]? optPrimInit) => OutputPolicy.Exact;
+
+    private static partial ExceptionPolicy GetStructFieldNullDereferenceExceptionPolicy() =>
+        new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
+}

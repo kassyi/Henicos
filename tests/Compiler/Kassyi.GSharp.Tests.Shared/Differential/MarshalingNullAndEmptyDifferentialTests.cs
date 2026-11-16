@@ -1,9 +1,6 @@
 #nullable enable
 using System;
 using Kassyi.GSharp.Core;
-#if GSHARP_CUDA
-using Kassyi.GSharp.Runtime;
-#endif
 using Xunit;
 using static Kassyi.GSharp.Tests.Shared.Differential.MarshalingDifferentialTestHelpers;
 
@@ -16,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Collection(TestCollections.GlobalStateSequential)]
-public sealed class MarshalingNullAndEmptyDifferentialTests
+public partial class MarshalingNullAndEmptyDifferentialTests
 {
     internal static readonly DifferentialCase s_nonNullableArrayNull = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.NonNullableArrayKernel), "Null"))
@@ -67,11 +64,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         // A null optPrim throws at output[2] (optPrim.Length), so the kernel never writes output[2..5]. output is
         // [Out], not copied to the device, so on CUDA those cells hold whatever the device memory held: not compared
         // there. The CPU paths pass the caller's array, whose cells keep their value, so they are compared
-#if GSHARP_CUDA
-        var afterThrow = optPrimInit is null ? OutputPolicy.Ignore : OutputPolicy.Exact;
-#else
-        var afterThrow = OutputPolicy.Exact;
-#endif
+        var afterThrow = GetAfterThrowPolicy(optPrimInit);
         return new DifferentialCase(
             KernelName(nameof(MarshalingAliasingDifferentialKernels.NullableTopLevelArrayKernel), label))
         {
@@ -217,16 +210,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
         Seeds = [0],
         // Every path throws (#1409); CUDA, the only path of Tests.Cuda, also reports the place of bag.Data
         // (MarshalingAliasingDifferentialKernels.cu.cs line 502, column 25), which the managed exception lacks
-#if GSHARP_CUDA
-        ExceptionPolicy = new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths())
-        {
-            SourceFile = nameof(MarshalingAliasingDifferentialKernels),
-            Line = 502,
-            Column = 25,
-        },
-#else
-        ExceptionPolicy = new ExceptionPolicy(typeof(NullReferenceException), DiffPaths.CheckedPaths()),
-#endif
+        ExceptionPolicy = GetStructFieldNullDereferenceExceptionPolicy(),
         Inputs = static (_, _) => new DiffBuffers()
             .InDeepScalar(
                 "bag",
@@ -246,4 +230,7 @@ public sealed class MarshalingNullAndEmptyDifferentialTests
     [Scenario(TestScenario.SadPath)]
     public void NullAndEmptyArrays_StructFieldNullDereference_ThrowsNullReferenceException() =>
         DifferentialRunner.Run(s_structFieldNullDereference);
+
+    private static partial OutputPolicy GetAfterThrowPolicy(int[]? optPrimInit);
+    private static partial ExceptionPolicy GetStructFieldNullDereferenceExceptionPolicy();
 }

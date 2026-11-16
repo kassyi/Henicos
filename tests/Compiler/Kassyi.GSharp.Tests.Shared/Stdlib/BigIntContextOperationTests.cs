@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]
-public class BigIntContextOperationTests : TranspilerTestBase
+public partial class BigIntContextOperationTests : TranspilerTestBase
 {
     private const int Words = 4;
     private static readonly uint[] s_left = [0x80000001u, 0x00000003u, 0xF0F0F0F0u, 0x12345678u];
@@ -31,7 +31,8 @@ public class BigIntContextOperationTests : TranspilerTestBase
         BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(s_left, null, result), wordShift, bitShift,
             blockDimX: 2);
 
-        Assert.Equal(ToWords(ToBigInteger(s_left) << (wordShift * 32 + bitShift)), result);
+        var expected = BigIntWords.ToWords(BigIntWords.ToBigInteger(s_left) << (wordShift * 32 + bitShift), Words);
+        Assert.Equal(expected, result);
     }
 
     [SkippableTheory]
@@ -46,7 +47,38 @@ public class BigIntContextOperationTests : TranspilerTestBase
         BigIntContextOperationKernels.LaunchShiftRightKernel(Context(s_left, null, result), wordShift, bitShift,
             blockDimX: 2);
 
-        Assert.Equal(ToWords(ToBigInteger(s_left) >> (wordShift * 32 + bitShift)), result);
+        var expected = BigIntWords.ToWords(BigIntWords.ToBigInteger(s_left) >> (wordShift * 32 + bitShift), Words);
+        Assert.Equal(expected, result);
+    }
+
+    // The result buffer is the left operand: one thread of the grid shifts every word, so no thread reads a word
+    // another one already shifted; two blocks of two threads, so the grid-stride loop would have split the words. No
+    // shift (0, 0), and shifts of all the words (4, 0) or more (5, 7), which leave zero.
+    // mutant: GpuBigIntKernels.cu.cs ExecuteShiftLeft(GpuBigIntContext, ...) `if (IsSameArray(left, result))` ->
+    // `if (false)` -> wrong words on the native CPU path (and a race on CUDA)
+    // mutant: the same in ExecuteShiftRight
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 0)]
+    [InlineData(0, 3)]
+    [InlineData(1, 5)]
+    [InlineData(2, 0)]
+    [InlineData(4, 0)]
+    [InlineData(5, 7)]
+    public void Shifts_ResultIsTheLeftOperand_MatchBigIntegerShift(int wordShift, int bitShift)
+    {
+        var left = (uint[])s_left.Clone();
+        var right = (uint[])s_left.Clone();
+
+        BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(left, null, left), wordShift, bitShift,
+            gridDimX: 2, blockDimX: 2);
+        BigIntContextOperationKernels.LaunchShiftRightKernel(Context(right, null, right), wordShift, bitShift,
+            gridDimX: 2, blockDimX: 2);
+
+        var value = BigIntWords.ToBigInteger(s_left);
+        var shift = wordShift * 32 + bitShift;
+        Assert.Equal(BigIntWords.ToWords(value << shift, Words), left);
+        Assert.Equal(BigIntWords.ToWords(value >> shift, Words), right);
     }
 
     [SkippableFact]
@@ -72,22 +104,6 @@ public class BigIntContextOperationTests : TranspilerTestBase
         }
     }
 
-    // The device function reads the operand through Gpu.NotNull: the native CPU build names the place in the message
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void ShiftLeft_NullLeftOperand_ThrowsNullReference()
-    {
-        Skip.If(IsCudaDialect, "The CUDA null cases run as differential cases (NullArrayAndFieldDifferentialTests).");
-        var result = new uint[Words];
-
-        var exception = Assert.Throws<NullReferenceException>(() =>
-            BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(null, null, result), 0, 1, blockDimX: 2));
-
-        Assert.StartsWith("G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(", exception.Message,
-            StringComparison.Ordinal);
-        Assert.Equal(new uint[Words], result);
-    }
-
     private static GpuBigIntContext Context(uint[]? left, uint[]? right, uint[] result) => new()
     {
         Operands = new OperandContext
@@ -96,28 +112,4 @@ public class BigIntContextOperationTests : TranspilerTestBase
         },
         NumberOfWords = Words
     };
-
-    private static BigInteger ToBigInteger(uint[] words)
-    {
-        var value = BigInteger.Zero;
-        for (var i = words.Length - 1; i >= 0; i--)
-        {
-            value = (value << 32) | words[i];
-        }
-
-        return value;
-    }
-
-    // The low Words words of value
-    private static uint[] ToWords(BigInteger value)
-    {
-        var words = new uint[Words];
-        for (var i = 0; i < Words; i++)
-        {
-            words[i] = (uint)(value & uint.MaxValue);
-            value >>= 32;
-        }
-
-        return words;
-    }
 }

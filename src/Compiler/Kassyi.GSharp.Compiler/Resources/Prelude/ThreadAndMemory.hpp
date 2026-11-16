@@ -1,9 +1,4 @@
 // --- Thread & Block State ---
-thread_local uint3 threadIdx;
-thread_local uint3 blockIdx;
-thread_local dim3 blockDim;
-thread_local dim3 gridDim;
-
 extern "C" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
     threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
     blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
@@ -212,8 +207,17 @@ inline void* __gsharp_allocate_smem_static(unsigned long long siteKey, size_t by
 
 // A declaration whose count is known at run time: a region of the launch's sharedMemBytes, with the rules of
 // __gsharp_dsmem_place (Prelude.cu). place is the declaration in the C# source, for the message
-inline void* __gsharp_allocate_smem_dynamic(unsigned long long siteKey, unsigned long long bytes, size_t alignment,
-                                            const char* place) {
+inline void* __gsharp_allocate_smem_dynamic(unsigned long long siteKey, long long count, size_t elementSize,
+                                            size_t alignment, const char* place) {
+    // Before anything is placed, with the message of the managed path and of CUDA
+    if (count < 0) {
+        char text[512];
+        std::snprintf(text, sizeof(text), "G#: the count of a shared memory declaration is negative (%lld, %s)", count,
+                      place);
+        __gsharp_trap_abort(GSharpErrorCode::ArgumentOutOfRange, text);
+    }
+    // An int count times the size of an element fits in 64 bits
+    unsigned long long bytes = (unsigned long long)count * elementSize;
     __gsharp_block_smem& arena = __gsharp_current_smem();
     size_t align = alignment > 16 ? alignment : 16;
     __gsharp_smem_region* region = nullptr;
@@ -235,8 +239,6 @@ inline void* __gsharp_allocate_smem_dynamic(unsigned long long siteKey, unsigned
         __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, text);
     }
     if (bytes > region->size) {
-        // [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to it
-        // would wrap past 2^64 to a small end
         unsigned long long limit = arena.dynamic_limit;
         if (bytes > limit || (unsigned long long)region->offset + bytes > limit) {
             char text[512];

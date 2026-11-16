@@ -55,6 +55,9 @@ The line of the declaration, filled in by the compiler. Do not pass it.
 The method of the declaration, filled in by the compiler. Do not pass it.
 
 > [!NOTE]
+> A `SharedMemory<T>` needs an element count. The parameterless constructor is obsolete as an error, so `new SharedMemory<int>()` and the target-typed `new()` are compile errors (CS0619); calling it anyway throws `InvalidOperationException`. `default` cannot be blocked by the language: `SharedMemory<int> s = default;` and `default(SharedMemory<int>)` are reported as [GSH0003](../diagnostics/GSH0003.md), because shared memory has no size until it is declared with a count.
+
+> [!NOTE]
 > More constructors, `SharedMemory(int size, ulong siteKey)` and the ones that also take the place of a dynamic declaration, are hidden from IntelliSense. The G# compiler uses them in the code it generates for managed execution; do not call them directly.
 
 ## Item[int]
@@ -144,7 +147,7 @@ Managed execution runs a device function that never reaches a barrier as ordinar
 
 ### Dynamic Shared Memory
 
-A declaration whose count is a C# constant (`new SharedMemory<float>(256)`, or a `const` field) is **static**: on CUDA it becomes `__shared__ T name[N]`, its size is fixed at compile time, and [GSH0013](../diagnostics/GSH0013.md) warns above 32 KB. Any other count (a parameter, `BlockDimension.X`, a non-constant expression) makes the declaration **dynamic**. Dynamic declarations live in the dynamic shared memory of the launch, whose size the host passes as `sharedMemBytes`:
+A declaration whose count is a C# constant (`new SharedMemory<float>(256)`, or a `const` field) is **static**: on CUDA it becomes `__shared__ T name[N]`, its size is fixed at compile time, and [GSH0013](../diagnostics/GSH0013.md) warns above 32 KB. A constant count of 0 declares empty shared memory, like `new int[0]` (CUDA, which has no array of 0 elements, declares one element that C# cannot reach); a negative constant count is an error, [GSH0117](../diagnostics/GSH0117.md), as C# rejects an array of a negative constant size. Any other count (a parameter, `BlockDimension.X`, a non-constant expression) makes the declaration **dynamic**. Dynamic declarations live in the dynamic shared memory of the launch, whose size the host passes as `sharedMemBytes`:
 
 ```csharp
 // TileKernel declares two dynamic SharedMemory<float>(n) with n = 256: two 1024-byte regions, each starting at a
@@ -198,13 +201,19 @@ Console.WriteLine(bytes); // 28
 
 On CUDA a block can use 48 KB of shared memory (static plus dynamic) on every GPU, and more on GPUs that allow it once the kernel opts in (99 KB on sm_86 and sm_89, 163 KB on sm_80, 227 KB on sm_90). The `sharedMemBytes` of the launch is the request: when it is larger than what the kernel currently allows, the CUDA launcher (also the launcher of a `[CudaImport]` kernel) opts the kernel in to the device maximum (`cuFuncSetAttribute(CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES)`). It does this once per kernel, so later launches make no extra driver call. The opt-in only permits the memory the launch asks for; it adds no work or synchronization and does not change the results.
 
-When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes and the limit:
+GPUs of compute capability 10.7 have a third, oversized configuration of up to 327 KB per block, at the cost of an L1 cache of 8 KB while the kernel runs. A kernel uses it only when it is declared with `[GpuKernel(AllowOversizedSharedMemory = true)]` and a launch asks for more than 227 KB; see [AllowOversizedSharedMemory](../attributes/GpuKernelAttribute.md#allowoversizedsharedmemory).
+
+When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes, the limit and the driver error:
 
 ```text
-G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of this GPU (sm_86) (Kernels.TileKernel).
+G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of this GPU (sm_86); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.TileKernel).
 ```
 
-The CPU paths do not check this limit yet (#799).
+The CPU paths (native, managed and C# execution, and the C# execution of a CUDA build) check `sharedMemBytes` plus the static shared memory of the kernel (taken as 0 for now) against the smallest opt-in limit over the target GPUs from `GSharpTargetArchitectures` ([§1.5.1](../../02_architecture/01_aot_transpiler.md#151-target-gpu-architectures-gsharptargetarchitectures), default `sm_86` = 101376 bytes), and throw the same `ArgumentOutOfRangeException` before any thread runs:
+
+```text
+G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of the target GPU sm_86 (GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.TileKernel).
+```
 
 #### Growing a declaration
 
@@ -222,11 +231,11 @@ Declare a region that grows last, or declare it with its largest count first.
 | Condition | CUDA | CPU (native) | Managed |
 | --- | --- | --- | --- |
 | The regions end past `sharedMemBytes` | Trap | `ArgumentOutOfRangeException` naming the declaration, the bytes it needs and `sharedMemBytes` | The same exception (not for a declaration in a device function that managed execution does not rewrite, see above) |
-| A negative count | Trap | `ArgumentOutOfRangeException` (the count arrives as at least 2^63 bytes, as on CUDA) | The same exception |
+| A negative count | `ArgumentOutOfRangeException` ("the count of a shared memory declaration is negative"), in every build | The same exception, naming the count and the declaration | The same exception, naming the count and the declaration |
 | A count of 0 | Empty region | Empty region | Empty region; an element access throws `IndexOutOfRangeException` |
 | A larger count for a region that is not the last | Trap | `InvalidOperationException` | The same exception |
 
-On CUDA and the native CPU path the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`, so a negative count, which arrives as at least 2^63 bytes, fails instead of wrapping. The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. A trap surfaces as a `CudaException` from the launch, and it leaves the CUDA context of the process unusable: later CUDA calls in the same process fail too. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+A negative count fails on every path before anything is placed; then the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`. A static declaration of a negative constant count is a compile-time error instead ([GSH0117](../diagnostics/GSH0117.md)). The CPU paths do not require a separate opt-in above 48 KB (they accept up to the target GPU's opt-in limit directly), and check `sharedMemBytes` against the opt-in limit of the target GPUs from `GSharpTargetArchitectures` before any thread runs. On sm_70 and later, a failed check records its error and ends the thread without a GPU fault: the launch throws the exception named in the table (`ArgumentOutOfRangeException`, `InvalidOperationException`) and the process keeps its CUDA context, so the next launch runs. Only a thread that cannot record its error (no error record for the launch, or before sm_70) executes a trap, which surfaces as a `CudaException` and leaves the CUDA context of the process unusable. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
 
 #### Threads must reach dynamic declarations alike
 

@@ -202,7 +202,8 @@ __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const cha
     __builtin_unreachable();
 }
 
-[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+// The record of __gsharp_trap_site, without the end of the thread (shared by it and __gsharp_record_site)
+__device__ __forceinline__ void __gsharp_record_site_body(GSharpErrorCode code, unsigned int site_id) {
     const unsigned int epoch = __gsharp_launch_epoch;
     GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
     // [WHY] Without a record (the host could not allocate it) nothing records the error, and a thread that exited would
@@ -233,12 +234,35 @@ __device__ __host__ constexpr unsigned int __gsharp_builtin_message_id(const cha
         }
 #ifndef __GSHARP_TRAP_EXITS
         // The other threads of the warp wait for the leader's record before their trap aborts the launch. [WHY] Not
-        // when threads exit: an exiting thread stops only itself, as in __gsharp_null_read_trap, and the barrier is
+        // when threads exit: an exiting thread stops only itself, as in __gsharp_inline_trap, and the barrier is
         // the only call left in this function, so without it ptxas saves no return address here (a module with a
         // recursive device function compiles every function that is not inlined with the call ABI)
         __syncwarp(active);
 #endif
     }
+}
+
+[[noreturn]] __device__ __noinline__ void __gsharp_trap_site(GSharpErrorCode code, unsigned int site_id) {
+    __gsharp_record_site_body(code, site_id);
+    __gsharp_exit_thread();
+}
+
+// Records the failure of the calling thread and returns, so that the code of a failing check can run the finally of
+// the scopes it leaves (__gsharp_trap_unwind) before the thread ends
+__device__ __noinline__ void __gsharp_record_site(GSharpErrorCode code, unsigned int site_id) {
+    __gsharp_record_site_body(code, site_id);
+}
+
+// A failed check inside the scope of a using: records the failure as __gsharp_trap_site does, disposes the guards
+// of the scopes the check leaves, the innermost first, as C# runs the finally blocks while the exception leaves,
+// and ends the thread. [WHY] The thread ends with exit, which runs no destructor, so the guards are called here.
+// The guards are the ones that the C++ block of the check can see, so the call costs the code that does not fail
+// nothing
+template <class... Guards>
+[[noreturn]] __device__ __forceinline__ void __gsharp_trap_unwind(GSharpErrorCode code, unsigned int site_id,
+    Guards&... guards) {
+    __gsharp_record_site(code, site_id);
+    (guards.__gsharp_unwind(), ...);
     __gsharp_exit_thread();
 }
 
@@ -362,11 +386,53 @@ struct GSharpArray {
         return GSharpArray<T>(data + start, length - start);
     }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    __device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
+    __device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const {
 #ifdef GSHARP_CHECKED
-        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
-            static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countMessage != nullptr ? countMessage : message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
+    // The same with error sites (ErrorSiteTable) that carry the message and the parameter name C# gives each failure: a
+    // start outside the array reports startSite, a count past its end countSite (startSite when countSite is 0)
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> Slice(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const {
+#ifdef GSHARP_CHECKED
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+            __gsharp_trap(ErrorCode, startSite);
+            return GSharpArray<T>();
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countSite != 0u ? countSite : startSite);
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
+    // One side of Array.Copy, in the order of CopyImpl of .NET 10 (the source side first: length, source index, source
+    // range; then the destination side: destination index, destination range; .NET 8 and 9 check both indexes before
+    // both ranges). A negative length is ArgumentOutOfRange (length), a negative index ArgumentOutOfRange (sourceIndex
+    // or destinationIndex), a range past the end Argument (sourceArray or destinationArray). Each failure is an error
+    // site (uint32_t) or a message (const char*)
+    template <typename S>
+    __device__ inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
+#ifdef GSHARP_CHECKED
+        if (count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, lengthSite);
+            return GSharpArray<T>();
+        }
+        if (start < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, indexSite);
+            return GSharpArray<T>();
+        }
+        if (start > length || count > length - start) {
+            __gsharp_trap(GSharpErrorCode::Argument, longSite);
             return GSharpArray<T>();
         }
 #endif
@@ -413,7 +479,7 @@ struct GSharpArray {
     template <typename U>
     __device__ inline void CopyTo(GSharpArray<U> destination) const {
         if (!TryCopyTo(destination)) {
-            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
+            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short. (Parameter 'destination')");
         }
     }
     // Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
@@ -442,18 +508,46 @@ struct GSharpArray {
         if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
             __gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
         }
+        if (IfDestinationNull == GSharpErrorCode::ArgumentNull) {
+            // The destination is an array, which C# copies into through Array.Copy and names destinationArray
+            if (!TryCopyTo(destination)) {
+                __gsharp_trap(GSharpErrorCode::Argument, "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')");
+            }
+            return;
+        }
         CopyTo(destination);
     }
     __device__ inline GSharpArray<T> AsSpan() const { return *this; }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
     __device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+    __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const { return Slice<ErrorCode>(start, count, message, countMessage); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> AsSpan(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const { return Slice<ErrorCode>(start, count, startSite, countSite); }
+    // The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
+    // count and ArgumentException when the range passes the end
+    __device__ inline GSharpArray<T> AsSpanOfArray(
+        int start,
+        int count,
+        const char* outOfRangeMessage,
+        const char* argumentMessage) const {
+#ifdef GSHARP_CHECKED
+        if (start < 0 || count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, outOfRangeMessage);
+            return GSharpArray<T>();
+        }
+#endif
+        return Slice<GSharpErrorCode::Argument>(start, count, argumentMessage);
+    }
     __device__ inline bool IsEmpty() const { return length <= 0; }
     
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    // Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
+    // const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
+    // element, so the const is removed here and the code that only reads builds. [GpuReadOnly] promises that no
+    // thread writes the array during the launch, through any alias; G# reports the writes it sees (GSH0118)
     template <typename U>
-    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
+    __device__ inline GSharpArray(const GSharpArray<U>& other)
+        : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
 
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }
@@ -462,9 +556,52 @@ struct GSharpArray {
     __device__ inline int size() const { return length; }
     __device__ inline T& operator[](int index) { return data[index]; }
     __device__ inline const T& operator[](int index) const { return data[index]; }
+    // An element at a C# index of type uint, long or ulong. The index is compared with the length at its own width:
+    // narrowing it to int first would wrap 2^32 to element 0. An exact match also wins over the built-in pointer subscript
+    // reached through operator T*(), which made a long long index ambiguous (MSVC C2666, nvcc)
+    __device__ inline T& operator[](unsigned int index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    __device__ inline const T& operator[](unsigned int index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    __device__ inline T& operator[](long index) { return data[ElementIndex(static_cast<long long>(index))]; }
+    __device__ inline const T& operator[](long index) const { return data[ElementIndex(static_cast<long long>(index))]; }
+    __device__ inline T& operator[](unsigned long index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    __device__ inline const T& operator[](unsigned long index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    __device__ inline T& operator[](long long index) { return data[ElementIndex(index)]; }
+    __device__ inline const T& operator[](long long index) const { return data[ElementIndex(index)]; }
+    __device__ inline T& operator[](unsigned long long index) { return data[ElementIndex(index)]; }
+    __device__ inline const T& operator[](unsigned long long index) const { return data[ElementIndex(index)]; }
+    // IndexOutOfRangeException outside the array, as C# throws it at ldelem / stelem; a negative index is a large unsigned one.
+    // Only the checked build checks, as for an int index (semantics charter: a release CUDA build keeps three checks)
+    __device__ inline int ElementIndex(long long index) const {
+#ifdef GSHARP_CHECKED
+        if (static_cast<unsigned long long>(index) >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+#endif
+        return static_cast<int>(index);
+    }
+    __device__ inline int ElementIndex(unsigned long long index) const {
+#ifdef GSHARP_CHECKED
+        if (index >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+#endif
+        return static_cast<int>(index);
+    }
     __device__ inline operator T*() { return data; }
     __device__ inline operator const T*() const { return data; }
 };
+
+// The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988): C#
+// converts the index with conv.ovf.i.un when it is evaluated, so an index above long.MaxValue throws OverflowException
+// before a null check or the right side of an assignment. Only the checked build checks, as for the bounds above
+__device__ inline long long __gsharp_array_index_u64(unsigned long long index) {
+#ifdef GSHARP_CHECKED
+    if (index > 0x7FFFFFFFFFFFFFFFull) {
+        __gsharp_trap(GSharpErrorCode::Overflow, "Arithmetic operation resulted in an overflow.");
+    }
+#endif
+    return static_cast<long long>(index);
+}
 
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
@@ -905,16 +1042,18 @@ __forceinline__ __device__ long long __gsharp_atomicExch(long long* address, lon
 // --- Runtime Error / Trap ---
 // GSharpErrorCode and __gsharp_trap are defined above GSharpArray<T>.
 
-// The site ID of a null array read: a site of the kernel's error site table, or the builtin ID of a message
-__device__ __forceinline__ unsigned int __gsharp_null_read_site(const char* message) { return __gsharp_builtin_message_id(message); }
-__device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int site_id) { return site_id; }
+// The site ID of a check written inline (a null array read, a divisor): a site of the kernel's error site table, or the
+// builtin ID of a message
+__device__ __forceinline__ unsigned int __gsharp_inline_site(const char* message) { return __gsharp_builtin_message_id(message); }
+__device__ __forceinline__ unsigned int __gsharp_inline_site(unsigned int site_id) { return site_id; }
 
-// The failure of a null array read, written inline: the record of __gsharp_trap_site without the warp leader election,
-// then the end of __gsharp_trap_site: the thread exits (sm_70+), or traps before sm_70 and without a record.
+// The failure of a check on a hot path (a null array read, a divisor of 0), written inline: the record of
+// __gsharp_trap_site without the warp leader election, then the end of __gsharp_trap_site: the thread exits (sm_70+),
+// or traps before sm_70 and without a record.
 // [WHY] A call to __gsharp_trap_site (__noinline__) makes ptxas keep the caller's live registers across the call: the
 // cooperative ReciprocalNewtonRaphsonMegaKernel of GpuMath went from 60 registers to 255 with a 336-byte stack and no
 // longer launched with 1024 threads per block (CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE). Written inline it takes 64
-[[noreturn]] __device__ __forceinline__ void __gsharp_null_read_trap(unsigned int site_id) {
+[[noreturn]] __device__ __forceinline__ void __gsharp_inline_trap(GSharpErrorCode error, unsigned int site_id) {
     const unsigned int epoch = __gsharp_launch_epoch;
     GSharpDeviceErrorSlot* record = __gsharp_launch_record(epoch);
     if (record == nullptr) {
@@ -922,7 +1061,7 @@ __device__ __forceinline__ unsigned int __gsharp_null_read_site(unsigned int sit
         asm volatile("trap;");
         __builtin_unreachable();
     }
-    constexpr unsigned int code = static_cast<unsigned int>(GSharpErrorCode::NullReference);
+    const unsigned int code = static_cast<unsigned int>(error);
     GSharpDeviceErrorSlot* held = __gsharp_record_error(record, epoch, code, site_id);
     __gsharp_signal_abort(epoch);
 #ifdef __GSHARP_TRAP_EXITS
@@ -948,10 +1087,22 @@ __device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
 {
     if (array.data == nullptr)
     {
-        __gsharp_null_read_trap(__gsharp_null_read_site(site));
+        __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
     }
     return static_cast<A&&>(array);
 }
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException ("source"). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_source_argument(A&& array, S site)
+{
+    if (array.data == nullptr)
+    {
+        __gsharp_inline_trap(GSharpErrorCode::ArgumentNull, __gsharp_inline_site(site));
+    }
+    return static_cast<A&&>(array);
+}
+
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>
@@ -959,7 +1110,7 @@ __device__ __forceinline__ decltype(auto) __gsharp_array_at(A&& array, I index, 
 {
     if (array.data == nullptr)
     {
-        __gsharp_null_read_trap(__gsharp_null_read_site(site));
+        __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
     }
     return array[index];
 }
@@ -969,7 +1120,7 @@ __device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
 {
     if (array.data == nullptr)
     {
-        __gsharp_null_read_trap(__gsharp_null_read_site(site));
+        __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
     }
     return static_cast<A&&>(array);
 }
@@ -983,6 +1134,7 @@ __device__ __forceinline__ T __gsharp_struct_ref(T&& value, S site, Get... get)
 }
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)
 struct __gsharp_sort_compare_scope { };
+#include "Prelude/IntegerDivision.hpp"
 
 // --- AsParallel() aggregates (ParallelAggregatePlanner, Block strategy) ---
 // The linear rank and the number of the threads of the block (all three dimensions)
@@ -997,7 +1149,19 @@ struct __gsharp_plus
     __device__ __forceinline__ T operator()(T a, T b) const { return a + b; }
     __device__ __forceinline__ int operator()(int a, int b) const { return (int)((unsigned int)a + (unsigned int)b); }
     __device__ __forceinline__ long long operator()(long long a, long long b) const { return (long long)((unsigned long long)a + (unsigned long long)b); }
+    __device__ __forceinline__ __gsharp_wide_sum operator()(__gsharp_wide_sum a, __gsharp_wide_sum b) const { return __gsharp_wide_combine(a, b); }
 };
+
+// The shuffle of a value that __shfl_down_sync does not take: the wide sum goes as its two words
+template <typename T>
+__device__ __forceinline__ T __gsharp_shfl_down(unsigned int mask, T value, unsigned int offset) { return __shfl_down_sync(mask, value, offset); }
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_shfl_down(unsigned int mask, __gsharp_wide_sum value, unsigned int offset)
+{
+    __gsharp_wide_sum other;
+    other.lo = __shfl_down_sync(mask, value.lo, offset);
+    other.hi = __shfl_down_sync(mask, value.hi, offset);
+    return other;
+}
 
 // [WHY] The last warp of a block whose size is not a multiple of 32 is partial: the shuffle mask names only the lanes that
 // exist, and a value shuffled from past the last valid lane is not combined (CUB WarpReduceShfl::ReduceStep).
@@ -1008,7 +1172,7 @@ __device__ __forceinline__ T __gsharp_warp_reduce(T value, unsigned int lane, un
     #pragma unroll
     for (unsigned int offset = 16u; offset > 0u; offset >>= 1)
     {
-        const T other = __shfl_down_sync(mask, value, offset);
+        const T other = __gsharp_shfl_down(mask, value, offset);
         if (lane + offset < valid) { value = op(value, other); }
     }
     return value;
@@ -1227,6 +1391,11 @@ __device__ __forceinline__ void __gsharp_dsmem_init(TDsmem* s) {
 template <int Slot, typename TDsmem>
 __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsigned long long bytes, unsigned int align) {
     static_assert(Slot >= 0 && Slot < TDsmem::Slots, "G#: shared memory declaration has no slot in this kernel");
+    // The count is widened through long long, so only a negative count arrives as 2^63 bytes or more; it fails before
+    // anything is placed, with the exception of the CPU paths (the record has no room for the count)
+    if (bytes >= 0x8000000000000000ull) {
+        __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "G#: the count of a shared memory declaration is negative");
+    }
     unsigned int offset = s->offset[Slot];
     if (offset == __GSHARP_DSMEM_UNSET) {
         offset = (s->cursor + align - 1) & ~(align - 1);
@@ -1238,8 +1407,7 @@ __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsign
         __gsharp_trap(GSharpErrorCode::InvalidOperation, "G#: a shared memory declaration grew after a later declaration");
     }
     if (bytes > s->size[Slot]) {
-        // [WHY] bytes is checked alone first: a negative count arrives as at least 2^63 bytes, and adding the offset to
-        // it would wrap past 2^64 to a small end
+        // bytes is below 2^63 here and the offset below 2^32, so their sum cannot wrap
         unsigned long long limit = __gsharp_dynamic_smem_size();
         if (bytes > limit || (unsigned long long)offset + bytes > limit) {
             __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "G#: dynamic shared memory exceeds sharedMemBytes");
