@@ -310,7 +310,7 @@ The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environ
 
 #### Shared Memory Limit of the Target GPUs
 
-From `GSharpTargetArchitectures`, the generator finds every compute capability in its table (`GpuArchitectureLimits.Table`) that the fatbin may run on (SASS runs on its own major version from its minor version up, except Tegra `8.7`; `sm_XYa` runs on `X.Y` only; `sm_XYf` runs on its family; PTX `compute_XY` runs on `X.Y` and every newer GPU) and takes the smallest per-block shared memory limit with opt-in over them (with the default setting, `sm_86`'s 99 KB = 101376 bytes):
+From `GSharpTargetArchitectures`, the generator finds every compute capability in its table (`GpuArchitectureLimits.Table`) that the fatbin may run on (SASS runs on its own major version from its minor version up, except Tegra `8.7`; an `a` suffix (`sm_90a`) runs on that compute capability only; an `f` suffix (`sm_100f`) runs on its family; PTX `compute_XY` runs on `X.Y` and every newer GPU) and takes the smallest per-block shared memory limit with opt-in over them (with the default setting, `sm_86`'s 99 KB = 101376 bytes):
 
 | Compute capability | Shared memory per block (with opt-in) |
 | :--- | :--- |
