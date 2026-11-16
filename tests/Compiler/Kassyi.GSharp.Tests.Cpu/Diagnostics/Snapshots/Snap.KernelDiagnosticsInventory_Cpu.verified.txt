@@ -179,12 +179,15 @@
 (18,28)-(18,48) GSH0029 analyzer: Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.
 
 ## Analyzers/StructSizeDiagnostics.cs
-(65,24)-(65,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(78,23)-(78,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(104,63)-(104,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
-(129,63)-(129,74) GSH0013 analyzer: The kernel allocates 2400000000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
-(138,63)-(138,74) GSH0013 analyzer: The kernel allocates 4294967296 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(100,24)-(100,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 32768 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
+(107,24)-(107,43) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ArrayAndBlockKernel' take 32780 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
+(113,24)-(113,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 32768 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
+(132,24)-(132,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.LargeKernel' take 40980 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
+(158,63)-(158,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(183,63)-(183,74) GSH0013 analyzer: The kernel allocates 2400000000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(192,63)-(192,74) GSH0013 analyzer: The kernel allocates 4294967296 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(199,24)-(199,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.InLargeKernel' take 40980 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
+(213,24)-(213,41) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.GridScratchKernel' take 32772 bytes with the ones G# adds, which exceeds the 32764-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value.
 
 ## Generator/DialectDiagnostics.cu.cs
 (11,13)-(11,34) GSH0054 analyzer: 'Gpu.InlinePtx' is not implemented by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure

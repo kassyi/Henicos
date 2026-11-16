@@ -85,6 +85,14 @@ native.B.Length = host.B.Length;
 }
 public static unsafe void Unmarshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, global::System.IntPtr hStream = default)
 {
+if (native.A.Data == global::System.IntPtr.Zero)
+{
+host.A = default;
+}
+if (native.B.Data == global::System.IntPtr.Zero)
+{
+host.B = default;
+}
 }
 public static void CopyArrays_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -135,6 +143,10 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -185,6 +197,10 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {

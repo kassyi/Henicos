@@ -170,7 +170,11 @@ native.Offset = host.Offset;
 }
 public static unsafe void Unmarshal_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, ref AotContexts.NotNullHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)

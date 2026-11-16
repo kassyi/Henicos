@@ -40,9 +40,9 @@ public class RefLocalAcrossSplitTests
     [InlineData(TestCase, "ReboundAfterSyncThreads", "alias")]
     [InlineData(HeldTestCase, "ReboundBeforeSyncThreads", "alias")]
     [InlineData(HeldTestCase, "UsedInAnotherSwitchSection", "alias")]
-    [InlineData(HeldTestCase, "RefForEachReadAfterSyncThreads", "e")]
-    [InlineData(HeldTestCase, "RefForEachInDeviceFunction", "e")]
-    [InlineData(HeldTestCase, "RefForEachUsedBeforeSyncThreads", "e")]
+    [InlineData(HeldTestCase, "RefForEachReadAfterSyncThreads", "e:live")]
+    [InlineData(HeldTestCase, "RefForEachInDeviceFunction", "e:live")]
+    [InlineData(HeldTestCase, "RefForEachUsedBeforeSyncThreads", "e:live")]
     [Scenario(TestScenario.HappyPath)]
     public void Lower_RefLocal_HeldOnlyWhenAStateAfterTheSplitNamesIt(string testCase, string method, string expected)
     {
