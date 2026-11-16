@@ -313,7 +313,8 @@ internal sealed class DeviceExportTable
             // function reaches code whose C# meaning only the generated code gives
             ReachesGeneratedMeaning: named.ContainsKey(AttributeNames.Traits.ReachesGeneratedMeaning)
                 ? GetBool(named, AttributeNames.Traits.ReachesGeneratedMeaning)
-                : GetBool(named, AttributeNames.Traits.ManagedVersion));
+                : GetBool(named, AttributeNames.Traits.ManagedVersion),
+            PrivateManagedFrame: GetBool(named, AttributeNames.Traits.PrivateManagedFrame));
 
         var record = new DeviceExportRecord(
             kind,

@@ -371,8 +371,7 @@ public class DeviceImportTests
         bool imported)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
-            RoslynTestUtility.ReadTestCase("Generators/HandWrittenStruct.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read("Generators/HandWrittenStruct.cs"));
         var compilation = DeviceLibraryBuilder.CreateConsumer(
             RoslynTestUtility.ReadTestCase("Generators/HandWrittenStructConsumer.cs"), library);
 
@@ -402,8 +401,7 @@ public class DeviceImportTests
     public async Task DeviceImport_StructWhoseRecordFailedInDialect_StaysInTheText(string dialect, bool kept)
     {
         var a = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
-            RoslynTestUtility.ReadTestCase("Diagnostics/CrossAssembly/HandWrittenLease.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read("Diagnostics/CrossAssembly/HandWrittenLease.cs"));
         var b = DeviceLibraryBuilder.BuildWithReferences("XasmB", null, [a],
             RoslynTestUtility.ReadTestCase("Generators/FailedStructLibraryB.cs"));
         var compilation = DeviceLibraryBuilder.CreateConsumer(RoslynTestUtility.ReadTestCase("Generators/FailedStructApp.cs"), b, a);
