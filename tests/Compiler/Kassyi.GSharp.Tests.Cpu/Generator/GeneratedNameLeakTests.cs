@@ -49,6 +49,11 @@ public class GeneratedNameLeakTests
             transpiled++;
             foreach (var (number, start) in FindProbes(source))
             {
+                if (IsInStringOrComment(source, start))
+                {
+                    continue;
+                }
+
                 var symbol = renamer.GetSymbol(number);
                 if (EndsResolverSpelling(source, start, symbol, dialect))
                 {
@@ -162,4 +167,76 @@ public class GeneratedNameLeakTests
 
     private static bool EndsWith(string source, int end, string text) =>
         end >= text.Length && source.AsSpan(end - text.Length, text.Length).SequenceEqual(text);
+
+    // Whether the character at probeStart is inside a C++ string literal or comment
+    private static bool IsInStringOrComment(string source, int probeStart)
+    {
+        var inString = false;
+        var inLineComment = false;
+        var inBlockComment = false;
+
+        for (var i = 0; i < probeStart && i < source.Length; i++)
+        {
+            if (inLineComment)
+            {
+                if (source[i] == '\n')
+                {
+                    inLineComment = false;
+                }
+
+                continue;
+            }
+
+            if (inBlockComment)
+            {
+                if (source[i] == '*' && i + 1 < source.Length && source[i + 1] == '/')
+                {
+                    inBlockComment = false;
+                    i++;
+                }
+
+                continue;
+            }
+
+            if (inString)
+            {
+                if (source[i] == '\\')
+                {
+                    i++;
+                    continue;
+                }
+
+                if (source[i] == '"')
+                {
+                    inString = false;
+                }
+
+                continue;
+            }
+
+            if (source[i] == '/' && i + 1 < source.Length)
+            {
+                if (source[i + 1] == '/')
+                {
+                    inLineComment = true;
+                    i++;
+                    continue;
+                }
+
+                if (source[i + 1] == '*')
+                {
+                    inBlockComment = true;
+                    i++;
+                    continue;
+                }
+            }
+
+            if (source[i] == '"')
+            {
+                inString = true;
+            }
+        }
+
+        return inString || inLineComment || inBlockComment;
+    }
 }

@@ -32,6 +32,9 @@ public partial class NamingArchitectureTests
         "StateMachineLowerer.cs:labeled.Identifier.ValueText",
         // A kernel whose symbol does not resolve; the C# compilation already fails.
         "MethodSignatureTranspiler.cs:method.Identifier.ValueText",
+        // Diagnostic exception messages for early null checks at device function calls (#2044).
+        "ArrayNullCheck.cs:field.Name",
+        "ArrayNullCheck.cs:parameter.Name",
     };
 
     // C++ / CUDA spellings that legitimately start with "__" and are not compiler-internal names.
