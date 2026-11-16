@@ -160,22 +160,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            // __gsharp_source_argument(<source>, <site>) when the source needs the check, else <source>
-            if (PlanSourceCheck(methodName, receiver, ref context) is { } sourceSite)
-            {
-                var writer = context.Emitter.Writer;
-                writer.Append(GSharpInternalNames.Prelude.SourceArgument);
-                using (writer.Parentheses())
-                {
-                    AppendSource(receiver, in sequence, ref context);
-                    writer.Append(", ");
-                    ArrayNullCheck.AppendSite(writer, sourceSite);
-                }
-            }
-            else
-            {
-                AppendSource(receiver, in sequence, ref context);
-            }
+            AppendQuerySource(methodName, receiver, null, null, in sequence, ref context);
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)
@@ -215,22 +200,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         AppendMethodName(methodName, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            // __gsharp_source_argument(<source>, <site>) when the source needs the check, else <source>
-            if (PlanSourceCheck(methodName, sourceArg.Expression, ref context) is { } sourceSite)
-            {
-                var writer = context.Emitter.Writer;
-                writer.Append(GSharpInternalNames.Prelude.SourceArgument);
-                using (writer.Parentheses())
-                {
-                    AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
-                    writer.Append(", ");
-                    ArrayNullCheck.AppendSite(writer, sourceSite);
-                }
-            }
-            else
-            {
-                AppendSpan(sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence, ref context);
-            }
+            AppendQuerySource(methodName, sourceArg.Expression, sourceArg, symbol.Parameters[0], in sequence,
+                ref context);
 
             var stageArgCount = StackLinqHelper.GetStageArgumentCount(symbol);
             for (var i = 0; i < stageArgCount; i++)
@@ -254,11 +225,31 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
         context.Emitter.Writer.Append(methodName);
     }
 
-    private static void AppendSource(
-        ExpressionSyntax receiver,
+    // The source of the call (the receiver when argument is null): __gsharp_source_argument(<source>, <site>) when
+    // AsStackEnumerable starts from an array that needs the check, else <source>
+    private static void AppendQuerySource(
+        string methodName,
+        ExpressionSyntax source,
+        ArgumentSyntax? argument,
+        IParameterSymbol? parameter,
         in EvaluationOrder.CallSequence sequence,
-        ref TranspileContext context) =>
-        AppendSpan(receiver, null, null, in sequence, ref context);
+        ref TranspileContext context)
+    {
+        if (PlanSourceCheck(methodName, source, ref context) is not { } site)
+        {
+            AppendSpan(source, argument, parameter, in sequence, ref context);
+            return;
+        }
+
+        var writer = context.Emitter.Writer;
+        writer.Append(GSharpInternalNames.Prelude.SourceArgument);
+        using (writer.Parentheses())
+        {
+            AppendSpan(source, argument, parameter, in sequence, ref context);
+            writer.Append(", ");
+            ArrayNullCheck.AppendSite(writer, site);
+        }
+    }
 
     private static void AppendStageArgument(
         ArgumentSyntax stageArg,

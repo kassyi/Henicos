@@ -66,6 +66,12 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
             case ArrayArgumentReads.StackLinqIndexedSum:
                 o[0] = a.AsStackEnumerable().Where((v, i) => i >= 0).Sum();
                 break;
+            case ArrayArgumentReads.StackLinqInDeviceFunction:
+                o[0] = NullableStackLinqSum(a);
+                break;
+            case ArrayArgumentReads.StackLinqStaticSum:
+                o[0] = StackLinqExtensions.AsStackEnumerable(a).Sum();
+                break;
         }
     }
 
@@ -215,6 +221,10 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
     [GpuDeviceFunction]
     public static int NullableLength(int[]? x) => x.Length;
+
+    // A device function has no error site table: its check must still give ArgumentNullException its ParamName
+    [GpuDeviceFunction]
+    public static int NullableStackLinqSum(int[]? x) => x.AsStackEnumerable().Sum();
 }
 #pragma warning restore CS8602, CS8604
 
@@ -257,4 +267,10 @@ public static class ArrayArgumentReads
 
     /// <summary><c>a.AsStackEnumerable().Where((v, i) =&gt; i &gt;= 0).Sum()</c>: an indexed lambda, not fused.</summary>
     public const int StackLinqIndexedSum = 13;
+
+    /// <summary>The same query in a device function, which has no error site table.</summary>
+    public const int StackLinqInDeviceFunction = 14;
+
+    /// <summary><c>StackLinqExtensions.AsStackEnumerable(a).Sum()</c>: the static form of the call.</summary>
+    public const int StackLinqStaticSum = 15;
 }

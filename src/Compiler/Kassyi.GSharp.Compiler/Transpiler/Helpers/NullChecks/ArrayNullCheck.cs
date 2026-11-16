@@ -41,6 +41,9 @@ internal static class ArrayNullCheck
 
     private const string ArgumentTrapKind = "ArrayNullArgument";
 
+    // The trap kind of the check of the array a StackLinq query starts from
+    private const string LinqSourceTrapKind = "LinqSourceNull";
+
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
@@ -256,22 +259,27 @@ internal static class ArrayNullCheck
         return false;
     }
 
-    /// <summary>The text of the error of a null array that starts a StackLinq query, as .NET words it.</summary>
-    public const string LinqSourceMessage = "Value cannot be null. (Parameter 'source')";
-
-    private const string LinqSourceTrapKind = "LinqSourceNull";
-
     /// <summary>
     /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws
     /// <see cref="ArgumentNullException"/> for a null array as <c>AsStackEnumerable</c> does: <see langword="null"/>
     /// when the source cannot be null or is not a C# array.
     /// </summary>
+    /// <remarks>
+    /// A method without an error site table (a device function) passes the message itself, with no place, as
+    /// <see cref="ArgumentCheckSite"/> does: the message must end with <c>(Parameter 'source')</c> for the mapper to
+    /// give the exception its <see cref="ArgumentException.ParamName"/>.
+    /// </remarks>
     public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
     {
         var model = context.Query.SemanticModel;
-        return model.GetTypeSymbol(source) is IArrayTypeSymbol && NeedsCheck(source, model)
-            ? PlanSite(source, null, LinqSourceMessage, LinqSourceTrapKind, ref context)
-            : null;
+        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !NeedsCheck(source, model))
+        {
+            return null;
+        }
+
+        return context.Emitter.ErrorSites is null
+            ? new NullCheckSite(0u, ArgumentExceptionMessages.LinqSource)
+            : PlanSite(source, null, ArgumentExceptionMessages.LinqSource, LinqSourceTrapKind, ref context);
     }
 
     /// <summary>
