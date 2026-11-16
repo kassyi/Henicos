@@ -10,14 +10,16 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Differential tests for two-form CUDA kernel emission and dynamic selection (Issue #1940 / #1842).
-/// Verifies aliased in/ref parameters, non-aliased parameters, multi-block execution, and Ptr launchers.
+/// Verifies aliased in/ref parameters, non-aliased parameters, multi-block execution,
+/// asymmetric two-in parameter configurations, nested method/ctor parameter isolation, and Ptr launchers.
 /// </summary>
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingTwoFormsDifferentialTests
 {
-    // T2: Non-aliased call (separate variables). Verifies by-value form execution matches C# oracle.
+    // Non-aliased execution: separate variables passed to in and ref parameters.
+    // Verifies by-value form is dynamically selected and matches sequential C# oracle.
     internal static readonly DifferentialCase s_inAndRefSeparateVariables = new(
         KernelName(nameof(MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel)))
     {
@@ -41,7 +43,8 @@ public sealed class MarshalingTwoFormsDifferentialTests
         },
     };
 
-    // T3: Multi-block (2 blocks, 64 threads). Thread (0, 0) writes to ref second, then reads in first.
+    // Multi-block execution (2 blocks x 64 threads = 128 threads): all threads read the in parameter
+    // into allReads, while thread (0, 0) writes to ref second and reads first into observed[0].
     internal static readonly DifferentialCase s_multiBlockInAndRef = new(
         KernelName(nameof(MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel)))
     {
@@ -49,7 +52,8 @@ public sealed class MarshalingTwoFormsDifferentialTests
         Seeds = [0],
         Inputs = static (_, _) => new DiffBuffers()
             .Out<int>("observed", 1, OutputPolicy.Exact)
-            .Out<int>("final", 1, OutputPolicy.Exact),
+            .Out<int>("final", 1, OutputPolicy.Exact)
+            .Out<int>("allReads", 128, OutputPolicy.Ignore),
         Reference = static (b, _) =>
         {
             b.Get<int>("observed")[0] = 15;
@@ -59,12 +63,13 @@ public sealed class MarshalingTwoFormsDifferentialTests
         {
             var variable = 5;
             MarshalingTwoFormsDifferentialKernels.LaunchMultiBlockInAndRefKernel(
-                variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+                variable, ref variable, b.Get<int>("observed"), b.Get<int>("allReads"),
+                gridDimX: s.GridX, blockDimX: s.BlockX);
             b.Get<int>("final")[0] = variable;
         },
     };
 
-    // T4: ref readonly parameter aliased with ref parameter.
+    // Ref readonly parameter aliased with ref parameter on the same variable.
     internal static readonly DifferentialCase s_refReadOnlyAndRef = new(
         KernelName(nameof(MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel)))
     {
@@ -87,71 +92,138 @@ public sealed class MarshalingTwoFormsDifferentialTests
         },
     };
 
-    // T1: Existing aliased cases
+    // Two in parameters where the first is aliased with ref third, and the second is separate.
+    internal static readonly DifferentialCase s_twoInFirstAliased = new(
+        KernelName(nameof(MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 2, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 15;
+            b.Get<int>("observed")[1] = 7;
+            b.Get<int>("final")[0] = 15;
+        },
+        Launch = static (b, s) =>
+        {
+            var aliased = 5;
+            var separate = 7;
+            MarshalingTwoFormsDifferentialKernels.LaunchTwoInAndOneRefKernel(
+                aliased, separate, ref aliased, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = aliased;
+        },
+    };
+
+    // Two in parameters where the second is aliased with ref third, and the first is separate.
+    internal static readonly DifferentialCase s_twoInSecondAliased = new(
+        KernelName(nameof(MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 2, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 7;
+            b.Get<int>("observed")[1] = 15;
+            b.Get<int>("final")[0] = 15;
+        },
+        Launch = static (b, s) =>
+        {
+            var separate = 7;
+            var aliased = 5;
+            MarshalingTwoFormsDifferentialKernels.LaunchTwoInAndOneRefKernel(
+                separate, aliased, ref aliased, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = aliased;
+        },
+    };
+
+    // Nested method, local function, and struct constructor ordinal isolation (Item 1).
+    // Verifies non-kernel method parameters with matching ordinals are not emitted as const T*.
+    internal static readonly DifferentialCase s_nestedFunctionsAndCtor = new(
+        KernelName(nameof(MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<int>("observed", 1, OutputPolicy.Exact)
+            .Out<int>("final", 1, OutputPolicy.Exact),
+        Reference = static (b, _) =>
+        {
+            b.Get<int>("observed")[0] = 16;
+            b.Get<int>("final")[0] = 16;
+        },
+        Launch = static (b, s) =>
+        {
+            var variable = 5;
+            MarshalingTwoFormsDifferentialKernels.LaunchNestedFunctionsAndCtorKernel(
+                variable, ref variable, b.Get<int>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+            b.Get<int>("final")[0] = variable;
+        },
+    };
+
+    // Form selection observation seam: tests that unaliased calls do not resolve the by-address function handle,
+    // while aliased calls resolve it. Kills both always-by-address and always-by-value mutants.
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InAndRefOneVariable_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inAndRefOneVariable);
+    public void TwoForms_FormSelection_ObservedViaResolveCount()
+    {
+#if GSHARP_CUDA
+        var beforeUnaliased = MarshalingTwoFormsDifferentialKernels.__gsharp_hfunc_InAndRefSeparateVariablesKernel__gsharp_by_address.ResolveCount;
+        var first = 5;
+        var second = 5;
+        var observed = new int[1];
+        MarshalingTwoFormsDifferentialKernels.LaunchInAndRefSeparateVariablesKernel(first, ref second, observed);
+        var afterUnaliased = MarshalingTwoFormsDifferentialKernels.__gsharp_hfunc_InAndRefSeparateVariablesKernel__gsharp_by_address.ResolveCount;
 
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InAndOutOneVariable_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inAndOutOneVariable);
+        // Unaliased launch must NOT resolve the by-address kernel function (by-value form was launched)
+        Assert.Equal(beforeUnaliased, afterUnaliased);
 
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InFieldAndRefStruct_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inFieldAndRefStruct);
+        // Aliased launch must resolve the by-address kernel function
+        var variable = 5;
+        MarshalingTwoFormsDifferentialKernels.LaunchInAndRefSeparateVariablesKernel(variable, ref variable, observed);
+        var afterAliased = MarshalingTwoFormsDifferentialKernels.__gsharp_hfunc_InAndRefSeparateVariablesKernel__gsharp_by_address.ResolveCount;
+        Assert.Equal(beforeUnaliased + 1, afterAliased);
+#else
+        Assert.True(true, "CUDA-specific function pointer resolve count");
+#endif
+    }
 
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InStructAndRefField_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inStructAndRefField);
-
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InAndRefConverted_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inAndRefConverted);
-
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InElementAndItsArray_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inElementAndItsArray);
-
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InElementAndItsSlice_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inElementAndItsSlice);
-
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InAndTwoRefsOneVariable_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inAndTwoRefsOneVariable);
-
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void TwoForms_InReadBeforeOut_MatchesReference() =>
-        DifferentialRunner.Run(MarshalingOverlapDifferentialTests.s_inReadBeforeOut);
-
-    // T2: Non-aliased case
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void TwoForms_InAndRefSeparateVariables_MatchesReference() =>
         DifferentialRunner.Run(s_inAndRefSeparateVariables);
 
-    // T3: Multi-block case
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void TwoForms_MultiBlockInAndRef_MatchesReference() =>
         DifferentialRunner.Run(s_multiBlockInAndRef);
 
-    // T4: ref readonly case
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void TwoForms_RefReadOnlyAndRef_MatchesReference() =>
         DifferentialRunner.Run(s_refReadOnlyAndRef);
 
-    // T4: Launch...Ptr takes value type parameter T (public signature verified by passing int value directly)
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void TwoForms_TwoInFirstAliased_MatchesReference() =>
+        DifferentialRunner.Run(s_twoInFirstAliased);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void TwoForms_TwoInSecondAliased_MatchesReference() =>
+        DifferentialRunner.Run(s_twoInSecondAliased);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void TwoForms_NestedFunctionsAndCtor_MatchesReference() =>
+        DifferentialRunner.Run(s_nestedFunctionsAndCtor);
+
+    // Launch...Ptr takes value type parameter T (public signature verified by passing int value directly)
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public unsafe void TwoForms_LaunchPtr_AcceptsValueTypeParameter()

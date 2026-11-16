@@ -27,6 +27,10 @@ namespace Kassyi.GSharp.Runtime.Aot;
 public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
 {
     private Resolved? _last;
+    private int _resolveCount;
+
+    /// <summary>The number of times <see cref="Resolve(ReadOnlySpan{GSharpErrorSite})"/> was called.</summary>
+    public int ResolveCount => Volatile.Read(ref _resolveCount);
 
     /// <summary>
     /// Returns the function in the context current for a launch on this thread, loading its module there if needed.
@@ -42,6 +46,7 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
     /// <returns>The <c>CUfunction</c> handle of the kernel in the current context.</returns>
     public IntPtr Resolve(ReadOnlySpan<GSharpErrorSite> errorSites)
     {
+        Interlocked.Increment(ref _resolveCount);
         // Read before resolving: a Shutdown during the resolution leaves an older number, so the next launch
         // resolves again
         var generation = CudaModuleCache.Generation;

@@ -61,13 +61,9 @@ internal static class MethodSignatureTranspiler
             }
 
             WriteKernelMethodPrefix(ref context);
-            methodName = GlobalCppNames.GetKernelName(methodSymbol);
-            if (context.Emitter.Dialect.IsCuda &&
-                context.Emitter.CurrentKernelForm == KernelFormKind.ByAddress &&
-                context.Emitter.TwoFormsPlan.HasTwoForms)
-            {
-                methodName += GSharpInternalNames.Kernel.InByAddressSuffix;
-            }
+            methodName = context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms
+                ? context.Emitter.TwoFormsPlan.GetKernelName(context.Emitter.CurrentKernelForm)
+                : GlobalCppNames.GetKernelName(methodSymbol);
             if (hasContext)
             {
                 contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);

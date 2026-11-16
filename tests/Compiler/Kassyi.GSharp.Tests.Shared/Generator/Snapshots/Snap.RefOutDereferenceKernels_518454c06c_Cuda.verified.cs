@@ -927,7 +927,7 @@ __gsharp_array_at(__gsharp_id_2_output, __gsharp_add_i32(__gsharp_mul_i32(__gsha
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_KernelWithInParameters = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_KernelWithInParameters__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+internal static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_KernelWithInParameters__gsharp_by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__KernelWithInParameters__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_KernelWithInParameters;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerKernelWithInParameters() => global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.__gsharp_hfunc_KernelWithInParameters.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.s_errorSites);
@@ -994,8 +994,9 @@ __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_ali
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
 if (__gsharp_in_aliased)
 {
-__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.__gsharp_hfunc_KernelWithInParameters__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.s_errorSites);
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.__gsharp_hfunc_KernelWithInParameters__gsharp_by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Syntax.RefOutDereferenceKernels.s_errorSites);
 }
+global::System.Int32 __gsharp_in_val_0 = scalar;
 if (__gsharp_in_aliased)
 {
 // Marshal ref/out scalar: scalar
@@ -1019,8 +1020,7 @@ __gsharp_kernel_params[0] = &__gsharp_d_0;
 else
 {
 // Marshal scalar: scalar
-global::System.Int32 __gsharp_val_0 = scalar;
-__gsharp_kernel_params[0] = &__gsharp_val_0;
+__gsharp_kernel_params[0] = &__gsharp_in_val_0;
 }
 // Marshal scalar struct: s
 __gsharp_kernel_params[1] = &s;

@@ -285,8 +285,11 @@ internal readonly record struct KernelParameterShape
                 AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
-                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type, kernelClass) : null,
-                IsShadowStructBuffer = shape.IsByRef && IsShadowStructElement(parameter.Type),
+                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                    : null,
+                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                    IsShadowStructElement(parameter.Type),
                 HasArrayFields = hasArrayFields,
                 CpuHoldsArrayMethodName = hasArrayFields
                     ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
@@ -319,10 +322,13 @@ internal readonly record struct KernelParameterShape
         return shape.IsByRef
             ? shape with
             {
-                BufferElementTypeName = GetBufferElementTypeName(parameter.Type, kernelClass),
+                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                    : null,
                 CudaAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cuda),
                 CpuAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cpu),
-                IsShadowStructBuffer = IsShadowStructElement(parameter.Type)
+                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                    IsShadowStructElement(parameter.Type)
             }
             : shape;
     }

@@ -430,13 +430,14 @@ internal static class SymbolExtensions
 
     /// <summary>
     /// Whether the emitted signature passes <paramref name="parameter"/> as a pointer: <c>ref</c> and <c>out</c> always,
-    /// <c>in</c> and <c>ref readonly</c> only for a device function. A kernel receives an <c>in</c> parameter by value,
-    /// as the whole struct. The emitter (<c>YamlDialectBase.AppendParameter</c>) and the kernel parameter space check
-    /// (<c>KernelSignatureRule</c>) both decide with this.
+    /// <c>in</c> and <c>ref readonly</c> for a device function or for a kernel whose parameter is passed by address
+    /// (<see cref="IsKernelInPassedByAddress"/>). The emitter (<c>YamlDialectBase.AppendParameter</c>) and the kernel
+    /// parameter space check (<c>KernelSignatureRule</c>) both decide with this.
     /// </summary>
     public static bool IsPassedByPointer(this IParameterSymbol parameter, bool isKernel) =>
         parameter.RefKind is RefKind.Ref or RefKind.Out ||
-        (!isKernel && parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter);
+        (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter &&
+         (!isKernel || parameter.IsKernelInPassedByAddress()));
 
     /// <summary>
     /// Whether <paramref name="method"/> is a <c>[GpuKernel(Cooperative = true)]</c> kernel, which the launcher starts

@@ -32,8 +32,9 @@ using static GSharpInternalNames.Prelude;
 /// </remarks>
 internal static class HostLauncherTranspiler
 {
-    // [WHY] Native CPU stays single by-address form: measurements showed the performance difference between by-value
-    // and by-address on CPU is within noise (<0.001 ms).
+    // [WHY] Native CPU stays a single form: parameters are passed via host memory pointers/references with no
+    // parameter-space copy divergence, so writes through a ref parameter are immediately visible to an aliased in
+    // parameter without needing a separate by-address kernel or dynamic dispatch.
     public static void WriteCpuLauncher(in MethodEmissionPlan plan,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {

@@ -960,7 +960,7 @@ return;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BoolAllPositionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BoolAllPositionsKernel__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+internal static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_BoolAllPositionsKernel__gsharp_by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__BoolAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_BoolAllPositionsKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerBoolAllPositionsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_BoolAllPositionsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
@@ -1068,10 +1068,11 @@ __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_ali
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
 if (__gsharp_in_aliased)
 {
-__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_BoolAllPositionsKernel__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_BoolAllPositionsKernel__gsharp_by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 }
 // Marshal scalar: v
 __gsharp_kernel_params[0] = &v;
+global::System.Boolean __gsharp_in_val_1 = iv;
 if (__gsharp_in_aliased)
 {
 // Marshal ref/out scalar: iv
@@ -1095,8 +1096,7 @@ __gsharp_kernel_params[1] = &__gsharp_d_1;
 else
 {
 // Marshal scalar: iv
-global::System.Boolean __gsharp_val_1 = iv;
-__gsharp_kernel_params[1] = &__gsharp_val_1;
+__gsharp_kernel_params[1] = &__gsharp_in_val_1;
 }
 // Marshal ref/out scalar: rv
 int __gsharp_size_2 = sizeof(global::System.Boolean);
@@ -1494,7 +1494,7 @@ return;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharAllPositionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharAllPositionsKernel__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+internal static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_CharAllPositionsKernel__gsharp_by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__CharAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 private static bool __gsharp_layout_checked_CharAllPositionsKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerCharAllPositionsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_CharAllPositionsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
@@ -1602,10 +1602,11 @@ __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_ali
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
 if (__gsharp_in_aliased)
 {
-__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_CharAllPositionsKernel__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_CharAllPositionsKernel__gsharp_by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 }
 // Marshal scalar: v
 __gsharp_kernel_params[0] = &v;
+global::System.Char __gsharp_in_val_1 = iv;
 if (__gsharp_in_aliased)
 {
 // Marshal ref/out scalar: iv
@@ -1629,8 +1630,7 @@ __gsharp_kernel_params[1] = &__gsharp_d_1;
 else
 {
 // Marshal scalar: iv
-global::System.Char __gsharp_val_1 = iv;
-__gsharp_kernel_params[1] = &__gsharp_val_1;
+__gsharp_kernel_params[1] = &__gsharp_in_val_1;
 }
 // Marshal ref/out scalar: rv
 int __gsharp_size_2 = sizeof(global::System.Char);
@@ -3745,7 +3745,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed __gsharp_
 ());
 if(__gsharp_id_7_tid>=__gsharp_array_ref(__gsharp_id_4_arr, 1619929524u).length)
 {
-__gsharp_auto_result[__gsharp_global_tid] = {};
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed>{};
 return;
 }
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffAutoMixed __gsharp_id_8_elem = __gsharp_array_at(__gsharp_id_4_arr, __gsharp_id_7_tid, 1292318110u);
@@ -3775,7 +3775,7 @@ return;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AutoLayoutAllPositionsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AutoLayoutAllPositionsKernel__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+internal static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_AutoLayoutAllPositionsKernel__gsharp_by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__AutoLayoutAllPositionsKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerAutoLayoutAllPositionsKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_AutoLayoutAllPositionsKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -3900,7 +3900,7 @@ global::Kassyi.GSharp.Runtime.Interop.HostAliasStaging.CopyToDevice(__gsharp_ali
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
 if (__gsharp_in_aliased)
 {
-__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_AutoLayoutAllPositionsKernel__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_AutoLayoutAllPositionsKernel__gsharp_by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 }
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.DiffAutoMixed __gsharp_native_0 = default;
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.AotContexts.Marshal_DiffAutoMixed(ref val, ref __gsharp_native_0, null, hStream);
@@ -6191,7 +6191,7 @@ int __gsharp_id_15_oldA = (*__gsharp_id_1_refA);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultiRefScalarAndRawPointerKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
-private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultiRefScalarAndRawPointerKernel__by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
+internal static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_MultiRefScalarAndRawPointerKernel__gsharp_by_address = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingBoundaryDifferentialKernels__MultiRefScalarAndRawPointerKernel__gsharp_in_by_address", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel in the current CUDA context.</summary>
 public static void WarmupFunctionPointerMultiRefScalarAndRawPointerKernel() => global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_MultiRefScalarAndRawPointerKernel.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -6294,8 +6294,9 @@ __gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_ali
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
 if (__gsharp_in_aliased)
 {
-__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_MultiRefScalarAndRawPointerKernel__by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
+__gsharp_hfunc = global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.__gsharp_hfunc_MultiRefScalarAndRawPointerKernel__gsharp_by_address.Resolve(global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingBoundaryDifferentialKernels.s_errorSites);
 }
+global::System.Int32 __gsharp_in_val_0 = inScalar;
 if (__gsharp_in_aliased)
 {
 // Marshal ref/out scalar: inScalar
@@ -6319,8 +6320,7 @@ __gsharp_kernel_params[0] = &__gsharp_d_0;
 else
 {
 // Marshal scalar: inScalar
-global::System.Int32 __gsharp_val_0 = inScalar;
-__gsharp_kernel_params[0] = &__gsharp_val_0;
+__gsharp_kernel_params[0] = &__gsharp_in_val_0;
 }
 // Marshal ref/out scalar: refA
 int __gsharp_size_1 = sizeof(global::System.Int32);

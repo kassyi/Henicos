@@ -158,8 +158,8 @@ public static class MethodTranspiler
             plan.Declaration,
             plan.Symbol,
             new IteratorExpansionContext(plan.SemanticModel, dialect, iteratorContext.Reporter),
-            ref iteratorContext.Emitter.IteratorExpansionCounter,
-            ref iteratorContext.Emitter.ArgumentTempCounter);
+            ref iteratorContext.Emitter.Counters.IteratorExpansion,
+            ref iteratorContext.Emitter.Counters.ArgumentTemp);
 
         try
         {

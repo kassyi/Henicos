@@ -28,7 +28,7 @@ UnsupportedOperation	None	ElementAccessExpression	95
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
 UnsupportedOperation	None	PointerIndirectionExpression	38
-UnsupportedOperation	None	StackAllocArrayCreationExpression	70
+UnsupportedOperation	None	StackAllocArrayCreationExpression	72
 UnsupportedOperation	Range	RangeExpression	1
 UnsupportedOperation	SwitchExpression	SwitchExpression	49
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
@@ -42,14 +42,14 @@ UnsupportedShape	Binary	EqualsExpression	2
 UnsupportedShape	Binary	NotEqualsExpression	1
 UnsupportedShape	CompoundAssignment	AddAssignmentExpression	1
 UnsupportedShape	Conversion	AsExpression	4
-UnsupportedShape	Invocation	InvocationExpression	99
+UnsupportedShape	Invocation	InvocationExpression	100
 UnsupportedShape	IsPattern	IsPatternExpression	13
 UnsupportedShape	ObjectCreation	ObjectCreationExpression class	11
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
 statement UnsupportedOperation	Labeled	LabeledStatement	41
-statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	57
+statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	58
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	160

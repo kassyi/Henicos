@@ -328,22 +328,7 @@ internal static class KernelLaunchEmitter
         }
         else if (shape.IsByRef)
         {
-            var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
-            var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
-            writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
-            writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
-            using (WriteGroupMemberBranch(writer, plan, paramIndex))
-            {
-                WriteDeviceAllocation(writer, device, size);
-                if (shape.RefKind != RefKind.Out)
-                {
-                    writer.AppendLine("// Fast zero-allocation copy to device");
-                    var source = $"({IntPtrType})(&{native})";
-                    WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, source, size);
-                }
-            }
-
-            writer.AppendLine($"{KernelParams}[{paramIndex}] = &{device};");
+            WriteRefOrOutStructMarshal(writer, plan, paramIndex, native);
         }
         else
         {
@@ -653,7 +638,29 @@ internal static class KernelLaunchEmitter
     private static void WriteShadowRent(SourceWriter writer, in KernelParameterShape shape) =>
         writer.AppendLine($"{KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = {HostTypeNames.ArrayPoolShared}.Rent({KernelHostNames.GetLocal(LauncherLocal.Size, shape)});");
 
-    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
+    internal static void WriteRefOrOutStructMarshal(
+        SourceWriter writer, in ArraySharingPlan plan, int paramIndex, string native)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
+        writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
+        using (WriteGroupMemberBranch(writer, plan, paramIndex))
+        {
+            WriteDeviceAllocation(writer, device, size);
+            if (shape.RefKind != RefKind.Out)
+            {
+                writer.AppendLine("// Fast zero-allocation copy to device");
+                var source = $"({IntPtrType})(&{native})";
+                WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, source, size);
+            }
+        }
+
+        writer.AppendLine($"{KernelParams}[{paramIndex}] = &{device};");
+    }
+
+    internal static void WriteRefOrOutScalarMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
         var shape = plan.Parameters[paramIndex];
         var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);

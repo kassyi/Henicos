@@ -10,7 +10,7 @@ internal static class CudaTwoFormsLaunchEmitter
     /// passed by address).
     /// </summary>
     public static bool HasTwoForms(in KernelHostModel kernel) =>
-        kernel.Parameters.AsStackEnumerable().Any(static p => p.IsInReference);
+        kernel.TwoFormsPlan.HasTwoForms;
 
     /// <summary>
     /// Emits the CudaKernelFunction fields for both the by-value and by-address forms.
@@ -31,9 +31,9 @@ internal static class CudaTwoFormsLaunchEmitter
 
         if (HasTwoForms(kernel.Host))
         {
-            var byAddressField = field + "__by_address";
-            var byAddressKernelName = kernel.Host.KernelName + GSharpInternalNames.Kernel.InByAddressSuffix;
-            writer.Append($"private static readonly {FunctionType} {byAddressField} = new {FunctionType}");
+            var byAddressField = field + kernel.Host.TwoFormsPlan.ByAddressFieldSuffix;
+            var byAddressKernelName = kernel.Host.TwoFormsPlan.ByAddressKernelName;
+            writer.Append($"internal static readonly {FunctionType} {byAddressField} = new {FunctionType}");
             using (writer.Parentheses())
             {
                 writer.Append($"\"{byAddressKernelName}\", ");
@@ -81,7 +81,7 @@ internal static class CudaTwoFormsLaunchEmitter
         using (writer.Scope())
         {
             var className = kernel.Host.ClassQualifiedName;
-            var byAddressField = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey) + "__by_address";
+            var byAddressField = KernelHostNames.GetFunctionPointerFieldName(kernel.MemberKey) + kernel.Host.TwoFormsPlan.ByAddressFieldSuffix;
             writer.Append($"{GSharpInternalNames.Launcher.FunctionHandle} = {className}.{byAddressField}.Resolve");
             using (writer.Parentheses())
             {
@@ -101,37 +101,17 @@ internal static class CudaTwoFormsLaunchEmitter
     public static void WriteInScalarMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
         var shape = plan.Parameters[paramIndex];
+        var valLocal = KernelHostNames.GetLocal(LauncherLocal.InValue, shape);
+        writer.AppendLine($"{shape.TypeName} {valLocal} = {shape.Identifier};");
         writer.AppendLine("if (__gsharp_in_aliased)");
         using (writer.Scope())
         {
-            var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
-            var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
-            var pinnedTemp = KernelHostNames.GetLocal(LauncherLocal.PinnedTemp, shape);
-            writer.AppendLine($"// Marshal ref/out scalar: {shape.Identifier}");
-            writer.AppendLine($"int {size} = sizeof({shape.TypeName});");
-            using (KernelLaunchEmitter.WriteGroupMemberBranch(writer, plan, paramIndex))
-            {
-                KernelLaunchEmitter.WriteDeviceAllocation(writer, device, size);
-                if (shape.RefKind != RefKind.Out)
-                {
-                    writer.AppendLine("// Fast zero-allocation copy to device");
-                    writer.AppendLine($"fixed ({shape.TypeName}* {pinnedTemp} = &{shape.Identifier})");
-                    using (writer.Scope())
-                    {
-                        var source = $"({HostTypeNames.IntPtr}){pinnedTemp}";
-                        KernelLaunchEmitter.WriteSynchronizedCopy(
-                            writer, KernelLaunchEmitter.CopyDirection.HostToDevice, device, source, size);
-                    }
-                }
-            }
-            writer.AppendLine($"{KernelLaunchEmitter.KernelParams}[{paramIndex}] = &{device};");
+            KernelLaunchEmitter.WriteRefOrOutScalarMarshal(writer, plan, paramIndex);
         }
         writer.AppendLine("else");
         using (writer.Scope())
         {
             writer.AppendLine($"// Marshal scalar: {shape.Identifier}");
-            var valLocal = $"__gsharp_val_{paramIndex}";
-            writer.AppendLine($"{shape.TypeName} {valLocal} = {shape.Identifier};");
             writer.AppendLine($"{KernelLaunchEmitter.KernelParams}[{paramIndex}] = &{valLocal};");
         }
     }
@@ -147,22 +127,7 @@ internal static class CudaTwoFormsLaunchEmitter
         writer.AppendLine("if (__gsharp_in_aliased)");
         using (writer.Scope())
         {
-            var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
-            var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
-            writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
-            writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
-            using (KernelLaunchEmitter.WriteGroupMemberBranch(writer, plan, paramIndex))
-            {
-                KernelLaunchEmitter.WriteDeviceAllocation(writer, device, size);
-                if (shape.RefKind != RefKind.Out)
-                {
-                    writer.AppendLine("// Fast zero-allocation copy to device");
-                    var source = $"({HostTypeNames.IntPtr})(&{native})";
-                    KernelLaunchEmitter.WriteSynchronizedCopy(
-                        writer, KernelLaunchEmitter.CopyDirection.HostToDevice, device, source, size);
-                }
-            }
-            writer.AppendLine($"{KernelLaunchEmitter.KernelParams}[{paramIndex}] = &{device};");
+            KernelLaunchEmitter.WriteRefOrOutStructMarshal(writer, plan, paramIndex, native);
         }
         writer.AppendLine("else");
         using (writer.Scope())

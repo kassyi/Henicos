@@ -129,6 +129,9 @@ internal readonly record struct KernelHostModel
 
     public EquatableArray<KernelParameterShape> Parameters { get; init; }
 
+    /// <summary>The plan for two-form emission (by-value and by-address) of kernels with aliasing in parameters.</summary>
+    public KernelTwoFormsPlan TwoFormsPlan { get; init; }
+
     /// <summary>The user structs that the parameters and return type marshal, one per <c>AotContexts</c> name, in first-use order.</summary>
     public EquatableArray<StructHostSource> Structs { get; init; }
 
@@ -164,6 +167,8 @@ internal readonly record struct KernelHostModel
             .Select(KernelParameterShape.Classify)
             .AddTo(builder);
         var parameters = builder.MoveToImmutable().AsEquatableArray();
+        var kernelName = GlobalCppNames.GetKernelName(kernel);
+        var twoFormsPlan = KernelTwoFormsPlan.Create(kernelName, parameters);
         var unavailableReason = model is not null && LauncherTypeAccess.Find(kernel, model.Compilation) is { } found
             ? FormatUnavailableReason(kernel, found)
             : null;
@@ -211,6 +216,7 @@ internal readonly record struct KernelHostModel
             OwnParameterTypes = LauncherSignatures.FormatOwnParameterTypes(parameters),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
+            TwoFormsPlan = twoFormsPlan,
             LauncherUnavailableReason = unavailableReason,
             ManagedMode = managedMode,
             ManagedUnavailableReason = managedReason,
