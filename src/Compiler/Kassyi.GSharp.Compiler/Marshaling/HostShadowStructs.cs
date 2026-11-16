@@ -15,9 +15,11 @@ internal static class HostShadowStructs
         TypeLayoutCalculator.IsUserStruct(type) || TryGetNullableValue(type, out _);
 
     /// <summary>
-    /// The value type of a <c>Nullable&lt;T&gt;</c> that has a native shadow struct: <c>T</c> is not array-like and has
-    /// a device representation under both dialects. A <c>Nullable&lt;T&gt;</c> of a type without one (<c>decimal?</c>)
-    /// has no shadow; GSH0078 / GSH0079 report it.
+    /// The value type of a <c>Nullable&lt;T&gt;</c> that has a native shadow struct: <c>T</c> has a device
+    /// representation under both dialects, an array-like value (<c>Memory&lt;T&gt;?</c>, #1115) included. A
+    /// <c>Nullable&lt;T&gt;</c> of a type without one (<c>decimal?</c>) has no shadow; GSH0078 / GSH0079 report it. A
+    /// kernel parameter of a nullable array-like type keeps its own path (the nullable proxy of the launchers), since
+    /// <see cref="KernelParameterShape.Classify"/> unwraps it first.
     /// </summary>
     public static bool TryGetNullableValue(ITypeSymbol type, [NotNullWhen(true)] out ITypeSymbol? value)
     {
@@ -26,7 +28,6 @@ internal static class HostShadowStructs
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlying]
             } &&
             underlying is not ITypeParameterSymbol &&
-            !underlying.IsArrayLikeType() &&
             StructLayoutValidator.HasDeviceRepresentation(underlying, HostDialects.Cuda) &&
             StructLayoutValidator.HasDeviceRepresentation(underlying, HostDialects.Cpu))
         {
@@ -52,10 +53,12 @@ internal static class HostShadowStructs
     /// </summary>
     public static bool IsConverted(ITypeSymbol type, ITranspilerDialect dialect)
     {
-        if (TryGetNullableValue(type, out _))
+        if (TryGetNullableValue(type, out var value))
         {
-            // [WHY] The plan decides: an unsupported value has no plan to convert by and is reported instead
-            return TransferPlanner.Plan(type, dialect) is TransferPlan.Nullable { IsIdentical: false };
+            // [WHY] The plan decides: an unsupported value has no plan to convert by and is reported instead. An
+            // array-like value is a reference on the host and an array view on the device, so it always converts
+            return value.IsArrayLikeType() ||
+                   TransferPlanner.Plan(type, dialect) is TransferPlan.Nullable { IsIdentical: false };
         }
 
         return type is INamedTypeSymbol named &&
@@ -95,7 +98,8 @@ internal static class HostShadowStructs
             // The value of an identical Nullable member is copied with its bytes and needs no shadow of its own
             if (used && types.Add((INamedTypeSymbol)type))
             {
-                Collect(value, types, dialect, isMember: false);
+                var valueType = value.TryGetArrayLikeElementType(out var valueElement) ? valueElement : value;
+                Collect(valueType, types, dialect, isMember: false);
             }
 
             return;

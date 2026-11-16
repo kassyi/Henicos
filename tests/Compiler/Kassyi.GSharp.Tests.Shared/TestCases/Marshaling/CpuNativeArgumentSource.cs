@@ -26,6 +26,23 @@ public struct Holder
     public int[] Values;
 }
 
+// Struct fields of every array-like type that is not an array, and an element whose CUDA layout differs
+public struct Views
+{
+    public Memory<int> Memory;
+    public ReadOnlyMemory<int> ReadOnly;
+    public ArraySegment<int> Segment;
+    public System.Collections.Immutable.ImmutableArray<int> Immutable;
+    public Memory<Spread> Spreads;
+    public Memory<int>? Optional;
+}
+
+public struct Spread
+{
+    public float X;
+    public System.Numerics.Vector2 V;
+}
+
 // One kernel per kind of parameter the CPU launcher passes to the native launcher, and the auto results
 public static partial class Arguments
 {

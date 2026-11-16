@@ -157,5 +157,3 @@
     - case: PendingBugsDifferentialKernels.HelperDynamicSharedMemoryGrowthAfterLaterDeclKernel
       paths: [Managed]
       columns: [$exception]
-
-
