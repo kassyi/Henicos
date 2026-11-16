@@ -41,8 +41,8 @@ private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_er
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(138539502u, "SpanSortKernels.cs", 135, 25, "SortSegmentsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(590135038u, "SpanSortKernels.cs", 141, 13, "SortSegmentsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166922133u, "SpanSortKernels.cs", 277, 33, "SortTrappingComparisonKernel", "Index was out of range."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(506488466u, "SpanSortKernels.cs", 277, 74, "SortTrappingComparisonKernel", "Index was out of range."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(166922133u, "SpanSortKernels.cs", 277, 33, "SortTrappingComparisonKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(506488466u, "SpanSortKernels.cs", 277, 74, "SortTrappingComparisonKernel", "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

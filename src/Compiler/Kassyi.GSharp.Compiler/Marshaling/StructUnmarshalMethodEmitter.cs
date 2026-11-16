@@ -55,12 +55,12 @@ internal static class StructUnmarshalMethodEmitter
             return;
         }
 
-        if (member.Type.TryGetArrayLikeElementType(out var elementType))
+        if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
+            WriteUnmarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
+        else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
             writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -89,17 +89,26 @@ internal static class StructUnmarshalMethodEmitter
         }
     }
 
-    internal static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType, ITranspilerDialect dialect)
+    // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
+    internal static void WriteUnmarshalArrayLikeMember(SourceWriter writer, string host, string native,
+        ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
+        if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })
+        {
+            ArrayViewFieldEmitter.WriteUnmarshal(writer, ArrayFieldView.Create(arrayLikeType, dialect), host, native,
+                dialect);
+            return;
+        }
+
         if (!dialect.IsCuda)
         {
             WriteCpuUnmarshalArrayMember(writer, host, native, elementType, dialect);
             return;
         }
 
+        WriteNullArrayAssigned(writer, host, native);
         writer.AppendLine(
-            $"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
+            $"else if ({host} != null)");
         using (writer.Scope())
         {
             StructBlockCopyEmitter.WriteArrayElementSize(writer, host, elementType);
@@ -107,7 +116,7 @@ internal static class StructUnmarshalMethodEmitter
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                if (TypeLayoutCalculator.IsUserStruct(elementType))
+                if (HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
                 {
                     StructMarshalMethodEmitter.WriteShadowArray(writer, "tempArray", host, elementType);
 
@@ -128,6 +137,20 @@ internal static class StructUnmarshalMethodEmitter
         }
     }
 
+    // if (<native>.Data == IntPtr.Zero) <host> = default;
+    // [WHY] The kernel assigned a null array to the field (a null array has no address). The marshaled arrays are
+    // pinned or copied in place, so the host array keeps its elements, but the field itself must become what the
+    // kernel wrote, as C# does (#1841). An array the launcher marshaled is never at address 0: an empty array gets
+    // EmptyArrayData and a null host array stays null.
+    private static void WriteNullArrayAssigned(SourceWriter writer, string host, string native)
+    {
+        writer.AppendLine($"if ({native}.Data == global::System.IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{host} = default;");
+        }
+    }
+
     // if (<host> != null) {
     //   List<IntPtr> pinnedHandles = allocatedPtrs ?? throw new ArgumentNullException("allocatedPtrs");
     //   [<element shadow>[] shadow = new <element shadow>[<host>.Length];
@@ -139,12 +162,13 @@ internal static class StructUnmarshalMethodEmitter
     private static void WriteCpuUnmarshalArrayMember(SourceWriter writer, string host, string native,
         ITypeSymbol elementType, ITranspilerDialect dialect)
     {
+        WriteNullArrayAssigned(writer, host, native);
         if (!KernelParameterShape.IsConverted(elementType, dialect))
         {
             return;
         }
 
-        writer.AppendLine($"if ({host} != null && {native}.Data != global::System.IntPtr.Zero)");
+        writer.AppendLine($"else if ({host} != null)");
         using (writer.Scope())
         {
             writer.AppendAotStructPath(elementType);

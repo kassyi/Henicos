@@ -142,6 +142,10 @@ Lowering:
     SyncGridNextLabelPrefix: __gsharp_sg_next_
     # The end of a loop body where the lanes that continue wait for the others (__gsharp_ReconvergeContinue_<n>, #844)
     ReconvergeContinueLabelPrefix: __gsharp_ReconvergeContinue_
+    # The continue and break targets that the emitter writes for a labeled loop or switch that a labeled break or
+    # continue jumps to (__gsharp_LabeledContinue_<id>_<name>, __gsharp_LabeledBreak_<id>_<name>, #1990)
+    LabeledBreakLabelPrefix: __gsharp_LabeledBreak_
+    LabeledContinueLabelPrefix: __gsharp_LabeledContinue_
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
@@ -283,6 +287,9 @@ Launcher:
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
     NullableProxyPrefix: __gsharp_nullable_
+    # The AotContexts shadow struct of a Nullable<T>, and the key of its Marshal_ / Unmarshal_ methods; the rest of the
+    # name is the marshal key of T
+    NullableShadowPrefix: __gsharp_nullable_of_
     NativePrefix: __gsharp_native_
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_
@@ -428,6 +435,9 @@ Prelude:
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
     TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
+    # The type T as one name: __gsharp_type<long long>{} is the default value of a type that is written with several
+    # words or as a pointer, where a plain long long{} or int*{} is not a functional cast (DefaultValue)
+    TypedValue: { Value: __gsharp_type, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # The null checks of the array operands of System.Array methods (SpanMemberTranspilerRule). Declared by Types.hpp and
@@ -474,6 +484,17 @@ StackLinq:
     BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
     BlockReduce: { Value: __gsharp_block_reduce, Prelude: ../Prelude.cu }
     Plus: { Value: __gsharp_plus, Prelude: ../Prelude.cu }
+    # The exact integer Sum: a 64-bit accumulator for int and uint, __gsharp_wide_sum (128 bits) for long and ulong, and the
+    # range check of the result (OverflowException)
+    WideSum: { Value: __gsharp_wide_sum, Prelude: IntegerSemantics.hpp }
+    WideFromInt64: { Value: __gsharp_wide_from_i64, Prelude: IntegerSemantics.hpp }
+    WideFromUInt64: { Value: __gsharp_wide_from_u64, Prelude: IntegerSemantics.hpp }
+    WideAddInt64: { Value: __gsharp_wide_add_i64, Prelude: IntegerSemantics.hpp }
+    WideAddUInt64: { Value: __gsharp_wide_add_u64, Prelude: IntegerSemantics.hpp }
+    NarrowSumInt32: { Value: __gsharp_sum_i32, Prelude: ../StackLinq.cuh }
+    NarrowSumUInt32: { Value: __gsharp_sum_u32, Prelude: ../StackLinq.cuh }
+    NarrowSumInt64: { Value: __gsharp_sum_i64, Prelude: ../StackLinq.cuh }
+    NarrowSumUInt64: { Value: __gsharp_sum_u64, Prelude: ../StackLinq.cuh }
     # The Grid strategy (cooperative CUDA kernels): the hidden last kernel parameter and the reduction over the grid
     GridScratch: __gsharp_grid_scratch
     GridBlockRank: { Value: __gsharp_grid_block_rank, Prelude: ../Prelude.cu }

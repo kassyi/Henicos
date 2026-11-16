@@ -109,6 +109,13 @@ internal sealed class UsingExitPlan
         exit = default;
         if (!JumpTargets.TryGetTarget(jump, out var kind, out var target))
         {
+            if (LabeledJumpSyntax.GetLabelName(jump) != null)
+            {
+                kind = jump is BreakStatementSyntax ? UsingExitKind.Break : UsingExitKind.Continue;
+                exit = new UsingExit(kind, jump, StateMachineReturn: false, jump);
+                return true;
+            }
+
             // [WHY] A goto written as it is would leave the try without the Dispose: no answer is a failure
             return jump is GotoStatementSyntax { RawKind: (int)SyntaxKind.GotoStatement }
                 ? throw new InvalidOperationException(

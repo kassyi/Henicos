@@ -76,4 +76,16 @@ public static partial class RefLocalHeldByCpuStateMachineKernels
             Gpu.SyncThreads();
         }
     }
+
+    // A ref foreach without a barrier or a suspending call in the loop: nothing is held, nothing is reported
+    [GpuKernel]
+    public static void RefForEachWithoutSplit(int[] r)
+    {
+        foreach (ref int e in r.AsSpan(ThreadIndex.X, 1))
+        {
+            e += 1;
+        }
+
+        Gpu.SyncThreads();
+    }
 }

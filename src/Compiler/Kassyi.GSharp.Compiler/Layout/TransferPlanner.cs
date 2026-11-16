@@ -6,8 +6,9 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// Decides, once per type and dialect, how a value crosses the host-device boundary (<see cref="TransferPlan"/>).
 /// </summary>
 /// <remarks>
-/// The sizes and offsets come from <see cref="TypeLayoutCalculator"/>; the planner only decides the kind. No emitter
-/// reads the plan yet (#976); the launch emitters and the layout diagnostics move onto it in later steps.
+/// The sizes and offsets come from <see cref="TypeLayoutCalculator"/>; the planner only decides the kind. The launch
+/// emitters decide whether a <c>Nullable&lt;T&gt;</c> is converted from its plan (<see cref="HostShadowStructs"/>); the
+/// rest of the launch emitters and the layout diagnostics move onto it in later steps (#976).
 /// </remarks>
 internal static class TransferPlanner
 {
@@ -108,18 +109,16 @@ internal static class TransferPlanner
         }
 
         // [WHY] A Nullable converts through HasValue and GetValueOrDefault (design Q2 a), so it needs no host layout:
-        // a LayoutKind.Auto value crosses as its own Convert plan. A value that holds a managed reference (an array
-        // field) is still refused (design N4); the array would have to be carried out of a Nullable copy
-        if (!valueType.IsUnmanagedType)
-        {
-            return Unsupported($"the value of '{TypeLayoutCalculator.FormatTypeName(nullableType)}' holds a managed reference");
-        }
-
+        // a LayoutKind.Auto value, or a value that holds an array (#972), crosses as its own Convert plan
         var device = TypeLayoutCalculator.GetDeviceLayout(nullableType, dialect);
         var valueOffset = TypeLayoutCalculator.AlignUp(1, TypeLayoutCalculator.GetDeviceLayout(valueType, dialect).Alignment);
+        int? hostValueOffset = HostLayoutCalculator.TryGetHostLayout(valueType, out var hostValue)
+            ? TypeLayoutCalculator.AlignUp(1, hostValue.Alignment)
+            : null;
         return new TransferPlan.Nullable(
             value,
             valueOffset,
+            hostValueOffset,
             HostLayoutCalculator.TryGetHostLayout(nullableType, out var host) ? host.Size : null,
             device.Size
         );

@@ -302,7 +302,11 @@ native.N = host.N;
 }
 public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
 {
-if (host.S != null && native.S.Data != global::System.IntPtr.Zero)
+if (native.S.Data == global::System.IntPtr.Zero)
+{
+host.S = default;
+}
+else if (host.S != null)
 {
 int size = checked(host.S.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -318,7 +322,11 @@ handle.Free();
 }
 }
 }
-if (host.X != null && native.X.Data != global::System.IntPtr.Zero)
+if (native.X.Data == global::System.IntPtr.Zero)
+{
+host.X = default;
+}
+else if (host.X != null)
 {
 int size = checked(host.X.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -334,7 +342,11 @@ handle.Free();
 }
 }
 }
-if (host.T != null && native.T.Data != global::System.IntPtr.Zero)
+if (native.T.Data == global::System.IntPtr.Zero)
+{
+host.T = default;
+}
+else if (host.T != null)
 {
 int size = checked(host.T.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -352,7 +364,11 @@ handle.Free();
 }
 host.R = native.R;
 host.V = native.V;
-if (host.CallResult != null && native.CallResult.Data != global::System.IntPtr.Zero)
+if (native.CallResult.Data == global::System.IntPtr.Zero)
+{
+host.CallResult = default;
+}
+else if (host.CallResult != null)
 {
 int size = checked(host.CallResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -368,7 +384,11 @@ handle.Free();
 }
 }
 }
-if (host.PutResult != null && native.PutResult.Data != global::System.IntPtr.Zero)
+if (native.PutResult.Data == global::System.IntPtr.Zero)
+{
+host.PutResult = default;
+}
+else if (host.PutResult != null)
 {
 int size = checked(host.PutResult.Length * sizeof(global::System.Single));
 if (size > 0)
