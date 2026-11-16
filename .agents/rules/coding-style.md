@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/*.cs"
-description: C# guardrails and style - no empty catch, no null-forgiving operator, naming, zero allocation, the StackLinq policy, GPU kernel files.
+trigger: model_decision
+description: Read before writing or editing any C# - no empty catch, no null-forgiving operator, naming, zero allocation, the StackLinq policy, kernel files.
+paths: "**/*.cs"
 ---
 
 # Henicos Agent Context & Coding Guidelines

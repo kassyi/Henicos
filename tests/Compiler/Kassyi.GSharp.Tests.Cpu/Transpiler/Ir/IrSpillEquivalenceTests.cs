@@ -32,6 +32,7 @@ public class IrSpillEquivalenceTests(ITestOutputHelper output)
 
         output.WriteLine($"{equivalence.StatementsCompared} planned statements compared, " +
                          $"{equivalence.Unexplained.Count} unexplained, {stopwatch.ElapsedMilliseconds} ms");
+        output.WriteLine($"{equivalence.LoopConditions} while conditions planned, not compared");
         foreach (var (reason, count) in equivalence.Fallbacks.OrderBy(static p => p.Key, StringComparer.Ordinal))
         {
             output.WriteLine($"left to the syntax passes, {reason}: {count}");

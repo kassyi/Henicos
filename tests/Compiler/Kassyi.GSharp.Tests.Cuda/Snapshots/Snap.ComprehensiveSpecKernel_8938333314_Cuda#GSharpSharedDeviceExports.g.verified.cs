@@ -15,8 +15,8 @@ return (float)sqrt((double)(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsha
 ", CudaBody = @"__noinline__ __device__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
 return __gsharp_id_0_value>0;
 }
-", CppSignature = @"__noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value);
-", CppBody = @"__noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
+", CppSignature = @"inline __noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value);
+", CppBody = @"inline __noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
 return __gsharp_id_0_value>0;
 }
 ")]

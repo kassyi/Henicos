@@ -52,7 +52,7 @@ internal static class ArrayNullCheck
         IsCheckedType(semanticModel.GetTypeSymbol(receiver)) && MayBeNull(receiver, semanticModel);
 
     // A C# array, or an ImmutableArray<T>, whose default holds a null array
-    private static bool IsCheckedType(ITypeSymbol? type) =>
+    internal static bool IsCheckedType(ITypeSymbol? type) =>
         type is IArrayTypeSymbol || IsImmutableArray(type);
 
     private static bool IsImmutableArray(ITypeSymbol? type) =>
@@ -346,6 +346,23 @@ internal static class ArrayNullCheck
             context.Emitter.CurrentMemberName);
 
     /// <summary>
+    /// Plans the error site of a check at <paramref name="location"/> (a report location, or
+    /// <c>IrSource.ToLocation</c>): an entry of <paramref name="table"/> in a kernel, or the message and place in a
+    /// device function, which has no table.
+    /// </summary>
+    internal static NullCheckSite PlanSite(Location location, string? place, string message, string trapKind,
+        Compilation compilation, ErrorSiteTable? table, string? currentMemberName)
+    {
+        if (table is null)
+        {
+            return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(location)));
+        }
+
+        var memberName = GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
+        return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
+    }
+
+    /// <summary>
     /// <see cref="PlanSite(ExpressionSyntax, string, string, string, ref TranspileContext)"/> with the parts of the
     /// context it reads: the model, the error site table of the method (<see langword="null"/> in a device function) and
     /// the name of the method being emitted.
@@ -358,23 +375,33 @@ internal static class ArrayNullCheck
             return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(model, node)));
         }
 
-        var memberName = GetSourceMemberName(node, model) ?? currentMemberName ?? "";
-        return new NullCheckSite(table.Register(node, model, memberName, message, trapKind), "");
+        var location = model.GetReportLocation(node);
+        var memberName = GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
+        return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
+
+    /// <summary>Plans the error site of an array read (element or Length) from a report location.</summary>
+    internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
+        string? currentMemberName) =>
+        PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
+
+    /// <summary>Plans the error site of an argument check from a report location.</summary>
+    internal static NullCheckSite PlanArgumentSite(Location location, Compilation compilation,
+        ErrorSiteTable? table, string? currentMemberName) =>
+        PlanSite(location, null, ArgumentSiteMessage, ArgumentTrapKind, compilation, table, currentMemberName);
 
     // The method that holds the receiver in the user's source, past lambdas and local functions.
     // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
     // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
     // would give one site ID two entries (GSH0103)
-    private static string? GetSourceMemberName(ExpressionSyntax receiver, SemanticModel model)
+    private static string? GetSourceMemberName(Location location, Compilation compilation)
     {
-        if (model.GetReportLocation(receiver) is not { SourceTree: { } tree } location ||
-            !model.Compilation.ContainsSyntaxTree(tree))
+        if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
         {
             return null;
         }
 
-        var symbol = model.Compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
+        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
         while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
         {
             symbol = symbol.ContainingSymbol;
@@ -424,6 +451,17 @@ internal static class ArrayNullCheck
         }
     }
 
+    /// <summary>The kind of check a device function parameter needs.</summary>
+    internal static ArgumentCheckKind GetArgumentCheckKind(IParameterSymbol parameter)
+    {
+        if (!NonNullProof.NeedsBoundaryCheck(parameter))
+        {
+            return ArgumentCheckKind.None;
+        }
+
+        return parameter.Type is IArrayTypeSymbol ? ArgumentCheckKind.Array : ArgumentCheckKind.Struct;
+    }
+
     /// <summary>
     /// The check an argument of a device function call needs (#1409): none when the parameter has no non-nullable array
     /// to guard or the argument is proven (<see cref="NonNullProof"/>), otherwise the array or the struct fields to check
@@ -462,8 +500,8 @@ internal static class ArrayNullCheck
     /// the call (<see cref="PlanArgument"/>): the parameter asks for it and the argument is not proven.
     /// </summary>
     public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
-        NonNullProof.NeedsBoundaryCheck(parameter) &&
-        !(parameter.Type is IArrayTypeSymbol
+        GetArgumentCheckKind(parameter) is var kind && kind != ArgumentCheckKind.None &&
+        !(kind == ArgumentCheckKind.Array
             ? NonNullProof.IsProvenNonNull(argument, model)
             : NonNullProof.IsProvenStruct(argument, model));
 
@@ -513,19 +551,21 @@ internal static class ArrayNullCheck
         string trapKind,
         ref TranspileContext context)
     {
+        var model = context.Query.SemanticModel;
         var table = context.Emitter.ErrorSites;
         if (table is null)
         {
-            var place = SourcePlace.Format(context.Query.SemanticModel, argument);
+            var place = SourcePlace.Format(model, argument);
             var message = FormatArgumentMessage(parameter, fieldPath, targetType, place);
             return new NullCheckSite(0u, message);
         }
 
         var messageWithoutPlace = FormatArgumentMessage(parameter, fieldPath, targetType, null);
-        var memberName = GetSourceMemberName(argument, context.Query.SemanticModel) ??
+        var location = model.GetReportLocation(argument);
+        var memberName = GetSourceMemberName(location, model.Compilation) ??
             context.Emitter.CurrentMemberName ?? "";
         return new NullCheckSite(
-            table.Register(argument, context.Query.SemanticModel, memberName, messageWithoutPlace, trapKind), "");
+            table.Register(location, memberName, messageWithoutPlace, trapKind), "");
     }
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
@@ -540,15 +580,18 @@ internal static class ArrayNullCheck
         CppStringLiteral.Append(writer, site.Message);
     }
 
+    // Whether type is System.Index or System.Range
+    internal static bool IsIndexOrRangeType(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { Name: "Index" or "Range" } named &&
+        named.ContainingNamespace.IsSystemNamespace();
+
     // a[^1] and a[1..]: an argument of type System.Index or System.Range
     private static bool IsIndexOrRange(ExpressionSyntax argument, SemanticModel model) =>
-        argument is RangeExpressionSyntax ||
-        model.GetTypeSymbol(argument) is INamedTypeSymbol { Name: "Index" or "Range" } type &&
-        type.ContainingNamespace.IsSystemNamespace();
+        argument is RangeExpressionSyntax || IsIndexOrRangeType(model.GetTypeSymbol(argument));
 
     // An instance member of System.Array: Length, LongLength, Rank, GetLength, ... (not an extension method such as
     // AsSpan), or Length / IsEmpty of ImmutableArray<T>, which read its array (IsDefault and AsSpan do not)
-    private static bool IsArrayMember(ISymbol? member) =>
+    internal static bool IsArrayMember(ISymbol? member) =>
         member is { IsStatic: false, ContainingType.SpecialType: SpecialType.System_Array } &&
         member is not IMethodSymbol { MethodKind: MethodKind.ReducedExtension } ||
         member is IPropertySymbol { IsStatic: false, Name: "Length" or "IsEmpty" } property &&

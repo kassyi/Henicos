@@ -25,5 +25,5 @@ internal sealed class IrOpaqueStatement(SyntaxNode syntax, IOperation? operation
 
     /// <summary>This node with <paramref name="split"/>; this node itself when it is the same.</summary>
     public IrOpaqueStatement WithSplit(IrOpaqueSplit split) =>
-        split == Split ? this : new IrOpaqueStatement(Syntax, Operation, Reason, split, Source);
+        split == Split ? this : KeepSpelling(new IrOpaqueStatement(Syntax, Operation, Reason, split, Source));
 }

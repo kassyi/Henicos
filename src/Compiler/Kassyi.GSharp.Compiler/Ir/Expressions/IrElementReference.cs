@@ -19,5 +19,5 @@ internal sealed class IrElementReference(IrExpression receiver, IrExpression ind
     public IrElementReference Update(IrExpression receiver, IrExpression index) =>
         receiver == Receiver && index == Index
             ? this
-            : new IrElementReference(receiver, index, Type, Category, Source);
+            : KeepSpelling(new IrElementReference(receiver, index, Type, Category, Source));
 }

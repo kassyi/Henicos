@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// never carries a probe. String literals and comments of the source are not renamed either.
 /// </para>
 /// <para>
-/// GCNR is the test-only family for internal consistency checks; it never appears in <c>diagnostics.json</c>.
+/// GCNR is the test-only family for internal consistency checks; it never appears in <c>diagnostics.yml</c>.
 /// </para>
 /// </remarks>
 [Collection(TestCollections.CorpusScan)]

@@ -14,12 +14,11 @@ internal static class SourcePlace
     public const string Unknown = "an unknown place";
 
     /// <summary>
-    /// Formats the place of <paramref name="node"/>, which may be in a lowered tree (its original-span annotation maps it
-    /// back, <see cref="SemanticModelExtensions.GetReportLocation"/>).
+    /// Formats the place of <paramref name="location"/> (a report location, or <c>IrSource.ToLocation</c>).
     /// </summary>
-    public static string Format(SemanticModel? semanticModel, SyntaxNode node)
+    public static string Format(Location location)
     {
-        if (semanticModel?.GetReportLocation(node) is not { } location || location == Location.None)
+        if (location == Location.None)
         {
             return Unknown;
         }
@@ -34,4 +33,11 @@ internal static class SourcePlace
         var start = span.StartLinePosition;
         return $"{fileName}({start.Line + 1},{start.Character + 1})";
     }
+
+    /// <summary>
+    /// Formats the place of <paramref name="node"/>, which may be in a lowered tree (its original-span annotation maps
+    /// it back, <see cref="SemanticModelExtensions.GetReportLocation"/>).
+    /// </summary>
+    public static string Format(SemanticModel? semanticModel, SyntaxNode node) =>
+        semanticModel?.GetReportLocation(node) is { } location ? Format(location) : Unknown;
 }

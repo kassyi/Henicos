@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: Which just command runs which tests, GPU fault tests, memory budgets of the test hosts, and what CI runs and what an agent does with pull requests.
+trigger: model_decision
+description: Read before running tests, fuzzing or mutation testing, or acting on a pull request (CI, review labels, merging) - just recipes, GPU fault tests, memory budgets, CI.
 ---
 
 # Test Execution Rules (`just`)

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Kassyi.GSharp.Compiler.Analysis;
+using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
@@ -12,12 +13,14 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// dialect when not given, as for a project that does not set the property.
 /// </param>
 /// <param name="exportsDeviceCode">Whether the project exports its device code (<c>GSharpExportDeviceCode</c>).</param>
+/// <param name="targetLimits">The launch limits of the target GPUs (<c>GSharpTargetArchitectures</c>).</param>
 internal readonly struct ValidationContext(
     SemanticModel semanticModel,
     IMethodSymbol methodSymbol,
     Action<Diagnostic> reportDiagnostic,
     ITranspilerDialect? dialect = null,
-    bool exportsDeviceCode = true)
+    bool exportsDeviceCode = true,
+    TargetLimits targetLimits = default)
 {
     private sealed class MethodAnalysisCache
     {
@@ -34,6 +37,9 @@ internal readonly struct ValidationContext(
 
     /// <summary>Whether the project exports its device code (<c>GSharpExportDeviceCode</c>, the default).</summary>
     public readonly bool ExportsDeviceCode = exportsDeviceCode;
+
+    /// <summary>The launch limits of the target GPUs (<c>GSharpTargetArchitectures</c>).</summary>
+    public readonly TargetLimits TargetLimits = targetLimits;
 
     /// <summary>
     /// Whether the method being checked has a managed form that calls the managed state machines of the suspending

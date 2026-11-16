@@ -21,6 +21,16 @@ internal static class IrEffectDifferences
     public static string? Reason(IrExpression node, string kind, ExpressionEffects old, ExpressionEffects ir,
         Compilation compilation)
     {
+        // An implicit user-defined conversion runs its operator where the operand is evaluated: the IR counts it on
+        // the conversion, which has the span of the operand; the syntax walk counts it on the operation that holds
+        // the operand, which the IR counts as well
+        if (kind == More && node is IrConversion { IsImplicit: true, Conversion.Method: not null } &&
+            Differs(old, ir, throws: true))
+        {
+            return IrClassificationEquivalence.KnownPrefix +
+                   "an implicit user-defined conversion throws at its operand";
+        }
+
         if (node is IrConversion { IsImplicit: true, Operand.ConstantValue.HasValue: false } conversion)
         {
             // An implicit conversion has the span of its operand, which is not compared on its own
@@ -58,12 +68,22 @@ internal static class IrEffectDifferences
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
             when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
+        // The syntax walk treats is null as throwing
+        IrNullTest when Differs(ir, old, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "an is null pattern throws nothing",
+        // The syntax walk does not list nameof among the operations that raise nothing; it is a constant
+        IrConstant or IrConversion { IsImplicit: true, Operand: IrConstant } when Differs(ir, old, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "a nameof is a constant",
         _ => null
     };
 
     // The IR counts more than the syntax walk
     private static string? MoreReason(IrExpression node, ExpressionEffects old, ExpressionEffects ir) => node switch
     {
+        // The IR does not prove an array non-null yet
+        IrPropertyReference { Property.ContainingType.SpecialType: SpecialType.System_Array }
+            when Differs(old, ir, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "the IR does not prove an array non-null yet",
         // An operator macro is taken as writing memory; its target is not looked at
         IrUnary { Operator.Method: not null } or IrBinary { Operator.Method: not null }
             or IrCompoundAssignment { Operator.Method: not null } or IrIncrement { OperatorMethod: not null }
@@ -75,12 +95,13 @@ internal static class IrEffectDifferences
     /// <summary>Whether the reads and writes of <paramref name="effects"/> lie within those of
     /// <paramref name="bound"/>.</summary>
     public static bool IsWithin(ExpressionEffects effects, ExpressionEffects bound) =>
-        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes);
+        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes) &&
+        (!effects.MayThrow || bound.MayThrow);
 
     // narrow lies within wide, and wide within narrow plus exactly the given reads and writes
     private static bool Differs(ExpressionEffects narrow, ExpressionEffects wide, VariableSet reads = default,
-        VariableSet writes = default) =>
-        IsWithin(narrow, wide) && IsWithin(wide, narrow.Union(new ExpressionEffects(reads, writes)));
+        VariableSet writes = default, bool throws = false) =>
+        IsWithin(narrow, wide) && IsWithin(wide, narrow.Union(new ExpressionEffects(reads, writes, throws)));
 
     private static VariableSet Memory() => new() { Memory = true };
 

@@ -14,11 +14,10 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [Collection(TestCollections.GlobalStateSequential)]
 public class SwitchExpressionManagedTests : TranspilerTestBase
 {
-    [SkippableFact]
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void NoDiscardArmSwitch_UnmatchedInputOnManagedPath_ThrowsWithTheUnmatchedValue()
     {
-        Skip.If(IsCudaDialect, "The managed execution path exists only on the CPU dialects.");
         int[] input = [5];
         int[] output = [0];
 

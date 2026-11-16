@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Compiler.Ir;
 internal sealed class IrVariable
 {
     private IrVariable(IrVariableKind kind, ISymbol? symbol, ITypeSymbol type, RefKind refKind, string name, int region,
-        IrSource source)
+        IrSource source, IrDeclaredTypeForm declaredTypeForm)
     {
         Kind = kind;
         Symbol = symbol;
@@ -18,6 +18,7 @@ internal sealed class IrVariable
         Name = name;
         Region = region;
         Source = source;
+        DeclaredTypeForm = declaredTypeForm;
     }
 
     /// <summary>What the variable stands for.</summary>
@@ -46,6 +47,12 @@ internal sealed class IrVariable
     /// <summary>Where the variable is declared (the method for <see langword="this"/>).</summary>
     public IrSource Source { get; }
 
+    /// <summary>
+    /// How the source declares the variable's type: a fact about the source; whether a declaration deduces its type
+    /// is <see cref="Statements.IrLocalDeclaration.DeducesType"/>.
+    /// </summary>
+    public IrDeclaredTypeForm DeclaredTypeForm { get; }
+
     /// <summary>Whether the type is a ref struct (a span), which cannot be stored in a frame.</summary>
     public bool IsRefLike => Type.IsRefLikeType;
 
@@ -55,19 +62,23 @@ internal sealed class IrVariable
     /// <param name="nameHint">What the temporary is for (not a C++ name).</param>
     /// <param name="source">The node the temporary is created for.</param>
     public static IrVariable CreateTemporary(ITypeSymbol type, RefKind refKind, string nameHint, IrSource source) =>
-        new(IrVariableKind.Temporary, null, type, refKind, nameHint, source.Region, source);
+        new(IrVariableKind.Temporary, null, type, refKind, nameHint, source.Region, source,
+            IrDeclaredTypeForm.Deduced);
 
     // Locals, parameters and this are created by IrVariableTable only, once per symbol and region
-    internal static IrVariable CreateLocal(ILocalSymbol local, int region, IrSource source) =>
-        new(IrVariableKind.Local, local, local.Type, local.RefKind, local.Name, region, source);
+    internal static IrVariable CreateLocal(ILocalSymbol local, int region, IrSource source,
+        IrDeclaredTypeForm declaredTypeForm) =>
+        new(IrVariableKind.Local, local, local.Type, local.RefKind, local.Name, region, source, declaredTypeForm);
 
     internal static IrVariable CreateParameter(IParameterSymbol parameter, int region, IrSource source) =>
-        new(IrVariableKind.Parameter, parameter, parameter.Type, parameter.RefKind, parameter.Name, region, source);
+        new(IrVariableKind.Parameter, parameter, parameter.Type, parameter.RefKind, parameter.Name, region, source,
+            IrDeclaredTypeForm.Named);
 
     internal static IrVariable CreateThis(IMethodSymbol method, int region, IrSource source)
     {
         var type = method.ContainingType;
         var refKind = !type.IsValueType ? RefKind.None : method.IsReadOnly ? RefKind.In : RefKind.Ref;
-        return new IrVariable(IrVariableKind.This, null, type, refKind, "this", region, source);
+        return new IrVariable(IrVariableKind.This, null, type, refKind, "this", region, source,
+            IrDeclaredTypeForm.Named);
     }
 }

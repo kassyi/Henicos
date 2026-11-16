@@ -19,14 +19,16 @@ internal static class IrExpressionBuilder
         context.CancellationToken.ThrowIfCancellationRequested();
         if (OpaqueReasonOf(operation) is { } reason)
         {
-            return Opaque(operation, reason, category, context);
+            return IrExpression.WithParentheses(Opaque(operation, reason, category, context),
+                IrSpelling.ParenthesesAround(operation));
         }
 
         // OpaqueReasonOf leaves only operations with a type
         var type = operation.Type ?? context.VoidType;
         var source = context.SourceOf(operation);
-        return BuildReference(operation, type, category, source, context) ??
-               BuildComputation(operation, type, category, source, context);
+        var node = BuildReference(operation, type, category, source, context) ??
+                   BuildComputation(operation, type, category, source, context);
+        return IrExpression.WithParentheses(node, IrSpelling.ParenthesesAround(operation));
     }
 
     // The first reason in the order of IrOpaqueReason that the kind of operation alone decides
@@ -49,7 +51,8 @@ internal static class IrExpressionBuilder
     private static IrExpression? BuildReference(IOperation operation, ITypeSymbol type, IrCategory category,
         IrSource source, IrBuildContext context) => operation switch
     {
-        ILiteralOperation => new IrConstant(operation.ConstantValue.Value, null, type, source),
+        ILiteralOperation => new IrConstant(operation.ConstantValue.Value, null, type, source,
+            IrSpelling.LiteralText(operation)),
         IFieldReferenceOperation field => BuildField(field, type, category, source, context),
         ILocalReferenceOperation { Local.IsConst: true } local =>
             new IrConstant(operation.ConstantValue.Value, local.Local, type, source),
