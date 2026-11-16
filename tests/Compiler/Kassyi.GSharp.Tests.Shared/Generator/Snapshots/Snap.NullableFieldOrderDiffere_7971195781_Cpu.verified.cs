@@ -144,7 +144,7 @@ __gsharp_state = -1;return;
 }
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_i, 1787556380u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_i, 592812400u).HasValue?([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_i, 1504440732u);
-return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderArrayInner{};
+return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderArrayInner>();
 }()).__gsharp_mb_A:(-1));
 __gsharp_state=-1;
 return;
@@ -522,16 +522,16 @@ auto __gsharp_id_3_item = __gsharp_array_at(__gsharp_id_0_items, __gsharp_id_2_i
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_i,5);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o+0, 1249083746u)=__gsharp_id_3_item.__gsharp_mb_Tag;
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,1), 1987960444u)=(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?1:0);
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,2), 827583362u)=(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?__gsharp_id_3_item.__gsharp_mb_Value.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderInner{}).__gsharp_mb_A:(-1));
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,3), 249778176u)=(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?__gsharp_id_3_item.__gsharp_mb_Value.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderInner{}).__gsharp_mb_B:(-1));
-auto __gsharp_id_5_local = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderLocalOuter{};
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,2), 827583362u)=(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?__gsharp_id_3_item.__gsharp_mb_Value.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderInner>()).__gsharp_mb_A:(-1));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,3), 249778176u)=(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?(__gsharp_id_3_item.__gsharp_mb_Value.HasValue?__gsharp_id_3_item.__gsharp_mb_Value.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderInner>()).__gsharp_mb_B:(-1));
+auto __gsharp_id_5_local = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderLocalOuter>();
 if((__gsharp_id_3_item.__gsharp_mb_Tag&1)==0)
 {
 __gsharp_id_5_local.__gsharp_mb_Value=([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderLocalInner __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_mul_i32(__gsharp_id_3_item.__gsharp_mb_Tag,3); return __gsharp_tmp; }
 ());
 }
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,4), 1221100226u)=(__gsharp_id_5_local.__gsharp_mb_Value.HasValue?(__gsharp_id_5_local.__gsharp_mb_Value.HasValue?__gsharp_id_5_local.__gsharp_mb_Value.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderLocalInner{}).__gsharp_mb_A:(-7));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,4), 1221100226u)=(__gsharp_id_5_local.__gsharp_mb_Value.HasValue?(__gsharp_id_5_local.__gsharp_mb_Value.HasValue?__gsharp_id_5_local.__gsharp_mb_Value.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderLocalInner>()).__gsharp_mb_A:(-7));
 __gsharp_state=-1;
 return;
 }

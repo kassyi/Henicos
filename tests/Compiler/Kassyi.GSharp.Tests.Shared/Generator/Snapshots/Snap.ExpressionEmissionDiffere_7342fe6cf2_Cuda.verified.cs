@@ -753,9 +753,9 @@ System_Nullable<int> __gsharp_id_7_r = ([&]() {
 switch((__gsharp_id_5_v&3))
 {
 case 0: return System_Nullable<int>(1);
-case 1: return System_Nullable<int>{};
+case 1: return __gsharp_type<System_Nullable<int>>();
 case 2: return System_Nullable<int>((short)__gsharp_id_5_v);
-default: return System_Nullable<int>{};
+default: return __gsharp_type<System_Nullable<int>>();
 }
 }());
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_6_col+0, 786044472u)=([&]() {
@@ -791,7 +791,7 @@ GSharpArray<int> __gsharp_id_10_picked = ([&]() {
 switch((__gsharp_id_5_v&8))
 {
 case 0: return __gsharp_id_0_a;
-default: return GSharpArray<int>{};
+default: return __gsharp_type<GSharpArray<int>>();
 }
 }());
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_6_col,3), 1215401432u)=((__gsharp_id_10_picked.data == nullptr)?(-1):__gsharp_array_at(__gsharp_id_10_picked, __gsharp_id_4_t, 1370228259u));

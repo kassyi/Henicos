@@ -62,8 +62,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         switch (SpanWriteClassifier.ClassifyProperty(property))
         {
             case SpanPropertyKind.Empty:
-                context.Emitter.Dialect.AppendType(ref context, property.Type);
-                context.Emitter.Writer.Append("{}");
+                DefaultValue.AppendZero(property.Type, ref context);
                 return true;
             case SpanPropertyKind.IsEmpty:
                 StackArrayLocals.AppendView(node.Expression, ref context);
