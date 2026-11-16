@@ -27,14 +27,6 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var parentNode = StripParenthesesUp(invocation);
-        if (parentNode.Parent is MemberAccessExpressionSyntax memberAccess &&
-            memberAccess.Expression == parentNode &&
-            memberAccess.Parent is InvocationExpressionSyntax)
-        {
-            return;
-        }
-
         var semanticModel = context.SemanticModel;
         var cancellationToken = context.CancellationToken;
 

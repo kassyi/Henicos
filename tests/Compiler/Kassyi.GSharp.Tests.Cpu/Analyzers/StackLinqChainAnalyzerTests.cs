@@ -77,6 +77,36 @@ public class StackLinqChainAnalyzerTests : AnalyzerTestBase
         Assert.Empty(diagnostics);
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task StackLinqChain_FiftyOneStagesWithUserExtension_ReportsSLQ0001()
+    {
+        var whereChain = BuildChain(50, ".Where(x => x > 0)");
+        var source = $$"""
+            using Kassyi.ZeroAlloc.Linq;
+
+            public static class UserHelper
+            {
+                public static void MySink<TE, T>(this StackEnumerable<TE, T> s)
+                    where TE : struct, IStackEnumerator<T>, allows ref struct
+                {
+                }
+            }
+
+            public class TestClass
+            {
+                public void TestMethod(int[] data)
+                {
+                    data.AsStackEnumerable(){{whereChain}}.MySink();
+                }
+            }
+            """;
+
+        var (diagnostics, _) = await AnalyzeAsync(source);
+        var slq = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.StackLinqChainTooDeep.Id, slq.Id);
+    }
+
     [Theory]
     [InlineData("OfType")]
     [InlineData("StaticCall")]
