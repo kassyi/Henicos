@@ -53,6 +53,12 @@ internal static class CSharpExecutionEmitter
             return;
         }
 
+        if (plan.TargetCheck is { } check)
+        {
+            LaunchLimitEmitter.WriteTargetSharedMemoryCheck(writer, check.MaxBytes, check.Architecture,
+                plan.MessageName);
+        }
+
         WriteCopies(writer, plan);
         WritePinnedRun(writer, plan, asManagedFallback);
         writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");

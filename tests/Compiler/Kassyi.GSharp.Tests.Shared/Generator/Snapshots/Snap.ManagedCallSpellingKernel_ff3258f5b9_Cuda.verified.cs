@@ -231,6 +231,7 @@ __gsharp_layout_checked_InReceiverKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedCallSpellingKernels.InReceiverKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedCallSpellingKernels.InReceiverKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = values;
 global::Kassyi.GSharp.Tests.Shared.Core.SpellingCell[] __gsharp_csharp_arg_1 = cells;
 global::System.Int32[] __gsharp_csharp_arg_2 = result;

@@ -677,6 +677,7 @@ public static unsafe void LaunchStepPrivateFieldsKernel(ref global::Kassyi.GShar
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_pin_0 = &holder)
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
@@ -821,6 +822,7 @@ public static unsafe void LaunchReadExplicitSwappedKernel(global::Kassyi.GSharp.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped __gsharp_csharp_arg_0 = value;
 global::System.Int32[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.ReadExplicitSwappedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -971,6 +973,7 @@ public static unsafe void LaunchStepLibraryInternalFieldsKernel(ref global::Kass
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 fixed (global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_pin_0 = &holder)
 {
 global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;

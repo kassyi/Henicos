@@ -114,6 +114,7 @@ public static unsafe void LaunchDigitSeparatorKernel(global::System.Int32[] ints
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "DigitSeparatorLiteralKernels.DigitSeparatorKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = ints;
 global::System.UInt32[] __gsharp_csharp_arg_1 = uints;
 global::System.Int64[] __gsharp_csharp_arg_2 = longs;

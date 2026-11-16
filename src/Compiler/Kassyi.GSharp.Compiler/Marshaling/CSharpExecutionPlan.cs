@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
@@ -7,6 +9,11 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal readonly record struct CSharpExecutionPlan
 {
+    /// <summary>
+    /// The target GPU per-block shared memory check emitted at the start of a CUDA launcher's C# branch.
+    /// </summary>
+    internal readonly record struct TargetSharedMemoryCheck(int MaxBytes, string Architecture);
+
     /// <summary>The kernel in the exception messages, as <c>Type.Method</c>.</summary>
     public string MessageName { get; init; }
 
@@ -27,10 +34,16 @@ internal readonly record struct CSharpExecutionPlan
     /// </summary>
     public string? ReturnTypeName { get; init; }
 
+    /// <summary>
+    /// The target GPU shared memory check at the start of the branch (CUDA launchers that run the kernel only), or
+    /// <see langword="null"/>.
+    /// </summary>
+    public TargetSharedMemoryCheck? TargetCheck { get; init; }
+
     /// <summary>Whether the kernel returns a value.</summary>
     public bool ReturnsValue => ReturnTypeName is not null;
 
-    /// <summary>The plan of the launcher of <paramref name="kernel"/>.</summary>
+    /// <summary>The plan of the launcher of <paramref name="kernel"/> on the CPU dialect.</summary>
     /// <param name="kernel">The kernel.</param>
     /// <param name="isDevicePtr">Whether the launcher takes device pointers (<c>Launch{Kernel}Ptr</c>).</param>
     public static CSharpExecutionPlan Create(in KernelHostModel kernel, bool isDevicePtr)
@@ -50,6 +63,26 @@ internal readonly record struct CSharpExecutionPlan
         }
 
         return plan with { CannotRunReason = reason };
+    }
+
+    /// <summary>
+    /// The plan of the launcher of <paramref name="kernel"/> on the CUDA dialect: when the branch runs the kernel and
+    /// <paramref name="targetLimits"/> is known, includes the target GPU shared memory check (#799).
+    /// </summary>
+    public static CSharpExecutionPlan CreateForCuda(in KernelHostModel kernel, bool isDevicePtr,
+        in TargetLimits targetLimits)
+    {
+        var plan = Create(kernel, isDevicePtr);
+        if (plan.CannotRunReason is null && targetLimits.IsKnown)
+        {
+            return plan with
+            {
+                TargetCheck = new TargetSharedMemoryCheck(targetLimits.MaxSharedMemoryPerBlockOptIn,
+                    targetLimits.SharedMemoryLimitArchitecture)
+            };
+        }
+
+        return plan;
     }
 
     // Why the launcher cannot run the kernel as C#, before its arguments are looked at

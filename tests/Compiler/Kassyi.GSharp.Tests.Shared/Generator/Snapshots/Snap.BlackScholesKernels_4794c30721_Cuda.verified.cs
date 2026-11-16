@@ -463,6 +463,7 @@ public static unsafe void LaunchBlackScholesKernel(global::Henicos.Benchmarks.Co
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BlackScholesKernels.BlackScholesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BlackScholesKernels.BlackScholesKernel");
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesKernel(__gsharp_csharp_arg_0));
 return;

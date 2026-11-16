@@ -413,6 +413,7 @@ private unsafe delegate void __gsharp_delegate_BreakAndContinueOuterFor(uint gri
 public static unsafe void LaunchBreakAndContinueOuterFor(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -565,6 +566,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BreakAndContinueOuterFor", "LaunchBreakAndContinueOuterForPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBreakAndContinueOuterFor");
@@ -791,6 +793,7 @@ private unsafe delegate void __gsharp_delegate_LabeledWhile(uint gridDimX, uint 
 public static unsafe void LaunchLabeledWhile(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledWhile");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledWhile");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -943,6 +946,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledWhile");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledWhile");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.LabeledWhile", "LaunchLabeledWhilePtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLabeledWhile");
@@ -1170,6 +1174,7 @@ private unsafe delegate void __gsharp_delegate_SwitchInLabeledLoop(uint gridDimX
 public static unsafe void LaunchSwitchInLabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -1322,6 +1327,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SwitchInLabeledLoop", "LaunchSwitchInLabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSwitchInLabeledLoop");
@@ -1530,6 +1536,7 @@ private unsafe delegate void __gsharp_delegate_ContinueOuterRunsTheIncrement(uin
 public static unsafe void LaunchContinueOuterRunsTheIncrement(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -1682,6 +1689,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement", "LaunchContinueOuterRunsTheIncrementPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueOuterRunsTheIncrement");
@@ -1903,6 +1911,7 @@ private unsafe delegate void __gsharp_delegate_ContinueOuterEvaluatesTheDoCondit
 public static unsafe void LaunchContinueOuterEvaluatesTheDoCondition(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -2055,6 +2064,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition", "LaunchContinueOuterEvaluatesTheDoConditionPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueOuterEvaluatesTheDoCondition");
@@ -2298,6 +2308,7 @@ private unsafe delegate void __gsharp_delegate_MiddleOfThreeLoops(uint gridDimX,
 public static unsafe void LaunchMiddleOfThreeLoops(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -2450,6 +2461,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.MiddleOfThreeLoops", "LaunchMiddleOfThreeLoopsPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMiddleOfThreeLoops");
@@ -2716,6 +2728,7 @@ private unsafe delegate void __gsharp_delegate_TwoLoopsWithTheSameLabel(uint gri
 public static unsafe void LaunchTwoLoopsWithTheSameLabel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -2868,6 +2881,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel", "LaunchTwoLoopsWithTheSameLabelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTwoLoopsWithTheSameLabel");
@@ -3147,6 +3161,7 @@ private unsafe delegate void __gsharp_delegate_ForEachOverAnArray(uint gridDimX,
 public static unsafe void LaunchForEachOverAnArray(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnArray");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnArray");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -3299,6 +3314,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnArray");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnArray");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForEachOverAnArray", "LaunchForEachOverAnArrayPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForEachOverAnArray");
@@ -3590,6 +3606,7 @@ private unsafe delegate void __gsharp_delegate_ForEachOverAnIterator(uint gridDi
 public static unsafe void LaunchForEachOverAnIterator(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -3742,6 +3759,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForEachOverAnIterator", "LaunchForEachOverAnIteratorPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForEachOverAnIterator");
@@ -4012,6 +4030,7 @@ private unsafe delegate void __gsharp_delegate_BreakLabeledSwitchFromALoop(uint 
 public static unsafe void LaunchBreakLabeledSwitchFromALoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -4164,6 +4183,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop", "LaunchBreakLabeledSwitchFromALoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBreakLabeledSwitchFromALoop");
@@ -4480,6 +4500,7 @@ private unsafe delegate void __gsharp_delegate_UsingInsideTheLabeledLoop(uint gr
 public static unsafe void LaunchUsingInsideTheLabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -4632,6 +4653,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop", "LaunchUsingInsideTheLabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUsingInsideTheLabeledLoop");
@@ -4980,6 +5002,7 @@ private unsafe delegate void __gsharp_delegate_LabeledLoopInAKernelWithoutABarri
 public static unsafe void LaunchLabeledLoopInAKernelWithoutABarrier(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -5132,6 +5155,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier", "LaunchLabeledLoopInAKernelWithoutABarrierPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLabeledLoopInAKernelWithoutABarrier");
@@ -5394,6 +5418,7 @@ private unsafe delegate void __gsharp_delegate_UnlabeledJumpsNextToLabeledOnes(u
 public static unsafe void LaunchUnlabeledJumpsNextToLabeledOnes(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -5546,6 +5571,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes", "LaunchUnlabeledJumpsNextToLabeledOnesPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUnlabeledJumpsNextToLabeledOnes");
@@ -5865,6 +5891,7 @@ private unsafe delegate void __gsharp_delegate_BarrierLabeledKernel(uint gridDim
 public static unsafe void LaunchBarrierLabeledKernel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierLabeledKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierLabeledKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierLabeledKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -6014,6 +6041,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierLabeledKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierLabeledKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierLabeledKernel", "LaunchBarrierLabeledKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierLabeledKernel");
@@ -6312,6 +6340,7 @@ private unsafe delegate void __gsharp_delegate_BarrierInTheOuterBodyOnly(uint gr
 public static unsafe void LaunchBarrierInTheOuterBodyOnly(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -6461,6 +6490,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly", "LaunchBarrierInTheOuterBodyOnlyPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierInTheOuterBodyOnly");
@@ -6749,6 +6779,7 @@ private unsafe delegate void __gsharp_delegate_BarrierOutsideTheLabeledLoop(uint
 public static unsafe void LaunchBarrierOutsideTheLabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -6898,6 +6929,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop", "LaunchBarrierOutsideTheLabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBarrierOutsideTheLabeledLoop");
@@ -7359,6 +7391,7 @@ private unsafe delegate void __gsharp_delegate_SwitchWithABarrierInALabeledLoop(
 public static unsafe void LaunchSwitchWithABarrierInALabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -7508,6 +7541,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop", "LaunchSwitchWithABarrierInALabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSwitchWithABarrierInALabeledLoop");
@@ -7837,6 +7871,7 @@ private unsafe delegate void __gsharp_delegate_DoWhileWithABarrier(uint gridDimX
 public static unsafe void LaunchDoWhileWithABarrier(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.DoWhileWithABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.DoWhileWithABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.DoWhileWithABarrier", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -7986,6 +8021,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.DoWhileWithABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.DoWhileWithABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.DoWhileWithABarrier", "LaunchDoWhileWithABarrierPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDoWhileWithABarrier");
@@ -8327,6 +8363,7 @@ private unsafe delegate void __gsharp_delegate_ForEachWithABarrier(uint gridDimX
 public static unsafe void LaunchForEachWithABarrier(global::System.Int32[] xs, global::System.Int32[] items, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachWithABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachWithABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForEachWithABarrier", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -8483,6 +8520,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachWithABarrier");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachWithABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForEachWithABarrier", "LaunchForEachWithABarrierPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForEachWithABarrier");
@@ -8825,6 +8863,7 @@ private unsafe delegate void __gsharp_delegate_ForUnrollBarrierInALabeledLoop(ui
 public static unsafe void LaunchForUnrollBarrierInALabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -8974,6 +9013,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop", "LaunchForUnrollBarrierInALabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForUnrollBarrierInALabeledLoop");
@@ -9276,6 +9316,7 @@ private unsafe delegate void __gsharp_delegate_SuspendingCallInALabeledLoop(uint
 public static unsafe void LaunchSuspendingCallInALabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -9425,6 +9466,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop", "LaunchSuspendingCallInALabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSuspendingCallInALabeledLoop");
@@ -9677,6 +9719,7 @@ private unsafe delegate void __gsharp_delegate_SyncGridBodyInALabeledLoop(uint g
 public static unsafe void LaunchSyncGridBodyInALabeledLoop(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
@@ -9853,6 +9896,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop", "LaunchSyncGridBodyInALabeledLoopPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSyncGridBodyInALabeledLoop");
@@ -10171,6 +10215,7 @@ private unsafe delegate void __gsharp_delegate_WarpShuffleInTheLabeledLoopCondit
 public static unsafe void LaunchWarpShuffleInTheLabeledLoopCondition(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition", "it reaches Warp.ShuffleSync(), and the C# execution runs one GPU thread at a time");
@@ -10339,6 +10384,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition", "LaunchWarpShuffleInTheLabeledLoopConditionPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchWarpShuffleInTheLabeledLoopCondition");
@@ -10716,6 +10762,7 @@ private unsafe delegate void __gsharp_delegate_ActiveMaskAfterALabeledBreak(uint
 public static unsafe void LaunchActiveMaskAfterALabeledBreak(global::System.UInt32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
@@ -10877,6 +10924,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("LabeledJumpDifferentialKernels.ActiveMaskAfterALabeledBreak", "LaunchActiveMaskAfterALabeledBreakPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchActiveMaskAfterALabeledBreak");

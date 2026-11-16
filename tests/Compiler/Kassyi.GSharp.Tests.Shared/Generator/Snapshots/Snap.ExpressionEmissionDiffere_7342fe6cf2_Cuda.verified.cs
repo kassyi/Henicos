@@ -249,6 +249,7 @@ public static unsafe void LaunchSwitchArmConversionKernel(global::System.Int32[]
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.SwitchArmConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.SwitchArmConversionKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int64[] __gsharp_csharp_arg_1 = dst;
 global::System.Single[] __gsharp_csharp_arg_2 = fdst;
@@ -528,6 +529,7 @@ public static unsafe void LaunchFloatingSwitchKernel(global::System.Double[] d, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.FloatingSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.FloatingSwitchKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = d;
 global::System.Single[] __gsharp_csharp_arg_1 = f;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;
@@ -808,6 +810,7 @@ public static unsafe void LaunchNullableSwitchKernel(global::System.Int32[] a, g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.NullableSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.NullableSwitchKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Double[] __gsharp_csharp_arg_1 = d;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;
@@ -1084,6 +1087,7 @@ public static unsafe void LaunchNullForgivingAndArrayCoalesceKernel(global::Syst
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.NullForgivingAndArrayCoalesceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.NullForgivingAndArrayCoalesceKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = b;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;
@@ -1335,6 +1339,7 @@ public static unsafe void LaunchImplicitArgumentConversionKernel(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int64[] __gsharp_csharp_arg_1 = la;
 global::System.Single[] __gsharp_csharp_arg_2 = dst;
@@ -1700,6 +1705,7 @@ public static unsafe void LaunchNestedMemberInitializerKernel(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ExpressionEmissionDifferentialKernels.NestedMemberInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ExpressionEmissionDifferentialKernels.NestedMemberInitializerKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;

@@ -94,7 +94,8 @@ public class SharedMemoryOptInPlanTests
         var message = DynamicSharedMemoryOptIn.FormatRejection(OptInBytes + 1, 0, plan, 10, 7, "Kernels.Big");
         Assert.Equal(
             "G#: sharedMemBytes 232449 plus 0 bytes of static shared memory exceeds the 232448 " +
-            "bytes of shared memory per block of this GPU (sm_107); this GPU holds up to 334848 bytes " +
+            "bytes of shared memory per block of this GPU (sm_107); the GPU rejects the launch with " +
+            "CUDA_ERROR_INVALID_VALUE; this GPU holds up to 334848 bytes " +
             "for a kernel with [GpuKernel(AllowOversizedSharedMemory = true)] (Kernels.Big).", message);
     }
 
@@ -109,7 +110,8 @@ public class SharedMemoryOptInPlanTests
         var message = DynamicSharedMemoryOptIn.FormatRejection(OversizedBytes + 1, 0, plan, 10, 7, "Kernels.Big");
         Assert.Equal(
             "G#: sharedMemBytes 334849 plus 0 bytes of static shared memory exceeds the 232448 " +
-            "bytes of shared memory per block of this GPU (sm_107) (Kernels.Big).", message);
+            "bytes of shared memory per block of this GPU (sm_107); the GPU rejects the launch with " +
+            "CUDA_ERROR_INVALID_VALUE (Kernels.Big).", message);
     }
 
     [Theory]
@@ -191,16 +193,17 @@ public class SharedMemoryOptInPlanTests
         AssertAction(SharedMemoryOptInAction.Reject, Decide(uint.MaxValue, allowsOversized));
     }
 
-    // The message of an unmarked kernel on a GPU without an oversized limit is the one of #545
+    // The message of an unmarked kernel on a GPU without an oversized limit names the limit and the driver error
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void FormatRejection_WithoutHint_KeepsTheExistingMessage()
+    public void FormatRejection_WithoutHint_NamesTheLimitAndTheDriverError()
     {
         var plan = new SharedMemoryOptInPlan(SharedMemoryOptInAction.Reject, 101376, 0);
 
         Assert.Equal(
             "G#: sharedMemBytes 101377 plus 16 bytes of static shared memory exceeds the 101376 " +
-            "bytes of shared memory per block of this GPU (sm_86) (Kernels.Small).",
+            "bytes of shared memory per block of this GPU (sm_86); the GPU rejects the launch with " +
+            "CUDA_ERROR_INVALID_VALUE (Kernels.Small).",
             DynamicSharedMemoryOptIn.FormatRejection(101377, 16, plan, 8, 6, "Kernels.Small"));
     }
 }

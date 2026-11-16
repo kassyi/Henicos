@@ -142,6 +142,7 @@ public static unsafe void LaunchConvertedKernel(global::System.UInt32[] us, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MixedSignPromotionShapeKernels.ConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MixedSignPromotionShapeKernels.ConvertedKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = us;
 global::System.Int32[] __gsharp_csharp_arg_1 = ns;
 global::System.Int16[] __gsharp_csharp_arg_2 = ss;
@@ -496,6 +497,7 @@ public static unsafe void LaunchUnchangedKernel(global::System.UInt32[] us, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MixedSignPromotionShapeKernels.UnchangedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MixedSignPromotionShapeKernels.UnchangedKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = us;
 global::System.Int32[] __gsharp_csharp_arg_1 = ns;
 global::System.Byte[] __gsharp_csharp_arg_2 = bs;

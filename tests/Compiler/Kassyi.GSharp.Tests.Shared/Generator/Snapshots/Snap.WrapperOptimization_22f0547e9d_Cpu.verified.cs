@@ -218,6 +218,7 @@ public static unsafe void LaunchComplexSignatureKernel(ref global::System.Int32 
 {
 global::System.Runtime.CompilerServices.Unsafe.SkipInit(out scalarOut);
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperOptimizationKernels.ComplexSignatureKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = arrayVal;
@@ -384,6 +385,7 @@ if (arrayVal.Data == global::System.IntPtr.Zero && arrayVal.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "arrayVal");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WrapperOptimizationKernels.ComplexSignatureKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WrapperOptimizationKernels.ComplexSignatureKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WrapperOptimizationKernels.ComplexSignatureKernel", "LaunchComplexSignatureKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchComplexSignatureKernel");

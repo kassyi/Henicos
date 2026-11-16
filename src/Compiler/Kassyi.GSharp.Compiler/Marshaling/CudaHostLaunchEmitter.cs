@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
@@ -8,13 +9,14 @@ internal static class CudaHostLaunchEmitter
 
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
-        LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild)
+        LauncherAccessibilities accessibilities, string moduleName, bool isCheckedBuild,
+        in TargetLimits targetLimits)
     {
         CudaTwoFormsLaunchEmitter.WriteFunctionFields(writer, kernel, moduleName);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CudaLayoutGuards, kernel.MemberKey);
         WriteWarmupFunctionPointerMethod(writer, kernel);
-        WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild);
-        WriteLaunchMethod(writer, kernel, true, accessibilities.Pointer, isCheckedBuild);
+        WriteLaunchMethod(writer, kernel, false, accessibilities.Launcher, isCheckedBuild, targetLimits);
+        WriteLaunchMethod(writer, kernel, true, accessibilities.Pointer, isCheckedBuild, targetLimits);
         if (kernel.IsOverloaded)
         {
             TypedPointerLaunchEmitter.Write(writer, kernel, accessibilities.TypedPointer);
@@ -22,7 +24,7 @@ internal static class CudaHostLaunchEmitter
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr,
-        Accessibility accessibility, bool isCheckedBuild)
+        Accessibility accessibility, bool isCheckedBuild, in TargetLimits targetLimits)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.Description);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr, accessibility);
@@ -41,7 +43,8 @@ internal static class CudaHostLaunchEmitter
 
             LaunchLimitEmitter.WriteCudaCheck(writer, kernel.Host);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
-            CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr));
+            CSharpExecutionEmitter.WriteBranch(writer,
+                CSharpExecutionPlan.CreateForCuda(kernel.Host, isDevicePtr, targetLimits));
 
             writer.AppendLine(
                 $"using ({HostTypeNames.CudaContextScope} {GSharpInternalNames.Launcher.CudaContextScope} = new())");

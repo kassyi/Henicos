@@ -196,6 +196,7 @@ private unsafe delegate void __gsharp_delegate_MatrixMultiplyStressKernel(uint g
 public static unsafe void LaunchMatrixMultiplyStressKernel(global::System.Single[] a, global::System.Single[] b, global::System.Single[] c, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = a;
@@ -357,6 +358,7 @@ if (c.Data == global::System.IntPtr.Zero && c.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "c");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("HeavyGpuStressKernels.MatrixMultiplyStressKernel", "LaunchMatrixMultiplyStressKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMatrixMultiplyStressKernel");

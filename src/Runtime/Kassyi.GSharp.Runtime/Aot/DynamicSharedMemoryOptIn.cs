@@ -98,8 +98,8 @@ public static class DynamicSharedMemoryOptIn
               "[GpuKernel(AllowOversizedSharedMemory = true)]"
             : "";
         return $"G#: sharedMemBytes {sharedMemBytes} plus {staticBytes} bytes of static shared memory exceeds the " +
-            $"{plan.LimitBytes} bytes of shared memory per block of this GPU (sm_{deviceMajor}{deviceMinor}){hint} " +
-            $"({kernelName}).";
+            $"{plan.LimitBytes} bytes of shared memory per block of this GPU (sm_{deviceMajor}{deviceMinor}); " +
+            $"the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE{hint} ({kernelName}).";
     }
 
     /// <summary>

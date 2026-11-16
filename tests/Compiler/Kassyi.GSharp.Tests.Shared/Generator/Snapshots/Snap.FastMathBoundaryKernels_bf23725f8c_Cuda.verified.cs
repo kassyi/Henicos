@@ -114,6 +114,7 @@ public static unsafe void LaunchKernel_COR01_FastMath_Exp(global::System.Single[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp");
 global::System.Single[] __gsharp_csharp_arg_0 = input;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.Kernel_COR01_FastMath_Exp(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -286,6 +287,7 @@ public static unsafe void LaunchKernel_COR01_FastMath_Log(global::System.Single[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Log");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FastMathBoundaryKernels.Kernel_COR01_FastMath_Log");
 global::System.Single[] __gsharp_csharp_arg_0 = input;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.Kernel_COR01_FastMath_Log(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -458,6 +460,7 @@ public static unsafe void LaunchKernel_COR01_FastMath_Sqrt(global::System.Single
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt");
 global::System.Single[] __gsharp_csharp_arg_0 = input;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.Kernel_COR01_FastMath_Sqrt(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -630,6 +633,7 @@ public static unsafe void LaunchKernel_COR01_FastMath_Abs(global::System.Single[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs");
 global::System.Single[] __gsharp_csharp_arg_0 = input;
 global::System.Single[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.FastMathBoundaryKernels.Kernel_COR01_FastMath_Abs(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
