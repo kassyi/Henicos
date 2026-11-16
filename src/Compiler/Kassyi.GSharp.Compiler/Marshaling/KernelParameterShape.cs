@@ -62,6 +62,12 @@ internal readonly record struct KernelParameterShape
     public bool IsNullableValue { get; init; }
 
     /// <summary>
+    /// A <c>Nullable&lt;T&gt;</c> of a value that is not array-like, which crosses through its own shadow struct like a
+    /// user struct (<see cref="HostShadowStructs.TryGetNullableValue"/>).
+    /// </summary>
+    public bool IsNullableStruct { get; init; }
+
+    /// <summary>
     /// A <c>ref struct</c> type such as <c>Span&lt;T&gt;</c>, which a lambda cannot capture (the C# execution of the
     /// launcher passes a span through a pinned pointer).
     /// </summary>
@@ -272,14 +278,15 @@ internal readonly record struct KernelParameterShape
             IsCopiedOut = copyOut
         };
 
-        // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
-        if (TypeLayoutCalculator.IsUserStruct(marshaledType))
+        // A user struct or a Nullable<T> wins over by-reference: ref MyStruct goes through the native shadow struct as
+        // well
+        if (HostShadowStructs.Has(marshaledType))
         {
-            var hasArrayFields = marshaledType is INamedTypeSymbol named &&
-                TransferClassifier.TryFindArrayField(named, out _);
+            var hasArrayFields = HostShadowStructs.HoldsArrayFields(marshaledType);
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
+                IsNullableStruct = HostShadowStructs.TryGetNullableValue(marshaledType, out _),
                 CudaAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cuda) : 0,
                 CpuAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cpu) : 0,
                 AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
@@ -349,9 +356,7 @@ internal readonly record struct KernelParameterShape
     /// user struct whose host and device layouts differ (any class but <see cref="TransferClass.Identical"/>).
     /// </summary>
     public static bool IsConverted(ITypeSymbol element, ITranspilerDialect dialect) =>
-        element is INamedTypeSymbol named &&
-        TypeLayoutCalculator.IsUserStruct(named) &&
-        TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical;
+        HostShadowStructs.IsConverted(element, dialect);
 
     /// <summary>
     /// Whether the auto result array of a kernel returning <paramref name="returnType"/> is read back element by element
@@ -364,12 +369,14 @@ internal readonly record struct KernelParameterShape
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element, INamedTypeSymbol? kernelClass) =>
         !element.IsUnmanagedType ? null
-        : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
+        : IsShadowStructElement(element) ? AotHostNames.GetAotStructPath(element, kernelClass)
         : element.GetFullyQualifiedCsharpName();
 
-    // The GpuBuffer element that GetBufferElementTypeName spells as an AotContexts path
+    // The GpuBuffer element that GetBufferElementTypeName spells as an AotContexts path: a user struct, and a
+    // Nullable<T> whose CUDA layout differs from the host's (a GpuBuffer<int?> keeps its element type)
     private static bool IsShadowStructElement(ITypeSymbol element) =>
-        element.IsUnmanagedType && TypeLayoutCalculator.IsUserStruct(element);
+        element.IsUnmanagedType &&
+        (TypeLayoutCalculator.IsUserStruct(element) || HostShadowStructs.IsConverted(element, HostDialects.Cuda));
 
     // The default as C# in the launcher's signature, whatever the build host's culture
     private static string FormatDefaultValue(ITypeSymbol type, object? value) => value switch
@@ -385,7 +392,8 @@ internal readonly record struct KernelParameterShape
 
     // Only reached for an array-like type, which TryGetArrayLikeElementType has already checked by namespace
 #pragma warning disable HNT0003 // The namespace check is in TryGetArrayLikeElementType, the caller's guard
-    private static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
+    /// <summary>The container of <paramref name="arrayLike"/>, an array-like type.</summary>
+    internal static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
     {
         IArrayTypeSymbol => ArrayContainerKind.Array,
         { Name: TypeConstants.SpanType } => ArrayContainerKind.Span,

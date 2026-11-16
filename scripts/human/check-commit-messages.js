@@ -3,19 +3,23 @@
 // `<type>[(<scope>)][!]: <description>` with one of the types of this repository, or the `Revert "..."` subject that
 // `git revert` writes. Work-in-progress commits (`wip ...`) and the commits that `git rebase --autosquash` folds
 // (`fixup!`, `squash!`, `amend!`) fail with it. Pull requests are merged with a merge commit, so every commit of the
-// branch reaches `main` as it is. Merge commits (main merged into the branch) are not checked.
-// Usage: node scripts/human/check-commit-messages.js --base <ref> [--head <ref>] [--github] [--self-test]
+// branch reaches `main` as it is. Merge commits (main merged into the branch) are not checked. With --title, the title
+// of the pull request is checked by the same rule: it is the subject people read in the list of pull requests and in
+// the body of the merge commit.
+// Usage: node scripts/human/check-commit-messages.js [--base <ref> [--head <ref>]] [--title <text>] [--github]
 'use strict';
 
 const { execFileSync } = require('child_process');
 const path = require('path');
 
 const helpText = [
-    'Usage: node scripts/human/check-commit-messages.js --base <ref> [--head <ref>] [--github] [--self-test]',
+    'Usage: node scripts/human/check-commit-messages.js [--base <ref> [--head <ref>]] [--title <text>] [--github]',
+    '       node scripts/human/check-commit-messages.js --self-test',
     '',
     '  --base       The base branch (for example origin/main); the commits of <base>..<head> are checked.',
     '  --head       The tip to check (default: HEAD).',
-    '  --github     Print a GitHub Actions ::error annotation per rejected commit.',
+    '  --title      A pull request title to check by the same rule as a commit subject.',
+    '  --github     Print a GitHub Actions ::error annotation per rejected commit or title.',
     '  --self-test  Check the subject rules and exit.',
     '  --help       Show this help.',
     '',
@@ -66,6 +70,7 @@ function selfTest() {
 function main(argv) {
     let base = '';
     let head = 'HEAD';
+    let title = null;
     let github = false;
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
@@ -77,16 +82,35 @@ function main(argv) {
         if (arg === '--github') github = true;
         else if (arg === '--base' && i + 1 < argv.length) base = argv[++i];
         else if (arg === '--head' && i + 1 < argv.length) head = argv[++i];
+        else if (arg === '--title' && i + 1 < argv.length) title = argv[++i];
         else {
             console.error(`Unknown or incomplete argument: ${arg}\n\n${helpText}`);
             return 2;
         }
     }
-    if (!base) {
-        console.error(`--base is required\n\n${helpText}`);
+    if (!base && title === null) {
+        console.error(`--base or --title is required\n\n${helpText}`);
         return 2;
     }
 
+    let exitCode = 0;
+    if (title !== null && checkTitle(title, github) !== 0) exitCode = 1;
+    if (base && checkCommits(base, head, github) !== 0) exitCode = 1;
+    return exitCode;
+}
+
+function checkTitle(title, github) {
+    if (!isRejected(title)) {
+        console.log('The pull request title is a Conventional Commits subject.');
+        return 0;
+    }
+    const text = `The pull request title "${title}" is not a Conventional Commits subject`;
+    console.log(github ? `::error title=Pull request title::${text}` : text);
+    console.log('Rename it as <type>[(<scope>)][!]: <description>, for example with gh pr edit <n> --title "...".');
+    return 1;
+}
+
+function checkCommits(base, head, github) {
     const root = path.resolve(__dirname, '..', '..');
     const log = execFileSync('git', ['log', '--no-merges', '--format=%H%x09%s', `${base}..${head}`], {
         cwd: root,

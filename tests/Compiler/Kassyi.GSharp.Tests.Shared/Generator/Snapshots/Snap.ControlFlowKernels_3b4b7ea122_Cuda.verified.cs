@@ -1089,7 +1089,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NullCoalescingKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_nullableInputs, GSharpArray<int> __gsharp_id_1_fallbackValues, GSharpArray<int> __gsharp_id_2_results, unsigned int __gsharp_epoch){
+public const string NullCoalescingKernel_Source = @"static_assert(sizeof(System_Nullable<int>)==8,""int?: size"");
+static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_nullableInputs, GSharpArray<int> __gsharp_id_1_fallbackValues, GSharpArray<int> __gsharp_id_2_results, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = (int)threadIdx.x;
 System_Nullable<int> __gsharp_id_4_input = __gsharp_array_at(__gsharp_id_0_nullableInputs, __gsharp_id_3_tid, 1545595042u);
@@ -1317,7 +1319,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingAssignmentSideEffectKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_targetArray, GSharpArray<int> __gsharp_id_1_sideEffectTracker, GSharpArray<int> __gsharp_id_2_values, unsigned int __gsharp_epoch){
+public const string NullCoalescingAssignmentSideEffectKernel_Source = @"static_assert(sizeof(System_Nullable<int>)==8,""int?: size"");
+static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ControlFlowKernels__NullCoalescingAssignmentSideEffectKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_targetArray, GSharpArray<int> __gsharp_id_1_sideEffectTracker, GSharpArray<int> __gsharp_id_2_values, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = (int)threadIdx.x;
 int __gsharp_id_4_idx = __gsharp_array_at(__gsharp_id_1_sideEffectTracker, __gsharp_id_3_tid, 1084152896u);

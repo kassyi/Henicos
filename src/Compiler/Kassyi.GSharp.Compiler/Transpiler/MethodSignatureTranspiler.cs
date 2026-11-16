@@ -60,6 +60,7 @@ internal static class MethodSignatureTranspiler
                 return;
             }
 
+            NullableLayoutAssertEmitter.Write(methodSymbol, ref context);
             WriteKernelMethodPrefix(ref context);
             methodName = context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms
                 ? context.Emitter.TwoFormsPlan.GetKernelName(context.Emitter.CurrentKernelForm)

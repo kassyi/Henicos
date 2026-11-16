@@ -146,6 +146,12 @@ Generator synthesizes three key artifacts at compile time:
      `cuMemcpyHtoDAsync_v2` (freeing the `GCHandle` in `finally`).
    - On the native CPU path, `Marshal_` pins each non-null array via `GCHandle.Alloc(..., GCHandleType.Pinned)`, records
      the handle in a per-argument `List<IntPtr>`, and passes the pinned host pointer in `native.<Field>.Data`.
+   - A `Nullable<T>` (a parameter, an element, a returned value or a field) has a shadow of its own,
+     `AotContexts.__gsharp_nullable_of_<T>`, with the device layout of `System_Nullable<T>`: `HasValue` in its first byte
+     and the value at the value's device alignment (byte 8 for `Vector2?` on CUDA, where .NET puts it at byte 4). Its
+     `Marshal_` reads `HasValue` and `GetValueOrDefault()` and writes the value through the value's own shadow, so a
+     `MyStruct?` whose struct holds arrays carries them as `MyStruct` does. When the host and device layouts are the
+     same (`int?`, `double?`), the value is copied as it is, as before.
 3. **Unmarshaling Routine (`AotContexts.Unmarshal_...`) and Cleanup**:
    Upon kernel completion:
    - On CUDA, `Unmarshal_` pins each host array with `GCHandle` and copies its device memory back via
@@ -330,6 +336,7 @@ When designing AOT Context structures, follow this type support specification:
 | **Raw Pointers** | `uint*`, `void*`, `IntPtr` | **Supported** | Device pointer (`T*`) | Raw pointer pass (for pre-allocated buffers) |
 | **Nested Structs** | Custom user structs | **Supported** | Nested C++ `struct` | Recursive marshaling & unmarshaling |
 | **Enums** | `enum MyEnum : int` | **Supported** | Integral scalar type | Cast to underlying integer type |
+| **Nullable Values** | `Vector2?`, `MyStruct?`, `int?` | **Supported** | `System_Nullable<T>` (`HasValue`, then the value at its device alignment) | Copy when both layouts match, else the `AotContexts.__gsharp_nullable_of_<T>` shadow through `HasValue` and `GetValueOrDefault()` |
 | **Null Arrays** | `uint[]? buf = null` | **Supported** | `GSharpArray<T>` | Skipped; `is null`, read throws (§7) |
 | **Reference Classes** | `class MyClass { ... }` | **Prohibited** | N/A | Compile-time diagnostic error (**GSH0078**) |
 | **Multi-dimensional Arrays** | `int[,]`, `float[,,]` | **Prohibited** | N/A | Must flatten to 1D `int[]` |
