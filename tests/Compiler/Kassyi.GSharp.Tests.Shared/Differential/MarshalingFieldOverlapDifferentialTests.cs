@@ -201,6 +201,29 @@ public sealed class MarshalingFieldOverlapDifferentialTests
                 out bag, backing.AsSpan(1, 2), observed, gridDimX: s.GridX, blockDimX: s.BlockX);
         });
 
+    internal static readonly DifferentialCase s_outConvertedStructAndSlice = new(
+        FieldKernelName(nameof(MarshalingFieldOverlapDifferentialKernels.OutConvertedStructAndSliceKernel)))
+    {
+        Shape = LaunchShapes.SingleThread(),
+        Seeds = [0],
+        Inputs = static (_, _) => new DiffBuffers()
+            .Out<float>("observed", 2, OutputPolicy.Exact),
+        OracleIsLaunch = true,
+        Launch = static (b, s) =>
+        {
+            DiffVec2Padded[] items =
+            [
+                new DiffVec2Padded { A = 1f },
+                new DiffVec2Padded { A = 2f },
+                new DiffVec2Padded { A = 3f },
+                new DiffVec2Padded { A = 4f }
+            ];
+            var holder = new DiffPaddedHolder { Items = items };
+            MarshalingFieldOverlapDifferentialKernels.LaunchOutConvertedStructAndSliceKernel(
+                out holder, items.AsSpan(1, 2), b.Get<float>("observed"), gridDimX: s.GridX, blockDimX: s.BlockX);
+        },
+    };
+
     internal static readonly DifferentialCase s_readOnlySpanElementsAndSlice = BackedCase(
         nameof(MarshalingFieldOverlapDifferentialKernels.ReadOnlySpanElementsAndSliceKernel), 2,
         static (backing, observed, s) =>
@@ -242,6 +265,11 @@ public sealed class MarshalingFieldOverlapDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void FieldOverlap_OutStructThatHeldTheSliceArray_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_outStructAndSlice);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void FieldOverlap_OutStructThatHeldConvertedElementsOfTheSlice_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_outConvertedStructAndSlice);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]

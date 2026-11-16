@@ -130,6 +130,23 @@ public static partial class MarshalingFieldOverlapDifferentialKernels
         }
     }
 
+    // The out struct held an array of converted elements that the slice views: the old arrays are no memory of this
+    // launch, so the slice is no member of a group that CUDA cannot give converted elements
+    [GpuKernel]
+    public static void OutConvertedStructAndSliceKernel(
+        out DiffPaddedHolder holder,
+        Span<DiffVec2Padded> slice,
+        [Out] float[] observed)
+    {
+        holder = default;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = slice[0].A;
+            slice[1].A += 100f;
+            observed[1] = slice[1].A;
+        }
+    }
+
     // The structs are the elements of a read-only span
     [GpuKernel]
     public static void ReadOnlySpanElementsAndSliceKernel(
