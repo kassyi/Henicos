@@ -311,7 +311,11 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_NullableDiffBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, ref AotContexts.NullableDiffBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -480,7 +484,11 @@ native.Inners.Length = host.Inners.Length;
 }
 public static unsafe void Unmarshal_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, ref AotContexts.NullableDiffArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Items != null && native.Items.Data != global::System.IntPtr.Zero)
+if (native.Items.Data == global::System.IntPtr.Zero)
+{
+host.Items = default;
+}
+else if (host.Items != null)
 {
 int size = checked(host.Items.Length * sizeof(AotContexts.__gsharp_nullable_of_Vector2));
 if (size > 0)
@@ -501,7 +509,11 @@ Unmarshal___gsharp_nullable_of_Vector2(ref host.Items[i], ref tempArray[i], hStr
 }
 }
 }
-if (host.Inners != null && native.Inners.Data != global::System.IntPtr.Zero)
+if (native.Inners.Data == global::System.IntPtr.Zero)
+{
+host.Inners = default;
+}
+else if (host.Inners != null)
 {
 int size = checked(host.Inners.Length * sizeof(AotContexts.__gsharp_nullable_of_NullableDiffInner));
 if (size > 0)
@@ -809,7 +821,7 @@ public static void WarmupFunctionPointerRefsKernel() => global::Kassyi.GSharp.Te
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefsKernel(ref global::System.Nullable<global::System.Numerics.Vector2> v, ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner> inner, ref global::System.Nullable<global::System.Int32> i, out global::System.Nullable<global::System.Numerics.Vector2> made, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-made = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out made);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingNullableDifferentialKernels.RefsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {

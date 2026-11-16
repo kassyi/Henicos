@@ -248,6 +248,10 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_NullableDiffBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, ref AotContexts.NullableDiffBag native, global::System.IntPtr hStream = default)
 {
 host.Tag = native.Tag;
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_NullableDiffBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -333,6 +337,14 @@ native.Inners.Length = host.Inners.Length;
 }
 public static unsafe void Unmarshal_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, ref AotContexts.NullableDiffArrayHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Items.Data == global::System.IntPtr.Zero)
+{
+host.Items = default;
+}
+if (native.Inners.Data == global::System.IntPtr.Zero)
+{
+host.Inners = default;
+}
 }
 public static void CopyArrays_NullableDiffArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -1011,7 +1023,7 @@ private unsafe delegate void __gsharp_delegate_RefsKernel(uint gridDimX, uint gr
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefsKernel(ref global::System.Nullable<global::System.Numerics.Vector2> v, ref global::System.Nullable<global::Kassyi.GSharp.Tests.Shared.Differential.NullableDiffInner> inner, ref global::System.Nullable<global::System.Int32> i, out global::System.Nullable<global::System.Numerics.Vector2> made, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-made = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out made);
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingNullableDifferentialKernels.RefsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
