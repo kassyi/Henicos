@@ -601,19 +601,19 @@ return;
 }
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_5_tid,7);
 __gsharp_array_at(__gsharp_id_4_probe, __gsharp_id_6_o+0, 133826836u)=(__gsharp_id_0_v.HasValue?1.0f:0.0f);
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,1), 223287868u)=(__gsharp_id_0_v.HasValue?__gsharp_id_0_v.Value:float2{}).y;
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,1), 223287868u)=(__gsharp_id_0_v.HasValue?__gsharp_id_0_v.Value:__gsharp_type<float2>()).y;
 __gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,2), 47774528u)=(__gsharp_id_1_inner.HasValue?1.0f:0.0f);
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,3), 1505986880u)=(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{}).__gsharp_mb_V.y+(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{}).__gsharp_mb_X;
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,3), 1505986880u)=(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y+(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_X;
 __gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,4), 704215116u)=(__gsharp_id_2_bag.HasValue?1.0f:0.0f);
 float __gsharp_id_7_sum = 0.0f;
 if(__gsharp_id_2_bag.HasValue)
 {
-auto __gsharp_id_8_data = (__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{}).__gsharp_mb_Data;
+auto __gsharp_id_8_data = (__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data;
 for(int __gsharp_id_9_k = 0;__gsharp_id_9_k<__gsharp_array_ref(__gsharp_id_8_data, 769339604u).length;__gsharp_id_9_k++)
 {
 __gsharp_id_7_sum+=__gsharp_array_at(__gsharp_id_8_data, __gsharp_id_9_k, 1064248068u);
 }
-__gsharp_id_7_sum+=(__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{}).__gsharp_mb_Tag;
+__gsharp_id_7_sum+=(__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Tag;
 }
 __gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,5), 1813157712u)=__gsharp_id_7_sum;
 __gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,6), 2109704680u)=([&]() {
@@ -801,11 +801,11 @@ if(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threa
 return;
 }
 __gsharp_array_at(__gsharp_id_4_o, 0, 1826031696u)=((*__gsharp_id_0_v).HasValue?1:0);
-auto __gsharp_id_5_old = ((*__gsharp_id_0_v).HasValue?(*__gsharp_id_0_v).Value:float2{});
+auto __gsharp_id_5_old = ((*__gsharp_id_0_v).HasValue?(*__gsharp_id_0_v).Value:__gsharp_type<float2>());
 (*__gsharp_id_0_v)=((*__gsharp_id_0_v).HasValue?float2{__gsharp_id_5_old.x+10.0f, __gsharp_id_5_old.y+20.0f}:float2{7.0f, 8.0f});
 if((*__gsharp_id_1_inner).HasValue)
 {
-auto __gsharp_id_6_value = ((*__gsharp_id_1_inner).HasValue?(*__gsharp_id_1_inner).Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{});
+auto __gsharp_id_6_value = ((*__gsharp_id_1_inner).HasValue?(*__gsharp_id_1_inner).Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>());
 __gsharp_id_6_value.__gsharp_mb_V=float2{__gsharp_id_6_value.__gsharp_mb_V.y, __gsharp_id_6_value.__gsharp_mb_X};
 (*__gsharp_id_1_inner)=__gsharp_id_6_value;
 }
@@ -1218,11 +1218,11 @@ return;
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_4_tid,3);
 __gsharp_array_at(__gsharp_id_3_probe, __gsharp_id_5_o+0, 1508181464u)=(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 2020841169u).HasValue?([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 1203355153u);
-return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:float2{};
+return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_type<float2>();
 }()).y:(-1.0f));
 __gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,1), 465722720u)=(__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 1975337103u).HasValue?([&]() {
 auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 698078899u);
-return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{};
+return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>();
 }()).__gsharp_mb_V.y:(-1.0f));
 __gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,2), 364189152u)=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_array_at(__gsharp_id_2_c, __gsharp_id_4_tid, 1285608305u);
@@ -1906,8 +1906,8 @@ return;
 auto __gsharp_id_3_item = __gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 1817500193u);
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
 __gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_4_o+0, 1785893264u)=__gsharp_id_3_item.__gsharp_mb_A;
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 1478174356u)=(__gsharp_id_3_item.__gsharp_mb_V.HasValue?(__gsharp_id_3_item.__gsharp_mb_V.HasValue?__gsharp_id_3_item.__gsharp_mb_V.Value:float2{}).y:(-1.0f));
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1143628560u)=(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?__gsharp_id_3_item.__gsharp_mb_Inner.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{}).__gsharp_mb_V.y:(-1.0f));
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 1478174356u)=(__gsharp_id_3_item.__gsharp_mb_V.HasValue?(__gsharp_id_3_item.__gsharp_mb_V.HasValue?__gsharp_id_3_item.__gsharp_mb_V.Value:__gsharp_type<float2>()).y:(-1.0f));
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1143628560u)=(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?__gsharp_id_3_item.__gsharp_mb_Inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y:(-1.0f));
 __gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 807692312u)=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_3_item.__gsharp_mb_N;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
@@ -1916,7 +1916,7 @@ __gsharp_id_3_item.__gsharp_mb_V=(__gsharp_id_3_item.__gsharp_mb_V.HasValue?Syst
 __gsharp_id_3_item.__gsharp_mb_Inner=([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_id_3_item.__gsharp_mb_A; __gsharp_tmp.__gsharp_mb_V = float2{__gsharp_id_2_tid*0.5f, __gsharp_id_2_tid*0.25f}; return __gsharp_tmp; }
 ());
-__gsharp_id_3_item.__gsharp_mb_N=(__gsharp_id_3_item.__gsharp_mb_N.HasValue?System_Nullable<int>(__gsharp_add_i32((__gsharp_id_3_item.__gsharp_mb_N.HasValue?__gsharp_id_3_item.__gsharp_mb_N.Value:int{}),1)):System_Nullable<int>());
+__gsharp_id_3_item.__gsharp_mb_N=(__gsharp_id_3_item.__gsharp_mb_N.HasValue?System_Nullable<int>(__gsharp_add_i32((__gsharp_id_3_item.__gsharp_mb_N.HasValue?__gsharp_id_3_item.__gsharp_mb_N.Value:__gsharp_type<int>()),1)):System_Nullable<int>());
 __gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 65838444u)=__gsharp_id_3_item;
 }
 ";
@@ -2137,11 +2137,11 @@ return;
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
 __gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_3_o+0, 1566102160u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 1623906402u).HasValue?([&]() {
 auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 290943898u);
-return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:float2{};
+return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_type<float2>();
 }()).y:(-1.0f));
 __gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_3_o,1), 31014444u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 1782464557u).HasValue?([&]() {
 auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 1124505863u);
-return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner{};
+return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>();
 }()).__gsharp_mb_V.y:(-1.0f));
 __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 245590542u)=float2{__gsharp_id_2_tid*3.0f, __gsharp_id_2_tid*5.0f};
 __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 629808189u)=nullptr;
@@ -2314,15 +2314,15 @@ if(__gsharp_id_3_tid>=__gsharp_array_ref(__gsharp_id_1_holders, 210991127u).leng
 return;
 }
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_3_tid,4);
-auto __gsharp_id_5_value = ((*__gsharp_id_0_bag).HasValue?(*__gsharp_id_0_bag).Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{});
+auto __gsharp_id_5_value = ((*__gsharp_id_0_bag).HasValue?(*__gsharp_id_0_bag).Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>());
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_id_4_o+0, 848851412u)=((*__gsharp_id_0_bag).HasValue?__gsharp_id_5_value.__gsharp_mb_Tag:(-1));
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 347232480u)=((*__gsharp_id_0_bag).HasValue?__gsharp_array_at(__gsharp_id_5_value.__gsharp_mb_Data, __gsharp_rem_i32(__gsharp_id_3_tid,__gsharp_array_ref(__gsharp_id_5_value.__gsharp_mb_Data, 100298297u).length,1448591541u), 160170807u):(-1));
 auto __gsharp_id_6_holder = __gsharp_array_at(__gsharp_id_1_holders, __gsharp_id_3_tid, 1669607319u).__gsharp_mb_Bag;
 __gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1970515428u)=(__gsharp_id_6_holder.HasValue?1:0);
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 1925223060u)=(__gsharp_id_6_holder.HasValue?__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{}).__gsharp_mb_Data, 0, 2097966654u):(-1));
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 1925223060u)=(__gsharp_id_6_holder.HasValue?__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 2097966654u):(-1));
 if(__gsharp_id_6_holder.HasValue)
 {
-__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag{}).__gsharp_mb_Data, 0, 735289306u)=__gsharp_add_i32(__gsharp_id_3_tid,100);
+__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 735289306u)=__gsharp_add_i32(__gsharp_id_3_tid,100);
 }
 }
 ";
