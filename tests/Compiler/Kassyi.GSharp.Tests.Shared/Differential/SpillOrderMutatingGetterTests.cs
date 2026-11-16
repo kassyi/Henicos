@@ -752,6 +752,9 @@ public sealed class SpillOrderMutatingGetterTests : TranspilerTestBase
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
+    // Forced blocking compacting collections in a loop stop every other test of the process (about 3 minutes on the
+    // Linux CI runner), so it runs with the other Stress tests, not in the normal run
+    [Category(TestCategory.Stress)]
     [Scenario(TestScenario.Boundary)]
     public void SpillOrder_AddressOfHoistedLocalAcrossBarrier_StressGcPressure()
     {

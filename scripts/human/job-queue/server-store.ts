@@ -32,6 +32,7 @@ export class JobStore {
       ...describeJob(job),
       spawnedAt: job.spawnedAt,
       turn: job.turn,
+      ...(job.places !== undefined ? { places: job.places } : {}),
       ...(job.stub ? { stub: true } : {}),
       ...(job.startNow === true ? { startNow: true } : {}),
       ...(job.provisional !== null ? { provisional: job.provisional } : {}),

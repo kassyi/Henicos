@@ -89,7 +89,7 @@ public sealed class ArrayCallSourceDifferentialTests
             ExceptionPolicy = value == "Null"
                 ? ExceptionPolicy.For<ArgumentNullException>(
                     DiffPaths.CheckedPaths(),
-                    messageContains: $"(Parameter '{ParameterName(call)}')")
+                    paramName: ParameterName(call))
                 : null,
             Inputs = static (_, _) => new DiffBuffers().Out<int>("o", 2, OutputPolicy.Exact),
             Launch = (b, s) => launch(create(), call, b.Get<int>("o"), s),
