@@ -45,4 +45,22 @@ public class UnrollControlFlowScopeTests : TranspilerTestBase
         Assert.Equal(23, lineSpan.EndLinePosition.Line);
         Assert.Equal(13, lineSpan.EndLinePosition.Character);
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task UnrollControlFlowScope_HintBeforeLabeledLoops_ReportsOnlyBreakOutOfUnrolledLabeledLoop()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/UnrollControlFlowScope_LabeledLoop.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
+        var warning = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.UnrolledLoopMayBeIgnored.Id, warning.Id);
+        var lineSpan = warning.Location.GetLineSpan();
+        Assert.Equal(49, lineSpan.StartLinePosition.Line);
+        Assert.Equal(8, lineSpan.StartLinePosition.Character);
+        Assert.Equal(58, lineSpan.EndLinePosition.Line);
+        Assert.Equal(9, lineSpan.EndLinePosition.Character);
+    }
 }

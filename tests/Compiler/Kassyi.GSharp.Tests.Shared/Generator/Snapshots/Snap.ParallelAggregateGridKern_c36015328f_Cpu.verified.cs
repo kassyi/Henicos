@@ -32,10 +32,16 @@ public partial class ParallelAggregateGridKernels
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1326491437u, "ParallelAggregateGridKernels.cs", 19, 9, "GridSumKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(968212913u, "ParallelAggregateGridKernels.cs", 19, 39, "GridSumKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(972650413u, "ParallelAggregateGridKernels.cs", 26, 9, "GridLongSumKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2060305447u, "ParallelAggregateGridKernels.cs", 26, 67, "GridLongSumKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(963160789u, "ParallelAggregateGridKernels.cs", 36, 33, "GridRepeatedSumKernel", "Value cannot be null. (Parameter 'source')"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1075843529u, "ParallelAggregateGridKernels.cs", 37, 33, "GridRepeatedSumKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(752583797u, "ParallelAggregateGridKernels.cs", 40, 9, "GridRepeatedSumKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(716103427u, "ParallelAggregateGridKernels.cs", 47, 9, "GridSegmentSumKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(766559630u, "ParallelAggregateGridKernels.cs", 48, 13, "GridSegmentSumKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1804378285u, "ParallelAggregateGridKernels.cs", 55, 9, "GridLambdaBlockIndexKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2138346266u, "ParallelAggregateGridKernels.cs", 56, 13, "GridLambdaBlockIndexKernel", "Value cannot be null. (Parameter 'source')"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -62,7 +68,7 @@ int __gsharp_id_2_rank = __gsharp_add_i32((int)threadIdx.x,__gsharp_mul_i32((int
 int __gsharp_id_3_size = __gsharp_mul_i32((int)blockDim.x*(int)blockDim.y,(int)blockDim.z);
 int __gsharp_id_4_block = __gsharp_add_i32((int)blockIdx.x,__gsharp_mul_i32((int)gridDim.x,__gsharp_add_i32((int)blockIdx.y,__gsharp_mul_i32((int)gridDim.y,(int)blockIdx.z))));
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_block,__gsharp_id_3_size),__gsharp_id_2_rank), 1326491437u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 968212913u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -458,7 +464,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x), 972650413u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2060305447u);
 __gsharp_wide_sum __gsharp_fusion_res = {0, 0};
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -844,7 +850,7 @@ int __gsharp_id_3_total = 0;
 for(int __gsharp_id_4_k = 0;__gsharp_id_4_k<3;__gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1))
 {
 __gsharp_id_3_total=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_total,7),([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_a;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_a, 963160789u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -856,7 +862,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return __gsharp_sum_i32(__gsharp_fusion_res);
 }()));
 __gsharp_id_3_total=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_total,7),([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_1_b;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_1_b, 1075843529u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1260,7 +1266,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_2_result, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x), 716103427u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 766559630u);
 int __gsharp_stage_0_n = __gsharp_mul_i32((int)blockIdx.x,__gsharp_id_1_m);
 int __gsharp_stage_1_n = __gsharp_id_1_m;
 long long __gsharp_fusion_res = 0;
@@ -1648,7 +1654,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_array_at(__gsharp_id_1_result, __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x), 1804378285u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2138346266u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;

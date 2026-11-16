@@ -48,7 +48,7 @@ UnsupportedShape	ObjectCreation	ObjectCreationExpression class	11
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
-statement UnsupportedOperation	Labeled	LabeledStatement	50
+statement UnsupportedOperation	Labeled	LabeledStatement	59
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	58
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3

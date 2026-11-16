@@ -31,10 +31,15 @@ public partial class StackLinqTestKernel
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1260318727u, "StackLinqTestKernel.cs", 16, 25, "RunLinq", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411466591u, "StackLinqTestKernel.cs", 21, 13, "RunLinq", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(127687090u, "StackLinqTestKernel.cs", 31, 28, "RunLinqAny", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(589825123u, "StackLinqTestKernel.cs", 32, 13, "RunLinqAny", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1579284963u, "StackLinqTestKernel.cs", 42, 23, "RunLinqSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(612402383u, "StackLinqTestKernel.cs", 43, 13, "RunLinqSum", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1428952171u, "StackLinqTestKernel.cs", 53, 25, "RunLinqFirst", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1582384235u, "StackLinqTestKernel.cs", 54, 13, "RunLinqFirst", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1995239331u, "StackLinqTestKernel.cs", 64, 23, "RunLinqIndexedAndSelectorSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1299316303u, "StackLinqTestKernel.cs", 69, 13, "RunLinqIndexedAndSelectorSum", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -62,7 +67,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_count = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1260318727u);
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -394,7 +399,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 bool __gsharp_id_2_hasEven = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 127687090u);
 bool __gsharp_fusion_res = false;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -720,7 +725,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1579284963u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1046,7 +1051,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_first = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1428952171u);
 int __gsharp_fusion_res = {};
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1371,7 +1376,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
-int __gsharp_id_2_sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),[&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
+int __gsharp_id_2_sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 1995239331u)),[&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
 return __gsharp_id_3_x>5&&__gsharp_id_4_i%2==0;
 }
 ),[&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
