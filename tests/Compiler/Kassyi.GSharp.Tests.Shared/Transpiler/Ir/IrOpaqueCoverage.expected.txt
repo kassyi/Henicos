@@ -48,13 +48,13 @@ UnsupportedShape	ObjectCreation	ObjectCreationExpression class	11
 UnsupportedShape	ObjectCreation	ObjectCreationExpression nested-member-initializer	3
 statement UnsupportedOperation	Branch	GotoStatement	16
 statement UnsupportedOperation	Empty	EmptyStatement	2
-statement UnsupportedOperation	Labeled	LabeledStatement	41
+statement UnsupportedOperation	Labeled	LabeledStatement	48
 statement UnsupportedOperation	LocalFunction	LocalFunctionStatement	57
 statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	160
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	129
+statement UnsupportedOperation	Loop	ForStatement	130
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	10
 statement UnsupportedOperation	Switch	SwitchStatement	53

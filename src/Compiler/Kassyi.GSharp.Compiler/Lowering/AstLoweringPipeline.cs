@@ -103,7 +103,7 @@ public static class AstLoweringPipeline
         var conditionalRewriter = new ConditionalEvaluationRewriter(names);
         var warpRewriter = new WarpInstructionRewriter(bodyModel, names);
         var branchRewriter = new BranchRewriter(bodyModel);
-        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(10);
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(12);
         if (irPass != null)
         {
             passes.Add(irPass);
@@ -116,6 +116,10 @@ public static class AstLoweringPipeline
             passes.Add(reconvergence);
         }
 
+        // [WHY] After the reconvergence regions, which follow the structure of the source (a break to a loop leaves the
+        // regions up to its end, and the lanes meet where the break label is, after the loop), and before the passes that
+        // leave a labeled jump as it is (#1990)
+        passes.Add(new LabeledJumpRewriter());
         passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
             warpRewriter, branchRewriter);
         return passes.ToImmutable();
@@ -224,6 +228,9 @@ public static class AstLoweringPipeline
         // into the state machine (#1191)
         annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
+        // [WHY] Before the split detaches the label of a statement that holds a split point: the jumps that name it find
+        // it by number afterwards (#1990)
+        annotatedBody = LabeledJumpMarker.Mark(annotatedBody);
         return LabeledStatementSplitter.Split(annotatedBody);
     }
 
