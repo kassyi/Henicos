@@ -56,7 +56,13 @@ public static class RoslynTestUtility
 
             var callerSubDir = Path.GetFileName(Path.GetDirectoryName(callerFilePath) ?? "");
             var fileName = Path.GetFileName(callerFilePath);
-            var sharedFile = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", callerSubDir, fileName);
+            var sharedFile = RepositoryPaths.Combine(
+                "tests",
+                "Compiler",
+                "Kassyi.GSharp.Tests.Shared",
+                callerSubDir,
+                fileName
+            );
             if (File.Exists(sharedFile))
             {
                 kernelFilePath = sharedFile;

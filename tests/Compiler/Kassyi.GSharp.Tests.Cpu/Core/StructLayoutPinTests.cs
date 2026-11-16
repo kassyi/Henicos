@@ -26,7 +26,11 @@ public class StructLayoutPinTests
         for (var i = 0; i < 20; i++)
         {
             Assert.ThrowsAny<Exception>(
-                () => StructLayoutRegressionKernels.LaunchBagNativeErrorKernel(new LayoutReproBag { N = 1, Data = [1] }, o));
+                () => StructLayoutRegressionKernels.LaunchBagNativeErrorKernel(
+                    new LayoutReproBag { N = 1, Data = [1] },
+                    o
+                )
+            );
         }
 
         var after = CountPinnedObjects();

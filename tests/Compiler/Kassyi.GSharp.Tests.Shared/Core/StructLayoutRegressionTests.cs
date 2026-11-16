@@ -143,7 +143,10 @@ public class StructLayoutRegressionTests
     [Scenario(TestScenario.Boundary)]
     public void R4e_TwoArrayFieldsHoldingOneArray_ByValue_SeeOneArray()
     {
-        Skip.If(AssemblyDialect.Current.IsCuda, "CUDA copies each array field separately (implicit-semantics inventory M10)");
+        Skip.If(
+            AssemblyDialect.Current.IsCuda,
+            "CUDA copies each array field separately (implicit-semantics inventory M10)"
+        );
         var x = new int[2];
 
         StructLayoutRegressionKernels.LaunchAliasKernel(new LayoutReproPair { A = x, B = x });

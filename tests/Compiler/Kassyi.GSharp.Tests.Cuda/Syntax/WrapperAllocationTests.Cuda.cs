@@ -58,7 +58,10 @@ public partial class WrapperAllocationTests
             // Note: cuLaunchKernel internally allocates 56 bytes per call in the unmanaged driver heap 
             // which gets tracked by GC.GetAllocatedBytesForCurrentThread() on Windows via ETW.
             // 48 bytes is background runner noise. 56 * 100 = 5600.
-            Assert.True(allocated <= 5648 + 48, $"Allocated {allocated} bytes, expected <= 5696 bytes (56B driver overhead/call + noise)");
+            Assert.True(
+                allocated <= 5648 + 48,
+                $"Allocated {allocated} bytes, expected <= 5696 bytes (56B driver overhead/call + noise)"
+            );
         }
         finally
         {
@@ -144,7 +147,13 @@ public partial class WrapperAllocationTests
         {
             for (int i = 0; i < 100; i++)
             {
-                WrapperAllocationKernels.LaunchStructAndTwoArraysKernel(ref counter[0], a, b, gridDimX: 1, blockDimX: 1);
+                WrapperAllocationKernels.LaunchStructAndTwoArraysKernel(
+                    ref counter[0],
+                    a,
+                    b,
+                    gridDimX: 1,
+                    blockDimX: 1
+                );
             }
         });
 
@@ -187,7 +196,14 @@ public partial class WrapperAllocationTests
     {
         for (int i = 0; i < 100; i++)
         {
-            WrapperAllocationKernels.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal, gridDimX: 1, blockDimX: 1);
+            WrapperAllocationKernels.LaunchAllocationTestKernelPtr(
+                d_ioVal,
+                d_outVal,
+                d_arrayVal,
+                constantVal,
+                gridDimX: 1,
+                blockDimX: 1
+            );
         }
     }
 

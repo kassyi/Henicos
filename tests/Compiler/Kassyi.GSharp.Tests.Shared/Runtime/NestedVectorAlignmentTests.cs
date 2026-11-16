@@ -11,7 +11,14 @@ public partial class NestedVectorAlignmentTests
 {
     private readonly ITestOutputHelper _output;
 
-    private partial void AssertOffsetsAndSize(int offset1, int offset2, int offset3, int offset4, int offset5, int totalSize);
+    private partial void AssertOffsetsAndSize(
+        int offset1,
+        int offset2,
+        int offset3,
+        int offset4,
+        int offset5,
+        int totalSize
+    );
 
     public NestedVectorAlignmentTests(ITestOutputHelper output)
     {

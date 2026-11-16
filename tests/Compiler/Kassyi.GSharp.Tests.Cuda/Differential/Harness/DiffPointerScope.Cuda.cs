@@ -39,23 +39,29 @@ public sealed partial class DiffPointerScope
         {
             foreach (var (buffer, deviceBuffer) in _deviceAllocations)
             {
-                try
-                {
-                    var writable = buffer.AsWritableBytes();
-                    if (!writable.IsEmpty)
-                    {
-                        deviceBuffer.CopyToHost(writable);
-                    }
-                }
-                finally
-                {
-                    deviceBuffer.Dispose();
-                }
+                CopyBackAndRelease(buffer, deviceBuffer);
             }
         }
         finally
         {
             _contextScope.Dispose();
+        }
+    }
+
+    // Copies a writable buffer back to the host, then frees its device memory even when the copy throws
+    private static void CopyBackAndRelease(DiffBuffer buffer, GpuBuffer<byte> deviceBuffer)
+    {
+        try
+        {
+            var writable = buffer.AsWritableBytes();
+            if (!writable.IsEmpty)
+            {
+                deviceBuffer.CopyToHost(writable);
+            }
+        }
+        finally
+        {
+            deviceBuffer.Dispose();
         }
     }
 }

@@ -16,9 +16,14 @@ public partial class DeviceDynamicSharedMemoryTests
         var output = new int[DeviceDynamicSharedMemoryScenarios.Length];
 
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceDynamicSharedMemoryKernels.LaunchNegativeCountKernel(output, DeviceDynamicSharedMemoryScenarios.Length,
-                negative, blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
-                sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)));
+            DeviceDynamicSharedMemoryKernels.LaunchNegativeCountKernel(
+                output,
+                DeviceDynamicSharedMemoryScenarios.Length,
+                negative,
+                blockDimX: DeviceDynamicSharedMemoryScenarios.Length,
+                sharedMemBytes: 3 * DeviceDynamicSharedMemoryScenarios.Length * sizeof(int)
+            )
+        );
         Assert.Contains("G#: the count of a shared memory declaration is negative", ex.Message);
         Assert.Null(ex.InnerException);
     }

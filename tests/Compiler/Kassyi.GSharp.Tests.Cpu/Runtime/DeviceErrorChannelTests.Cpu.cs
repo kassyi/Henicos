@@ -116,7 +116,14 @@ public partial class DeviceErrorChannelTests
         int[] result = [0];
 
         var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(data, targetBlock: 37, result, gridDimX: 100, blockDimX: 32));
+            DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(
+                data,
+                targetBlock: 37,
+                result,
+                gridDimX: 100,
+                blockDimX: 32
+            )
+        );
 
         Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
         Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);

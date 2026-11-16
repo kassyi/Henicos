@@ -15,8 +15,12 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class SharedTestDialectIfBanAnalyzerTests
 {
-    private static async Task<ImmutableArray<Diagnostic>> RunAnalyzerAsync(string filePath, string source)
+    private const string SharedDirectory = "tests/Compiler/Kassyi.GSharp.Tests.Shared/";
+
+    // Analyzes the test case as if it were the file at the given path
+    private static async Task<ImmutableArray<Diagnostic>> RunAnalyzerAsync(string filePath, string testCase)
     {
+        var source = RoslynTestUtility.ReadTestCase($"Analyzers/SharedTestDialectIfBan/{testCase}");
         var compilation = RoslynTestUtility.CreateCompilationAt(filePath, source);
         var analyzer = new SharedTestDialectIfBanAnalyzer();
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
@@ -27,193 +31,111 @@ public class SharedTestDialectIfBanAnalyzerTests
             .ToImmutableArray();
     }
 
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task P1_IfGsharpCpu_ReportsErrorAtSymbol()
-    {
-        const string source = """
-            #if GSHARP_CPU
-            public class C {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP1.cs", source);
+    private static Task<ImmutableArray<Diagnostic>> RunInSharedAsync(string testCase) =>
+        RunAnalyzerAsync(SharedDirectory + testCase, testCase);
 
-        var diag = Assert.Single(diags);
-        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
-        Assert.Equal(SharedTestDialectIfBanAnalyzer.DiagnosticId, diag.Id);
-        var lineSpan = diag.Location.GetLineSpan();
-        Assert.Equal(0, lineSpan.StartLinePosition.Line);
-        Assert.Equal(4, lineSpan.StartLinePosition.Character);
-        Assert.Equal(14, lineSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CPU", diag.GetMessage());
+    // Asserts an HNT0010 error on the symbol at the given line and columns (all zero-based)
+    private static void AssertReported(Diagnostic diagnostic, string symbol, int line, int startColumn, int endColumn)
+    {
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.Equal(SharedTestDialectIfBanAnalyzer.DiagnosticId, diagnostic.Id);
+        var lineSpan = diagnostic.Location.GetLineSpan();
+        Assert.Equal(line, lineSpan.StartLinePosition.Line);
+        Assert.Equal(line, lineSpan.EndLinePosition.Line);
+        Assert.Equal(startColumn, lineSpan.StartLinePosition.Character);
+        Assert.Equal(endColumn, lineSpan.EndLinePosition.Character);
+        Assert.Contains(symbol, diagnostic.GetMessage());
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task P2_IfGsharpCuda_ReportsErrorAtSymbol()
+    public async Task IfGsharpCpu_InShared_ReportsErrorAtSymbol()
     {
-        const string source = """
-            #if GSHARP_CUDA
-            public class C {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP2.cs", source);
+        var diagnostics = await RunInSharedAsync("IfCpu.cs");
 
-        var diag = Assert.Single(diags);
-        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
-        Assert.Equal(SharedTestDialectIfBanAnalyzer.DiagnosticId, diag.Id);
-        var lineSpan = diag.Location.GetLineSpan();
-        Assert.Equal(0, lineSpan.StartLinePosition.Line);
-        Assert.Equal(4, lineSpan.StartLinePosition.Character);
-        Assert.Equal(15, lineSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CUDA", diag.GetMessage());
+        AssertReported(Assert.Single(diagnostics), "GSHARP_CPU", line: 0, startColumn: 4, endColumn: 14);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task P3_IfNegatedGsharpCpu_ReportsErrorAtSymbol()
+    public async Task IfGsharpCuda_InShared_ReportsErrorAtSymbol()
     {
-        const string source = """
-            #if !GSHARP_CPU
-            public class C {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP3.cs", source);
+        var diagnostics = await RunInSharedAsync("IfCuda.cs");
 
-        var diag = Assert.Single(diags);
-        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
-        var lineSpan = diag.Location.GetLineSpan();
-        Assert.Equal(0, lineSpan.StartLinePosition.Line);
-        Assert.Equal(5, lineSpan.StartLinePosition.Character);
-        Assert.Equal(15, lineSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CPU", diag.GetMessage());
+        AssertReported(Assert.Single(diagnostics), "GSHARP_CUDA", line: 0, startColumn: 4, endColumn: 15);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task P4_ElifGsharpCuda_ReportsErrorAtSymbol()
+    public async Task IfNegatedGsharpCpu_InShared_ReportsErrorAtSymbol()
     {
-        const string source = """
-            #if DEBUG
-            public class C {}
-            #elif GSHARP_CUDA
-            public class D {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP4.cs", source);
+        var diagnostics = await RunInSharedAsync("IfNotCpu.cs");
 
-        var diag = Assert.Single(diags);
-        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
-        var lineSpan = diag.Location.GetLineSpan();
-        Assert.Equal(2, lineSpan.StartLinePosition.Line);
-        Assert.Equal(6, lineSpan.StartLinePosition.Character);
-        Assert.Equal(17, lineSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CUDA", diag.GetMessage());
+        AssertReported(Assert.Single(diagnostics), "GSHARP_CPU", line: 0, startColumn: 5, endColumn: 15);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task P5_IfGsharpCpuAndSomething_ReportsErrorOnlyAtDialectSymbol()
+    public async Task ElifGsharpCuda_InShared_ReportsErrorAtSymbol()
     {
-        const string source = """
-            #if GSHARP_CPU && SOMETHING
-            public class C {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP5.cs", source);
+        var diagnostics = await RunInSharedAsync("ElifCuda.cs");
 
-        var diag = Assert.Single(diags);
-        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
-        var lineSpan = diag.Location.GetLineSpan();
-        Assert.Equal(0, lineSpan.StartLinePosition.Line);
-        Assert.Equal(4, lineSpan.StartLinePosition.Character);
-        Assert.Equal(14, lineSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CPU", diag.GetMessage());
+        AssertReported(Assert.Single(diagnostics), "GSHARP_CUDA", line: 2, startColumn: 6, endColumn: 17);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task P6_IfParenthesizedBothSymbols_ReportsErrorForBoth()
+    public async Task IfGsharpCpuAndOtherSymbol_InShared_ReportsErrorOnlyAtDialectSymbol()
     {
-        const string source = """
-            #if (GSHARP_CPU || GSHARP_CUDA)
-            public class C {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CaseP6.cs", source);
+        var diagnostics = await RunInSharedAsync("IfCpuAndOther.cs");
 
-        Assert.Equal(2, diags.Length);
-        Assert.All(diags, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+        AssertReported(Assert.Single(diagnostics), "GSHARP_CPU", line: 0, startColumn: 4, endColumn: 14);
+    }
 
-        var first = diags[0];
-        var firstSpan = first.Location.GetLineSpan();
-        Assert.Equal(0, firstSpan.StartLinePosition.Line);
-        Assert.Equal(5, firstSpan.StartLinePosition.Character);
-        Assert.Equal(15, firstSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CPU", first.GetMessage());
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task IfParenthesizedBothSymbols_InShared_ReportsErrorForBoth()
+    {
+        var diagnostics = await RunInSharedAsync("IfCpuOrCuda.cs");
 
-        var second = diags[1];
-        var secondSpan = second.Location.GetLineSpan();
-        Assert.Equal(0, secondSpan.StartLinePosition.Line);
-        Assert.Equal(19, secondSpan.StartLinePosition.Character);
-        Assert.Equal(30, secondSpan.EndLinePosition.Character);
-        Assert.Contains("GSHARP_CUDA", second.GetMessage());
+        Assert.Equal(2, diagnostics.Length);
+        AssertReported(diagnostics[0], "GSHARP_CPU", line: 0, startColumn: 5, endColumn: 15);
+        AssertReported(diagnostics[1], "GSHARP_CUDA", line: 0, startColumn: 19, endColumn: 30);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task N1_CpuAssemblyFile_ProducesNoDiagnostics()
+    public async Task IfGsharpCpu_InCpuAssemblyFile_ReportsNothing()
     {
-        const string source = """
-            #if GSHARP_CPU
-            public class CpuOnlyClass {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Cpu/CpuTests.cs", source);
-        Assert.Empty(diags);
+        var diagnostics = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Cpu/CpuTests.cs", "IfCpu.cs");
+
+        Assert.Empty(diagnostics);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task N2_CudaAssemblyFile_ProducesNoDiagnostics()
+    public async Task IfGsharpCuda_InCudaAssemblyFile_ReportsNothing()
     {
-        const string source = """
-            #if GSHARP_CUDA
-            public class CudaOnlyClass {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Cuda/CudaTests.cs", source);
-        Assert.Empty(diags);
+        var diagnostics = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Cuda/CudaTests.cs", "IfCuda.cs");
+
+        Assert.Empty(diagnostics);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task N3_AllowedPreprocessorSymbolsInShared_ProducesNoDiagnostics()
+    public async Task OtherPreprocessorSymbols_InShared_ReportsNothing()
     {
-        const string source = """
-            #if DEBUG
-            public class Dbg {}
-            #elif NET10_0_OR_GREATER || NETCOREAPP
-            public class NetCore {}
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/AllowedSymbols.cs", source);
-        Assert.Empty(diags);
+        var diagnostics = await RunInSharedAsync("OtherSymbols.cs");
+
+        Assert.Empty(diagnostics);
     }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task N4_CommentsAndStringLiterals_ProducesNoDiagnostics()
+    public async Task DialectNamesInCommentsAndStrings_InShared_ReportsNothing()
     {
-        const string source = """
-            #if DEBUG // GSHARP_CPU is not used
-            public class TextCheck
-            {
-                public string S = "GSHARP_CUDA";
-            }
-            #endif
-            """;
-        var diags = await RunAnalyzerAsync("tests/Compiler/Kassyi.GSharp.Tests.Shared/CommentsAndStrings.cs", source);
-        Assert.Empty(diags);
+        var diagnostics = await RunInSharedAsync("CommentsAndStrings.cs");
+
+        Assert.Empty(diagnostics);
     }
 }

@@ -1168,5 +1168,11 @@ public partial class MathDifferentialTests
             return v == sbyte.MinValue ? (sbyte)(sbyte.MinValue + 1) : v;
         });
 
-    private static partial PropertyResult? CheckFmaContract(int i, float k, bool matchesFma, float fmaExpected, float actual);
+    private static partial PropertyResult? CheckFmaContract(
+        int i,
+        float k,
+        bool matchesFma,
+        float fmaExpected,
+        float actual
+    );
 }

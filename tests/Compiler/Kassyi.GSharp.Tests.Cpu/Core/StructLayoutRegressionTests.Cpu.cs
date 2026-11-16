@@ -4,9 +4,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public partial class StructLayoutRegressionSequentialTests
 {
-    // The CPU launcher converts an [Out] array through a shadow rented from ArrayPool, which still holds the bytes of an
-    // earlier launch of the same size (R7 first leaves 1 to 6 in it); the shadow is cleared, so what the kernel does not
-    // write reads as 0. CUDA leaves an unwritten [Out] element undefined (device memory is not cleared)
+    // The CPU launcher converts an [Out] array through a shadow rented from ArrayPool, which still holds the bytes of
+    // an earlier launch of the same size (R7 first leaves 1 to 6 in it); the shadow is cleared, so what the kernel does
+    // not write reads as 0. CUDA leaves an unwritten [Out] element undefined (device memory is not cleared)
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Scenario(TestScenario.Boundary)]

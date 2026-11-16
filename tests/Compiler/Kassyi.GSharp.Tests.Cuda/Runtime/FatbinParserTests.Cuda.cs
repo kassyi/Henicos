@@ -18,8 +18,12 @@ public partial class FatbinParserTests
         var fileName = Kassyi.GSharp.Compiler.Marshaling.AotModuleNames.GetArtifactFileStem(moduleName) + ".gfatbin";
         // The default GSharpTargetArchitectures keeps the sm_86 SASS and adds compute_86 PTX, so that GPUs newer than
         // the 8.x family JIT-compile the module instead of failing to load it.
-        // The build skips the fatbins only without nvcc or with GSHARP_TEST_NO_CUDA=1; otherwise a missing file is a failure
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "GSHARP_TEST_NO_CUDA=1 skips the fatbins.");
+        // The build skips the fatbins only without nvcc or with GSHARP_TEST_NO_CUDA=1; otherwise a missing file is a
+        // failure
+        Skip.If(
+            Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1",
+            "GSHARP_TEST_NO_CUDA=1 skips the fatbins."
+        );
         Skip.IfNot(IsNvccOnPath(), "nvcc is not on PATH, so the build skipped the fatbins.");
         var path = Path.Combine(AppContext.BaseDirectory, fileName);
         Assert.True(File.Exists(path), $"'{path}' was not built.");

@@ -6,7 +6,10 @@ public partial class WmmaTests
 {
     partial void AssertWmmaDialectSource(string source)
     {
-        Assert.Contains("__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&", source);
+        Assert.Contains(
+            "__gsharp_wmma_load<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major>(&",
+            source
+        );
         Assert.Contains("__gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&", source);
     }
 
@@ -19,8 +22,8 @@ public partial class WmmaTests
         var c = new int[16 * 16];
         var d = new int[16 * 16];
 
-        // A[i, k] = 1 for k == 0, -1 for k == 1, 0 otherwise
-        // B[k, j] = i + 1 for k == 0, j + 1 for k == 1 (i.e. B[0, j] = j + 1? Wait: A[i, 0] = i + 1, A[i, 1] = -1; B[0, j] = 1, B[1, j] = j + 1 => (A*B)[i, j] = (i + 1)*1 + (-1)*(j + 1) = i - j)
+        // A[i, 0] = i + 1, A[i, 1] = -1, 0 otherwise; B[0, j] = 1, B[1, j] = j + 1, 0 otherwise
+        // => (A*B)[i, j] = (i + 1) * 1 + (-1) * (j + 1) = i - j
         for (int i = 0; i < 16; i++)
         {
             a[(i * 16) + 0] = (sbyte)(i + 1);
