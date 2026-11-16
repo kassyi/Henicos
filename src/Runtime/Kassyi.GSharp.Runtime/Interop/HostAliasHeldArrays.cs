@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <remarks>
 /// The generated <c>AliasHeldArrays_</c> methods add the arrays of each struct argument (<see cref="Add{T}"/>),
 /// <see cref="Pin"/> pins them for the launch, and every method that takes the range list takes the one of
-/// <see cref="Combine"/>, which appends one entry per held array to the entries of the arguments. A held array that
+/// <see cref="Combine(ReadOnlySpan{nint})"/>, which appends one entry per held array to the entries of the arguments. A held array that
 /// lands in a group takes the group's region (<see cref="AddRegions"/>), so the <c>Marshal_</c> of its struct finds it
 /// by identity as it finds the region of a <c>T[]</c> argument. The launcher calls <see cref="Free"/> in its
 /// <c>finally</c> block.
@@ -32,12 +32,14 @@ public sealed class HostAliasHeldArrays
     private readonly List<CopySharer> _sharers = [];
     private readonly List<GCHandle> _pins = [];
     private readonly List<string> _convertedTypes = [];
+    private nint[] _heldRanges = [];
+    private byte[] _heldTraits = [];
+    private string _heldNames = "";
     private nint[]? _combined;
 
     // Gives the held array the copy of its group, typed by the array's element type
     private delegate void CopySharer(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
         HostArrayCopies copies, Array array);
-    private nint[] _heldRanges = [];
 
     /// <summary>The number of arrays held.</summary>
     public int Count => _arrays.Count;
@@ -92,9 +94,13 @@ public sealed class HostAliasHeldArrays
         _copiesBack.Add(CopiesBack);
         _sharers.Add(static (groups, member, ranges, copies, held) =>
         {
-            // A copy that starts at the array and covers it is the array's copy; a group of writers has none
-            if (HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start) &&
-                start == 0 && copy.Length == held.Length)
+            // A copy that starts at the array and covers it is the array's copy; a group of writers has none, and
+            // its holders then use the array itself, as they use the memory that the writer writes
+            if (!HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start))
+            {
+                copies.Keep(held);
+            }
+            else if (start == 0 && copy.Length == held.Length)
             {
                 copies.Share(held, copy);
             }
@@ -103,12 +109,18 @@ public sealed class HostAliasHeldArrays
             deviceAlignment, key));
     }
 
-    /// <summary>Pins the arrays added, until <see cref="Free"/>, and reads their addresses.</summary>
+    /// <summary>
+    /// Pins the arrays added, until <see cref="Free"/>, and reads their addresses and the traits and names that
+    /// <see cref="Combine(byte[])"/> and <see cref="Combine(string)"/> append.
+    /// </summary>
     public void Pin()
     {
         _heldRanges = new nint[_arrays.Count * HostAliasGroups.RangeFields];
+        _heldTraits = new byte[_arrays.Count];
+        var names = new System.Text.StringBuilder();
         for (var i = 0; i < _arrays.Count; i++)
         {
+            names.Append(",an array held by a struct argument");
             var handle = GCHandle.Alloc(_arrays[i], GCHandleType.Pinned);
             _pins.Add(handle);
             var at = i * HostAliasGroups.RangeFields;
@@ -119,7 +131,11 @@ public sealed class HostAliasHeldArrays
             _heldRanges[at + 3] = layout.DeviceSize;
             _heldRanges[at + 4] = layout.Alignment;
             _heldRanges[at + 5] = layout.Conversion;
+            var back = _copiesBack[i] ? HostAliasGroups.CopiesBack : 0;
+            _heldTraits[i] = (byte)(HostAliasGroups.CopiesIn | back | HostAliasGroups.WholeArray);
         }
+
+        _heldNames = names.ToString();
     }
 
     /// <summary>The range list of the arguments followed by one entry per held array.</summary>
@@ -148,19 +164,14 @@ public sealed class HostAliasHeldArrays
     /// <param name="traits">The traits of the arguments.</param>
     public byte[] Combine(byte[] traits)
     {
-        if (_arrays.Count == 0)
+        if (_heldTraits.Length == 0)
         {
             return traits;
         }
 
-        var combined = new byte[traits.Length + _arrays.Count];
+        var combined = new byte[traits.Length + _heldTraits.Length];
         traits.CopyTo(combined, 0);
-        for (var i = 0; i < _arrays.Count; i++)
-        {
-            var back = _copiesBack[i] ? HostAliasGroups.CopiesBack : 0;
-            combined[traits.Length + i] = (byte)(HostAliasGroups.CopiesIn | back | HostAliasGroups.WholeArray);
-        }
-
+        _heldTraits.CopyTo(combined, traits.Length);
         return combined;
     }
 
@@ -168,21 +179,7 @@ public sealed class HostAliasHeldArrays
     /// The names of the arguments followed by a name for each held array, for the exception messages.
     /// </summary>
     /// <param name="names">The names of the arguments, separated by commas.</param>
-    public string Combine(string names)
-    {
-        if (_arrays.Count == 0)
-        {
-            return names;
-        }
-
-        var combined = names;
-        for (var i = 0; i < _arrays.Count; i++)
-        {
-            combined += ",an array held by a struct argument";
-        }
-
-        return combined;
-    }
+    public string Combine(string names) => names + _heldNames;
 
     /// <summary>
     /// CUDA: records the region of each held array that is a member of a group in <paramref name="regions"/>, so that
@@ -232,6 +229,7 @@ public sealed class HostAliasHeldArrays
     /// <summary>Unpins the arrays and forgets them.</summary>
     public void Free()
     {
+        GC.SuppressFinalize(this);
         foreach (var pin in _pins)
         {
             pin.Free();
@@ -243,6 +241,8 @@ public sealed class HostAliasHeldArrays
         _copiesBack.Clear();
         _sharers.Clear();
         _heldRanges = [];
+        _heldTraits = [];
+        _heldNames = "";
         _combined = null;
     }
 }

@@ -60,23 +60,32 @@ internal static class AliasGroupEmitter
             writer.AppendLine($"if ({Aliases} != null)");
             using (writer.Scope())
             {
-                var ranges = AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays);
-                writer.AppendLine($"{Aliases}.CopyToDevice({ranges}, hStream);");
-                var table = sharing.UsesTable ? DeviceArrays : "null";
-                writer.AppendLineIf(plan.HasHeldArrays, $"{Held}.AddRegions({Aliases}, {plan.Ranges.Length}, {table});");
-                for (var k = 0; k < plan.Candidates.Length && sharing.UsesTable; k++)
-                {
-                    var shape = sharing.Parameters[plan.Candidates[k]];
-                    if (shape.IsSharableArray)
-                    {
-                        writer.AppendLine($"if ({Aliases}.IsMember({k})) " +
-                            $"{DeviceArrays}.AddShared({shape.Identifier}, {Aliases}.GetDevicePointer({k}));");
-                    }
-                }
-
-                WriteConversions(writer, plan, toDevice: true, isCuda: true);
+                WriteCudaGroupRegions(writer, sharing);
             }
         }
+    }
+
+    // __gsharp_aliases.CopyToDevice(<ranges>, hStream); [__gsharp_alias_held.AddRegions(...);]
+    // [if (__gsharp_aliases.IsMember(<k>)) __gsharp_device_arrays.AddShared(<array>, <region>);] <conversions>
+    private static void WriteCudaGroupRegions(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        var plan = sharing.Aliases;
+        var ranges = AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays);
+        writer.AppendLine($"{Aliases}.CopyToDevice({ranges}, hStream);");
+        var table = sharing.UsesTable ? DeviceArrays : "null";
+        writer.AppendLineIf(plan.HasHeldArrays,
+            $"{Held}.AddRegions({Aliases}, {plan.Ranges.Length}, {table});");
+        for (var k = 0; k < plan.Candidates.Length && sharing.UsesTable; k++)
+        {
+            var shape = sharing.Parameters[plan.Candidates[k]];
+            if (shape.IsSharableArray)
+            {
+                writer.AppendLine($"if ({Aliases}.IsMember({k})) " +
+                    $"{DeviceArrays}.AddShared({shape.Identifier}, {Aliases}.GetDevicePointer({k}));");
+            }
+        }
+
+        WriteConversions(writer, plan, toDevice: true, isCuda: true);
     }
 
     // if (__gsharp_aliases != null) { <pins> { __gsharp_aliases.CopyToHost(<ranges>, hStream); } }
@@ -122,28 +131,37 @@ internal static class AliasGroupEmitter
         writer.AppendLine($"{Held} = new();");
         foreach (var index in plan.HeldSources)
         {
-            var shape = sharing.Parameters[index];
-            var method = shape.HeldArraysMethodName ?? throw new InvalidOperationException(
-                $"Parameter '{shape.Identifier}' holds no arrays.");
-            var copiesBack = isCuda
-                ? !shape.IsArray || sharing.CopiesBack(index)
-                : !(shape.IsArray && sharing.NeedsKernelCopy(index));
-            writer.AppendLine($"{Held}.CopiesBack = {(copiesBack ? "true" : "false")};");
-            if (shape.IsArray)
-            {
-                writer.AppendLine($"for (int {Index} = 0; {Index} < {shape.SpanExpression}.Length; {Index}++)");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"{method}(ref {shape.SpanExpression}[{Index}], {Held});");
-                }
-            }
-            else
-            {
-                writer.AppendLine($"{method}(ref {shape.ReferenceExpression}, {Held});");
-            }
+            WriteHeldArraysOf(writer, sharing, index, isCuda);
         }
 
         writer.AppendLine($"{Held}.Pin();");
+    }
+
+    // held.CopiesBack = <bool>; <the AliasHeldArrays_ call of the argument, or of each of its elements>
+    // [WHY] A read-only container is copied in only, so the arrays that its elements hold are not copied back; each
+    // element is passed through Unsafe.AsRef, as the method takes a ref and the element is a ref readonly
+    private static void WriteHeldArraysOf(SourceWriter writer, in ArraySharingPlan sharing, int index, bool isCuda)
+    {
+        var shape = sharing.Parameters[index];
+        var method = shape.HeldArraysMethodName ?? throw new InvalidOperationException(
+            $"Parameter '{shape.Identifier}' holds no arrays.");
+        var copiesBack = isCuda
+            ? !shape.IsArray || sharing.CopiesBack(index)
+            : !(shape.IsArray && (sharing.NeedsKernelCopy(index) || shape.IsReadOnlyContainer));
+        writer.AppendLine($"{Held}.CopiesBack = {(copiesBack ? "true" : "false")};");
+        if (!shape.IsArray)
+        {
+            writer.AppendLine($"{method}(ref {shape.ReferenceExpression}, {Held});");
+            return;
+        }
+
+        var element = $"{shape.SpanExpression}[{Index}]";
+        var reference = shape.IsReadOnlyContainer ? $"{HostTypeNames.Unsafe}.AsRef(in {element})" : element;
+        writer.AppendLine($"for (int {Index} = 0; {Index} < {shape.SpanExpression}.Length; {Index}++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{method}(ref {reference}, {Held});");
+        }
     }
 
     // List<IntPtr>? __gsharp_alias_handles = null;   (CPU, before the try block that frees them)

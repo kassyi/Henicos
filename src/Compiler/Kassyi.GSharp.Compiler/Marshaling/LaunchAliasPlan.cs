@@ -63,7 +63,7 @@ internal readonly struct LaunchAliasPlan
     public static LaunchAliasPlan ForCuda(in ArraySharingPlan sharing, bool isDevicePtr)
     {
         var parameters = sharing.Parameters;
-        if (isDevicePtr || !HasPartialCandidate(parameters, heldCounts: true))
+        if (isDevicePtr || !HasPartialCandidate(parameters))
         {
             return default;
         }
@@ -92,7 +92,7 @@ internal readonly struct LaunchAliasPlan
     public static LaunchAliasPlan ForCpu(in ArraySharingPlan sharing)
     {
         var parameters = sharing.Parameters;
-        if (!HasPartialCandidate(parameters, heldCounts: true))
+        if (!HasPartialCandidate(parameters))
         {
             return default;
         }
@@ -139,30 +139,26 @@ internal readonly struct LaunchAliasPlan
     // [WHY] Without a slice or a by-reference argument, only T[] arguments can share memory, and two of them overlap
     // only when they are one array, which ArraySharingPlan already compares by identity
     // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849)
-    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters, bool heldCounts) =>
+    private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters) =>
         parameters
             .AsStackEnumerable()
             .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
         (parameters
             .AsStackEnumerable()
             .Count(static shape => IsCandidate(shape)) > 1 ||
-         (heldCounts && !GetHeldSources(parameters).IsEmpty));
+         !GetHeldSources(parameters).IsEmpty);
 
     // The parameters that hold arrays in the fields of their structs
+    // [WHY] An out struct is cleared before the kernel reads it (#1841), so its arrays are not held. A read-only
+    // container (ImmutableArray, ReadOnlySpan) is walked through a ref to each element that Unsafe.AsRef makes
     private static ImmutableArray<int> GetHeldSources(EquatableArray<KernelParameterShape> parameters)
     {
         var sources = ImmutableArray.CreateBuilder<int>();
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            // A read-only container (ImmutableArray, ReadOnlySpan) has no element to pass by ref to the method
-            // An out struct is cleared before the kernel reads it (#1841), so its arrays are not held
-            if (parameters[i].HeldArraysMethodName is not null && !parameters[i].IsReadOnlyContainer &&
-                parameters[i].RefKind != RefKind.Out)
-            {
-                sources.Add(i);
-            }
-        }
-
+        parameters
+            .AsStackEnumerable()
+            .Where(static shape => shape.HeldArraysMethodName is not null && shape.RefKind != RefKind.Out)
+            .Select(static shape => shape.Ordinal)
+            .AddTo(sources);
         return sources.ToImmutable();
     }
 

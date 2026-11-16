@@ -1409,6 +1409,11 @@ for (int __gsharp_alias_index = 0; __gsharp_alias_index < spanBags.Length; __gsh
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref spanBags[__gsharp_alias_index], __gsharp_alias_held);
 }
+__gsharp_alias_held.CopiesBack = false;
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < roSpanBags.Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in roSpanBags[__gsharp_alias_index]), __gsharp_alias_held);
+}
 __gsharp_alias_held.CopiesBack = true;
 for (int __gsharp_alias_index = 0; __gsharp_alias_index < segBags.AsSpan().Length; __gsharp_alias_index++)
 {
@@ -1418,6 +1423,11 @@ __gsharp_alias_held.CopiesBack = true;
 for (int __gsharp_alias_index = 0; __gsharp_alias_index < memBags.Span.Length; __gsharp_alias_index++)
 {
 global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref memBags.Span[__gsharp_alias_index], __gsharp_alias_held);
+}
+__gsharp_alias_held.CopiesBack = false;
+for (int __gsharp_alias_index = 0; __gsharp_alias_index < immBags.AsSpan().Length; __gsharp_alias_index++)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.AliasHeldArrays_DiffDeepBag(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in immBags.AsSpan()[__gsharp_alias_index]), __gsharp_alias_held);
 }
 __gsharp_alias_held.Pin();
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(arrBags), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(spanBags), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(roSpanBags), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(segBags.AsSpan()), __gsharp_alias_pin_4 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(memBags.Span), __gsharp_alias_pin_5 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(immBags.AsSpan()), __gsharp_alias_pin_6 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(outTotals))
