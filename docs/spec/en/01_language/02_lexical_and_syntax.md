@@ -22,7 +22,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `do...while` loop | Yes | `do...while` loop | Supported. |
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). As in C#, the switch block is one scope: a local or const declared in one section can be used in another (the C++ declares it in a block around the switch). A barrier, a warp shuffle or a call that may suspend inside a section suspends the thread on the CPU paths as it does outside a switch. A local that needs its initializer at the declaration (a span over a stack array or another ref struct that is not a view of an array, a stack array, shared memory) used that way is reported as [GSH0003](../03_bcl_api/diagnostics/GSH0003.md). |
 | `switch` expression | Yes | Zero-allocation branch | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
-| `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. A labeled `break` / `continue` (C# 15) is supported; one that names a loop or switch containing a barrier, warp collective or suspending call reports GSH0003 for now (#1990). |
+| `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. A labeled `break` / `continue` (C# 15) is supported, also when the named loop or switch contains a barrier, warp collective or suspending call (#1990). |
 | `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
 | Local functions / Lambdas | Yes | C++ Lambdas | Supported for lambdas and local functions, capturing or not. Transpiled to C++ lambda expressions that capture by reference (`[&]`), as C# closures capture variables, not values. |
@@ -244,7 +244,7 @@ The compiler builds against Roslyn 5.9 and parses C# 13 to 15 syntax. In device 
 
 | Feature | Version | Status |
 | :--- | :--- | :--- |
-| Labeled `break` / `continue` | C# 15 | Supported; [GSH0003](../03_bcl_api/diagnostics/GSH0003.md) when the named loop or switch contains a barrier, warp collective or suspending call (#1990) |
+| Labeled `break` / `continue` | C# 15 | Supported, also when the named loop or switch contains a barrier, warp collective or suspending call (#1990) |
 | Extension indexer | C# 15 | Not supported yet; the native build fails (#885) |
 | Extension block members | C# 14 | Not supported yet (#885) |
 | Collection expression arguments (`with(...)`) | C# 15 | Reported as [GSH0003](../03_bcl_api/diagnostics/GSH0003.md) |
