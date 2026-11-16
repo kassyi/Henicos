@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
+using Kassyi.GSharp.Compiler.NativeApi;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
@@ -13,31 +13,10 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public partial class DiagnosticParityTests : TranspilerTestBase
 {
-    private sealed class DiagnosticMetadata
-    {
-        public string Name { get; set; } = "";
-        public string Id { get; set; } = "";
-        public string Title { get; set; } = "";
-        public string DefaultSeverity { get; set; } = "";
-        public bool IsObsolete { get; set; }
-    }
-
-    private static string ReadDiagnosticsJson(out string rootPath)
+    private static List<DiagnosticCatalogEntry> LoadDiagnosticsMetadata(out string rootPath)
     {
         rootPath = RepositoryPaths.Root;
-        string jsonPath = Path.Combine(RepositoryPaths.CompilerProject, "Diagnostics", "diagnostics.json");
-        Assert.True(File.Exists(jsonPath), $"diagnostics.json not found at {jsonPath}");
-
-        return File.ReadAllText(jsonPath);
-    }
-
-    private static List<DiagnosticMetadata> LoadDiagnosticsMetadata(out string rootPath)
-    {
-        string json = ReadDiagnosticsJson(out rootPath);
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var diagnostics = JsonSerializer.Deserialize<List<DiagnosticMetadata>>(json, options);
-
-        Assert.NotNull(diagnostics);
+        var diagnostics = DiagnosticCatalogFile.Read();
         Assert.NotEmpty(diagnostics);
         return diagnostics;
     }
@@ -69,7 +48,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
 
         var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var byId = new Dictionary<string, DiagnosticMetadata>(StringComparer.OrdinalIgnoreCase);
+        var byId = new Dictionary<string, DiagnosticCatalogEntry>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var diag in diagnostics)
         {
@@ -89,7 +68,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
             byId[diag.Id] = diag;
         }
 
-        // Bidirectional check between GSharpDiagnostics descriptor fields (via Roslyn symbols) and diagnostics.json
+        // Bidirectional check between GSharpDiagnostics descriptor fields (via Roslyn symbols) and diagnostics.yml
         var gsharpDiagnosticsSymbol = RoslynTestUtility.BaseCompilation
             .GetTypeByMetadataName("Kassyi.GSharp.Compiler.Diagnostics.GSharpDiagnostics");
         Assert.NotNull(gsharpDiagnosticsSymbol);
@@ -111,11 +90,11 @@ public partial class DiagnosticParityTests : TranspilerTestBase
             Assert.Contains(fieldName, seenNames);
         }
 
-        // Verify all registered validation rule descriptors match diagnostics.json metadata
+        // Verify all registered validation rule descriptors match diagnostics.yml metadata
         foreach (var descriptor in DiagnosticRuleRegistry.AllSupportedDiagnostics)
         {
             Assert.True(byId.TryGetValue(descriptor.Id, out var meta),
-                $"Descriptor '{descriptor.Id}' in DiagnosticRuleRegistry is missing from diagnostics.json.");
+                $"Descriptor '{descriptor.Id}' in DiagnosticRuleRegistry is missing from diagnostics.yml.");
             Assert.Equal(meta.Title, descriptor.Title.ToString());
             Assert.Equal(Enum.Parse<DiagnosticSeverity>(meta.DefaultSeverity), descriptor.DefaultSeverity);
         }
@@ -182,107 +161,56 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         }
     }
 
-    // A merge-conflict resolution once folded two entries into one object (#420). System.Text.Json keeps the last
-    // value of a repeated key, so the first diagnostic vanished without any of the checks above noticing.
+    // A merge-conflict resolution once folded two entries into one (#420); the JSON reader kept the last value of a
+    // repeated key, so the first diagnostic vanished without any of the checks above noticing. The YAML parser of the
+    // compiler rejects a repeated key, and the build reads the catalog with it.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void DiagnosticsJson_HasNoDuplicateKeysInAnyEntry()
+    public void DiagnosticCatalog_EntryMergedFromTwoDiagnostics_IsRejected()
     {
-        var violations = FindDuplicateKeys(ReadDiagnosticsJson(out _));
+        const string Yaml = """
+            - name: A
+              id: GSH0001
+              title: First
+            - name: KernelParameterSpaceExceeded
+              id: GSH0064
+              title: B
+              name: UserDefinedOperatorNotSupported
+            """;
 
-        Assert.True(violations.Count == 0,
-            "diagnostics.json has entries with repeated keys:" + Environment.NewLine +
-            string.Join(Environment.NewLine, violations));
+        var error = Assert.Throws<NativeApiReadException>(() => DiagnosticCatalogFile.Parse(Yaml));
+
+        Assert.Contains("Duplicate key 'name'", error.Message, StringComparison.Ordinal);
+        Assert.Equal(7, error.ToError().Line);
     }
 
     // Gaps are allowed: IDs are reserved for planned issues before they are used.
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void DiagnosticsJson_ListsIdsInAscendingOrderPerPrefix()
+    public void DiagnosticCatalog_ListsIdsInAscendingOrderPerPrefix()
     {
-        var violations = FindOutOfOrderIds(ReadDiagnosticsJson(out _));
+        var violations = FindOutOfOrderIds(DiagnosticCatalogFile.Read().Select(static d => d.Id));
 
         Assert.True(violations.Count == 0,
-            "diagnostics.json lists IDs out of order:" + Environment.NewLine +
+            "diagnostics.yml lists IDs out of order:" + Environment.NewLine +
             string.Join(Environment.NewLine, violations));
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void FindDuplicateKeys_ReportsEntryMergedFromTwoDiagnostics()
-    {
-        // The shape the #420 conflict resolution produced.
-        const string Json = """
-            [
-              { "name": "A", "id": "GSH0001", "title": "First" },
-              { "name": "KernelParameterSpaceExceeded", "id": "GSH0064", "title": "B",
-                "name": "UserDefinedOperatorNotSupported", "id": "GSH0060", "title": "C" }
-            ]
-            """;
-
-        var violations = FindDuplicateKeys(Json);
-
-        Assert.Equal(["GSH0064+GSH0060: name", "GSH0064+GSH0060: id", "GSH0064+GSH0060: title"], violations);
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void FindOutOfOrderIds_AllowsGapsAndReportsDescendingPair()
     {
-        const string Json = """
-            [
-              { "id": "GSH0001" },
-              { "id": "GSH0003" },
-              { "id": "GSH0064" },
-              { "id": "GSH0060" },
-              { "id": "SLQ0001" }
-            ]
-            """;
-
-        var violations = FindOutOfOrderIds(Json);
+        var violations = FindOutOfOrderIds(["GSH0001", "GSH0003", "GSH0064", "GSH0060", "SLQ0001"]);
 
         Assert.Equal(["GSH0064 is followed by GSH0060"], violations);
     }
 
-    private static List<string> FindDuplicateKeys(string json)
+    private static List<string> FindOutOfOrderIds(IEnumerable<string> ids)
     {
-        using var document = JsonDocument.Parse(json);
-        var violations = new List<string>();
-        foreach (var entry in document.RootElement.EnumerateArray())
-        {
-            var seen = new HashSet<string>(StringComparer.Ordinal);
-            var ids = new List<string>();
-            var repeated = new List<string>();
-            foreach (var property in entry.EnumerateObject())
-            {
-                if (property.NameEquals("id"))
-                {
-                    ids.Add(property.Value.GetString() ?? "");
-                }
-
-                if (!seen.Add(property.Name))
-                {
-                    repeated.Add(property.Name);
-                }
-            }
-
-            foreach (var key in repeated)
-            {
-                violations.Add($"{string.Join("+", ids)}: {key}");
-            }
-        }
-
-        return violations;
-    }
-
-    private static List<string> FindOutOfOrderIds(string json)
-    {
-        using var document = JsonDocument.Parse(json);
         var previousByPrefix = new Dictionary<string, (int Number, string Id)>(StringComparer.Ordinal);
         var violations = new List<string>();
-        foreach (var entry in document.RootElement.EnumerateArray())
+        foreach (var id in ids)
         {
-            var id = entry.GetProperty("id").GetString() ?? "";
             var prefix = id[..^4];
             var number = int.Parse(id[^4..], NumberStyles.None, CultureInfo.InvariantCulture);
             if (previousByPrefix.TryGetValue(prefix, out var previous) && number <= previous.Number)

@@ -15,12 +15,26 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
     <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" />
-    <None Include="known-issues.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="known-issues.yml" CopyToOutputDirectory="PreserveNewest" />
     <Using Include="System" />
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Runtime.CompilerServices" />
     <Using Include="System.Text" />
     <Using Include="Kassyi.GSharp.Compiler" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tools.FuzzDiff.Tests" />
+  </ItemGroup>
+
+  <!-- The YAML parser of the compiler (internal there), for known-issues.yml -->
+  <ItemGroup>
+    <Using Include="System.Collections.Immutable" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadErrorKind.cs" Link="NativeApi\NativeApiReadErrorKind.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadError.cs" Link="NativeApi\NativeApiReadError.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\NativeApiReadException.cs" Link="NativeApi\NativeApiReadException.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlSubsetParser.cs" Link="NativeApi\YamlSubsetParser.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlNode.cs" Link="NativeApi\YamlNode.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlScalar.cs" Link="NativeApi\YamlScalar.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlSequence.cs" Link="NativeApi\YamlSequence.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlMapping.cs" Link="NativeApi\YamlMapping.cs" />
+    <Compile Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\NativeApi\YamlInlineParser.cs" Link="NativeApi\YamlInlineParser.cs" />
   </ItemGroup>
 </Project>
