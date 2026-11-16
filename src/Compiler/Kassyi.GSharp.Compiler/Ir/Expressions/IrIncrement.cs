@@ -31,5 +31,6 @@ internal sealed class IrIncrement(IrExpression target, bool isPrefix, bool isDec
     public IrIncrement Update(IrExpression target) =>
         target == Target
             ? this
-            : new IrIncrement(target, IsPrefix, IsDecrement, OperatorMethod, IsChecked, Category, Source);
+            : KeepSpelling(new IrIncrement(target, IsPrefix, IsDecrement, OperatorMethod, IsChecked, Category,
+                Source));
 }

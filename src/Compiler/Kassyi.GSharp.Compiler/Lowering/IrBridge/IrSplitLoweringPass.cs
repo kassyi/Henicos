@@ -13,10 +13,12 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// statement stays to them.
 /// </summary>
 /// <remarks>
-/// The unit is one statement of the source, reached through blocks and the branches of an <see langword="if"/> (the
-/// statements of a loop, a switch or a try are inside opaque nodes of the IR). A statement is written out when all of
-/// these hold: the plan of each of its IR statements has no fallback; the prepared statement is the statement of the
-/// source (no expansion, removal or mutant switch changed it); the plan can be applied
+/// The unit is one statement of the source, reached through blocks and the branches of an <see langword="if"/> (a
+/// <see langword="while"/> loop is a node of the IR but stays to the syntax passes
+/// (<see cref="IrSpillApplySkip.LoopCondition"/>); the statements of other loops, a switch or a try are inside opaque
+/// nodes of the IR). A statement is written out when all of these hold: the plan of each of its IR statements has no
+/// fallback; the prepared statement is the statement of the source (no expansion, removal or mutant switch changed
+/// it); the plan can be applied
 /// (<see cref="IrSpillRewriter"/>); every operand evaluated into a <c>var</c> temporary can be copied out of its
 /// statement (<see cref="IrOperandCopies"/>); the split annotations of the syntax agree with the splits of the IR,
 /// before and after the statement is written (<see cref="IrSplitAnnotationCheck"/>); and every node has syntax to copy

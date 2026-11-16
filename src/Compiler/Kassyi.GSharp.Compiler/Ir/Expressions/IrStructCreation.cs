@@ -28,5 +28,5 @@ internal sealed class IrStructCreation(IMethodSymbol? constructor, ImmutableArra
         ImmutableArray<IrAssignment> initializers) =>
         arguments == Arguments && initializers == Initializers
             ? this
-            : new IrStructCreation(Constructor, arguments, initializers, Type, Category, Source);
+            : KeepSpelling(new IrStructCreation(Constructor, arguments, initializers, Type, Category, Source));
 }

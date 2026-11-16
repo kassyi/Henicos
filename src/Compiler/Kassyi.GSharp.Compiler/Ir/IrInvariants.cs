@@ -85,6 +85,7 @@ internal sealed class IrInvariants
         {
             IrBlock block => scopes.Push(block.Locals),
             IrSequence sequence => scopes.Push(sequence.Locals),
+            IrWhile @while => scopes.Push(@while.Locals),
             _ => scopes
         };
         foreach (var child in IrNodeChildren.Of(node))
@@ -134,6 +135,9 @@ internal sealed class IrInvariants
                 break;
             case IrReturn { Value: { } value } @return:
                 Report(@return, IrNodeChecks.Return(_method.Symbol, value));
+                break;
+            case IrWhile @while:
+                Report(@while, IrNodeChecks.WhileCondition(@while.Condition));
                 break;
         }
     }
