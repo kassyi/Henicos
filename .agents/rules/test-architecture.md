@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/tests/**"
-description: Test tiers, snapshot rules, test attributes and names, the test analyzers, and the APIs banned in tests.
+trigger: model_decision
+description: Read before writing or changing a test - test tiers, snapshot rules, test attributes and names, the test analyzers, the APIs banned in tests.
+paths: "tests/**"
 ---
 
 # G# Test Framework & Tier 1-3 Architecture Guidelines
