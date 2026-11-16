@@ -4,19 +4,31 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Rewrites top-level <c>break</c> and <c>continue</c> statements of a consumer <c>foreach</c> body into <c>goto</c>
 /// statements targeting the enclosing inlined iterator expansion's end and next labels.
 /// </summary>
-internal sealed class BranchTargetRewriter(string endLabel, string nextLabel) : CSharpSyntaxRewriter
+internal sealed class BranchTargetRewriter(string endLabel, string nextLabel, string? loopLabel) : CSharpSyntaxRewriter
 {
     private int _breakDepth;
     private int _continueDepth;
 
-    public static StatementSyntax Rewrite(StatementSyntax body, string endLabel, string nextLabel)
+    public static StatementSyntax Rewrite(StatementSyntax body, string endLabel, string nextLabel,
+        string? loopLabel = null)
     {
-        var rewriter = new BranchTargetRewriter(endLabel, nextLabel);
+        var resolvedLoopLabel = loopLabel ??
+            (body.Parent is CommonForEachStatementSyntax { Parent: LabeledStatementSyntax labeled }
+                ? labeled.Identifier.ValueText
+                : null);
+        var rewriter = new BranchTargetRewriter(endLabel, nextLabel, resolvedLoopLabel);
         return rewriter.Visit(body) as StatementSyntax ?? body;
     }
 
     public override SyntaxNode? VisitBreakStatement(BreakStatementSyntax node)
     {
+        if (LabeledJumpSyntax.GetLabelName(node) is { } labelName)
+        {
+            return NamesThisLoop(labelName)
+                ? LoweringSyntax.Goto(endLabel).WithOriginalSpanFrom(node)
+                : node;
+        }
+
         if (_breakDepth > 0)
         {
             return node;
@@ -28,6 +40,13 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel) : 
 
     public override SyntaxNode? VisitContinueStatement(ContinueStatementSyntax node)
     {
+        if (LabeledJumpSyntax.GetLabelName(node) is { } labelName)
+        {
+            return NamesThisLoop(labelName)
+                ? LoweringSyntax.Goto(nextLabel).WithOriginalSpanFrom(node)
+                : node;
+        }
+
         if (_continueDepth > 0)
         {
             return node;
@@ -87,4 +106,8 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel) : 
             _continueDepth--;
         }
     }
+
+    // Whether a labeled jump names the consumer foreach whose body this rewriter walks
+    private bool NamesThisLoop(IdentifierNameSyntax labelName) =>
+        loopLabel != null && string.Equals(labelName.Identifier.ValueText, loopLabel, StringComparison.Ordinal);
 }

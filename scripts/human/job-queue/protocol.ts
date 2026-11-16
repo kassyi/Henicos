@@ -2,6 +2,7 @@
 
 import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
+import type { PathPlace } from "./estimate-key.ts";
 
 /** How a job ended, as --after reads it. `lost`: its client died and its command exited with an unknown code. */
 export type Outcome = "succeeded" | "failed" | "cancelled" | "lost";
@@ -16,6 +17,11 @@ export interface JobRequest {
   cwd: string;
   /** The root of the worktree of cwd (absent from older clients: the scheduler then takes cwd). */
   worktree?: string;
+  /**
+   * Where the command's project and script arguments lie (the worktree that holds each, whether it ignores it), keyed
+   * by absolute path, for the estimate keys; absent from older clients and when the command names none.
+   */
+  places?: Record<string, PathPlace>;
   /** The agent chat that queued it (CLAUDE_CODE_SESSION_ID, ANTIGRAVITY_CONVERSATION_ID; absent from other callers). */
   session?: string;
   command: string;
@@ -235,4 +241,25 @@ export function idField(message: Incoming, name: string): number | null {
 export function optionalNumberField(message: Incoming, name: string): number | null {
   const value = message[name];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** The well-formed entries of a `places` field (JobRequest.places); undefined when there are none. */
+export function placesField(message: Incoming): Record<string, PathPlace> | undefined {
+  const value = message.places;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return undefined;
+  }
+  // Without a prototype, so that a path named "__proto__" stays a plain key
+  const places: Record<string, PathPlace> = Object.create(null) as Record<string, PathPlace>;
+  let any = false;
+  for (const [key, place] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof place === "object" && place !== null) {
+      const { root, ignored } = place as Record<string, unknown>;
+      if (typeof root === "string" && typeof ignored === "boolean") {
+        places[key] = { root, ignored };
+        any = true;
+      }
+    }
+  }
+  return any ? places : undefined;
 }

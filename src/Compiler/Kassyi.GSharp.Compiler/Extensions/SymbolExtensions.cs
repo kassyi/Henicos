@@ -375,6 +375,16 @@ internal static class SymbolExtensions
         parameter.HasAttribute(KnownAttributes.GpuConstexpr);
 
     /// <summary>
+    /// Whether the emitted signature passes <paramref name="parameter"/> as a pointer: <c>ref</c> and <c>out</c> always,
+    /// <c>in</c> and <c>ref readonly</c> only for a device function. A kernel receives an <c>in</c> parameter by value,
+    /// as the whole struct. The emitter (<c>YamlDialectBase.AppendParameter</c>) and the kernel parameter space check
+    /// (<c>KernelSignatureRule</c>) both decide with this.
+    /// </summary>
+    public static bool IsPassedByPointer(this IParameterSymbol parameter, bool isKernel) =>
+        parameter.RefKind is RefKind.Ref or RefKind.Out ||
+        (!isKernel && parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter);
+
+    /// <summary>
     /// Whether <paramref name="method"/> is a <c>[GpuKernel(Cooperative = true)]</c> kernel, which the launcher starts
     /// with <c>cuLaunchCooperativeKernel</c> and which alone may call <c>Gpu.SyncGrid</c>.
     /// </summary>

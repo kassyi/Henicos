@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.ErrorSites;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Naming;
 using Kassyi.GSharp.Runtime.Aot;
@@ -69,6 +71,155 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal("(7,3,1)", ex.Data["GSharp.ThreadIndex"]);
         Assert.Equal("(2,4,1)", ex.Data["GSharp.BlockIndex"]);
         Assert.Equal(nameof(CUresult.CudaErrorIllegalInstruction), ex.Data["GSharp.CudaError"]);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(GSharpErrorCode.ArgumentNull, typeof(ArgumentNullException), "Value cannot be null.", "array")]
+    [InlineData(GSharpErrorCode.Argument, typeof(ArgumentException), "Destination is too short.", "destination")]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, typeof(ArgumentOutOfRangeException), "Count is out.", "count")]
+    public void ErrorMapper_ArgumentErrorNamingAParameter_SetsParamNameOnceInTheMessage(
+        GSharpErrorCode code,
+        Type expectedExceptionType,
+        string text,
+        string parameter)
+    {
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-{code}",
+            [new GSharpErrorSite(2u, "MyKernels.cu.cs", 7, 3, "MyKernel", $"{text} (Parameter '{parameter}')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 2u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.IsType(expectedExceptionType, ex);
+        Assert.Equal(parameter, ex.ParamName);
+        Assert.StartsWith($"{text} in MyKernel at MyKernels.cu.cs(7,3)", ex.Message);
+        Assert.EndsWith($"(Parameter '{parameter}')", ex.Message);
+        Assert.Equal(
+            ex.Message.IndexOf("(Parameter '", StringComparison.Ordinal),
+            ex.Message.LastIndexOf("(Parameter '", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void ErrorMapper_EveryArgumentExceptionMessageOfTheCompiler_IsAKnownBuiltinMessage()
+    {
+        foreach (var message in ArgumentExceptionMessages.All)
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(message),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.NotNull(ex.ParamName);
+            Assert.Contains(ex.ParamName, message);
+        }
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Resources/Prelude.cu")]
+    [InlineData("Resources/Prelude/Types.hpp")]
+    [InlineData("Resources/StackLinq.cuh")]
+    public void ErrorMapper_EveryParameterMessageOfThePrelude_IsAKnownBuiltinMessage(string preludeFile)
+    {
+        // C++ text has no syntax tree: the literals of the prelude that name a parameter are read from the file
+        var text = File.ReadAllText(
+            RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", preludeFile));
+#pragma warning disable RS0030 // C++ text of the prelude has no syntax tree
+        var literals = Regex.Matches(text, @"""((?:[^""\\]|\\.)*\(Parameter '[^']*'\))""");
+#pragma warning restore RS0030
+        Assert.NotEmpty(literals);
+
+        foreach (var literal in literals.Select(static m => m.Groups[1].Value))
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(literal),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.True(ex.ParamName is not null, $"The mapper does not know \"{literal}\" of {preludeFile}");
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_ArgumentErrorWithoutAParameter_HasNoParamName()
+    {
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+        };
+
+        var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_MessageEndingInAnEmptyParameterName_KeepsItsText()
+    {
+        // new ArgumentException(message, "") drops the suffix, so an empty name must not be taken from the text
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            "test-module-empty-param-name",
+            [new GSharpErrorSite(3u, "MyKernels.cu.cs", 9, 1, "MyKernel", "Destination is too short. (Parameter '')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.Argument | GSharpErrorMapper.CompletionBit,
+            SiteId = 3u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsType<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
+        Assert.Contains("(Parameter '')", ex.Message);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(GSharpErrorCode.Argument, true)]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, false)]
+    [InlineData(GSharpErrorCode.ArgumentNull, false)]
+    public void ErrorMapper_ArgumentErrorWithAnInnerException_KeepsParamNameOnlyWhereTheConstructorTakesBoth(
+        GSharpErrorCode code,
+        bool keepsParamName)
+    {
+        // ArgumentException(message, paramName, innerException) exists; the other two types have no such constructor
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-inner-{code}",
+            [new GSharpErrorSite(4u, "MyKernels.cu.cs", 11, 5, "MyKernel", "Bad value. (Parameter 'count')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 4u,
+            ModuleId = moduleId,
+        };
+        var inner = new InvalidOperationException("inner");
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot, inner));
+
+        Assert.Equal(keepsParamName ? "count" : null, ex.ParamName);
+        Assert.Contains("(Parameter 'count')", ex.Message);
+        Assert.Same(inner, ex.InnerException);
     }
 
     [Fact]
