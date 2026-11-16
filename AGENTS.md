@@ -19,6 +19,7 @@ These rules govern agent behavior and tool execution:
 
 - **No Autonomous Git Commits or Pushes**: Strictly prohibited under any circumstances. When modifications are finished, stop and prompt the user to invoke `/commit.ja.prompt` (WIP/prototype) or `/commit.en.prompt` (PR). Commits must never be performed directly on `main` or `master`.
 - **Builds and Tests Go Through the Job Queue**: The machine and its GPU are shared by every agent and worktree. Run every `dotnet build` / `test`, `msbuild`, `just` test, fuzz, mutate and benchmark recipe and long test script as `node scripts/human/job-queue.js run [--gpu] -- "<command>"` ([job-queue.md](.agents/rules/job-queue.md)); never run one directly.
+- **Before Writing C#**: Read [coding-style.md](.agents/rules/coding-style.md) before writing or editing C#, a new file included. Never an empty `catch`, never `!` without a comment saying why it is safe.
 - **Communication & Tone**: Keep your tone quiet, highly professional, concise, and dry—like a seasoned senior backend engineer. All explanations, thinking processes, and Q&A must be in Japanese.
 - **Issue & PR Shorthand (`#<number>`)**: When referenced without qualification, autonomously inspect using `gh issue view <number>` or `gh pr view <number>` without asking for clarification.
 - **Issue & PR Numbers Carry Their Title**: Never write an issue or PR number alone; add a short title, as in `#1078 (MSVC /O2 miscompile)`, in chat, handoffs, briefs, memory, PR bodies and commit messages, so a wrong number shows. Copy numbers from tool output, not from memory. Before publishing text with numbers (issue / PR bodies and comments, commits, branch names), run `node scripts/agent/check-issue-refs.js --text "<text>"` (or `--file`); a PreToolUse hook in Claude Code (`.claude/settings.json`) and Antigravity (`.agents/hooks.json`) runs it on those commands and denies a number that does not exist, or a closing keyword (`Fixes #n`) that names a PR or a closed issue. A brief or handoff that refers to issues starts with a `number | title` table.
@@ -29,21 +30,20 @@ These rules govern agent behavior and tool execution:
 
 ## 3. Rules Index (`.agents/rules/`)
 
-You **MUST** follow the dedicated rule files for code implementation. Each file starts with frontmatter for Antigravity (`trigger: always_on`, or `glob` with the files it covers), checked by `node scripts/human/check-rule-frontmatter.js`; Claude Code imports every file through `CLAUDE.md`.
+Only the rules marked *always loaded* are in your context from the start. Read every other rule before the work its line names, and follow it; the line says when. Antigravity lists those rules by their description, and `CLAUDE.md` lists them for Claude Code, which also loads a rule by itself when you read or edit a file its `paths` cover (`.claude/rules/`, copied from `.agents/rules/` by `just update-agents`). The frontmatter is checked by `node scripts/human/check-rule-frontmatter.js`.
 
-- [Coding Style & Memory Guidelines](.agents/rules/coding-style.md): C# naming conventions, zero-allocation patterns, `StackLinq` policy (`RS0030`), null-forgiving (`!`) ban, and empty catch ban.
-- [GPU / C# Boundary Naming Conventions](.agents/rules/gsharp-naming-conventions.md): Kernel and host naming standards.
-- [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): 2-Tier test hierarchy, snapshot testing (`.verified.cs`), and Test-Driven AI Vibe Coding workflow.
-- [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories, DiffEngine hang prevention, memory budgets, CI.
-- [Job Queue](.agents/rules/job-queue.md): every build and test command runs through `scripts/human/job-queue.js` (`run`, `status`, `wait`, dependencies, GPU turns).
-- [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output, decide then write (Plan / Emit).
-- [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard, C# order of evaluation (`EvaluationOrder`). The symbol file (`*.gsym.json`) and source hash header are described in the transpiler skill (Symbol File Mapping).
-- [Label Colors](.agents/rules/issue-labels.md): tiers, one hue family per label, dark-mode check for a new label.
-- [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): the current bugs-first policy, the milestones `M1`–`M5` and `Future`, how to assign an issue, the order to work in, and what agents may change without approval.
-- [Hard Problem Routing](.agents/rules/model-routing.md): when to use Fable for the hardest design/verification work, and handing math optimization / complexity reduction to the user as a self-contained plain-text problem (no file attachments).
-- [Semantics Charter](.agents/rules/semantics-charter.md): which definition wins (C#, GPU, CPU), no implicit meaning without a marker, undefined behavior is an error. Every design and compiler change must follow it.
-- [Agent Scripts](.agents/rules/agent-scripts.md): agent-run scripts are dependency-free Node `.js` (no `.sh` / `.ps1`); compiler-owned logic goes in a `Kassyi.GSharp.Compiler.Generators` mode; script catalog.
-
+- [Semantics Charter](.agents/rules/semantics-charter.md) (*always loaded*): which definition wins (C#, GPU, CPU), no implicit meaning without a marker, undefined behavior is an error. Every design and compiler change must follow it.
+- [Job Queue](.agents/rules/job-queue.md) (*always loaded*): the short form of running builds and tests through `scripts/human/job-queue.js`. Read [Job Queue Reference](.agents/rules/job-queue-reference.md) before `--after`, moving, cancelling or pausing jobs, weights, memory budgets, or the hook's exact rules.
+- [Coding Style & Memory Guidelines](.agents/rules/coding-style.md): before writing or editing any C#. No empty catch, no `!`, naming, zero allocation, the `StackLinq` policy (`RS0030`), kernel files.
+- [GPU / C# Boundary Naming Conventions](.agents/rules/gsharp-naming-conventions.md): before naming a kernel, device function or launch wrapper.
+- [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): before changing code that emits C# or CUDA C++. No Reflection, `SourceWriter` scoped brackets, dense output, plan then emit.
+- [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): before changing the compiler under `src/Compiler`. Diagnostics, original spans, struct guards, ref/out, `var` suffix, design-time I/O, evaluation order. The symbol file (`*.gsym.json`) is described in the transpiler skill.
+- [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): before writing or changing a test. Tiers, snapshots (`.verified.cs`), attributes and names, the test analyzers.
+- [Test Execution (`just`)](.agents/rules/test-execution.md): before running tests, fuzzing or mutation testing, or acting on a pull request (CI, review labels, merging).
+- [Agent Scripts](.agents/rules/agent-scripts.md): before writing or changing a script or a `justfile` recipe. Node built-ins only (no `.sh` / `.ps1`), compiler-owned logic in a `Kassyi.GSharp.Compiler.Generators` mode, the script catalog.
+- [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): before filing or triaging an issue, choosing a milestone, or picking what to work on next.
+- [Label Colors](.agents/rules/issue-labels.md): before creating or recoloring a GitHub label.
+- [Hard Problem Routing](.agents/rules/model-routing.md): before choosing a model for a subagent, using Fable, or meeting a math optimization or complexity problem to hand to the user.
 ---
 
 ## 4. Specialized Skills Index (`.agents/skills/`)
