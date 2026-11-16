@@ -97,8 +97,8 @@ internal static class SpanWriteClassifier
                 : SpanPropertyKind.Unsupported;
         }
 
-        // [WHY] ImmutableArray<T> and Memory<T> are array views in device code: only these members have a device form here;
-        // Length is mapped by the dialect and the others are reported where they are used
+        // [WHY] ImmutableArray<T> and Memory<T> are array views in device code: only these members have a device form
+        // here; Length is mapped by the dialect and the others are reported where they are used
         if (property.IsStatic || !(IsImmutableArray(owner) || IsMemory(owner)))
         {
             return SpanPropertyKind.None;

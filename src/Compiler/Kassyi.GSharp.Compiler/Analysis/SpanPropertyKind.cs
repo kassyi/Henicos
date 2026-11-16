@@ -24,7 +24,9 @@ internal enum SpanPropertyKind
     /// <summary><c>ImmutableArray&lt;T&gt;.IsDefault</c>: the array is <see langword="null"/>.</summary>
     IsDefault,
 
-    /// <summary><c>ImmutableArray&lt;T&gt;.IsDefaultOrEmpty</c>: the array is <see langword="null"/> or has no element.</summary>
+    /// <summary>
+    /// <c>ImmutableArray&lt;T&gt;.IsDefaultOrEmpty</c>: the array is <see langword="null"/> or has no element.
+    /// </summary>
     IsDefaultOrEmpty,
 
     /// <summary><c>Span&lt;T&gt;.Empty</c> or <c>ReadOnlySpan&lt;T&gt;.Empty</c>.</summary>

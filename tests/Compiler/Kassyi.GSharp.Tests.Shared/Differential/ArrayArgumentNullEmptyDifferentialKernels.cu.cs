@@ -245,6 +245,8 @@ public static class ArrayArgumentReads
     /// <summary><c>IsDefaultOrEmpty</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
     public const int IsDefaultOrEmpty = 10;
 
-    /// <summary><c>IsDefault</c> and <c>IsDefaultOrEmpty</c> of a <c>default(ImmutableArray&lt;T&gt;)</c> literal.</summary>
+    /// <summary>
+    /// <c>IsDefault</c> and <c>IsDefaultOrEmpty</c> of a <c>default(ImmutableArray&lt;T&gt;)</c> literal.
+    /// </summary>
     public const int DefaultLiteral = 16;
 }
