@@ -99,8 +99,7 @@ internal sealed partial class ManagedExecutionRewriter
     {
         if (visited is not (InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax) ||
             semanticModel.GetSymbol(node) is not IMethodSymbol method ||
-            !IsUserMethod(method) ||
-            method.ContainingType.IsSharedMemoryType())
+            !ManagedCallForms.AddsCallerInfo(method))
         {
             return visited;
         }
@@ -135,12 +134,6 @@ internal sealed partial class ManagedExecutionRewriter
             _ => visited
         };
     }
-
-    // A method declared in this compilation, or a device function of another assembly (the managed path calls it, or
-    // its managed version, with the parameters it declares)
-    private static bool IsUserMethod(IMethodSymbol method) =>
-        !method.OriginalDefinition.DeclaringSyntaxReferences.IsEmpty ||
-        (method.ReducedFrom ?? method).OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction);
 
     private static InvocationExpressionSyntax RewriteSequentialSum(InvocationExpressionSyntax call) =>
         call.Expression switch
