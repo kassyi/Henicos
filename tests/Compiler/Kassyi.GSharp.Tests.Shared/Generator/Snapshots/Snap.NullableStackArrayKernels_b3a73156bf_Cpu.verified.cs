@@ -50,9 +50,9 @@ private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_er
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(12177267u, "NullableStackArrayKernels.cs", 38, 9, "StackArrayArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1929480247u, "NullableStackArrayKernels.cs", 47, 9, "StackArrayWithParameterKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1625469020u, "NullableStackArrayKernels.cs", 47, 30, "StackArrayWithParameterKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1625469020u, "NullableStackArrayKernels.cs", 47, 30, "StackArrayWithParameterKernel", "G#: a null array is passed to the non-nullable parameter 'fallback' of First. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2043583447u, "NullableStackArrayKernels.cs", 54, 9, "ParameterArgumentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(312371704u, "NullableStackArrayKernels.cs", 54, 30, "ParameterArgumentKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(312371704u, "NullableStackArrayKernels.cs", 54, 30, "ParameterArgumentKernel", "G#: a null array is passed to the non-nullable parameter 'values' of SumArray. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

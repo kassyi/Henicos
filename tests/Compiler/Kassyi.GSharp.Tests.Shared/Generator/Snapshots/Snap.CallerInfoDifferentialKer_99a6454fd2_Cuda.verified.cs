@@ -228,7 +228,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940997348u, "CallerInfoDif
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1226024750u, "CallerInfoDifferentialKernels.cs", 84, 21, "CallerLineKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1417588917u, "CallerInfoDifferentialKernels.cs", 92, 20, "CallerLineManagedVersionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1159802896u, "CallerInfoDifferentialKernels.cs", 93, 9, "CallerLineManagedVersionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(158106789u, "CallerInfoDifferentialKernels.cs", 93, 30, "CallerLineManagedVersionKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(158106789u, "CallerInfoDifferentialKernels.cs", 93, 30, "CallerLineManagedVersionKernel", "G#: a null array is passed to the non-nullable parameter 'data' of LineWithSum. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (float[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(119696514u, "CallerInfoDifferentialKernels.cs", 101, 17, "CallerLineSuspendingCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(212762616u, "CallerInfoDifferentialKernels.cs", 102, 9, "CallerLineSuspendingCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(519420282u, "CallerInfoDifferentialKernels.cs", 110, 20, "CallerLineIteratorKernel", "G#: a null array is read"),

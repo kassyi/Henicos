@@ -393,23 +393,33 @@ internal static class ArrayNullCheck
         check.Kind == ArgumentCheckKind.Array ? GSharpInternalNames.Prelude.ArrayRef : GSharpInternalNames.Prelude.StructRef;
 
     /// <summary>
-    /// Writes what follows the argument in the check: <c>, &lt;site&gt;</c>, and for a struct one getter per field chain,
-    /// <c>, [](const auto&amp; s) -&gt; decltype(auto) { return (s.&lt;field&gt;...); }</c>.
+    /// Writes what follows the argument in the check: <c>, &lt;site&gt;</c> for an array argument, and for a struct
+    /// one check per field chain,
+    /// <c>, [](const auto&amp; s) { return __gsharp_array_ref(s.&lt;field&gt;..., &lt;site&gt;); }</c>.
     /// </summary>
     public static void AppendArgumentCheckTail(ArgumentCheck check, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
-        writer.Append(", ");
-        AppendSite(writer, check.Site);
-        foreach (var path in check.Fields)
+        if (check.Kind == ArgumentCheckKind.Array)
         {
-            writer.Append(", [](const auto& s) -> decltype(auto) { return (s");
-            foreach (var field in path)
+            writer.Append(", ");
+            AppendSite(writer, check.ArraySite);
+            return;
+        }
+
+        foreach (var fieldCheck in check.StructChecks)
+        {
+            writer.Append(", [](const auto& s) { return ");
+            writer.Append(GSharpInternalNames.Prelude.ArrayRef);
+            writer.Append("(s");
+            foreach (var field in fieldCheck.Path)
             {
                 writer.Append(".");
                 CppNameResolver.AppendSymbolName(field, ref context);
             }
 
+            writer.Append(", ");
+            AppendSite(writer, fieldCheck.Site);
             writer.Append("); }");
         }
     }
@@ -427,11 +437,24 @@ internal static class ArrayNullCheck
             return ArgumentCheck.None;
         }
 
-        return parameter.Type is IArrayTypeSymbol
-            ? new ArgumentCheck(ArgumentCheckKind.Array, PlanArgumentSite(argument, ref context),
-                ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
-            : new ArgumentCheck(ArgumentCheckKind.Struct, PlanArgumentSite(argument, ref context),
-                NonNullProof.GetNonNullableArrayFields(parameter.Type));
+        if (parameter.Type is IArrayTypeSymbol)
+        {
+            var site = PlanArgumentSite(argument, parameter, null, parameter.Type, ArgumentTrapKind, ref context);
+            return new ArgumentCheck(ArgumentCheckKind.Array, site, ImmutableArray<StructFieldCheck>.Empty);
+        }
+
+        var paths = NonNullProof.GetNonNullableArrayFields(parameter.Type);
+        var builder = ImmutableArray.CreateBuilder<StructFieldCheck>(paths.Length);
+        foreach (var path in paths)
+        {
+            var fieldPath = FormatFieldPath(parameter, path);
+            var targetType = path[^1].Type;
+            var trapKind = $"{ArgumentTrapKind}#{fieldPath}";
+            var site = PlanArgumentSite(argument, parameter, fieldPath, targetType, trapKind, ref context);
+            builder.Add(new StructFieldCheck(site, path));
+        }
+
+        return new ArgumentCheck(ArgumentCheckKind.Struct, default, builder.MoveToImmutable());
     }
 
     /// <summary>
@@ -444,9 +467,66 @@ internal static class ArrayNullCheck
             ? NonNullProof.IsProvenNonNull(argument, model)
             : NonNullProof.IsProvenStruct(argument, model));
 
+    // Formats the path from the parameter to a nested struct field, for example "s.Inner.Data"
+    private static string FormatFieldPath(IParameterSymbol parameter, ImmutableArray<IFieldSymbol> path)
+    {
+        var builder = new System.Text.StringBuilder(parameter.Name);
+        foreach (var field in path)
+        {
+            builder.Append('.').Append(field.Name);
+        }
+
+        return builder.ToString();
+    }
+
+    // Explains why G# throws earlier than C# at a device function call boundary (#2044)
+    private static string FormatArgumentMessage(
+        IParameterSymbol parameter,
+        string? fieldPath,
+        ITypeSymbol targetType,
+        string? place)
+    {
+        var calleeName = parameter.ContainingSymbol?.Name ?? "";
+        var typeStr = targetType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        var placeSuffix = place is not null ? $" at {place}." : ".";
+
+        if (fieldPath is not null)
+        {
+            return $"G#: a null array is passed to the non-nullable field '{fieldPath}' of parameter " +
+                $"'{parameter.Name}' of {calleeName}{placeSuffix} G# checks the nullable annotation at the call, " +
+                "earlier than C#, which throws only when the array is read; " +
+                $"declare the field nullable ({typeStr}?) to keep the C# behavior.";
+        }
+
+        return $"G#: a null array is passed to the non-nullable parameter '{parameter.Name}' of {calleeName}" +
+            $"{placeSuffix} G# checks the nullable annotation at the call, earlier than C#, " +
+            "which throws only when the array is read; " +
+            $"declare the parameter nullable ({typeStr}?) to keep the C# behavior.";
+    }
+
     // The place of a null passed where the parameter is not nullable
-    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
-        PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
+    private static NullCheckSite PlanArgumentSite(
+        ExpressionSyntax argument,
+        IParameterSymbol parameter,
+        string? fieldPath,
+        ITypeSymbol targetType,
+        string trapKind,
+        ref TranspileContext context)
+    {
+        var table = context.Emitter.ErrorSites;
+        if (table is null)
+        {
+            var place = SourcePlace.Format(context.Query.SemanticModel, argument);
+            var message = FormatArgumentMessage(parameter, fieldPath, targetType, place);
+            return new NullCheckSite(0u, message);
+        }
+
+        var messageWithoutPlace = FormatArgumentMessage(parameter, fieldPath, targetType, null);
+        var memberName = GetSourceMemberName(argument, context.Query.SemanticModel) ??
+            context.Emitter.CurrentMemberName ?? "";
+        return new NullCheckSite(
+            table.Register(argument, context.Query.SemanticModel, memberName, messageWithoutPlace, trapKind), "");
+    }
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
     internal static void AppendSite(SourceWriter writer, NullCheckSite site)
@@ -516,13 +596,21 @@ internal enum ArgumentCheckKind
 }
 
 /// <summary>
-/// The check of one device function argument: its kind, the place a failure reports, and for a struct the chains of
-/// fields to the non-nullable arrays it tests.
+/// A non-nullable array field checked in a struct argument of a device function call (#1409, #2044):
+/// the site of the check, and the path of fields from the struct to the array.
 /// </summary>
-internal readonly record struct ArgumentCheck(ArgumentCheckKind Kind, NullCheckSite Site,
-    ImmutableArray<ImmutableArray<IFieldSymbol>> Fields)
+internal readonly record struct StructFieldCheck(NullCheckSite Site, ImmutableArray<IFieldSymbol> Path);
+
+/// <summary>
+/// The check of one device function argument: its kind, the place a failure reports for an array argument,
+/// and for a struct the checks and field paths of its non-nullable arrays.
+/// </summary>
+internal readonly record struct ArgumentCheck(
+    ArgumentCheckKind Kind,
+    NullCheckSite ArraySite,
+    ImmutableArray<StructFieldCheck> StructChecks)
 {
     /// <summary>The argument needs no check.</summary>
     public static ArgumentCheck None { get; } =
-        new(ArgumentCheckKind.None, default, ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
+        new(ArgumentCheckKind.None, default, ImmutableArray<StructFieldCheck>.Empty);
 }

@@ -276,7 +276,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1169233545u, "ArrayCallSou
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1883131059u, "ArrayCallSourceDifferentialKernels.cs", 112, 46, "LocalArrayCallKernel", "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(514213743u, "ArrayCallSourceDifferentialKernels.cs", 115, 9, "LocalArrayCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(267692291u, "ArrayCallSourceDifferentialKernels.cs", 126, 9, "ParameterArrayCallKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997671583u, "ArrayCallSourceDifferentialKernels.cs", 127, 34, "ParameterArrayCallKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997671583u, "ArrayCallSourceDifferentialKernels.cs", 127, 34, "ParameterArrayCallKernel", "G#: a null array is passed to the non-nullable parameter 'o' of CallOnParameter. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(457530175u, "ArrayCallSourceDifferentialKernels.cs", 128, 9, "ParameterArrayCallKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
