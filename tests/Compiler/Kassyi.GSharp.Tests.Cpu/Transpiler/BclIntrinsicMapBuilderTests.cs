@@ -13,8 +13,8 @@ using Mapping = (Microsoft.CodeAnalysis.IMethodSymbol Method, string CudaIntrins
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
-/// The <c>nuint</c> overloads of <see cref="BitOperations"/> take the mapping of the <c>uint</c> overload on a 32-bit
-/// platform and of the <c>ulong</c> overload otherwise.
+/// The <c>nuint</c> overloads of <see cref="BitOperations"/> take the mapping of the <c>ulong</c> overload on every
+/// platform: <c>nint</c> and <c>nuint</c> are 64-bit in device code, whatever the platform of the host project is.
 /// </summary>
 public class BclIntrinsicMapBuilderTests
 {
@@ -41,7 +41,7 @@ public class BclIntrinsicMapBuilderTests
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     [MemberData(nameof(NativeSizedOperations))]
-    public void NativeSizedOverload_MapsLikeTheFixedSizeOverloadOfThePlatform(string methodName, Platform platform)
+    public void NativeSizedOverload_MapsLikeTheUInt64OverloadOnEveryPlatform(string methodName, Platform platform)
     {
         var baseCompilation = RoslynTestUtility.BaseCompilation;
         var compilation = baseCompilation.WithOptions(baseCompilation.Options.WithPlatform(platform));
@@ -49,12 +49,12 @@ public class BclIntrinsicMapBuilderTests
 
         var is32Bit = platform is Platform.X86 or Platform.Arm;
         var nativeSized = FindOverload(compilation, methodName, SpecialType.System_UIntPtr);
-        var fixedSize = FindOverload(compilation, methodName, is32Bit ? SpecialType.System_UInt32 : SpecialType.System_UInt64);
+        var fixedSize = FindOverload(compilation, methodName, SpecialType.System_UInt64);
 
         Assert.True(map.TryGetValue(nativeSized, out var actual), $"{methodName}(nuint) has no mapping.");
         Assert.True(map.TryGetValue(fixedSize, out var expected), $"{methodName}({fixedSize.Parameters[0].Type}) has no mapping.");
         Assert.Equal(expected.CudaIntrinsicName, actual.CudaIntrinsicName);
-        Assert.Equal(is32Bit ? "unsigned int" : "unsigned long long int", actual.CastFirstArgumentTo);
+        Assert.Equal("unsigned long long int", actual.CastFirstArgumentTo);
     }
 
     [Theory]
