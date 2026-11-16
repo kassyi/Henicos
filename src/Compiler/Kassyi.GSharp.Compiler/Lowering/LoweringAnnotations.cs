@@ -157,6 +157,14 @@ public static class LoweringAnnotations
     public const string IrLoweredAnnotationKind = "GSharpIrLowered";
 
     /// <summary>
+    /// Annotation kind that <see cref="LabeledJumpMarker"/> puts on a loop or <c>switch</c> statement that a labeled
+    /// <c>break</c> or <c>continue</c> names and that holds a split point, and on each of those jumps, with the same number
+    /// as data: <see cref="LabeledStatementSplitter"/> detaches the label from such a statement, so the jumps find their
+    /// target by this number, not by the name.
+    /// </summary>
+    public const string LabeledJumpTargetAnnotationKind = "GSharpLabeledJumpTarget";
+
+    /// <summary>
     /// Copies the <see cref="OriginalSpanAnnotationKind"/> annotations of <paramref name="original"/>, the node that
     /// <paramref name="node"/> replaces, onto <paramref name="node"/>, so that a diagnostic on it is reported at the
     /// user's source.
