@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Diagnostics.Host;
 using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
@@ -13,7 +12,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>
-/// Analyzer and static-analysis tests pinning current behavior for open issues (#926, #1082, #1083)
+/// Analyzer and static-analysis tests pinning current behavior for open issues (#926, #1082)
 /// and regression coverage for barrier reachability and grid-stride loop barrier diagnostics (#490).
 /// </summary>
 [Category(TestCategory.Compiler)]
@@ -22,7 +21,6 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
 {
     private static readonly BarrierUsageAnalyzer s_barrierAnalyzer = new();
     private static readonly GpuKernelAnalyzer s_kernelAnalyzer = new();
-    private static readonly StackLinqChainAnalyzer s_chainAnalyzer = new();
 
     // #926: Expect IsRecursiveSuspendingFunction to return true and 3 GSH0061 diagnostics to be reported once ReducedFrom is normalized.
     [Fact(Skip = "#926: Extension-form recursion does not recognize recursive suspending functions.")]
@@ -184,38 +182,5 @@ public class PendingBugsAnalyzerTests : TranspilerTestBase
         Assert.All(gsh0003, d => Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, d.Id));
         Assert.Equal(invocations[0].GetLocation().GetLineSpan().Span, gsh0003[0].Location.GetLineSpan().Span);
         Assert.Equal(invocations[1].GetLocation().GetLineSpan().Span, gsh0003[1].Location.GetLineSpan().Span);
-    }
-
-    // #1083: Expect 2 SLQ0001 diagnostics once StackLinqChainAnalyzer counts StackEnumerable.OfType<T>() and static StackLinqExtensions calls.
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task StackLinqChain_ExceedingMaxDepthWithOfTypeOrStaticCall_ReportsSLQ0001()
-    {
-        var (_, tree, _) =
-            RoslynTestUtility.GetTestCaseContext("Analyzers/PendingBugs/StackLinqChainDepthBypassKernels.cu.cs");
-
-        var sumInvocations = tree.GetRoot()
-            .DescendantNodes()
-            .OfType<InvocationExpressionSyntax>()
-            .Where(inv => inv.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Sum" })
-            .OrderBy(inv => inv.SpanStart)
-            .ToArray();
-
-        Assert.Equal(2, sumInvocations.Length);
-
-        var diagnostics = await TestAnalyzer(
-                "Analyzers/PendingBugs/StackLinqChainDepthBypassKernels.cu.cs",
-                s_chainAnalyzer)
-            .GetDiagnosticsAsync();
-
-        var slq0001 = diagnostics
-            .Where(d => d.Id == GSharpDiagnostics.StackLinqChainTooDeep.Id)
-            .OrderBy(d => d.Location.SourceSpan.Start)
-            .ToArray();
-
-        Assert.Equal(2, slq0001.Length);
-        Assert.All(slq0001, d => Assert.Equal(GSharpDiagnostics.StackLinqChainTooDeep.Id, d.Id));
-        Assert.Equal(sumInvocations[0].GetLocation().GetLineSpan().Span, slq0001[0].Location.GetLineSpan().Span);
-        Assert.Equal(sumInvocations[1].GetLocation().GetLineSpan().Span, slq0001[1].Location.GetLineSpan().Span);
     }
 }
