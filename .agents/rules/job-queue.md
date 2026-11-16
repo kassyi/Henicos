@@ -21,6 +21,8 @@ node scripts/human/job-queue.js status [<id>]               # the jobs ahead and
   `fuzz-differential.js` take the GPU lock themselves: queue them without `--gpu`.
 - A build and the tests of what it built go into one job, as one quoted string:
   `run -- "dotnet build X && dotnet test X --no-build"`. Under `--gpu`, `run` puts the build into a CPU job of its own.
+- A test run outside `just` sets `DiffEngine_Disabled=true` (`run -- "DiffEngine_Disabled=true dotnet test X"`): a
+  failing Verify snapshot otherwise opens a diff viewer and the run waits for it forever. The `just` recipes set it.
 - Write the command for the shell you call `run` from (Git Bash for the Claude Code Bash tool, PowerShell otherwise on
   Windows).
 - A wait can be long: run `run` or `wait <id>` in the background, and the tool calls you when it ends.

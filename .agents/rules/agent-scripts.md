@@ -1,7 +1,7 @@
 ---
 trigger: model_decision
 description: Read before writing or changing a script under scripts/ or .agents/, or a justfile recipe - language, folders, conventions, and the catalog of scripts.
-paths: "scripts/**, .agents/**, justfile"
+paths: "scripts/**, .agents/skills/*/scripts/**, justfile"
 ---
 
 # Agent Scripts (`scripts/`)

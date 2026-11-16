@@ -4,7 +4,7 @@
 Rules read on demand: read the file before the work its description names, and follow it.
 (.claude/rules/ holds the rules loaded at start and those loaded with the files their paths cover.)
 - .agents/rules/agent-scripts.md: Read before writing or changing a script under scripts/ or .agents/, or a justfile recipe - language, folders, conventions, and the catalog of scripts.
-- .agents/rules/agent-tool-mapping.md: How the Antigravity tool names in workflows and skills map to Claude Code tools and when to delegate to subagents.
+- .agents/rules/agent-tool-mapping.md: Read before following a workflow or skill written with Antigravity tool names, or before starting a subagent - the tool name mapping and when delegating is worth it.
 - .agents/rules/coding-style.md: Read before writing or editing any C# - no empty catch, no null-forgiving operator, naming, zero allocation, the StackLinq policy, kernel files.
 - .agents/rules/generator-invariants.md: Read before changing the compiler under src/Compiler - diagnostics, original spans, struct guards, ref/out, design-time I/O, evaluation order.
 - .agents/rules/gsharp-naming-conventions.md: Read before naming a kernel, a device function or a generated launch wrapper in C# - suffixes, no underscores or prefixes.

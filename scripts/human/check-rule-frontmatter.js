@@ -88,6 +88,9 @@ function checkFields(fields) {
             problems.push('paths is only read with trigger: model_decision');
         } else if (!quoted) {
             problems.push('paths needs "<pattern>, <pattern>" in double quotes');
+        } else if (/[{}]/.test(quoted[1])) {
+            // The list is split at every comma, so a brace pattern (*.{cs,ts}) would fall apart
+            problems.push('paths takes no braces; list each pattern on its own (**/*.cs, **/*.ts)');
         } else {
             for (const pattern of quoted[1].split(',').map((p) => p.trim())) {
                 if (pattern === '' || pattern.startsWith('/') || pattern.startsWith('./')) {
@@ -187,6 +190,7 @@ function selfTest() {
     assert.match(checkFields(rule('trigger: glob', 'description: d'))[0], /does not load glob rules/);
     assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'paths: **/*.cs'))[0], /double quotes/);
     assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'paths: "/src/**"'))[0], /relative/);
+    assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'paths: "**/*.{cs,ts}"'))[0], /braces/);
     assert.match(checkFields(rule('trigger: always_on', 'description: d', 'paths: "src/**"'))[0], /only read/);
     assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'globs: "**/x"'))[0], /unknown key/);
     assert.match(checkFields(ok('---\ntrigger: manual\ndescription: d\n---\n'))[0], /trigger must be/);
