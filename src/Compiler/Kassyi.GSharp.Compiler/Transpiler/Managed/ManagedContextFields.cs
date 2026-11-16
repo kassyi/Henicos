@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -30,7 +32,8 @@ internal static class ManagedContextFields
     /// that an expansion stamped with different regions get fields of their own.
     /// </remarks>
     public static (ImmutableArray<ManagedContextField> LocalInits, ImmutableArray<ManagedContextField> RegularFields,
-        Dictionary<DeclarationKey, ManagedContextField> UnhoistedLocals, Dictionary<DeclarationKey, string> RenamedLocals)
+        Dictionary<DeclarationKey, ManagedContextField> UnhoistedLocals,
+        Dictionary<DeclarationKey, string> RenamedLocals, ImmutableArray<FrameSlot> Slots)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
@@ -41,28 +44,46 @@ internal static class ManagedContextFields
         var localInits = ImmutableArray.CreateBuilder<ManagedContextField>();
         var unhoistedLocals = new Dictionary<DeclarationKey, ManagedContextField>();
         var renamedLocals = new Dictionary<DeclarationKey, string>();
+        var slots = ImmutableArray.CreateBuilder<FrameSlot>();
 
         if (contextFields == null)
         {
-            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals);
+            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals,
+                ImmutableArray<FrameSlot>.Empty);
         }
 
         var sharedNames = FindSharedNames(contextFields);
         var bodyNames = FindDeclaredNames(loweredBody);
         foreach (var field in contextFields)
         {
-            // A held ref local gets no field: the state machine only throws (LoweredStateMachine.HeldRefLocals)
-            if (field.Parent is not VariableDeclarationSyntax declaration ||
-                RefLocalLiveness.IsRefType(declaration.Type))
+            if (field.Parent is not VariableDeclarationSyntax declaration)
             {
+                continue;
+            }
+
+            // A held ref local gets no field: the state machine only throws (LoweredStateMachine.HeldRefLocals).
+            // Its type comes from the local, not HoistedFieldTypeResolver, which throws for some ref locals.
+            if (RefLocalLiveness.IsRefType(declaration.Type))
+            {
+                var heldRefName = field.Identifier.ValueText;
+                var heldRefType = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field)?.Type
+                                  ?? throw new InvalidOperationException(
+                                      $"The held ref local '{heldRefName}' of '{kernelName}' has no symbol.");
+                slots.Add(new FrameSlot(FrameSlotKind.HeldRef, heldRefType, heldRefName.ToCSharpIdentifier(), null, 0,
+                    null, new ManagedSlotSpelling(null, false, null)));
                 continue;
             }
 
             var key = LoweringIdentity.ForDeclaration(field, semanticModel);
             var contextField = CreateField(field, declaration, key, sharedNames, renamedLocals, semanticModel, kernelName);
+            var writtenType = GetWrittenType(contextField.DeclaredType);
+            var namesPointer = NamesPointer(contextField.DeclaredType);
+
             if (!ResumeLocals.IsRedeclared(field, contextField.ResolvedType, sharedMemoryInFrame: false))
             {
                 regularFields.Add(contextField);
+                slots.Add(new FrameSlot(FrameSlotKind.Field, contextField.ResolvedType, contextField.Name, null, 0,
+                    null, new ManagedSlotSpelling(writtenType, namesPointer, null)));
                 continue;
             }
 
@@ -74,10 +95,60 @@ internal static class ManagedContextFields
             }
 
             localInits.Add(resumeLocal);
+
+            FrameSlotKind slotKind;
+            ITypeSymbol? slotElementType = null;
+            var slotLength = 0;
+            string? slotInitializer = null;
+
+            if (resumeLocal.Resume is { } resume)
+            {
+                switch (resume.Kind)
+                {
+                    case ResumeLocalKind.Initialized:
+                        slotKind = FrameSlotKind.SharedMemory;
+                        slotInitializer = resumeLocal.Declarator.Initializer is { } init
+                            ? ManagedStateMachineEmitter.ToSource(init.WithoutTrivia())
+                            : null;
+                        break;
+                    case ResumeLocalKind.StackAlloc:
+                        slotKind = FrameSlotKind.RedeclaredStack;
+                        slotElementType = resume.ElementType;
+                        slotLength = resume.Length;
+                        break;
+                    case ResumeLocalKind.Bound:
+                        slotKind = FrameSlotKind.Redeclared;
+                        break;
+                    case ResumeLocalKind.Unsupported:
+                        slotKind = FrameSlotKind.Unsupported;
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Unexpected resume local kind: {resume.Kind}");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException($"Missing resume description for '{resumeLocal.Name}'");
+            }
+
+            slots.Add(new FrameSlot(slotKind, contextField.ResolvedType, resumeLocal.Name, slotElementType, slotLength,
+                null, new ManagedSlotSpelling(writtenType, namesPointer, slotInitializer)));
         }
 
-        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals);
+        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedLocals, renamedLocals,
+            slots.ToImmutable());
     }
+
+    // The type as written, for the managed writer; null for var, which it spells from the resolved type. Without
+    // trivia: a comment above the original declaration would otherwise land inside the emitted one
+    private static string? GetWrittenType(TypeSyntax declaredType) =>
+        declaredType.IsVar ? null : ManagedStateMachineEmitter.ToSource(declaredType.WithoutTrivia());
+
+    // Whether the written type holds a pointer anywhere (int*[] included), which makes the frame unsafe
+    private static bool NamesPointer(TypeSyntax declaredType) =>
+        declaredType.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax);
 
     // The field of a hoisted local: named after the local, or after its C++ field when another hoisted local shares the
     // name (recorded in renamedLocals)
