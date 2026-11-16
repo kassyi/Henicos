@@ -1,0 +1,42 @@
+name: Commit messages
+
+# Fails a pull request with a commit whose message does not follow the repository's Conventional Commits format
+# (<type>(<scope>)[!]: <description> with the required body sections; so no wip or fixup! commit either). Pull requests
+# are merged with a merge commit, so every commit of the branch reaches main as it is. A workflow of its own, without
+# the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked too; it needs no build, only
+# Node. The title of the pull request is checked by the header rule, and `edited` runs the check again when the title is
+# renamed.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The commits between the base branch and the head of the pull request are needed.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the commit subjects
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/human/check-commit-messages.js --github --base "origin/$BASE_REF" --head "$HEAD_SHA"
+
+      - name: Check the pull request title
+        # Passed through the environment, never written into the script: the title is text anyone can type.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/human/check-commit-messages.js --github --title "$PR_TITLE"

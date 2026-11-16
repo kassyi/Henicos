@@ -134,6 +134,7 @@ public static unsafe void LaunchSegmentSliceKernel(global::System.ArraySegment<g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.SegmentSliceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.SegmentSliceKernel");
 global::System.ArraySegment<global::System.Int32> __gsharp_csharp_arg_0 = segment;
 global::System.Int32[] __gsharp_csharp_arg_1 = mode;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;
@@ -437,6 +438,7 @@ public static unsafe void LaunchSegmentCopyToKernel(global::System.ArraySegment<
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.SegmentCopyToKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.SegmentCopyToKernel");
 global::System.ArraySegment<global::System.Int32> __gsharp_csharp_arg_0 = segment;
 global::System.Int32[] __gsharp_csharp_arg_1 = mode;
 global::System.Int32[]? __gsharp_csharp_arg_2 = target;
@@ -809,6 +811,7 @@ public static unsafe void LaunchSegmentCopyToSegmentKernel(global::System.ArrayS
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.SegmentCopyToSegmentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.SegmentCopyToSegmentKernel");
 global::System.ArraySegment<global::System.Int32> __gsharp_csharp_arg_0 = segment;
 global::System.ArraySegment<global::System.Int32> __gsharp_csharp_arg_1 = destination;
 global::System.Int32[] __gsharp_csharp_arg_2 = mode;
@@ -1165,6 +1168,7 @@ public static unsafe void LaunchImmutableCopyToKernel(global::System.Collections
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.ImmutableCopyToKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.ImmutableCopyToKernel");
 global::System.Collections.Immutable.ImmutableArray<global::System.Int32> __gsharp_csharp_arg_0 = immutable;
 global::System.Int32[] __gsharp_csharp_arg_1 = mode;
 global::System.Int32[]? __gsharp_csharp_arg_2 = target;
@@ -1518,6 +1522,7 @@ public static unsafe void LaunchNullableImmutableKernel(global::System.Nullable<
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.NullableImmutableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.NullableImmutableKernel");
 global::System.Nullable<global::System.Collections.Immutable.ImmutableArray<global::System.Int32>> __gsharp_csharp_arg_0 = s;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewDefaultDifferentialKernels.NullableImmutableKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1737,6 +1742,7 @@ public static unsafe void LaunchNullableImmutableHasValueKernel(global::System.N
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ArrayViewDefaultDifferentialKernels.NullableImmutableHasValueKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ArrayViewDefaultDifferentialKernels.NullableImmutableHasValueKernel");
 global::System.Nullable<global::System.Collections.Immutable.ImmutableArray<global::System.Int32>> __gsharp_csharp_arg_0 = s;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewDefaultDifferentialKernels.NullableImmutableHasValueKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

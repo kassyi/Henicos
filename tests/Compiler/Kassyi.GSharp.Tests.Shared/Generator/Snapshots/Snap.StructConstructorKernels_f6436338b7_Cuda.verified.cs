@@ -139,6 +139,7 @@ public static unsafe void LaunchConstructorBodyKernel(global::System.Int32[] out
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorBodyKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorBodyKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorBodyKernel(__gsharp_csharp_arg_0));
 return;
@@ -288,6 +289,7 @@ public static unsafe void LaunchConstructorDefaultArgumentKernel(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorDefaultArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorDefaultArgumentKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorDefaultArgumentKernel(__gsharp_csharp_arg_0));
 return;
@@ -441,6 +443,7 @@ public static unsafe void LaunchConstructorNamedArgumentKernel(global::System.In
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorNamedArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorNamedArgumentKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorNamedArgumentKernel(__gsharp_csharp_arg_0));
 return;
@@ -590,6 +593,7 @@ public static unsafe void LaunchConstructorChainedThisKernel(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorChainedThisKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorChainedThisKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorChainedThisKernel(__gsharp_csharp_arg_0));
 return;
@@ -737,6 +741,7 @@ public static unsafe void LaunchConstructorFieldInitializersKernel(global::Syste
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorFieldInitializersKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorFieldInitializersKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorFieldInitializersKernel(__gsharp_csharp_arg_0));
 return;
@@ -869,7 +874,7 @@ return __gsharp_self;
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructConstructorKernels__ConstructorFieldInitializersDefaultKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-auto __gsharp_id_2_s1 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers{};
+auto __gsharp_id_2_s1 = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers>();
 auto __gsharp_id_3_s2 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Result = __gsharp_add_i32(__gsharp_id_1_tid,10); return __gsharp_tmp; }
 ());
@@ -887,6 +892,7 @@ public static unsafe void LaunchConstructorFieldInitializersDefaultKernel(global
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructConstructorKernels.ConstructorFieldInitializersDefaultKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructConstructorKernels.ConstructorFieldInitializersDefaultKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.StructConstructorKernels.ConstructorFieldInitializersDefaultKernel(__gsharp_csharp_arg_0));
 return;

@@ -115,6 +115,7 @@ public static unsafe void LaunchMathFmaKernel(global::System.Single[] data, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathFmaKernels.MathFmaKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathFmaKernels.MathFmaKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = data;
 global::System.Int32 __gsharp_csharp_arg_1 = n;
 global::System.Int32 __gsharp_csharp_arg_2 = iterations;

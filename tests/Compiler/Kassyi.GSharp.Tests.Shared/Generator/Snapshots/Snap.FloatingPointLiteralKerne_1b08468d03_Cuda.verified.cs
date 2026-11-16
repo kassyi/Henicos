@@ -108,6 +108,7 @@ public static unsafe void LaunchFloatLiteralKernel(global::System.Single[] value
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FloatingPointLiteralKernels.FloatLiteralKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FloatingPointLiteralKernels.FloatLiteralKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = values;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.FloatingPointLiteralKernels.FloatLiteralKernel(__gsharp_csharp_arg_0));
 return;
@@ -232,6 +233,7 @@ public static unsafe void LaunchDoubleLiteralKernel(global::System.Double[] valu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FloatingPointLiteralKernels.DoubleLiteralKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FloatingPointLiteralKernels.DoubleLiteralKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = values;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.FloatingPointLiteralKernels.DoubleLiteralKernel(__gsharp_csharp_arg_0));
 return;

@@ -182,6 +182,7 @@ __gsharp_layout_checked_ReadSecondPaddedKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructSizeKernels.ReadSecondPaddedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructSizeKernels.ReadSecondPaddedKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.ReadSecondPaddedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -371,6 +372,7 @@ public static unsafe void LaunchReadSecondOddKernel(global::Kassyi.GSharp.Tests.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructSizeKernels.ReadSecondOddKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructSizeKernels.ReadSecondOddKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.StructSizeOddInt[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.ReadSecondOddKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -590,6 +592,7 @@ __gsharp_layout_checked_ReadSecondPackedKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructSizeKernels.ReadSecondPackedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructSizeKernels.ReadSecondPackedKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.StructSizePacked[] __gsharp_csharp_arg_0 = data;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.ReadSecondPackedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -783,6 +786,7 @@ __gsharp_layout_checked_ReadPaddedByValueKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructSizeKernels.ReadPaddedByValueKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructSizeKernels.ReadPaddedByValueKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.StructSizePaddedInt __gsharp_csharp_arg_0 = value;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.StructSizeKernels.ReadPaddedByValueKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

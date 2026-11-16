@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// Launches and checks the kernels of <see cref="SwitchSuspensionKernels"/> (#708). The native and managed test classes
 /// share these scenarios and differ only in how a launch runs. The expected values are computed per lane on the host.
 /// </summary>
-internal static class SwitchSuspensionScenarios
+internal static partial class SwitchSuspensionScenarios
 {
     public const int WarpSize = 32;
 
@@ -152,22 +152,6 @@ internal static class SwitchSuspensionScenarios
 
         Assert.All(output, value => Assert.Equal(flag switch { 0 => 3, 1 => 6, _ => 9 }, value));
     }
-
-#if GSHARP_CPU
-    public static void NaNCase(Action<Action> run, float selector)
-    {
-        var output = new int[WarpSize];
-
-        run(() => SwitchNaNCaseKernels.LaunchNaNCaseKernel(output, selector, blockDimX: WarpSize));
-
-        for (int i = 0; i < WarpSize; i++)
-        {
-            // C# matches case float.NaN for a NaN value (the switch compares with float.IsNaN)
-            int expected = float.IsNaN(selector) ? i ^ 1 : selector == 1f ? i + 100 : i + 1000;
-            Assert.Equal(expected, output[i]);
-        }
-    }
-#endif
 
     public static void SectionConstantCaseLabel(Action<Action> run, int flag)
     {

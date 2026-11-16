@@ -15,7 +15,8 @@ internal readonly struct MethodEmissionPlan
     private readonly DeferredLowering? _lowering;
 
     private MethodEmissionPlan(MethodDeclarationSyntax declaration, SemanticModel semanticModel, MethodEmissionKind kind,
-        IMethodSymbol? symbol, DeferredLowering? lowering, bool isGpuKernelEntry, bool hasAutoResult)
+        IMethodSymbol? symbol, DeferredLowering? lowering, bool isGpuKernelEntry, bool hasAutoResult,
+        KernelTwoFormsPlan twoFormsPlan = default)
     {
         Declaration = declaration;
         SemanticModel = semanticModel;
@@ -24,6 +25,7 @@ internal readonly struct MethodEmissionPlan
         _lowering = lowering;
         IsGpuKernelEntry = isGpuKernelEntry;
         HasAutoResult = hasAutoResult;
+        TwoFormsPlan = twoFormsPlan;
     }
 
     // Shared by the copies of the plan (it is passed by value), so the method is lowered once
@@ -57,6 +59,9 @@ internal readonly struct MethodEmissionPlan
 
     /// <summary>The method has <c>[GpuKernel]</c>.</summary>
     public bool IsGpuKernelEntry { get; }
+
+    /// <summary>The plan for two-form emission (by-value and by-address) of kernels with aliasing in parameters.</summary>
+    public KernelTwoFormsPlan TwoFormsPlan { get; }
 
     /// <summary>
     /// The method is a <c>[GpuKernel]</c> that returns a value, which each thread writes into the auto result buffer.
@@ -139,8 +144,19 @@ internal readonly struct MethodEmissionPlan
             var kernelLowering = isGpuKernelEntry && symbol != null && declaration.HasBody()
                 ? new DeferredLowering(declaration, semanticModel, symbol, isDeviceFunction: false)
                 : null;
+            var twoFormsPlan = KernelTwoFormsPlan.Empty;
+            if (isGpuKernelEntry && symbol != null)
+            {
+                var paramBuilder = ImmutableArray.CreateBuilder<KernelParameterShape>(symbol.Parameters.Length);
+                symbol.Parameters
+                    .AsStackEnumerable()
+                    .Select(KernelParameterShape.Classify)
+                    .AddTo(paramBuilder);
+                twoFormsPlan = KernelTwoFormsPlan.Create(GlobalCppNames.GetKernelName(symbol), paramBuilder.MoveToImmutable().AsEquatableArray());
+            }
+
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
-                isGpuKernelEntry, hasAutoResult);
+                isGpuKernelEntry, hasAutoResult, twoFormsPlan);
         }
 
         if (symbol != null && declaration.HasBody() &&

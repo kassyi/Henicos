@@ -444,7 +444,7 @@ public ref struct RefFieldHolder
 }
 
 /// <summary>A ref struct with a mutating suspending method and a readonly suspending method.</summary>
-public ref struct SuspendingCursor
+public ref partial struct SuspendingCursor
 {
     public int Position;
 

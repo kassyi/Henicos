@@ -526,6 +526,7 @@ public static unsafe void LaunchAtomicAddStressKernel(global::System.Int32[] glo
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConcurrencyAndWarpKernels.AtomicAddStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConcurrencyAndWarpKernels.AtomicAddStressKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = globalSum;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.AtomicAddStressKernel(__gsharp_csharp_arg_0));
 return;
@@ -654,6 +655,7 @@ public static unsafe void LaunchAtomicOrMaxStressKernel(global::System.UInt32[] 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConcurrencyAndWarpKernels.AtomicOrMaxStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConcurrencyAndWarpKernels.AtomicOrMaxStressKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = globalState;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.AtomicOrMaxStressKernel(__gsharp_csharp_arg_0));
 return;

@@ -15,8 +15,19 @@ internal enum SpanPropertyKind
     /// <summary><c>Span&lt;T&gt;.Length</c>, <c>ReadOnlySpan&lt;T&gt;.Length</c>, or <c>Array.Length</c>.</summary>
     Length,
 
-    /// <summary><c>Span&lt;T&gt;.IsEmpty</c> or <c>ReadOnlySpan&lt;T&gt;.IsEmpty</c>.</summary>
+    /// <summary>
+    /// <c>Span&lt;T&gt;.IsEmpty</c>, <c>ReadOnlySpan&lt;T&gt;.IsEmpty</c>, <c>Memory&lt;T&gt;.IsEmpty</c>,
+    /// <c>ReadOnlyMemory&lt;T&gt;.IsEmpty</c> or <c>ImmutableArray&lt;T&gt;.IsEmpty</c>.
+    /// </summary>
     IsEmpty,
+
+    /// <summary><c>ImmutableArray&lt;T&gt;.IsDefault</c>: the array is <see langword="null"/>.</summary>
+    IsDefault,
+
+    /// <summary>
+    /// <c>ImmutableArray&lt;T&gt;.IsDefaultOrEmpty</c>: the array is <see langword="null"/> or has no element.
+    /// </summary>
+    IsDefaultOrEmpty,
 
     /// <summary><c>Span&lt;T&gt;.Empty</c> or <c>ReadOnlySpan&lt;T&gt;.Empty</c>.</summary>
     Empty,

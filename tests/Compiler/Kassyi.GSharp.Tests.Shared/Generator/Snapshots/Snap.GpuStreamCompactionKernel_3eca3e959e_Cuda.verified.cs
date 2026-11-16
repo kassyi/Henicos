@@ -203,7 +203,11 @@ native.Limit = host.Limit;
 }
 public static unsafe void Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, global::System.IntPtr hStream = default)
 {
-if (host.Base != null && native.Base.Data != global::System.IntPtr.Zero)
+if (native.Base.Data == global::System.IntPtr.Zero)
+{
+host.Base = default;
+}
+else if (host.Base != null)
 {
 int size = checked(host.Base.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -607,6 +611,7 @@ public static unsafe void LaunchAddBlockSums(global::System.UInt32[] output, glo
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.AddBlockSums");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuStreamCompactionKernels.AddBlockSums");
 global::System.UInt32[] __gsharp_csharp_arg_0 = output;
 global::System.UInt32[] __gsharp_csharp_arg_1 = blockSums;
 global::System.Int32 __gsharp_csharp_arg_2 = elementCount;
@@ -798,6 +803,7 @@ public static unsafe void LaunchCompactBigUIntArray(global::System.UInt32[] outp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactBigUIntArray");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuStreamCompactionKernels.CompactBigUIntArray");
 global::System.UInt32[] __gsharp_csharp_arg_0 = output;
 global::System.UInt32[] __gsharp_csharp_arg_1 = input;
 global::System.UInt32[] __gsharp_csharp_arg_2 = predicates;
@@ -1115,6 +1121,7 @@ public static unsafe void LaunchCompactSignedVector(global::System.UInt32[] outp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactSignedVector");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuStreamCompactionKernels.CompactSignedVector");
 global::System.UInt32[] __gsharp_csharp_arg_0 = outputValues;
 global::System.UInt32[] __gsharp_csharp_arg_1 = outputSigns;
 global::System.UInt32[] __gsharp_csharp_arg_2 = inputValues;
@@ -1510,6 +1517,7 @@ public static unsafe void LaunchCompactFloatVector(global::System.UInt32[] outpu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.CompactFloatVector");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuStreamCompactionKernels.CompactFloatVector");
 global::System.UInt32[] __gsharp_csharp_arg_0 = outputSignificands;
 global::System.UInt32[] __gsharp_csharp_arg_1 = outputExponents;
 global::System.UInt32[] __gsharp_csharp_arg_2 = outputSigns;
@@ -1968,6 +1976,7 @@ public static unsafe void LaunchMemsetZero(global::System.UInt32[] output, globa
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuStreamCompactionKernels.MemsetZero");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuStreamCompactionKernels.MemsetZero");
 global::System.UInt32[] __gsharp_csharp_arg_0 = output;
 global::System.Int32 __gsharp_csharp_arg_1 = totalWords;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuStreamCompactionKernels.MemsetZero(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

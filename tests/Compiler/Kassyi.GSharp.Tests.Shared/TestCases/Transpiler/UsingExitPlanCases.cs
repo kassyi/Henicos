@@ -137,4 +137,46 @@ public static class Cases
         using var r = new Res { Log = log };
         return ref log[1];
     }
+
+    // break outer of the loop around the using from inside an inner loop leaves the using
+    public static void LabeledBreakOutOfOuterLoop(int[] log)
+    {
+        outer:
+        while (log[0] < 4)
+        {
+            using var d = new Res { Log = log };
+            while (log[1] < 2)
+            {
+                break outer;
+            }
+        }
+    }
+
+    public static System.Collections.Generic.IEnumerable<int> Iter()
+    {
+        yield return 1;
+        yield return 2;
+    }
+
+    // A jump in an iterator foreach inside a using is copied per yield return; the plan matches each copy by span
+    public static int IteratorForEach(int[] log)
+    {
+        using (var r = new Res { Log = log })
+        {
+            foreach (var x in Iter())
+            {
+                if (x == log[0])
+                {
+                    return x;
+                }
+
+                if (x == log[1])
+                {
+                    break;
+                }
+            }
+        }
+
+        return 0;
+    }
 }

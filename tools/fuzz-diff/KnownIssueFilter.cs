@@ -1,9 +1,9 @@
-using System.Text.Json;
+using Kassyi.GSharp.Compiler.NativeApi;
 
 namespace Kassyi.GSharp.Tools.FuzzDiff;
 
 /// <summary>
-/// Describes a single tracked known issue entry loaded from <c>known-issues.json</c>.
+/// Describes a single tracked known issue entry loaded from <c>known-issues.yml</c>.
 /// </summary>
 public sealed record KnownIssueEntry(
     int Issue,
@@ -17,7 +17,7 @@ public sealed record KnownIssueEntry(
     IReadOnlyList<string>? ClassifyOnlyPaths = null);
 
 /// <summary>
-/// Evaluates per-issue avoidance and classification rules for <see cref="ScalarFuzzGenerator"/> based on <c>known-issues.json</c>,
+/// Evaluates per-issue avoidance and classification rules for <see cref="ScalarFuzzGenerator"/> based on <c>known-issues.yml</c>,
 /// the active execution profile (<c>M</c>, <c>C</c>, or <c>G</c>), and any user-supplied <c>--allow-issue &lt;n&gt;</c> overrides.
 /// </summary>
 public sealed class KnownIssueFilter
@@ -87,7 +87,7 @@ public sealed class KnownIssueFilter
     /// <summary>Gets the set of issue numbers explicitly allowed (re-enabled) via <c>--allow-issue &lt;n&gt;</c>.</summary>
     public IReadOnlySet<int> AllowedIssues { get; }
 
-    /// <summary>Gets the catalog of known issue entries loaded from <c>known-issues.json</c>.</summary>
+    /// <summary>Gets the catalog of known issue entries loaded from <c>known-issues.yml</c>.</summary>
     public IReadOnlyList<KnownIssueEntry> Entries { get; }
 
     /// <summary>Gets the set of issue numbers currently avoided on this profile.</summary>
@@ -151,51 +151,59 @@ public sealed class KnownIssueFilter
     }
 
     /// <summary>
-    /// Loads <see cref="KnownIssueEntry"/> definitions from <c>known-issues.json</c>.
+    /// Loads <see cref="KnownIssueEntry"/> definitions from <c>known-issues.yml</c>, a YAML list with one mapping per
+    /// issue (the keys are described at the top of the file).
     /// Throws an exception if the catalog file cannot be found or parsed.
     /// </summary>
-    public static IReadOnlyList<KnownIssueEntry> LoadEntries(string? explicitJsonPath = null)
+    public static IReadOnlyList<KnownIssueEntry> LoadEntries(string? explicitPath = null)
     {
-        string resolvedPath = ResolveJsonPath(explicitJsonPath);
-        using var stream = File.OpenRead(resolvedPath);
-        using var doc = JsonDocument.Parse(stream);
-        if (!doc.RootElement.TryGetProperty("issues", out var issuesElem) ||
-            issuesElem.ValueKind != JsonValueKind.Array)
+        string resolvedPath = ResolvePath(explicitPath);
+        YamlNode root;
+        try
         {
-            throw new InvalidDataException($"known-issues.json at '{resolvedPath}' is missing an 'issues' array.");
+            root = YamlSubsetParser.Parse(File.ReadAllText(resolvedPath, Encoding.UTF8));
+        }
+        catch (NativeApiReadException ex)
+        {
+            throw new InvalidDataException($"{resolvedPath}({ex.ToError().Line}): {ex.Message}", ex);
+        }
+
+        if (root is not YamlSequence items)
+        {
+            throw new InvalidDataException($"{resolvedPath}({root.Line}): the file must hold a YAML list of issues.");
         }
 
         var list = new List<KnownIssueEntry>();
-        foreach (var item in issuesElem.EnumerateArray())
+        foreach (var node in items.Items)
         {
-            if (!item.TryGetProperty("issue", out var issueProp) || !issueProp.TryGetInt32(out int issueNum))
+            if (node is not YamlMapping item)
             {
-                throw new InvalidDataException($"An entry in '{resolvedPath}' is missing a valid integer 'issue' property.");
+                throw new InvalidDataException($"{resolvedPath}({node.Line}): each issue must be a mapping.");
             }
 
-            string kind = item.TryGetProperty("kind", out var kindProp) ? (kindProp.GetString() ?? "avoid") : "avoid";
-            string summary = item.TryGetProperty("summary", out var sumProp) ? (sumProp.GetString() ?? string.Empty) : string.Empty;
-            string avoidedShape = item.TryGetProperty("avoidedShape", out var shapeProp) ? (shapeProp.GetString() ?? string.Empty) : string.Empty;
-            string? removalCondition = item.TryGetProperty("removalCondition", out var remProp) ? remProp.GetString() : null;
-            var profiles = ReadStringArray(item, "profiles");
-            var paths = ReadStringArray(item, "paths");
-            var shapes = ReadStringArray(item, "shapes");
-            var classifyOnlyPaths = ReadStringArray(item, "classifyOnlyPaths");
+            if (!item.TryGetInt32("issue", out int issueNum))
+            {
+                throw new InvalidDataException(
+                    $"{resolvedPath}({item.Line}): an entry is missing a valid integer 'issue' value.");
+            }
+
             list.Add(new KnownIssueEntry(
                 issueNum,
-                kind,
-                summary,
-                profiles,
-                paths,
-                avoidedShape,
-                shapes,
-                removalCondition,
-                classifyOnlyPaths.Count > 0 ? classifyOnlyPaths : null));
+                item.TryGetScalar("kind", out var kind) ? kind : "avoid",
+                item.TryGetScalar("summary", out var summary) ? summary : string.Empty,
+                ReadStringList(resolvedPath, item, "profiles"),
+                ReadStringList(resolvedPath, item, "paths"),
+                item.TryGetScalar("avoidedShape", out var avoidedShape) ? avoidedShape : string.Empty,
+                ReadStringList(resolvedPath, item, "shapes"),
+                item.TryGetScalar("removalCondition", out var removalCondition) ? removalCondition : null,
+                ReadStringList(resolvedPath, item, "classifyOnlyPaths") is { Count: > 0 } classifyOnlyPaths
+                    ? classifyOnlyPaths
+                    : null));
         }
 
         if (list.Count == 0)
         {
-            throw new InvalidDataException($"known-issues.json at '{resolvedPath}' contains zero entries.");
+            throw new InvalidDataException($"known-issues.yml at '{resolvedPath}' contains zero entries.");
         }
 
         return list;
@@ -214,36 +222,43 @@ public sealed class KnownIssueFilter
         return false;
     }
 
-    private static List<string> ReadStringArray(JsonElement obj, string propertyName)
+    private static List<string> ReadStringList(string path, YamlMapping item, string key)
     {
         var result = new List<string>();
-        if (obj.TryGetProperty(propertyName, out var prop) && prop.ValueKind == JsonValueKind.Array)
+        if (!item.TryGetValue(key, out var node))
         {
-            foreach (var elem in prop.EnumerateArray())
+            return result;
+        }
+
+        if (node is not YamlSequence values)
+        {
+            throw new InvalidDataException($"{path}({node.Line}): '{key}' must be a list.");
+        }
+
+        foreach (var value in values.Items)
+        {
+            if (value is YamlScalar { IsNull: false, Value: var text } && !string.IsNullOrWhiteSpace(text))
             {
-                if (elem.GetString() is { } s && !string.IsNullOrWhiteSpace(s))
-                {
-                    result.Add(s.AsSpan().Trim().ToString());
-                }
+                result.Add(text.AsSpan().Trim().ToString());
             }
         }
 
         return result;
     }
 
-    private static string ResolveJsonPath(string? explicitJsonPath)
+    private static string ResolvePath(string? explicitPath)
     {
-        if (!string.IsNullOrWhiteSpace(explicitJsonPath))
+        if (!string.IsNullOrWhiteSpace(explicitPath))
         {
-            if (!File.Exists(explicitJsonPath))
+            if (!File.Exists(explicitPath))
             {
-                throw new FileNotFoundException($"Explicit known-issues.json path not found: '{explicitJsonPath}'.", explicitJsonPath);
+                throw new FileNotFoundException($"Explicit known-issues.yml path not found: '{explicitPath}'.", explicitPath);
             }
 
-            return explicitJsonPath;
+            return explicitPath;
         }
 
-        string alongsideExe = Path.Combine(AppContext.BaseDirectory, "known-issues.json");
+        string alongsideExe = Path.Combine(AppContext.BaseDirectory, "known-issues.yml");
         if (File.Exists(alongsideExe))
         {
             return alongsideExe;
@@ -251,7 +266,7 @@ public sealed class KnownIssueFilter
 
         for (string? dir = AppContext.BaseDirectory; !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir))
         {
-            string candidate = Path.Combine(dir, "tools", "fuzz-diff", "known-issues.json");
+            string candidate = Path.Combine(dir, "tools", "fuzz-diff", "known-issues.yml");
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -260,13 +275,13 @@ public sealed class KnownIssueFilter
 
         for (string? dir = Directory.GetCurrentDirectory(); !string.IsNullOrEmpty(dir); dir = Path.GetDirectoryName(dir))
         {
-            string candidate = Path.Combine(dir, "tools", "fuzz-diff", "known-issues.json");
+            string candidate = Path.Combine(dir, "tools", "fuzz-diff", "known-issues.yml");
             if (File.Exists(candidate))
             {
                 return candidate;
             }
         }
 
-        throw new FileNotFoundException("Could not locate tools/fuzz-diff/known-issues.json.");
+        throw new FileNotFoundException("Could not locate tools/fuzz-diff/known-issues.yml.");
     }
 }

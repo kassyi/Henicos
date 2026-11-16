@@ -46,7 +46,7 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
         {
             if (node.ArgumentList.Arguments.Count > 0)
             {
-                context.Visitor.Visit(node.ArgumentList.Arguments[0].Expression);
+                ArrayElementIndex.Append(node.ArgumentList.Arguments[0].Expression, ref context);
             }
         }
     }
