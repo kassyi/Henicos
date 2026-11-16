@@ -119,8 +119,8 @@ internal static class LoopStatementTranspilers
             iteratorMethod,
             sourceInvocation,
             new IteratorExpansionContext(context.Query.SemanticModel, context.Emitter.Dialect, context.Reporter),
-            ref context.Emitter.IteratorExpansionCounter,
-            ref context.Emitter.ArgumentTempCounter);
+            ref context.Emitter.Counters.IteratorExpansion,
+            ref context.Emitter.Counters.ArgumentTemp);
 
         context.Visitor.VisitBlock(expandedBlock);
     }
