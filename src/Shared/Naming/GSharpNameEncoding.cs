@@ -439,7 +439,7 @@ internal static class GSharpNameEncoding
         return builder.Append(text, copied, text.Length - copied).ToString();
     }
 
-    private static string EscapeJsonString(string text)
+    internal static string EscapeJsonString(string text)
     {
         var sb = new StringBuilder(text.Length);
         foreach (var c in text)
