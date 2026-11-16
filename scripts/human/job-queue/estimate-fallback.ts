@@ -145,8 +145,10 @@ function isEntry(value: unknown): value is AccuracyEntry {
 export interface LevelAccuracy {
   level: EstimateLevel;
   runs: number;
-  /** The median of |predicted - actual| / actual, in percent. */
+  /** The median of |predicted - actual| / actual, in percent: unbounded for a short run estimated long. */
   medianErrorPercent: number;
+  /** The median of how many times off the estimate was, either way (max(predicted / actual, actual / predicted)). */
+  medianFactor: number;
   /** The share of runs whose estimate was within 50% of the actual time, in percent. */
   within50Percent: number;
 }
@@ -155,14 +157,15 @@ export interface LevelAccuracy {
 export function summarizeAccuracy(entries: readonly AccuracyEntry[]): LevelAccuracy[] {
   const result: LevelAccuracy[] = [];
   for (const level of AccuracyLevels) {
-    const errors = entries
-      .filter((entry) => entry[1] === level && entry[3] > 0)
-      .map((entry) => Math.abs(entry[2] - entry[3]) / entry[3]);
+    const judged = entries.filter((entry) => entry[1] === level && entry[2] > 0 && entry[3] > 0);
+    const errors = judged.map((entry) => Math.abs(entry[2] - entry[3]) / entry[3]);
+    const factors = judged.map((entry) => Math.max(entry[2] / entry[3], entry[3] / entry[2]));
     if (errors.length > 0) {
       result.push({
         level,
         runs: errors.length,
         medianErrorPercent: Math.round(median(errors) * 100),
+        medianFactor: Math.round(median(factors) * 10) / 10,
         within50Percent: Math.round((errors.filter((e) => e <= 0.5).length / errors.length) * 100),
       });
     }
@@ -174,12 +177,13 @@ export function formatAccuracy(rows: readonly LevelAccuracy[]): string {
   if (rows.length === 0) {
     return "no estimate has been judged yet (a run that ends by itself adds one)";
   }
-  const lines = ["level       runs  median error  within 50%"];
+  const lines = ["level       runs  median error  within 50%  times off"];
   for (const row of rows) {
     const runs = String(row.runs).padStart(4);
     const error = `${row.medianErrorPercent}%`.padStart(12);
     const within = `${row.within50Percent}%`.padStart(10);
-    lines.push(`${row.level.padEnd(10)}  ${runs}  ${error}  ${within}`);
+    const factor = `x${row.medianFactor.toFixed(1)}`.padStart(9);
+    lines.push(`${row.level.padEnd(10)}  ${runs}  ${error}  ${within}  ${factor}`);
   }
   return lines.join("\n");
 }

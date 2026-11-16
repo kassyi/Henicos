@@ -20,7 +20,9 @@ import { describeOutlook } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
+import type { PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
+import { resolvePlaces } from "./path-places.ts";
 import {
   numberField,
   onMessages,
@@ -52,6 +54,8 @@ export class QueuedRun {
   private socket: net.Socket | null = null;
   /** The root of the worktree the job runs in, the scheduler's round-robin key; resolved at the first registration. */
   private worktree: string | null = null;
+  /** Where the command's projects and scripts lie (git), for the estimate keys; resolved at the first registration. */
+  private places: Record<string, PathPlace> | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -406,6 +410,9 @@ export class QueuedRun {
   private register(current: net.Socket): void {
     const { options, placement } = this;
     const running = this.child;
+    // Resolved once per job (git), kept for the re-registrations after a scheduler restart
+    const worktree = (this.worktree ??= resolveWorktree(process.cwd()));
+    const places = (this.places ??= resolvePlaces(options.command, { cwd: process.cwd(), worktree }));
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -414,8 +421,8 @@ export class QueuedRun {
       commandPid: running !== null && running.pid !== undefined ? running.pid : 0,
       spawnedAt: this.spawnedAt,
       cwd: process.cwd(),
-      // Resolved once per job (git), kept for the re-registrations after a scheduler restart
-      worktree: (this.worktree ??= resolveWorktree(process.cwd())),
+      worktree,
+      ...(Object.keys(places).length > 0 ? { places } : {}),
       // The chat that queued it, so that the live view can show its jobs on its row
       session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,

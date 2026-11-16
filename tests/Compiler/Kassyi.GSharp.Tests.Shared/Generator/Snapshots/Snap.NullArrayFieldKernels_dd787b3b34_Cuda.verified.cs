@@ -226,7 +226,11 @@ native.X = host.X;
 }
 public static unsafe void Unmarshal_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, ref AotContexts.NullArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -320,7 +324,11 @@ native.B.Length = host.B.Length;
 }
 public static unsafe void Unmarshal_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, ref AotContexts.NullArrayPair native, global::System.IntPtr hStream = default)
 {
-if (host.A != null && native.A.Data != global::System.IntPtr.Zero)
+if (native.A.Data == global::System.IntPtr.Zero)
+{
+host.A = default;
+}
+else if (host.A != null)
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -336,7 +344,11 @@ handle.Free();
 }
 }
 }
-if (host.B != null && native.B.Data != global::System.IntPtr.Zero)
+if (native.B.Data == global::System.IntPtr.Zero)
+{
+host.B = default;
+}
+else if (host.B != null)
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)

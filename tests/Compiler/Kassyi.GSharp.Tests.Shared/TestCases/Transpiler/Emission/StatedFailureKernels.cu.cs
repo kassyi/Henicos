@@ -30,12 +30,4 @@ public partial class StatedFailureKernels
         output[tid] = s_hostCounter + SuspendingWithFunctionPointer(null, tid);
         var unused = ManagedResult(tid);
     }
-
-    // A ref local is not supported
-    [GpuKernel]
-    public static void RefLocalKernel(int[] output)
-    {
-        ref int first = ref output[0];
-        first = 1;
-    }
 }

@@ -110,6 +110,10 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {

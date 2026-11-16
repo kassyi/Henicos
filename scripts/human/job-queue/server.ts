@@ -22,6 +22,7 @@ import {
   idField,
   numberField,
   optionalNumberField,
+  placesField,
   send,
   type Incoming,
   type Outcome,
@@ -231,6 +232,7 @@ export class JobServer {
     const command = String(message.command ?? "");
     const cwd = String(message.cwd ?? "");
     const worktree = worktreeKey(String(message.worktree ?? "") || cwd);
+    const places = placesField(message);
     return {
       id,
       phase,
@@ -250,11 +252,12 @@ export class JobServer {
       cwd,
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
+      ...(places !== undefined ? { places } : {}),
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
-      estimate: this.history.estimateWithFallback(command, { cwd, worktree }),
+      estimate: this.history.estimateWithFallback(command, { cwd, worktree, places }),
       pin: optionalNumberField(message, "pin"),
       before: idField(message, "before"),
       after: idField(message, "after"),
@@ -320,7 +323,8 @@ export class JobServer {
         job.estimate ? job.estimate.typicalMs : UnknownTypicalMs,
         actualMs,
       );
-      this.history.record(job.command, actualMs, this.nextId, Date.now(), { cwd: job.cwd, worktree: job.worktree });
+      const context = { cwd: job.cwd, worktree: job.worktree, places: job.places };
+      this.history.record(job.command, actualMs, this.nextId, Date.now(), context);
     }
     this.scheduler.detach(job);
     this.recordOutcome(job.id, outcome);
