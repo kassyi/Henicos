@@ -35,6 +35,7 @@ public class ReconvergenceInserterTests
     [InlineData("BreakKernel", "Mark(4)")]
     [InlineData("ContinueKernel", "Next(k)")]
     [InlineData("NestedKernel", "Mark(5)", "Mark(6)")]
+    [InlineData("UniformSwitchBreakKernel", "Mark(9)")]
     public void Insert_ThreadDependentBranch_ReconvergesAtItsImmediatePostDominator(string kernel,
         params string[] expected)
     {
@@ -49,6 +50,7 @@ public class ReconvergenceInserterTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("UniformAndPlainKernel")]
     [InlineData("LastStatementKernel")]
+    [InlineData("UniformSwitchDirectBreakKernel")]
     public void Insert_UniformBranchOrKernelEnd_AddsNoReconvergencePoint(string kernel)
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
