@@ -15,7 +15,7 @@ internal static class TerminalTrap
         using (context.Emitter.Writer.Braces())
         {
             UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation",
-                UnwindingTrap.TrapSite.OfMessage(message));
+                ErrorSiteArgument.FromMessage(message));
             context.Emitter.Writer.AppendLine(";");
         }
     }

@@ -316,7 +316,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
     // The trap after the switch: none when a discard arm matches every input; otherwise a site of the kernel's error
     // site table, or (in a device function, which has no table) a message that names the place
-    private static NoMatchTrap? PlanNoMatchTrap(SwitchExpressionSyntax node, ref TranspileContext context)
+    private static ErrorSiteArgument? PlanNoMatchTrap(SwitchExpressionSyntax node, ref TranspileContext context)
     {
         var hasDiscardArm = node.Arms
             .AsStackEnumerable()
@@ -330,20 +330,21 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         if (context.Emitter.ErrorSites is { } table)
         {
             var memberName = context.Emitter.CurrentMemberName ?? "";
-            return new NoMatchTrap(table.Register(node, model, memberName, NoMatchMessage, "SwitchExpression"), "");
+            return ErrorSiteArgument.FromSiteId(
+                table.Register(node, model, memberName, NoMatchMessage, "SwitchExpression"));
         }
 
         var place = SourcePlace.Format(model, node);
-        return new NoMatchTrap(0u, $"Non-exhaustive switch expression failed to match its input at {place}");
+        return ErrorSiteArgument.FromMessage(
+            $"Non-exhaustive switch expression failed to match its input at {place}");
     }
 
     // ([&]() { switch (<input>) { case <value>: return <arm>; } <trap> })(), the trap being
     // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, <site>u); or
     // __gsharp_trap_abort(GSharpErrorCode::SwitchExpression, "<message>");
-    private static void AppendNoMatchTrap(NoMatchTrap trap, ref TranspileContext context)
+    private static void AppendNoMatchTrap(ErrorSiteArgument trap, ref TranspileContext context)
     {
-        UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.TrapAbort, "SwitchExpression",
-            UnwindingTrap.TrapSite.Of(trap.SiteId, trap.Message));
+        UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.TrapAbort, "SwitchExpression", trap);
         context.Emitter.Writer.AppendLine(";");
     }
 
@@ -368,7 +369,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         ITypeSymbol? ValueType,
         bool IsNullableInput,
         ISwitchExpressionOperation? Operation,
-        NoMatchTrap? NoMatch);
+        ErrorSiteArgument? NoMatch);
 
     /// <summary>How an arm is written so that its <c>return</c> has the type of the switch expression.</summary>
     internal enum ArmConversion
@@ -388,7 +389,4 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         /// <summary>A value wrapped in the <c>Nullable&lt;T&gt;</c> it converts to: <c>System_Nullable&lt;int&gt;(x)</c>.</summary>
         Construct
     }
-
-    /// <summary>Either a registered error site (<paramref name="SiteId"/>) or, when there is no table, a message with the place.</summary>
-    internal readonly record struct NoMatchTrap(uint SiteId, string Message);
 }

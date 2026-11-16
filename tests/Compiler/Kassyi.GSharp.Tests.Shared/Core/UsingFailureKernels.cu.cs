@@ -37,7 +37,9 @@ public struct FailingResource : IDisposable
     }
 }
 
-/// <summary>A resource that counts its <c>Dispose</c> calls in <c>Counts[Slot]</c>, for the kernels of many threads.</summary>
+/// <summary>
+/// A resource that counts its <c>Dispose</c> calls in <c>Counts[Slot]</c>, for the kernels of many threads.
+/// </summary>
 public struct CountingResource : IDisposable
 {
     public int[] Counts;

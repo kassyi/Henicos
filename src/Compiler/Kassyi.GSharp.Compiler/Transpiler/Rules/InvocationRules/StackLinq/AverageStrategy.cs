@@ -23,7 +23,7 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
         using (context.Emitter.Writer.Braces())
         {
             UnwindingTrap.Append(ref context, GSharpInternalNames.Prelude.Trap, "InvalidOperation",
-                UnwindingTrap.TrapSite.OfMessage("Sequence contains no elements"));
+                ErrorSiteArgument.FromMessage("Sequence contains no elements"));
             context.Emitter.Writer.AppendLine(";");
         }
         context.Emitter.Writer.AppendLine("else");
