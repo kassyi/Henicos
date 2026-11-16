@@ -248,9 +248,45 @@ struct GSharpArray {
     inline int size() const { return length; }
     inline T& operator[](int index) { return data[index]; }
     inline const T& operator[](int index) const { return data[index]; }
+    // An element at a C# index of type uint, long or ulong. The index is compared with the length at its own width:
+    // narrowing it to int first would wrap 2^32 to element 0. An exact match also wins over the built-in pointer subscript
+    // reached through operator T*(), which made a long long index ambiguous (MSVC C2666, nvcc)
+    inline T& operator[](unsigned int index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline const T& operator[](unsigned int index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline T& operator[](long index) { return data[ElementIndex(static_cast<long long>(index))]; }
+    inline const T& operator[](long index) const { return data[ElementIndex(static_cast<long long>(index))]; }
+    inline T& operator[](unsigned long index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline const T& operator[](unsigned long index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+    inline T& operator[](long long index) { return data[ElementIndex(index)]; }
+    inline const T& operator[](long long index) const { return data[ElementIndex(index)]; }
+    inline T& operator[](unsigned long long index) { return data[ElementIndex(index)]; }
+    inline const T& operator[](unsigned long long index) const { return data[ElementIndex(index)]; }
+    // IndexOutOfRangeException outside the array, as C# throws it at ldelem / stelem; a negative index is a large unsigned one
+    inline int ElementIndex(long long index) const {
+        if (static_cast<unsigned long long>(index) >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+        return static_cast<int>(index);
+    }
+    inline int ElementIndex(unsigned long long index) const {
+        if (index >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+            __gsharp_trap(GSharpErrorCode::IndexOutOfRange, "Index was outside the bounds of the array.");
+        }
+        return static_cast<int>(index);
+    }
     inline operator T*() { return data; }
     inline operator const T*() const { return data; }
 };
+
+// The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988): C#
+// converts the index with conv.ovf.i.un when it is evaluated, so an index above long.MaxValue throws OverflowException
+// before a null check or the right side of an assignment
+inline long long __gsharp_array_index_u64(unsigned long long index) {
+    if (index > 0x7FFFFFFFFFFFFFFFull) {
+        __gsharp_trap(GSharpErrorCode::Overflow, "Arithmetic operation resulted in an overflow.");
+    }
+    return static_cast<long long>(index);
+}
 
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>

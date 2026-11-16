@@ -9,15 +9,29 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 /// today: the split point of each call and the effects of each expression.
 /// </summary>
 /// <remarks>
-/// The number of differences per known reason is kept in <c>IrEffectDifferences.expected.txt</c>: a reason that grows
-/// or a new one fails, so a change that falls into a known reason by accident is seen. Every run writes the full list
-/// of differences to the received file it names in its output.
+/// The number of differences per method and known reason is kept in <c>IrEffectDifferences.expected.yml</c>: a reason
+/// that grows or a new one fails, so a change that falls into a known reason by accident is seen. Every run writes the
+/// full list of differences to the received file it names in its output.
 /// </remarks>
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.CorpusScan)]
 public class IrClassificationEquivalenceTests(ITestOutputHelper output)
 {
-    private const string ExpectedFile = "IrEffectDifferences.expected.txt";
+    private const string ExpectedFile = "IrEffectDifferences.expected.yml";
+
+    private static readonly string[] s_header =
+    [
+        "The expressions whose effects the IR classifies differently from the syntax walk of the lowering and the",
+        "emitters (ExpressionEffects), per GPU method or emitted struct member of the IR corpus, for a known reason.",
+        "IrClassificationEquivalenceTests.EveryGpuMethod_ClassifiesAsTheSyntaxPassesDo builds the list again on every",
+        "run and fails on any difference; a received file goes to tmp/, and the full list of differences to",
+        "tmp/IrClassificationEquivalence.<assembly>.received.txt. The test output prints the total of each reason.",
+        "",
+        "  file:   the source file, relative to tests/Compiler/Kassyi.GSharp.Tests.Shared",
+        "  method: the containing type and the method (an accessor, constructor or operator by its metadata name)",
+        "  reason: the known reason of the difference (IrEffectDifferences.Reason)",
+        "  count:  how many such expressions the method has"
+    ];
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -52,10 +66,12 @@ public class IrClassificationEquivalenceTests(ITestOutputHelper output)
             .OrderBy(static m => m, StringComparer.Ordinal)
             .ToArray();
         Assert.True(unexplained.Length == 0, string.Join("\n", unexplained.Take(50)));
-        IrExpectedFiles.AssertMatches(ExpectedFile,
-            IrExpectedFiles.SortedLines(equivalence.EffectMismatches
-                .Select(static pair => pair.Key + "\t" + pair.Value.Count)
-            ), output);
+        foreach (var total in equivalence.EffectCounts.Totals())
+        {
+            output.WriteLine(total);
+        }
+
+        IrExpectedFiles.AssertMatches(ExpectedFile, equivalence.EffectCounts.Render(s_header), output);
     }
 
     // Every difference, to read when a count changes

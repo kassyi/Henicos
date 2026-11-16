@@ -259,6 +259,15 @@ public static class ArrayArgumentReads
     /// <summary>The array read in a device function whose parameter is nullable.</summary>
     public const int InNullableFunction = 7;
 
+    /// <summary><c>IsEmpty</c> of a <c>Memory&lt;T&gt;</c> or an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsEmpty = 8;
+
+    /// <summary><c>IsDefault</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsDefault = 9;
+
+    /// <summary><c>IsDefaultOrEmpty</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
+    public const int IsDefaultOrEmpty = 10;
+
     /// <summary><c>a.AsStackEnumerable().Sum()</c>: StackLinq over an array.</summary>
     public const int StackLinqSum = 11;
 
@@ -275,4 +284,9 @@ public static class ArrayArgumentReads
 
     /// <summary><c>StackLinqExtensions.AsStackEnumerable(a).Sum()</c>: the static form of the call.</summary>
     public const int StackLinqStaticSum = 15;
+
+    /// <summary>
+    /// <c>IsDefault</c> and <c>IsDefaultOrEmpty</c> of a <c>default(ImmutableArray&lt;T&gt;)</c> literal.
+    /// </summary>
+    public const int DefaultLiteral = 16;
 }
