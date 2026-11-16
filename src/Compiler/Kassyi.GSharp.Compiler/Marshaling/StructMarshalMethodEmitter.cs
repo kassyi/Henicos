@@ -73,7 +73,7 @@ internal static class StructMarshalMethodEmitter
             var name = member.Name.ToCSharpIdentifier();
             WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
         }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
+        else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
             writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -167,7 +167,7 @@ internal static class StructMarshalMethodEmitter
             $"out {native}.Data, (global::System.IntPtr)size, hStream));");
         writer.AppendLine($"{StructMarshalingEmitter.CudaArraysParameter}?.Add({host}, {native}.Data);");
 
-        if (!TypeLayoutCalculator.IsUserStruct(elementType))
+        if (!HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
         {
             StructBlockCopyEmitter.WritePinnedCopy(writer, host, $"{native}.Data", toDevice: true);
             return;

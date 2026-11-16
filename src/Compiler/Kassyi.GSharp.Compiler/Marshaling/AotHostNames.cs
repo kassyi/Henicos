@@ -79,7 +79,17 @@ internal static class AotHostNames
     /// The name that the native shadow struct of <paramref name="symbol"/> declares: the type name without a trailing
     /// <c>Context</c>, as C# source spells it (<c>@struct</c>).
     /// </summary>
-    public static string GetNativeStructName(ISymbol symbol) => TrimContextSuffix(symbol.Name).ToCSharpIdentifier();
+    public static string GetNativeStructName(ISymbol symbol)
+    {
+        if (symbol is not ITypeSymbol type || !HostShadowStructs.TryGetNullableValue(type, out _))
+        {
+            return TrimContextSuffix(symbol.Name).ToCSharpIdentifier();
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendMarshalTypeKey(symbol);
+        return writer.ToString();
+    }
 
     /// <summary>
     /// The custom structs that enclose <paramref name="structSymbol"/>, outermost first, which the native declaration
@@ -99,8 +109,17 @@ internal static class AotHostNames
     }
 
     /// <summary>Appends the key of a struct in the marshaling method names: <c>Parent_Child</c> for a nested type.</summary>
+    /// <remarks>
+    /// A <c>Nullable&lt;T&gt;</c> is keyed <c>__gsharp_nullable_of_{key of T}</c>, which also names its shadow struct.
+    /// </remarks>
     public static ref readonly SourceWriter AppendMarshalTypeKey(this in SourceWriter writer, ISymbol symbol)
     {
+        if (symbol is ITypeSymbol type && HostShadowStructs.TryGetNullableValue(type, out var value))
+        {
+            writer.Append(GSharpInternalNames.Launcher.NullableShadowPrefix);
+            return ref writer.AppendMarshalTypeKey(value);
+        }
+
         if (symbol.ContainingType is { } parentType)
         {
             writer.AppendMarshalTypeKey(parentType);

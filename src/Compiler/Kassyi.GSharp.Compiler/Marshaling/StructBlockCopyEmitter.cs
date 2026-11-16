@@ -90,13 +90,10 @@ internal static class StructBlockCopyEmitter
         }
     }
 
-    // Whether an inline array element is copied one by one: a user struct that is not Identical, or an array-like value
-    // (a GSharpArray on the device, a reference on the host)
+    // Whether an inline array element is copied one by one: a user struct or a Nullable<T> that is not Identical, or an
+    // array-like value (a GSharpArray on the device, a reference on the host)
     internal static bool NeedsElementCopy(ITypeSymbol elementType, ITranspilerDialect dialect) =>
-        elementType.IsArrayLikeType() ||
-        (elementType is INamedTypeSymbol named &&
-         TypeLayoutCalculator.IsUserStruct(named) &&
-         TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer != TransferClass.Identical);
+        elementType.IsArrayLikeType() || HostShadowStructs.IsConverted(elementType, dialect);
 
     // for (int k = 0; k < <N>; k++) { <copy host[k] and ((<element shadow>*)pField)[k]> }
     internal static void WriteInlineArrayElementCopy(SourceWriter writer, StructAbiMember member, bool toNative,
@@ -170,7 +167,7 @@ internal static class StructBlockCopyEmitter
     internal static void WriteArrayElementSize(SourceWriter writer, string host, ITypeSymbol elementType)
     {
         writer.Append($"int size = checked({host}.Length * sizeof(");
-        if (TypeLayoutCalculator.IsUserStruct(elementType))
+        if (HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
         {
             writer.AppendAotStructPath(elementType);
         }
