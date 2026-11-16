@@ -13,14 +13,19 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal sealed class UsingExitPlan
 {
     private readonly Dictionary<SyntaxNode, int> _exitOf;
+    private readonly Dictionary<(int TreeOrdinal, int Start, int Length), int> _exitOfSpan;
+    private readonly Compilation? _compilation;
 
     private UsingExitPlan(TextSpan body, SyntaxNode? function, ImmutableArray<UsingExit> exits,
-        Dictionary<SyntaxNode, int> exitOf, ITypeSymbol? returnType, bool returnsByRef, bool declaresReturnValue)
+        Dictionary<SyntaxNode, int> exitOf, Dictionary<(int TreeOrdinal, int Start, int Length), int> exitOfSpan,
+        Compilation? compilation, ITypeSymbol? returnType, bool returnsByRef, bool declaresReturnValue)
     {
         Body = body;
         Function = function;
         Exits = exits;
         _exitOf = exitOf;
+        _exitOfSpan = exitOfSpan;
+        _compilation = compilation;
         ReturnType = returnType;
         ReturnsByRef = returnsByRef;
         DeclaresReturnValue = declaresReturnValue;
@@ -73,8 +78,10 @@ internal sealed class UsingExitPlan
         SemanticModel semanticModel, IMethodSymbol? method)
     {
         var function = JumpTargets.FunctionOf(owner);
+        var compilation = semanticModel.Compilation;
         var exits = ImmutableArray.CreateBuilder<UsingExit>();
         var exitOf = new Dictionary<SyntaxNode, int>();
+        var exitOfSpan = new Dictionary<(int TreeOrdinal, int Start, int Length), int>();
         var body = first is null || last is null
             ? new TextSpan(owner.Span.End, 0)
             : TextSpan.FromBounds(first.SpanStart, last.Span.End);
@@ -84,7 +91,12 @@ internal sealed class UsingExitPlan
             {
                 if (node is StatementSyntax jump && body.Contains(jump.Span) && TryGetExit(jump, body, out var exit))
                 {
-                    exitOf[jump] = AddExit(exits, exit);
+                    var exitIndex = AddExit(exits, exit);
+                    exitOf[jump] = exitIndex;
+                    if (TryGetOriginalSpanKey(jump, compilation, out var spanKey))
+                    {
+                        exitOfSpan[spanKey] = exitIndex;
+                    }
                 }
             }
         }
@@ -93,15 +105,58 @@ internal sealed class UsingExitPlan
             .AsStackEnumerable()
             .Any(static exit => exit.Jump is ReturnStatementSyntax { Expression: not null });
         var symbol = returnsValue ? FunctionSymbol(function, semanticModel, method) : null;
-        return new UsingExitPlan(body, function, exits.ToImmutable(), exitOf, symbol?.ReturnType,
-            symbol is { ReturnsByRef: true } or { ReturnsByRefReadonly: true },
+        return new UsingExitPlan(body, function, exits.ToImmutable(), exitOf, exitOfSpan, compilation,
+            symbol?.ReturnType, symbol is { ReturnsByRef: true } or { ReturnsByRefReadonly: true },
             returnsValue && !IsInsideUsing(owner, function));
     }
 
     /// <summary>
     /// The index of the exit that <paramref name="jump"/> takes, or -1 when it does not leave the body.
     /// </summary>
-    public int FindExit(StatementSyntax jump) => _exitOf.TryGetValue(jump, out var index) ? index : -1;
+    public int FindExit(StatementSyntax jump)
+    {
+        if (_exitOf.TryGetValue(jump, out var index))
+        {
+            return index;
+        }
+
+        return TryGetOriginalSpanKey(jump, _compilation, out var spanKey) &&
+               _exitOfSpan.TryGetValue(spanKey, out index)
+            ? index
+            : -1;
+    }
+
+    // The (treeOrdinal, start, length) of a jump in the user's source, ignoring the copy region so that every copy of
+    // a consumer body inlined by IteratorInliner.Expand resolves to the exit of the original jump
+    private static bool TryGetOriginalSpanKey(
+        StatementSyntax jump,
+        Compilation? compilation,
+        out (int TreeOrdinal, int Start, int Length) key)
+    {
+        foreach (var annotation in jump.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+        {
+            if (LoweringAnnotations.TryParseOriginalSpanData(
+                    annotation.Data,
+                    out var start,
+                    out var length,
+                    out var treeOrdinal,
+                    out _))
+            {
+                key = (treeOrdinal, start, length);
+                return true;
+            }
+        }
+
+        var ordinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, jump.SyntaxTree);
+        if (ordinal >= 0)
+        {
+            key = (ordinal, jump.SpanStart, jump.Span.Length);
+            return true;
+        }
+
+        key = default;
+        return false;
+    }
 
     // The exit of a jump whose target is outside the body
     private static bool TryGetExit(StatementSyntax jump, TextSpan body, out UsingExit exit)
