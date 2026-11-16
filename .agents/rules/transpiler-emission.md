@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/src/Compiler/**"
-description: Rules for code that emits C# or CUDA C++ - no reflection, SourceWriter and scoped brackets, dense output, plan then emit.
+trigger: model_decision
+description: Read before changing code that emits C# or CUDA C++ - no reflection, SourceWriter and scoped brackets, dense output, plan then emit.
+paths: "src/Compiler/**"
 ---
 
 # Transpiler Emission Rules (SourceWriter / Generated Output)

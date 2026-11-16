@@ -18,13 +18,19 @@ using Microsoft.CodeAnalysis.Operations;
 internal static class CallerInfoArgument
 {
     /// <summary>
+    /// Whether <paramref name="parameter"/> is optional and carries any caller-info attribute.
+    /// </summary>
+    public static bool IsCallerInfoParameter(IParameterSymbol parameter) =>
+        parameter.IsOptional && HasCallerInfoAttribute(parameter);
+
+    /// <summary>
     /// The value C# passes to <paramref name="parameter"/> when <paramref name="call"/> omits it, converted to the
     /// parameter type (a number, or a <see cref="string"/>); <see langword="null"/> when the parameter is not a
     /// caller-info parameter or the call passes it.
     /// </summary>
     public static object? GetValue(IParameterSymbol parameter, SyntaxNode call, SemanticModel semanticModel)
     {
-        if (!parameter.IsOptional || !HasCallerInfoAttribute(parameter) ||
+        if (!IsCallerInfoParameter(parameter) ||
             !semanticModel.TryGetOriginalNode(call, out var site, out var siteModel))
         {
             return null;

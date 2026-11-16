@@ -1019,10 +1019,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         using var allKernelsSource = new SourceWriter();
-        foreach (var method in kernelMethods)
+        var kernelItems = new KernelPartitionItem[kernelMethods.Length];
+        for (var i = 0; i < kernelMethods.Length; i++)
         {
-            allKernelsSource.AppendLine(method.GetSource(isCuda));
+            var method = kernelMethods[i];
+            var source = method.GetSource(isCuda);
+            allKernelsSource.AppendLine(source);
+            var byteCount = Encoding.UTF8.GetByteCount(source);
+            kernelItems[i] = new KernelPartitionItem(method.Class.FullyQualifiedName, byteCount);
         }
+
+        var dialectName = isCuda ? "Cuda" : "Cpu";
+        var partitionPlan = NativeModulePartitioner.Plan(kernelItems.AsSpan());
+        var partitionJson = NativeModulePlanJson.Format(
+            dialectName, partitionPlan, kernelItems.AsSpan());
 
         var requiredIncludes = NativeModuleAssembler.CollectIncludes(kernelMethods, distinctDeviceMethods, isCuda);
         imports.Includes
@@ -1030,7 +1040,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AddTo(requiredIncludes);
         var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
             allKernelsSource.ToString());
-        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName, symbolSites.ToImmutable());
+        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName,
+            symbolSites.ToImmutable(), partitionJson);
     }
 
     // The device code of other assemblies that the kernels and device functions of the module reach

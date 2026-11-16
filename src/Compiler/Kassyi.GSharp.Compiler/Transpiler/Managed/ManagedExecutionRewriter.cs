@@ -447,19 +447,17 @@ internal sealed partial class ManagedExecutionRewriter(
             .WithTriviaFrom(node);
     }
 
-    // [WHY] A variable passed to a ref readonly parameter without a keyword is passed by reference, and C# warns
-    // that it should carry one (CS9192). The user's source already reports or suppresses that warning, so the copy
-    // writes the keyword (in), which passes the same reference without repeating it. A value that is not a variable
-    // keeps no keyword: C# passes a temporary for it, and in would not compile. The operation is looked up from the
-    // expression: an argument without a keyword has the span of its expression, and the lookup of a lowered node by
-    // span finds the innermost node
+    // The keyword is decided by ManagedCallForms.GetArgumentModifier. The operation is looked up from the expression:
+    // an argument without a keyword has the span of its expression, and the lookup of a lowered node by span finds
+    // the innermost node
     private bool IsVariableToRefReadOnlyWithoutKeyword(ArgumentSyntax node) =>
         node.RefKindKeyword.IsKind(SyntaxKind.None) &&
         semanticModel.GetSafeOperation(node.Expression) is
         {
-            Parent: IArgumentOperation { Parameter.RefKind: RefKind.RefReadOnlyParameter }
+            Parent: IArgumentOperation { Parameter: { } parameter }
         } value &&
-        value.IsVariable();
+        ManagedCallForms.ArgumentNeedsVariableTest(parameter.RefKind) &&
+        ManagedCallForms.GetArgumentModifier(parameter.RefKind, value.IsVariable()) == ManagedArgumentModifier.In;
 
     // [WHY] C# ends a switch expression that is not exhaustive with an arm of its own that throws, and warns about it
     // (CS8509). The user's source already reports or suppresses that warning, so the copy writes the arm out, which

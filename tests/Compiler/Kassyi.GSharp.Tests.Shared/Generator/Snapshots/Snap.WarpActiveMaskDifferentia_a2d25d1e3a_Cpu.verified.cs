@@ -418,6 +418,18 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(902030285u, "WarpActiveMas
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(199381565u, "WarpActiveMaskDifferentialKernels.cs", 309, 13, "GridStrideShuffleTailKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1771636946u, "WarpActiveMaskDifferentialKernels.cs", 316, 9, "PartialWarpKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(756110398u, "WarpActiveMaskDifferentialKernels.cs", 331, 9, "ShuffleOutsideActiveMaskKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(80371578u, "WarpActiveMaskDifferentialKernels.cs", 342, 17, "UniformSwitchBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(595013934u, "WarpActiveMaskDifferentialKernels.cs", 348, 17, "UniformSwitchBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2098205210u, "WarpActiveMaskDifferentialKernels.cs", 354, 9, "UniformSwitchBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1746007580u, "WarpActiveMaskDifferentialKernels.cs", 365, 17, "UniformSwitchGotoCaseKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(246084526u, "WarpActiveMaskDifferentialKernels.cs", 371, 17, "UniformSwitchGotoCaseKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1671658680u, "WarpActiveMaskDifferentialKernels.cs", 372, 17, "UniformSwitchGotoCaseKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1386484086u, "WarpActiveMaskDifferentialKernels.cs", 375, 17, "UniformSwitchGotoCaseKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940007434u, "WarpActiveMaskDifferentialKernels.cs", 381, 9, "UniformSwitchGotoCaseKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(788653656u, "WarpActiveMaskDifferentialKernels.cs", 392, 17, "UniformSwitchLabeledBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(364422034u, "WarpActiveMaskDifferentialKernels.cs", 401, 17, "UniformSwitchLabeledBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1468171934u, "WarpActiveMaskDifferentialKernels.cs", 407, 9, "UniformSwitchLabeledBreakKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1019267778u, "WarpActiveMaskDifferentialKernels.cs", 433, 9, "UniformSwitchBreakShuffleKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -10096,6 +10108,2075 @@ if (s_errorSites.Length > 0)
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
+public const string UniformSwitchBreakKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel* __gsharp_all_contexts = nullptr;
+__gsharp_warp_record __gsharp_warp_records[2] = {};
+uint32_t __gsharp_warp_record_next = 0;
+uint32_t __gsharp_warp_round = 0;
+bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[4] = {};
+GSharpArray<unsigned int> __gsharp_id_0_result;
+int __gsharp_id_1_uniformCond;
+int __gsharp_id_2_t;
+unsigned int __gsharp_warp_temp_1;
+unsigned int __gsharp_warp_temp_2;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_result, int __gsharp_in___gsharp_id_1_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+__gsharp_ctx->__gsharp_id_1_uniformCond=__gsharp_in___gsharp_id_1_uniformCond;
+}
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_2_t=(int)threadIdx.x;
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
+auto __gsharp_switch_temp_0 = __gsharp_ctx->__gsharp_id_1_uniformCond;
+if(__gsharp_switch_temp_0==0)
+{
+goto __gsharp_switch_1_state_1;
+}
+goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_1;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(342,29)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(342,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_2_t, 80371578u)=__gsharp_ctx->__gsharp_warp_temp_1;
+if((__gsharp_ctx->__gsharp_id_2_t&1)==1)
+{
+goto __gsharp_switch_1_state_5;
+}
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(348,34)"");
+__gsharp_state=3;
+return;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(348,34)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,32), 595013934u)=__gsharp_ctx->__gsharp_warp_temp_2;
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_4;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_5;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""WarpActiveMaskDifferentialKernels.cs(339,9)"");
+__gsharp_state=6;
+return;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(354,26)"");
+__gsharp_state=7;
+return;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(354,26)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,64), 2098205210u)=__gsharp_warp_temp_0;
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<unsigned int> __gsharp_id_0_result, int __gsharp_id_1_uniformCond)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+uint32_t __gsharp_round = 0;
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+if (__gsharp_warp_can_run(&__gsharp_contexts[0], __gsharp_ctx_tid, (uint32_t)__gsharp_threads_per_block, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel(__gsharp_id_0_result, __gsharp_id_1_uniformCond, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (__gsharp_any_active && !__gsharp_stepped)
+{
+__gsharp_warp_report_stall(&__gsharp_contexts[0], (uint32_t)__gsharp_threads_per_block);
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint[] result;
+public int uniformCond;
+public int t;
+public uint __gsharp_warp_temp_1;
+public uint __gsharp_warp_temp_2;
+public uint[] __gsharp_warp_visits = new uint[4];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel(uint[] __gsharp_in_result, int __gsharp_in_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+__gsharp_ctx.uniformCond = __gsharp_in_uniformCond;
+}
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
+{
+int __gsharp_switch_temp_0 = __gsharp_ctx.uniformCond;
+if (__gsharp_switch_temp_0 == 0)
+goto case 1;
+goto case 4;
+}
+
+goto case 1;
+}
+
+case 1:
+{
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(342,29)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(342,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_1;
+if ((__gsharp_ctx.t & 1) == 1)
+{
+goto case 5;
+}
+
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(348,34)");
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
+
+case 3:
+{
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(348,34)");
+__gsharp_ctx.result[__gsharp_ctx.t + 32] = __gsharp_ctx.__gsharp_warp_temp_2;
+goto case 5;
+goto case 4;
+}
+
+case 4:
+{
+goto case 5;
+goto case 5;
+}
+
+case 5:
+{
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "WarpActiveMaskDifferentialKernels.cs(339,9)");
+__gsharp_ctx.__gsharp_state = 6;
+return;
+}
+
+case 6:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(354,26)");
+__gsharp_ctx.__gsharp_state = 7;
+return;
+}
+
+case 7:
+{
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(354,26)");
+__gsharp_ctx.result[__gsharp_ctx.t + 64] = __gsharp_warp_temp_0;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_UniformSwitchBreakKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchBreakKernel(global::System.UInt32[] result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel();
+}
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+int __gsharp_round = 0;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun(__gsharp_thread_index, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel(result, uniformCond, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == -1)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited(__gsharp_thread_index);
+}
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (__gsharp_any_block_active && !__gsharp_stepped)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall(__gsharp_threads_per_block);
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_UniformSwitchBreakKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_UniformSwitchBreakKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchBreakKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("result", result.Length, "The array length must not be negative.");
+}
+if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchBreakKernel", "LaunchUniformSwitchBreakKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUniformSwitchBreakKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchUniformSwitchBreakKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchUniformSwitchBreakKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = result.Data, Length = result.Length }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
+public const string UniformSwitchGotoCaseKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel* __gsharp_all_contexts = nullptr;
+__gsharp_warp_record __gsharp_warp_records[2] = {};
+uint32_t __gsharp_warp_record_next = 0;
+uint32_t __gsharp_warp_round = 0;
+bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[6] = {};
+GSharpArray<unsigned int> __gsharp_id_0_result;
+int __gsharp_id_1_uniformCond;
+int __gsharp_id_2_t;
+unsigned int __gsharp_warp_temp_1;
+unsigned int __gsharp_warp_temp_2;
+unsigned int __gsharp_warp_temp_3;
+unsigned int __gsharp_warp_temp_4;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_result, int __gsharp_in___gsharp_id_1_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+__gsharp_ctx->__gsharp_id_1_uniformCond=__gsharp_in___gsharp_id_1_uniformCond;
+}
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_2_t=(int)threadIdx.x;
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
+auto __gsharp_switch_temp_0 = __gsharp_ctx->__gsharp_id_1_uniformCond;
+if(__gsharp_switch_temp_0==0)
+{
+goto __gsharp_switch_1_state_1;
+}
+if(__gsharp_switch_temp_0==1)
+{
+goto __gsharp_switch_1_state_5;
+}
+goto __gsharp_switch_1_state_7;
+goto __gsharp_switch_1_state_1;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(365,29)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(365,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_2_t, 1746007580u)=__gsharp_ctx->__gsharp_warp_temp_1;
+if((__gsharp_ctx->__gsharp_id_2_t&1)==1)
+{
+goto __gsharp_switch_1_state_5;
+}
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(371,34)"");
+__gsharp_state=3;
+return;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(371,34)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,32), 246084526u)=__gsharp_ctx->__gsharp_warp_temp_2;
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(372,34)"");
+__gsharp_state=4;
+return;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(372,34)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,64), 1671658680u)=__gsharp_ctx->__gsharp_warp_temp_3;
+goto __gsharp_switch_1_state_8;
+goto __gsharp_switch_1_state_5;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(375,34)"");
+__gsharp_state=6;
+return;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+__gsharp_ctx->__gsharp_warp_temp_4=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,4,""WarpActiveMaskDifferentialKernels.cs(375,34)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,96), 1386484086u)=__gsharp_ctx->__gsharp_warp_temp_4;
+goto __gsharp_switch_1_state_8;
+goto __gsharp_switch_1_state_7;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+goto __gsharp_switch_1_state_8;
+goto __gsharp_switch_1_state_8;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""WarpActiveMaskDifferentialKernels.cs(362,9)"");
+__gsharp_state=9;
+return;
+}
+case 9:
+__gsharp_switch_1_state_9:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,5,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(381,27)"");
+__gsharp_state=10;
+return;
+}
+case 10:
+__gsharp_switch_1_state_10:
+{
+auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,5,""WarpActiveMaskDifferentialKernels.cs(381,27)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,128), 940007434u)=__gsharp_warp_temp_0;
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<unsigned int> __gsharp_id_0_result, int __gsharp_id_1_uniformCond)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+uint32_t __gsharp_round = 0;
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+if (__gsharp_warp_can_run(&__gsharp_contexts[0], __gsharp_ctx_tid, (uint32_t)__gsharp_threads_per_block, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel(__gsharp_id_0_result, __gsharp_id_1_uniformCond, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (__gsharp_any_active && !__gsharp_stepped)
+{
+__gsharp_warp_report_stall(&__gsharp_contexts[0], (uint32_t)__gsharp_threads_per_block);
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint[] result;
+public int uniformCond;
+public int t;
+public uint __gsharp_warp_temp_1;
+public uint __gsharp_warp_temp_2;
+public uint __gsharp_warp_temp_3;
+public uint __gsharp_warp_temp_4;
+public uint[] __gsharp_warp_visits = new uint[6];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel(uint[] __gsharp_in_result, int __gsharp_in_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+__gsharp_ctx.uniformCond = __gsharp_in_uniformCond;
+}
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
+{
+int __gsharp_switch_temp_0 = __gsharp_ctx.uniformCond;
+if (__gsharp_switch_temp_0 == 0)
+goto case 1;
+if (__gsharp_switch_temp_0 == 1)
+goto case 5;
+goto case 7;
+}
+
+goto case 1;
+}
+
+case 1:
+{
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(365,29)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(365,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_1;
+if ((__gsharp_ctx.t & 1) == 1)
+{
+goto case 5;
+}
+
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(371,34)");
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
+
+case 3:
+{
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(371,34)");
+__gsharp_ctx.result[__gsharp_ctx.t + 32] = __gsharp_ctx.__gsharp_warp_temp_2;
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(372,34)");
+__gsharp_ctx.__gsharp_state = 4;
+return;
+}
+
+case 4:
+{
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(372,34)");
+__gsharp_ctx.result[__gsharp_ctx.t + 64] = __gsharp_ctx.__gsharp_warp_temp_3;
+goto case 8;
+goto case 5;
+}
+
+case 5:
+{
+__gsharp_warp_publish(0, ref __gsharp_ctx, 4, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(375,34)");
+__gsharp_ctx.__gsharp_state = 6;
+return;
+}
+
+case 6:
+{
+__gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 4, "WarpActiveMaskDifferentialKernels.cs(375,34)");
+__gsharp_ctx.result[__gsharp_ctx.t + 96] = __gsharp_ctx.__gsharp_warp_temp_4;
+goto case 8;
+goto case 7;
+}
+
+case 7:
+{
+goto case 8;
+goto case 8;
+}
+
+case 8:
+{
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "WarpActiveMaskDifferentialKernels.cs(362,9)");
+__gsharp_ctx.__gsharp_state = 9;
+return;
+}
+
+case 9:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 5, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(381,27)");
+__gsharp_ctx.__gsharp_state = 10;
+return;
+}
+
+case 10:
+{
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 5, "WarpActiveMaskDifferentialKernels.cs(381,27)");
+__gsharp_ctx.result[__gsharp_ctx.t + 128] = __gsharp_warp_temp_0;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_UniformSwitchGotoCaseKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchGotoCaseKernel(global::System.UInt32[] result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel();
+}
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+int __gsharp_round = 0;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun(__gsharp_thread_index, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel(result, uniformCond, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == -1)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited(__gsharp_thread_index);
+}
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (__gsharp_any_block_active && !__gsharp_stepped)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall(__gsharp_threads_per_block);
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_UniformSwitchGotoCaseKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_UniformSwitchGotoCaseKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchGotoCaseKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("result", result.Length, "The array length must not be negative.");
+}
+if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchGotoCaseKernel", "LaunchUniformSwitchGotoCaseKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUniformSwitchGotoCaseKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchUniformSwitchGotoCaseKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchUniformSwitchGotoCaseKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchGotoCaseKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = result.Data, Length = result.Length }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
+public const string UniformSwitchLabeledBreakKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel* __gsharp_all_contexts = nullptr;
+__gsharp_warp_record __gsharp_warp_records[2] = {};
+uint32_t __gsharp_warp_record_next = 0;
+uint32_t __gsharp_warp_round = 0;
+bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[4] = {};
+GSharpArray<unsigned int> __gsharp_id_0_result;
+int __gsharp_id_1_uniformCond;
+int __gsharp_id_2_t;
+unsigned int __gsharp_warp_temp_1;
+int __gsharp_id_4_i;
+unsigned int __gsharp_warp_temp_2;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel(GSharpArray<unsigned int> __gsharp_in___gsharp_id_0_result, int __gsharp_in___gsharp_id_1_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_result=__gsharp_in___gsharp_id_0_result;
+__gsharp_ctx->__gsharp_id_1_uniformCond=__gsharp_in___gsharp_id_1_uniformCond;
+}
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_2_t=(int)threadIdx.x;
+__gsharp_id_3_sw:;
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
+auto __gsharp_switch_temp_0 = __gsharp_ctx->__gsharp_id_1_uniformCond;
+if(__gsharp_switch_temp_0==0)
+{
+goto __gsharp_switch_1_state_1;
+}
+goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_1;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(392,29)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(392,29)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_ctx->__gsharp_id_2_t, 788653656u)=__gsharp_ctx->__gsharp_warp_temp_1;
+for(__gsharp_ctx->__gsharp_id_4_i=0;__gsharp_ctx->__gsharp_id_4_i<2;__gsharp_ctx->__gsharp_id_4_i=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_i,1))
+{
+if((__gsharp_ctx->__gsharp_id_2_t&1)==1)
+{
+goto __gsharp_switch_1_state_6;
+}
+}
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(401,34)"");
+__gsharp_state=3;
+return;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(401,34)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,32), 364422034u)=__gsharp_ctx->__gsharp_warp_temp_2;
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_4;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_5;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+goto __gsharp_switch_1_state_6;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""WarpActiveMaskDifferentialKernels.cs(389,13)"");
+__gsharp_state=7;
+return;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(407,26)"");
+__gsharp_state=8;
+return;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+auto __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(407,26)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_result, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_t,64), 1468171934u)=__gsharp_warp_temp_0;
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<unsigned int> __gsharp_id_0_result, int __gsharp_id_1_uniformCond)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+uint32_t __gsharp_round = 0;
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+if (__gsharp_warp_can_run(&__gsharp_contexts[0], __gsharp_ctx_tid, (uint32_t)__gsharp_threads_per_block, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel(__gsharp_id_0_result, __gsharp_id_1_uniformCond, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (__gsharp_any_active && !__gsharp_stepped)
+{
+__gsharp_warp_report_stall(&__gsharp_contexts[0], (uint32_t)__gsharp_threads_per_block);
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint[] result;
+public int uniformCond;
+public int t;
+public uint __gsharp_warp_temp_1;
+public int i;
+public uint __gsharp_warp_temp_2;
+public uint[] __gsharp_warp_visits = new uint[4];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel(uint[] __gsharp_in_result, int __gsharp_in_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.result = __gsharp_in_result;
+__gsharp_ctx.uniformCond = __gsharp_in_uniformCond;
+}
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+sw:
+;
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
+{
+int __gsharp_switch_temp_0 = __gsharp_ctx.uniformCond;
+if (__gsharp_switch_temp_0 == 0)
+goto case 1;
+goto case 4;
+}
+
+goto case 1;
+}
+
+case 1:
+{
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(392,29)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(392,29)");
+__gsharp_ctx.result[__gsharp_ctx.t] = __gsharp_ctx.__gsharp_warp_temp_1;
+for (__gsharp_ctx.i = 0; __gsharp_ctx.i < 2; __gsharp_ctx.i++)
+{
+if ((__gsharp_ctx.t & 1) == 1)
+{
+goto case 6;
+}
+}
+
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(401,34)");
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
+
+case 3:
+{
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(401,34)");
+__gsharp_ctx.result[__gsharp_ctx.t + 32] = __gsharp_ctx.__gsharp_warp_temp_2;
+goto case 5;
+goto case 4;
+}
+
+case 4:
+{
+goto case 5;
+goto case 5;
+}
+
+case 5:
+{
+goto case 6;
+}
+
+case 6:
+{
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "WarpActiveMaskDifferentialKernels.cs(389,13)");
+__gsharp_ctx.__gsharp_state = 7;
+return;
+}
+
+case 7:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(407,26)");
+__gsharp_ctx.__gsharp_state = 8;
+return;
+}
+
+case 8:
+{
+uint __gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(407,26)");
+__gsharp_ctx.result[__gsharp_ctx.t + 64] = __gsharp_warp_temp_0;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_UniformSwitchLabeledBreakKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchLabeledBreakKernel(global::System.UInt32[] result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel();
+}
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+int __gsharp_round = 0;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun(__gsharp_thread_index, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel(result, uniformCond, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == -1)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited(__gsharp_thread_index);
+}
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (__gsharp_any_block_active && !__gsharp_stepped)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall(__gsharp_threads_per_block);
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_UniformSwitchLabeledBreakKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_UniformSwitchLabeledBreakKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(result))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (result?.Length ?? 0) }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchLabeledBreakKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (result.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("result", result.Length, "The array length must not be negative.");
+}
+if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchLabeledBreakKernel", "LaunchUniformSwitchLabeledBreakKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUniformSwitchLabeledBreakKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchUniformSwitchLabeledBreakKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchUniformSwitchLabeledBreakKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchLabeledBreakKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = result.Data, Length = result.Length }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
+public const string UniformSwitchBreakShuffleKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel* __gsharp_all_contexts = nullptr;
+__gsharp_warp_record __gsharp_warp_records[2] = {};
+uint32_t __gsharp_warp_record_next = 0;
+uint32_t __gsharp_warp_round = 0;
+bool __gsharp_warp_waiting = false;
+__gsharp_warp_instance __gsharp_warp_regions[16] = {};
+uint32_t __gsharp_warp_region_depth = 0;
+bool __gsharp_warp_reconverging = false;
+uint32_t __gsharp_warp_reconverge_round = 0;
+const char* __gsharp_warp_reconverge_location = nullptr;
+uint32_t __gsharp_warp_decided_round = 0;
+bool __gsharp_warp_may_pass = false;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+uint32_t __gsharp_warp_visits[5] = {};
+GSharpArray<int> __gsharp_id_0_output;
+int __gsharp_id_1_uniformCond;
+int __gsharp_id_2_t;
+int __gsharp_id_3_v;
+unsigned int __gsharp_warp_temp_2;
+unsigned int __gsharp_id_4_m1;
+unsigned int __gsharp_warp_temp_3;
+unsigned int __gsharp_id_5_m2;
+unsigned int __gsharp_warp_temp_0;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, int __gsharp_in___gsharp_id_1_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+if(__gsharp_state==0){
+__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
+__gsharp_ctx->__gsharp_id_1_uniformCond=__gsharp_in___gsharp_id_1_uniformCond;
+}
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_2_t=(int)threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_ctx->__gsharp_id_2_t;
+__gsharp_warp_region_enter(__gsharp_root,__gsharp_ctx,0);
+auto __gsharp_switch_temp_0 = __gsharp_ctx->__gsharp_id_1_uniformCond;
+if(__gsharp_switch_temp_0==0)
+{
+goto __gsharp_switch_1_state_1;
+}
+goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_1;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(419,27)"");
+__gsharp_state=2;
+return;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,1,""WarpActiveMaskDifferentialKernels.cs(419,27)"");
+__gsharp_ctx->__gsharp_id_4_m1=__gsharp_ctx->__gsharp_warp_temp_2;
+if((__gsharp_ctx->__gsharp_id_2_t&1)==1)
+{
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_v,(int)(__gsharp_ctx->__gsharp_id_4_m1&0u));
+goto __gsharp_switch_1_state_5;
+}
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(426,27)"");
+__gsharp_state=3;
+return;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,2,""WarpActiveMaskDifferentialKernels.cs(426,27)"");
+__gsharp_ctx->__gsharp_id_5_m2=__gsharp_ctx->__gsharp_warp_temp_3;
+__gsharp_ctx->__gsharp_id_3_v=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_v,(int)(__gsharp_ctx->__gsharp_id_5_m2&0u));
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_4;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+goto __gsharp_switch_1_state_5;
+goto __gsharp_switch_1_state_5;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+__gsharp_warp_reconverge_arrive(__gsharp_root,__gsharp_ctx,0,""WarpActiveMaskDifferentialKernels.cs(416,9)"");
+__gsharp_state=6;
+return;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+__gsharp_warp_reconverge_pass(__gsharp_root,__gsharp_ctx,0);
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,3,0,0,""Warp.ActiveMask"",""WarpActiveMaskDifferentialKernels.cs(433,41)"");
+__gsharp_state=7;
+return;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_active_mask_read(__gsharp_root,__gsharp_ctx,3,""WarpActiveMaskDifferentialKernels.cs(433,41)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_warp_temp_0,__gsharp_ctx->__gsharp_id_3_v,""Warp.ShuffleXorSync"",""WarpActiveMaskDifferentialKernels.cs(433,21)"");
+__gsharp_state=8;
+return;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,4,__gsharp_ctx->__gsharp_warp_temp_0,__gsharp_ctx->__gsharp_id_3_v,1,32,""WarpActiveMaskDifferentialKernels.cs(433,21)"");
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_t, 1019267778u)=__gsharp_warp_temp_1;
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_uniformCond)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+uint32_t __gsharp_round = 0;
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+if (__gsharp_warp_can_run(&__gsharp_contexts[0], __gsharp_ctx_tid, (uint32_t)__gsharp_threads_per_block, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel(__gsharp_id_0_output, __gsharp_id_1_uniformCond, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (__gsharp_any_active && !__gsharp_stepped)
+{
+__gsharp_warp_report_stall(&__gsharp_contexts[0], (uint32_t)__gsharp_threads_per_block);
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel : global::Kassyi.GSharp.Core.IManagedWarpFrame {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public int[] output;
+public int uniformCond;
+public int t;
+public int v;
+public uint __gsharp_warp_temp_2;
+public uint m1;
+public uint __gsharp_warp_temp_3;
+public uint m2;
+public uint __gsharp_warp_temp_0;
+public uint[] __gsharp_warp_visits = new uint[5];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.WarpPath => __gsharp_warp_path;
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.AdvanceWarpVisit(int site) => ++__gsharp_warp_visits[site];
+uint global::Kassyi.GSharp.Core.IManagedWarpFrame.GetWarpVisit(int site) => __gsharp_warp_visits[site];
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel(int[] __gsharp_in_output, int __gsharp_in_uniformCond, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel __gsharp_ctx) {
+if (__gsharp_ctx.__gsharp_state == 0) {
+__gsharp_ctx.output = __gsharp_in_output;
+__gsharp_ctx.uniformCond = __gsharp_in_uniformCond;
+}
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.t = global::Kassyi.GSharp.Core.ThreadIndex.X;
+__gsharp_ctx.v = __gsharp_ctx.t;
+__gsharp_warp_region_enter(0, ref __gsharp_ctx, 0);
+{
+int __gsharp_switch_temp_0 = __gsharp_ctx.uniformCond;
+if (__gsharp_switch_temp_0 == 0)
+goto case 1;
+goto case 4;
+}
+
+goto case 1;
+}
+
+case 1:
+{
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(419,27)");
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
+
+case 2:
+{
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 1, "WarpActiveMaskDifferentialKernels.cs(419,27)");
+__gsharp_ctx.m1 = __gsharp_ctx.__gsharp_warp_temp_2;
+if ((__gsharp_ctx.t & 1) == 1)
+{
+__gsharp_ctx.v += (int)(__gsharp_ctx.m1 & 0u);
+goto case 5;
+}
+
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(426,27)");
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
+
+case 3:
+{
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 2, "WarpActiveMaskDifferentialKernels.cs(426,27)");
+__gsharp_ctx.m2 = __gsharp_ctx.__gsharp_warp_temp_3;
+__gsharp_ctx.v += (int)(__gsharp_ctx.m2 & 0u);
+goto case 5;
+goto case 4;
+}
+
+case 4:
+{
+goto case 5;
+goto case 5;
+}
+
+case 5:
+{
+__gsharp_warp_reconverge_arrive(0, ref __gsharp_ctx, 0, "WarpActiveMaskDifferentialKernels.cs(416,9)");
+__gsharp_ctx.__gsharp_state = 6;
+return;
+}
+
+case 6:
+{
+__gsharp_warp_reconverge_pass(0, ref __gsharp_ctx, 0);
+__gsharp_warp_publish(0, ref __gsharp_ctx, 3, 0, 0, "Warp.ActiveMask", "WarpActiveMaskDifferentialKernels.cs(433,41)");
+__gsharp_ctx.__gsharp_state = 7;
+return;
+}
+
+case 7:
+{
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_active_mask_read(0, ref __gsharp_ctx, 3, "WarpActiveMaskDifferentialKernels.cs(433,41)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 4, __gsharp_ctx.__gsharp_warp_temp_0, __gsharp_ctx.v, "Warp.ShuffleXorSync", "WarpActiveMaskDifferentialKernels.cs(433,21)");
+__gsharp_ctx.__gsharp_state = 8;
+return;
+}
+
+case 8:
+{
+int __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 4, __gsharp_ctx.__gsharp_warp_temp_0, __gsharp_ctx.v, 1, 32, "WarpActiveMaskDifferentialKernels.cs(433,21)");
+__gsharp_ctx.output[__gsharp_ctx.t] = __gsharp_warp_temp_1;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_UniformSwitchBreakShuffleKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 uniformCond);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchBreakShuffleKernel(global::System.Int32[] output, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel", "it reaches Warp.ActiveMask(), and the C# execution runs one GPU thread at a time");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel();
+}
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index].__gsharp_number_warp_paths(0u);
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+int __gsharp_round = 0;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+__gsharp_round++;
+bool __gsharp_stepped = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.WarpCanRun(__gsharp_thread_index, __gsharp_round))
+{
+__gsharp_stepped = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel(output, uniformCond, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state == -1)
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.MarkWarpLaneExited(__gsharp_thread_index);
+}
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (__gsharp_any_block_active && !__gsharp_stepped)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.WarpStall(__gsharp_threads_per_block);
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_UniformSwitchBreakShuffleKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_UniformSwitchBreakShuffleKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
+{
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (output?.Length ?? 0) }, uniformCond);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchUniformSwitchBreakShuffleKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 uniformCond, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("WarpActiveMaskDifferentialKernels.UniformSwitchBreakShuffleKernel", "LaunchUniformSwitchBreakShuffleKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchUniformSwitchBreakShuffleKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchUniformSwitchBreakShuffleKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchUniformSwitchBreakShuffleKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__WarpActiveMaskDifferentialKernels__UniformSwitchBreakShuffleKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length }, uniformCond);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500

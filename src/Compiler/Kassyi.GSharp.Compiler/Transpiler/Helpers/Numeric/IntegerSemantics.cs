@@ -504,6 +504,18 @@ internal static class IntegerSemantics
     internal static DivisionCheck DecideDivision(IOperation dividend, IOperation divisor, SpecialType operatorType) =>
         DecideDivision(OperationRanges.Of(dividend), OperationRanges.Of(divisor), operatorType);
 
+    /// <summary>
+    /// Whether the signed division or remainder in <paramref name="operatorType"/> may divide the minimum of the
+    /// type by -1, from the ranges of <paramref name="dividend"/> and <paramref name="divisor"/> (an operand whose
+    /// range is not known spans the operator type, as in
+    /// <see cref="DecideDivision(IntegerRange?, IntegerRange?, SpecialType)"/>); false for a type without a minimum
+    /// to reach.
+    /// </summary>
+    internal static bool MayDivideMinimumByMinusOne(IntegerRange? dividend, IntegerRange? divisor,
+        SpecialType operatorType) =>
+        IntegerRange.OfType(operatorType) is { } operatorRange &&
+        DivisionCheckRule.MayDivideMinimumByMinusOne(operatorType, dividend ?? operatorRange, divisor ?? operatorRange);
+
     // Whether the operand ranges bound the exact result inside the type of the operation, so that it cannot wrap
     private static bool FitsWithoutWrap(in IntegerBinaryFacts facts)
     {

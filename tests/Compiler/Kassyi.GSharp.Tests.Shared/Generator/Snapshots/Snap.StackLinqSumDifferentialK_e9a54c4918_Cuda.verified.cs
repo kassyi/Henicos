@@ -216,9 +216,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1623649016u, "StackLinqSum
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997788590u, "StackLinqSumDifferentialKernels.cs", 65, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1534428860u, "StackLinqSumDifferentialKernels.cs", 65, 50, "FloatSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240324742u, "StackLinqSumDifferentialKernels.cs", 66, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1170886551u, "StackLinqSumDifferentialKernels.cs", 66, 35, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1170886551u, "StackLinqSumDifferentialKernels.cs", 66, 35, "FloatSumMatrixKernel", "G#: a null array is passed to the non-nullable parameter 'data' of DeviceFloatSum. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (float[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1379112652u, "StackLinqSumDifferentialKernels.cs", 67, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(88280963u, "StackLinqSumDifferentialKernels.cs", 67, 45, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(88280963u, "StackLinqSumDifferentialKernels.cs", 67, 45, "FloatSumMatrixKernel", "G#: a null array is passed to the non-nullable parameter 'data' of DeviceFloatSumTransitive. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (float[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(628238559u, "StackLinqSumDifferentialKernels.cs", 74, 22, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(852901670u, "StackLinqSumDifferentialKernels.cs", 80, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166921762u, "StackLinqSumDifferentialKernels.cs", 80, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
@@ -232,9 +232,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285884470u, "StackLinqSum
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1657038426u, "StackLinqSumDifferentialKernels.cs", 84, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(888229108u, "StackLinqSumDifferentialKernels.cs", 84, 50, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(63396192u, "StackLinqSumDifferentialKernels.cs", 85, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(235858114u, "StackLinqSumDifferentialKernels.cs", 85, 36, "DoubleSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(235858114u, "StackLinqSumDifferentialKernels.cs", 85, 36, "DoubleSumMatrixKernel", "G#: a null array is passed to the non-nullable parameter 'data' of DeviceDoubleSum. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (double[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(59508374u, "StackLinqSumDifferentialKernels.cs", 86, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1386245048u, "StackLinqSumDifferentialKernels.cs", 86, 46, "DoubleSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1386245048u, "StackLinqSumDifferentialKernels.cs", 86, 46, "DoubleSumMatrixKernel", "G#: a null array is passed to the non-nullable parameter 'data' of DeviceDoubleSumTransitive. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (double[]?) to keep the C# behavior."),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

@@ -111,7 +111,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(137310915u, "ReadOnlyArray
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(218134605u, "ReadOnlyArrayConversionKernels.cs", 40, 9, "ReassignedLocalKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(18418354u, "ReadOnlyArrayConversionKernels.cs", 40, 16, "ReassignedLocalKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(779717625u, "ReadOnlyArrayConversionKernels.cs", 46, 9, "DeviceFunctionArgumentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1288761115u, "ReadOnlyArrayConversionKernels.cs", 46, 20, "DeviceFunctionArgumentKernel", "G#: a null array is passed where it is not nullable"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1288761115u, "ReadOnlyArrayConversionKernels.cs", 46, 20, "DeviceFunctionArgumentKernel", "G#: a null array is passed to the non-nullable parameter 'a' of Sum. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (uint[]?) to keep the C# behavior."),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(862868015u, "ReadOnlyArrayConversionKernels.cs", 54, 9, "FieldToSpanKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1316897805u, "ReadOnlyArrayConversionKernels.cs", 62, 9, "ParameterToReadOnlySpanKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1502929400u, "ReadOnlyArrayConversionKernels.cs", 72, 13, "FixedSpanKernel", "G#: a null array is read"),

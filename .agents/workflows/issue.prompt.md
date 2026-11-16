@@ -67,8 +67,9 @@ graph TD
      - Select **1 to 2 labels** from the existing repository labels fetched above (e.g., `feature`, `refactor`, `bug`, `performance`, `test`, `documentation`, `chore`).
      - If the issue spans two distinct topics (e.g., a new feature combined with refactoring -> `feature,refactor`), attach both labels.
      - Add the area as the second label when it is not the kind: a bug in test code or test infrastructure is `bug,test`; a wrong document is `bug,documentation`; a cleanup of tests is `refactor,test`.
-     - The `found-by:*` labels (`found-by:audit`, `found-by:differential`, `found-by:matrix`) record how a bug was found and do not count toward the two.
+     - The `found-by:*` labels (`found-by:audit`, `found-by:differential`, `found-by:matrix`, `found-by:review`) record how a bug was found and do not count toward the two.
      - **Strict Cap**: Assign **at most 2 labels** (`1 <= count <= 2`) so that label classification remains focused and meaningful.
+     - Use existing labels only. A new label needs the user's approval and a color chosen by [`.agents/rules/issue-labels.md`](../rules/issue-labels.md).
 
 3. **Select the Milestone (exactly 1)**:
    Pick one milestone by the decision order in [`.agents/rules/issue-milestones.md`](../rules/issue-milestones.md) (`M1 Wrong Results`, `M2 Build Failures & Missing Diagnostics`, `M3 Unconfirmed Suspicions`, `M4 Bug-Finding Infrastructure`, `M5 Cleanup`, `Future`). List the current ones with `gh api repos/{owner}/{repo}/milestones --jq '.[].title'`.

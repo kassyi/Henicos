@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: Issue priority by milestone (M1 to M5, Future), how to assign one, the order of work, and what agents may change without approval.
+trigger: model_decision
+description: Read before filing or triaging an issue, choosing a milestone, or picking what to work on next - milestones M1 to M5 and Future, how to assign one, the order of work.
 ---
 
 # Issue Priority (GitHub Milestones)
