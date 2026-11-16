@@ -62,6 +62,29 @@ internal static class IrCoverage
         {
             violations.Add(where + ": " + problem);
         }
+
+        CheckSpellingParentheses(method, where, violations);
+    }
+
+    private static void CheckSpellingParentheses(IrMethod method, string where, ConcurrentBag<string> violations)
+    {
+        foreach (var parent in IrNodeChildren.DescendantsAndSelf(method.Body))
+        {
+            if (parent is IrExpression parentExpr && !parentExpr.Source.Synthesized && parentExpr.Parentheses > 0)
+            {
+                foreach (var child in IrNodeChildren.Of(parent))
+                {
+                    if (child is IrExpression childExpr && !childExpr.Source.Synthesized && childExpr.Parentheses > 0 &&
+                        childExpr.Source.Span == parentExpr.Source.Span)
+                    {
+                        violations.Add(
+                            $"{where}: spelling at {parentExpr.Source.Start}.." +
+                            $"{parentExpr.Source.Start + parentExpr.Source.Length}: " +
+                            "a parent and its child with the same syntax both have parentheses");
+                    }
+                }
+            }
+        }
     }
 
     // Counts the opaque nodes of one built method by node kind, reason, operation kind and syntax kind

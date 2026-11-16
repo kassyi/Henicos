@@ -141,7 +141,7 @@ internal static class ExpressionTraps
             IInstanceReferenceOperation or ISimpleAssignmentOperation or IDeclarationExpressionOperation or
             IDiscardOperation => true,
         IPropertyReferenceOperation { Property: var property } reference =>
-            !property.IsIndexer && IsStoredOrIntrinsic(property) && !ReadsArrayThatMayBeNull(reference),
+            IsTrapFreeProperty(property) && !ReadsArrayThatMayBeNull(reference),
         IBinaryOperation binary =>
             binary is { OperatorMethod: null, IsChecked: false } &&
             !MayFailDivision(binary.OperatorKind, binary.Type, binary.LeftOperand, binary.RightOperand),
@@ -160,6 +160,10 @@ internal static class ExpressionTraps
         _ => false
     };
 
+    /// <summary>Whether a property access has no trap of its own (not an indexer, and stored or intrinsic).</summary>
+    internal static bool IsTrapFreeProperty(IPropertySymbol property) =>
+        !property.IsIndexer && IsStoredOrIntrinsic(property);
+
     // A field-like property, or the length of an array or span: a computed property of a struct runs its getter
     private static bool IsStoredOrIntrinsic(IPropertySymbol property) =>
         !StructAbiMembers.HasAccessorFunctions(property) ||
@@ -172,12 +176,27 @@ internal static class ExpressionTraps
         reference.Instance is { Syntax: ExpressionSyntax receiver, SemanticModel: { } model } &&
         ArrayNullCheck.NeedsCheck(receiver, model);
 
+    /// <summary>Whether a conversion unboxes or unwraps a Nullable&lt;T&gt; to its value type.</summary>
+    internal static bool UnwrapsNullable(ITypeSymbol? operandType, ITypeSymbol? type) =>
+        IsNullable(operandType) && !IsNullable(type);
+
     // (int)n of an int? n: C# raises InvalidOperationException when n has no value
     private static bool UnwrapsNullable(IConversionOperation conversion) =>
-        IsNullable(conversion.Operand.Type) && !IsNullable(conversion.Type);
+        UnwrapsNullable(conversion.Operand.Type, conversion.Type);
 
     private static bool IsNullable(ITypeSymbol? type) =>
         type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+
+    /// <summary>Whether a binary operator is an integer division or remainder, before ranges are read.</summary>
+    internal static bool IsIntegerDivision(BinaryOperatorKind kind, ITypeSymbol? operatorType) =>
+        kind is BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder && IsInteger(operatorType);
+
+    /// <summary>Whether an integer division or remainder may fail by zero divisor or overflow.</summary>
+    internal static bool MayFailDivision(SpecialType operatorType, IntegerRange? dividend, IntegerRange? divisor,
+        Optional<object?> divisorConstant) =>
+        IntegerRange.OfType(operatorType) is null
+            ? !IsConstantOtherThanZeroOrMinusOne(divisorConstant)
+            : DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(dividend, divisor, operatorType));
 
     // x / y and x % y of an integer type, as the divisor check decides it (DivisionCheckRule, the definition the
     // transpiler writes from): y == 0 raises DivideByZeroException; MinValue / -1, whose GPU result G# gives, is
@@ -186,15 +205,30 @@ internal static class ExpressionTraps
     private static bool MayFailDivision(BinaryOperatorKind kind, ITypeSymbol? operatorType, IOperation dividend,
         IOperation divisor)
     {
-        if (kind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder) || !IsInteger(operatorType))
+        if (!IsIntegerDivision(kind, operatorType))
         {
             return false;
         }
 
         var type = operatorType?.SpecialType ?? SpecialType.None;
-        return IntegerRange.OfType(type) is null
-            ? !IsConstantOtherThanZeroOrMinusOne(divisor)
-            : DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(dividend, divisor, type));
+        if (IntegerRange.OfType(type) is null)
+        {
+            return MayFailDivision(type, null, null, divisor.ConstantValue);
+        }
+
+        return MayFailDivision(type, OperationRanges.Of(dividend), OperationRanges.Of(divisor), divisor.ConstantValue);
+    }
+
+    /// <summary>Whether a compound assignment division or remainder may fail by zero divisor or overflow.</summary>
+    internal static bool MayFailCompoundDivision(SpecialType operatorType, bool targetOrValueIsInteger,
+        IntegerRange? target, IntegerRange? value, Optional<object?> valueConstant)
+    {
+        if (operatorType != SpecialType.None)
+        {
+            return DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(target, value, operatorType));
+        }
+
+        return targetOrValueIsInteger && !IsConstantOtherThanZeroOrMinusOne(valueConstant);
     }
 
     // x /= y and x %= y: the division of the operator type of the assignment (the promotion of the target and the
@@ -209,27 +243,28 @@ internal static class ExpressionTraps
         var type = IntegerSemantics.GetCompoundOperatorType(compound);
         if (type != SpecialType.None)
         {
-            return DivisionCheckRule.MayThrow(IntegerSemantics.DecideDivision(compound.Target, compound.Value, type));
+            return MayFailCompoundDivision(type, false, OperationRanges.Of(compound.Target),
+                OperationRanges.Of(compound.Value), compound.Value.ConstantValue);
         }
 
-        return (IsInteger(compound.Target.Type) || IsInteger(compound.Value.Type)) &&
-               !IsConstantOtherThanZeroOrMinusOne(compound.Value);
+        var targetOrValueIsInteger = IsInteger(compound.Target.Type) || IsInteger(compound.Value.Type);
+        return MayFailCompoundDivision(type, targetOrValueIsInteger, null, null, compound.Value.ConstantValue);
     }
 
-    private static bool IsConstantOtherThanZeroOrMinusOne(IOperation divisor) =>
-        divisor.ConstantValue is { HasValue: true, Value: { } value } &&
+    private static bool IsConstantOtherThanZeroOrMinusOne(Optional<object?> divisorConstant) =>
+        divisorConstant is { HasValue: true, Value: { } value } &&
         IntegerSemantics.TryGetInteger(value, out var constant) &&
         !constant.IsZero &&
         constant != BigInteger.MinusOne;
 
-    private static bool IsInteger(ITypeSymbol? type) =>
+    internal static bool IsInteger(ITypeSymbol? type) =>
         type?.SpecialType is SpecialType.System_SByte or SpecialType.System_Byte or SpecialType.System_Int16 or
             SpecialType.System_UInt16 or SpecialType.System_Char or SpecialType.System_Int32 or
             SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64 or
             SpecialType.System_IntPtr or SpecialType.System_UIntPtr;
 
     // Math.Sqrt, MathF.Max, float.IsNaN ...: pure, and over floating-point values only, which raise nothing
-    private static bool IsFloatingPointMath(IMethodSymbol method) =>
+    internal static bool IsFloatingPointMath(IMethodSymbol method) =>
         DeviceIntrinsicEffects.IsPureIntrinsic(method) &&
         (IsFloatingPoint(method.ReturnType) || method.ReturnType.SpecialType == SpecialType.System_Boolean) &&
         method.Parameters
