@@ -25,7 +25,7 @@ Purple belongs to the process tier because it carries no verdict: green reads as
 
 ## 2. Current colors
 
-The HCT values are measured from the hex color (`Hct.fromInt` of `@material/material-color-utilities`), rounded; they are not the targets a color was picked from. A new row is measured the same way.
+The HCT values are measured from the hex color (the HCT conversion of the npm package `@material/material-color-utilities`), rounded; they are not the targets a color was picked from. A new row is measured the same way.
 
 | Label | Family | Color | HCT (H / C / T) |
 | :- | :- | :- | :- |
