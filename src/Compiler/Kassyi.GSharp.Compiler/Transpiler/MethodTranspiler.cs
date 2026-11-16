@@ -100,23 +100,27 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
-        WriteStateMachineHeader(in plan, lowered, frame, ref context);
-        try
+        ReadOnlySpan<KernelFormKind> forms = context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms
+            ? [KernelFormKind.ByValue, KernelFormKind.ByAddress]
+            : [KernelFormKind.ByValue];
+
+        for (var i = 0; i < forms.Length; i++)
         {
-            WriteMethodBody(in plan, lowered, frame, resumeLocals, ref context);
+            if (i > 0)
+            {
+                bodyWriter.AppendLine();
+                context.Emitter.ResetMethodCounters();
+            }
+
+            context.Emitter.CurrentKernelForm = forms[i];
+            if (!TryWriteOneForm(in plan, lowered, frame, resumeLocals, ref context, out var failure))
+            {
+                requiredIncludes = [];
+                return failure;
+            }
         }
-        catch (InsufficientExecutionStackException)
-        {
-            var location = plan.Declaration.Identifier.GetLocation();
-            var methodName = plan.Declaration.Identifier.ValueText;
-            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
-            context.Reporter.Fail(
-                GSharpDiagnostics.MethodTooComplexToCompile,
-                location,
-                methodName);
-            requiredIncludes = [];
-            return Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
-        }
+
+        context.Emitter.CurrentKernelForm = KernelFormKind.ByValue;
 
         // The struct members and Dispose bodies written below have no table of dynamic shared memory regions
         context.Emitter.DynamicSharedMemorySlotScope = null;
@@ -154,8 +158,8 @@ public static class MethodTranspiler
             plan.Declaration,
             plan.Symbol,
             new IteratorExpansionContext(plan.SemanticModel, dialect, iteratorContext.Reporter),
-            ref iteratorContext.Emitter.IteratorExpansionCounter,
-            ref iteratorContext.Emitter.ArgumentTempCounter);
+            ref iteratorContext.Emitter.Counters.IteratorExpansion,
+            ref iteratorContext.Emitter.Counters.ArgumentTemp);
 
         try
         {
@@ -432,6 +436,28 @@ public static class MethodTranspiler
     // Transpile builds the frame whenever there is a lowered state machine
     private static InvalidOperationException MissingFrame() =>
         new("A lowered state machine has no frame.");
+
+    private static bool TryWriteOneForm(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
+        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context,
+        [NotNullWhen(false)] out string? failureOutput)
+    {
+        WriteStateMachineHeader(in plan, lowered, frame, ref context);
+        try
+        {
+            WriteMethodBody(in plan, lowered, frame, resumeLocals, ref context);
+            failureOutput = null;
+            return true;
+        }
+        catch (InsufficientExecutionStackException)
+        {
+            var location = plan.Declaration.Identifier.GetLocation();
+            var methodName = plan.Declaration.Identifier.ValueText;
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodName]);
+            context.Reporter.Fail(GSharpDiagnostics.MethodTooComplexToCompile, location, methodName);
+            failureOutput = Aot.NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+            return false;
+        }
+    }
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
         StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)

@@ -70,7 +70,9 @@ public class CSharpExecutionAnalysisTests
             new[]
             {
                 new CSharpArgument("a", CSharpArgumentKind.Value, "global::System.Int32", "__gsharp_csharp_arg_0"),
-                new CSharpArgument("b", CSharpArgumentKind.In, "global::System.Int32", "__gsharp_csharp_arg_1"),
+                // An in parameter beside a ref parameter of its type is the caller's variable, as the ref one is
+                new CSharpArgument("b", CSharpArgumentKind.InReference, "global::System.Int32",
+                    "__gsharp_csharp_arg_1", "__gsharp_csharp_pin_1"),
                 new CSharpArgument("c", CSharpArgumentKind.Ref, "global::System.Int32", "__gsharp_csharp_arg_2",
                     "__gsharp_csharp_pin_2"),
                 new CSharpArgument("d", CSharpArgumentKind.Out, "global::System.Int32", "__gsharp_csharp_arg_3",
@@ -83,6 +85,18 @@ public class CSharpExecutionAnalysisTests
                 new CSharpArgument("g", CSharpArgumentKind.Value, "global::System.Single[]?", "__gsharp_csharp_arg_6")
             },
             plan.Arguments.ToArray());
+    }
+
+    // mutant: CSharpExecutionPlan.PlanArgument plans every in parameter as InReference (the pin of a value is missing)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Create_InParameterWithoutARefOfItsType_PassesACopy()
+    {
+        var plan = CSharpExecutionPlan.Create(Host("InParameter"), isDevicePtr: false);
+
+        Assert.Equal(
+            new CSharpArgument("b", CSharpArgumentKind.In, "global::System.Int32", "__gsharp_csharp_arg_0"),
+            plan.Arguments[0]);
     }
 
     [Fact]
