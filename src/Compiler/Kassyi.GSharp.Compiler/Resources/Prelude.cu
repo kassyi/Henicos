@@ -980,6 +980,7 @@ __device__ __forceinline__ A __gsharp_source_argument(A&& array, S site)
     }
     return static_cast<A&&>(array);
 }
+
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>
