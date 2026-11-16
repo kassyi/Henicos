@@ -54,7 +54,7 @@ statement UnsupportedOperation	Lock	LockStatement	1
 statement UnsupportedOperation	Loop	DoStatement	3
 statement UnsupportedOperation	Loop	ForEachStatement	160
 statement UnsupportedOperation	Loop	ForEachVariableStatement	1
-statement UnsupportedOperation	Loop	ForStatement	131
+statement UnsupportedOperation	Loop	ForStatement	130
 statement UnsupportedOperation	Loop	WhileStatement	10
 statement UnsupportedOperation	None	FixedStatement	10
 statement UnsupportedOperation	Switch	SwitchStatement	53
