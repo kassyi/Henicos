@@ -166,13 +166,13 @@ public sealed class MarshalingTwoFormsDifferentialTests
         },
     };
 
-    // Form selection observation seam: tests that unaliased calls do not resolve the by-address function handle,
-    // while aliased calls resolve it. Kills both always-by-address and always-by-value mutants.
+#if GSHARP_CUDA
+    // Only the CUDA launcher has two entry points: an unaliased launch does not resolve the by-address function, an
+    // aliased one does. Kills both always-by-address and always-by-value mutants.
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void TwoForms_FormSelection_ObservedViaResolveCount()
     {
-#if GSHARP_CUDA
         var beforeUnaliased = MarshalingTwoFormsDifferentialKernels.__gsharp_hfunc_InAndRefSeparateVariablesKernel__gsharp_by_address.ResolveCount;
         var first = 5;
         var second = 5;
@@ -188,10 +188,8 @@ public sealed class MarshalingTwoFormsDifferentialTests
         MarshalingTwoFormsDifferentialKernels.LaunchInAndRefSeparateVariablesKernel(variable, ref variable, observed);
         var afterAliased = MarshalingTwoFormsDifferentialKernels.__gsharp_hfunc_InAndRefSeparateVariablesKernel__gsharp_by_address.ResolveCount;
         Assert.Equal(beforeUnaliased + 1, afterAliased);
-#else
-        Assert.True(true, "CUDA-specific function pointer resolve count");
-#endif
     }
+#endif
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]

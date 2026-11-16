@@ -30,7 +30,7 @@ public sealed class CudaKernelFunction(string kernelName, Func<byte[]> fatbin)
     private int _resolveCount;
 
     /// <summary>The number of times <see cref="Resolve(ReadOnlySpan{GSharpErrorSite})"/> was called.</summary>
-    public int ResolveCount => Volatile.Read(ref _resolveCount);
+    internal int ResolveCount => Volatile.Read(ref _resolveCount);
 
     /// <summary>
     /// Returns the function in the context current for a launch on this thread, loading its module there if needed.
