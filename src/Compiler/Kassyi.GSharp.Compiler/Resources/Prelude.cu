@@ -362,11 +362,53 @@ struct GSharpArray {
         return GSharpArray<T>(data + start, length - start);
     }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    __device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr) const {
+    __device__ inline GSharpArray<T> Slice(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const {
 #ifdef GSHARP_CHECKED
-        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length) ||
-            static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
             __gsharp_trap(ErrorCode, message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countMessage != nullptr ? countMessage : message != nullptr ? message : __gsharp_range_message<ErrorCode>());
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
+    // The same with error sites (ErrorSiteTable) that carry the message and the parameter name C# gives each failure: a
+    // start outside the array reports startSite, a count past its end countSite (startSite when countSite is 0)
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> Slice(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const {
+#ifdef GSHARP_CHECKED
+        if (static_cast<unsigned int>(start) > static_cast<unsigned int>(length)) {
+            __gsharp_trap(ErrorCode, startSite);
+            return GSharpArray<T>();
+        }
+        if (static_cast<unsigned int>(count) > static_cast<unsigned int>(length - start)) {
+            __gsharp_trap(ErrorCode, countSite != 0u ? countSite : startSite);
+            return GSharpArray<T>();
+        }
+#endif
+        return GSharpArray<T>(data + start, count);
+    }
+    // One side of Array.Copy, in the order of CopyImpl of .NET 10 (the source side first: length, source index, source
+    // range; then the destination side: destination index, destination range; .NET 8 and 9 check both indexes before
+    // both ranges). A negative length is ArgumentOutOfRange (length), a negative index ArgumentOutOfRange (sourceIndex
+    // or destinationIndex), a range past the end Argument (sourceArray or destinationArray). Each failure is an error
+    // site (uint32_t) or a message (const char*)
+    template <typename S>
+    __device__ inline GSharpArray<T> CopySlice(int start, int count, S lengthSite, S indexSite, S longSite) const {
+#ifdef GSHARP_CHECKED
+        if (count < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, lengthSite);
+            return GSharpArray<T>();
+        }
+        if (start < 0) {
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, indexSite);
+            return GSharpArray<T>();
+        }
+        if (start > length || count > length - start) {
+            __gsharp_trap(GSharpErrorCode::Argument, longSite);
             return GSharpArray<T>();
         }
 #endif
@@ -413,7 +455,7 @@ struct GSharpArray {
     template <typename U>
     __device__ inline void CopyTo(GSharpArray<U> destination) const {
         if (!TryCopyTo(destination)) {
-            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short.");
+            __gsharp_trap(GSharpErrorCode::Argument, "Destination is too short. (Parameter 'destination')");
         }
     }
     // Slice and CopyTo of an ArraySegment<T> or ImmutableArray<T> (ArrayViewMethods.GetChecks): a default value has no
@@ -442,13 +484,22 @@ struct GSharpArray {
         if (IfDestinationNull != GSharpErrorCode::None && destination.data == nullptr) {
             __gsharp_trap(IfDestinationNull, __gsharp_view_message<IfDestinationNull>());
         }
+        if (IfDestinationNull == GSharpErrorCode::ArgumentNull) {
+            // The destination is an array, which C# copies into through Array.Copy and names destinationArray
+            if (!TryCopyTo(destination)) {
+                __gsharp_trap(GSharpErrorCode::Argument, "Destination array was not long enough. Check the destination index, length, and the array's lower bounds. (Parameter 'destinationArray')");
+            }
+            return;
+        }
         CopyTo(destination);
     }
     __device__ inline GSharpArray<T> AsSpan() const { return *this; }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
     __device__ inline GSharpArray<T> AsSpan(int start, const char* message = nullptr) const { return Slice<ErrorCode>(start, message); }
     template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
-    __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr) const { return Slice<ErrorCode>(start, count, message); }
+    __device__ inline GSharpArray<T> AsSpan(int start, int count, const char* message = nullptr, const char* countMessage = nullptr) const { return Slice<ErrorCode>(start, count, message, countMessage); }
+    template <GSharpErrorCode ErrorCode = GSharpErrorCode::ArgumentOutOfRange>
+    __device__ inline GSharpArray<T> AsSpan(int start, int count, uint32_t startSite, uint32_t countSite = 0u) const { return Slice<ErrorCode>(start, count, startSite, countSite); }
     // The range of Array.Reverse(array, index, count): .NET throws ArgumentOutOfRangeException for a negative start or
     // count and ArgumentException when the range passes the end
     __device__ inline GSharpArray<T> AsSpanOfArray(
@@ -466,9 +517,13 @@ struct GSharpArray {
     }
     __device__ inline bool IsEmpty() const { return length <= 0; }
     
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    // Implicit conversion from GSharpArray<U> to GSharpArray<T> where U and T differ only in const: T to const T, and
+    // const T back to T. C# converts a [GpuReadOnly] array (const elements here) to every array and span type of its
+    // element, so the const is removed here and the code that only reads builds. [GpuReadOnly] promises that no
+    // thread writes the array during the launch, through any alias; G# reports the writes it sees (GSH0118)
     template <typename U>
-    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length), flags(other.flags) {}
+    __device__ inline GSharpArray(const GSharpArray<U>& other)
+        : data(const_cast<T*>(other.data)), length(other.length), flags(other.flags) {}
 
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }
@@ -1015,7 +1070,19 @@ struct __gsharp_plus
     __device__ __forceinline__ T operator()(T a, T b) const { return a + b; }
     __device__ __forceinline__ int operator()(int a, int b) const { return (int)((unsigned int)a + (unsigned int)b); }
     __device__ __forceinline__ long long operator()(long long a, long long b) const { return (long long)((unsigned long long)a + (unsigned long long)b); }
+    __device__ __forceinline__ __gsharp_wide_sum operator()(__gsharp_wide_sum a, __gsharp_wide_sum b) const { return __gsharp_wide_combine(a, b); }
 };
+
+// The shuffle of a value that __shfl_down_sync does not take: the wide sum goes as its two words
+template <typename T>
+__device__ __forceinline__ T __gsharp_shfl_down(unsigned int mask, T value, unsigned int offset) { return __shfl_down_sync(mask, value, offset); }
+__device__ __forceinline__ __gsharp_wide_sum __gsharp_shfl_down(unsigned int mask, __gsharp_wide_sum value, unsigned int offset)
+{
+    __gsharp_wide_sum other;
+    other.lo = __shfl_down_sync(mask, value.lo, offset);
+    other.hi = __shfl_down_sync(mask, value.hi, offset);
+    return other;
+}
 
 // [WHY] The last warp of a block whose size is not a multiple of 32 is partial: the shuffle mask names only the lanes that
 // exist, and a value shuffled from past the last valid lane is not combined (CUB WarpReduceShfl::ReduceStep).
@@ -1026,7 +1093,7 @@ __device__ __forceinline__ T __gsharp_warp_reduce(T value, unsigned int lane, un
     #pragma unroll
     for (unsigned int offset = 16u; offset > 0u; offset >>= 1)
     {
-        const T other = __shfl_down_sync(mask, value, offset);
+        const T other = __gsharp_shfl_down(mask, value, offset);
         if (lane + offset < valid) { value = op(value, other); }
     }
     return value;

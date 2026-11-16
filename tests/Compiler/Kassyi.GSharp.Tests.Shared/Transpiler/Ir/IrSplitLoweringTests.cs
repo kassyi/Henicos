@@ -175,7 +175,7 @@ public class IrSplitLoweringTests
 
         var fields = lowered.ContextFields.Select(static field => field.Identifier.ValueText).ToArray();
         var (localInits, regularFields, _, _, _) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, symbol.Name);
+            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, symbol.Name, lowered.LoweredBody);
         var managedFields = localInits.Concat(regularFields)
             .Select(static field => field.Declarator.Identifier.ValueText)
             .ToArray();

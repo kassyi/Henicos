@@ -122,7 +122,8 @@ public class StateMachineFrameTests
         var (plan, model) = GetPlan("SharedKernel", isKernel: true);
         var lowered = plan.Lowered ?? throw new InvalidOperationException("Lowered is null");
         var (_, _, _, _, slots) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, "SharedKernel");
+            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, "SharedKernel",
+                lowered.LoweredBody);
 
         var sharedSlot = slots.FirstOrDefault(static s => s.Kind == FrameSlotKind.SharedMemory);
         Assert.NotNull(sharedSlot);
@@ -136,7 +137,7 @@ public class StateMachineFrameTests
         var (plan, model) = GetPlan("SlotsKernel", isKernel: true);
         var lowered = plan.Lowered ?? throw new InvalidOperationException("Lowered is null");
         var (_, _, _, _, managedSlots) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, "SlotsKernel");
+            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, "SlotsKernel", lowered.LoweredBody);
         var nativeFrame = LoweredFrameBuilder.BuildNative(lowered, in plan, new StandardCppDialect());
 
         var expectedNames = lowered.ContextFields.Select(static f => f.Identifier.ValueText).ToList();

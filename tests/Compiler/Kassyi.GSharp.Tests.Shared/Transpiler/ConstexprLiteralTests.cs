@@ -232,4 +232,28 @@ public class ConstexprLiteralTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => ConstexprLiteral.Format(stringType, "abc"));
     }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(SpecialType.System_Single, 'A', "65.0f", "65F")]
+    [InlineData(SpecialType.System_Double, 'A', "65.0", "65D")]
+    [InlineData(SpecialType.System_Single, 'a', "97.0f", "97F")]
+    [InlineData(SpecialType.System_Double, 'a', "97.0", "97D")]
+    [InlineData(SpecialType.System_Single, 'z', "122.0f", "122F")]
+    [InlineData(SpecialType.System_Double, 'z', "122.0", "122D")]
+    [InlineData(SpecialType.System_Single, '\0', "0.0f", "0F")]
+    [InlineData(SpecialType.System_Double, '\0', "0.0", "0D")]
+    [InlineData(SpecialType.System_Single, '￿', "65535.0f", "65535F")]
+    [InlineData(SpecialType.System_Double, '￿', "65535.0", "65535D")]
+    public void TryFormatConstant_CharConstantConvertedToFloatingPoint_FormatsExpectedLiterals(
+        SpecialType targetType,
+        char value,
+        string expectedCpp,
+        string expectedCSharp)
+    {
+        var type = s_compilation.GetSpecialType(targetType);
+
+        Assert.True(ConstexprLiteral.TryFormatConstant(type, value, out var literal));
+        Assert.Equal((expectedCpp, expectedCSharp), literal);
+    }
 }

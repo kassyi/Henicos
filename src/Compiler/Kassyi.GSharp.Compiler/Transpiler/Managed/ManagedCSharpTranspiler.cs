@@ -34,7 +34,7 @@ internal static class ManagedCSharpTranspiler
         var kernelName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
-            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
+            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName, loweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
         var callees = GetCallees(lowered.CallSites, semanticModel);
         var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);
@@ -143,7 +143,8 @@ internal static class ManagedCSharpTranspiler
         var functionName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
+            ManagedContextFields.ProcessContextFields(
+                lowered.ContextFields, semanticModel, functionName, lowered.LoweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
         var callees = GetCallees(lowered.CallSites, semanticModel);
         var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);

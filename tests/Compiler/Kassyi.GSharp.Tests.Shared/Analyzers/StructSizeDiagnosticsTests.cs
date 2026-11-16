@@ -16,12 +16,18 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    // 16 (array header) + 4096 = 4112 bytes.
-    [InlineData("OverLimitKernel", "GSH0064", "4112 bytes")]
-    // 1 byte padded to 8, then 4096 = 4104 bytes (the unaligned sum would be 4097).
-    [InlineData("PaddingKernel", "GSH0064", "4104 bytes")]
-    // 4096 + hidden result pointer 8 = 4104 bytes.
-    [InlineData("ResultKernel", "GSH0064", "4104 bytes")]
+    // 32761, aligned to 4 for the launch epoch, + 4 = 32768 bytes: within the limit only when the epoch is not counted.
+    [InlineData("OverLimitKernel", "GSH0064", "32768 bytes")]
+    // 16 (array header) + 32760 + 4 (epoch) = 32780 bytes.
+    [InlineData("ArrayAndBlockKernel", "GSH0064", "32780 bytes")]
+    // 1 byte padded to 8, 32752, 1 byte, padded to 4, + 4 (epoch) = 32768 bytes (the unaligned sum would be 32758).
+    [InlineData("PaddingKernel", "GSH0064", "32768 bytes")]
+    // 16 + 40960 + 4 = 40980 bytes: nvcc rejects it ("max 32764 bytes allowed").
+    [InlineData("LargeKernel", "GSH0064", "40980 bytes")]
+    // An `in` struct is passed by value, the same 40980 bytes (not an 8-byte pointer).
+    [InlineData("InLargeKernel", "GSH0064", "40980 bytes")]
+    // 32760 + 8 (grid aggregate scratch) + 4 (epoch) = 32772 bytes; the mutant that leaves the scratch out gives 32764.
+    [InlineData("GridScratchKernel", "GSH0064", "32772 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.
     [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
     // The byte count is computed in long: 2,400,000,000 and 2^32 bytes would wrap in int to a negative number and to 0
@@ -34,12 +40,26 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
 
         var diagnostic = Assert.Single(diagnostics, d => d.Id == diagnosticId);
         Assert.Contains(expectedSize, diagnostic.GetMessage());
+        if (diagnosticId == "GSH0064")
+        {
+            // nvcc rejects every such kernel, so the build stops here
+            Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+            Assert.Contains("32764-byte", diagnostic.GetMessage());
+        }
     }
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    // Exactly 4096 bytes of kernel parameters.
+    // 32760 + 4 (epoch) = exactly 32764 bytes of kernel parameters.
     [InlineData("AtLimitKernel", "GSH0064")]
+    // 32752 + 8 (result pointer) + 4 (epoch) = exactly 32764 bytes.
+    [InlineData("ResultKernel", "GSH0064")]
+    // 16 + 8192 + 4 = 8212 bytes: above the old 4,096-byte check, accepted by nvcc and run on the GPU (#1168).
+    [InlineData("MediumKernel", "GSH0064")]
+    // A `ref` struct is an 8-byte pointer, whatever its size.
+    [InlineData("RefLargeKernel", "GSH0064")]
+    // The parameters of GridScratchKernel without the aggregate: exactly 32764 bytes.
+    [InlineData("NoGridScratchKernel", "GSH0064")]
     // A 48-byte struct by value: the retired GSH0014 warned, GSH0064 does not.
     [InlineData("SmallStructKernel", "GSH0064")]
     [InlineData("SmallStructKernel", "GSH0014")]

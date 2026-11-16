@@ -111,22 +111,6 @@ public class PendingBugsTranspilerTests : TranspilerTestBase
         Assert.DoesNotContain(": size\");", cppSource, StringComparison.Ordinal);
     }
 
-    // #1084: Expect outputCompilation.GetDiagnostics() to have zero errors once ContextHoister avoids hoisting non-crossing SharedMemory<T> locals to outer scope.
-    [Fact(Skip = "#1084: ContextHoister hoists non-crossing SharedMemory locals to outer scope causing CS0136.")]
-    [Scenario(TestScenario.SadPath)]
-    public void SharedMemorySiblingScopes_LocalDeclarations_CompilesWithoutCS0136InManagedCSharp()
-    {
-        var source = RoslynTestUtility.ReadTestCase(
-            "Transpiler/PendingBugs/SharedMemorySiblingScopeHoistKernels.cu.cs");
-
-        var (_, outputCompilation, _) = GeneratorTestRunner.RunGenerator(source, "Cpu");
-        var compilerErrors = outputCompilation.GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error && d.Id == "CS0136")
-            .ToArray();
-
-        Assert.Empty(compilerErrors);
-    }
-
     // #1085: Expect C++ declarations for parenthesized creation `s` and alias copy `alias` to be emitted once LocalDeclarationStatementTranspilerRule handles non-direct SharedMemory<T> initializers.
     [Fact(Skip = "#1085: LocalDeclarationStatementTranspilerRule omits C++ variable declarations for non-direct SharedMemory initializers.")]
     [Scenario(TestScenario.SadPath)]

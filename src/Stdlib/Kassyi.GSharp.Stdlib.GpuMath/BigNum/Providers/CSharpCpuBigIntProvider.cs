@@ -414,6 +414,21 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(v, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <summary>
+    /// Writes <paramref name="baseValue"/> to the power <paramref name="exponent"/> modulo <paramref name="modulus"/>
+    /// into <paramref name="resultBuffer"/>, for <see cref="GpuBigIntDivRem.ModPow"/> in CPU fallback mode.
+    /// </summary>
+    /// <exception cref="DivideByZeroException"><paramref name="modulus"/> is zero.</exception>
+    internal void ModPow(GpuBigUInt baseValue, GpuBigUInt exponent, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        var power = BigInteger.ModPow(
+            Read(baseValue.DevicePointer, baseValue.NumWords),
+            Read(exponent.DevicePointer, exponent.NumWords),
+            Read(modulus.DevicePointer, modulus.NumWords)
+        );
+        Write(power, resultBuffer.DevicePointer, resultBuffer.NumWords);
+    }
+
     // --- IGpuGraphProvider (No-op on CPU fallback) ---
 
     /// <summary>
