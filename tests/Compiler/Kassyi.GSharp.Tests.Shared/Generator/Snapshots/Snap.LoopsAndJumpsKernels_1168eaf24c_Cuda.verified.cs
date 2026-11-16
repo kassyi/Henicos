@@ -115,7 +115,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedAr
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4 __gsharp_id_1_arr = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4 __gsharp_id_1_arr = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4>();
 __gsharp_id_1_arr[0]=10;
 __gsharp_id_1_arr[1]=20;
 __gsharp_id_1_arr[2]=30;

@@ -1478,7 +1478,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields __gsharp_id_3_item = __gsharp_array_at(__gsharp_id_0_items, __gsharp_id_2_tid, 1091944787u);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4 __gsharp_id_4_buffer = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4 __gsharp_id_4_buffer = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4>();
 __gsharp_id_4_buffer[0]=__gsharp_id_3_item.__gsharp_mb_register;
 __gsharp_id_4_buffer[1]=__gsharp_id_3_item.__gsharp_mb_int;
 __gsharp_id_4_buffer[2]=__gsharp_id_3_item.__gsharp_mb_Length;

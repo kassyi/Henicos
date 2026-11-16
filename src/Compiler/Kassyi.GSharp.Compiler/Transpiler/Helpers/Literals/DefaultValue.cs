@@ -6,7 +6,7 @@ internal enum DefaultValueForm
     /// <summary><c>{}</c>, valid where a braced list may stand.</summary>
     Braced,
 
-    /// <summary>The typed value <c>__gsharp_type&lt;T&gt;{}</c>.</summary>
+    /// <summary>The typed value <c>__gsharp_type&lt;T&gt;()</c>.</summary>
     Typed
 }
 
@@ -23,9 +23,9 @@ internal readonly record struct DefaultValuePlan(
 /// <c>default(T)</c> and the <c>default</c> literal. <c>{}</c> is C++ only where a braced list may stand: the
 /// initializer of a declaration with a written type (<c>T x = {};</c>), the right side of a simple assignment
 /// (<c>x = {};</c>) and an argument the compiler built itself. Every other position gets
-/// <c>__gsharp_type&lt;T&gt;{}</c> with <c>T</c> from the semantic model (<c>c ? a : __gsharp_type&lt;int&gt;{}</c>,
-/// <c>x == __gsharp_type&lt;int&gt;{}</c>, <c>auto z = __gsharp_type&lt;int&gt;{}</c>,
-/// <c>__gsharp_type&lt;S&gt;{}.Field</c>). The alias template is one name for every type, so a type of
+/// <c>__gsharp_type&lt;T&gt;()</c> with <c>T</c> from the semantic model (<c>c ? a : __gsharp_type&lt;int&gt;()</c>,
+/// <c>x == __gsharp_type&lt;int&gt;()</c>, <c>auto z = __gsharp_type&lt;int&gt;()</c>,
+/// <c>__gsharp_type&lt;S&gt;().Field</c>). The alias template is one name for every type, so a type of
 /// several words (<c>long long</c>, <c>unsigned char</c>) or a pointer is a valid functional cast in every compiler.
 /// </summary>
 internal static class DefaultValue
@@ -42,7 +42,7 @@ internal static class DefaultValue
             ? model.GetTypeSymbol(node)
             : model.GetConvertedTypeSymbol(node);
         // {} initializes the target, so it is the value of the default only when the target has the default's own type:
-        // int? q = {} is null, and int? q = default(int) is 0, which __gsharp_type<int>{} converts to
+        // int? q = {} is null, and int? q = default(int) is 0, which __gsharp_type<int>() converts to
         if (IsBracedListPosition(node) && (node is not DefaultExpressionSyntax || type is null ||
                                            type.IsEqualTo(model.GetConvertedTypeSymbol(node))))
         {
@@ -98,14 +98,27 @@ internal static class DefaultValue
             context.Emitter.Writer.Append(">(");
         }
 
-        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TypedValue);
-        context.Emitter.Writer.Append('<');
-        context.Emitter.Dialect.AppendType(ref context, type);
-        context.Emitter.Writer.Append(">{}");
+        AppendZero(type, ref context);
         if (target is not null)
         {
             context.Emitter.Writer.Append("))");
         }
+    }
+
+    /// <summary>
+    /// Writes the zero value of <paramref name="type"/> as an expression: <c>__gsharp_type&lt;T&gt;()</c>.
+    /// </summary>
+    /// <remarks>
+    /// Parentheses, not braces: nvcc 13.4 at <c>-O3</c> folds <c>c ? T{} : v</c> to <c>v</c> when a member of
+    /// <c>T</c> has a user-provided constructor (a <c>Nullable</c> field), and <c>T()</c> does not hit it (#2022). Both
+    /// forms zero-initialize a type without a user-provided default constructor, so the value is the same.
+    /// </remarks>
+    public static void AppendZero(ITypeSymbol type, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TypedValue);
+        context.Emitter.Writer.Append('<');
+        context.Emitter.Dialect.AppendType(ref context, type);
+        context.Emitter.Writer.Append(">()");
     }
 
     /// <summary>
