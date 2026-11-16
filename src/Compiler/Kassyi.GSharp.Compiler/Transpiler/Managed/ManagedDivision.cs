@@ -5,7 +5,7 @@ using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// The managed form of an int or long <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
+/// The managed form of an int, long or nint <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
 /// the type by -1 (#718): .NET throws <see cref="OverflowException"/> there, while G# gives the GPU result (MinValue,
 /// and 0 for the remainder) on every path. The managed path calls a <c>ManagedGpuContext</c> function instead, in
 /// kernel bodies and, through the managed version of a device function (#711), in device functions. A division that
@@ -34,13 +34,15 @@ internal static class ManagedDivision
             operation.Syntax.RawKind != node.RawKind ||
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             operation.ConstantValue.HasValue ||
-            operation.Type?.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_Int64) ||
-            !MayDivideMinimumByMinusOne(operation.Type.SpecialType, operation.LeftOperand, operation.RightOperand))
+            operation.Type is not { } operationType ||
+            IntegerSemantics.Canonical(operationType.SpecialType) is not
+                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
+            !MayDivideMinimumByMinusOne(type, operation.LeftOperand, operation.RightOperand))
         {
             return null;
         }
 
-        var helper = Pick(operation.OperatorKind == BinaryOperatorKind.Divide, operation.Type.SpecialType,
+        var helper = Pick(operation.OperatorKind == BinaryOperatorKind.Divide, type,
             Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32, Names.RemainderInt64);
         return new ManagedDivisionPlan(helper, ManagedDivisionForm.Call);
     }
@@ -54,7 +56,7 @@ internal static class ManagedDivision
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             IntegerSemantics.GetCompoundOperatorType(operation) is not
                 (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
-            operation.Target.Type?.SpecialType != type ||
+            IntegerSemantics.Canonical(operation.Target.Type?.SpecialType ?? SpecialType.None) != type ||
             !MayDivideMinimumByMinusOne(type, operation.Target, operation.Value))
         {
             return null;
