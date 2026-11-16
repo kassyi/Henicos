@@ -1031,7 +1031,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var dialectName = isCuda ? "Cuda" : "Cpu";
         var partitionPlan = NativeModulePartitioner.Plan(kernelItems.AsSpan());
-        var partitionJson = AotArtifactWriter.FormatPartitionJson(
+        var partitionJson = NativeModulePlanJson.Format(
             dialectName, partitionPlan, kernelItems.AsSpan());
 
         var requiredIncludes = NativeModuleAssembler.CollectIncludes(kernelMethods, distinctDeviceMethods, isCuda);

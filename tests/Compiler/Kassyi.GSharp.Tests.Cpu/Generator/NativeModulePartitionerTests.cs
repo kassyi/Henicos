@@ -191,7 +191,7 @@ public class NativeModulePartitionerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void FormatPartitionJson_ProducesExpectedJsonStructure()
+    public void PlanJsonFormat_TwoClasses_WritesUnitsAndSortedClasses()
     {
         var kernels = new[]
         {
@@ -200,7 +200,7 @@ public class NativeModulePartitionerTests
         };
 
         var plan = NativeModulePartitioner.Plan(kernels);
-        var json = AotArtifactWriter.FormatPartitionJson("Cpu", plan, kernels);
+        var json = NativeModulePlanJson.Format("Cpu", plan, kernels);
 
         Assert.Contains("\"dialect\": \"Cpu\"", json, StringComparison.Ordinal);
         Assert.Contains("\"B\": 4", json, StringComparison.Ordinal);
@@ -231,18 +231,16 @@ public class NativeModulePartitionerTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void ComputeClassHash_Utf8AndAscii_ProduceDeterministicHash()
+    public void ComputeClassHash_KnownAndNonAsciiNames_IsFnv1A64AndDeterministic()
     {
+        // FNV-1a 64 of "a" (one code unit, 0x61), the published test vector
+        Assert.Equal(0xaf63dc4c8601ec8cUL, NativeModulePartitioner.ComputeClassHash("a"));
+
         var hashAscii = NativeModulePartitioner.ComputeClassHash("global::MyCompany.MyProduct.KernelClass");
-        Assert.NotEqual(0UL, hashAscii);
+        Assert.Equal(hashAscii, NativeModulePartitioner.ComputeClassHash("global::MyCompany.MyProduct.KernelClass"));
 
-        // Deterministic across repeated calls
-        var hashRepeat = NativeModulePartitioner.ComputeClassHash("global::MyCompany.MyProduct.KernelClass");
-        Assert.Equal(hashAscii, hashRepeat);
-
-        // Supports non-ASCII UTF-8 characters without throwing
-        var hashUtf8 = NativeModulePartitioner.ComputeClassHash("global::テスト名前空間.カーネルクラス");
-        Assert.NotEqual(0UL, hashUtf8);
-        Assert.Equal(hashUtf8, NativeModulePartitioner.ComputeClassHash("global::テスト名前空間.カーネルクラス"));
+        var hashNonAscii = NativeModulePartitioner.ComputeClassHash("global::テスト名前空間.カーネルクラス");
+        Assert.NotEqual(hashAscii, hashNonAscii);
+        Assert.Equal(hashNonAscii, NativeModulePartitioner.ComputeClassHash("global::テスト名前空間.カーネルクラス"));
     }
 }

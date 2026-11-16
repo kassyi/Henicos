@@ -1,4 +1,3 @@
-using System.Globalization;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler.Aot;
@@ -60,85 +59,10 @@ internal static class AotArtifactWriter
 
         // The manifest goes last: when an earlier write fails, the manifest still names the source of the earlier build
         // instead of a source that was not written
-        if (partitionJson is not null)
-        {
-            WriteFiles(safeIntermediateOutputPath, context,
-                (filePath, fullSource),
-                (gsymFilePath, gsymContent),
-                (partitionPath, partitionJson),
-                (manifestPath, fileName + "\n")
-            );
-        }
-        else
-        {
-            WriteFiles(safeIntermediateOutputPath, context,
-                (filePath, fullSource),
-                (gsymFilePath, gsymContent),
-                (manifestPath, fileName + "\n")
-            );
-        }
-    }
-
-    /// <summary>
-    /// Formats the partition plan as a JSON string.
-    /// Structure: dialect, B, units (unit index, bytes, class count), classes (sorted by class name).
-    /// </summary>
-    public static string FormatPartitionJson(string dialect, NativeModulePlan plan,
-        ReadOnlySpan<KernelPartitionItem> kernels)
-    {
-        var unitCount = plan.UnitCount;
-        var classUnits = new Dictionary<string, int>(StringComparer.Ordinal);
-        for (var i = 0; i < kernels.Length; i++)
-        {
-            var name = kernels[i].ClassFullName;
-            if (!classUnits.ContainsKey(name))
-            {
-                classUnits[name] = NativeModulePartitioner.ComputeUnitIndex(name, unitCount);
-            }
-        }
-
-        var unitClassCounts = new int[unitCount];
-        foreach (var pair in classUnits)
-        {
-            unitClassCounts[pair.Value]++;
-        }
-
-        var sortedClasses = new string[classUnits.Count];
-        classUnits.Keys.CopyTo(sortedClasses, 0);
-        Array.Sort(sortedClasses, StringComparer.Ordinal);
-
-        using var writer = new SourceWriter();
-        writer.AppendLine("{");
-        writer.AppendLine($"  \"dialect\": \"{GSharpNameEncoding.EscapeJsonString(dialect)}\",");
-        writer.AppendLine($"  \"B\": {unitCount.ToString(CultureInfo.InvariantCulture)},");
-        writer.AppendLine("  \"units\": [");
-
-        for (var i = 0; i < unitCount; i++)
-        {
-            writer.AppendLine("    {");
-            writer.AppendLine($"      \"unit\": {i.ToString(CultureInfo.InvariantCulture)},");
-            writer.AppendLine($"      \"bytes\": {plan.UnitByteCounts[i].ToString(CultureInfo.InvariantCulture)},");
-            writer.AppendLine($"      \"class_count\": {unitClassCounts[i].ToString(CultureInfo.InvariantCulture)}");
-            writer.AppendLine(i + 1 < unitCount ? "    }," : "    }");
-        }
-
-        writer.AppendLine("  ],");
-        writer.AppendLine("  \"classes\": [");
-
-        for (var i = 0; i < sortedClasses.Length; i++)
-        {
-            var className = sortedClasses[i];
-            var unitIndex = classUnits[className];
-            writer.AppendLine("    {");
-            writer.AppendLine($"      \"class\": \"{GSharpNameEncoding.EscapeJsonString(className)}\",");
-            writer.AppendLine($"      \"unit\": {unitIndex.ToString(CultureInfo.InvariantCulture)}");
-            writer.AppendLine(i + 1 < sortedClasses.Length ? "    }," : "    }");
-        }
-
-        writer.AppendLine("  ]");
-        writer.AppendLine("}");
-
-        return writer.ToString();
+        var manifest = (manifestPath, fileName + "\n");
+        WriteFiles(safeIntermediateOutputPath, context, partitionJson is null
+            ? [(filePath, fullSource), (gsymFilePath, gsymContent), manifest]
+            : [(filePath, fullSource), (gsymFilePath, gsymContent), (partitionPath, partitionJson), manifest]);
     }
 
     /// <summary>
