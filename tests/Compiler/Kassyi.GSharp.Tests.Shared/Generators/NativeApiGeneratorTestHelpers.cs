@@ -140,11 +140,14 @@ internal static class NativeApiGeneratorTestHelpers
     /// </summary>
     internal static async Task VerifyGenerated(GeneratorDriverRunResult result, string testName)
     {
-        var snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Generators", "Snapshots");
-        if (!Directory.Exists(snapshotsDir))
-        {
-            snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Generators", "Snapshots");
-        }
+        // Both assemblies compare with the one set of snapshots kept beside the Tests.Cpu generator tests
+        var snapshotsDir = RepositoryPaths.Combine(
+            "tests",
+            "Compiler",
+            "Kassyi.GSharp.Tests.Cpu",
+            "Generators",
+            "Snapshots"
+        );
 
         Assert.NotEmpty(result.GeneratedTrees);
         foreach (var tree in result.GeneratedTrees.OrderBy(t => Path.GetFileName(t.FilePath), StringComparer.Ordinal))

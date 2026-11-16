@@ -22,7 +22,6 @@ public sealed class GridBarrierTests
     // CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
     private const int CooperativeLaunchTooLarge = 720;
 
-#if GSHARP_CUDA
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void GridBarrier_PartOfEveryWarpAndThreadZeroFail_EveryBlockLeavesBarrier()
@@ -210,7 +209,6 @@ public sealed class GridBarrierTests
         );
         return count;
     }
-#endif
 
     private static int[] Filled(int length)
     {

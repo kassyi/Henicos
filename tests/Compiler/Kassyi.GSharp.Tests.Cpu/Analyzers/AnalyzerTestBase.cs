@@ -33,14 +33,8 @@ public abstract class AnalyzerTestBase
             ? string.Join(Environment.NewLine, analyzerDiagnostics)
             : "No Diagnostics";
 
-        var snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analyzers", "Snapshots");
-        if (!Directory.Exists(snapshotsDir))
-        {
-            snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Analyzers", "Snapshots");
-        }
-
         await Verifier.Verify(output, "txt")
-            .UseDirectory(snapshotsDir)
+            .UseDirectory("Snapshots")
             .UseFileName($"Snap.{testName}");
     }
 }

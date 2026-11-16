@@ -1,4 +1,3 @@
-#if GSHARP_CPU
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
@@ -35,4 +34,3 @@ public static partial class SwitchNaNCaseKernels
         output[tid] = value;
     }
 }
-#endif

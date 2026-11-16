@@ -1,7 +1,4 @@
 using System;
-#if GSHARP_CPU
-using Kassyi.GSharp.Runtime.Aot;
-#endif
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 using Kassyi.GSharp.Runtime;
@@ -10,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>A call that may suspend passes every parameter, whether the call names it, omits it or reorders it.</summary>
 [Category(TestCategory.Syntax)]
-public class SuspendingCallArgumentTests : TranspilerTestBase
+public partial class SuspendingCallArgumentTests : TranspilerTestBase
 {
     private const int Length = 64;
 
@@ -31,34 +28,6 @@ public class SuspendingCallArgumentTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void SuspendingCall_ReorderedNamedArguments_MatchesArgumentsByName() =>
         AssertReorderedNamedArguments();
-
-#if GSHARP_CPU
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void SuspendingCall_ManagedOmittedOptionalArguments_UsesDefaultValues() =>
-        RunManaged(AssertOmittedOptionalArguments);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.Boundary)]
-    public void SuspendingCall_ManagedNamedArguments_SkipsOptionalParameters() =>
-        RunManaged(AssertNamedArgument);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.Boundary)]
-    public void SuspendingCall_ManagedReorderedNamedArguments_MatchesArgumentsByName() =>
-        RunManaged(AssertReorderedNamedArguments);
-
-    private static void RunManaged(Action run)
-    {
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            run();
-        }
-    }
-#endif
 
     private static void AssertOmittedOptionalArguments()
     {
