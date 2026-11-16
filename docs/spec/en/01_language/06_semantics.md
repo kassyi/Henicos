@@ -43,9 +43,12 @@ G# treats a form that neither C# nor the GPU defines like `1 / 0` in C#:
 | :--- | :--- | :--- |
 | At compile time, with certainty | `1 / 0` is a compile error | A compile error. The message shows the explicit form that does what you meant |
 | Only at run time | `1 / x` throws | A run-time error, with the source location, on the native CPU build, the managed path and the checked CUDA build |
-| In the release CUDA build | (C# always checks) | Not checked: detecting races while running is too slow for production |
+| In the release CUDA build | (C# always checks) | Not checked, except for the three checks listed below: detecting races or bounds while running is too slow for production |
 
-- The release CUDA build keeps a check placed in a branch that only an unmatched case reaches, such as the trap after the last arm of a switch expression without a discard arm: removing it would leave undefined behavior in the output.
+- The release CUDA build keeps three checks, each one compare and one branch that normal use does not take:
+  the divisor of an integer `/` and `%` (and `/=`, `%=`) that may be 0 (§6.4); the minimum value of `Math.Abs` of `int`,
+  `long`, `short` and `sbyte`; and a check placed in a branch that only an unmatched case reaches, such as the trap after
+  the last arm of a switch expression without a discard arm (removing it would leave undefined behavior in the output).
 - A compile error is reported only when the analysis is certain. A form that the analysis can only suspect compiles and is left to the run-time checks, so correct code is never rejected.
 - A result that a CPU path happens to produce for such a form is never treated as correct. A CPU result that differs from the GPU result points to undefined behavior on the GPU first.
 - When a GPU thread fails a check through the runtime error channel (`__gsharp_trap` / `__gsharp_trap_site`), it records the `GSharpErrorCode`, the compile-time error site ID, and its 3D thread and block coordinates in the error record of its launch (the first failing thread of the launch wins), and ends there: on sm_70 and later it exits, so the kernel completes and the context stays usable. The launcher of the launch (or, for a `Ptr` launch, the next synchronization point; the post-launch stream synchronization emitted when `<GSharpCheckedBuild>true</GSharpCheckedBuild>` is enabled covers both) translates the record into the matching standard .NET exception (`IndexOutOfRangeException`, `DivideByZeroException`, `OverflowException`, `ArgumentOutOfRangeException`, `ArgumentException`, `InvalidOperationException`, `SwitchExpressionException`, `NullReferenceException`, or `NotSupportedException`) with no `InnerException`, and `Exception.Data` populated with `GSharp.ErrorCode`, `GSharp.ThreadIndex`, `GSharp.BlockIndex`, `GSharp.MemberName`, and `GSharp.SourceLocation`.
@@ -59,6 +62,25 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 
 - By default, G# follows C# and emits the check.
 - The compiler removes the check where it can prove the access is in range, as the .NET JIT does for loop indices.
+- An integer `/` or `%` (and `/=`, `%=`) whose divisor may be 0 throws `DivideByZeroException` on every path: the
+  native CPU build, the managed path and the CUDA build, release included (the failing CUDA thread records the error
+  and exits, §6.3). A divisor whose constant or type excludes 0 has no check (`x / 7`). `Math.Abs` of the minimum
+  value of `int`, `long`, `short` and `sbyte` throws `OverflowException` on every path in the same way, release CUDA
+  included.
+  `MinValue / -1` and `MinValue % -1`, which C# leaves implementation-defined in an unchecked context, give the GPU
+  result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
+  function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
+  would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
+  it. The managed path throws it too in two forms that keep the C# operator (a type that holds device functions must be
+  `partial`, class or struct, GSH0036: the rewritten copy of a function is written into a partial declaration of its
+  types):
+  - the compound assignment (`/=`, `%=`) of an indexer whose receiver or argument writes, may throw, or reads what
+    the right side writes (`g[k++] /= -1`): the getter and the setter would evaluate it twice;
+  - the compound assignment of a property of a value type whose receiver is not a variable (a call that returns the
+    value type by value, `MakeCell().P /= d`; a call that returns a `ref` is a variable and is rewritten), or of a
+    property of a type parameter.
+  The other compound assignments are rewritten, also where the right side writes the variable of the target or the
+  receiver of the property: the target is found once and read before the right side.
 - The null check of an array read is removed where the array cannot be `null`: a stack array, and a parameter of a
   device function that is declared non-nullable (`T[]` in a `#nullable enable` context, or a struct that holds such an
   array) and never assigned. A call of a device function checks an argument that may be `null` once, at the call, for
@@ -73,7 +95,7 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 ## 6.5 The CPU paths
 
 - The native CPU build and the managed path must produce the GPU result.
-- The CPU paths accept every launch that the GPU accepts and reject what every GPU rejects ([launch limits](../02_architecture/01_aot_transpiler.md)). The run time, the speed or the memory of the machine never defines that contract.
+- The CPU paths accept every launch that the GPU accepts and reject what any of the declared target GPUs rejects (the limits that every GPU enforces, and the shared memory per block of the GPUs that `GSharpTargetArchitectures` builds for; [launch limits](../02_architecture/01_aot_transpiler.md)). The run time, the speed or the memory of the machine never defines that contract. The capacity of one device (how many blocks of a cooperative launch it holds at once, how much device memory it has) is not part of that contract: the CPU paths have no such capacity, and a program that must fit a device asks that device.
 - A form whose GPU result the CPU cannot reproduce exactly is not supported on the CPU. G# works around technical obstacles, but not limits that come from the definition of the form itself.
 - The CPU paths are also checkers: they report the undefined behavior of §6.3 instead of hiding it.
 - Where the GPU leaves a value unspecified within bounds, the CPU paths return one value within them, as they do within the accuracy bounds of the approximate math functions. `Warp.ActiveMask()` is such a value: the GPU returns the calling lane, no lane that has exited, and any of the other lanes on the same path (from Volta on it may return fewer), and the CPU paths return the classic value, the lanes that took the same way through the thread-dependent branches since the warp last ran together ([Warp guide](../04_guides/01_warp_programming_guide.md)). A program whose result depends on which subset it gets is not portable between GPUs either.

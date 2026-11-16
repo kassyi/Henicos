@@ -103,7 +103,7 @@ public static class AstLoweringPipeline
         var conditionalRewriter = new ConditionalEvaluationRewriter(names);
         var warpRewriter = new WarpInstructionRewriter(bodyModel, names);
         var branchRewriter = new BranchRewriter(bodyModel);
-        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(10);
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(12);
         if (irPass != null)
         {
             passes.Add(irPass);
@@ -116,6 +116,10 @@ public static class AstLoweringPipeline
             passes.Add(reconvergence);
         }
 
+        // [WHY] After the reconvergence regions, which follow the structure of the source (a break to a loop leaves the
+        // regions up to its end, and the lanes meet where the break label is, after the loop), and before the passes that
+        // leave a labeled jump as it is (#1990)
+        passes.Add(new LabeledJumpRewriter());
         passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
             warpRewriter, branchRewriter);
         return passes.ToImmutable();
@@ -136,7 +140,17 @@ public static class AstLoweringPipeline
 
             var symbol = LoweringIdentity.ForDeclaration(field, bodyModel).Symbol;
             var isReportedLive = symbol != null && refLocals != null && refLocals.ReportedLive.Contains(symbol);
-            held.Add(new HeldRefLocal(field, isReportedLive));
+
+            // The variable of a foreach (ref ...) whose loop has a split point is the one that the analyzer reports as
+            // GSH0039 (RefForEachSplit, the same rule); any other held variable stays GSH0003 (#1657)
+            var isForEachVariable = bodyModel != null &&
+                                    symbol is { DeclaringSyntaxReferences: [var reference] } &&
+                                    reference.GetSyntax() is ForEachStatementSyntax loop &&
+                                    RefForEachSplit.HoldsSplitPoint(
+                                        loop,
+                                        bodyModel.Compilation.GetSemanticModel(loop.SyntaxTree)
+                                    );
+            held.Add(new HeldRefLocal(field, isReportedLive || isForEachVariable));
         }
 
         return held.ToImmutable();
@@ -214,6 +228,9 @@ public static class AstLoweringPipeline
         // into the state machine (#1191)
         annotatedBody = MutantSwitchRemover.Remove(annotatedBody, bodyModel);
         annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
+        // [WHY] Before the split detaches the label of a statement that holds a split point: the jumps that name it find
+        // it by number afterwards (#1990)
+        annotatedBody = LabeledJumpMarker.Mark(annotatedBody);
         return LabeledStatementSplitter.Split(annotatedBody);
     }
 

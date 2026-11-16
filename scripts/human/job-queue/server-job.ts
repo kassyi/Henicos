@@ -1,6 +1,7 @@
 // A job as the scheduler process keeps it (the scheduler's view plus the connection and the command), and how status
 // and the state file show it.
 
+import type { PathPlace } from "./estimate-key.ts";
 import type { JobView, Outcome } from "./protocol.ts";
 import type { SchedulerJob } from "./scheduler.ts";
 import type { Connection } from "./server-connection.ts";
@@ -28,6 +29,10 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   cwd: string;
   /** The round-robin key: the root of the job's worktree, resolved once by its client (or its cwd). */
   worktree: string;
+  /** Where its project and script arguments lie (JobRequest.places), for the estimate keys; absent when none came. */
+  places?: Record<string, PathPlace>;
+  /** The agent chat that queued it (JobRequest.session), kept for the chat panel; absent when none was sent. */
+  session?: string;
   command: string;
   keepIfFailed: boolean;
   lastPosition: number;
@@ -49,10 +54,12 @@ export function describeJob(job: ServerJob): JobView {
     orphan: job.connection === null,
     cwd: job.cwd,
     worktree: job.worktree,
+    session: job.session,
     command: job.command,
     queuedAt: job.queuedAt,
     grantedAt: job.grantedAt || null,
     typicalMs: job.estimate ? job.estimate.typicalMs : null,
+    estimateFrom: job.estimate?.from ?? "none",
     pin: job.pin,
     before: job.before,
     after: job.after,

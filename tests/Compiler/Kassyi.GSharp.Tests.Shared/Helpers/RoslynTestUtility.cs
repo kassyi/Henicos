@@ -20,19 +20,23 @@ public static class RoslynTestUtility
     public static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
     {
         var fileDir = Path.GetDirectoryName(callerFilePath);
-        if (string.IsNullOrEmpty(fileDir))
+        if (!string.IsNullOrEmpty(fileDir))
         {
-            throw new DirectoryNotFoundException("Could not determine test project directory.");
+            var projectDir = Path.GetFullPath(Path.Combine(fileDir, ".."));
+            var testCasesDir = Path.Combine(projectDir, "TestCases");
+            if (Directory.Exists(testCasesDir))
+            {
+                return testCasesDir;
+            }
         }
 
-        var projectDir = Path.GetFullPath(Path.Combine(fileDir, ".."));
-        var testCasesDir = Path.Combine(projectDir, "TestCases");
-        if (!Directory.Exists(testCasesDir))
+        var sharedTestCasesDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases");
+        if (Directory.Exists(sharedTestCasesDir))
         {
-            throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
+            return sharedTestCasesDir;
         }
 
-        return testCasesDir;
+        throw new DirectoryNotFoundException($"TestCases directory not found at: {sharedTestCasesDir}");
     }
 
     /// <summary>Reads the source of a test case file, given relative to the TestCases directory.</summary>
@@ -42,10 +46,28 @@ public static class RoslynTestUtility
     /// <summary>Attempts to resolve the companion .cu.cs kernel file for a given test file without throwing when absent.</summary>
     public static bool TryResolveKernelFilePath(string callerFilePath, out string? kernelFilePath)
     {
-        if (callerFilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase) && File.Exists(callerFilePath))
+        if (callerFilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase))
         {
-            kernelFilePath = callerFilePath;
-            return true;
+            if (File.Exists(callerFilePath))
+            {
+                kernelFilePath = callerFilePath;
+                return true;
+            }
+
+            var callerSubDir = Path.GetFileName(Path.GetDirectoryName(callerFilePath) ?? "");
+            var fileName = Path.GetFileName(callerFilePath);
+            var sharedFile = RepositoryPaths.Combine(
+                "tests",
+                "Compiler",
+                "Kassyi.GSharp.Tests.Shared",
+                callerSubDir,
+                fileName
+            );
+            if (File.Exists(sharedFile))
+            {
+                kernelFilePath = sharedFile;
+                return true;
+            }
         }
 
         var directory = Path.GetDirectoryName(callerFilePath) ?? string.Empty;
@@ -62,7 +84,29 @@ public static class RoslynTestUtility
         ];
 
         kernelFilePath = candidates.FirstOrDefault(File.Exists);
-        return kernelFilePath != null;
+        if (kernelFilePath != null)
+        {
+            return true;
+        }
+
+        var subDir = Path.GetFileName(directory);
+        var sharedDirectory = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", subDir);
+
+        string[] sharedCandidates =
+        [
+            Path.Combine(sharedDirectory, $"{baseName}TestKernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{baseName}Kernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{testClassName}Kernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{testClassName}.cu.cs")
+        ];
+
+        kernelFilePath = sharedCandidates.FirstOrDefault(File.Exists);
+        if (kernelFilePath != null)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // FooTests -> Foo

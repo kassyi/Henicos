@@ -21,9 +21,6 @@ public class WarpRendezvousDifferentialTests
     // Runs the launch on every path of this build and compares the output with the expected values
     private static void RunOnEveryPath(int outputLength, Action<int[]> launch, int[] expected)
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();

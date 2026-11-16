@@ -8,10 +8,15 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 {
     public static readonly KernelSignatureRule Instance = new();
 
-    // [WHY] CUDA limits the parameters of a kernel to 4 KB (4096 bytes).
-    private const int KernelParameterSpaceLimitBytes = 4096;
+    // [WHY] The parameter space of a kernel is 32,764 bytes from CUDA 12.1 on Volta and newer, and 4,096 bytes before.
+    // G# builds with CUDA 13.0 or newer, whose oldest target is compute capability 7.5, so every build G# supports has
+    // the larger limit, and nvcc rejects a kernel above it ("Formal parameter space overflowed ... max 32764 bytes").
+    private const int KernelParameterSpaceLimitBytes = 32764;
 
     private const int DevicePointerBytes = 8;
+
+    // The limit is the CUDA one, so every user parameter is laid out as CUDA lays it out, whatever dialect the build has
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
@@ -99,21 +104,13 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
     private static void CheckKernelParameterSpace(MethodDeclarationSyntax node, IMethodSymbol kernel,
         ref ValidationContext context)
     {
-        var offset = 0;
-        foreach (var parameter in kernel.Parameters)
-        {
-            var layout = parameter.RefKind != RefKind.None
-                ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
-                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, context.Dialect);
-
-            offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
-        }
-
-        // A kernel that returns a value takes the pointer to its result buffer as a hidden last parameter
-        if (!kernel.ReturnsVoid)
-        {
-            offset = TypeLayoutCalculator.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
-        }
+        // A kernel whose in parameter may share memory with another parameter is emitted twice, with the in parameter
+        // by value and by address, and each entry point must fit: the larger of the two is checked
+        var hidden = KernelHiddenParameters.For(node, kernel, context.SemanticModel, isCuda: true);
+        var offset = Math.Max(
+            hidden.AppendTo(GetParameterSpace(kernel, inByAddress: false)),
+            hidden.AppendTo(GetParameterSpace(kernel, inByAddress: true))
+        );
 
         if (offset > KernelParameterSpaceLimitBytes)
         {
@@ -125,5 +122,24 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                 offset,
                 KernelParameterSpaceLimitBytes);
         }
+    }
+
+    // The bytes of the declared parameters in one entry point: ref and out by pointer always, an in parameter that may
+    // share memory by pointer only in the by-address entry point (SymbolExtensions.IsKernelInPassedByAddress)
+    private static int GetParameterSpace(IMethodSymbol kernel, bool inByAddress)
+    {
+        var offset = 0;
+        foreach (var parameter in kernel.Parameters)
+        {
+            var byPointer = parameter.RefKind is RefKind.Ref or RefKind.Out ||
+                (inByAddress && parameter.IsKernelInPassedByAddress());
+            var layout = byPointer
+                ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
+                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, s_cudaDialect);
+
+            offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
+        }
+
+        return offset;
     }
 }

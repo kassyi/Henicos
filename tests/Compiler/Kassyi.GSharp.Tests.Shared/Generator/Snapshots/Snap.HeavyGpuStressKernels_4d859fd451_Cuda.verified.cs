@@ -115,6 +115,7 @@ public static unsafe void LaunchMatrixMultiplyStressKernel(global::System.Single
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "HeavyGpuStressKernels.MatrixMultiplyStressKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = a;
 global::System.Single[] __gsharp_csharp_arg_1 = b;
 global::System.Single[] __gsharp_csharp_arg_2 = c;

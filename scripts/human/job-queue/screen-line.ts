@@ -123,6 +123,52 @@ export class ScreenLine {
     return this.parts.map((part) => part.text).join("");
   }
 
+  /**
+   * Draws `text` over the cells from `column` on, keeping the rest of the line (a wide character that it cuts becomes a
+   * space). For a mark that floats over the job rows.
+   */
+  overlay(column: number, text: string, style: Style): this {
+    const cells: { char: string; style: Style }[] = [];
+    for (const part of this.parts) {
+      for (const char of part.text) {
+        cells.push({ char, style: part.style });
+        if (charWidth(char.codePointAt(0) ?? 0) === 2) {
+          cells.push({ char: "", style: part.style }); // the second cell of a wide character
+        }
+      }
+    }
+    const marks = [...text];
+    marks.forEach((char, offset) => {
+      cells[column + offset] = { char, style };
+    });
+    for (let i = 0; i < cells.length; i++) {
+      // a wide character with one cell overwritten, or its second cell without it, leaves a space
+      const cell = cells[i] as { char: string; style: Style };
+      const wide = charWidth(cell.char.codePointAt(0) ?? 0) === 2;
+      if (wide && (cells[i + 1] as { char: string } | undefined)?.char !== "") {
+        cells[i] = { char: " ", style: cell.style };
+      } else if (
+        cell.char === "" &&
+        (cells[i - 1] === undefined || charWidth(cells[i - 1]?.char.codePointAt(0) ?? 0) !== 2)
+      ) {
+        cells[i] = { char: " ", style: cell.style };
+      }
+    }
+    this.parts.length = 0;
+    for (const cell of cells) {
+      if (cell.char === "") {
+        continue;
+      }
+      const last = this.parts[this.parts.length - 1];
+      if (last !== undefined && last.style === cell.style) {
+        last.text += cell.char;
+      } else {
+        this.parts.push({ text: cell.char, style: cell.style });
+      }
+    }
+    return this;
+  }
+
   /** The line with ANSI colors (when `color`), the whole line in reverse video when `selected`. */
   render(color: boolean, selected = false): string {
     if (!color) {

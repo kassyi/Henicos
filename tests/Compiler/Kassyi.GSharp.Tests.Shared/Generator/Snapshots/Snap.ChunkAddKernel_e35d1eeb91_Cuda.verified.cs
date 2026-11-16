@@ -124,6 +124,7 @@ public static unsafe void LaunchChunkAddKernel(global::System.UInt32[] dA, globa
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuBigIntKernels.ChunkAddKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuBigIntKernels.ChunkAddKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = dA;
 global::System.UInt32[] __gsharp_csharp_arg_1 = dB;
 global::System.UInt32[] __gsharp_csharp_arg_2 = dResult;

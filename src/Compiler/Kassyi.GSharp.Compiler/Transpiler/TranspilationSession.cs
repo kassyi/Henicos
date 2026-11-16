@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal readonly ref struct TranspilationSession
@@ -55,6 +57,7 @@ internal readonly ref struct TranspilationSession
             context.Emitter.IsGpuKernelEntry = plan.IsGpuKernelEntry;
             context.Emitter.IsVoidReturn = plan.ReturnsVoid;
             context.Emitter.MethodSymbol = methodSymbol;
+            context.Emitter.TwoFormsPlan = plan.TwoFormsPlan;
         }
 
         return new TranspilationSession(visitor, methodSymbol, null);

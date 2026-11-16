@@ -8,8 +8,9 @@ namespace Kassyi.GSharp.Compiler.Targets;
 /// </summary>
 /// <remarks>
 /// The values are those of the CUDA Programming Guide ("Compute Capabilities", the maximum amount of shared memory per
-/// thread block with opt-in). The 12.x column of the guide covers 12.0 and 12.1, the members of the compute_120f
-/// family.
+/// thread block with opt-in). On 10.7, 327 KB is an oversized mode that requires a function attribute, so an unmarked
+/// kernel's limit is 227 KB (Table 35, footnote [5]). The 12.x column of the guide covers 12.0 and 12.1, the members
+/// of the compute_120f family.
 /// </remarks>
 internal static class GpuArchitectureLimits
 {
@@ -25,7 +26,9 @@ internal static class GpuArchitectureLimits
         new(9, 0, 227 * KiB),
         new(10, 0, 227 * KiB),
         new(10, 3, 227 * KiB),
-        new(10, 7, 327 * KiB),
+        // 327 KB on 10.7 needs the oversized shared memory mode of the function; an unmarked kernel's limit is 227 KB
+        // (Programming Guide Table 35, footnote [5])
+        new(10, 7, 227 * KiB),
         new(11, 0, 227 * KiB),
         new(12, 0, 99 * KiB),
         new(12, 1, 99 * KiB)

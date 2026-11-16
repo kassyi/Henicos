@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The list has three cases today:
+/// The list has four cases today:
 /// <list type="bullet">
 /// <item><description>an operator macro assignment (<c>c = a + b;</c> with a <c>[GpuOperatorMacro]</c> operator), whose
 /// operator body throws <c>GpuOnlyException</c> and has no run-time stand-in;</description></item>
@@ -18,7 +18,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// is <see cref="float"/> or <see cref="double"/> (#730), which the host <c>Sum</c> vectorized with SIMD in a different
 /// addition order from the GPU loop;</description></item>
 /// <item><description>a <c>Gpu.InlinePtx</c> statement (#581), which the managed path replaces with a
-/// <see cref="NotSupportedException"/> throw instead of the stub's <c>GpuOnlyException</c>.</description></item>
+/// <see cref="NotSupportedException"/> throw instead of the stub's <c>GpuOnlyException</c>;</description></item>
+/// <item><description>an int or long <c>/</c>, <c>%</c>, <c>/=</c> or <c>%=</c> that may divide the minimum by -1
+/// (<see cref="ManagedDivision"/>, #718), where .NET throws <see cref="OverflowException"/> and G# gives the GPU
+/// result.</description></item>
 /// </list>
 /// </para>
 /// <para>
@@ -34,9 +37,23 @@ internal static class ManagedRewriteClassifier
 {
     /// <summary>Whether the managed path rewrites <paramref name="node"/> into code that G# writes.</summary>
     public static bool IsSemanticRewrite(SyntaxNode node, SemanticModel semanticModel) =>
-        (node is AssignmentExpressionSyntax assignment && TryGetOperatorMacro(assignment, semanticModel, out _)) ||
-        (node is InvocationExpressionSyntax invocation &&
-         (IsSequentialSum(invocation, semanticModel) || IsInlinePtx(invocation, semanticModel)));
+        Describe(node, semanticModel) is not null;
+
+    /// <summary>
+    /// What the managed path rewrites <paramref name="node"/> for, as a noun phrase for a message, or
+    /// <see langword="null"/> when it does not (<see cref="IsSemanticRewrite"/>).
+    /// </summary>
+    public static string? Describe(SyntaxNode node, SemanticModel semanticModel) => node switch
+    {
+        AssignmentExpressionSyntax assignment when TryGetOperatorMacro(assignment, semanticModel, out _) =>
+            "an operator macro",
+        InvocationExpressionSyntax invocation when IsSequentialSum(invocation, semanticModel) =>
+            "a float or double StackLinq Sum",
+        InvocationExpressionSyntax invocation when IsInlinePtx(invocation, semanticModel) => "Gpu.InlinePtx",
+        _ when ManagedDivision.Plan(node, semanticModel) != null =>
+            "an integer division or remainder (int.MinValue / -1 is int.MinValue on the GPU and throws in C#)",
+        _ => null
+    };
 
     /// <summary>
     /// The operator macro that the managed path expands at <paramref name="assignment"/>: a simple assignment statement

@@ -1,0 +1,317 @@
+#nullable enable
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Tasks.Helpers;
+using Microsoft.Build.Framework;
+using Xunit;
+
+namespace Kassyi.GSharp.Tests.Shared.Tasks;
+
+public class ProcessRunnerTests
+{
+    static ProcessRunnerTests()
+    {
+        MSBuildLocatorSetup.EnsureRegistered();
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task ProcessRunner_Echo_Success()
+    {
+        var runner = ProcessRunner.Default;
+        var startInfo = ShellCommand.Echo("Hello World");
+
+        var result = await runner.RunAsync(startInfo);
+        
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Hello World", result.StandardOutput);
+        Assert.Equal(string.Empty, result.StandardError.AsSpan().Trim().ToString());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ProcessRunner_FileNotFound_ThrowsException()
+    {
+        var runner = ProcessRunner.Default;
+        var startInfo = ShellCommand.Missing();
+
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => runner.RunAsync(startInfo));
+    }
+
+    [Fact]
+    [Category(TestCategory.Stress)]
+    public void ProcessRunner_LargeOutput_NoDeadlock()
+    {
+        // Generate a large output to fill the buffer (usually 4KB on Windows).
+        // If we read synchronously, this would deadlock.
+        var runner = ProcessRunner.Default;
+        var startInfo = ShellCommand.Spam(1000);
+
+        // Run synchronously to prove the synchronous path doesn't deadlock inside.
+        var result = runner.Run(startInfo);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("out line 1000", result.StandardOutput);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ProcessRunner_Run_LargeStdoutAndStderr_DoesNotDeadlock()
+    {
+        // Both pipes exceed their buffers, so reading one stream after the other would block the child forever.
+        var startInfo = ShellCommand.Spam(3000);
+
+        var result = RunWithTimeout(startInfo);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("out line 3000", result.StandardOutput);
+        Assert.Contains("err line 3000", result.StandardError);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ProcessRunner_Run_ProducesSameTextAsRunAsync()
+    {
+        var startInfo = ShellCommand.Echo("last line");
+        var asyncStartInfo = ShellCommand.Echo("last line");
+
+        var sync = ProcessRunner.Default.Run(startInfo);
+        var async = await ProcessRunner.Default.RunAsync(asyncStartInfo);
+
+        // The trailing newline is part of the text: callers parse it, so it must survive.
+        Assert.Equal(async.StandardOutput, sync.StandardOutput);
+        Assert.EndsWith(Environment.NewLine, sync.StandardOutput);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ProcessRunner_Run_CanceledWhileRunning_KillsProcess()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+        var startInfo = ShellCommand.Sleep(60);
+        var stopwatch = Stopwatch.StartNew();
+
+        Assert.ThrowsAny<OperationCanceledException>(() => ProcessRunner.Default.Run(startInfo, cts.Token));
+
+        // The child sleeps 60 s, so a missing kill still exceeds 45 s; the margin absorbs a loaded CI runner.
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(45), "The process was not killed on cancellation.");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Run_CanceledWhileGrandchildHoldsThePipes_KillsTheWholeTree()
+    {
+        using var probe = DescendantProcessProbe.Create();
+        using var cts = new CancellationTokenSource();
+        var run = Task.Factory.StartNew(
+            () => ProcessRunner.Default.Run(probe.WaitingShell(60), cts.Token),
+            TaskCreationOptions.LongRunning
+        );
+        Assert.True(probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(30)), "The grandchild did not start.");
+
+        cts.Cancel();
+
+        // The grandchild holds the output pipes for 60 s: killing only the shell leaves the run waiting for it.
+        Assert.True(Task.WaitAny([run], TimeSpan.FromSeconds(15)) == 0, "The run waited for the grandchild.");
+        Assert.IsAssignableFrom<OperationCanceledException>(run.Exception?.InnerException);
+        Assert.True(
+            probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)),
+            "The grandchild survived the cancellation."
+        );
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task RunAsync_CanceledWhileGrandchildRuns_KillsTheWholeTree()
+    {
+        using var probe = DescendantProcessProbe.Create();
+        using var cts = new CancellationTokenSource();
+        var run = ProcessRunner.Default.RunAsync(probe.WaitingShell(60), cts.Token);
+        Assert.True(probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(30)), "The grandchild did not start.");
+
+        cts.Cancel();
+
+        var finished = await Task.WhenAny(run, Task.Delay(TimeSpan.FromSeconds(15)));
+        Assert.Same(run, finished);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+        Assert.True(
+            probe.WaitFor(static n => n == 0, TimeSpan.FromSeconds(5)),
+            "The grandchild survived the cancellation."
+        );
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Run_DescendantOutlivesTheChild_KeepsItRunning()
+    {
+        // A compiler may start a server that outlives it and serves later compiles (mspdbsrv.exe of MSVC): only a
+        // cancellation stops the descendants, a normal end leaves them as they were.
+        using var probe = DescendantProcessProbe.Create();
+
+        var result = ProcessRunner.Default.Run(probe.DetachingShell(30));
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.True(
+            probe.WaitFor(static n => n == 1, TimeSpan.FromSeconds(10)),
+            "The detached descendant did not start."
+        );
+        Thread.Sleep(500);
+        Assert.Equal(1, probe.CountRunning());
+    }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("#!/bin/sh\necho started\n", false)]
+    [InlineData("echo started\n", true)]
+    public void Run_FileThatCannotBeExecuted_ThrowsWin32ExceptionAsProcessStartDoes(string content, bool executable)
+    {
+        // Not an exit code of a wrapper, and no fallback to /bin/sh for a script without #!.
+        Skip.If(OperatingSystem.IsWindows(), "Execute permissions and #! lines are Unix only.");
+        var directory = Directory.CreateTempSubdirectory("gsharp-process-runner-");
+        try
+        {
+            var program = Path.Combine(directory.FullName, "program");
+            File.WriteAllText(program, content);
+            var mode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            File.SetUnixFileMode(program, executable ? mode | UnixFileMode.UserExecute : mode);
+
+            Assert.Throws<System.ComponentModel.Win32Exception>(
+                () => ProcessRunner.Default.Run(new ProcessStartInfo { FileName = program })
+            );
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ProcessRunner_Run_PreCanceledToken_DoesNotStartProcess()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var startInfo = ShellCommand.Missing();
+
+        // Cancellation wins over the start failure, which proves the process was never started.
+        Assert.ThrowsAny<OperationCanceledException>(() => ProcessRunner.Default.Run(startInfo, cts.Token));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ProcessRunner_Run_FileNotFound_ThrowsWin32Exception()
+    {
+        var startInfo = ShellCommand.Missing();
+
+        Assert.Throws<System.ComponentModel.Win32Exception>(() => ProcessRunner.Default.Run(startInfo));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ProcessRunner_Run_InParallelForEach_AllComplete()
+    {
+        // The shape used by the compile tasks: many synchronous runs inside Parallel.ForEach.
+        var exitCodes = new int[24];
+
+        Parallel.For(0, exitCodes.Length, i =>
+        {
+            var startInfo = ShellCommand.Echo($"item {i}");
+            var result = ProcessRunner.Default.Run(startInfo);
+            exitCodes[i] = result.StandardOutput.Contains($"item {i}") ? result.ExitCode : -1;
+        });
+
+        Assert.All(exitCodes, code => Assert.Equal(0, code));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task ProcessRunner_CancellationRequested_BeforeStart()
+    {
+        var runner = new ProcessRunner();
+        var startInfo = new ProcessStartInfo("dummy_executable_that_will_not_be_run.exe");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel before start
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => runner.RunAsync(startInfo, cts.Token));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task ProcessRunner_ProcessStartFailed()
+    {
+        var runner = new ProcessRunner();
+        // Use a definitely non-existent executable to force Start() to fail
+        var startInfo = new ProcessStartInfo("this_executable_should_not_exist_xyz123.exe");
+
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => runner.RunAsync(startInfo));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public async Task ProcessRunner_Cancellation_KillsProcess()
+    {
+        var runner = new ProcessRunner();
+
+        // An actual executable process is required to test the post-start kill callback across OSes.
+        var startInfo = Kassyi.GSharp.Tests.Shared.Helpers.ShellCommand.Sleep(10);
+        using var cts = new CancellationTokenSource();
+
+        var task = runner.RunAsync(startInfo, cts.Token);
+
+        // Cancel immediately to trigger the cancellation token registration callback.
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+    }
+
+    private static ProcessResult RunWithTimeout(ProcessStartInfo startInfo)
+    {
+        // A deadlock would hang the test host, so the run happens on its own task with a deadline.
+        var timeout = TimeSpan.FromSeconds(180);
+        var begin = DateTime.Now;
+        var run = Task.Factory.StartNew(() => ProcessRunner.Default.Run(startInfo), TaskCreationOptions.LongRunning);
+        if (!run.Wait(timeout))
+        {
+            // Only a timed-out run looks at the processes; the message argument of Assert.True would be built every time.
+            Assert.Fail($"The run did not complete: the pipes deadlocked. {DescribeStalledRun(startInfo, begin, timeout)}");
+        }
+
+        return run.Result;
+    }
+
+    // Tells a child that never finished (slow or stuck) from a child that finished while the pipes stayed open
+    // (another process holds a copy of the pipe ends), which a bare timeout message cannot.
+    private static string DescribeStalledRun(ProcessStartInfo startInfo, DateTime begin, TimeSpan timeout)
+    {
+        var name = Path.GetFileNameWithoutExtension(startInfo.FileName);
+        var builder = new System.Text.StringBuilder($"Waited {timeout.TotalSeconds:F0} s for {name}. Processes named {name} started since then: ");
+        var found = 0;
+        foreach (var process in Process.GetProcessesByName(name))
+        {
+            try
+            {
+                if (process.StartTime < begin.AddSeconds(-1))
+                {
+                    continue;
+                }
+
+                found++;
+                builder.Append($"[pid {process.Id}, exited {process.HasExited}, cpu {process.TotalProcessorTime.TotalMilliseconds:F0} ms, handles {process.HandleCount}] ");
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                builder.Append($"[pid {process.Id}: {ex.GetType().Name}] ");
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        // No such process left means the child exited while a reader was still waiting for end-of-stream.
+        return builder.Append(found == 0 ? "none (the child exited, so the readers wait for another holder of the pipes)." : string.Empty).ToString();
+    }
+}

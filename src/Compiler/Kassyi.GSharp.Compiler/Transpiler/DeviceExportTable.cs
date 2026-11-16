@@ -308,7 +308,13 @@ internal sealed class DeviceExportTable
             DivergentExitOnlyParameters: GetInt(named, AttributeNames.Traits.DivergentExitOnlyParameters),
             HasExitOnlyBarrier: GetBool(named, AttributeNames.Traits.HasExitOnlyBarrier),
             ReachesArrivalBarrier: GetBool(named, AttributeNames.Traits.ReachesArrivalBarrier),
-            ReachesSharedMemory: GetBool(named, AttributeNames.Traits.ReachesSharedMemory));
+            ReachesSharedMemory: GetBool(named, AttributeNames.Traits.ReachesSharedMemory),
+            // [WHY] A record written before the trait existed has none; its ManagedVersion then meant exactly that the
+            // function reaches code whose C# meaning only the generated code gives
+            ReachesGeneratedMeaning: named.ContainsKey(AttributeNames.Traits.ReachesGeneratedMeaning)
+                ? GetBool(named, AttributeNames.Traits.ReachesGeneratedMeaning)
+                : GetBool(named, AttributeNames.Traits.ManagedVersion),
+            PrivateManagedFrame: GetBool(named, AttributeNames.Traits.PrivateManagedFrame));
 
         var record = new DeviceExportRecord(
             kind,

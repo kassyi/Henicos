@@ -61,11 +61,22 @@ internal static class UnrollChecks
             context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMustBeStatic, loopStmt);
         }
 
-        if (HasDynamicControlFlow(loopStmt, isRoot: true, insideNestedLoop: false, insideNestedSwitch: false))
+        if (HasDynamicControlFlow(loopStmt))
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="loopStmt"/> contains dynamic control flow that leaves an unrolled iteration.
+    /// </summary>
+    internal static bool HasDynamicControlFlow(SyntaxNode loopStmt) =>
+        HasDynamicControlFlow(
+            loopStmt,
+            loopRoot: loopStmt,
+            isRoot: true,
+            insideNestedLoop: false,
+            insideNestedSwitch: false);
 
     // A comparison is static when one side is; any other condition must be static as a whole
     private static bool HasStaticCondition(StatementSyntax loopStmt, SemanticModel semanticModel)
@@ -104,11 +115,12 @@ internal static class UnrollChecks
 
     private static bool HasDynamicControlFlow(
         SyntaxNode node,
+        SyntaxNode loopRoot,
         bool isRoot,
         bool insideNestedLoop,
         bool insideNestedSwitch)
     {
-        if (!isRoot && LeavesIteration(node, insideNestedLoop, insideNestedSwitch) is { } leaves)
+        if (!isRoot && LeavesIteration(node, loopRoot, insideNestedLoop, insideNestedSwitch) is { } leaves)
         {
             return leaves;
         }
@@ -119,9 +131,10 @@ internal static class UnrollChecks
         return node.ChildNodes()
             .AsStackEnumerable()
             .Any(
-                (Loop: nextInsideLoop, Switch: nextInsideSwitch),
+                (Root: loopRoot, Loop: nextInsideLoop, Switch: nextInsideSwitch),
                 static (child, inside) => HasDynamicControlFlow(
                     child,
+                    loopRoot: inside.Root,
                     isRoot: false,
                     insideNestedLoop: inside.Loop,
                     insideNestedSwitch: inside.Switch
@@ -130,13 +143,25 @@ internal static class UnrollChecks
     }
 
     // Whether a jump leaves the unrolled iteration; null when the children decide (not a jump, not a nested function)
-    private static bool? LeavesIteration(SyntaxNode node, bool insideNestedLoop, bool insideNestedSwitch) =>
+    private static bool? LeavesIteration(
+        SyntaxNode node,
+        SyntaxNode loopRoot,
+        bool insideNestedLoop,
+        bool insideNestedSwitch) =>
         node switch
         {
             LambdaExpressionSyntax or AnonymousMethodExpressionSyntax or LocalFunctionStatementSyntax => false,
             ReturnStatementSyntax or GotoStatementSyntax => true,
-            BreakStatementSyntax => !insideNestedLoop && !insideNestedSwitch,
-            ContinueStatementSyntax => !insideNestedLoop,
+            BreakStatementSyntax breakStmt => LabeledJumpSyntax.GetLabelName(breakStmt) != null
+                ? LabeledJumpSyntax.FindEnclosingTarget(breakStmt) is not { } target ||
+                  target == loopRoot ||
+                  !loopRoot.FullSpan.Contains(target.FullSpan)
+                : !insideNestedLoop && !insideNestedSwitch,
+            ContinueStatementSyntax continueStmt => LabeledJumpSyntax.GetLabelName(continueStmt) != null
+                ? LabeledJumpSyntax.FindEnclosingTarget(continueStmt) is not { } target ||
+                  target == loopRoot ||
+                  !loopRoot.FullSpan.Contains(target.FullSpan)
+                : !insideNestedLoop,
             _ => null
         };
 

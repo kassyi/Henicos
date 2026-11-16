@@ -250,10 +250,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         StatementSyntax jump = statement;
         switch (statement)
         {
-            case BreakStatementSyntax when FindTarget(loopOnly: false) is { } target:
+            case BreakStatementSyntax when FindTarget(statement, loopOnly: false) is { } target:
                 leaveFrom = target.BreakDepth;
                 break;
-            case ContinueStatementSyntax when FindTarget(loopOnly: true) is { } target:
+            case ContinueStatementSyntax when FindTarget(statement, loopOnly: true) is { } target:
                 leaveFrom = target.ContinueDepth;
                 if (target.ContinueLabel != null)
                 {
@@ -285,11 +285,15 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         return true;
     }
 
-    private JumpTarget? FindTarget(bool loopOnly)
+    // The target that the break or continue leaves: the one it names when it has a label, otherwise the innermost
+    private JumpTarget? FindTarget(StatementSyntax jump, bool loopOnly)
     {
+        var named = LabeledJumpSyntax.GetLabelName(jump) != null
+            ? ReconvergenceSyntax.FindJumpTarget(jump, loopOnly)
+            : null;
         for (var i = _targets.Count - 1; i >= 0; i--)
         {
-            if (!loopOnly || _targets[i].IsLoop)
+            if (named != null ? _targets[i].Node == named : !loopOnly || _targets[i].IsLoop)
             {
                 return _targets[i];
             }
@@ -375,7 +379,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 .Any(static label => label is CasePatternSwitchLabelSyntax { WhenClause: not null })
             );
 
-    // A break of the loop, or a return or goto in its body, by which a lane may leave the loop before the others
+    // A break of the loop, a labeled break or continue to a statement around it, or a return or goto in its body, by which
+    // a lane may leave the loop before the others
     private static bool HasExit(StatementSyntax loop) =>
         GetLoopBody(loop)
             .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
@@ -383,7 +388,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             .Any(loop, static (node, target) =>
                 node is ReturnStatementSyntax ||
                 node.IsKind(SyntaxKind.GotoStatement) ||
-                (node is BreakStatementSyntax && ReconvergenceSyntax.FindJumpTarget(node, loopOnly: false) == target));
+                ReconvergenceSyntax.LeavesLoop(node, target));
 
     // Whether a continue goes to the end of the body of loop
     private static bool HasContinue(StatementSyntax loop) =>

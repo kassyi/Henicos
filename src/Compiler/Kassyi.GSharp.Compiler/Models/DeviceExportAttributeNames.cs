@@ -54,12 +54,14 @@ internal static class DeviceExportAttributeNames
         public const string DynamicSharedMemorySites = "DynamicSharedMemorySites";
         public const string Effect = "Effect";
         public const string ManagedStateMachine = "ManagedStateMachine";
+        public const string PrivateManagedFrame = "PrivateManagedFrame";
         public const string ManagedVersion = "ManagedVersion";
         public const string DivergentConditionParameters = "DivergentConditionParameters";
         public const string DivergentExitOnlyParameters = "DivergentExitOnlyParameters";
         public const string HasExitOnlyBarrier = "HasExitOnlyBarrier";
         public const string ReachesArrivalBarrier = "ReachesArrivalBarrier";
         public const string ReachesSharedMemory = "ReachesSharedMemory";
+        public const string ReachesGeneratedMeaning = "ReachesGeneratedMeaning";
     }
 
     /// <summary>The names of one dialect's <see cref="DeviceExportRecord.DialectText"/>.</summary>

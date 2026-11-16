@@ -41,6 +41,9 @@ internal static class ArrayNullCheck
 
     private const string ArgumentTrapKind = "ArrayNullArgument";
 
+    // The trap kind of the check of the array a StackLinq query starts from
+    private const string LinqSourceTrapKind = "LinqSourceNull";
+
     // Between the text of an error and the place it names, in a method without an error site table
     private const string PlaceSeparator = " at ";
 
@@ -141,7 +144,11 @@ internal static class ArrayNullCheck
         var site = PlanSite(node.Expression, ref context);
         var writer = context.Emitter.Writer;
         if (EvaluationOrder.LastSpilledOperand(
-                [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
+                [
+                    ExpressionEffects.Of(node.Expression, model),
+                    ExpressionEffects.Of(argument.Expression, model)
+                        .WithThrow(ArrayElementIndex.NeedsOverflowCheck(node, model))
+                ]) < 0)
         {
             AppendElementCall(node.Expression, argument.Expression, site, ref context);
             return true;
@@ -149,7 +156,9 @@ internal static class ArrayNullCheck
 
         using var sequence = EvaluationOrder.BeginSequence(writer, "decltype(auto)");
         var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
-        var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
+        var index = EvaluationOrder.BeginDeclaration(ref context);
+        ArrayElementIndex.Append(argument.Expression, ref context);
+        writer.AppendLine(";");
         sequence.Return();
         AppendElementCall(writer, receiver, index, site);
         return true;
@@ -223,7 +232,7 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(receiver);
             writer.Append(", ");
-            context.Visitor.Visit(index);
+            ArrayElementIndex.Append(index, ref context);
             writer.Append(", ");
             AppendSite(writer, site);
         }
@@ -254,6 +263,44 @@ internal static class ArrayNullCheck
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws
+    /// <see cref="ArgumentNullException"/> for a null array as <c>AsStackEnumerable</c> does: <see langword="null"/>
+    /// when the source cannot be null or is not a C# array.
+    /// </summary>
+    /// <remarks>
+    /// A method without an error site table (a device function) passes the message itself, with no place, as
+    /// <see cref="ArgumentCheckSite"/> does: the message must end with <c>(Parameter 'source')</c> for the mapper to
+    /// give the exception its <see cref="ArgumentException.ParamName"/>.
+    /// </remarks>
+    public static NullCheckSite? PlanLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        if (model.GetTypeSymbol(source) is not IArrayTypeSymbol || !NeedsCheck(source, model))
+        {
+            return null;
+        }
+
+        return context.Emitter.ErrorSites is null
+            ? new NullCheckSite(0u, ArgumentExceptionMessages.LinqSource)
+            : PlanSite(source, null, ArgumentExceptionMessages.LinqSource, LinqSourceTrapKind, ref context);
+    }
+
+    /// <summary>
+    /// Writes <paramref name="source"/> as <c>__gsharp_source_argument(&lt;source&gt;, &lt;site&gt;)</c> when
+    /// <see cref="PlanLinqSource"/> says it needs the check, as it is otherwise.
+    /// </summary>
+    public static void AppendLinqSource(ExpressionSyntax source, ref TranspileContext context)
+    {
+        if (PlanLinqSource(source, ref context) is not { } site)
+        {
+            context.Visitor.Visit(source);
+            return;
+        }
+
+        AppendHelperCall(GSharpInternalNames.Prelude.SourceArgument, source, site, ref context);
     }
 
     /// <summary>Writes <c>__gsharp_array_ref(&lt;receiver&gt;, &lt;site&gt;)</c>.</summary>
@@ -401,8 +448,8 @@ internal static class ArrayNullCheck
     private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
         PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
-    // <site>u for a registered site, "<message>" otherwise
-    private static void AppendSite(SourceWriter writer, NullCheckSite site)
+    /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
+    internal static void AppendSite(SourceWriter writer, NullCheckSite site)
     {
         if (site.SiteId != 0u)
         {

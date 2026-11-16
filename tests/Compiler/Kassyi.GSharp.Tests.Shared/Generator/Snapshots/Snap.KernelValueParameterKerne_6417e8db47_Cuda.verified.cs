@@ -194,7 +194,11 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_KernelParameterHolder(ref global::Kassyi.GSharp.Tests.Shared.Syntax.KernelParameterHolder host, ref AotContexts.KernelParameterHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -1439,7 +1443,7 @@ for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<3;__gsharp_id_2_i++)
 __gsharp_id_0_value=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_0_value,2),__gsharp_id_2_i);
 __syncthreads();
 }
-__gsharp_array_at(__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_id_0_value,__gsharp_mul_i32((int)threadIdx.x,100));
+__gsharp_array_at(__gsharp_id_1_output, (int)threadIdx.x, 22597650u)=__gsharp_add_i32(__gsharp_id_0_value,(int)threadIdx.x*100);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ParameterInBarrierLoopKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__KernelValueParameterKernels__ParameterInBarrierLoopKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2258,6 +2262,7 @@ public static unsafe void LaunchParameterWithoutBarrierKernel(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "KernelValueParameterKernels.ParameterWithoutBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "KernelValueParameterKernels.ParameterWithoutBarrierKernel");
 global::System.Int32 __gsharp_csharp_arg_0 = value;
 global::System.Int32[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.KernelValueParameterKernels.ParameterWithoutBarrierKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

@@ -97,8 +97,7 @@ internal static class TransferPlannerTestHelper
         }
     }
 
-    // Unsupported when the value is, or holds a managed reference (#976 F2: the value converts through
-    // GetValueOrDefault, but an array inside a Nullable stays a diagnostic)
+    // Unsupported when the value is; a value that holds a managed reference converts through GetValueOrDefault (#972)
     private static int CompareNullablePlan(TransferPlan plan, INamedTypeSymbol nullableType,
         ITranspilerDialect dialect, ImmutableHashSet<string> ancestors, string where, List<string> failures)
     {
@@ -106,11 +105,9 @@ internal static class TransferPlannerTestHelper
         var valuePlan = TransferPlanner.Plan(valueType, dialect);
         switch (plan)
         {
-            case TransferPlan.Nullable nullable when valueType.IsUnmanagedType:
+            case TransferPlan.Nullable nullable when valuePlan is not TransferPlan.Unsupported:
                 return 1 + ComparePlan(nullable.Value, valueType, dialect, ancestors, $"{where}?", failures);
-            case TransferPlan.Unsupported when valuePlan is TransferPlan.Unsupported
-                ? plan == valuePlan
-                : !valueType.IsUnmanagedType:
+            case TransferPlan.Unsupported when plan == valuePlan:
                 return 1;
             default:
                 failures.Add($"{where}: {plan}, expected Nullable or Unsupported");

@@ -32,6 +32,7 @@ export class JobStore {
       ...describeJob(job),
       spawnedAt: job.spawnedAt,
       turn: job.turn,
+      ...(job.places !== undefined ? { places: job.places } : {}),
       ...(job.stub ? { stub: true } : {}),
       ...(job.startNow === true ? { startNow: true } : {}),
       ...(job.provisional !== null ? { provisional: job.provisional } : {}),
@@ -64,6 +65,8 @@ export class JobStore {
           waiting: of("waiting"),
           provisional: of("ended"),
           ended: [...server.outcomes],
+          // An older scheduler ignores it (and would start the waiting jobs)
+          ...(server.scheduler.paused ? { paused: true, pausedAt: server.scheduler.pausedAt } : {}),
           // Only for an older scheduler, which waits for these ids as predecessors (--after) until they come back
           pending: records.map((job) => job.id),
         }),
@@ -134,6 +137,11 @@ export class JobStore {
           server.outcomes.set(entry[0] as number, entry[1] as Outcome);
         }
       }
+    }
+    if (saved.paused === true) {
+      server.scheduler.paused = true;
+      server.scheduler.pausedAt = typeof saved.pausedAt === "number" ? saved.pausedAt : Date.now();
+      server.log("restored the pause");
     }
     const list = (name: string): unknown[] => (Array.isArray(saved[name]) ? (saved[name] as unknown[]) : []);
     const restore = (phase: Phase) => (record: unknown) => {
