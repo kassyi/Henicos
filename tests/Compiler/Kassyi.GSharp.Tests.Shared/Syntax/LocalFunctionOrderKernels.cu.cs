@@ -81,4 +81,107 @@ public static partial class LocalFunctionOrderKernels
 
         int Next(int x) => x + 500;
     }
+
+    // The first use of the function is in unreachable code, above the declaration of the local that it captures
+    [GpuKernel]
+    public static void UnreachableCallBeforeCapturedDeclarationKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Captured();
+        }
+#pragma warning restore CS0162
+
+        int z = 5;
+        data[tid] += Captured();
+
+        int Captured() => z;
+    }
+
+    // Two captured locals of different types: a scalar and an array alias
+    [GpuKernel]
+    public static void UnreachableCallTwoCapturedLocalsKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Total();
+        }
+#pragma warning restore CS0162
+
+        int a = 3;
+        int[] alias = data;
+        data[tid] += Total();
+
+        int Total() => a + alias.Length;
+    }
+
+    // The captured local is used by a function that the unreachable use reaches only through another function
+    [GpuKernel]
+    public static void UnreachableCallThroughAFunctionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+#pragma warning disable CS0162 // The call under test is unreachable
+        if (false)
+        {
+            data[tid] = Outer();
+        }
+#pragma warning restore CS0162
+
+        int z = 2;
+        data[tid] += Outer();
+
+        int Outer() => Inner() * 2;
+        int Inner() => z + 1;
+    }
+
+    // The pattern inside a switch section: the captured local is declared at the start of the section
+    [GpuKernel]
+    public static void UnreachableCallInSwitchSectionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        switch (tid & 1)
+        {
+            case 0:
+#pragma warning disable CS0162 // The call under test is unreachable
+                if (false)
+                {
+                    data[tid] = Captured();
+                }
+#pragma warning restore CS0162
+
+                int z = 4;
+                data[tid] += Captured();
+                break;
+
+                int Captured() => z;
+            default:
+                data[tid] += 4;
+                break;
+        }
+    }
+
+    // The pattern in a loop body: the captured local is declared again on every iteration
+    [GpuKernel]
+    public static void UnreachableCallInLoopBodyKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        for (int i = 0; i < 3; i++)
+        {
+#pragma warning disable CS0162 // The call under test is unreachable
+            if (false)
+            {
+                data[tid] = Captured();
+            }
+#pragma warning restore CS0162
+
+            int z = i + 1;
+            data[tid] += Captured();
+
+            int Captured() => z;
+        }
+    }
 }

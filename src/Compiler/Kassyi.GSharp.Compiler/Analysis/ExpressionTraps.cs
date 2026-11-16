@@ -70,7 +70,9 @@ internal static class ExpressionTraps
 
         foreach (var index in element.Indices)
         {
-            if (MayTrap(index))
+            // C# converts a ulong array index with conv.ovf.i.un when the index is evaluated, before the right side
+            // of a simple assignment (#1988)
+            if (index.Type?.SpecialType == SpecialType.System_UInt64 || MayTrap(index))
             {
                 return true;
             }

@@ -1,5 +1,6 @@
 // The big mark that the live view (status --watch) flashes over the job rows for a second after Space: two bars for a
-// pause, a right-pointing triangle for a play, drawn with block characters as the timeline is. Pure, like view.ts.
+// pause, a right-pointing triangle for a play, drawn with block characters as the timeline is. The triangle uses the
+// half blocks (▀ ▄) as well, so that its edges step every half row instead of every row. Pure, like view.ts.
 
 import type { ScreenLine, Style } from "./screen-line.ts";
 
@@ -18,7 +19,8 @@ const FlashMarks: Record<Flash["kind"], { rows: string[]; style: Style }> = {
     style: "now",
   },
   resume: {
-    rows: ["██        ", "██████    ", "██████████", "██████    ", "██        "],
+    // Ten half rows, 2, 4, ... 10, 10, ... 4, 2 cells wide: the upper half of a row in its ▀, the lower in its ▄
+    rows: ["██▄▄      ", "██████▄▄  ", "██████████", "██████▀▀  ", "██▀▀      "],
     style: "run",
   },
 };

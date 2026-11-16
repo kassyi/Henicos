@@ -11,7 +11,7 @@ public static class Program
     private const string Usage =
         """
         Usage: Kassyi.GSharp.Compiler.Generators <mode> <arguments>
-          diagnostics <diagnostics.json> <output directory>
+          diagnostics <diagnostics.yml> <output directory>
           dialects <dialect YAML directory> <output directory>
           native-api <native API YAML directory> <output directory>
           prelude <resources directory> <output directory>

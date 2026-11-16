@@ -48,6 +48,13 @@ public sealed class DeviceArrayRegions
     }
 
     /// <summary>
+    /// Records a region that this launch allocated for a view that no array identity names (the slice that a
+    /// <c>Memory&lt;T&gt;</c> or <c>ArraySegment&lt;T&gt;</c> field covers), which <see cref="Free"/> releases.
+    /// </summary>
+    /// <param name="region">The device region.</param>
+    public void AddOwned(IntPtr region) => (_regions ??= []).Add(region);
+
+    /// <summary>
     /// Records a region that another owner allocated and frees for <paramref name="array"/>: the region of a group
     /// of overlapping arguments (<see cref="HostAliasGroups"/>), so that a struct field that holds the same array
     /// takes it. Two <c>T[]</c> arguments that are one array record it once: both start the group's region at the

@@ -278,6 +278,7 @@ public static unsafe void LaunchLabelLoopKernel(global::System.Int32[] data, glo
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UserLabelKernels.LabelLoopKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UserLabelKernels.LabelLoopKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::System.Int32 __gsharp_csharp_arg_1 = rounds;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.LabelLoopKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -854,6 +855,7 @@ public static unsafe void LaunchGotoPastInitializationKernel(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UserLabelKernels.GotoPastInitializationKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UserLabelKernels.GotoPastInitializationKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.GotoPastInitializationKernel(__gsharp_csharp_arg_0));
 return;
@@ -995,6 +997,7 @@ public static unsafe void LaunchGotoPastConstAndArraysKernel(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UserLabelKernels.GotoPastConstAndArraysKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UserLabelKernels.GotoPastConstAndArraysKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.UserLabelKernels.GotoPastConstAndArraysKernel(__gsharp_csharp_arg_0));
 return;

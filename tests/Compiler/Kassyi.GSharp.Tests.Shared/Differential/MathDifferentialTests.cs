@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// Differential tests (<see cref="Math"/>, <see cref="MathF"/>, <see cref="FastMath"/>, <see cref="BitOperations"/>,
 /// <see cref="float"/> and <see cref="double"/> intrinsics).
 /// </summary>
-public class MathDifferentialTests
+public partial class MathDifferentialTests
 {
     private static readonly float[] s_singleRoundBoundaries =
     [
@@ -191,7 +191,15 @@ public class MathDifferentialTests
         ("FastMath.Sqrt(|x|)", OutputPolicy.Bitwise),
         ("FastMath.Abs(x)", OutputPolicy.Bitwise),
         ("FastMath.Exp(expX)", OutputPolicy.Ulp(14, "CUDA Programming Guide __expf <= 2 + floor(|1.173*x|) ulp on [-10,10] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
-        ("FastMath.Log(logUnitX)", OutputPolicy.Ignore),
+        (
+            "FastMath.Log(logUnitX)",
+            OutputPolicy.Absolute(
+                4.8e-7,
+                "CUDA Programming Guide __logf abs error <= 2^-21.41 (~3.576e-7) on [0.5, 2.0] + host 1 ulp, the "
+                    + "documented bound (measured max |__logf - MathF.Log| 1.8e-7 on every float of [0.5, 2], "
+                    + "RTX 3070 Ti)"
+            )
+        ),
         ("FastMath.Log(logWideX)", OutputPolicy.Ulp(4, "CUDA Programming Guide __logf <= 3 ulp outside [0.5,2.0] + 1 ulp margin for the host result (measured CUDA vs .NET: at most 1 ulp, seeds 0-8)")),
     ];
 
@@ -640,14 +648,11 @@ public class MathDifferentialTests
                     );
                 }
 
-#if GSHARP_CUDA
-                if (i == 0 && !matchesFma)
+                var fmaFailure = CheckFmaContract(i, k, matchesFma, fmaExpected, actual);
+                if (fmaFailure is not null)
                 {
-                    return PropertyResult.Fail(
-                        $"CUDA row 0 (k={k}): expected FMA contracted result {fmaExpected} (2^-24), got {actual}"
-                    );
+                    return fmaFailure.Value;
                 }
-#endif
             }
 
             return PropertyResult.Pass();
@@ -1170,4 +1175,12 @@ public class MathDifferentialTests
             sbyte v = unchecked((sbyte)r.NextInt32());
             return v == sbyte.MinValue ? (sbyte)(sbyte.MinValue + 1) : v;
         });
+
+    private static partial PropertyResult? CheckFmaContract(
+        int i,
+        float k,
+        bool matchesFma,
+        float fmaExpected,
+        float actual
+    );
 }

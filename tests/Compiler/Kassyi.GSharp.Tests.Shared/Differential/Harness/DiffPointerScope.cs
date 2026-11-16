@@ -1,46 +1,28 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
-#if GSHARP_CUDA
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Runtime.Aot;
-#endif
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Allocates and uploads device buffers (on <c>GSHARP_CUDA</c>) or unmanaged staging buffers (on CPU) for
+/// Allocates and uploads device buffers (on CUDA) or unmanaged staging buffers (on CPU) for
 /// <c>Launch{Kernel}Ptr</c> invocations, copying results back to the underlying <see cref="DiffBuffers"/>
 /// and freeing resources upon disposal.
 /// </summary>
-public sealed class DiffPointerScope : IDisposable
+public sealed partial class DiffPointerScope : IDisposable
 {
     private readonly DiffBuffers _buffers;
     private readonly Dictionary<string, IntPtr> _pointers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _lengths = new(StringComparer.Ordinal);
-#if GSHARP_CUDA
-    private readonly GpuKernelLoader.CudaContextScope _contextScope;
-    private readonly List<(DiffBuffer Buffer, GpuBuffer<byte> DeviceBuffer)> _deviceAllocations = [];
-#else
-    private readonly List<(DiffBuffer Buffer, IntPtr StagingPointer, int ByteLength)> _hostAllocations = [];
-#endif
     private bool _disposed;
 
-    internal unsafe DiffPointerScope(DiffBuffers buffers)
+    internal DiffPointerScope(DiffBuffers buffers)
     {
         ArgumentNullException.ThrowIfNull(buffers);
         _buffers = buffers;
-
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-        _contextScope = new GpuKernelLoader.CudaContextScope();
-        var sharedDeviceBuffers = new Dictionary<object, GpuBuffer<byte>>(ReferenceEqualityComparer.Instance);
-#else
-        var sharedStagingPointers = new Dictionary<object, IntPtr>(ReferenceEqualityComparer.Instance);
-#endif
+        InitializeStorage();
 
         foreach (var buffer in _buffers.All)
         {
@@ -51,32 +33,13 @@ public sealed class DiffPointerScope : IDisposable
                 continue;
             }
 
-            var rawArray = buffer.RawArray;
-#if GSHARP_CUDA
-            if (!sharedDeviceBuffers.TryGetValue(rawArray, out var deviceBuffer))
-            {
-                var hostBytes = buffer.AsReadOnlyBytes();
-                deviceBuffer = new GpuBuffer<byte>(hostBytes.Length);
-                deviceBuffer.CopyToDevice(hostBytes);
-                sharedDeviceBuffers.Add(rawArray, deviceBuffer);
-                _deviceAllocations.Add((buffer, deviceBuffer));
-            }
-
-            _pointers[buffer.Name] = deviceBuffer.DevicePointer;
-#else
-            if (!sharedStagingPointers.TryGetValue(rawArray, out var stagingPtr))
-            {
-                var hostBytes = buffer.AsReadOnlyBytes();
-                stagingPtr = Marshal.AllocHGlobal(hostBytes.Length);
-                hostBytes.CopyTo(new Span<byte>((void*)stagingPtr, hostBytes.Length));
-                sharedStagingPointers.Add(rawArray, stagingPtr);
-                _hostAllocations.Add((buffer, stagingPtr, hostBytes.Length));
-            }
-
-            _pointers[buffer.Name] = stagingPtr;
-#endif
+            _pointers[buffer.Name] = AllocateAndUpload(buffer);
         }
     }
+
+    private partial void InitializeStorage();
+    private partial IntPtr AllocateAndUpload(DiffBuffer buffer);
+    private partial void DisposeStorage();
 
     /// <summary>Gets the device (or staging) pointer for the buffer named <paramref name="name"/>.</summary>
     public IntPtr Get(string name) =>
@@ -104,7 +67,7 @@ public sealed class DiffPointerScope : IDisposable
         where T : unmanaged => Get(name);
 
     /// <summary>Copies device/staging memory back to the host buffers and releases all allocations.</summary>
-    public unsafe void Dispose()
+    public void Dispose()
     {
         if (_disposed)
         {
@@ -112,48 +75,6 @@ public sealed class DiffPointerScope : IDisposable
         }
 
         _disposed = true;
-
-#if GSHARP_CUDA
-        try
-        {
-            foreach (var (buffer, deviceBuffer) in _deviceAllocations)
-            {
-                try
-                {
-                    var writable = buffer.AsWritableBytes();
-                    if (!writable.IsEmpty)
-                    {
-                        deviceBuffer.CopyToHost(writable);
-                    }
-                }
-                finally
-                {
-                    deviceBuffer.Dispose();
-                }
-            }
-        }
-        finally
-        {
-            _contextScope.Dispose();
-        }
-#else
-        foreach (var (buffer, stagingPtr, byteLength) in _hostAllocations)
-        {
-            try
-            {
-                var writable = buffer.AsWritableBytes();
-                if (!writable.IsEmpty)
-                {
-                    new ReadOnlySpan<byte>((void*)stagingPtr, byteLength).CopyTo(writable);
-                }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(stagingPtr);
-            }
-        }
-
-        _hostAllocations.Clear();
-#endif
+        DisposeStorage();
     }
 }

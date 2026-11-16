@@ -41,6 +41,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 global::System.Int32[] __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ErrorKernels.NonVoidReturnKernel");
 global::System.Int32[] __gsharp_csharp_result = __gsharp_auto_result;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => __gsharp_csharp_result[__gsharp_csharp_thread] = global::TestSpace.ErrorKernels.NonVoidReturnKernel());
 return __gsharp_auto_result;

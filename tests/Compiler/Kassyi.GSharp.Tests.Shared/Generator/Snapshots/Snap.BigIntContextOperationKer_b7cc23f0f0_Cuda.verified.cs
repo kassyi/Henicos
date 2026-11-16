@@ -581,7 +581,11 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
-if (host.LeftOperand != null && native.LeftOperand.Data != global::System.IntPtr.Zero)
+if (native.LeftOperand.Data == global::System.IntPtr.Zero)
+{
+host.LeftOperand = default;
+}
+else if (host.LeftOperand != null)
 {
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -597,7 +601,11 @@ handle.Free();
 }
 }
 }
-if (host.RightOperand != null && native.RightOperand.Data != global::System.IntPtr.Zero)
+if (native.RightOperand.Data == global::System.IntPtr.Zero)
+{
+host.RightOperand = default;
+}
+else if (host.RightOperand != null)
 {
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -613,7 +621,11 @@ handle.Free();
 }
 }
 }
-if (host.TargetOperand != null && native.TargetOperand.Data != global::System.IntPtr.Zero)
+if (native.TargetOperand.Data == global::System.IntPtr.Zero)
+{
+host.TargetOperand = default;
+}
+else if (host.TargetOperand != null)
 {
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -629,7 +641,11 @@ handle.Free();
 }
 }
 }
-if (host.ResultBuffer != null && native.ResultBuffer.Data != global::System.IntPtr.Zero)
+if (native.ResultBuffer.Data == global::System.IntPtr.Zero)
+{
+host.ResultBuffer = default;
+}
+else if (host.ResultBuffer != null)
 {
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -645,7 +661,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant != null && native.Constant.Data != global::System.IntPtr.Zero)
+if (native.Constant.Data == global::System.IntPtr.Zero)
+{
+host.Constant = default;
+}
+else if (host.Constant != null)
 {
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -661,7 +681,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant3 != null && native.Constant3.Data != global::System.IntPtr.Zero)
+if (native.Constant3.Data == global::System.IntPtr.Zero)
+{
+host.Constant3 = default;
+}
+else if (host.Constant3 != null)
 {
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -677,7 +701,11 @@ handle.Free();
 }
 }
 }
-if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
+{
+host.CarryBuffer = default;
+}
+else if (host.CarryBuffer != null)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -748,6 +776,7 @@ public static unsafe void LaunchShiftLeftKernel(global::Kassyi.GSharp.Stdlib.Gpu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftLeftKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.ShiftLeftKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::System.Int32 __gsharp_csharp_arg_1 = wordShift;
 global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
@@ -886,6 +915,7 @@ public static unsafe void LaunchShiftRightKernel(global::Kassyi.GSharp.Stdlib.Gp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftRightKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.ShiftRightKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::System.Int32 __gsharp_csharp_arg_1 = wordShift;
 global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
@@ -1024,6 +1054,7 @@ public static unsafe void LaunchAndKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.AndKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.AndKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AndKernel(__gsharp_csharp_arg_0));
 return;
@@ -1152,6 +1183,7 @@ public static unsafe void LaunchOrKernel(global::Kassyi.GSharp.Stdlib.GpuMath.Bi
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.OrKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.OrKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.OrKernel(__gsharp_csharp_arg_0));
 return;
@@ -1280,6 +1312,7 @@ public static unsafe void LaunchXorKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.XorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.XorKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.XorKernel(__gsharp_csharp_arg_0));
 return;
@@ -1408,6 +1441,7 @@ public static unsafe void LaunchNotKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.NotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.NotKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.NotKernel(__gsharp_csharp_arg_0));
 return;

@@ -1,8 +1,11 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
 /// Emits the check of the launch dimensions against the limits of every GPU (<c>LaunchLimits.CheckLaunch</c>) at
-/// the start of a launch method, after the array arguments are checked, on CUDA and on both CPU paths (#799).
+/// the start of a launch method, after the array arguments are checked, on CUDA and on both CPU paths, and the target
+/// GPU shared memory check (<c>LaunchLimits.CheckTargetSharedMemory</c>) on the CPU paths (#799).
 /// </summary>
 internal static class LaunchLimitEmitter
 {
@@ -12,12 +15,34 @@ internal static class LaunchLimitEmitter
     private const string BlockDimensions = "blockDimX, blockDimY, blockDimZ";
 
     /// <summary>
-    /// CPU: emits <c>long __gsharp_launch_block_count = LaunchLimits.CheckLaunch(...);</c>, before the managed and
-    /// native paths branch; both run the grid from this count, which never wraps (#805).
+    /// CPU: emits <c>long __gsharp_launch_block_count = LaunchLimits.CheckLaunch(...);</c> and, when
+    /// <paramref name="limits"/> knows the target GPUs, <c>LaunchLimits.CheckTargetSharedMemory(...);</c>, before the
+    /// managed and native paths branch; both run the grid from this count, which never wraps (#805, #799).
     /// </summary>
-    public static void WriteCpuCheck(SourceWriter writer, in KernelHostModel kernel) =>
+    public static void WriteCpuCheck(SourceWriter writer, in KernelHostModel kernel, in TargetLimits limits)
+    {
         writer.AppendLine(
             $"long {GridBlockCount} = {LaunchLimitsType}.CheckLaunch({Dimensions}, {GetNameLiteral(kernel)});");
+        if (limits.IsKnown)
+        {
+            WriteTargetSharedMemoryCheck(writer, limits.MaxSharedMemoryPerBlockOptIn,
+                limits.SharedMemoryLimitArchitecture, kernel.MessageName);
+        }
+    }
+
+    /// <summary>
+    /// Emits
+    /// <c>LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, limit, "sm_86", "Type.Kernel");</c>.
+    /// </summary>
+    public static void WriteTargetSharedMemoryCheck(SourceWriter writer, int maxBytes, string architecture,
+        string kernelName)
+    {
+        var archLiteral = SymbolDisplay.FormatLiteral(architecture, quote: true);
+        var nameLiteral = SymbolDisplay.FormatLiteral(kernelName, quote: true);
+        writer.AppendLine(
+            $"{LaunchLimitsType}.CheckTargetSharedMemory(sharedMemBytes, 0, {maxBytes}, {archLiteral}, " +
+            $"{nameLiteral});");
+    }
 
     /// <summary>
     /// CUDA: emits <c>LaunchLimits.CheckLaunch(...);</c>, so that the driver never gets dimensions it rejects.

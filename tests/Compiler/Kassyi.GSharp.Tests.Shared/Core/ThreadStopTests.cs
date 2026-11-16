@@ -222,9 +222,6 @@ public class ThreadStopTests
     {
         var selected = DiffPaths.Available.Where(p => (p.Path & paths) != 0).ToArray();
         Skip.If(selected.Length == 0, "No path of this build checks the failing form");
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         foreach (var path in selected)
         {
             path.Preflight?.Invoke();

@@ -179,6 +179,7 @@ public static unsafe void LaunchUnrollShadowKernel(global::System.Int32[] xs, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UnrollShadowDifferentialKernels.UnrollShadowKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UnrollShadowDifferentialKernels.UnrollShadowKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.UnrollShadowDifferentialKernels.UnrollShadowKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

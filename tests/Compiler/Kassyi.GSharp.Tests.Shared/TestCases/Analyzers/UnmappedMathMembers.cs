@@ -14,13 +14,13 @@ public static partial class UnmappedMathMembers
     public static void UnmappedMathKernel(long[] l, float[] f, double[] d)
     {
         int t = ThreadIndex.X;
-        l[t] = Math.Abs(l[t]) + Math.Max(l[t], 1L);
+        l[t] = Math.Min(l[t], 0L) + Math.Max(l[t], 1L);
         f[t] = MathF.Cbrt(f[t]);
-        Func<long, long> g = Math.Abs;
+        Func<long, long, long> g = Math.Min;
         d[t] = Cbrt(d[t]);
-        l[t] = Abs(l[t]);
+        l[t] = Min(l[t], 0L);
         Func<int, int> g2 = Math.Abs;
         Func<int, int> g3 = Abs;
-        Func<long, long> g1 = Abs;
+        Func<long, long, long> g1 = Min;
     }
 }

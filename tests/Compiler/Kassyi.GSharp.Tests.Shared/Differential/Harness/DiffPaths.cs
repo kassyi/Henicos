@@ -66,20 +66,15 @@ public sealed record DiffPathRunner(DiffPath Path, Action<Action> Run, Action? P
 /// The paths of this test process (each process compares its own paths with the oracle). Tests.Cpu runs the
 /// managed and the native path, Tests.Cuda the CUDA path.
 /// </summary>
-public static class DiffPaths
+public static partial class DiffPaths
 {
     /// <summary>Gets the shared <see cref="RunDirect"/> delegate instance.</summary>
     public static Action<Action> DirectRunner { get; } = RunDirect;
 
     /// <summary>Gets the paths this build runs.</summary>
-    public static IReadOnlyList<DiffPathRunner> Available { get; } =
-#if GSHARP_CPU
-        [new(DiffPath.Managed, ManagedKernelRun.Run), Native(NativeLibraryPath(typeof(DiffPaths).Assembly))];
-#elif GSHARP_CUDA
-        [new(DiffPath.Cuda, DirectRunner)];
-#else
-        [];
-#endif
+    public static IReadOnlyList<DiffPathRunner> Available { get; } = GetAvailablePaths();
+
+    private static partial IReadOnlyList<DiffPathRunner> GetAvailablePaths();
 
     /// <summary>Gets a value indicating whether the current test assembly was built with <c>GSharpCheckedBuild=true</c>.</summary>
     public static bool IsCudaCheckedBuild { get; } = ResolveIsCudaCheckedBuild();

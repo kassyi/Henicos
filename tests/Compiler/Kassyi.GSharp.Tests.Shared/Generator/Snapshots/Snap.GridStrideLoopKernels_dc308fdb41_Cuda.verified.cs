@@ -128,6 +128,7 @@ public static unsafe void LaunchCountVisitsKernel(global::System.Int32[] visits,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridStrideLoopKernels.CountVisitsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridStrideLoopKernels.CountVisitsKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = visits;
 global::System.Int32 __gsharp_csharp_arg_1 = count;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.GridStrideLoopKernels.CountVisitsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -267,6 +268,7 @@ public static unsafe void LaunchCountVisitsWithContextKernel(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridStrideLoopKernels.CountVisitsWithContextKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridStrideLoopKernels.CountVisitsWithContextKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = visits;
 global::System.Int32 __gsharp_csharp_arg_1 = count;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.GridStrideLoopKernels.CountVisitsWithContextKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -409,6 +411,7 @@ public static unsafe void LaunchCountReadOnceKernel(global::System.Int32[] lengt
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridStrideLoopKernels.CountReadOnceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridStrideLoopKernels.CountReadOnceKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = length;
 global::System.Int32[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.GridStrideLoopKernels.CountReadOnceKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -590,6 +593,7 @@ public static unsafe void LaunchCountCallOnceKernel(global::System.Int32[] calls
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridStrideLoopKernels.CountCallOnceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridStrideLoopKernels.CountCallOnceKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = calls;
 global::System.Int32[] __gsharp_csharp_arg_1 = visits;
 global::System.Int32 __gsharp_csharp_arg_2 = count;

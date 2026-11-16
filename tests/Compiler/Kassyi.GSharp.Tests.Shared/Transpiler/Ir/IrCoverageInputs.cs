@@ -129,4 +129,29 @@ internal static class IrCoverageInputs
     /// <summary>Where a method is, for a test message.</summary>
     public static string Where(SyntaxTree tree, IMethodSymbol symbol) =>
         Path.GetFileName(tree.FilePath) + " " + symbol.ContainingType.Name + "." + symbol.Name;
+
+    /// <summary>
+    /// The method as an entry of the expected files: its file relative to the shared test project (relative to the
+    /// repository when it lies outside), with <c>/</c> on every platform, and <c>Type.Method</c>.
+    /// </summary>
+    public static IrCorpusMethod Locate(SyntaxTree tree, IMethodSymbol symbol)
+    {
+        var shared = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared");
+        var relative = Path.GetRelativePath(shared, tree.FilePath);
+        if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative))
+        {
+            relative = Path.GetRelativePath(RepositoryPaths.Root, tree.FilePath);
+        }
+
+        var file = relative.ToCharArray();
+        for (var i = 0; i < file.Length; i++)
+        {
+            if (file[i] == '\\')
+            {
+                file[i] = '/';
+            }
+        }
+
+        return new IrCorpusMethod(new string(file), symbol.ContainingType.Name + "." + symbol.Name);
+    }
 }
