@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Maintenance helper for the GSHxxxx diagnostic registry (diagnostics.json). Node port of manage-diagnostics.ps1.
+// Maintenance helper for the GSHxxxx diagnostic registry (diagnostics.yml).
 // Usage (from anywhere in the repository):
-//   node scripts/agent/manage-diagnostics.js [--next-id] [--check-gaps] [--check-docs] [--json-path <p>] [--docs-dir <p>] [--help]
+//   node scripts/agent/manage-diagnostics.js [--next-id] [--check-gaps] [--check-docs] [--catalog-path <p>] [--docs-dir <p>] [--help]
 //   --next-id     print the next free diagnostic ID
 //   --check-gaps  warn about missing numbers between GSH0001 and the highest ID
 //   --check-docs  fail (exit 1) when a diagnostic has no <ID>.md in the docs directory
-//   --json-path / --docs-dir  override the defaults; relative paths are resolved against the repository root
-// Exit code: 0 on success, 1 when diagnostics.json is missing/empty or documentation is missing.
+//   --catalog-path / --docs-dir  override the defaults; relative paths are resolved against the repository root
+// Exit code: 0 on success, 1 when diagnostics.yml is missing/empty or documentation is missing.
 'use strict';
 
 const fs = require('fs');
@@ -14,10 +14,10 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
-const usage = 'Usage: manage-diagnostics.js [--check-gaps] [--next-id] [--check-docs] [--json-path <p>] [--docs-dir <p>]';
+const usage = 'Usage: manage-diagnostics.js [--check-gaps] [--next-id] [--check-docs] [--catalog-path <p>] [--docs-dir <p>]';
 
 // Same defaults as the .ps1 (forward slashes are fine on every platform)
-let jsonPath = 'src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/diagnostics.json';
+let catalogPath = 'src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/diagnostics.yml';
 let docsDir = 'docs/spec/en/03_bcl_api/diagnostics';
 let checkGaps = false;
 let nextId = false;
@@ -29,14 +29,14 @@ for (let i = 0; i < args.length; i++) {
         case '--check-gaps': checkGaps = true; break;
         case '--next-id': nextId = true; break;
         case '--check-docs': checkDocs = true; break;
-        case '--json-path':
+        case '--catalog-path':
         case '--docs-dir': {
             const value = args[++i];
             if (value === undefined) {
                 console.error(`${args[i - 1]} requires a value.`);
                 process.exit(1);
             }
-            if (args[i - 1] === '--json-path') jsonPath = value; else docsDir = value;
+            if (args[i - 1] === '--catalog-path') catalogPath = value; else docsDir = value;
             break;
         }
         case '--help':
@@ -52,17 +52,18 @@ for (let i = 0; i < args.length; i++) {
 }
 
 // Resolve paths (absolute overrides are kept as is)
-const fullJsonPath = path.resolve(repoRoot, jsonPath);
+const fullCatalogPath = path.resolve(repoRoot, catalogPath);
 const fullDocsDir = path.resolve(repoRoot, docsDir);
 
-if (!fs.existsSync(fullJsonPath)) {
-    console.error(`Could not find diagnostics.json at ${fullJsonPath}`);
+if (!fs.existsSync(fullCatalogPath)) {
+    console.error(`Could not find diagnostics.yml at ${fullCatalogPath}`);
     process.exit(1);
 }
 
-// Strip a UTF-8 BOM, then accept either an array or a single object
-let diagnostics = JSON.parse(fs.readFileSync(fullJsonPath, 'utf8').replace(/^﻿/, ''));
-if (!Array.isArray(diagnostics)) diagnostics = [diagnostics];
+// The id of each entry: diagnostics.yml writes it as a plain `id: GSHxxxx` line of a list item (the compiler's YAML
+// parser reads the whole file at build time; only the IDs are needed here)
+const diagnostics = [...fs.readFileSync(fullCatalogPath, 'utf8').matchAll(/^(?:- | {2})id:\s*"?([A-Z]{3}\d{4})"?\s*$/gm)]
+    .map((match) => ({ id: match[1] }));
 
 // Extract numbers
 const numbers = [];

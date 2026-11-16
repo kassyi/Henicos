@@ -1,18 +1,11 @@
-using System.Text.Json;
-
 namespace Kassyi.GSharp.Compiler.Generators;
 
-/// <summary>Generates strongly-typed DiagnosticDescriptor C# definitions from diagnostics.json.</summary>
+/// <summary>Generates strongly-typed DiagnosticDescriptor C# definitions from diagnostics.yml.</summary>
 public static partial class DiagnosticGenerator
 {
-    private static readonly JsonSerializerOptions s_jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
-    /// <summary>Reads diagnostic definitions from the input JSON file and emits generated source files.</summary>
+    /// <summary>Reads diagnostic definitions from the input YAML file and emits generated source files.</summary>
     /// <exception cref="GeneratorInputException">
-    /// The file does not exist or is not a JSON array of diagnostics.
+    /// The file does not exist or is not a YAML list of diagnostics.
     /// </exception>
     public static void Run(string inputFile, string outputDir)
     {
@@ -21,24 +14,7 @@ public static partial class DiagnosticGenerator
             throw new GeneratorInputException(inputFile, 0, "The diagnostics file does not exist.");
         }
 
-        List<DiagnosticDefinition>? diagnostics;
-        try
-        {
-            diagnostics = JsonSerializer.Deserialize<List<DiagnosticDefinition>>(
-                File.ReadAllText(inputFile), s_jsonOptions);
-        }
-        catch (JsonException ex)
-        {
-            // LineNumber is 0-based.
-            throw new GeneratorInputException(inputFile, (int)(ex.LineNumber ?? -1) + 1, ex.Message);
-        }
-
-        if (diagnostics is null)
-        {
-            throw new GeneratorInputException(
-                inputFile, 0, "The file must hold a JSON array of diagnostics, not null.");
-        }
-
+        var diagnostics = DiagnosticCatalogReader.Read(inputFile);
         Directory.CreateDirectory(outputDir);
         var source = GenerateSource(diagnostics);
         File.WriteAllText(Path.Combine(outputDir, "GSharpDiagnostics.g.cs"), source, Encoding.UTF8);
@@ -85,7 +61,7 @@ public static partial class DiagnosticGenerator
     // public static readonly ImmutableArray<DiagnosticDescriptor> Reported = ImmutableArray.Create<...>(<names>);
     private static void EmitReported(SourceWriter writer, List<string> descriptorNames)
     {
-        writer.Line("/// <summary>Gets the descriptors of diagnostics.json that the compiler reports: every one");
+        writer.Line("/// <summary>Gets the descriptors of diagnostics.yml that the compiler reports: every one");
         writer.Line("/// that is not obsolete.</summary>");
         writer.Line(
             "public static readonly ImmutableArray<DiagnosticDescriptor> Reported = " +
@@ -155,38 +131,38 @@ public static partial class DiagnosticGenerator
         // 2. ID Validation & Duplication (Error)
         if (string.IsNullOrWhiteSpace(diag.Id))
         {
-            writer.Line("#error Diagnostic ID is missing in diagnostics.json.");
+            writer.Line("#error Diagnostic ID is missing in diagnostics.yml.");
         }
         else if (!IsValidId(diag.Id))
         {
-            writer.Line($"#error Invalid diagnostic ID format '{diag.Id}' in diagnostics.json. " +
+            writer.Line($"#error Invalid diagnostic ID format '{diag.Id}' in diagnostics.yml. " +
                 $"Expected 3 alphanumeric characters followed by 4 digits (e.g. GSH0001).");
         }
         else if (!seenIds.Add(diag.Id))
         {
-            writer.Line($"#error Duplicate diagnostic ID found in diagnostics.json: {diag.Id}");
+            writer.Line($"#error Duplicate diagnostic ID found in diagnostics.yml: {diag.Id}");
         }
 
         // 3. Severity (Error): written as DiagnosticSeverity.<value>
         if (diag.DefaultSeverity is not ("Hidden" or "Info" or "Warning" or "Error"))
         {
-            writer.Line($"#error Invalid defaultSeverity '{diag.DefaultSeverity}' in diagnostics.json " +
+            writer.Line($"#error Invalid defaultSeverity '{diag.DefaultSeverity}' in diagnostics.yml " +
                 $"(ID: {diag.Id}). Expected Hidden, Info, Warning or Error.");
         }
 
         // 4. Name Validation & Duplication (Error)
         if (string.IsNullOrWhiteSpace(diag.Name))
         {
-            writer.Line($"#error Diagnostic Name is missing in diagnostics.json (ID: {diag.Id}).");
+            writer.Line($"#error Diagnostic Name is missing in diagnostics.yml (ID: {diag.Id}).");
         }
         else if (!SyntaxFacts.IsValidIdentifier(diag.Name))
         {
-            writer.Line($"#error Invalid diagnostic Name '{diag.Name}' in diagnostics.json. " +
+            writer.Line($"#error Invalid diagnostic Name '{diag.Name}' in diagnostics.yml. " +
                 $"It must be a valid C# identifier.");
         }
         else if (!seenNames.Add(diag.Name))
         {
-            writer.Line($"#error Duplicate diagnostic Name found in diagnostics.json: {diag.Name}");
+            writer.Line($"#error Duplicate diagnostic Name found in diagnostics.yml: {diag.Name}");
         }
     }
 
