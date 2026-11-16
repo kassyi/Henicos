@@ -1,4 +1,3 @@
-#if GSHARP_CPU
 using Kassyi.GSharp.Tests.DeviceLibrary;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
@@ -71,4 +70,3 @@ public class CrossAssemblyPrivateFrameManagedTests : TranspilerTestBase
         Assert.Equal([1, 2, 3, 4], buffer);
     }
 }
-#endif

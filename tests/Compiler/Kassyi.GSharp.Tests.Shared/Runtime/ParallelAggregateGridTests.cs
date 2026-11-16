@@ -178,13 +178,11 @@ public class ParallelAggregateGridTests : TranspilerTestBase
     private void Run(bool managed, Action launch)
     {
         Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");
-#if GSHARP_CPU
         if (managed)
         {
             ManagedKernelRun.Run(launch);
             return;
         }
-#endif
         launch();
     }
 

@@ -1,4 +1,3 @@
-#if GSHARP_CPU
 using System;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
@@ -87,4 +86,3 @@ public class RefLocalManagedTests : TranspilerTestBase
         }
     }
 }
-#endif

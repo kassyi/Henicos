@@ -18,9 +18,6 @@ public class WarpActiveMaskDifferentialTests
     // Runs the launch on every path of this build and compares the output with the expected values
     private static void RunOnEveryPath<T>(int outputLength, Action<T[]> launch, T[] expected)
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();
@@ -36,9 +33,6 @@ public class WarpActiveMaskDifferentialTests
     private static void RunWithinClassicBounds(int outputLength, Action<uint[]> launch, uint[] classic,
         Func<int, int> lane)
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();
@@ -119,9 +113,6 @@ public class WarpActiveMaskDifferentialTests
     [Scenario(TestScenario.HappyPath)]
     public void ActiveMask_AfterBranch_ReturnsEveryLane()
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();
@@ -287,9 +278,6 @@ public class WarpActiveMaskDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ActiveMask_EarlyReturnFromDeviceFunction_MeetsTheOtherLanesAfterTheCall()
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         var expectedEarly = PerLane(32, static t => t < 4, 0x0000000Fu);
         var expected = Enumerable.Range(0, 64).Select(static i => i < 4 ? 1u : i < 32 ? 0xFFFFFFF0u : 0xFFFFFFFFu).ToArray();
         foreach (var path in DiffPaths.Available)
@@ -332,9 +320,6 @@ public class WarpActiveMaskDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ShuffleXorSync_ActiveMaskOfEachHalf_ShufflesWithinTheHalf()
     {
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-#endif
         var input = Enumerable.Range(0, 32).Select(static t => t * 10 + 1).ToArray();
         var expectedMasks = Enumerable.Range(0, 32).Select(static t => t < 16 ? 0x0000FFFFu : 0xFFFF0000u).ToArray();
         var expected = Enumerable.Range(0, 32)

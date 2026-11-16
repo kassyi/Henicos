@@ -54,17 +54,13 @@ public static class RoslynTestUtility
                 return true;
             }
 
-            if (callerFilePath.Contains("Kassyi.GSharp.Tests.Cpu", StringComparison.Ordinal) ||
-                callerFilePath.Contains("Kassyi.GSharp.Tests.Cuda", StringComparison.Ordinal))
+            var callerSubDir = Path.GetFileName(Path.GetDirectoryName(callerFilePath) ?? "");
+            var fileName = Path.GetFileName(callerFilePath);
+            var sharedFile = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", callerSubDir, fileName);
+            if (File.Exists(sharedFile))
             {
-                var subDir = Path.GetFileName(Path.GetDirectoryName(callerFilePath) ?? "");
-                var fileName = Path.GetFileName(callerFilePath);
-                var sharedFile = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", subDir, fileName);
-                if (File.Exists(sharedFile))
-                {
-                    kernelFilePath = sharedFile;
-                    return true;
-                }
+                kernelFilePath = sharedFile;
+                return true;
             }
         }
 
@@ -87,25 +83,21 @@ public static class RoslynTestUtility
             return true;
         }
 
-        if (directory.Contains("Kassyi.GSharp.Tests.Cpu", StringComparison.Ordinal) ||
-            directory.Contains("Kassyi.GSharp.Tests.Cuda", StringComparison.Ordinal))
+        var subDir = Path.GetFileName(directory);
+        var sharedDirectory = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", subDir);
+
+        string[] sharedCandidates =
+        [
+            Path.Combine(sharedDirectory, $"{baseName}TestKernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{baseName}Kernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{testClassName}Kernels.cu.cs"),
+            Path.Combine(sharedDirectory, $"{testClassName}.cu.cs")
+        ];
+
+        kernelFilePath = sharedCandidates.FirstOrDefault(File.Exists);
+        if (kernelFilePath != null)
         {
-            var subDir = Path.GetFileName(directory);
-            var sharedDirectory = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", subDir);
-
-            string[] sharedCandidates =
-            [
-                Path.Combine(sharedDirectory, $"{baseName}TestKernels.cu.cs"),
-                Path.Combine(sharedDirectory, $"{baseName}Kernels.cu.cs"),
-                Path.Combine(sharedDirectory, $"{testClassName}Kernels.cu.cs"),
-                Path.Combine(sharedDirectory, $"{testClassName}.cu.cs")
-            ];
-
-            kernelFilePath = sharedCandidates.FirstOrDefault(File.Exists);
-            if (kernelFilePath != null)
-            {
-                return true;
-            }
+            return true;
         }
 
         return false;

@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// Differential tests (<see cref="Math"/>, <see cref="MathF"/>, <see cref="FastMath"/>, <see cref="BitOperations"/>,
 /// <see cref="float"/> and <see cref="double"/> intrinsics).
 /// </summary>
-public class MathDifferentialTests
+public partial class MathDifferentialTests
 {
     private static readonly float[] s_singleRoundBoundaries =
     [
@@ -640,14 +640,11 @@ public class MathDifferentialTests
                     );
                 }
 
-#if GSHARP_CUDA
-                if (i == 0 && !matchesFma)
+                var fmaFailure = CheckFmaContract(i, k, matchesFma, fmaExpected, actual);
+                if (fmaFailure is not null)
                 {
-                    return PropertyResult.Fail(
-                        $"CUDA row 0 (k={k}): expected FMA contracted result {fmaExpected} (2^-24), got {actual}"
-                    );
+                    return fmaFailure.Value;
                 }
-#endif
             }
 
             return PropertyResult.Pass();
@@ -1170,4 +1167,6 @@ public class MathDifferentialTests
             sbyte v = unchecked((sbyte)r.NextInt32());
             return v == sbyte.MinValue ? (sbyte)(sbyte.MinValue + 1) : v;
         });
+
+    private static partial PropertyResult? CheckFmaContract(int i, float k, bool matchesFma, float fmaExpected, float actual);
 }

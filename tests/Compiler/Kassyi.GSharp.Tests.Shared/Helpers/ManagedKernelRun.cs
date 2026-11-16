@@ -1,4 +1,3 @@
-#if GSHARP_CPU
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.ExceptionServices;
@@ -40,4 +39,3 @@ internal static class ManagedKernelRun
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if GSHARP_CPU
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
@@ -23,4 +22,3 @@ public static partial class SharedMemoryHugeStaticKernels
         output[0] = cache[20];
     }
 }
-#endif

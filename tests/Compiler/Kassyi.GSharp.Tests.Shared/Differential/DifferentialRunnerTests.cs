@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// (<see cref="HarnessProbeKernels"/>) on the paths of this process. Each check names, above it, the one-line change of
 /// the harness (mutant) that makes it fail; the fake case is <see cref="DifferentialHarnessFakes"/>.
 /// </summary>
-public class DifferentialRunnerTests
+public partial class DifferentialRunnerTests
 {
     internal static readonly DifferentialCase s_uint32Add = new("HarnessProbeKernels.UInt32AddMatrixKernel")
     {
@@ -423,64 +423,15 @@ public class DifferentialRunnerTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
-    public unsafe void LaunchPtr_DeviceExecution_ExecutesAndMatchesManagedLaunchOnCuda()
+    public void LaunchPtr_DeviceExecution_ExecutesAndMatchesManagedLaunchOnCuda()
     {
         // LaunchPtr uploads buffers via DiffPointerScope, runs the pointer kernel, and copies device/staging memory back
         // to the host buffers on Dispose so the cells match Launch and the oracle
         // mutant: DiffPointerScope.cs Dispose skips `deviceBuffer.CopyToHost(writable)` / `CopyTo(writable)`
-#if GSHARP_CUDA
-        CudaCapability.EnsureGpuAvailable();
-        var cudaPtrCase = new DifferentialCase("HarnessProbeKernels.LastWriterKernel")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Inputs = static (_, _) => new DiffBuffers().RefScalar("r", -99, OutputPolicy.Exact),
-            Launch = static (b, s) => HarnessProbeKernels.LaunchLastWriterKernel(
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            LaunchPtr = static (b, s) =>
-            {
-                using var scope = b.PinOrUpload();
-                HarnessProbeKernels.LaunchLastWriterKernelPtr(
-                    scope.GetArray("r"),
-                    gridDimX: s.GridX,
-                    blockDimX: s.BlockX
-                );
-            },
-            OracleIsLaunch = true,
-        };
-
-        var cudaReport = DifferentialRunner.Evaluate(cudaPtrCase, [0], DiffPaths.Available, NoEntries);
-        Assert.False(cudaReport.HasFailures, cudaReport.ToString());
-#else
-        var hostSimCase = new DifferentialCase("HarnessTests.FakePointerKernel")
-        {
-            Shape = LaunchShapes.SingleThread(),
-            Inputs = static (_, _) => new DiffBuffers().RefScalar("r", -99, OutputPolicy.Exact),
-            Launch = static (b, _) => b.SetScalar("r", 0),
-            LaunchPtr = static (b, _) =>
-            {
-                using var scope = b.PinOrUpload();
-                int* ptr = (int*)scope.Get("r");
-                ptr[0] = 0;
-            },
-            Oracle = static (b, s) => HarnessProbeKernels.LaunchLastWriterKernel(
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-        };
-
-        var simReport = DifferentialRunner.Evaluate(
-            hostSimCase,
-            [0],
-            [new DiffPathRunner(DiffPath.Cuda, DiffPaths.RunDirect)],
-            NoEntries
-        );
-        Assert.False(simReport.HasFailures, simReport.ToString());
-#endif
+        RunLaunchPtrDeviceExecutionCase();
     }
+
+    partial void RunLaunchPtrDeviceExecutionCase();
 
     // ---- Helpers ----
 
