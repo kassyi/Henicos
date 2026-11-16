@@ -47,7 +47,12 @@ Console.WriteLine($"FastMath.Exp(1.0f) = {f:F4}");
 
 ## Remarks
 
-Usable in both CPU fallback (delegating to `MathF.Exp`) and GPU device kernels (mapped to the CUDA `__expf` fast-math intrinsic).
+Usable in both CPU fallback (delegating to `MathF.Exp`) and GPU device kernels (mapped to the CUDA `__expf` fast-math intrinsic). Calling on the host CPU evaluates `MathF.Exp` directly and does not throw `GpuOnlyException`.
+
+### Error Bound
+
+- **GPU (CUDA `__expf`)**: Maximum error is within $2 + \lfloor |1.173 \times x| \rfloor$ ULP.
+- **CPU Fallback (`MathF.Exp`)**: Accurate to within 1 ULP (the platform math library; not guaranteed to be correctly rounded).
 
 ## See also
 

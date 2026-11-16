@@ -26,5 +26,5 @@ internal sealed class IrSequence(ImmutableArray<IrVariable> locals, ImmutableArr
     public IrSequence Update(ImmutableArray<IrStatement> sideEffects, IrExpression value) =>
         sideEffects == SideEffects && value == Value
             ? this
-            : new IrSequence(Locals, sideEffects, value, Category, Source);
+            : KeepSpelling(new IrSequence(Locals, sideEffects, value, Category, Source));
 }

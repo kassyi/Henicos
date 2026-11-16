@@ -115,6 +115,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0112](GSH0112.md) | Error | Kernel parameter type has no device representation |
 | [GSH0113](GSH0113.md) | Error | G# cannot generate the launcher of a [CudaImport] declaration |
 | [GSH0114](GSH0114.md) | Warning | G# has no launch limits for a GSharpTargetArchitectures architecture |
+| [GSH0116](GSH0116.md) | Warning | No GPU of GSharpTargetArchitectures has an oversized shared memory configuration |
 | [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
 | [GSH0119](GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates |
 | [GSH0118](GSH0118.md) | Error | A [GpuReadOnly] array is written |

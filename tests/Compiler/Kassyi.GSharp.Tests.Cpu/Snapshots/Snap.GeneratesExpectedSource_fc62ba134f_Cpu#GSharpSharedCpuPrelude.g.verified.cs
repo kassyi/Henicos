@@ -106,6 +106,8 @@ template <typename T>
 struct __gsharp_using_scope {
 T& resource;
 __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+// Called by a failed check inside the scope (__gsharp_trap_unwind), where the thread ends without the destructor
+__device__ inline void __gsharp_unwind() { resource.__gsharp_dispose(); }
 };
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
@@ -787,9 +789,10 @@ return s;
 }
 
 // --- Runtime Error Channel (CPU Dialect) ---
-extern thread_local uint3 threadIdx;
-extern thread_local uint3 blockIdx;
-extern thread_local dim3 gridDim;
+inline thread_local uint3 threadIdx;
+inline thread_local uint3 blockIdx;
+inline thread_local dim3 blockDim;
+inline thread_local dim3 gridDim;
 
 // GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
@@ -1112,12 +1115,13 @@ __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 return static_cast<A&&>(array);
 }
 
-// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409): each field
-// that a getter names is checked as __gsharp_array_ref checks an array, at the call, and the struct is passed on
-template <typename T, typename S, typename... Get>
-inline T __gsharp_struct_ref(T&& value, S site, Get... get)
+// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409, #2044):
+// each check tests one field with its own site as __gsharp_array_ref checks an array, at the call, and the struct
+// is passed on
+template <typename T, typename... Check>
+inline T __gsharp_struct_ref(T&& value, Check... check)
 {
-(static_cast<void>(__gsharp_array_ref(get(value), site)), ...);
+(static_cast<void>(check(value)), ...);
 return static_cast<T&&>(value);
 }
 
@@ -1240,11 +1244,6 @@ return static_cast<signed char>(a < 0 ? -a : a);
 #undef __GSHARP_DIVISOR_CHECK
 
 // --- Thread & Block State ---
-thread_local uint3 threadIdx;
-thread_local uint3 blockIdx;
-thread_local dim3 blockDim;
-thread_local dim3 gridDim;
-
 extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
 threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
 blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;

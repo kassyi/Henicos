@@ -56,7 +56,7 @@ internal static class CSharpExecutionEmitter
         if (plan.TargetCheck is { } check)
         {
             LaunchLimitEmitter.WriteTargetSharedMemoryCheck(writer, check.MaxBytes, check.Architecture,
-                plan.MessageName);
+                plan.MessageName, check.HintMaxBytes);
         }
 
         WriteCopies(writer, plan);

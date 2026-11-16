@@ -24,7 +24,11 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 /// never carries a probe. String literals and comments of the source are not renamed either.
 /// </para>
 /// <para>
-/// GCNR is the test-only family for internal consistency checks; it never appears in <c>diagnostics.json</c>.
+/// A probe inside a string literal of the generated C++ is not a leak: it is the C# name in the text of a run-time
+/// error message (<c>MessageText.Name</c>), which never declares or references a C++ name.
+/// </para>
+/// <para>
+/// GCNR is the test-only family for internal consistency checks; it never appears in <c>diagnostics.yml</c>.
 /// </para>
 /// </remarks>
 [Collection(TestCollections.CorpusScan)]
@@ -49,6 +53,11 @@ public class GeneratedNameLeakTests
             transpiled++;
             foreach (var (number, start) in FindProbes(source))
             {
+                if (IsInsideStringLiteral(source, start))
+                {
+                    continue;
+                }
+
                 var symbol = renamer.GetSymbol(number);
                 if (EndsResolverSpelling(source, start, symbol, dialect))
                 {
@@ -159,6 +168,31 @@ public class GeneratedNameLeakTests
     // What CppNameResolver writes in front of a function-scope name with this ordinal and region
     private static string SpellingBeforeName(int ordinal, int region) =>
         CppName.FunctionScope(ordinal, string.Empty, region).ToString();
+
+    // Whether position is inside a C++ string literal: the quotes from the start of its line, skipping escapes and
+    // character literals, are left open. The generated C++ writes each string literal on one line.
+    private static bool IsInsideStringLiteral(string source, int position)
+    {
+        var inString = false;
+        var inCharacter = false;
+        for (var i = source.LastIndexOf('\n', position) + 1; i < position; i++)
+        {
+            switch (source[i])
+            {
+                case '\\' when inString || inCharacter:
+                    i++;
+                    break;
+                case '"' when !inCharacter:
+                    inString = !inString;
+                    break;
+                case '\'' when !inString:
+                    inCharacter = !inCharacter;
+                    break;
+            }
+        }
+
+        return inString;
+    }
 
     private static bool EndsWith(string source, int end, string text) =>
         end >= text.Length && source.AsSpan(end - text.Length, text.Length).SequenceEqual(text);
