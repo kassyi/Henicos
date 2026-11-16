@@ -1085,4 +1085,117 @@ public static partial class LabeledJumpDifferentialKernels
 
         result[(t * 8) + 6] = Warp.ActiveMask();
     }
+
+#pragma warning disable GSH0033 // Dynamic control flow inside Gpu.Hint.Unroll is the subject of this test
+    [GpuKernel]
+    public static void UnrolledLabeledLoops(int[] xs, int[] r)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid >= xs.Length) return;
+        int x = xs[tid] & 0x3FF;
+        int acc = 0;
+
+        Gpu.Hint.Unroll();
+        outerFor:
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                if (j == 1 && ((x + i) & 1) == 0)
+                {
+                    acc += 10 + (i * 3) + j;
+                    continue outerFor;
+                }
+
+                if (i == 2 && j == 2 && (x & 2) != 0)
+                {
+                    acc += 100 + (i * 3) + j;
+                    break outerFor;
+                }
+
+                acc += i + j + 1;
+            }
+
+            acc += 20;
+        }
+
+        int w = 0;
+        Gpu.Hint.Unroll(2);
+        outerWhile:
+        while (w < 4)
+        {
+            w++;
+            for (int j = 0; j < 2; j++)
+            {
+                if (j == 0 && ((x + w) & 1) != 0)
+                {
+                    acc += (w * 5) + j;
+                    continue outerWhile;
+                }
+
+                if (w == 3 && j == 1 && (x & 4) != 0)
+                {
+                    acc += (w * 50) + j;
+                    break outerWhile;
+                }
+
+                acc += w + j;
+            }
+
+            acc += 30;
+        }
+
+        int d = 0;
+        Gpu.Hint.Unroll(4);
+        outerDo:
+        do
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                if (j == 0 && ((x + d) & 2) != 0)
+                {
+                    acc += (d * 7) + j + 1;
+                    continue outerDo;
+                }
+
+                if (d == 2 && j == 1 && (x & 8) != 0)
+                {
+                    acc += (d * 70) + j + 1;
+                    break outerDo;
+                }
+
+                acc += d + j + 2;
+            }
+
+            acc += 40;
+        } while (++d < 4);
+
+        Gpu.Hint.Unroll(2);
+        a:
+        b:
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                if (j == 0 && ((x + i) & 1) == 0)
+                {
+                    acc += 15 + i;
+                    continue b;
+                }
+
+                if (i == 1 && j == 1 && (x & 16) != 0)
+                {
+                    acc += 150 + j;
+                    break b;
+                }
+
+                acc += i + j + 3;
+            }
+
+            acc += 50;
+        }
+
+        r[tid] = acc;
+    }
+#pragma warning restore GSH0033
 }

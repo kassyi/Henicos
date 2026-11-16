@@ -92,6 +92,11 @@ public class LabeledJumpDifferentialTests
         static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchUnlabeledJumpsNextToLabeledOnes(
             xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
 
+    internal static readonly DifferentialCase s_unrolledLabeledLoops = CreateSingleColumn(
+        nameof(LabeledJumpDifferentialKernels.UnrolledLabeledLoops),
+        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchUnrolledLabeledLoops(
+            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+
     [SkippableFact]
     public void BreakAndContinueOuterFor_MatchesOracle() =>
         DifferentialRunner.Run(s_breakAndContinueOuterFor);
@@ -143,6 +148,10 @@ public class LabeledJumpDifferentialTests
     [SkippableFact]
     public void UnlabeledJumpsNextToLabeledOnes_MatchesOracle() =>
         DifferentialRunner.Run(s_unlabeledJumpsNextToLabeledOnes);
+
+    [SkippableFact]
+    public void UnrolledLabeledLoops_MatchesOracle() =>
+        DifferentialRunner.Run(s_unrolledLabeledLoops);
 
     // The kernels with a split point in the labeled loop or switch (a barrier, a Gpu.ForUnroll body that holds one, a
     // Gpu.SyncGrid body, a call that suspends) are compared with a reference of the same code without the split point,
