@@ -35,6 +35,24 @@ public sealed class ThrowGenericException<T> : Exception
 }
 
 /// <summary>
+/// A resource that records its <c>Dispose</c>: <c>Id</c> when it starts and <c>-Id</c> when it ends, at
+/// <c>Log[Log[0] + 1]</c>. It is declared here so that the file compiles alone, as the snapshot test compiles it.
+/// </summary>
+public struct ThrowResource : IDisposable
+{
+    public int[] Log;
+    public int Id;
+
+    public void Dispose()
+    {
+        Log[0] = Log[0] + 1;
+        Log[Log[0]] = Id;
+        Log[0] = Log[0] + 1;
+        Log[Log[0]] = -Id;
+    }
+}
+
+/// <summary>
 /// Kernels that throw, one form each, for <see cref="ThrowTests"/>. Every kernel writes <c>outs[0]</c> before the throw
 /// and <c>outs[1]</c> after it; the throw happens when <c>fail</c> is not 0. The plain C# method is the oracle.
 /// </summary>
@@ -356,7 +374,7 @@ public static partial class ThrowKernels
     [GpuKernel]
     public static void UsingBodyKernel(int[] log, int[] outs, int fail)
     {
-        using (var r = new FailingResource { Log = log, Source = outs, Id = 1, Fail = 0 })
+        using (var r = new ThrowResource { Log = log, Id = 1 })
         {
             outs[0] = 1;
             if (fail != 0)
@@ -372,9 +390,9 @@ public static partial class ThrowKernels
     [GpuKernel]
     public static void UsingNestedKernel(int[] log, int[] outs, int fail)
     {
-        using (var a = new FailingResource { Log = log, Source = outs, Id = 1, Fail = 0 })
+        using (var a = new ThrowResource { Log = log, Id = 1 })
         {
-            using (var b = new FailingResource { Log = log, Source = outs, Id = 2, Fail = 0 })
+            using (var b = new ThrowResource { Log = log, Id = 2 })
             {
                 outs[0] = 1;
                 if (fail != 0)
@@ -395,7 +413,7 @@ public static partial class ThrowKernels
     {
         for (int i = 0; i < 4; i++)
         {
-            using var r = new FailingResource { Log = log, Source = outs, Id = i + 1, Fail = 0 };
+            using var r = new ThrowResource { Log = log, Id = i + 1 };
             outs[0] += 1;
             if (i == fail - 1)
             {
@@ -421,7 +439,7 @@ public static partial class ThrowKernels
     [GpuKernel]
     public static void UsingCalleeKernel(int[] log, int[] outs, int fail)
     {
-        using (var r = new FailingResource { Log = log, Source = outs, Id = 1, Fail = 0 })
+        using (var r = new ThrowResource { Log = log, Id = 1 })
         {
             outs[0] = Throwing(fail);
         }
