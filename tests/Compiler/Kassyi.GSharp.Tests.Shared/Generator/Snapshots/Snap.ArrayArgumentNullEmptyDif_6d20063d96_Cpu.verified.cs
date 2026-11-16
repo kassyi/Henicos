@@ -1192,7 +1192,7 @@ break;
 case 11:
 __gsharp_switch_2_state_11:
 {
-__gsharp_array_at(__gsharp_id_2_o, 0, 945914969u)=__gsharp_add_i32(((__gsharp_type<GSharpArray<int>>{}.data==nullptr)?1:0),(__gsharp_type<GSharpArray<int>>{}.IsEmpty()?2:0));
+__gsharp_array_at(__gsharp_id_2_o, 0, 945914969u)=__gsharp_add_i32(((__gsharp_type<GSharpArray<int>>().data==nullptr)?1:0),(__gsharp_type<GSharpArray<int>>().IsEmpty()?2:0));
 break;
 }
 case 3:
