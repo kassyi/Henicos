@@ -187,7 +187,7 @@ public partial class MyKernels
 }
 ```
 
-6. **Launch Limits**: Before any work, every launcher (CUDA, native CPU and managed, and the `[CudaImport]` / YAML `moduleName` launchers of external modules) checks the launch dimensions against the limits that every GPU enforces, through `LaunchLimits.CheckLaunch`: each dimension at least 1, `gridDimX` at most 2^31 - 1, `gridDimY` and `gridDimZ` at most 65535, `blockDimX` and `blockDimY` at most 1024, `blockDimZ` at most 64, and at most 1024 threads per block. A launch beyond them throws `ArgumentOutOfRangeException` whose `ParamName` is the dimension, on every path; the CUDA path no longer leaves it to the driver's `CUDA_ERROR_INVALID_VALUE`. These are the only launch limits of the CPU paths: they accept every launch that the GPU accepts, and the run time or the memory of the machine never adds a limit. The launcher counts the blocks of the grid in 64 bits and the native CPU launcher runs them with a 64-bit loop. The managed path still keeps a context for every thread of the grid in one array, so a launch with more threads than `Array.MaxLength` throws `NotSupportedException` there (an implementation limit of that path, tracked in #1443).
+6. **Launch Limits**: Before any work, every launcher (CUDA, native CPU and managed, and the `[CudaImport]` / YAML `moduleName` launchers of external modules) checks the launch dimensions against the limits that every GPU enforces, through `LaunchLimits.CheckLaunch`: each dimension at least 1, `gridDimX` at most 2^31 - 1, `gridDimY` and `gridDimZ` at most 65535, `blockDimX` and `blockDimY` at most 1024, `blockDimZ` at most 64, and at most 1024 threads per block. A launch beyond them throws `ArgumentOutOfRangeException` whose `ParamName` is the dimension, on every path; the CUDA path no longer leaves it to the driver's `CUDA_ERROR_INVALID_VALUE`. In addition, the CPU launchers (native, managed and the C# execution, and the C# execution of a CUDA build) check `sharedMemBytes` plus the static shared memory of the kernel (taken as 0 for now) against the smallest shared memory per block with opt-in over the GPUs the fatbin may run on (§1.5.1), through `LaunchLimits.CheckTargetSharedMemory`, and throw `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before any thread runs (for example, `G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of the target GPU sm_86 (GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.ReduceKernel).`); the CUDA path checks the real device instead (`DynamicSharedMemoryOptIn`). The CPU paths accept every launch that the GPU accepts and reject what any of the declared target GPUs rejects, and the run time or the memory of the machine never adds a limit. The launcher counts the blocks of the grid in 64 bits and the native CPU launcher runs them with a 64-bit loop. The managed path still keeps a context for every thread of the grid in one array, so a launch with more threads than `Array.MaxLength` throws `NotSupportedException` there (an implementation limit of that path, tracked in #1443).
 
 ### 1.4.2 Ahead-Of-Time (AOT) Fatbin Loading
 
@@ -276,10 +276,10 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 
 ### 1.5.1 Target GPU Architectures (`GSharpTargetArchitectures`)
 
-`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin. It is read by the `GSharpCompileCuda` target (not by the generator) and is a list of entries separated by `;`. Each entry takes one of the forms below; `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time. `XY` is the compute capability without the dot (`89`, `100`), optionally followed by `a` or `f` (`sm_90a`, which keeps the suffix on the PTX as well).
+`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin, and sets the per-block shared memory limit that the generator writes into the CPU launchers (`LaunchLimits.CheckTargetSharedMemory`). It is read by both the `GSharpCompileCuda` target and the source generator (`build_property.GSharpTargetArchitectures`) and is a list of entries separated by `;`. Each entry takes one of the forms below; `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time. `XY` is the compute capability without the dot (`89`, `100`), optionally followed by `a` or `f` (`sm_90a`, which keeps the suffix on the PTX as well).
 
 | Entry | nvcc options |
-| :- | :- |
+| :--- | :--- |
 | `compute_XY,sm_XY` / `compute_XY,compute_XY` | `-gencode arch=compute_XY,code=sm_XY` / `code=compute_XY` |
 | `sm_XY` | `-gencode arch=compute_XY,code=sm_XY -gencode arch=compute_XY,code=compute_XY` (what `nvcc -arch=sm_XY` means) |
 | `compute_XY` | `-gencode arch=compute_XY,code=compute_XY` |
@@ -289,7 +289,7 @@ Any other entry (a typo, an `arch,code` pair whose `arch` is an `sm_` architectu
 When the property is empty, the default is `compute_86,sm_86;compute_86,compute_86` (`CompileCudaToFatbinTask.DefaultTargetArchitectures`):
 
 | GPU compute capability | What runs |
-| :- | :- |
+| :--- | :--- |
 | 8.6, 8.9 (for example RTX 30xx, RTX 40xx) | The sm_86 SASS. A cubin runs on its own major version from its minor version up |
 | 8.7 (Jetson Orin, Tegra), 9.0 and newer (Hopper, Blackwell) | The compute_86 PTX, JIT-compiled by the driver on the first load and then kept in the driver's JIT cache (`CUDA_CACHE_PATH`). Tegra GPUs are not binary compatible with the desktop sm_86 SASS |
 | 7.5 (Turing, T4), 8.0 (A100) | Nothing: loading the module throws `InvalidOperationException`, which names the GPU and lists the images in the fatbin |
@@ -307,6 +307,20 @@ Each additional SASS architecture runs ptxas once more and adds its code to the 
 Next to each fatbin, the build writes `<fatbin>.nvcc`, a record of the nvcc options, the source list, the public key the fatbin is signed with (`GSHARP_SIGNING_KEY`) and the nvcc version used. A fatbin is rebuilt when its sources are newer or when the record differs from the current command, so changing `GSharpTargetArchitectures` (or the default, the signing key or the CUDA Toolkit) rebuilds the fatbin on the next build without cleaning `obj/`. For the fatbins that `GSharpCompileCuda` builds, the record is listed in `FileWrites`, so `dotnet clean` removes it.
 
 The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environment variables, the version of the host C++ compiler, or the headers that the generated source includes. After changing one of them, rebuild (`dotnet build --no-incremental`) or delete the fatbins under `obj/`.
+
+#### Shared Memory Limit of the Target GPUs
+
+From `GSharpTargetArchitectures`, the generator finds every compute capability in its table (`GpuArchitectureLimits.Table`) that the fatbin may run on (SASS runs on its own major version from its minor version up, except Tegra `8.7`; `sm_XYa` runs on `X.Y` only; `sm_XYf` runs on its family; PTX `compute_XY` runs on `X.Y` and every newer GPU) and takes the smallest per-block shared memory limit with opt-in over them (with the default setting, `sm_86`'s 99 KB = 101376 bytes):
+
+| Compute capability | Shared memory per block (with opt-in) |
+| :--- | :--- |
+| 7.5 | 64 KB (65536 bytes) |
+| 8.0, 8.7 (Tegra) | 163 KB (166912 bytes) |
+| 8.6, 8.9 | 99 KB (101376 bytes) |
+| 9.0, 10.0, 10.3, 10.7, 11.0 | 227 KB (232448 bytes; on 10.7, the 327 KB oversized mode requires a kernel marker) |
+| 12.0, 12.1 | 99 KB (101376 bytes) |
+
+When `GSharpTargetArchitectures` names a compute capability that is not in the table, the generator reports warning [GSH0114](../03_bcl_api/diagnostics/GSH0114.md) once per project with kernels. If no known compute capability is reached, only the fixed dimension limits (`LaunchLimits.CheckLaunch`) are emitted.
 
 ### 1.5.2 Native Sources and the Artifact Manifest
 

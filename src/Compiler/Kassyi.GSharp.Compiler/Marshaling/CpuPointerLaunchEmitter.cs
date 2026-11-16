@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
@@ -17,7 +19,7 @@ internal static class CpuPointerLaunchEmitter
     // <error sites>; [fixed (<result>* p = <auto result>)] { <nullable proxies>; __gsharp_hfunc(...); <error check> }
     /// <summary>Emits the CPU pointer launcher of <paramref name="kernel"/>.</summary>
     public static void Write(SourceWriter writer, in KernelEmission kernel, Accessibility accessibility,
-        string moduleName)
+        string moduleName, in TargetLimits targetLimits)
     {
         var plan = CpuPointerLaunchPlan.Create(kernel.Host);
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
@@ -25,7 +27,7 @@ internal static class CpuPointerLaunchEmitter
         using (writer.Scope())
         {
             WrapperEmitter.WritePointerArrayArgumentChecks(writer, kernel.Host);
-            LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host);
+            LaunchLimitEmitter.WriteCpuCheck(writer, kernel.Host, targetLimits);
             AutoResultEmitter.WriteAllocation(writer, kernel.Host);
             CSharpExecutionEmitter.WriteBranch(writer, CSharpExecutionPlan.Create(kernel.Host, isDevicePtr: true));
             CpuHostLaunchEmitter.WriteDllPath(writer, moduleName);
