@@ -98,4 +98,67 @@ internal static class ReconvergenceSyntax
 
         return null;
     }
+
+    /// <summary>
+    /// Determines whether any section of <paramref name="switchStatement"/> contains a jump out of the switch
+    /// (<c>break</c> targeting this switch, or <c>goto case</c> / <c>goto default</c> targeting this switch)
+    /// that is nested inside a non-transparent statement (such as <c>if</c>, a loop, or an inner switch).
+    /// </summary>
+    /// <remarks>
+    /// Direct exits under a section (<c>break;</c> or <c>goto case</c> directly in a section or inside
+    /// transparent blocks/labels) are executed by all lanes reaching that section and do not cause intra-section
+    /// divergence. Jumps inside nested lambdas or local functions are ignored.
+    /// </remarks>
+    internal static bool HasNestedExit(SwitchStatementSyntax switchStatement) =>
+        switchStatement.Sections
+            .AsStackEnumerable()
+            .Any(switchStatement, static (section, @switch) =>
+                section.DescendantNodes(static n => n is not
+                        (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+                    .AsStackEnumerable()
+                    .Any((@switch, section), static (node, state) =>
+                        IsSwitchExit(node, state.@switch) && HasInterveningStatement(node, state.section)));
+
+    private static bool IsSwitchExit(SyntaxNode node, SwitchStatementSyntax switchStatement) =>
+        node switch
+        {
+            BreakStatementSyntax => FindJumpTarget(node, loopOnly: false) == switchStatement,
+            GotoStatementSyntax gotoStatement when gotoStatement.IsKind(SyntaxKind.GotoCaseStatement) ||
+                                                   gotoStatement.IsKind(SyntaxKind.GotoDefaultStatement) =>
+                EnclosingSwitchIs(gotoStatement, switchStatement),
+            _ => false
+        };
+
+    private static bool EnclosingSwitchIs(SyntaxNode node, SwitchStatementSyntax switchStatement)
+    {
+        for (var current = node.Parent; current != null; current = current.Parent)
+        {
+            if (current is SwitchStatementSyntax s)
+            {
+                return s == switchStatement;
+            }
+
+            if (current is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                or MemberDeclarationSyntax)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasInterveningStatement(SyntaxNode node, SwitchSectionSyntax section)
+    {
+        for (var current = node.Parent; current != null && current != section; current = current.Parent)
+        {
+            if (current is StatementSyntax and not (BlockSyntax or LabeledStatementSyntax or
+                    CheckedStatementSyntax or UnsafeStatementSyntax))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
