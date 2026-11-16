@@ -302,6 +302,7 @@ public static unsafe void LaunchBreakAndContinueOuterFor(global::System.Int32[] 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakAndContinueOuterFor");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.BreakAndContinueOuterFor(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -508,6 +509,7 @@ public static unsafe void LaunchLabeledWhile(global::System.Int32[] xs, global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledWhile");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledWhile");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.LabeledWhile(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -718,6 +720,7 @@ public static unsafe void LaunchSwitchInLabeledLoop(global::System.Int32[] xs, g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.SwitchInLabeledLoop");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.SwitchInLabeledLoop(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -915,6 +918,7 @@ public static unsafe void LaunchContinueOuterRunsTheIncrement(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1119,6 +1123,7 @@ public static unsafe void LaunchContinueOuterEvaluatesTheDoCondition(global::Sys
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1334,6 +1339,7 @@ public static unsafe void LaunchMiddleOfThreeLoops(global::System.Int32[] xs, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.MiddleOfThreeLoops");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.MiddleOfThreeLoops(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1558,6 +1564,7 @@ public static unsafe void LaunchTwoLoopsWithTheSameLabel(global::System.Int32[] 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1785,6 +1792,7 @@ public static unsafe void LaunchForEachOverAnArray(global::System.Int32[] xs, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnArray");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnArray");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.ForEachOverAnArray(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2049,6 +2057,7 @@ public static unsafe void LaunchForEachOverAnIterator(global::System.Int32[] xs,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.ForEachOverAnIterator");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.ForEachOverAnIterator(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2284,6 +2293,7 @@ public static unsafe void LaunchBreakLabeledSwitchFromALoop(global::System.Int32
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2517,6 +2527,7 @@ public static unsafe void LaunchUsingInsideTheLabeledLoop(global::System.Int32[]
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2797,6 +2808,7 @@ public static unsafe void LaunchLabeledLoopInAKernelWithoutABarrier(global::Syst
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3019,6 +3031,7 @@ public static unsafe void LaunchUnlabeledJumpsNextToLabeledOnes(global::System.I
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

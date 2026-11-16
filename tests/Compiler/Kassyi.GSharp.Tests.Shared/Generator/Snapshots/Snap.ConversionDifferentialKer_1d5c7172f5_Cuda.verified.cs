@@ -324,6 +324,7 @@ public static unsafe void LaunchForeachFloatToIntMatrixKernel(global::System.Sin
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = f;
 global::System.Double[] __gsharp_csharp_arg_1 = d;
 global::System.Int64[] __gsharp_csharp_arg_2 = r;
@@ -567,6 +568,7 @@ public static unsafe void LaunchEnumCastMatrixKernel(global::System.Single[] f, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.EnumCastMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.EnumCastMatrixKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = f;
 global::System.Double[] __gsharp_csharp_arg_1 = d;
 global::System.Int32[] __gsharp_csharp_arg_2 = i32;
@@ -872,6 +874,7 @@ public static unsafe void LaunchIntToFloatConversionMatrixKernel(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.IntToFloatConversionMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.IntToFloatConversionMatrixKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = i32;
 global::System.UInt32[] __gsharp_csharp_arg_1 = u;
 global::System.Int64[] __gsharp_csharp_arg_2 = l;
@@ -1228,6 +1231,7 @@ public static unsafe void LaunchIntToDoubleConversionMatrixKernel(global::System
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.IntToDoubleConversionMatrixKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = i32;
 global::System.UInt32[] __gsharp_csharp_arg_1 = u;
 global::System.Int64[] __gsharp_csharp_arg_2 = l;
@@ -1575,6 +1579,7 @@ public static unsafe void LaunchCharScalarArgKernel(global::System.Char cArg, gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.CharScalarArgKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.CharScalarArgKernel");
 global::System.Char __gsharp_csharp_arg_0 = cArg;
 global::System.Char[] __gsharp_csharp_arg_1 = cArr;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -1787,6 +1792,7 @@ public static unsafe void LaunchDirectFloatDoubleCastMatrixKernel(global::System
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.DirectFloatDoubleCastMatrixKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = f;
 global::System.Double[] __gsharp_csharp_arg_1 = d;
 global::System.Int64[] __gsharp_csharp_arg_2 = i64;
@@ -2372,6 +2378,7 @@ public static unsafe void LaunchIntegerCastAndShiftMaskMatrixKernel(global::Syst
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConversionDifferentialKernels.IntegerCastAndShiftMaskMatrixKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = i32;
 global::System.UInt32[] __gsharp_csharp_arg_1 = u32;
 global::System.Int64[] __gsharp_csharp_arg_2 = i64;

@@ -340,6 +340,7 @@ private unsafe delegate void __gsharp_delegate_StaleSpanKernel(uint gridDimX, ui
 public static unsafe void LaunchStaleSpanKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.StaleSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.StaleSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.StaleSpanKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -482,6 +483,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.StaleSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.StaleSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.StaleSpanKernel", "LaunchStaleSpanKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStaleSpanKernel");
@@ -679,6 +681,7 @@ private unsafe delegate void __gsharp_delegate_MixedElementTypesKernel(uint grid
 public static unsafe void LaunchMixedElementTypesKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.MixedElementTypesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.MixedElementTypesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.MixedElementTypesKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -821,6 +824,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.MixedElementTypesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.MixedElementTypesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.MixedElementTypesKernel", "LaunchMixedElementTypesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMixedElementTypesKernel");
@@ -1061,6 +1065,7 @@ private unsafe delegate void __gsharp_delegate_GrowingDeclarationKernel(uint gri
 public static unsafe void LaunchGrowingDeclarationKernel(global::System.Int32[] output, global::System.Int32 smallCount, global::System.Int32 largeCount, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.GrowingDeclarationKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.GrowingDeclarationKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.GrowingDeclarationKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -1203,6 +1208,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedMemoryRegionKernels.GrowingDeclarationKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedMemoryRegionKernels.GrowingDeclarationKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SharedMemoryRegionKernels.GrowingDeclarationKernel", "LaunchGrowingDeclarationKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGrowingDeclarationKernel");

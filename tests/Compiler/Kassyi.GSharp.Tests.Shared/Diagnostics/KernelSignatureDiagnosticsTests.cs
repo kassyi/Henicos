@@ -101,7 +101,8 @@ public class KernelSignatureDiagnosticsTests
                 (Analyzer, 113, 24, 113, 37),
                 (Analyzer, 132, 24, 132, 35),
                 (Analyzer, 199, 24, 199, 37),
-                (Analyzer, 213, 24, 213, 41)
+                (Analyzer, 207, 24, 207, 46),
+                (Analyzer, 221, 24, 221, 41)
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }

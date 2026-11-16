@@ -12,6 +12,7 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
+    InByAddressSuffix: __gsharp_in_by_address
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -228,6 +229,8 @@ Launcher:
     AliasHandles: __gsharp_alias_handles
     # The CPU launcher's HostArrayCopies: one copy per host array that the kernel gets instead of the caller's (#985)
     ArrayCopies: __gsharp_array_copies
+    # Field suffix for the by-address kernel function handle on CUDA (#1940)
+    ByAddressFieldSuffix: __gsharp_by_address
     GridDimX: __gsharp_grid_dim_x
     GridDimY: __gsharp_grid_dim_y
     GridDimZ: __gsharp_grid_dim_z
@@ -294,6 +297,7 @@ Launcher:
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_
     ScalarPointerPrefix: __gsharp_ptr_
+    InValuePrefix: __gsharp_in_val_
     SizePrefix: __gsharp_size_
     ShadowPrefix: __gsharp_shadow_
     SharedShadowPrefix: __gsharp_shared_shadow_

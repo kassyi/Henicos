@@ -1237,6 +1237,7 @@ private unsafe delegate void __gsharp_delegate_StructFieldWriteKernel(uint gridD
 public static unsafe void LaunchStructFieldWriteKernel(global::System.Single[] fieldOut, global::System.Int32[] scalarOut, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.StructFieldWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.StructFieldWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.StructFieldWriteKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -1386,6 +1387,7 @@ if (scalarOut.Data == global::System.IntPtr.Zero && scalarOut.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "scalarOut");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.StructFieldWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.StructFieldWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.StructFieldWriteKernel", "LaunchStructFieldWriteKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStructFieldWriteKernel");
@@ -1597,6 +1599,7 @@ private unsafe delegate void __gsharp_delegate_RefExtensionWriteKernel(uint grid
 public static unsafe void LaunchRefExtensionWriteKernel(global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.RefExtensionWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.RefExtensionWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.RefExtensionWriteKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -1739,6 +1742,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.RefExtensionWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.RefExtensionWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.RefExtensionWriteKernel", "LaunchRefExtensionWriteKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefExtensionWriteKernel");
@@ -1963,6 +1967,7 @@ private unsafe delegate void __gsharp_delegate_NestedFieldWriteKernel(uint gridD
 public static unsafe void LaunchNestedFieldWriteKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.NestedFieldWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.NestedFieldWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.NestedFieldWriteKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -2105,6 +2110,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.NestedFieldWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.NestedFieldWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.NestedFieldWriteKernel", "LaunchNestedFieldWriteKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedFieldWriteKernel");
@@ -2344,6 +2350,7 @@ private unsafe delegate void __gsharp_delegate_InlineArrayElementWriteKernel(uin
 public static unsafe void LaunchInlineArrayElementWriteKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.InlineArrayElementWriteKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -2486,6 +2493,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.InlineArrayElementWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.InlineArrayElementWriteKernel", "LaunchInlineArrayElementWriteKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInlineArrayElementWriteKernel");
@@ -2697,6 +2705,7 @@ private unsafe delegate void __gsharp_delegate_PrefixIncrementFieldKernel(uint g
 public static unsafe void LaunchPrefixIncrementFieldKernel(global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.PrefixIncrementFieldKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -2839,6 +2848,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.PrefixIncrementFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.PrefixIncrementFieldKernel", "LaunchPrefixIncrementFieldKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchPrefixIncrementFieldKernel");
@@ -3050,6 +3060,7 @@ private unsafe delegate void __gsharp_delegate_RefFieldArgumentKernel(uint gridD
 public static unsafe void LaunchRefFieldArgumentKernel(global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.RefFieldArgumentKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.RefFieldArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.RefFieldArgumentKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -3192,6 +3203,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.RefFieldArgumentKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.RefFieldArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.RefFieldArgumentKernel", "LaunchRefFieldArgumentKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefFieldArgumentKernel");
@@ -3388,6 +3400,7 @@ private unsafe delegate void __gsharp_delegate_ArrayElementWriteKernel(uint grid
 public static unsafe void LaunchArrayElementWriteKernel(global::System.Int32[] values, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.ArrayElementWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.ArrayElementWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.ArrayElementWriteKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -3537,6 +3550,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.ArrayElementWriteKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.ArrayElementWriteKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.ArrayElementWriteKernel", "LaunchArrayElementWriteKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchArrayElementWriteKernel");
@@ -3750,6 +3764,7 @@ private unsafe delegate void __gsharp_delegate_TupleSwapFieldsKernel(uint gridDi
 public static unsafe void LaunchTupleSwapFieldsKernel(global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.TupleSwapFieldsKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -3892,6 +3907,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.TupleSwapFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.TupleSwapFieldsKernel", "LaunchTupleSwapFieldsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTupleSwapFieldsKernel");
@@ -4084,6 +4100,7 @@ private unsafe delegate void __gsharp_delegate_TupleSwapScalarsKernel(uint gridD
 public static unsafe void LaunchTupleSwapScalarsKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.TupleSwapScalarsKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -4226,6 +4243,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SuspendingValueParameterKernels.TupleSwapScalarsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SuspendingValueParameterKernels.TupleSwapScalarsKernel", "LaunchTupleSwapScalarsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTupleSwapScalarsKernel");

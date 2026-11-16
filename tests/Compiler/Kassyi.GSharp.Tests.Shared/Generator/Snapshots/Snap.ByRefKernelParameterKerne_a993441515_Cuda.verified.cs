@@ -834,6 +834,7 @@ __gsharp_layout_checked_RefReadOnlyStructNoBarrierKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ByRefKernelParameterKernels.RefReadOnlyStructNoBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ByRefKernelParameterKernels.RefReadOnlyStructNoBarrierKernel");
 global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct __gsharp_csharp_arg_0 = s;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefKernelParameterKernels.RefReadOnlyStructNoBarrierKernel(in __gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

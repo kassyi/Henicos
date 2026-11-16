@@ -287,6 +287,7 @@ private unsafe delegate void __gsharp_delegate_TypedLocalKernel(uint gridDimX, u
 public static unsafe void LaunchTypedLocalKernel(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder h, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.TypedLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.TypedLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder __gsharp_csharp_arg_0 = h;
@@ -443,6 +444,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.TypedLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.TypedLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.TypedLocalKernel", "LaunchTypedLocalKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTypedLocalKernel");
@@ -613,6 +615,7 @@ private unsafe delegate void __gsharp_delegate_NotNullLocalKernel(uint gridDimX,
 public static unsafe void LaunchNotNullLocalKernel(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder h, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.NotNullLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.NotNullLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder __gsharp_csharp_arg_0 = h;
@@ -769,6 +772,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.NotNullLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.NotNullLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.NotNullLocalKernel", "LaunchNotNullLocalKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNotNullLocalKernel");
@@ -941,6 +945,7 @@ private unsafe delegate void __gsharp_delegate_ReassignedLocalKernel(uint gridDi
 public static unsafe void LaunchReassignedLocalKernel(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder h, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.ReassignedLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.ReassignedLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder __gsharp_csharp_arg_0 = h;
@@ -1097,6 +1102,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.ReassignedLocalKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.ReassignedLocalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.ReassignedLocalKernel", "LaunchReassignedLocalKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReassignedLocalKernel");
@@ -1265,6 +1271,7 @@ private unsafe delegate void __gsharp_delegate_DeviceFunctionArgumentKernel(uint
 public static unsafe void LaunchDeviceFunctionArgumentKernel(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder h, global::System.UInt32[] r, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.DeviceFunctionArgumentKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.DeviceFunctionArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder __gsharp_csharp_arg_0 = h;
@@ -1429,6 +1436,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.DeviceFunctionArgumentKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.DeviceFunctionArgumentKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.DeviceFunctionArgumentKernel", "LaunchDeviceFunctionArgumentKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDeviceFunctionArgumentKernel");
@@ -1601,6 +1609,7 @@ private unsafe delegate void __gsharp_delegate_FieldToSpanKernel(uint gridDimX, 
 public static unsafe void LaunchFieldToSpanKernel(global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder h, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.FieldToSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.FieldToSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.ReadOnlyArrayHolder __gsharp_csharp_arg_0 = h;
@@ -1757,6 +1766,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.FieldToSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.FieldToSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.FieldToSpanKernel", "LaunchFieldToSpanKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFieldToSpanKernel");
@@ -1915,6 +1925,7 @@ private unsafe delegate void __gsharp_delegate_ParameterToReadOnlySpanKernel(uin
 public static unsafe void LaunchParameterToReadOnlySpanKernel(global::System.UInt32[] r, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.ParameterToReadOnlySpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.ParameterToReadOnlySpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.UInt32[] __gsharp_csharp_arg_0 = r;
@@ -2067,6 +2078,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.ParameterToReadOnlySpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.ParameterToReadOnlySpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.ParameterToReadOnlySpanKernel", "LaunchParameterToReadOnlySpanKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchParameterToReadOnlySpanKernel");
@@ -2232,6 +2244,7 @@ private unsafe delegate void __gsharp_delegate_FixedSpanKernel(uint gridDimX, ui
 public static unsafe void LaunchFixedSpanKernel(global::System.UInt32[] r, global::System.UInt32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.FixedSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.FixedSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.UInt32[] __gsharp_csharp_arg_0 = r;
@@ -2383,6 +2396,7 @@ if (o.Data == global::System.IntPtr.Zero && o.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "o");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReadOnlyArrayConversionKernels.FixedSpanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReadOnlyArrayConversionKernels.FixedSpanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReadOnlyArrayConversionKernels.FixedSpanKernel", "LaunchFixedSpanKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFixedSpanKernel");

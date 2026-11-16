@@ -306,6 +306,7 @@ private unsafe delegate void __gsharp_delegate_MontgomeryMuKernel(uint gridDimX,
 public static unsafe void LaunchMontgomeryMuKernel(global::System.UInt32[] moduli, global::System.UInt32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.UInt32[] __gsharp_csharp_arg_0 = moduli;
@@ -458,6 +459,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyStdlibKernels.MontgomeryMuKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CrossAssemblyStdlibKernels.MontgomeryMuKernel", "LaunchMontgomeryMuKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMontgomeryMuKernel");
@@ -722,6 +724,7 @@ private unsafe delegate void __gsharp_delegate_WarpScanKernel(uint gridDimX, uin
 public static unsafe void LaunchWarpScanKernel(global::System.UInt32[] generate, global::System.UInt32[] propagate, global::System.UInt32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyStdlibKernels.WarpScanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyStdlibKernels.WarpScanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CrossAssemblyStdlibKernels.WarpScanKernel", "it reaches GpuBigIntKernels.WarpScanGp() of another assembly, which reaches a barrier or a warp collective, and the C# execution runs one GPU thread at a time");
@@ -897,6 +900,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyStdlibKernels.WarpScanKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyStdlibKernels.WarpScanKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CrossAssemblyStdlibKernels.WarpScanKernel", "LaunchWarpScanKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchWarpScanKernel");

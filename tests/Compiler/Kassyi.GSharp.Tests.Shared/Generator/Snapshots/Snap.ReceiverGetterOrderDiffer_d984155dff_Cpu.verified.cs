@@ -428,6 +428,7 @@ private unsafe delegate void __gsharp_delegate_ReceiverGetterKernel(uint gridDim
 public static unsafe void LaunchReceiverGetterKernel(global::System.Int32[] data, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -580,6 +581,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel", "LaunchReceiverGetterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReceiverGetterKernel");
@@ -824,6 +826,7 @@ private unsafe delegate void __gsharp_delegate_ImplicitThisGetterKernel(uint gri
 public static unsafe void LaunchImplicitThisGetterKernel(global::System.Int32[] data, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -976,6 +979,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel", "LaunchImplicitThisGetterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchImplicitThisGetterKernel");
@@ -1278,6 +1282,7 @@ private unsafe delegate void __gsharp_delegate_AccessorCallKernel(uint gridDimX,
 public static unsafe void LaunchAccessorCallKernel(global::System.Int32[] data, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.AccessorCallKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.AccessorCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -1430,6 +1435,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ReceiverGetterOrderDifferentialKernels.AccessorCallKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ReceiverGetterOrderDifferentialKernels.AccessorCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ReceiverGetterOrderDifferentialKernels.AccessorCallKernel", "LaunchAccessorCallKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchAccessorCallKernel");

@@ -26,6 +26,9 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [InlineData("LargeKernel", "GSH0064", "40980 bytes")]
     // An `in` struct is passed by value, the same 40980 bytes (not an 8-byte pointer).
     [InlineData("InLargeKernel", "GSH0064", "40980 bytes")]
+    // The by-value entry point of an `in` struct beside a `ref` of its type: 32760 + 8 + 4 = 32772 bytes (counting the
+    // by-address one alone gives 20).
+    [InlineData("InBesideRefLargeKernel", "GSH0064", "32772 bytes")]
     // 32760 + 8 (grid aggregate scratch) + 4 (epoch) = 32772 bytes; the mutant that leaves the scratch out gives 32764.
     [InlineData("GridScratchKernel", "GSH0064", "32772 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.

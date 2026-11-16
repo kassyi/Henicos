@@ -319,6 +319,7 @@ private unsafe delegate void __gsharp_delegate_GridStrideLoopKernel(uint gridDim
 public static unsafe void LaunchGridStrideLoopKernel(global::System.Int32[] result, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.GridStrideLoopKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.GridStrideLoopKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = result;
@@ -464,6 +465,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.GridStrideLoopKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.GridStrideLoopKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.GridStrideLoopKernel", "LaunchGridStrideLoopKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGridStrideLoopKernel");
@@ -638,6 +640,7 @@ private unsafe delegate void __gsharp_delegate_SingleThreadKernel(uint gridDimX,
 public static unsafe void LaunchSingleThreadKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.SingleThreadKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.SingleThreadKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = result;
@@ -782,6 +785,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.SingleThreadKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.SingleThreadKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.SingleThreadKernel", "LaunchSingleThreadKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSingleThreadKernel");
@@ -961,6 +965,7 @@ private unsafe delegate void __gsharp_delegate_ForUnrollKernel(uint gridDimX, ui
 public static unsafe void LaunchForUnrollKernel(global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ForUnrollKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.ForUnrollKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = result;
@@ -1105,6 +1110,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ForUnrollKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.ForUnrollKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ForUnrollKernel", "LaunchForUnrollKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchForUnrollKernel");
@@ -1313,6 +1319,7 @@ private unsafe delegate void __gsharp_delegate_NestedAndLaterKernel(uint gridDim
 public static unsafe void LaunchNestedAndLaterKernel(global::System.Int32[] result, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.NestedAndLaterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.NestedAndLaterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = result;
@@ -1458,6 +1465,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.NestedAndLaterKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.NestedAndLaterKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.NestedAndLaterKernel", "LaunchNestedAndLaterKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedAndLaterKernel");
@@ -1655,6 +1663,7 @@ private unsafe delegate void __gsharp_delegate_LocalFunctionKernel(uint gridDimX
 public static unsafe void LaunchLocalFunctionKernel(global::System.Int32[] result, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.LocalFunctionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.LocalFunctionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = result;
@@ -1800,6 +1809,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.LocalFunctionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.LocalFunctionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.LocalFunctionKernel", "LaunchLocalFunctionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchLocalFunctionKernel");
@@ -1954,6 +1964,7 @@ private unsafe delegate void __gsharp_delegate_ManagedVersionKernel(uint gridDim
 public static unsafe void LaunchManagedVersionKernel(global::System.Int32[] result, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ManagedVersionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.ManagedVersionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ManagedVersionKernel", "it reaches an operator macro ([GpuOperatorMacro]), which only the generated code expands");
@@ -2092,6 +2103,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ManagedShadowedLocalKernels.ManagedVersionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ManagedShadowedLocalKernels.ManagedVersionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("ManagedShadowedLocalKernels.ManagedVersionKernel", "LaunchManagedVersionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchManagedVersionKernel");

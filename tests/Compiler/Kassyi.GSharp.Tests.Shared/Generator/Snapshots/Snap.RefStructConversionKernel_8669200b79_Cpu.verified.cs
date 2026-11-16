@@ -244,6 +244,7 @@ private unsafe delegate void __gsharp_delegate_ImplicitRefStructConversionKernel
 public static unsafe void LaunchImplicitRefStructConversionKernel(global::System.Int32[] input, global::System.Int32[] fields, global::System.Int32[] converted, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ImplicitRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.ImplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = input;
@@ -404,6 +405,7 @@ if (converted.Data == global::System.IntPtr.Zero && converted.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "converted");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ImplicitRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.ImplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ImplicitRefStructConversionKernel", "LaunchImplicitRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchImplicitRefStructConversionKernel");
@@ -588,6 +590,7 @@ private unsafe delegate void __gsharp_delegate_ExplicitRefStructConversionKernel
 public static unsafe void LaunchExplicitRefStructConversionKernel(global::System.Int32[] input, global::System.Int32[] fields, global::System.Int32[] converted, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ExplicitRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.ExplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = input;
@@ -748,6 +751,7 @@ if (converted.Data == global::System.IntPtr.Zero && converted.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "converted");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.ExplicitRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.ExplicitRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.ExplicitRefStructConversionKernel", "LaunchExplicitRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchExplicitRefStructConversionKernel");
@@ -958,6 +962,7 @@ private unsafe delegate void __gsharp_delegate_RefStructToRefStructConversionKer
 public static unsafe void LaunchRefStructToRefStructConversionKernel(global::System.Int32[] input, global::System.Int32[] pads, global::System.Int32[] converted, global::System.Int32[] back, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.RefStructToRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.RefStructToRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = input;
@@ -1126,6 +1131,7 @@ if (back.Data == global::System.IntPtr.Zero && back.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "back");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.RefStructToRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.RefStructToRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.RefStructToRefStructConversionKernel", "LaunchRefStructToRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefStructToRefStructConversionKernel");
@@ -1306,6 +1312,7 @@ private unsafe delegate void __gsharp_delegate_MixedRefStructConversionKernel(ui
 public static unsafe void LaunchMixedRefStructConversionKernel(global::System.Int32[] input, global::System.Int32[] fields, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.MixedRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.MixedRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = input;
@@ -1458,6 +1465,7 @@ if (fields.Data == global::System.IntPtr.Zero && fields.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "fields");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "RefStructConversionKernels.MixedRefStructConversionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "RefStructConversionKernels.MixedRefStructConversionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("RefStructConversionKernels.MixedRefStructConversionKernel", "LaunchMixedRefStructConversionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMixedRefStructConversionKernel");

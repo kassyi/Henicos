@@ -521,6 +521,7 @@ private unsafe delegate void __gsharp_delegate_MathOfSingleMatrixKernel(uint gri
 public static unsafe void LaunchMathOfSingleMatrixKernel(global::System.Single[] f, global::System.Double[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MathOfSingleMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MathOfSingleMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = f;
@@ -673,6 +674,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MathOfSingleMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MathOfSingleMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.MathOfSingleMatrixKernel", "LaunchMathOfSingleMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMathOfSingleMatrixKernel");
@@ -853,6 +855,7 @@ private unsafe delegate void __gsharp_delegate_SingleRoundingAndUnaryMatrixKerne
 public static unsafe void LaunchSingleRoundingAndUnaryMatrixKernel(global::System.Single[] f, global::System.Single[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = f;
@@ -1005,6 +1008,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel", "LaunchSingleRoundingAndUnaryMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSingleRoundingAndUnaryMatrixKernel");
@@ -1183,6 +1187,7 @@ private unsafe delegate void __gsharp_delegate_DoubleRoundingAndUnaryMatrixKerne
 public static unsafe void LaunchDoubleRoundingAndUnaryMatrixKernel(global::System.Double[] d, global::System.Double[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Double[] __gsharp_csharp_arg_0 = d;
@@ -1335,6 +1340,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel", "LaunchDoubleRoundingAndUnaryMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDoubleRoundingAndUnaryMatrixKernel");
@@ -1521,6 +1527,7 @@ private unsafe delegate void __gsharp_delegate_SingleMaxMinClampMatrixKernel(uin
 public static unsafe void LaunchSingleMaxMinClampMatrixKernel(global::System.Single[] a, global::System.Single[] b, global::System.Single[] min, global::System.Single[] max, global::System.Single[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleMaxMinClampMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleMaxMinClampMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = a;
@@ -1697,6 +1704,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleMaxMinClampMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleMaxMinClampMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.SingleMaxMinClampMatrixKernel", "LaunchSingleMaxMinClampMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSingleMaxMinClampMatrixKernel");
@@ -1879,6 +1887,7 @@ private unsafe delegate void __gsharp_delegate_DoubleMaxMinClampMatrixKernel(uin
 public static unsafe void LaunchDoubleMaxMinClampMatrixKernel(global::System.Double[] a, global::System.Double[] b, global::System.Double[] min, global::System.Double[] max, global::System.Double[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleMaxMinClampMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleMaxMinClampMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Double[] __gsharp_csharp_arg_0 = a;
@@ -2055,6 +2064,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleMaxMinClampMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleMaxMinClampMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.DoubleMaxMinClampMatrixKernel", "LaunchDoubleMaxMinClampMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDoubleMaxMinClampMatrixKernel");
@@ -2249,6 +2259,7 @@ private unsafe delegate void __gsharp_delegate_MixedFloatMaxMinMatrixKernel(uint
 public static unsafe void LaunchMixedFloatMaxMinMatrixKernel(global::System.Single[] f, global::System.Double[] d, global::System.Int32[] iv, global::System.Single[] rf, global::System.Double[] rd, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MixedFloatMaxMinMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MixedFloatMaxMinMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = f;
@@ -2425,6 +2436,7 @@ if (rd.Data == global::System.IntPtr.Zero && rd.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rd");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MixedFloatMaxMinMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MixedFloatMaxMinMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.MixedFloatMaxMinMatrixKernel", "LaunchMixedFloatMaxMinMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMixedFloatMaxMinMatrixKernel");
@@ -2609,6 +2621,7 @@ private unsafe delegate void __gsharp_delegate_Int32MathMatrixKernel(uint gridDi
 public static unsafe void LaunchInt32MathMatrixKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int16[] s, global::System.SByte[] sb, global::System.Int32[] min, global::System.Int32[] max, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.Int32MathMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.Int32MathMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
@@ -2801,6 +2814,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.Int32MathMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.Int32MathMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.Int32MathMatrixKernel", "LaunchInt32MathMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInt32MathMatrixKernel");
@@ -2977,6 +2991,7 @@ private unsafe delegate void __gsharp_delegate_MathFIntArgumentMatrixKernel(uint
 public static unsafe void LaunchMathFIntArgumentMatrixKernel(global::System.Int32[] v, global::System.Int32[] min, global::System.Int32[] max, global::System.Single[] rf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MathFIntArgumentMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MathFIntArgumentMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = v;
@@ -3145,6 +3160,7 @@ if (rf.Data == global::System.IntPtr.Zero && rf.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rf");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MathFIntArgumentMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MathFIntArgumentMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.MathFIntArgumentMatrixKernel", "LaunchMathFIntArgumentMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMathFIntArgumentMatrixKernel");
@@ -3345,6 +3361,7 @@ private unsafe delegate void __gsharp_delegate_SubnormalIeeeExactMatrixKernel(ui
 public static unsafe void LaunchSubnormalIeeeExactMatrixKernel(global::System.Single[] fa, global::System.Single[] fb, global::System.Double[] da, global::System.Double[] db, global::System.Single[] rf, global::System.Double[] rd, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SubnormalIeeeExactMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SubnormalIeeeExactMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = fa;
@@ -3529,6 +3546,7 @@ if (rd.Data == global::System.IntPtr.Zero && rd.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rd");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SubnormalIeeeExactMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SubnormalIeeeExactMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.SubnormalIeeeExactMatrixKernel", "LaunchSubnormalIeeeExactMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSubnormalIeeeExactMatrixKernel");
@@ -3725,6 +3743,7 @@ private unsafe delegate void __gsharp_delegate_TranscendentalSpecialValuesKernel
 public static unsafe void LaunchTranscendentalSpecialValuesKernel(global::System.Single[] fx, global::System.Single[] logF, global::System.Single[] powBaseF, global::System.Single[] powExpF, global::System.Double[] dx, global::System.Double[] logD, global::System.Double[] powBaseD, global::System.Double[] powExpD, global::System.Single[] rf, global::System.Double[] rd, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.TranscendentalSpecialValuesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.TranscendentalSpecialValuesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = fx;
@@ -3941,6 +3960,7 @@ if (rd.Data == global::System.IntPtr.Zero && rd.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rd");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.TranscendentalSpecialValuesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.TranscendentalSpecialValuesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.TranscendentalSpecialValuesKernel", "LaunchTranscendentalSpecialValuesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTranscendentalSpecialValuesKernel");
@@ -4145,6 +4165,7 @@ private unsafe delegate void __gsharp_delegate_BitOperationsMatrixKernel(uint gr
 public static unsafe void LaunchBitOperationsMatrixKernel(global::System.UInt32[] u32, global::System.UInt64[] u64, global::System.Int32[] offsets, global::System.UInt64[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.BitOperationsMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.BitOperationsMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.UInt32[] __gsharp_csharp_arg_0 = u32;
@@ -4313,6 +4334,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.BitOperationsMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.BitOperationsMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.BitOperationsMatrixKernel", "LaunchBitOperationsMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBitOperationsMatrixKernel");
@@ -4529,6 +4551,7 @@ private unsafe delegate void __gsharp_delegate_FloatComparisonAndLargeTieMatrixK
 public static unsafe void LaunchFloatComparisonAndLargeTieMatrixKernel(global::System.Single[] fa, global::System.Single[] fb, global::System.Double[] da, global::System.Double[] db, global::System.Int32[] ia, global::System.Byte[] rCmp, global::System.Double[] rRound, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = fa;
@@ -4721,6 +4744,7 @@ if (rRound.Data == global::System.IntPtr.Zero && rRound.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rRound");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.FloatComparisonAndLargeTieMatrixKernel", "LaunchFloatComparisonAndLargeTieMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFloatComparisonAndLargeTieMatrixKernel");
@@ -4893,6 +4917,7 @@ private unsafe delegate void __gsharp_delegate_MulAddExactAndContractionKernel(u
 public static unsafe void LaunchMulAddExactAndContractionKernel(global::System.Single[] fa, global::System.Single[] fb, global::System.Single[] fc, global::System.Single[] rExact, global::System.Single[] rContract, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MulAddExactAndContractionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MulAddExactAndContractionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = fa;
@@ -5069,6 +5094,7 @@ if (rContract.Data == global::System.IntPtr.Zero && rContract.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "rContract");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.MulAddExactAndContractionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.MulAddExactAndContractionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.MulAddExactAndContractionKernel", "LaunchMulAddExactAndContractionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMulAddExactAndContractionKernel");
@@ -5249,6 +5275,7 @@ private unsafe delegate void __gsharp_delegate_SingleTranscendentalMatrixKernel(
 public static unsafe void LaunchSingleTranscendentalMatrixKernel(global::System.Single[] trigX, global::System.Single[] expX, global::System.Single[] logX, global::System.Single[] powBase, global::System.Single[] powExp, global::System.Single[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleTranscendentalMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleTranscendentalMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = trigX;
@@ -5433,6 +5460,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.SingleTranscendentalMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.SingleTranscendentalMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.SingleTranscendentalMatrixKernel", "LaunchSingleTranscendentalMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSingleTranscendentalMatrixKernel");
@@ -5625,6 +5653,7 @@ private unsafe delegate void __gsharp_delegate_DoubleAndPromotedSingleTranscende
 public static unsafe void LaunchDoubleAndPromotedSingleTranscendentalMatrixKernel(global::System.Double[] trigD, global::System.Double[] expD, global::System.Double[] logD, global::System.Double[] powBaseD, global::System.Double[] powExpD, global::System.Single[] fArg, global::System.Single[] fExp, global::System.Double[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Double[] __gsharp_csharp_arg_0 = trigD;
@@ -5825,6 +5854,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.DoubleAndPromotedSingleTranscendentalMatrixKernel", "LaunchDoubleAndPromotedSingleTranscendentalMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchDoubleAndPromotedSingleTranscendentalMatrixKernel");
@@ -6003,6 +6033,7 @@ private unsafe delegate void __gsharp_delegate_FastMathMatrixKernel(uint gridDim
 public static unsafe void LaunchFastMathMatrixKernel(global::System.Single[] x, global::System.Single[] expX, global::System.Single[] logUnitX, global::System.Single[] logWideX, global::System.Single[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.FastMathMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.FastMathMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_0 = x;
@@ -6179,6 +6210,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathDifferentialKernels.FastMathMatrixKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathDifferentialKernels.FastMathMatrixKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MathDifferentialKernels.FastMathMatrixKernel", "LaunchFastMathMatrixKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchFastMathMatrixKernel");

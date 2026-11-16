@@ -168,6 +168,7 @@ public static unsafe void LaunchThreeDimensionalIndexAndSignednessKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchShapeDifferentialKernels.ThreeDimensionalIndexAndSignednessKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchShapeDifferentialKernels.ThreeDimensionalIndexAndSignednessKernel");
 global::System.Int64[] __gsharp_csharp_arg_0 = outGid;
 global::System.Int32[] __gsharp_csharp_arg_1 = outSignedMath;
 global::System.Int32[] __gsharp_csharp_arg_2 = visitCount;
@@ -440,6 +441,7 @@ public static unsafe void LaunchGridStrideLoopMetamorphicKernel(global::System.I
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchShapeDifferentialKernels.GridStrideLoopMetamorphicKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchShapeDifferentialKernels.GridStrideLoopMetamorphicKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = src;
 global::System.Int32[] __gsharp_csharp_arg_1 = dstMulti;
 global::System.Int32[] __gsharp_csharp_arg_2 = dstShort;
@@ -758,6 +760,7 @@ public static unsafe void LaunchSingleThreadMultiDimAndEarlyReturnKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "LaunchShapeDifferentialKernels.SingleThreadMultiDimAndEarlyReturnKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchShapeDifferentialKernels.SingleThreadMultiDimAndEarlyReturnKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = header;
 global::System.Int32[] __gsharp_csharp_arg_1 = perThreadOut;
 global::System.Int32 __gsharp_csharp_arg_2 = rows;
@@ -1720,6 +1723,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 global::System.Int32[] __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "LaunchShapeDifferentialKernels.AutoResultThreeDimensionalKernel");
 global::System.Int32[] __gsharp_csharp_result = __gsharp_auto_result;
 global::System.Int32[] __gsharp_csharp_arg_0 = src;
 global::System.Int32 __gsharp_csharp_arg_1 = salt;

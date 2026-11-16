@@ -326,6 +326,7 @@ private unsafe delegate void __gsharp_delegate_ContinueInSwitchKernel(uint gridD
 public static unsafe void LaunchContinueInSwitchKernel(global::System.Int32[] a, global::System.Int32[] mode, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -475,6 +476,7 @@ if (mode.Data == global::System.IntPtr.Zero && mode.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "mode");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchKernel", "LaunchContinueInSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInSwitchKernel");
@@ -727,6 +729,7 @@ private unsafe delegate void __gsharp_delegate_ContinueInSwitchWithoutCaseKernel
 public static unsafe void LaunchContinueInSwitchWithoutCaseKernel(global::System.Int32[] a, global::System.Int32[] mode, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -876,6 +879,7 @@ if (mode.Data == global::System.IntPtr.Zero && mode.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "mode");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInSwitchWithoutCaseKernel", "LaunchContinueInSwitchWithoutCaseKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInSwitchWithoutCaseKernel");
@@ -1184,6 +1188,7 @@ private unsafe delegate void __gsharp_delegate_GotoOutOfSwitchKernel(uint gridDi
 public static unsafe void LaunchGotoOutOfSwitchKernel(global::System.Int32[] a, global::System.Int32[] mode, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -1333,6 +1338,7 @@ if (mode.Data == global::System.IntPtr.Zero && mode.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "mode");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.GotoOutOfSwitchKernel", "LaunchGotoOutOfSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchGotoOutOfSwitchKernel");
@@ -1622,6 +1628,7 @@ private unsafe delegate void __gsharp_delegate_ContinueInNestedSwitchKernel(uint
 public static unsafe void LaunchContinueInNestedSwitchKernel(global::System.Int32[] a, global::System.Int32[] mode, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -1771,6 +1778,7 @@ if (mode.Data == global::System.IntPtr.Zero && mode.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "mode");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("SwitchInBarrierLoopKernels.ContinueInNestedSwitchKernel", "LaunchContinueInNestedSwitchKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchContinueInNestedSwitchKernel");

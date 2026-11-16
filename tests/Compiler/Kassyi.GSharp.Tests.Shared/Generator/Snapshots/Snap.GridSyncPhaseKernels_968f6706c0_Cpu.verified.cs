@@ -371,6 +371,7 @@ private unsafe delegate void __gsharp_delegate_SharedMemoryAcrossGridSyncKernel(
 public static unsafe void LaunchSharedMemoryAcrossGridSyncKernel(global::System.Int32[] buffer, global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -547,6 +548,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.SharedMemoryAcrossGridSyncKernel", "LaunchSharedMemoryAcrossGridSyncKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchSharedMemoryAcrossGridSyncKernel");
@@ -838,6 +840,7 @@ private unsafe delegate void __gsharp_delegate_ShuffleBeforeGridSyncKernel(uint 
 public static unsafe void LaunchShuffleBeforeGridSyncKernel(global::System.Int32[] data, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel", "it reaches Warp.ShuffleDownSync(), and the C# execution runs one GPU thread at a time");
@@ -1040,6 +1043,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.ShuffleBeforeGridSyncKernel", "LaunchShuffleBeforeGridSyncKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchShuffleBeforeGridSyncKernel");
@@ -1267,6 +1271,7 @@ private unsafe delegate void __gsharp_delegate_BlockFinishesBeforeGridSyncKernel
 public static unsafe void LaunchBlockFinishesBeforeGridSyncKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
@@ -1436,6 +1441,7 @@ if (a.Data == global::System.IntPtr.Zero && a.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "a");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel", "LaunchBlockFinishesBeforeGridSyncKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchBlockFinishesBeforeGridSyncKernel");
@@ -1667,6 +1673,7 @@ private unsafe delegate void __gsharp_delegate_RepresentativeFinishesBeforeGridS
 public static unsafe void LaunchRepresentativeFinishesBeforeGridSyncKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
@@ -1836,6 +1843,7 @@ if (a.Data == global::System.IntPtr.Zero && a.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "a");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel", "LaunchRepresentativeFinishesBeforeGridSyncKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRepresentativeFinishesBeforeGridSyncKernel");
@@ -2028,6 +2036,7 @@ private unsafe delegate void __gsharp_delegate_NotCooperativeKernel(uint gridDim
 public static unsafe void LaunchNotCooperativeKernel(global::System.Int32[] a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.NotCooperativeKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.NotCooperativeKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.NotCooperativeKernel", "it reaches Gpu.SyncGrid(), and the C# execution runs one GPU thread at a time");
@@ -2170,6 +2179,7 @@ if (a.Data == global::System.IntPtr.Zero && a.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "a");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GridSyncPhaseKernels.NotCooperativeKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GridSyncPhaseKernels.NotCooperativeKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("GridSyncPhaseKernels.NotCooperativeKernel", "LaunchNotCooperativeKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNotCooperativeKernel");

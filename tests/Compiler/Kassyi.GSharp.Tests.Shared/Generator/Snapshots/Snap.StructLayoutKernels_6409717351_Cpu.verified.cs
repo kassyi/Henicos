@@ -201,6 +201,7 @@ private unsafe delegate void __gsharp_delegate_ModifyStructLayoutKernel(uint gri
 public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutKernels.ModifyStructLayoutKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructLayoutKernels.ModifyStructLayoutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct[] __gsharp_csharp_arg_0 = data;
@@ -356,6 +357,7 @@ if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutKernels.ModifyStructLayoutKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructLayoutKernels.ModifyStructLayoutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StructLayoutKernels.ModifyStructLayoutKernel", "LaunchModifyStructLayoutKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchModifyStructLayoutKernel");
@@ -558,6 +560,7 @@ private unsafe delegate void __gsharp_delegate_ModifyPackedInlineArrayKernel(uin
 public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutKernels.ModifyPackedInlineArrayKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructLayoutKernels.ModifyPackedInlineArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray[] __gsharp_csharp_arg_0 = data;
@@ -714,6 +717,7 @@ if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StructLayoutKernels.ModifyPackedInlineArrayKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StructLayoutKernels.ModifyPackedInlineArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StructLayoutKernels.ModifyPackedInlineArrayKernel", "LaunchModifyPackedInlineArrayKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchModifyPackedInlineArrayKernel");
