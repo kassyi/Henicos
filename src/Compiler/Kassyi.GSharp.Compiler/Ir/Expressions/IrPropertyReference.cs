@@ -27,5 +27,5 @@ internal sealed class IrPropertyReference(IrExpression? receiver, IPropertySymbo
     public IrPropertyReference Update(IrExpression? receiver, ImmutableArray<IrArgument> arguments) =>
         receiver == Receiver && arguments == Arguments
             ? this
-            : new IrPropertyReference(receiver, Property, arguments, Category, ConstantValue, Source);
+            : KeepSpelling(new IrPropertyReference(receiver, Property, arguments, Category, ConstantValue, Source));
 }

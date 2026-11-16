@@ -30,5 +30,5 @@ internal sealed class IrBinary(IrOperator<BinaryOperatorKind> @operator, IrExpre
     public IrBinary Update(IrExpression left, IrExpression right) =>
         left == Left && right == Right
             ? this
-            : new IrBinary(Operator, left, right, Type, Category, ConstantValue, Source);
+            : KeepSpelling(new IrBinary(Operator, left, right, Type, Category, ConstantValue, Source));
 }
