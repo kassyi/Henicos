@@ -109,7 +109,7 @@ internal sealed class UsingExitPlan
         exit = default;
         if (!JumpTargets.TryGetTarget(jump, out var kind, out var target))
         {
-            if (LabeledJumps.GetLabelName(jump) != null)
+            if (LabeledJumpSyntax.GetLabelName(jump) != null)
             {
                 kind = jump is BreakStatementSyntax ? UsingExitKind.Break : UsingExitKind.Continue;
                 exit = new UsingExit(kind, jump, StateMachineReturn: false, jump);

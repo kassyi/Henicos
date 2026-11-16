@@ -109,7 +109,9 @@ internal static class LoopStatementTranspilers
         var compilation = context.Query.SemanticModel.Compilation;
         var forEachForExpansion =
             compilation.ContainsSyntaxTree(node.SyntaxTree) && node.Parent is LabeledStatementSyntax labeledParent
-                ? (ForEachStatementSyntax)LoweringAnnotations.AnnotateOriginalSpans(labeledParent, compilation).Statement
+                ? (ForEachStatementSyntax)LoweringAnnotations
+                    .AnnotateOriginalSpans(labeledParent, compilation)
+                    .Statement
                 : node;
 
         var expandedBlock = IteratorInliner.Expand(

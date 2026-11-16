@@ -108,12 +108,12 @@ public class LabeledJumpPlanTests
         var whileLoop = method.DescendantNodes().OfType<WhileStatementSyntax>().Single();
         var breakB = method.DescendantNodes().OfType<BreakStatementSyntax>().Single();
 
-        Assert.Same(whileLoop, LabeledJumps.FindTarget(breakB));
+        Assert.Same(whileLoop, LabeledJumpSyntax.FindTarget(breakB));
 
         var breakA = LabeledJumpSyntax.WithLabelName(breakB, SyntaxFactory.IdentifierName("a"));
         var replaced = method.ReplaceNode(breakB, breakA);
         var breakAInTree = replaced.DescendantNodes().OfType<BreakStatementSyntax>().Single();
-        Assert.Null(LabeledJumps.FindTarget(breakAInTree));
+        Assert.Null(LabeledJumpSyntax.FindTarget(breakAInTree));
     }
 
     [Fact]
@@ -125,8 +125,8 @@ public class LabeledJumpPlanTests
         var breakMid = method.DescendantNodes().OfType<BreakStatementSyntax>().Single();
         var continueTop = method.DescendantNodes().OfType<ContinueStatementSyntax>().Single();
 
-        Assert.Same(loops[1], LabeledJumps.FindTarget(breakMid));
-        Assert.Same(loops[0], LabeledJumps.FindTarget(continueTop));
+        Assert.Same(loops[1], LabeledJumpSyntax.FindTarget(breakMid));
+        Assert.Same(loops[0], LabeledJumpSyntax.FindTarget(continueTop));
     }
 
     [Fact]

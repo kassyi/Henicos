@@ -6,7 +6,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 internal static class LabeledJumpSyntax
 {
     /// <summary>
-    /// The label identifier of a labeled <c>break</c> or <c>continue</c>, or <see langword="null"/> for an unlabeled one.
+    /// The label identifier of a labeled <c>break</c> or <c>continue</c>, or <see langword="null"/> for an unlabeled
+    /// one.
     /// </summary>
     public static IdentifierNameSyntax? GetLabelName(StatementSyntax jump) =>
         // BreakStatementSyntax.Name and ContinueStatementSyntax.Name are [Experimental("RSEXPERIMENTAL006")] in
@@ -38,7 +39,8 @@ internal static class LabeledJumpSyntax
     /// <summary>
     /// The loop or <c>switch</c> statement that <paramref name="jump"/> names: the nearest enclosing loop (or
     /// <c>switch</c> for <c>break</c>) in the same function whose immediate parent is a
-    /// <see cref="LabeledStatementSyntax"/> with that identifier (only the immediate label counts); <see langword="null"/>
+    /// <see cref="LabeledStatementSyntax"/> with that identifier (only the immediate label counts);
+    /// <see langword="null"/>
     /// when <paramref name="jump"/> is unlabeled or its target is not in the tree.
     /// </summary>
     public static StatementSyntax? FindTarget(StatementSyntax jump)

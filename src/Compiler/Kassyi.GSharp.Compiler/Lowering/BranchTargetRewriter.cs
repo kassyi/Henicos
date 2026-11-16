@@ -24,7 +24,7 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel, st
     {
         if (LabeledJumpSyntax.GetLabelName(node) is { } labelName)
         {
-            return loopLabel != null && string.Equals(labelName.Identifier.ValueText, loopLabel, StringComparison.Ordinal)
+            return NamesThisLoop(labelName)
                 ? LoweringSyntax.Goto(endLabel).WithOriginalSpanFrom(node)
                 : node;
         }
@@ -42,7 +42,7 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel, st
     {
         if (LabeledJumpSyntax.GetLabelName(node) is { } labelName)
         {
-            return loopLabel != null && string.Equals(labelName.Identifier.ValueText, loopLabel, StringComparison.Ordinal)
+            return NamesThisLoop(labelName)
                 ? LoweringSyntax.Goto(nextLabel).WithOriginalSpanFrom(node)
                 : node;
         }
@@ -106,4 +106,8 @@ internal sealed class BranchTargetRewriter(string endLabel, string nextLabel, st
             _continueDepth--;
         }
     }
+
+    // Whether a labeled jump names the consumer foreach whose body this rewriter walks
+    private bool NamesThisLoop(IdentifierNameSyntax labelName) =>
+        loopLabel != null && string.Equals(labelName.Identifier.ValueText, loopLabel, StringComparison.Ordinal);
 }
