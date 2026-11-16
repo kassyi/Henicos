@@ -18,7 +18,7 @@ internal struct LabeledJumpLifoRecorder : IDisposable
 }
 
 /// <summary>
-/// Differential kernels for C# 15 labeled <c>break</c> and <c>continue</c> statements (#1990, design.md §6.3 PR 1 rows).
+/// Differential kernels for C# 15 labeled <c>break</c> and <c>continue</c> statements (#1990).
 /// </summary>
 public static partial class LabeledJumpDifferentialKernels
 {

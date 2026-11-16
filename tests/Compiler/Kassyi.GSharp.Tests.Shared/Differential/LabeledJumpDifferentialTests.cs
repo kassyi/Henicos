@@ -6,7 +6,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Differential tests for C# 15 labeled <c>break</c> and <c>continue</c> statements (#1990, design.md §6.3 PR 1 rows):
+/// Differential tests for C# 15 labeled <c>break</c> and <c>continue</c> statements (#1990):
 /// Managed C#, Native CPU C++ and CUDA C++ against the sequential C# oracle.
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
