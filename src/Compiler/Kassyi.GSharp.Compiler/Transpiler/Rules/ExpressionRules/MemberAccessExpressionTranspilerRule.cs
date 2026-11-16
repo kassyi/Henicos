@@ -63,8 +63,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         switch (SpanWriteClassifier.ClassifyProperty(property))
         {
             case SpanPropertyKind.Empty:
-                context.Emitter.Dialect.AppendType(ref context, property.Type);
-                context.Emitter.Writer.Append("{}");
+                DefaultValue.AppendZero(property.Type, ref context);
                 return true;
             case SpanPropertyKind.IsEmpty or SpanPropertyKind.IsDefaultOrEmpty:
                 // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array;
