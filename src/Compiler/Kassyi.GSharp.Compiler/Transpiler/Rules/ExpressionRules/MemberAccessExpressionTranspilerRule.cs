@@ -69,14 +69,14 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             case SpanPropertyKind.IsEmpty or SpanPropertyKind.IsDefaultOrEmpty:
                 // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array;
                 // IsDefaultOrEmpty reads no array, and a default array has no element either
-                AppendViewReceiver(node, property, ref context);
+                AppendMemberReceiver(node, property, ref context);
                 context.Emitter.Writer.Append(".IsEmpty()");
                 return true;
             case SpanPropertyKind.IsDefault:
                 // (<array>.data==nullptr): a null array is the one with no data pointer, an empty one has it
                 using (context.Emitter.Writer.Parentheses())
                 {
-                    AppendViewReceiver(node, property, ref context);
+                    AppendMemberReceiver(node, property, ref context);
                     context.Emitter.Writer.Append(".data==nullptr");
                 }
 
@@ -94,15 +94,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
     }
 
-    // The receiver as an array view; the receiver of a member that reads the array of an ImmutableArray<T> is checked
-    private static void AppendViewReceiver(MemberAccessExpressionSyntax node, IPropertySymbol property,
-        ref TranspileContext context)
-    {
-        if (!ArrayNullCheck.TryAppendMemberReceiver(node, property, ref context))
-        {
-            StackArrayLocals.AppendView(node.Expression, ref context);
-        }
-    }
 
     // A member reached through a type name (Type.Member).
     private static bool TryTranspileTypeQualifiedAccess(
