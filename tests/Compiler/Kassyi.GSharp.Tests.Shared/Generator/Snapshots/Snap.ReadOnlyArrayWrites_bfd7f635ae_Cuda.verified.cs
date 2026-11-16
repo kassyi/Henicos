@@ -1221,7 +1221,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyArrayWriteKernels__StructAliasKernel(GSharpArray<const unsigned int> __gsharp_id_0_r, GSharpArray<unsigned int> __gsharp_id_1_o, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-auto __gsharp_id_2_assigned = __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyAliasHolder{};
+auto __gsharp_id_2_assigned = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyAliasHolder>();
 __gsharp_id_2_assigned.__gsharp_mb_Data=__gsharp_id_0_r;
 __gsharp_array_at(__gsharp_id_2_assigned.__gsharp_mb_Data, 0, 29040306u)=4u;
 auto __gsharp_id_3_initialized = ([&]() {

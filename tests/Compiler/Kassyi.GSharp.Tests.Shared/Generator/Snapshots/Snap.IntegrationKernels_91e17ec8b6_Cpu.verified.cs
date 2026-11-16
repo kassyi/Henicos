@@ -213,7 +213,7 @@ case 1: return 2.0f;
 default: return 3.0f;
 }
 }());
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray>();
 __gsharp_id_16_arr[0]=__gsharp_id_15_mag;
 __gsharp_id_16_arr[1]=__gsharp_id_15_mag*2.0f;
 __gsharp_id_16_arr[2]=__gsharp_id_15_mag*3.0f;
@@ -304,7 +304,7 @@ int __gsharp_id_34_bitwise = (__gsharp_shl_i32(__gsharp_id_32_a,1))|(__gsharp_id
 __gsharp_id_34_bitwise&=(-2);
 float __gsharp_id_35_finalVal = ((__gsharp_id_34_bitwise>0)?((__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t]>10.0f?10.0f:__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t])):0.0f);
 {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct>();
 __gsharp_id_36_fbs.__gsharp_mb_Data[0]=__gsharp_id_34_bitwise;
 __gsharp_id_35_finalVal+=__gsharp_id_36_fbs.__gsharp_mb_Data[0];
 }

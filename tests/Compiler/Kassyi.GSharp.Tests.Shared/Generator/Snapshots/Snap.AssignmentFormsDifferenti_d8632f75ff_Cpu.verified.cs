@@ -711,12 +711,12 @@ System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNul
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullablePair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_array_at(__gsharp_id_1_values, __gsharp_id_4_t, 1417767088u); __gsharp_tmp.__gsharp_mb_Y = 1; return __gsharp_tmp; }
 ())):System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullablePair>());
 System_Nullable<float> __gsharp_id_8_optFloat = (__gsharp_array_at(__gsharp_id_0_has, __gsharp_id_4_t, 25818569u)!=0?System_Nullable<float>(__gsharp_array_at(__gsharp_id_2_fvalues, __gsharp_id_4_t, 2110907454u)):System_Nullable<float>());
-__gsharp_array_at(__gsharp_id_3_dst, __gsharp_id_5_o, 1207723961u)=(__gsharp_id_6_optInt.HasValue?__gsharp_id_6_optInt.Value:int{});
+__gsharp_array_at(__gsharp_id_3_dst, __gsharp_id_5_o, 1207723961u)=(__gsharp_id_6_optInt.HasValue?__gsharp_id_6_optInt.Value:__gsharp_type<int>());
 __gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,1), 207157717u)=(__gsharp_id_6_optInt.HasValue?__gsharp_id_6_optInt.Value:(-1));
 __gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,2), 2037589445u)=(__gsharp_array_at(__gsharp_id_0_has, __gsharp_id_4_t, 2087886970u)!=0?__gsharp_add_i32(__gsharp_id_6_optInt.Value,(__gsharp_id_7_optPair.Value).__gsharp_mb_X):0);
 __gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,3), 1131398609u)=(__gsharp_array_at(__gsharp_id_0_has, __gsharp_id_4_t, 888954676u)!=0?(int)((long long)__gsharp_id_6_optInt.Value>>1):0);
 __gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,4), 1546229473u)=(__gsharp_array_at(__gsharp_id_0_has, __gsharp_id_4_t, 773415386u)!=0?__gsharp_to_i32(__gsharp_id_8_optFloat.Value):0);
-__gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,5), 1373192265u)=(__gsharp_id_7_optPair.HasValue?__gsharp_id_7_optPair.Value:__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullablePair{}).__gsharp_mb_Y;
+__gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,5), 1373192265u)=(__gsharp_id_7_optPair.HasValue?__gsharp_id_7_optPair.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffNullablePair>()).__gsharp_mb_Y;
 int __gsharp_id_9_calls = 0;
 __gsharp_array_at(__gsharp_id_3_dst, __gsharp_add_i32(__gsharp_id_5_o,6), 1788842645u)=([&]() {
 auto __gsharp_seq_0 = ([&]() {

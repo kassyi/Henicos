@@ -43,7 +43,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag,__gsharp_mb_Count)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffWeightedBag.Count: offset"");
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ImplicitCallDifferentialKernels__CreateWeightedBag(GSharpArray<int> __gsharp_id_0_values){
-auto __gsharp_id_1_bag = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag{};
+auto __gsharp_id_1_bag = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag>();
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_id_0_values.length;__gsharp_id_2_i++)
 {
 __gsharp_id_1_bag.__gsharp_mb_Sum=__gsharp_add_i32(__gsharp_id_1_bag.__gsharp_mb_Sum,__gsharp_mul_i32(__gsharp_id_0_values[__gsharp_id_2_i],__gsharp_add_i32(__gsharp_id_2_i,1)));

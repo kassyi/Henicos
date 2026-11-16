@@ -47,6 +47,20 @@ internal static class ReconvergenceSyntax
         return null;
     }
 
+    // Whether the break or continue leaves the loop before its body ends: a break of the loop itself, or a labeled jump to
+    // a statement around it. A jump to a statement inside the loop stays in it.
+    internal static bool LeavesLoop(SyntaxNode jump, SyntaxNode loop) =>
+        jump switch
+        {
+            BreakStatementSyntax => FindJumpTarget(jump, loopOnly: false) is { } target &&
+                                    (target == loop || IsInside(loop, target)),
+            ContinueStatementSyntax => LabeledJumpSyntax.GetLabelName((StatementSyntax)jump) != null &&
+                                       FindJumpTarget(jump, loopOnly: true) is { } target &&
+                                       target != loop &&
+                                       IsInside(loop, target),
+            _ => false
+        };
+
     internal static bool IsInside(SyntaxNode node, SyntaxNode extent)
     {
         for (var current = node; current != null; current = current.Parent)
@@ -60,9 +74,15 @@ internal static class ReconvergenceSyntax
         return false;
     }
 
-    // The loop (or the switch, for a break) that a break or continue jumps out of
+    // The loop (or the switch, for a break) that a break or continue jumps out of: the one it names when it has a label
+    // (LabeledJumpMarker.FindTarget), otherwise the innermost
     internal static SyntaxNode? FindJumpTarget(SyntaxNode jump, bool loopOnly)
     {
+        if (jump is StatementSyntax statement && LabeledJumpSyntax.GetLabelName(statement) != null)
+        {
+            return LabeledJumpMarker.FindTarget(statement);
+        }
+
         foreach (var ancestor in jump.Ancestors())
         {
             switch (ancestor)

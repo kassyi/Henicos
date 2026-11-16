@@ -2666,7 +2666,7 @@ auto __gsharp_coalesce_tmp = __gsharp_id_9_mus;
 return __gsharp_coalesce_tmp.HasValue ? static_cast<unsigned short>(__gsharp_coalesce_tmp.Value) : static_cast<unsigned short>(0);
 }());
 __gsharp_id_10_y=(unsigned short)__gsharp_add_i32(__gsharp_id_10_y,1);
-System_Nullable<unsigned char> __gsharp_id_11_mbNullForMax = ((__gsharp_id_6_c&4)==0?System_Nullable<unsigned char>{}:System_Nullable<unsigned char>{(unsigned char)255});
+System_Nullable<unsigned char> __gsharp_id_11_mbNullForMax = ((__gsharp_id_6_c&4)==0?__gsharp_type<System_Nullable<unsigned char>>():System_Nullable<unsigned char>{(unsigned char)255});
 unsigned short __gsharp_id_12_usMax = 65535;
 auto __gsharp_id_13_z = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_11_mbNullForMax;

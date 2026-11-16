@@ -391,6 +391,41 @@ public class WarpActiveMaskDifferentialTests
             static output => WarpActiveMaskDifferentialKernels.LaunchPartialWarpKernel(output, blockDimX: 40),
             Enumerable.Range(0, 40).Select(static t => t < 32 ? 0xFFFFFFFFu : 0xFFu).ToArray());
 
+    // A lane leaves the loop by break outer, or continues outer; the lanes of one iteration meet at the end of its body,
+    // and every lane meets the others where the loop ends (#1990)
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_LabeledBreakAndContinue_StartsEachIterationWithTheLanesLeft()
+    {
+        // The lanes in the loop at the start of the iteration, and those that run its inner loop to the end
+        static bool InLoop(int lane, int iteration) => ((lane >> 2) & 1) == 1 || lane % 4 >= iteration;
+        static bool PassesInnerLoop(int lane, int iteration) => ((lane >> 2) & 1) == 0 && lane % 4 > iteration;
+
+        var expected = new uint[256];
+        for (int t = 0; t < 32; t++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                uint start = 0u;
+                uint passing = 0u;
+                for (int u = 0; u < 32; u++)
+                {
+                    start |= InLoop(u, i) ? 1u << u : 0u;
+                    passing |= PassesInnerLoop(u, i) ? 1u << u : 0u;
+                }
+
+                expected[(t * 8) + i] = InLoop(t, i) ? start : 0u;
+                expected[(t * 8) + 3 + i] = PassesInnerLoop(t, i) ? passing : 0u;
+            }
+
+            expected[(t * 8) + 6] = 0xFFFFFFFFu;
+        }
+
+        RunWithinClassicBounds(256,
+            static output => LabeledJumpDifferentialKernels.LaunchActiveMaskAfterALabeledBreak(output, blockDimX: 32),
+            expected, static i => i / 8);
+    }
+
     // The shuffles of GpuBigIntCmpKernels.IsZeroKernel read lanes 16..31 in the last round, which have left the loop
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]

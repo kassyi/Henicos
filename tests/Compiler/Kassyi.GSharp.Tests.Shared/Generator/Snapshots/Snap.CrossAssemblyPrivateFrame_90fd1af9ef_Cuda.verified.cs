@@ -73,7 +73,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibPriva
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibPrivateFrame__Carry,__gsharp_mb_V)==0,""Kassyi.GSharp.Tests.DeviceLibrary.LibPrivateFrame.Carry.V: offset"");
 #endif
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__DeviceLibrary__LibPrivateFrame__KeepAcrossBarrier(GSharpArray<int> __gsharp_id_0_buffer, int __gsharp_id_1_tid){
-auto __gsharp_id_2_carry = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibPrivateFrame__Carry{};
+auto __gsharp_id_2_carry = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibPrivateFrame__Carry>();
 __gsharp_id_2_carry.__gsharp_mb_V=__gsharp_mul_i32(__gsharp_id_1_tid,3);
 __gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, ""G#: a null array is read at LibPrivateFrame.cu.cs(20,9)"")=__gsharp_add_i32(__gsharp_id_1_tid,1);
 __syncthreads();
