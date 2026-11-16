@@ -1418,10 +1418,10 @@ if(__gsharp_id_2_i>=__gsharp_array_ref(__gsharp_id_1_r, 417458188u).length)
 return;
 }
 auto __gsharp_id_3_optional = __gsharp_id_0_h.__gsharp_mb_Optional;
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_i, 1799816353u)=(__gsharp_id_3_optional.HasValue?((__gsharp_id_2_i<(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:GSharpArray<int>{}).length?(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:GSharpArray<int>{})[__gsharp_id_2_i]:(-2))):(-3));
-if(__gsharp_id_3_optional.HasValue&&__gsharp_id_2_i<(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:GSharpArray<int>{}).length)
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_i, 1799816353u)=(__gsharp_id_3_optional.HasValue?((__gsharp_id_2_i<(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:__gsharp_type<GSharpArray<int>>()).length?(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:__gsharp_type<GSharpArray<int>>())[__gsharp_id_2_i]:(-2))):(-3));
+if(__gsharp_id_3_optional.HasValue&&__gsharp_id_2_i<(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:__gsharp_type<GSharpArray<int>>()).length)
 {
-(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:GSharpArray<int>{})[__gsharp_id_2_i]=__gsharp_neg_i32(__gsharp_id_2_i);
+(__gsharp_id_3_optional.HasValue?__gsharp_id_3_optional.Value:__gsharp_type<GSharpArray<int>>())[__gsharp_id_2_i]=__gsharp_neg_i32(__gsharp_id_2_i);
 }
 }
 ";
@@ -1588,7 +1588,7 @@ if(__gsharp_id_2_i>=__gsharp_array_ref(__gsharp_id_1_r, 1628361966u).length)
 return;
 }
 auto __gsharp_id_3_optionalSegment = __gsharp_id_0_h.__gsharp_mb_OptionalSegment;
-__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_i, 1297858097u)=(__gsharp_id_3_optionalSegment.HasValue?((__gsharp_id_2_i<(__gsharp_id_3_optionalSegment.HasValue?__gsharp_id_3_optionalSegment.Value:GSharpArray<int>{}).length?(__gsharp_id_3_optionalSegment.HasValue?__gsharp_id_3_optionalSegment.Value:GSharpArray<int>{})[__gsharp_id_2_i]:(-2))):(-3));
+__gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_i, 1297858097u)=(__gsharp_id_3_optionalSegment.HasValue?((__gsharp_id_2_i<(__gsharp_id_3_optionalSegment.HasValue?__gsharp_id_3_optionalSegment.Value:__gsharp_type<GSharpArray<int>>()).length?(__gsharp_id_3_optionalSegment.HasValue?__gsharp_id_3_optionalSegment.Value:__gsharp_type<GSharpArray<int>>())[__gsharp_id_2_i]:(-2))):(-3));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_OptionalSegmentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayViewFieldDifferentialKernels__OptionalSegmentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

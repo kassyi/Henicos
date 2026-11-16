@@ -39,7 +39,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_carry=__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibFrameBase__Carry{};
+__gsharp_ctx->__gsharp_id_2_carry=__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibFrameBase__Carry>();
 __gsharp_ctx->__gsharp_id_2_carry.__gsharp_mb_V=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_tid,3);
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, __gsharp_ctx->__gsharp_id_1_tid, ""G#: a null array is read at LibFrameBase.cu.cs(24,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 __gsharp_yielded_for_block_barrier=true;

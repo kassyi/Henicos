@@ -2681,8 +2681,8 @@ if((int)threadIdx.x!=0||(int)blockIdx.x!=0)
 {
 return;
 }
-GSharpArray<int> __gsharp_id_2_emptySpan = GSharpArray<int>{};
-GSharpArray<int> __gsharp_id_3_emptyRo = GSharpArray<int>{};
+GSharpArray<int> __gsharp_id_2_emptySpan = __gsharp_type<GSharpArray<int>>();
+GSharpArray<int> __gsharp_id_3_emptyRo = __gsharp_type<GSharpArray<int>>();
 GSharpArray<int> __gsharp_id_4_nonEmpty = __gsharp_id_0_data.AsSpan();
 GSharpArray<int> __gsharp_id_5_nonEmptyRo = __gsharp_id_0_data;
 GSharpArray<int> __gsharp_id_6_zeroTail = __gsharp_id_4_nonEmpty.Slice(__gsharp_id_4_nonEmpty.length, ""G#: index was out of range at SpanWriteKernels.cs(228,30)"");

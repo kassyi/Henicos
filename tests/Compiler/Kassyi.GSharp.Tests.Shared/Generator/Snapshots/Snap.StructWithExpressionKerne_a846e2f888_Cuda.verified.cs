@@ -1857,7 +1857,7 @@ static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFou
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__InlineArrayStructKernel(GSharpArray<int> __gsharp_id_0_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-auto __gsharp_id_1_a = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFourInts{};
+auto __gsharp_id_1_a = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFourInts>();
 __gsharp_id_1_a[0]=5;
 __gsharp_id_1_a[3]=8;
 auto __gsharp_id_2_b = ([&]() {
@@ -2005,7 +2005,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFi
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructWithExpressionKernels__FixedBufferStructKernel(GSharpArray<int> __gsharp_id_0_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-auto __gsharp_id_1_a = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFixedBufferStruct{};
+auto __gsharp_id_1_a = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFixedBufferStruct>();
 __gsharp_id_1_a.__gsharp_mb_Buffer[0]=5;
 __gsharp_id_1_a.__gsharp_mb_Buffer[2]=6;
 __gsharp_id_1_a.__gsharp_mb_Tag=1;

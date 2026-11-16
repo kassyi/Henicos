@@ -3433,15 +3433,15 @@ return;
 int __gsharp_id_5_v = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_t, 1363399798u);
 int __gsharp_id_6_w = __gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_t, 2120864098u);
 int __gsharp_id_7_col = __gsharp_mul_i32(__gsharp_id_4_t,4);
-System_Nullable<int> __gsharp_id_8_maybeVal = ((__gsharp_id_5_v&1)==0?System_Nullable<int>{__gsharp_id_5_v&0xFFFF}:System_Nullable<int>{});
+System_Nullable<int> __gsharp_id_8_maybeVal = ((__gsharp_id_5_v&1)==0?System_Nullable<int>{__gsharp_id_5_v&0xFFFF}:__gsharp_type<System_Nullable<int>>());
 int __gsharp_id_9_rhsSideEffect = 10;
 int __gsharp_id_10_coalesced = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_8_maybeVal;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : ((__gsharp_id_9_rhsSideEffect=__gsharp_add_i32(__gsharp_id_9_rhsSideEffect,5)));
 }());
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_7_col+0, 760709427u)=__gsharp_add_i32(__gsharp_id_10_coalesced,__gsharp_mul_i32(__gsharp_id_9_rhsSideEffect,100));
-System_Nullable<int> __gsharp_id_11_first = ((__gsharp_id_5_v&3)==0?System_Nullable<int>{111}:System_Nullable<int>{});
-System_Nullable<int> __gsharp_id_12_second = ((__gsharp_id_5_v&3)==1?System_Nullable<int>{222}:System_Nullable<int>{});
+System_Nullable<int> __gsharp_id_11_first = ((__gsharp_id_5_v&3)==0?System_Nullable<int>{111}:__gsharp_type<System_Nullable<int>>());
+System_Nullable<int> __gsharp_id_12_second = ((__gsharp_id_5_v&3)==1?System_Nullable<int>{222}:__gsharp_type<System_Nullable<int>>());
 int __gsharp_id_13_chained = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_11_first;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : ([&]() {
@@ -3450,7 +3450,7 @@ return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (__gsharp_
 }());
 }());
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_7_col,1), 1902017611u)=__gsharp_id_13_chained;
-System_Nullable<int> __gsharp_id_14_target = ((__gsharp_id_5_v&1)==0?System_Nullable<int>{}:System_Nullable<int>{77});
+System_Nullable<int> __gsharp_id_14_target = ((__gsharp_id_5_v&1)==0?__gsharp_type<System_Nullable<int>>():System_Nullable<int>{77});
 int __gsharp_id_15_assignTouches = 0;
 ([&]() {
 auto& __gsharp_coalesce_target = __gsharp_id_14_target;

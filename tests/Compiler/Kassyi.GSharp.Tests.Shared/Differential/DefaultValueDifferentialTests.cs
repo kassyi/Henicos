@@ -59,6 +59,12 @@ public class DefaultValueDifferentialTests
         static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultStructKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
+    internal static readonly DifferentialCase s_zeroStructBesideAValue = Case(
+        nameof(DefaultValueDifferentialKernels.ZeroStructBesideAValueKernel),
+        ["created_arm_tag", "switch_default_arm_tag", "get_value_or_default_tag"],
+        static (b, s) => DefaultValueDifferentialKernels.LaunchZeroStructBesideAValueKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+
     internal static readonly DifferentialCase s_nullable = Case(
         nameof(DefaultValueDifferentialKernels.DefaultNullableKernel),
         ["maybe_has_value", "q_has_value", "equals_default", "not_equals_default", "default_on_left"],
@@ -127,6 +133,13 @@ public class DefaultValueDifferentialTests
     [Category(TestCategory.Differential)]
     [Scenario(TestScenario.Boundary)]
     public void DefaultValue_OfAStruct_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_struct);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ZeroValue_OfAStructWithNullableFieldsBesideAValue_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_zeroStructBesideAValue);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

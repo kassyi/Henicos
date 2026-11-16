@@ -322,11 +322,11 @@ if(__gsharp_ctx->__gsharp_id_7_tx==0)
 atomicAdd(&(*__gsharp_id_1_totalMagnitude),__gsharp_ctx->__gsharp_id_21_dynamicCache[0]);
 (*__gsharp_id_2_successFlag)=true;
 }
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8>();
 __gsharp_id_31_inlineVec[0]=123;
 __gsharp_id_31_inlineVec[1]=456;
 {
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState>();
 __gsharp_id_32_state.__gsharp_mb_Buffer[0]=__gsharp_id_31_inlineVec[0];
 __gsharp_id_32_state.__gsharp_mb_Buffer[1]=__gsharp_id_31_inlineVec[1];
 unsigned long long __gsharp_id_33_carry = 0;

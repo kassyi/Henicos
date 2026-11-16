@@ -78,7 +78,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4 __gsharp_id_1_arr = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4 __gsharp_id_1_arr = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4>();
 __gsharp_id_1_arr[0]=10;
 __gsharp_id_1_arr[1]=20;
 __gsharp_id_1_arr[2]=30;

@@ -1724,7 +1724,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = (int)threadIdx.x;
-auto __gsharp_id_2_s1 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers{};
+auto __gsharp_id_2_s1 = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers>();
 auto __gsharp_id_3_s2 = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Result = __gsharp_add_i32(__gsharp_id_1_tid,10); return __gsharp_tmp; }
 ());

@@ -1851,7 +1851,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_2_assigned = __gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyAliasHolder{};
+auto __gsharp_id_2_assigned = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyAliasHolder>();
 __gsharp_id_2_assigned.__gsharp_mb_Data=__gsharp_id_0_r;
 __gsharp_array_at(__gsharp_id_2_assigned.__gsharp_mb_Data, 0, 29040306u)=4u;
 auto __gsharp_id_3_initialized = ([&]() {
