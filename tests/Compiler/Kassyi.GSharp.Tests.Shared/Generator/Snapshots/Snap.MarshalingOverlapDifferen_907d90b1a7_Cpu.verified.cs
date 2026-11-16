@@ -11533,6 +11533,7 @@ private unsafe delegate void __gsharp_delegate_InAndRefOneVariableKernel(uint gr
 public static unsafe void LaunchInAndRefOneVariableKernel(in global::System.Int32 first, ref global::System.Int32 second, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -11685,6 +11686,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel", "LaunchInAndRefOneVariableKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInAndRefOneVariableKernel");
@@ -11849,6 +11851,7 @@ public static unsafe void LaunchInAndOutOneVariableKernel(in global::System.Int3
 {
 global::System.Runtime.CompilerServices.Unsafe.SkipInit(out second);
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -12001,6 +12004,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel", "LaunchInAndOutOneVariableKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInAndOutOneVariableKernel");
@@ -12178,6 +12182,7 @@ private unsafe delegate void __gsharp_delegate_InAndRefConvertedKernel(uint grid
 public static unsafe void LaunchInAndRefConvertedKernel(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded first, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded second, global::System.Single[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Single[] __gsharp_csharp_arg_2 = observed;
@@ -12340,6 +12345,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel", "LaunchInAndRefConvertedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInAndRefConvertedKernel");
@@ -12517,6 +12523,7 @@ private unsafe delegate void __gsharp_delegate_InFieldAndRefStructKernel(uint gr
 public static unsafe void LaunchInFieldAndRefStructKernel(in global::System.Int32 field, ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffOverlapPoint whole, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -12679,6 +12686,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel", "LaunchInFieldAndRefStructKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInFieldAndRefStructKernel");
@@ -12856,6 +12864,7 @@ private unsafe delegate void __gsharp_delegate_InStructAndRefFieldKernel(uint gr
 public static unsafe void LaunchInStructAndRefFieldKernel(in global::Kassyi.GSharp.Tests.Shared.Differential.DiffOverlapPoint whole, ref global::System.Int32 field, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -13018,6 +13027,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel", "LaunchInStructAndRefFieldKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInStructAndRefFieldKernel");
@@ -13181,6 +13191,7 @@ private unsafe delegate void __gsharp_delegate_InElementAndItsArrayKernel(uint g
 public static unsafe void LaunchInElementAndItsArrayKernel(in global::System.Int32 element, global::System.Int32[] array, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_1 = array;
@@ -13338,6 +13349,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel", "LaunchInElementAndItsArrayKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInElementAndItsArrayKernel");
@@ -13501,6 +13513,7 @@ private unsafe delegate void __gsharp_delegate_InElementAndItsSliceKernel(uint g
 public static unsafe void LaunchInElementAndItsSliceKernel(in global::System.Int32 element, global::System.Span<global::System.Int32> slice, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -13660,6 +13673,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel", "LaunchInElementAndItsSliceKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInElementAndItsSliceKernel");
@@ -13825,6 +13839,7 @@ private unsafe delegate void __gsharp_delegate_InAndTwoRefsOneVariableKernel(uin
 public static unsafe void LaunchInAndTwoRefsOneVariableKernel(in global::System.Int32 first, ref global::System.Int32 second, ref global::System.Int32 third, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_3 = observed;
@@ -13980,6 +13995,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel", "LaunchInAndTwoRefsOneVariableKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInAndTwoRefsOneVariableKernel");
@@ -14144,6 +14160,7 @@ public static unsafe void LaunchInReadBeforeOutKernel(in global::System.Int32 fi
 {
 global::System.Runtime.CompilerServices.Unsafe.SkipInit(out second);
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -14296,6 +14313,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel", "LaunchInReadBeforeOutKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInReadBeforeOutKernel");

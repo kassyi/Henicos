@@ -9137,6 +9137,7 @@ public static unsafe void LaunchInAndRefOneVariableKernel(in global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefOneVariableKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -9403,6 +9404,7 @@ global::System.Runtime.CompilerServices.Unsafe.SkipInit(out second);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndOutOneVariableKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -9676,6 +9678,7 @@ public static unsafe void LaunchInAndRefConvertedKernel(in global::Kassyi.GSharp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndRefConvertedKernel");
 global::System.Single[] __gsharp_csharp_arg_2 = observed;
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded* __gsharp_csharp_pin_0 = &first)
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.DiffVec2Padded* __gsharp_csharp_pin_1 = &second)
@@ -9988,6 +9991,7 @@ __gsharp_layout_checked_InFieldAndRefStructKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InFieldAndRefStructKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &field)
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.DiffOverlapPoint* __gsharp_csharp_pin_1 = &whole)
@@ -10274,6 +10278,7 @@ __gsharp_layout_checked_InStructAndRefFieldKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InStructAndRefFieldKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.DiffOverlapPoint* __gsharp_csharp_pin_0 = &whole)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &field)
@@ -10537,6 +10542,7 @@ public static unsafe void LaunchInElementAndItsArrayKernel(in global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsArrayKernel");
 global::System.Int32[] __gsharp_csharp_arg_1 = array;
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &element)
@@ -10825,6 +10831,7 @@ public static unsafe void LaunchInElementAndItsSliceKernel(in global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InElementAndItsSliceKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &element)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(slice))
@@ -11110,6 +11117,7 @@ public static unsafe void LaunchInAndTwoRefsOneVariableKernel(in global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InAndTwoRefsOneVariableKernel");
 global::System.Int32[] __gsharp_csharp_arg_3 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -11420,6 +11428,7 @@ global::System.Runtime.CompilerServices.Unsafe.SkipInit(out second);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingOverlapDifferentialKernels.InReadBeforeOutKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)

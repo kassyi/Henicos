@@ -132,6 +132,7 @@ public static unsafe void LaunchInAndRefSeparateVariablesKernel(in global::Syste
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -401,6 +402,7 @@ public static unsafe void LaunchMultiBlockInAndRefKernel(in global::System.Int32
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 global::System.Int32[] __gsharp_csharp_arg_3 = allReads;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
@@ -729,6 +731,7 @@ public static unsafe void LaunchRefReadOnlyAndRefKernel(in global::System.Int32 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -996,6 +999,7 @@ public static unsafe void LaunchTwoInAndOneRefKernel(in global::System.Int32 fir
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
 global::System.Int32[] __gsharp_csharp_arg_3 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)
@@ -1338,6 +1342,7 @@ public static unsafe void LaunchNestedFunctionsAndCtorKernel(in global::System.I
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
 fixed (global::System.Int32* __gsharp_csharp_pin_0 = &first)
 fixed (global::System.Int32* __gsharp_csharp_pin_1 = &second)

@@ -193,6 +193,7 @@ private unsafe delegate void __gsharp_delegate_InAndRefSeparateVariablesKernel(u
 public static unsafe void LaunchInAndRefSeparateVariablesKernel(in global::System.Int32 first, ref global::System.Int32 second, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -345,6 +346,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingTwoFormsDifferentialKernels.InAndRefSeparateVariablesKernel", "LaunchInAndRefSeparateVariablesKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchInAndRefSeparateVariablesKernel");
@@ -512,6 +514,7 @@ private unsafe delegate void __gsharp_delegate_MultiBlockInAndRefKernel(uint gri
 public static unsafe void LaunchMultiBlockInAndRefKernel(in global::System.Int32 first, ref global::System.Int32 second, global::System.Int32[] observed, global::System.Int32[] allReads, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -672,6 +675,7 @@ if (allReads.Data == global::System.IntPtr.Zero && allReads.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "allReads");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingTwoFormsDifferentialKernels.MultiBlockInAndRefKernel", "LaunchMultiBlockInAndRefKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchMultiBlockInAndRefKernel");
@@ -835,6 +839,7 @@ private unsafe delegate void __gsharp_delegate_RefReadOnlyAndRefKernel(uint grid
 public static unsafe void LaunchRefReadOnlyAndRefKernel(in global::System.Int32 first, ref global::System.Int32 second, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -987,6 +992,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingTwoFormsDifferentialKernels.RefReadOnlyAndRefKernel", "LaunchRefReadOnlyAndRefKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRefReadOnlyAndRefKernel");
@@ -1152,6 +1158,7 @@ private unsafe delegate void __gsharp_delegate_TwoInAndOneRefKernel(uint gridDim
 public static unsafe void LaunchTwoInAndOneRefKernel(in global::System.Int32 first, in global::System.Int32 second, ref global::System.Int32 third, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_3 = observed;
@@ -1307,6 +1314,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingTwoFormsDifferentialKernels.TwoInAndOneRefKernel", "LaunchTwoInAndOneRefKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchTwoInAndOneRefKernel");
@@ -1500,6 +1508,7 @@ private unsafe delegate void __gsharp_delegate_NestedFunctionsAndCtorKernel(uint
 public static unsafe void LaunchNestedFunctionsAndCtorKernel(in global::System.Int32 first, ref global::System.Int32 second, global::System.Int32[] observed, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_2 = observed;
@@ -1652,6 +1661,7 @@ if (observed.Data == global::System.IntPtr.Zero && observed.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "observed");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("MarshalingTwoFormsDifferentialKernels.NestedFunctionsAndCtorKernel", "LaunchNestedFunctionsAndCtorKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedFunctionsAndCtorKernel");
