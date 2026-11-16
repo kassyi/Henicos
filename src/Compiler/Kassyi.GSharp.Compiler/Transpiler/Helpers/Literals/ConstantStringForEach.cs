@@ -57,7 +57,7 @@ internal static class ConstantStringForEach
             }
 
             writer.AppendLine(";");
-            context.Visitor.VisitStatementOrBlock(node.Statement);
+            LoopBodyWriter.WriteInOpenScope(node, node.Statement, visitBlockDirectlyWhenUnlabeled: false, ref context);
         }
 
         return true;

@@ -475,6 +475,7 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, AttributeNames.Cuda.Failed, record.Cuda.Failed);
             AppendBoolProperty(writer, AttributeNames.Cpp.Failed, record.Cpp.Failed);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedStateMachine, traits.ManagedStateMachine);
+            AppendBoolProperty(writer, AttributeNames.Traits.PrivateManagedFrame, traits.PrivateManagedFrame);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);
             AppendStringProperty(writer, AttributeNames.InternalError, record.InternalError);
             AppendIntProperty(writer, AttributeNames.Traits.DivergentConditionParameters,
