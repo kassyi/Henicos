@@ -148,6 +148,32 @@ public static unsafe partial class DefaultValueDifferentialKernels
         dst[col + 2] = tag;
     }
 
+    // The other forms that write the zero value of a struct whose members have constructors (the Nullable fields),
+    // each beside a value of the same struct, so that a compiler that folds the choice shows it
+    [GpuKernel]
+    public static void ZeroStructBesideAValueKernel(int[] a, int[] dst, int n)
+    {
+        int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (t >= n)
+        {
+            return;
+        }
+
+        DiffNullablePairHolder created = a[t] > 0 ? new DiffNullablePairHolder() : new DiffNullablePairHolder { Tag = 7 };
+        int positive = a[t] > 0 ? 1 : 0;
+        DiffNullablePairHolder switched = positive switch
+        {
+            1 => default,
+            _ => new DiffNullablePairHolder { Tag = 7 },
+        };
+        DiffNullablePairHolder? maybe = a[t] > 0 ? null : new DiffNullablePairHolder { Tag = 7 };
+
+        int col = t * 3;
+        dst[col + 0] = created.Tag;
+        dst[col + 1] = switched.Tag;
+        dst[col + 2] = maybe.GetValueOrDefault().Tag;
+    }
+
     [GpuKernel]
     public static void DefaultNullableKernel(int[] a, int[] dst, int n)
     {
