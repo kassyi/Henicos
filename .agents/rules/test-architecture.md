@@ -254,7 +254,7 @@ a suppression there follows the procedure of [transpiler-emission.md](transpiler
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)
 
 This project strictly adheres to **Test-Driven AI Vibe Coding**.
-When picking up tasks from the roadmap, you MUST follow this fundamental workflow:
+When picking up an issue (in the order of [issue-milestones.md](issue-milestones.md)), you MUST follow this workflow:
 
 1. **Phase 1: Golden Master / Snapshot Test Generation First**
     - Before writing ANY implementation code, you must create the necessary test cases.

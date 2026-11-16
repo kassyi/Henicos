@@ -11,7 +11,7 @@ internal sealed class NativeApiReadError(NativeApiReadErrorKind kind, int line, 
 
     /// <summary>
     /// Gets the diagnostic ID this error is reported under. The build-time generator executable cannot link the
-    /// generated <c>GSharpDiagnostics</c>, so the IDs are mirrored here and pinned to <c>diagnostics.json</c> by a test.
+    /// generated <c>GSharpDiagnostics</c>, so the IDs are mirrored here and pinned to <c>diagnostics.yml</c> by a test.
     /// </summary>
     public string DiagnosticId => Kind == NativeApiReadErrorKind.Syntax ? "GSH0052" : "GSH0053";
 }
