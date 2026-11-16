@@ -31,10 +31,9 @@ internal sealed class ErrorSiteTable
     /// <summary>
     /// Registers an error site for <paramref name="node"/> and returns its deterministic 31-bit site ID.
     /// </summary>
-    public uint Register(SyntaxNode node, SemanticModel? semanticModel, string memberName, string defaultMessage,
-        string trapKind = "", string exceptionType = "")
+    public uint Register(SyntaxNode node, SemanticModel? semanticModel, string memberName, string defaultMessage, string trapKind = "")
     {
-        var entry = CreateSite(node, semanticModel, memberName, defaultMessage, trapKind, exceptionType);
+        var entry = CreateSite(node, semanticModel, memberName, defaultMessage, trapKind);
         return RegisterEntry(entry);
     }
 
@@ -80,8 +79,7 @@ internal sealed class ErrorSiteTable
         Location location,
         string memberName,
         string defaultMessage,
-        string trapKind = "",
-        string exceptionType = "")
+        string trapKind = "")
     {
         var kind = string.IsNullOrEmpty(trapKind) ? defaultMessage : trapKind;
         if (location != Location.None)
@@ -95,14 +93,14 @@ internal sealed class ErrorSiteTable
                 var siteId = ComputeSiteId(
                     fileName, start.Line + 1, start.Character + 1, end.Line + 1, end.Character + 1, kind);
                 return new ErrorSiteEntry(
-                    siteId, fileName, start.Line + 1, start.Character + 1, memberName, defaultMessage, exceptionType);
+                    siteId, fileName, start.Line + 1, start.Character + 1, memberName, defaultMessage);
             }
         }
 
         // [WHY] Every place of a tree without a file path is unknown: the member keeps the sites of two kernels apart,
         // whose one ID would be a collision (GSH0103) and drop the error site table of their class
         var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, 0, 0, kind + "@" + memberName);
-        return new ErrorSiteEntry(fallbackId, SourcePlace.Unknown, 0, 0, memberName, defaultMessage, exceptionType);
+        return new ErrorSiteEntry(fallbackId, SourcePlace.Unknown, 0, 0, memberName, defaultMessage);
     }
 
     /// <summary>

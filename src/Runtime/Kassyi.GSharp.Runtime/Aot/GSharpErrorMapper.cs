@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Errors;
+
 namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
@@ -258,22 +260,14 @@ public static class GSharpErrorMapper
     /// <param name="code">The runtime error code.</param>
     /// <returns>The default base message string.</returns>
     public static string GetDefaultMessage(GSharpErrorCode code) =>
-        code switch
-        {
-            GSharpErrorCode.NotSupported => "Specified method is not supported.",
-            GSharpErrorCode.InvalidOperation => "Operation is not valid due to the current state of the object.",
-            GSharpErrorCode.IndexOutOfRange => "Index was outside the bounds of the array.",
-            GSharpErrorCode.ArgumentOutOfRange => "Specified argument was out of the range of valid values.",
-            GSharpErrorCode.Argument => "Value does not fall within the expected range.",
-            GSharpErrorCode.NullReference => "Object reference not set to an instance of an object.",
-            GSharpErrorCode.DivideByZero => "Attempted to divide by zero.",
-            GSharpErrorCode.Overflow => "Arithmetic operation resulted in an overflow.",
-            GSharpErrorCode.DataRace => "Shared memory data race detected.",
-            GSharpErrorCode.SwitchExpression => "Non-exhaustive switch expression failed to match its input.",
-            GSharpErrorCode.ArgumentNull => "Value cannot be null.",
-            GSharpErrorCode.Throw => "An exception was thrown in device code.",
-            _ => "A G# runtime error occurred."
-        };
+        ThrowableExceptions.TryFindByCodeName(code.ToString(), out var entry)
+            ? entry.DefaultMessage
+            : code switch
+            {
+                GSharpErrorCode.DataRace => "Shared memory data race detected.",
+                GSharpErrorCode.Throw => "An exception was thrown in device code.",
+                _ => "A G# runtime error occurred."
+            };
 
     /// <summary>
     /// Creates a standard .NET exception from a <see cref="GSharpDeviceErrorSlot"/>, populating <see cref="Exception.Data"/>.
@@ -433,7 +427,7 @@ public static class GSharpErrorMapper
     // field for it). The exception takes the name as ParamName, and its Message appends the same words again
     private static string? SplitParameterName(GSharpErrorCode code, ref string message)
     {
-        if (code is not (GSharpErrorCode.Argument or GSharpErrorCode.ArgumentNull or GSharpErrorCode.ArgumentOutOfRange)
+        if (!ThrowableExceptions.TryFindByCodeName(code.ToString(), out var entry) || !entry.HasParameterName
             || !message.EndsWith("')", StringComparison.Ordinal))
         {
             return null;
@@ -488,30 +482,44 @@ public static class GSharpErrorMapper
             _ => new InvalidOperationException(message, innerException)
         };
 
-    // The exception type that a throw names (an assembly-qualified name of the site), built with the message and the
-    // inner exception when it has such a constructor; any other case is InvalidOperationException
+    // The exception type that a throw names (an assembly-qualified CLR name in the site, which the compiler checked: the
+    // type exists, is not abstract and has a public (string, Exception), (string) or () constructor), built with the
+    // message and the inner exception when it has such a constructor. A type that cannot be built is a defect of the
+    // compiler or of a stale site table, so it fails loudly instead of becoming another exception type
     private static Exception InstantiateThrown(string? typeName, string message, Exception? innerException)
     {
-        var type = string.IsNullOrEmpty(typeName) ? null : Type.GetType(typeName, throwOnError: false);
-        if (type is not null && typeof(Exception).IsAssignableFrom(type) && !type.IsAbstract)
+        if (string.IsNullOrEmpty(typeName))
         {
-            var args = new object?[] { message, innerException };
-            if (type.GetConstructor([typeof(string), typeof(Exception)]) is { } both)
-            {
-                return (Exception)both.Invoke(args);
-            }
-
-            if (type.GetConstructor([typeof(string)]) is { } single)
-            {
-                return (Exception)single.Invoke([message]);
-            }
-
-            if (type.GetConstructor(Type.EmptyTypes) is { } none)
-            {
-                return (Exception)none.Invoke(null);
-            }
+            throw new InvalidOperationException(
+                "G# internal error: a throw without an exception type in its error site (code Throw). " + message);
         }
 
-        return new InvalidOperationException(message, innerException);
+        var type = Type.GetType(typeName, throwOnError: false) ??
+                   throw new InvalidOperationException(
+                       $"G# internal error: the exception type '{typeName}' of a throw cannot be loaded. {message}");
+        if (!typeof(Exception).IsAssignableFrom(type) || type.IsAbstract)
+        {
+            throw new InvalidOperationException(
+                $"G# internal error: '{typeName}' of a throw is not a concrete exception type. {message}");
+        }
+
+        if (type.GetConstructor([typeof(string), typeof(Exception)]) is { } both)
+        {
+            return (Exception)both.Invoke([message, innerException]);
+        }
+
+        if (type.GetConstructor([typeof(string)]) is { } single)
+        {
+            return (Exception)single.Invoke([message]);
+        }
+
+        if (type.GetConstructor(Type.EmptyTypes) is { } none)
+        {
+            return (Exception)none.Invoke(null);
+        }
+
+        throw new InvalidOperationException(
+            $"G# internal error: '{typeName}' of a throw has no public (string, Exception), (string) or () constructor. " +
+            message);
     }
 }
