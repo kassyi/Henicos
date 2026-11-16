@@ -9,7 +9,7 @@ using Kassyi.GSharp.Runtime;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 [Collection(TestCollections.GlobalStateSequential)]
-public partial class SpillOrderMutatingGetterTests : TranspilerTestBase
+public partial class SpillOrderBarrierDifferentialTests : TranspilerTestBase
 {
     private const int ThreadCount = 32;
 

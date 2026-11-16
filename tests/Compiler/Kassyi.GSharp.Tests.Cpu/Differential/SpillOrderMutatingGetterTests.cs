@@ -13,20 +13,19 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
-public partial class SpillOrderMutatingGetterTests
+/// <summary>
+/// In-memory generator and managed state-machine compilation shape tests for mutating getters, indexers, pointers, and
+/// ref/address-of locals across barriers (#957, #958, #966, #970, #992, #1036).
+/// </summary>
+[Collection(TestCollections.GlobalStateSequential)]
+public class SpillOrderMutatingGetterTests : TranspilerTestBase
 {
+    private const int ThreadCount = 32;
+
     private const string PointerShapePath = "Transpiler/Emission/SpillOrderPointerShapeKernels.cu.cs";
 
     private const string PointerShapeTypeName =
         "Kassyi.GSharp.Tests.Shared.TestCases.Transpiler.Emission.SpillOrderPointerShapeKernels";
-
-    partial void RunManagedVerification(Action action)
-    {
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            action();
-        }
-    }
 
     private static Assembly CompileManagedShapeAssembly(
         string testId,

@@ -14,7 +14,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public static partial class DifferentialRunner
 {
     static partial void EnsureEnvironmentReady();
-    private readonly record struct CaseRun(
+
+    internal readonly record struct CaseRun(
         DifferentialCase Case,
         IReadOnlyList<DiffPathRunner> Paths,
         List<KnownDivergence> Entries,
@@ -28,7 +29,7 @@ public static partial class DifferentialRunner
         }
     }
 
-    private readonly record struct ShapeRun(int Seed, int ShapeIndex, LaunchShape Shape, DiffBuffers Initial);
+    internal readonly record struct ShapeRun(int Seed, int ShapeIndex, LaunchShape Shape, DiffBuffers Initial);
 
     /// <summary>
     /// Runs the case on <see cref="DiffPaths.Available"/> with <paramref name="seeds"/> (by default
@@ -58,7 +59,8 @@ public static partial class DifferentialRunner
     }
 
     /// <summary>
-    /// Evaluates a batch of <see cref="DifferentialCase"/> instances, running path preflight checks only once at the start of the batch.
+    /// Evaluates a batch of <see cref="DifferentialCase"/> instances, running path preflight checks only once at the
+    /// start of the batch.
     /// </summary>
     public static IReadOnlyList<DifferentialReport> EvaluateBatch(
         ReadOnlySpan<DifferentialCase> cases,
@@ -80,14 +82,25 @@ public static partial class DifferentialRunner
         foreach (var testCase in cases)
         {
             var effectiveSeeds = seeds ?? testCase.Seeds ?? DifferentialSeeds.For(testSeed);
-            reports.Add(EvaluateCore(testCase, effectiveSeeds, activePaths, activeKnown, testSeed, checkStale, runPreflight: false));
+            reports.Add(
+                EvaluateCore(
+                    testCase,
+                    effectiveSeeds,
+                    activePaths,
+                    activeKnown,
+                    testSeed,
+                    checkStale,
+                    runPreflight: false
+                )
+            );
         }
 
         return reports;
     }
 
     /// <summary>
-    /// Evaluates a batch of <see cref="DifferentialCase"/> instances, running path preflight checks only once at the start of the batch.
+    /// Evaluates a batch of <see cref="DifferentialCase"/> instances, running path preflight checks only once at the
+    /// start of the batch.
     /// </summary>
     public static IReadOnlyList<DifferentialReport> EvaluateBatch(
         IReadOnlyList<DifferentialCase> cases,
@@ -110,7 +123,17 @@ public static partial class DifferentialRunner
         foreach (var testCase in cases)
         {
             var effectiveSeeds = seeds ?? testCase.Seeds ?? DifferentialSeeds.For(testSeed);
-            reports.Add(EvaluateCore(testCase, effectiveSeeds, activePaths, activeKnown, testSeed, checkStale, runPreflight: false));
+            reports.Add(
+                EvaluateCore(
+                    testCase,
+                    effectiveSeeds,
+                    activePaths,
+                    activeKnown,
+                    testSeed,
+                    checkStale,
+                    runPreflight: false
+                )
+            );
         }
 
         return reports;
@@ -122,8 +145,13 @@ public static partial class DifferentialRunner
     /// <param name="paths">The paths to compare with the oracle.</param>
     /// <param name="known">The known divergences; entries of other cases are ignored.</param>
     /// <param name="testSeed">The <c>TEST_SEED</c> the seeds came from, for the report.</param>
-    /// <param name="checkStale">Whether to report known divergences that no longer reproduce; false when <paramref name="seeds"/> are only some of the seeds that run by default.</param>
-    /// <exception cref="DifferentialHarnessException">The case is malformed, or the oracle threw or depends on the thread order.</exception>
+    /// <param name="checkStale">
+    /// Whether to report known divergences that no longer reproduce; false when <paramref name="seeds"/> are only some
+    /// of the seeds that run by default.
+    /// </param>
+    /// <exception cref="DifferentialHarnessException">
+    /// The case is malformed, or the oracle threw or depends on the thread order.
+    /// </exception>
     public static DifferentialReport Evaluate(
         DifferentialCase testCase,
         IReadOnlyList<int> seeds,
@@ -185,13 +213,17 @@ public static partial class DifferentialRunner
 
         if (checkStale)
         {
-            AddStaleEntries(in run);
+            DifferentialOutputVerifier.AddStaleEntries(in run);
         }
 
         return report;
     }
 
-    private static void ValidateCase(DifferentialCase testCase, IReadOnlyList<int> seeds, IReadOnlyList<DiffPathRunner> paths)
+    private static void ValidateCase(
+        DifferentialCase testCase,
+        IReadOnlyList<int> seeds,
+        IReadOnlyList<DiffPathRunner> paths
+    )
     {
         bool hasOracle = testCase.EffectiveOracle is not null;
         bool hasReference = testCase.Reference is not null;
@@ -210,7 +242,9 @@ public static partial class DifferentialRunner
 
         if (!hasOracle && !hasReference && !hasVerifier && !hasExpectedException)
         {
-            throw new DifferentialHarnessException($"{testCase.Name}: set Oracle, Reference, Verify/VerifyAgainstInitial, or ExpectedException");
+            throw new DifferentialHarnessException(
+                $"{testCase.Name}: set Oracle, Reference, Verify/VerifyAgainstInitial, or ExpectedException"
+            );
         }
 
         if (seeds.Count == 0 || paths.Count == 0)
@@ -268,32 +302,48 @@ public static partial class DifferentialRunner
         bool hasOracle = testCase.EffectiveOracle is not null;
         bool hasReference = testCase.Reference is not null;
 
-        var activeExPolicy = testCase.ExpectedException?.Invoke(new DiffRandom(at.Seed), at.Shape) ?? testCase.ExceptionPolicy;
+        var activeExPolicy =
+            testCase.ExpectedException?.Invoke(new DiffRandom(at.Seed), at.Shape) ?? testCase.ExceptionPolicy;
         DiffBuffers? expected = null;
         DiffBuffers? afterException = null;
 
         if (activeExPolicy is not null && hasOracle)
         {
-            afterException = RunOracleExpecting(testCase, in at, activeExPolicy);
+            afterException = DifferentialOracleRunner.RunOracleExpecting(testCase, in at, activeExPolicy);
         }
         else if (activeExPolicy is null)
         {
-            if (!hasOracle && !hasReference && at.Initial.All.Any(static b => b.IsOutput && b.Policy.Kind != OutputPolicyKind.Ignore))
+            if (!hasOracle && !hasReference &&
+                at.Initial.All.Any(static b => b.IsOutput && b.Policy.Kind != OutputPolicyKind.Ignore))
             {
                 throw new DifferentialHarnessException(
-                    $"{testCase.Name}: when neither Oracle nor Reference is set, all output buffers must use OutputPolicy.Ignore"
+                    $"{testCase.Name}: when neither Oracle nor Reference is set, "
+                        + "all output buffers must use OutputPolicy.Ignore"
                 );
             }
 
             if (hasOracle || hasReference)
             {
-                expected = RunOracle(testCase, at.Initial, at.Shape, at.Seed, out activeExPolicy, out afterException);
+                expected = DifferentialOracleRunner.RunOracle(
+                    testCase,
+                    at.Initial,
+                    at.Shape,
+                    at.Seed,
+                    out activeExPolicy,
+                    out afterException
+                );
             }
         }
 
         if (activeExPolicy is not null)
         {
-            return EvaluateExceptionExpectation(in run, in at, activeExPolicy, allowSubprocess, afterException);
+            return DifferentialExceptionEvaluator.EvaluateExceptionExpectation(
+                in run,
+                in at,
+                activeExPolicy,
+                allowSubprocess,
+                afterException
+            );
         }
 
         var shape = at.Shape;
@@ -329,323 +379,10 @@ public static partial class DifferentialRunner
 
         if (expected is not null)
         {
-            Compare(in run, in at, expected, actuals);
+            DifferentialOutputVerifier.Compare(in run, in at, expected, actuals);
         }
 
-        RunPropertyChecks(in run, in at, actuals);
+        DifferentialOutputVerifier.RunPropertyChecks(in run, in at, actuals);
         return false;
-    }
-
-    private static DiffBuffers? RunOracle(
-        DifferentialCase testCase,
-        DiffBuffers initial,
-        LaunchShape shape,
-        int seed,
-        out ExceptionPolicy? matchedExceptionPolicy,
-        out DiffBuffers? afterException
-    )
-    {
-        matchedExceptionPolicy = null;
-        afterException = null;
-        var expected = initial.Clone();
-        expected.Shape = shape;
-        if (testCase.Reference is { } reference)
-        {
-            Guard(testCase, seed, "reference model", () => reference(expected, shape));
-            return expected;
-        }
-
-        var oracle = testCase.EffectiveOracle ?? throw new DifferentialHarnessException($"{testCase.Name}: no oracle");
-        if (testCase.OracleExceptions == OracleExceptionMode.MatchOracle)
-        {
-            expected = RunOracleOrders(testCase, oracle, initial, shape, seed, out var thrown);
-            if (thrown is not null)
-            {
-                matchedExceptionPolicy = new ExceptionPolicy(thrown.GetType(), testCase.ExceptionPaths)
-                {
-                    // C# names the parameter of an argument exception, or none; every path has to do the same
-                    ParamName = (thrown as ArgumentException)?.ParamName,
-                    ParamNameIsExact = thrown is ArgumentException,
-                };
-                afterException = expected;
-                return null;
-            }
-
-            return expected;
-        }
-
-        var orders = testCase.OracleOrders ?? [ThreadOrder.Forward, ThreadOrder.Reverse, ThreadOrder.Permutation(seed)];
-        var firstOrder = orders.Count > 0 ? orders[0] : ThreadOrder.Forward;
-        Guard(testCase, seed, $"oracle ({firstOrder})", () => SequentialOracle.Run(shape, firstOrder, () => oracle(expected, shape)));
-
-        for (int i = 1; i < orders.Count; i++)
-        {
-            var order = orders[i];
-            var other = initial.Clone();
-            other.Shape = shape;
-            Guard(testCase, seed, $"oracle ({order})", () => SequentialOracle.Run(shape, order, () => oracle(other, shape)));
-            CheckOrderIndependence(testCase, seed, expected, other, order);
-        }
-
-        return expected;
-    }
-
-    private static Exception? TryRunOrder(LaunchShape shape, ThreadOrder order, Action run)
-    {
-        try
-        {
-            SequentialOracle.Run(shape, order, run);
-            return null;
-        }
-        catch (Exception ex) when (ex is not DifferentialHarnessException)
-        {
-            return ExceptionPolicy.Unwrap(ex);
-        }
-    }
-
-    private static void Guard(DifferentialCase testCase, int seed, string what, Action run)
-    {
-        try
-        {
-            run();
-        }
-        catch (Exception ex) when (ex is not DifferentialHarnessException)
-        {
-            throw new DifferentialHarnessException(
-                $"{testCase.Name}: the {what} threw for seed {seed}; keep inputs that C# rejects out of the generator",
-                ex
-            );
-        }
-    }
-
-    private static void CheckOrderIndependence(DifferentialCase testCase, int seed, DiffBuffers forward, DiffBuffers other, ThreadOrder order)
-    {
-        for (int b = 0; b < forward.All.Count; b++)
-        {
-            var first = forward.All[b];
-            if (first.ColumnPolicies is null && first.Policy.Kind is OutputPolicyKind.Ignore or OutputPolicyKind.Multiset)
-            {
-                continue;
-            }
-
-            var second = other.All[b];
-            for (int i = 0; i < first.Length; i++)
-            {
-                if (first.PolicyOf(i).Kind is OutputPolicyKind.Ignore or OutputPolicyKind.Multiset)
-                {
-                    continue;
-                }
-
-                // [WHY] a computed floating-point cell (Bitwise) promises only that it is a NaN, not which one: the
-                // optimized JIT code may quiet a signaling NaN that the unoptimized code returns as it is. A moved value
-                // (Exact) still has to keep every bit
-                bool sameValue = first.SameBits(second, i) ||
-                    (first.PolicyOf(i).Kind == OutputPolicyKind.Bitwise && first.CellsMatch(second, i));
-                if (!sameValue)
-                {
-                    throw new DifferentialHarnessException(
-                        $"{testCase.Name}: kernel output depends on thread order, so the kernel races (undefined on the GPU) " +
-                        $"or reads a non-commutative atomic: seed {seed}, {first.Name}[{i}] column \"{first.ColumnNameOf(i)}\" " +
-                        $"is {first.FormatCell(i)} in forward order and {second.FormatCell(i)} in {order} order"
-                    );
-                }
-            }
-        }
-    }
-
-    // absentPathsMatch: a path without buffers among actuals is left out of the comparison instead of differing in
-    // every cell (the comparison after an exception, whose exception cells report the paths that did not throw)
-    private static void Compare(
-        in CaseRun run,
-        in ShapeRun at,
-        DiffBuffers expected,
-        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals,
-        bool absentPathsMatch = false
-    )
-    {
-        for (int b = 0; b < expected.All.Count; b++)
-        {
-            var rawOracle = at.Initial.All[b].IsReadOnly ? at.Initial.All[b] : expected.All[b];
-            bool isMultiset = rawOracle.Policy.Kind == OutputPolicyKind.Multiset ||
-                (rawOracle.ColumnPolicies is not null && rawOracle.ColumnPolicies.Any(static p => p.Kind == OutputPolicyKind.Multiset));
-            var oracle = isMultiset ? rawOracle.CreateSortedCopy() : rawOracle;
-            var actualBuffers = new List<(DiffPathRunner Path, DiffBuffer Primary, DiffBuffer? Ptr)>(actuals.Count);
-            foreach (var (path, buffers, ptrBuffers) in actuals)
-            {
-                var primary = isMultiset ? buffers.All[b].CreateSortedCopy() : buffers.All[b];
-                var ptr = ptrBuffers is not null
-                    ? (isMultiset ? ptrBuffers.All[b].CreateSortedCopy() : ptrBuffers.All[b])
-                    : null;
-                actualBuffers.Add((path, primary, ptr));
-            }
-
-            var skippedPaths = run.Case.SkippedPaths;
-            for (int i = 0; i < oracle.Length; i++)
-            {
-                if (run.Paths.All(p => skippedPaths is not null && skippedPaths.ContainsKey(p.Path) ||
-                                       PathMatches(oracle, actualBuffers, p.Path, i, absentPathsMatch)))
-                {
-                    continue;
-                }
-
-                var cells = new List<PathCell>(run.Paths.Count);
-                string column = oracle.ColumnNameOf(i);
-                foreach (var path in run.Paths)
-                {
-                    if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.TryGetValue(path.Path, out string? skipReason))
-                    {
-                        cells.Add(new PathCell(path.Path, $"skipped ({skipReason})", Differs: false, Known: null));
-                        continue;
-                    }
-
-                    var match = actualBuffers.FirstOrDefault(a => a.Path.Path == path.Path);
-                    if (match.Primary is null)
-                    {
-                        continue;
-                    }
-                    bool primaryDiffers = !oracle.CellsMatch(match.Primary, i);
-                    bool ptrDiffers = match.Ptr is not null && !oracle.CellsMatch(match.Ptr, i);
-                    bool differs = primaryDiffers || ptrDiffers;
-                    var displayedBuffer = !primaryDiffers && ptrDiffers && match.Ptr is not null ? match.Ptr : match.Primary;
-                    var entry = differs ? run.FindEntry(column, path.Path, at.Shape) : null;
-                    cells.Add(new PathCell(path.Path, displayedBuffer.FormatCell(i), differs, entry));
-                }
-
-                run.Report.Add(new CellMismatch(
-                    at.Seed,
-                    oracle.LocationOf(i),
-                    FormatInputs(at.Initial, at.Shape.Rows, oracle.RowOf(i)),
-                    oracle.FormatCell(i),
-                    cells,
-                    at.Shape
-                ));
-            }
-        }
-    }
-
-    private static void RunPropertyChecks(
-        in CaseRun run,
-        in ShapeRun at,
-        List<(DiffPathRunner Path, DiffBuffers Buffers, DiffBuffers? PtrBuffers)> actuals
-    )
-    {
-        var testCase = run.Case;
-        if (testCase.Verify is null && testCase.VerifyAgainstInitial is null)
-        {
-            return;
-        }
-
-        foreach (var (path, buffers, ptrBuffers) in actuals)
-        {
-            if (testCase.Verify is { } verify)
-            {
-                var res = verify(buffers, at.Shape);
-                if (!res.Success)
-                {
-                    run.Report.Add(new PropertyFailure(at.Seed, path.Path, res.FailureMessage ?? "Verify failed.", at.Shape));
-                }
-
-                if (ptrBuffers is not null)
-                {
-                    var ptrRes = verify(ptrBuffers, at.Shape);
-                    if (!ptrRes.Success)
-                    {
-                        run.Report.Add(new PropertyFailure(at.Seed, path.Path, ptrRes.FailureMessage ?? "Verify (LaunchPtr) failed.", at.Shape));
-                    }
-                }
-            }
-
-            if (testCase.VerifyAgainstInitial is { } verifyAgainstInitial)
-            {
-                var res = verifyAgainstInitial(at.Initial, buffers, at.Shape);
-                if (!res.Success)
-                {
-                    run.Report.Add(new PropertyFailure(at.Seed, path.Path, res.FailureMessage ?? "VerifyAgainstInitial failed.", at.Shape));
-                }
-
-                if (ptrBuffers is not null)
-                {
-                    var ptrRes = verifyAgainstInitial(at.Initial, ptrBuffers, at.Shape);
-                    if (!ptrRes.Success)
-                    {
-                        run.Report.Add(new PropertyFailure(at.Seed, path.Path, ptrRes.FailureMessage ?? "VerifyAgainstInitial (LaunchPtr) failed.", at.Shape));
-                    }
-                }
-            }
-        }
-    }
-
-    // The inputs with one value per row, as name=value
-    // Whether the buffers of path match the oracle at cell i; a path without buffers matches when absentPathsMatch
-    private static bool PathMatches(
-        DiffBuffer oracle,
-        List<(DiffPathRunner Path, DiffBuffer Primary, DiffBuffer? Ptr)> actualBuffers,
-        DiffPath path,
-        int i,
-        bool absentPathsMatch
-    )
-    {
-        var match = actualBuffers.FirstOrDefault(a => a.Path.Path == path);
-        if (match.Primary is null)
-        {
-            return absentPathsMatch;
-        }
-
-        return oracle.CellsMatch(match.Primary, i) && (match.Ptr is null || oracle.CellsMatch(match.Ptr, i));
-    }
-
-    private static string FormatInputs(DiffBuffers initial, int rows, int row) =>
-        string.Join("  ", initial.All
-            .Where(b => !b.IsOutput && b.Length == rows && row < rows)
-            .Select(b => $"{b.Name}={b.FormatCell(row)}")
-        );
-
-    private static void AddStaleEntries(in CaseRun run)
-    {
-        var report = run.Report;
-        foreach (var entry in run.Entries)
-        {
-            if (entry.ShapePredicate is not null && !report.ExecutedShapes.Any(s => entry.ShapePredicate(s)))
-            {
-                continue;
-            }
-
-            foreach (var path in run.Paths)
-            {
-                if (run.Case.SkippedPaths is not null && run.Case.SkippedPaths.ContainsKey(path.Path))
-                {
-                    continue;
-                }
-
-                if ((entry.Paths & path.Path) == 0)
-                {
-                    continue;
-                }
-
-                // The CUDA cells of the fault seeds did not run, so an entry for them cannot be seen
-                if (entry.Column == KnownDivergence.ExceptionColumn && path.Path == DiffPath.Cuda && report.SkippedCudaTraps.Count > 0)
-                {
-                    continue;
-                }
-
-                if (entry.Column != KnownDivergence.ExceptionColumn &&
-                    report.Failures.Any(f => f.Path == path.Path && (f.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(f.Shape))))
-                {
-                    continue;
-                }
-
-                bool seen = report.Mismatches.Any(m =>
-                    m.ColumnName == entry.Column &&
-                    (m.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(m.Shape)) &&
-                    m.Paths.Any(p => p.Path == path.Path && p.Known == entry))
-                    || (entry.Column == KnownDivergence.ExceptionColumn &&
-                        report.Failures.Any(f => f.Path == path.Path && f.Known == entry &&
-                            (f.Shape is null || entry.ShapePredicate is null || entry.ShapePredicate(f.Shape))));
-                if (!seen)
-                {
-                    report.Add(new StaleDivergence(entry, path.Path));
-                }
-            }
-        }
     }
 }
