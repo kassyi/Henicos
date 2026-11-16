@@ -49,8 +49,8 @@ const wipSubject = /^\s*(?:wip\b|fixup!|squash!|amend!)/i;
 // Adapted from conventional-commits-parser (MIT): split header into type, scope, breaking indicator, separator, subject.
 const headerPattern = /^(?<type>[A-Za-z]+)(?<scopePart>\([^()]*\))?(?<breaking>!)?(?<sep>:\s*)(?<subject>.*)$/;
 const scopePattern = /^[a-z0-9-]+$/;
-const sectionHeaderPattern = /^\s*-\s+(Details of changes|Technical background|Symptom|Cause|Solution):\s*(.*)$/;
-const footerLinePattern = /^(?:Fixes|Closes|Resolves|Part of|Refs?|Co-authored-by:|Signed-off-by:)\s*(?:#\d+|\S)/i;
+const sectionHeaderPattern = /^[ \t]*-[ \t]+(Details of changes|Technical background|Symptom|Cause|Solution):[ \t]*(.*)$/;
+const footerLinePattern = /^(?:Fixes|Closes|Resolves|Part of|Refs?|Co-authored-by:|Signed-off-by:)[ \t]*(?:#\d+|\S)/i;
 const templatePlaceholder = /^\[.*\]$/;
 
 function requiredSectionsFor(type) {
@@ -208,13 +208,13 @@ function extractHookTarget(command, cwd) {
     const prMatch = /\bgh\s+pr\s+(?:create|edit)\b/.exec(command);
     if (prMatch) {
         const prSlice = command.slice(prMatch.index);
-        const titleMatch = /(?:--title|-t)(?:=|\s+)(?:"([^"$`\\]*)"|'([^']*)')/.exec(prSlice);
+        const titleMatch = /(?:--title|-t)(?:=|[ \t]+)(?:"([^"$`\\]*)"|'([^']*)')/.exec(prSlice);
         if (!titleMatch) return null;
         const title = titleMatch[1] !== undefined ? titleMatch[1] : titleMatch[2];
         return { kind: 'title', text: title };
     }
 
-    const commitMatch = /\bgit\s+(?:-C\s+(?:"[^"]+"|'[^']+'|\S+)\s+)*commit\b(?![-\w])/.exec(command);
+    const commitMatch = /\bgit\s+(?:-C\s+(?:"[^"\r\n]+"|'[^'\r\n]+'|[^\s"']+)\s+)*commit\b(?![-\w])/.exec(command);
     if (!commitMatch) {
         return null;
     }
@@ -223,7 +223,7 @@ function extractHookTarget(command, cwd) {
         return null;
     }
 
-    const fileMatch = /(?:--file|-F)(?:=|\s+)(?:"([^"]+)"|'([^']+)'|(\S+))/.exec(commitSlice);
+    const fileMatch = /(?:--file|-F)(?:=|[ \t]+)(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s"']+))/.exec(commitSlice);
     if (fileMatch) {
         const rawPath = fileMatch[1] || fileMatch[2] || fileMatch[3];
         if (!rawPath || rawPath === '-' || rawPath.includes('$')) return null;
@@ -237,14 +237,14 @@ function extractHookTarget(command, cwd) {
         }
     }
 
-    const heredocMatch = /<<-?\s*['"]?([A-Za-z0-9_]+)['"]?\r?\n([\s\S]*?)\r?\n\1\b/.exec(commitSlice);
+    const heredocMatch = /<<-?[ \t]*['"]?([A-Za-z0-9_]+)['"]?\r?\n([\s\S]*?)\r?\n\1\b/.exec(commitSlice);
     if (heredocMatch) {
         const body = heredocMatch[2];
         if (body.includes('$(')) return null;
         return { kind: 'commit', text: body, allowHeaderOnly: isMergeCommitMessage(body) };
     }
 
-    const msgPattern = /(?:^|\s)(?:-m|--message)(?:=|\s+)(?:"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+))/g;
+    const msgPattern = /(?:^|\s)(?:-m|--message)(?:=|[ \t]+)(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)'|([^\s"']+))/g;
     const parts = [];
     for (const match of commitSlice.matchAll(msgPattern)) {
         if (match[3] !== undefined) {
@@ -533,6 +533,10 @@ function selfTest() {
         ],
         [
             { tool_input: { command: 'gh pr create --title "feat(queue): valid title" --body "x"' } },
+            false,
+        ],
+        [
+            { tool_input: { command: `git ${'-C "!" '.repeat(100)}status` } },
             false,
         ],
     ];
