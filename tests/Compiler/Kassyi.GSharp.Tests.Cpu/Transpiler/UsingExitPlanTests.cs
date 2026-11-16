@@ -1,5 +1,7 @@
 #nullable enable
 using System.Linq;
+using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -100,6 +102,42 @@ public class UsingExitPlanTests
 
         Assert.Equal([UsingExitKind.Break], plan.Exits.Select(static e => e.Kind));
         Assert.Equal(0, plan.FindExit(breakOuter));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindExit_CopiedIteratorForEachBody_MatchesExitJumpsAndIgnoresInternalBreak()
+    {
+        var plan = Plan("IteratorForEach", 0);
+        var forEach = Method("IteratorForEach")
+            .DescendantNodes()
+            .OfType<ForEachStatementSyntax>()
+            .Single();
+        var invocation = (InvocationExpressionSyntax)forEach.Expression;
+        var iteratorMethod = Assert.IsAssignableFrom<IMethodSymbol>(s_context.Model.GetSymbolInfo(invocation).Symbol);
+        var regionCounter = 0;
+        var tempCounter = 0;
+        var expanded = IteratorInliner.Expand(
+            forEach,
+            iteratorMethod,
+            invocation,
+            new IteratorExpansionContext(s_context.Model, new StandardCppDialect(), new Reporter(null, s_context.Model)),
+            ref regionCounter,
+            ref tempCounter);
+
+        var copiedReturns = expanded
+            .DescendantNodes()
+            .OfType<ReturnStatementSyntax>()
+            .ToArray();
+        var copiedGotos = expanded
+            .DescendantNodes()
+            .OfType<GotoStatementSyntax>()
+            .ToArray();
+
+        Assert.Equal(2, copiedReturns.Length);
+        Assert.All(copiedReturns, ret => Assert.Equal(0, plan.FindExit(ret)));
+        Assert.Equal(2, copiedGotos.Length);
+        Assert.All(copiedGotos, g => Assert.Equal(-1, plan.FindExit(g)));
     }
 
     private static MethodDeclarationSyntax Method(string name) =>
