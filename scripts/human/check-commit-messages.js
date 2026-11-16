@@ -5,8 +5,9 @@
 //   Body:   - Details of changes:
 //           - Technical background:
 //           (and for fix commits: - Symptom:, - Cause:, - Solution:)
-// The parser structure (header regex correspondence + line-based section splitting) is adapted from the MIT-licensed
-// conventional-commits-parser / @commitlint packages, implemented with Node built-ins only.
+// The header follows the grammar of Conventional Commits 1.0.0; the body sections are those of the commit.en skill.
+// A commit made before RulesCutoff keeps the earlier rule (subject only, scope optional). --hook reads the command
+// with the shell reader of check-queued-command.js.
 // Usage:
 //   node scripts/human/check-commit-messages.js [--base <ref> [--head <ref>]] [--title <text>] [--github]
 //   node scripts/human/check-commit-messages.js (--message <text> | --file <path> | --hook | --self-test)
@@ -44,9 +45,14 @@ const helpText = [
 ].join('\n');
 
 const types = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
+// The commit that brought in the required scope and body sections. A commit descends from it once its branch was made
+// from, or merged, a main that has it; the commits of older branches keep the earlier rule (a Conventional Commits
+// subject, scope optional, no body rule), so that the branches open when the rule came in need no rewording. Ancestry,
+// not a date: an author date survives a rebase and a committer date changes on an amend.
+const RulesCutoff = '220618bd605020b4d2b153e3f3c08d49b292b82d';
 const revertSubject = /^Revert ".+"$/;
 const wipSubject = /^\s*(?:wip\b|fixup!|squash!|amend!)/i;
-// Adapted from conventional-commits-parser (MIT): split header into type, scope, breaking indicator, separator, subject.
+// The Conventional Commits 1.0.0 header: type, scope, breaking indicator, separator, subject.
 const headerPattern = /^(?<type>[A-Za-z]+)(?<scopePart>\([^()]*\))?(?<breaking>!)?(?<sep>:\s*)(?<subject>.*)$/;
 const scopePattern = /^[a-z0-9-]+$/;
 const sectionHeaderPattern = /^[ \t]*-[ \t]+(Details of changes|Technical background|Symptom|Cause|Solution):[ \t]*(.*)$/;
@@ -138,8 +144,12 @@ function parseCommitMessage(raw) {
     };
 }
 
+// options.title: a pull request title (one line, no body). options.requireBody: check the body sections (default
+// true). options.legacy: the rule of a commit made before RulesCutoff: a Conventional Commits subject whose scope may
+// be left out, with no body rule.
 function validateCommitMessage(raw, options = {}) {
-    const requireBody = options.requireBody !== undefined ? options.requireBody : true;
+    const legacy = options.legacy === true;
+    const requireBody = !legacy && (options.requireBody !== undefined ? options.requireBody : true);
     const parsed = parseCommitMessage(raw);
     const errors = [];
 
@@ -147,7 +157,7 @@ function validateCommitMessage(raw, options = {}) {
         errors.push('must not start with a UTF-8 byte order mark (BOM)');
         return errors;
     }
-    if (!requireBody && parsed.secondLine !== null) {
+    if (options.title === true && parsed.secondLine !== null) {
         errors.push('pull request title must be a single line');
         return errors;
     }
@@ -166,7 +176,9 @@ function validateCommitMessage(raw, options = {}) {
         errors.push(`type "${parsed.type}" must be one of: ${types.join(', ')}`);
     }
     if (parsed.scope === null) {
-        errors.push(`scope is required (expected ${parsed.type}(<scope>): <description>)`);
+        if (!legacy) {
+            errors.push(`scope is required (expected ${parsed.type}(<scope>): <description>)`);
+        }
     } else if (parsed.scope === '') {
         errors.push(`scope must not be empty (expected ${parsed.type}(<scope>): <description>)`);
     } else if (!scopePattern.test(parsed.scope)) {
@@ -174,7 +186,7 @@ function validateCommitMessage(raw, options = {}) {
     }
     if (parsed.sep !== ': ' || parsed.subject.length === 0 || /^\s/.test(parsed.subject)) {
         errors.push('description after ": " must start with a non-whitespace character');
-    } else if (parsed.subject.trimEnd().endsWith('.')) {
+    } else if (!legacy && parsed.subject.trimEnd().endsWith('.')) {
         errors.push('subject description must not end with a period');
     }
 
@@ -202,71 +214,169 @@ function validateCommitMessage(raw, options = {}) {
     return errors;
 }
 
-// Extracts a literal commit message or PR title from a shell command for --hook mode.
-// Returns { kind: 'commit' | 'title', text: string, allowHeaderOnly?: boolean } or null when not applicable / dynamic.
-function extractHookTarget(command, cwd) {
-    const prMatch = /\bgh\s+pr\s+(?:create|edit)\b/.exec(command);
-    if (prMatch) {
-        const prSlice = command.slice(prMatch.index);
-        const titleMatch = /(?:--title|-t)(?:=|[ \t]+)(?:"([^"$`\\]*)"|'([^']*)')/.exec(prSlice);
-        if (!titleMatch) return null;
-        const title = titleMatch[1] !== undefined ? titleMatch[1] : titleMatch[2];
-        return { kind: 'title', text: title };
-    }
+// The shell reader of check-queued-command.js: splits a command at &&, ||, ;, | and line breaks, reads the quotes of
+// the tool's dialect, skips heredoc bodies and sees through wrappers (bash -c, pwsh -Command) and launch prefixes. Only
+// --hook needs it; the CI modes run without it.
+let shellReader = null;
+try {
+    shellReader = require('../agent/check-queued-command/shell-reader.js');
+} catch (error) {
+    shellReader = null;
+    process.stderr.write(`check-commit-messages: the shell reader could not be loaded: ${error.message}\n`);
+}
 
-    const commitMatch = /\bgit\s+(?:-C\s+(?:"[^"\r\n]+"|'[^'\r\n]+'|[^\s"']+)\s+)*commit\b(?![-\w])/.exec(command);
-    if (!commitMatch) {
+// The text a word passes on, or null when the shell computes it ($VAR, $(...), a here-string): such a message cannot be
+// checked before it exists, and CI checks the commit. The one computed form read here is the body of
+// "$(cat <<'EOF' ... EOF)", the usual way to pass a multi-line message.
+function literalArgument(raw, kind) {
+    const r = shellReader;
+    if (raw === '@here-string') {
         return null;
     }
-    const commitSlice = command.slice(commitMatch.index);
-    if (/\s(?:--help|-h|--no-edit)\b/.test(commitSlice)) {
+    // PowerShell turns `n, `r and `t into control characters in double quotes; the reader keeps only the letter
+    const word = kind === 'pwsh' ? raw.replace(/`n/g, '\n').replace(/`r/g, '\r').replace(/`t/g, '\t') : raw;
+    const text = r.argumentText(word);
+    const heredoc = /^\$\(cat <<-?[ \t]*['"]?([A-Za-z_]\w*)['"]?\r?\n([\s\S]*?)\r?\n[ \t]*\1[ \t]*\r?\n?\)$/.exec(text);
+    if (heredoc !== null) {
+        return heredoc[2].includes('$(') ? null : heredoc[2];
+    }
+    return /\$/.test(word.replace(/'[^']*'/g, '')) ? null : text;
+}
+
+// The message of one `git [global options] commit ...` word list, or null when it is not a commit, the message comes
+// from an editor, another commit or stdin, or the shell computes it.
+function gitCommitTarget(list, cwd, kind) {
+    const r = shellReader;
+    let i = 1;
+    for (; i < list.length; i++) {
+        const option = r.argumentText(list[i]);
+        if (['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path'].includes(option)) {
+            i++;
+        } else if (!option.startsWith('-')) {
+            break;
+        }
+    }
+    if (i >= list.length || r.argumentText(list[i]) !== 'commit') {
         return null;
     }
 
-    const fileMatch = /(?:--file|-F)(?:=|[ \t]+)(?:"([^"\r\n]+)"|'([^'\r\n]+)'|([^\s"']+))/.exec(commitSlice);
-    if (fileMatch) {
-        const rawPath = fileMatch[1] || fileMatch[2] || fileMatch[3];
-        if (!rawPath || rawPath === '-' || rawPath.includes('$')) return null;
-        const fullPath = path.resolve(cwd, rawPath);
-        if (!fs.existsSync(fullPath)) return null;
+    const messages = [];
+    let file = null;
+    for (let j = i + 1; j < list.length; j++) {
+        const raw = list[j];
+        const word = r.argumentText(raw);
+        const next = () => (j + 1 < list.length ? list[++j] : null);
+        if (word === '--') {
+            break;
+        }
+        if (/^--(no-edit|fixup|squash|reuse-message|reedit-message|allow-empty-message)\b/.test(word)) {
+            return null;
+        }
+        if (word === '-m' || word === '--message') {
+            messages.push(next());
+        } else if (word.startsWith('--message=')) {
+            messages.push(raw.slice(raw.indexOf('=') + 1));
+        } else if (word === '-F' || word === '--file') {
+            file = next();
+        } else if (word.startsWith('--file=')) {
+            file = raw.slice(raw.indexOf('=') + 1);
+        } else if (/^-[A-Za-z]/.test(word)) {
+            // A cluster of short options: -qam "msg", -am"msg", -sF file; -c / -C reuse another commit's message
+            for (let k = 1; k < word.length; k++) {
+                const letter = word[k];
+                if (letter === 'c' || letter === 'C') {
+                    return null;
+                }
+                if (letter === 'm' || letter === 'F') {
+                    const attached = raw.slice(raw.indexOf(letter, 1) + 1);
+                    const value = attached !== '' ? attached : next();
+                    if (letter === 'm') {
+                        messages.push(value);
+                    } else {
+                        file = value;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    let text = null;
+    if (messages.length > 0) {
+        const parts = messages.map((raw) => (raw === null ? null : literalArgument(raw, kind)));
+        if (parts.includes(null)) {
+            return null;
+        }
+        text = parts.join('\n\n');
+    } else if (file !== null) {
+        const name = literalArgument(file, kind);
+        if (name === null || name === '-') {
+            return null;
+        }
+        const fullPath = path.resolve(cwd, name);
         try {
-            const text = fs.readFileSync(fullPath, 'utf8');
-            return { kind: 'commit', text, allowHeaderOnly: isMergeCommitMessage(text) };
+            text = fs.readFileSync(fullPath, 'utf8');
         } catch {
             return null;
         }
     }
+    return text === null ? null : { kind: 'commit', text, allowHeaderOnly: isMergeCommitMessage(text) };
+}
 
-    const heredocMatch = /<<-?[ \t]*['"]?([A-Za-z0-9_]+)['"]?\r?\n([\s\S]*?)\r?\n\1\b/.exec(commitSlice);
-    if (heredocMatch) {
-        const body = heredocMatch[2];
-        if (body.includes('$(')) return null;
-        return { kind: 'commit', text: body, allowHeaderOnly: isMergeCommitMessage(body) };
+// The title of one `gh pr create|edit ... --title <t>` word list, or null.
+function ghPrTitle(list, kind) {
+    const r = shellReader;
+    if (r.argumentText(list[1] || '') !== 'pr' || !['create', 'edit'].includes(r.argumentText(list[2] || ''))) {
+        return null;
     }
-
-    const msgPattern = /(?:^|\s)(?:-m|--message)(?:=|[ \t]+)(?:"((?:[^"\\]|\\[\s\S])*)"|'([^']*)'|([^\s"']+))/g;
-    const parts = [];
-    for (const match of commitSlice.matchAll(msgPattern)) {
-        if (match[3] !== undefined) {
-            if (match[3].includes('$')) return null;
-            parts.push(match[3]);
-        } else if (match[2] !== undefined) {
-            parts.push(match[2]);
-        } else if (match[1] !== undefined) {
-            const dq = match[1];
-            if (/\$[A-Za-z_({]/.test(dq)) return null;
-            const unescaped = dq
-                .replace(/\\n|`n/g, '\n')
-                .replace(/\\r|`r/g, '\r')
-                .replace(/\\t|`t/g, '\t')
-                .replace(/\\"|`"/g, '"')
-                .replace(/\\\\/g, '\\');
-            parts.push(unescaped);
+    for (let j = 3; j < list.length; j++) {
+        const word = r.argumentText(list[j]);
+        const raw =
+            word === '--title' || word === '-t'
+                ? list[j + 1] || null
+                : word.startsWith('--title=')
+                  ? list[j].slice(list[j].indexOf('=') + 1)
+                  : undefined;
+        if (raw !== undefined) {
+            const text = raw === null ? null : literalArgument(raw, kind);
+            return text === null ? null : { kind: 'title', text };
         }
     }
-    if (parts.length === 0) return null;
-    const text = parts.join('\n\n');
-    return { kind: 'commit', text, allowHeaderOnly: isMergeCommitMessage(text) };
+    return null;
+}
+
+// The commit messages and pull request titles a command would create, read in the tool's dialect ('bash' or 'pwsh'):
+// every git commit and gh pr create / edit of every segment, also inside $( ), bash -c and pwsh -Command.
+function hookTargets(command, kind, cwd) {
+    const r = shellReader;
+    if (r === null) {
+        return [];
+    }
+    return r.withDialect(kind, () => {
+        const targets = [];
+        const pending = [command];
+        while (pending.length > 0) {
+            for (const segment of r.splitSegments(pending.shift())) {
+                pending.push(...r.substitutions(segment));
+                const list = r.dropPrefixes(r.words(segment));
+                if (list.length === 0) {
+                    continue;
+                }
+                const name = r.programName(list[0]);
+                const shellIndex = r.shellCommandIndex(name, list);
+                if (shellIndex > 0 && shellIndex < list.length) {
+                    pending.push(r.argumentText(list[shellIndex]));
+                    continue;
+                }
+                const target =
+                    name === 'git' ? gitCommitTarget(list, cwd, kind) : name === 'gh' ? ghPrTitle(list, kind) : null;
+                if (target !== null) {
+                    targets.push(target);
+                }
+            }
+        }
+        return targets;
+    });
 }
 
 function isMergeCommitMessage(text) {
@@ -295,17 +405,24 @@ function hookAnswer(input, processCwd = process.cwd()) {
           : '';
     if (!command) return null;
     const cwd = commandDirectory(input, antigravity, processCwd);
-    const target = extractHookTarget(command, cwd);
-    if (!target) return null;
+    const kind = antigravity || input.tool_name === 'PowerShell' ? 'pwsh' : 'bash';
+    const findings = hookTargets(command, kind, cwd)
+        .map((target) => ({
+            target,
+            errors: validateCommitMessage(target.text, {
+                title: target.kind === 'title',
+                requireBody: target.kind === 'commit' && !target.allowHeaderOnly,
+            }),
+        }))
+        .filter((finding) => finding.errors.length > 0);
+    if (findings.length === 0) return null;
 
-    const requireBody = target.kind === 'commit' && !target.allowHeaderOnly;
-    const errors = validateCommitMessage(target.text, { requireBody });
-    if (errors.length === 0) return null;
-
-    const label = target.kind === 'title' ? 'Pull request title' : 'Commit message';
     const reason = [
-        `${label} does not follow the repository's Conventional Commits format:`,
-        ...errors.map((e) => `  - ${e}`),
+        ...findings.flatMap(({ target, errors }) => [
+            `${target.kind === 'title' ? 'Pull request title' : 'Commit message'} "${target.text.split(/\r?\n/)[0]}" ` +
+                "does not follow the repository's Conventional Commits format:",
+            ...errors.map((e) => `  - ${e}`),
+        ]),
         '',
         'Expected commit format:',
         '  <type>(<scope>): <description>',
@@ -479,7 +596,7 @@ function selfTest() {
 
     let failed = 0;
     for (const [title, expectedRejected] of titleCases) {
-        const errors = validateCommitMessage(title, { requireBody: false });
+        const errors = validateCommitMessage(title, { title: true, requireBody: false });
         const rejected = errors.length > 0;
         if (rejected !== expectedRejected) {
             console.error(
@@ -514,11 +631,53 @@ function selfTest() {
         [
             {
                 tool_input: {
-                    command: `git tag -a v1 -m "tag msg" && git commit -m "feat(queue): key projects" -m "${validNonFixBody.replace(/\n/g, '\\n')}"`,
+                    command: `git tag -a v1 -m "tag msg" && git commit -m "feat(queue): key projects" -m "${validNonFixBody}"`,
                 },
             },
             false,
         ],
+        // bash keeps \n in double quotes as the two characters, so this message has no body sections
+        [
+            {
+                tool_input: {
+                    command: `git commit -m "feat(queue): key projects" -m "${validNonFixBody.replace(/\n/g, '\\n')}"`,
+                },
+            },
+            true,
+        ],
+        // Short options clustered with -m, and git options before the subcommand
+        [{ tool_input: { command: 'git commit -qam "wip"' } }, true],
+        [{ tool_input: { command: 'git commit -am"wip"' } }, true],
+        [{ tool_input: { command: 'git -c user.name=x commit -m "wip"' } }, true],
+        [{ tool_input: { command: 'cd x && git -C "a b" commit --message="wip"' } }, true],
+        [{ tool_input: { command: 'bash -c "git commit -m wip"' } }, true],
+        // Text that only names a command is data
+        [{ tool_input: { command: 'echo "git commit -m wip"' } }, false],
+        [{ tool_input: { command: 'git log --grep "commit -m wip"' } }, false],
+        // A message the shell computes is left to CI; the usual heredoc form is read
+        [{ tool_input: { command: 'git commit -m "$MSG"' } }, false],
+        [{ tool_input: { command: 'git commit -F -' } }, false],
+        [{ tool_input: { command: 'git commit --amend --no-edit' } }, false],
+        [{ tool_input: { command: "git commit -m \"$(cat <<'EOF'\nwip\nEOF\n)\"" } }, true],
+        [
+            {
+                tool_input: {
+                    command: `git commit -m "$(cat <<'EOF'\nfeat(queue): key projects\n\n${validNonFixBody}\nEOF\n)"`,
+                },
+            },
+            false,
+        ],
+        // PowerShell: `n is a line break in double quotes
+        [
+            {
+                tool_name: 'PowerShell',
+                tool_input: {
+                    command: `git commit -m "feat(queue): key projects\`n\`n${validNonFixBody.replace(/\n/g, '`n')}"`,
+                },
+            },
+            false,
+        ],
+        [{ toolCall: { args: { CommandLine: "git commit -m 'wip'" } } }, true],
         [
             {
                 tool_input: {
@@ -552,7 +711,31 @@ function selfTest() {
         }
     }
 
-    const total = titleCases.length + commitCases.length + hookCases.length;
+    // RulesCutoff: a commit before it keeps the earlier rule (subject only, scope optional); one after it needs the
+    // scope and the body sections. The ancestry is given here, as git would answer it.
+    const entries = [
+        { sha: 'old-plain', raw: 'test: keep the line of the in overload case' },
+        { sha: 'old-wip', raw: 'wip: half done' },
+        { sha: 'old-prose', raw: 'fix(compiler): dispose the resource\n\nThe jump skipped the exit label.' },
+        { sha: 'new-plain', raw: 'test: keep the line of the in overload case' },
+        { sha: 'new-full', raw: `test(ir): keep the line\n\n${validNonFixBody}` },
+    ];
+    const invalid = findInvalidCommits(entries, (sha) => sha.startsWith('new-')).map((commit) => commit.sha);
+    const cutoffCases = [
+        ['old-plain', false],
+        ['old-wip', true],
+        ['old-prose', false],
+        ['new-plain', true],
+        ['new-full', false],
+    ];
+    for (const [sha, expectedInvalid] of cutoffCases) {
+        if (invalid.includes(sha) !== expectedInvalid) {
+            console.error(`self-test (cutoff): ${sha} should ${expectedInvalid ? '' : 'not '}be rejected`);
+            failed++;
+        }
+    }
+
+    const total = titleCases.length + commitCases.length + hookCases.length + cutoffCases.length;
     console.log(failed === 0 ? `self-test: ${total} cases passed` : `self-test: ${failed} failed`);
     return failed === 0 ? 0 : 1;
 }
@@ -608,7 +791,7 @@ function main(argv) {
 }
 
 function checkTitle(title, github) {
-    const errors = validateCommitMessage(title, { requireBody: false });
+    const errors = validateCommitMessage(title, { title: true, requireBody: false });
     if (errors.length === 0) {
         console.log('The pull request title is a valid Conventional Commits subject.');
         return 0;
@@ -631,25 +814,44 @@ function checkSingleMessage(raw, label, github) {
     return 1;
 }
 
+// Whether `sha` descends from RulesCutoff (or is it), asked of git. A cutoff git does not know is an error, not a pass:
+// a shallow checkout (fetch-depth other than 0) would otherwise let every commit through on the legacy rule.
+function descendsFromCutoff(sha, root) {
+    try {
+        execFileSync('git', ['merge-base', '--is-ancestor', RulesCutoff, sha], { cwd: root, stdio: 'ignore' });
+        return true;
+    } catch (error) {
+        if (error.status === 1) {
+            return false;
+        }
+        throw new Error(`git merge-base --is-ancestor ${RulesCutoff} ${sha} failed; is the history fetched?`);
+    }
+}
+
+// The commits with their errors: the full rule for a commit that descends from RulesCutoff, the legacy rule for one made
+// before it (a commit of a branch that has not merged main since the rule came in).
+function findInvalidCommits(entries, descends) {
+    return entries
+        .map(({ sha, raw }) => ({
+            sha,
+            subject: raw.split(/\r?\n/)[0] || '',
+            errors: validateCommitMessage(raw, { requireBody: true, legacy: !descends(sha) }),
+        }))
+        .filter((commit) => commit.errors.length > 0);
+}
+
 function checkCommits(base, head, github) {
     const root = path.resolve(__dirname, '..', '..');
     const log = execFileSync('git', ['log', '--no-merges', '--format=%H%x09%B%x00', `${base}..${head}`], {
         cwd: root,
         encoding: 'utf8',
     });
-    const commits = log
+    const entries = log
         .split('\0')
         .map((entry) => entry.replace(/^\r?\n/, ''))
         .filter((entry) => entry.length > 0)
-        .map((entry) => {
-            const tab = entry.indexOf('\t');
-            const sha = entry.slice(0, tab);
-            const raw = entry.slice(tab + 1);
-            const subject = raw.split(/\r?\n/)[0] || '';
-            const errors = validateCommitMessage(raw, { requireBody: true });
-            return { sha, subject, errors };
-        })
-        .filter((commit) => commit.errors.length > 0);
+        .map((entry) => ({ sha: entry.slice(0, entry.indexOf('\t')), raw: entry.slice(entry.indexOf('\t') + 1) }));
+    const commits = findInvalidCommits(entries, (sha) => descendsFromCutoff(sha, root));
 
     if (commits.length === 0) {
         console.log(`Every commit of ${base}..${head} follows the Conventional Commits format.`);
