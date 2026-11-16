@@ -95,6 +95,45 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
             ? visited.WithExpression(SyntaxFactory.IdentifierName(renamed).WithTriviaFrom(target))
             : visited;
     }
+
+    public override SyntaxNode? VisitBreakStatement(BreakStatementSyntax node)
+    {
+        var visited = (BreakStatementSyntax?)base.VisitBreakStatement(node) ?? node;
+        return TryGetRenamedJumpLabel(node, out var labelName, out var renamed)
+            ? LabeledJumpSyntax.WithLabelName(
+                visited,
+                SyntaxFactory.IdentifierName(renamed).WithTriviaFrom(labelName))
+            : visited;
+    }
+
+    public override SyntaxNode? VisitContinueStatement(ContinueStatementSyntax node)
+    {
+        var visited = (ContinueStatementSyntax?)base.VisitContinueStatement(node) ?? node;
+        return TryGetRenamedJumpLabel(node, out var labelName, out var renamed)
+            ? LabeledJumpSyntax.WithLabelName(
+                visited,
+                SyntaxFactory.IdentifierName(renamed).WithTriviaFrom(labelName))
+            : visited;
+    }
+
+    private bool TryGetRenamedJumpLabel(
+        StatementSyntax node,
+        [NotNullWhen(true)] out IdentifierNameSyntax? labelName,
+        [NotNullWhen(true)] out string? renamed)
+    {
+        renamed = null;
+        if (LabeledJumpSyntax.GetLabelName(node) is not { } name)
+        {
+            labelName = null;
+            return false;
+        }
+
+        labelName = name;
+        var key = LabeledJumpSyntax.FindTarget(node)?.Parent is LabeledStatementSyntax target
+            ? LoweringIdentity.ForDeclaration(target, _semanticModel)
+            : LoweringIdentity.ForReference(name, _semanticModel);
+        return _labelRenames.TryGetValue(key, out renamed);
+    }
     /// <summary>
     /// Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.
     /// </summary>

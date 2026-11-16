@@ -142,6 +142,10 @@ Lowering:
     SyncGridNextLabelPrefix: __gsharp_sg_next_
     # The end of a loop body where the lanes that continue wait for the others (__gsharp_ReconvergeContinue_<n>, #844)
     ReconvergeContinueLabelPrefix: __gsharp_ReconvergeContinue_
+    # The continue and break targets that the emitter writes for a labeled loop or switch that a labeled break or
+    # continue jumps to (__gsharp_LabeledContinue_<id>_<name>, __gsharp_LabeledBreak_<id>_<name>, #1990)
+    LabeledBreakLabelPrefix: __gsharp_LabeledBreak_
+    LabeledContinueLabelPrefix: __gsharp_LabeledContinue_
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_

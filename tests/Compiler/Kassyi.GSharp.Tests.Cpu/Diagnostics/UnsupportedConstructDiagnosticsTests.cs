@@ -579,4 +579,27 @@ public class UnsupportedConstructDiagnosticsTests
             ],
             diagnostics.Ranges(GSharpDiagnostics.ObjectCreationNotSupported.Id));
     }
+
+    // A labeled break or continue whose target loop or switch contains a split point is reported as GSH0003 until
+    // the lowering handles it (#1990)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LabeledJumpTargetWithSplitPoint_SplitTarget_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/LabeledJumpSplitTargetDiagnostics.cu.cs",
+            dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 22, 21, 22, 33),
+                (Analyzer, 27, 21, 27, 36),
+                (Analyzer, 47, 21, 47, 33),
+                (Analyzer, 68, 21, 68, 33),
+                (Analyzer, 85, 21, 85, 33),
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "labeled break or continue"));
+    }
 }

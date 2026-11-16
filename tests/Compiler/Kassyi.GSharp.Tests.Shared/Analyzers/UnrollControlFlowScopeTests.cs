@@ -29,4 +29,20 @@ public class UnrollControlFlowScopeTests : TranspilerTestBase
                                    GSharpDiagnostics.UnrolledLoopMayBeIgnored.Id
                                });
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task UnrollControlFlowScope_LabeledBreakOutOfUnrolledLoop_ReportsDiagnosticWithLoopSpan()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/UnrollControlFlowScope_LabeledJump.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+        var warning = Assert.Single(diagnostics, d => d.Id == GSharpDiagnostics.UnrolledLoopMayBeIgnored.Id);
+        var lineSpan = warning.Location.GetLineSpan();
+        Assert.Equal(14, lineSpan.StartLinePosition.Line);
+        Assert.Equal(12, lineSpan.StartLinePosition.Character);
+        Assert.Equal(23, lineSpan.EndLinePosition.Line);
+        Assert.Equal(13, lineSpan.EndLinePosition.Character);
+    }
 }

@@ -91,6 +91,17 @@ public class UsingExitPlanTests
         Assert.Equal(SpecialType.System_Int32, plan.ReturnType?.SpecialType);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void TryGetTarget_BreakOuterInsideAUsingInTheOuterLoop_LeavesTheBody()
+    {
+        var plan = Plan("LabeledBreakOutOfOuterLoop", 0);
+        var breakOuter = Jumps("LabeledBreakOutOfOuterLoop").Single();
+
+        Assert.Equal([UsingExitKind.Break], plan.Exits.Select(static e => e.Kind));
+        Assert.Equal(0, plan.FindExit(breakOuter));
+    }
+
     private static MethodDeclarationSyntax Method(string name) =>
         s_context.Tree.GetRoot()
             .DescendantNodes()
