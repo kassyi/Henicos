@@ -13,8 +13,8 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <remarks>
 /// The generated <c>AliasHeldArrays_</c> methods add the arrays of each struct argument (<see cref="Add{T}"/>),
 /// <see cref="Pin"/> pins them for the launch, and every method that takes the range list takes the one of
-/// <see cref="Combine(ReadOnlySpan{nint})"/>, which appends one entry per held array to the entries of the arguments. A held array that
-/// lands in a group takes the group's region (<see cref="AddRegions"/>), so the <c>Marshal_</c> of its struct finds it
+/// <see cref="Combine(ReadOnlySpan{nint})"/>, which appends one entry per held array to the entries of the
+/// arguments. A held array that lands in a group takes the group's region (<see cref="AddRegions"/>), so the <c>Marshal_</c> of its struct finds it
 /// by identity as it finds the region of a <c>T[]</c> argument. The launcher calls <see cref="Free"/> in its
 /// <c>finally</c> block.
 /// </remarks>
@@ -76,37 +76,40 @@ public sealed class HostAliasHeldArrays
         }
 
         var hostSize = Unsafe.SizeOf<T>();
-        var key = 0;
-        if (converted)
-        {
-            var name = typeof(T).FullName ?? typeof(T).Name;
-            var index = _convertedTypes.IndexOf(name);
-            if (index < 0)
-            {
-                index = _convertedTypes.Count;
-                _convertedTypes.Add(name);
-            }
-
-            key = HeldConversionKey + index;
-        }
-
         _arrays.Add(array);
         _copiesBack.Add(CopiesBack);
-        _sharers.Add(static (groups, member, ranges, copies, held) =>
-        {
-            // A copy that starts at the array and covers it is the array's copy; a group of writers has none, and
-            // its holders then use the array itself, as they use the memory that the writer writes
-            if (!HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start))
-            {
-                copies.Keep(held);
-            }
-            else if (start == 0 && copy.Length == held.Length)
-            {
-                copies.Share(held, copy);
-            }
-        });
+        _sharers.Add(ShareCopy<T>);
         _layouts.Add(((nint)array.Length * hostSize, hostSize, deviceSize == 0 ? hostSize : deviceSize,
-            deviceAlignment, key));
+            deviceAlignment, converted ? GetConversionKey(typeof(T)) : 0));
+    }
+
+    // The conversion number of an element type, numbered on its first use
+    private int GetConversionKey(Type element)
+    {
+        var name = element.FullName ?? element.Name;
+        var index = _convertedTypes.IndexOf(name);
+        if (index < 0)
+        {
+            index = _convertedTypes.Count;
+            _convertedTypes.Add(name);
+        }
+
+        return HeldConversionKey + index;
+    }
+
+    // A copy that starts at the array and covers it is the array's copy; a group of writers has none, and its holders
+    // then use the array itself, as they use the memory that the writer writes
+    private static void ShareCopy<T>(HostAliasGroups groups, int member, ReadOnlySpan<nint> ranges,
+        HostArrayCopies copies, Array held)
+    {
+        if (!HostAliasCopies.TryGetHostCopy<T>(groups, member, ranges, out var copy, out var start))
+        {
+            copies.Keep(held);
+        }
+        else if (start == 0 && copy.Length == held.Length)
+        {
+            copies.Share(held, copy);
+        }
     }
 
     /// <summary>

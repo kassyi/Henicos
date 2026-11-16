@@ -130,7 +130,8 @@ internal static class StructArrayHelperEmitter
     //   if (HoldsArray_<nested>(host.<struct>, array)) return true; for (int k = 0; k < <N>; k++) { <the same for host[k]> }
     //   return false; }
     // public static bool HoldsArray_<key>(ReadOnlySpan<<S>> items, object array)
-    // { for (int i = 0; i < items.Length; i++) { if (HoldsArray_<key>(items[i], array)) { return true; } } return false; }
+    // { for (int i = 0; i < items.Length; i++) { if (HoldsArray_<key>(items[i], array)) { return true; } }
+    //   return false; }
     // [WHY] On CUDA an [In] array argument and an array field that hold one array share one device region, which the field
     // copies back (#721), so the CPU launcher gives such an [In] argument the caller's array instead of a copy; these
     // methods find the field, at any depth. Only a T[] has an identity to compare, so only T[] fields are compared and
