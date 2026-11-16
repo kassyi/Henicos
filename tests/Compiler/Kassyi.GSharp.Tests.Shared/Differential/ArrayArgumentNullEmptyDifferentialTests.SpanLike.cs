@@ -38,7 +38,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             }
 
             foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach, R.IsEmpty, R.IsDefault,
-                         R.IsDefaultOrEmpty])
+                         R.IsDefaultOrEmpty, R.DefaultLiteral])
             {
                 yield return Create(nameof(K.ImmutableKernel), valueName, read,
                     (o, s) => K.LaunchImmutableKernel(

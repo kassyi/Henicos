@@ -94,7 +94,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
     }
 
-
     // A member reached through a type name (Type.Member).
     private static bool TryTranspileTypeQualifiedAccess(
         ISymbol? memberExprSymbol,

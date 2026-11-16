@@ -101,6 +101,10 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
             case ArrayArgumentReads.IsDefaultOrEmpty:
                 o[0] = ia.IsDefaultOrEmpty ? 1 : 0;
                 break;
+            case ArrayArgumentReads.DefaultLiteral:
+                o[0] = (default(ImmutableArray<int>).IsDefault ? 1 : 0) +
+                    (default(ImmutableArray<int>).IsDefaultOrEmpty ? 2 : 0);
+                break;
             case ArrayArgumentReads.ForEach:
                 o[0] = 100;
                 foreach (var v in ia)

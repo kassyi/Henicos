@@ -133,6 +133,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         R.IsEmpty => "IsEmpty",
         R.IsDefault => "IsDefault",
         R.IsDefaultOrEmpty => "IsDefaultOrEmpty",
+        R.DefaultLiteral => "DefaultLiteral",
         _ => "InNullableFunction",
     };
 }
