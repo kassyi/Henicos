@@ -17,6 +17,7 @@ internal static class IrNodeChildren
         IrExpressionStatement statement => [statement.Expression],
         IrReturn @return => Optional(@return.Value),
         IrIf @if => @if.Else is { } @else ? [@if.Condition, @if.Then, @else] : [@if.Condition, @if.Then],
+        IrWhile @while => [@while.Condition, @while.Body],
         IrFieldReference field => Optional(field.Receiver),
         IrElementReference element => [element.Receiver, element.Index],
         IrPropertyReference property => WithArguments(property.Receiver, property.Arguments),

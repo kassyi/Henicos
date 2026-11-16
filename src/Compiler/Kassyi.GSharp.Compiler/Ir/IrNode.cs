@@ -7,7 +7,9 @@ namespace Kassyi.GSharp.Compiler.Ir;
 /// <remarks>
 /// Nodes are immutable and compared by reference: two reads of <c>x</c> are two nodes. The tree holds symbols and
 /// syntax, so it lives within one generator transform or analyzer callback; it is never part of an incremental
-/// pipeline model and never kept in a static field.
+/// pipeline model and never kept in a static field. The spelling fields (<see cref="IrExpression.Parentheses"/>,
+/// <see cref="IrStatement.CommentsBefore"/>) are written only into a copy just made (<c>With…</c>, or the new node
+/// of an <c>Update</c>), never into a node that exists.
 /// </remarks>
 /// <param name="source">Where the node comes from.</param>
 internal abstract class IrNode(IrSource source)

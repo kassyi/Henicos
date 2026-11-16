@@ -11,8 +11,12 @@ namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 /// <param name="category">How the holder uses the result.</param>
 /// <param name="constantValue">The constant value, as Roslyn gives it.</param>
 /// <param name="source">Where the node comes from.</param>
+/// <param name="uniformity">
+/// Whether the condition is the same in every thread of a warp; unclassified when built.
+/// </param>
 internal sealed class IrConditional(IrExpression condition, IrExpression whenTrue, IrExpression whenFalse, bool isRef,
-    IrCategory category, Optional<object?> constantValue, IrSource source)
+    IrCategory category, Optional<object?> constantValue, IrSource source,
+    IrUniformity uniformity = IrUniformity.Unclassified)
     : IrExpression(whenTrue.Type, category, constantValue, source)
 {
     /// <summary>The condition.</summary>
@@ -27,9 +31,20 @@ internal sealed class IrConditional(IrExpression condition, IrExpression whenTru
     /// <summary>Whether the branches are references (<c>ref</c> conditional).</summary>
     public bool IsRef { get; } = isRef;
 
+    /// <summary>Whether the condition is the same in every thread of a warp.</summary>
+    public IrUniformity Uniformity { get; } = uniformity;
+
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrConditional Update(IrExpression condition, IrExpression whenTrue, IrExpression whenFalse) =>
         condition == Condition && whenTrue == WhenTrue && whenFalse == WhenFalse
             ? this
-            : new IrConditional(condition, whenTrue, whenFalse, IsRef, Category, ConstantValue, Source);
+            : KeepSpelling(new IrConditional(condition, whenTrue, whenFalse, IsRef, Category, ConstantValue, Source,
+                Uniformity));
+
+    /// <summary>This node with <paramref name="uniformity"/>; this node itself when it is the same.</summary>
+    public IrConditional WithUniformity(IrUniformity uniformity) =>
+        uniformity == Uniformity
+            ? this
+            : KeepSpelling(new IrConditional(Condition, WhenTrue, WhenFalse, IsRef, Category, ConstantValue, Source,
+                uniformity));
 }
