@@ -143,7 +143,8 @@ internal static class MethodSignatureTranspiler
         var methodName = CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
             ? GlobalCppNames.GetFunctionName(methodSymbol)
             : method.Identifier.Text;
-        context.Emitter.Writer.Append($"template <typename TRoot> {GetInliningKeyword(methodSymbol)} bool {methodName}");
+        var inlineKeyword = GetInliningKeyword(methodSymbol, context.Emitter.Dialect.IsCuda);
+        context.Emitter.Writer.Append($"template <typename TRoot> {inlineKeyword} bool {methodName}");
         using (context.Emitter.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, true, ref context, copiedParameters);
@@ -282,7 +283,7 @@ internal static class MethodSignatureTranspiler
 
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
-        var inlineKeyword = GetInliningKeyword(methodSymbol);
+        var inlineKeyword = GetInliningKeyword(methodSymbol, context.Emitter.Dialect.IsCuda);
         context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda ? $"{inlineKeyword} __device__ " : $"{inlineKeyword} ");
 
         var returnType = methodSymbol?.ReturnType;
@@ -307,7 +308,7 @@ internal static class MethodSignatureTranspiler
         }
     }
 
-    private static string GetInliningKeyword(IMethodSymbol? methodSymbol)
+    private static string GetInliningKeyword(IMethodSymbol? methodSymbol, bool isCuda)
     {
         if (methodSymbol == null)
         {
@@ -323,7 +324,7 @@ internal static class MethodSignatureTranspiler
 
             if (attr.IsAttribute(KnownAttributes.GpuNoInline))
             {
-                return "__noinline__";
+                return isCuda ? "__noinline__" : "inline __noinline__";
             }
 
             if (attr.IsAttribute(KnownAttributes.MethodImpl))
@@ -336,7 +337,7 @@ internal static class MethodSignatureTranspiler
 
                 if ((opt & MethodImplOptions.NoInlining) != 0)
                 {
-                    return "__noinline__";
+                    return isCuda ? "__noinline__" : "inline __noinline__";
                 }
             }
         }

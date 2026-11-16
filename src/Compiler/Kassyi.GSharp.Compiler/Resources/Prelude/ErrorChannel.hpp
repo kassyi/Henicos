@@ -1,7 +1,8 @@
 // --- Runtime Error Channel (CPU Dialect) ---
-extern thread_local uint3 threadIdx;
-extern thread_local uint3 blockIdx;
-extern thread_local dim3 gridDim;
+inline thread_local uint3 threadIdx;
+inline thread_local uint3 blockIdx;
+inline thread_local dim3 blockDim;
+inline thread_local dim3 gridDim;
 
 // GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 

@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyFrame(int __gsharp_id_0_value, int __gsharp_id_1_index);
+public const string Source = @"inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyFrame(int __gsharp_id_0_value, int __gsharp_id_1_index);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__SumSpan(GSharpArray<int> __gsharp_id_0_values);
 
@@ -16,9 +16,9 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__L
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__KeepIn(GSharpArray<int> __gsharp_id_0_x, GSharpArray<int>* __gsharp_id_1_slot);
 
-__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyDefaultsFrame(int __gsharp_id_0_value, int __gsharp_id_1_index);
+inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyDefaultsFrame(int __gsharp_id_0_value, int __gsharp_id_1_index);
 
-__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__ReadDefaults(int __gsharp_id_0_index);
+inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__ReadDefaults(int __gsharp_id_0_index);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__Pair2(int __gsharp_id_0_a, int __gsharp_id_1_b);
 
@@ -28,7 +28,7 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__R
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__ReadAt(GSharpArray<int> __gsharp_id_0_values, int __gsharp_id_1_index);
 
-__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyFrame(int __gsharp_id_0_value, int __gsharp_id_1_index){
+inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyFrame(int __gsharp_id_0_value, int __gsharp_id_1_index){
 int __gsharp_id_2_junk[8]{};
 for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<8;__gsharp_id_3_i++)
 {
@@ -98,7 +98,7 @@ __device__ inline int size() const { return 8; }
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitItems8)==32,""Kassyi.GSharp.Tests.Shared.Syntax.ZeroInitItems8: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitItems8)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ZeroInitItems8: alignment"");
 #endif
-__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyDefaultsFrame(int __gsharp_id_0_value, int __gsharp_id_1_index){
+inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__DirtyDefaultsFrame(int __gsharp_id_0_value, int __gsharp_id_1_index){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitPair __gsharp_id_2_pair = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_id_0_value; __gsharp_tmp.__gsharp_mb_Y = __gsharp_id_0_value; return __gsharp_tmp; }
 ());
@@ -145,7 +145,7 @@ __device__ inline int size() const { return 8; }
 static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitItems8)==32,""Kassyi.GSharp.Tests.Shared.Syntax.ZeroInitItems8: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitItems8)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ZeroInitItems8: alignment"");
 #endif
-__noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__ReadDefaults(int __gsharp_id_0_index){
+inline __noinline__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitKernels__ReadDefaults(int __gsharp_id_0_index){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitPair __gsharp_id_1_r = {};
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ZeroInitItems8 __gsharp_id_2_items = {};
 return __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_1_r.__gsharp_mb_X,__gsharp_id_1_r.__gsharp_mb_Y),__gsharp_id_2_items[__gsharp_id_0_index&7]),__gsharp_id_2_items[(__gsharp_add_i32(__gsharp_id_0_index,4))&7]);
