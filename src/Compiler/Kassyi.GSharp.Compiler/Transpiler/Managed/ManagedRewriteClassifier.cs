@@ -71,20 +71,34 @@ internal static class ManagedRewriteClassifier
     }
 
     /// <summary>
+    /// Whether <paramref name="method"/> is a <c>StackLinqExtensions.Sum</c> method on a
+    /// <c>StackEnumerable&lt;TEnumerator, T&gt;</c> whose result is <see cref="float"/> or <see cref="double"/> (#730).
+    /// </summary>
+    public static bool IsSequentialSum(IMethodSymbol method) =>
+        method is
+        {
+            Name: "Sum",
+            ReturnType.SpecialType: SpecialType.System_Single or SpecialType.System_Double,
+            ContainingType.Name: "StackLinqExtensions"
+        } &&
+        StackLinqHelper.IsStackLinqMethod(method) &&
+        (method.ReducedFrom ?? method).Parameters is [{ Type.Name: "StackEnumerable" }, ..];
+
+    /// <summary>
     /// Whether <paramref name="invocation"/> is a <c>StackLinqExtensions.Sum</c> call on a
     /// <c>StackEnumerable&lt;TEnumerator, T&gt;</c> whose result is <see cref="float"/> or <see cref="double"/> (#730).
     /// The managed path rewrites it to <c>SumSequential</c> so elements are added from start to end without SIMD
     /// reassociation, matching the GPU and native CPU loop order.
     /// </summary>
     public static bool IsSequentialSum(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
-        semanticModel.GetSymbol(invocation) is IMethodSymbol
-        {
-            Name: "Sum",
-            ReturnType.SpecialType: SpecialType.System_Single or SpecialType.System_Double,
-            ContainingType.Name: "StackLinqExtensions"
-        } method &&
-        StackLinqHelper.IsStackLinqMethod(method) &&
-        (method.ReducedFrom ?? method).Parameters is [{ Type.Name: "StackEnumerable" }, ..];
+        semanticModel.GetSymbol(invocation) is IMethodSymbol method && IsSequentialSum(method);
+
+    /// <summary>
+    /// Whether <paramref name="method"/>, called as an expression statement, is inline PTX that the CPU dialect
+    /// does not support.
+    /// </summary>
+    public static bool IsInlinePtxStatement(IMethodSymbol method, bool isExpressionStatement) =>
+        isExpressionStatement && DialectCallSupport.IsUnsupportedInlinePtx(method, HostDialects.Cpu);
 
     /// <summary>
     /// Whether <paramref name="invocation"/> is a <c>Gpu.InlinePtx</c> statement that the managed path replaces with a
