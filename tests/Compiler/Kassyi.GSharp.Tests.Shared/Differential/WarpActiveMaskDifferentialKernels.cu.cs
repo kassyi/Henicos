@@ -330,4 +330,106 @@ public static partial class WarpActiveMaskDifferentialKernels
 
         output[t] = v;
     }
+
+    // A uniform switch with a nested thread-dependent break
+    [GpuKernel]
+    public static void UniformSwitchBreakKernel(uint[] result, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        switch (uniformCond)
+        {
+            case 0:
+                result[t] = Warp.ActiveMask();
+                if ((t & 1) == 1)
+                {
+                    break;
+                }
+
+                result[t + 32] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    // A uniform switch where a nested branch jumps to another case with differing split point counts
+    [GpuKernel]
+    public static void UniformSwitchGotoCaseKernel(uint[] result, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        switch (uniformCond)
+        {
+            case 0:
+                result[t] = Warp.ActiveMask();
+                if ((t & 1) == 1)
+                {
+                    goto case 1;
+                }
+
+                result[t + 32] = Warp.ActiveMask();
+                result[t + 64] = Warp.ActiveMask();
+                break;
+            case 1:
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // A uniform switch with a labeled break targeting the switch from inside an inner loop
+    [GpuKernel]
+    public static void UniformSwitchLabeledBreakKernel(uint[] result, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        sw: switch (uniformCond)
+        {
+            case 0:
+                result[t] = Warp.ActiveMask();
+                for (int i = 0; i < 2; i++)
+                {
+                    if ((t & 1) == 1)
+                    {
+                        break sw;
+                    }
+                }
+
+                result[t + 32] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    // A uniform switch with a nested break followed by a warp shuffle across all lanes
+    [GpuKernel]
+    public static void UniformSwitchBreakShuffleKernel(int[] output, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        int v = t;
+        switch (uniformCond)
+        {
+            case 0:
+                uint m1 = Warp.ActiveMask();
+                if ((t & 1) == 1)
+                {
+                    v += (int)(m1 & 0u);
+                    break;
+                }
+
+                uint m2 = Warp.ActiveMask();
+                v += (int)(m2 & 0u);
+                break;
+            default:
+                break;
+        }
+
+        output[t] = Warp.ShuffleXorSync(Warp.ActiveMask(), v, 1);
+    }
 }
