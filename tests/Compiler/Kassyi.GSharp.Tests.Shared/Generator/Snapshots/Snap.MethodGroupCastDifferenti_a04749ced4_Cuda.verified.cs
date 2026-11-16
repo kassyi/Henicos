@@ -143,6 +143,7 @@ public static unsafe void LaunchMethodGroupCastKernel(global::System.Int32[] inp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MethodGroupCastDifferentialKernels.MethodGroupCastKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MethodGroupCastDifferentialKernels.MethodGroupCastKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MethodGroupCastDifferentialKernels.MethodGroupCastKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -326,6 +327,7 @@ public static unsafe void LaunchByRefDelegateKernel(global::System.Int32[] input
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MethodGroupCastDifferentialKernels.ByRefDelegateKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MethodGroupCastDifferentialKernels.ByRefDelegateKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MethodGroupCastDifferentialKernels.ByRefDelegateKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -519,6 +521,7 @@ public static unsafe void LaunchUserDelegateKernel(global::System.Int32[] inputs
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MethodGroupCastDifferentialKernels.UserDelegateKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MethodGroupCastDifferentialKernels.UserDelegateKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.MethodGroupCastDifferentialKernels.UserDelegateKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

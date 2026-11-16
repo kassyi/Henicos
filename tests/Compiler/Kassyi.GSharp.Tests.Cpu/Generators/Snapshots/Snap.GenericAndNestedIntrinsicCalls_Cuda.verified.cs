@@ -49,6 +49,7 @@ public static unsafe void LaunchCopyAndReleaseKernel(global::System.Int32[] dst,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GenericIntrinsicCallKernels.CopyAndReleaseKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = dst;
 global::System.Int32[] __gsharp_csharp_arg_1 = src;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.NativeApi.GenericIntrinsicCallKernels.CopyAndReleaseKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

@@ -220,6 +220,7 @@ __gsharp_layout_checked_ReadNullableArrayFieldKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableFieldOrderDifferentialKernels.ReadNullableArrayFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableFieldOrderDifferentialKernels.ReadNullableArrayFieldKernel");
 global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder __gsharp_csharp_arg_0 = h;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.NullableFieldOrderDifferentialKernels.ReadNullableArrayFieldKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -439,6 +440,7 @@ __gsharp_layout_checked_ReadNullableStructFieldKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableFieldOrderDifferentialKernels.ReadNullableStructFieldKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableFieldOrderDifferentialKernels.ReadNullableStructFieldKernel");
 global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderOuter[] __gsharp_csharp_arg_0 = items;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.NullableFieldOrderDifferentialKernels.ReadNullableStructFieldKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
