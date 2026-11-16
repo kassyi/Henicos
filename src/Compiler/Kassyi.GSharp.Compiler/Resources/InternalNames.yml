@@ -355,6 +355,8 @@ Prelude:
     SourceArgument: { Value: __gsharp_source_argument, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
+    # The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988)
+    ArrayIndexU64: { Value: __gsharp_array_index_u64, Prelude: Types.hpp }
     # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, a null kernel argument included
     ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call

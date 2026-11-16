@@ -144,7 +144,11 @@ internal static class ArrayNullCheck
         var site = PlanSite(node.Expression, ref context);
         var writer = context.Emitter.Writer;
         if (EvaluationOrder.LastSpilledOperand(
-                [ExpressionEffects.Of(node.Expression, model), ExpressionEffects.Of(argument.Expression, model)]) < 0)
+                [
+                    ExpressionEffects.Of(node.Expression, model),
+                    ExpressionEffects.Of(argument.Expression, model)
+                        .WithThrow(ArrayElementIndex.NeedsOverflowCheck(node, model))
+                ]) < 0)
         {
             AppendElementCall(node.Expression, argument.Expression, site, ref context);
             return true;
@@ -152,7 +156,9 @@ internal static class ArrayNullCheck
 
         using var sequence = EvaluationOrder.BeginSequence(writer, "decltype(auto)");
         var receiver = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
-        var index = EvaluationOrder.DeclareTemp(ref context, argument.Expression, reference: false);
+        var index = EvaluationOrder.BeginDeclaration(ref context);
+        ArrayElementIndex.Append(argument.Expression, ref context);
+        writer.AppendLine(";");
         sequence.Return();
         AppendElementCall(writer, receiver, index, site);
         return true;
@@ -226,7 +232,7 @@ internal static class ArrayNullCheck
         {
             context.Visitor.Visit(receiver);
             writer.Append(", ");
-            context.Visitor.Visit(index);
+            ArrayElementIndex.Append(index, ref context);
             writer.Append(", ");
             AppendSite(writer, site);
         }
