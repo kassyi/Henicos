@@ -55,7 +55,8 @@ internal enum NullableValueForm
 /// The view of an array-like value for <see cref="NullableValueForm.ArrayView"/>, otherwise <see langword="null"/>.
 /// </param>
 /// <param name="HeldArrays">
-/// The methods that collect the held arrays, or <see langword="null"/> when the value is not a struct that holds arrays.
+/// The methods that collect the held arrays, or <see langword="null"/> when the value is not a struct that holds
+/// arrays.
 /// </param>
 /// <param name="ArrayHelpers">
 /// The CPU methods that copy and find the arrays the value holds, or <see langword="null"/> when it holds none or on

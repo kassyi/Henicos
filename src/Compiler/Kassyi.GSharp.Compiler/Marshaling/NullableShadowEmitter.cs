@@ -84,32 +84,37 @@ internal static class NullableShadowEmitter
             {
                 writer.AppendLine($"{Native}.HasValue = 1;");
                 writer.AppendLine($"{plan.ValueTypeName} {Value} = {Host}.GetValueOrDefault();");
-                switch (plan.ValueForm)
-                {
-                    case NullableValueForm.Shadow:
-                        writer.Append($"{plan.ValueMarshalMethodName}(ref {Value}, ref {Native}.Value, ");
-                        writer.AppendLine($"{plan.ArraysParameter}, hStream);");
-                        break;
-                    case NullableValueForm.Named:
-                        writer.AppendLine($"{Native}.Value = {Value};");
-                        break;
-                    case NullableValueForm.ArrayView:
-                        ArrayViewFieldEmitter.WriteMarshal(
-                            writer, GetArrayValue(plan), Value, $"{Native}.Value", dialect);
-                        break;
-                    default:
-                        writer.AppendLine($"fixed (byte* pField = {Native}.Value)");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine($"*(({plan.ValueTypeName}*)pField) = {Value};");
-                        }
-
-                        break;
-                }
+                WriteValueToNative(writer, plan, dialect);
             }
         }
 
         writer.AppendLine();
+    }
+
+    // <value> is written to native.Value by the form of the value: its Marshal_, a copy, the array view, or the bytes
+    private static void WriteValueToNative(SourceWriter writer, NullableShadowPlan plan, ITranspilerDialect dialect)
+    {
+        switch (plan.ValueForm)
+        {
+            case NullableValueForm.Shadow:
+                writer.Append($"{plan.ValueMarshalMethodName}(ref {Value}, ref {Native}.Value, ");
+                writer.AppendLine($"{plan.ArraysParameter}, hStream);");
+                break;
+            case NullableValueForm.Named:
+                writer.AppendLine($"{Native}.Value = {Value};");
+                break;
+            case NullableValueForm.ArrayView:
+                ArrayViewFieldEmitter.WriteMarshal(writer, GetArrayValue(plan), Value, $"{Native}.Value", dialect);
+                break;
+            default:
+                writer.AppendLine($"fixed (byte* pField = {Native}.Value)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"*(({plan.ValueTypeName}*)pField) = {Value};");
+                }
+
+                break;
+        }
     }
 
     // public static unsafe void Unmarshal_<key>(ref <T?> host, ref <shadow> native, IntPtr hStream = default)
@@ -137,32 +142,36 @@ internal static class NullableShadowEmitter
             }
 
             writer.AppendLine($"{plan.ValueTypeName} {Value} = {Host}.GetValueOrDefault();");
-            switch (plan.ValueForm)
-            {
-                case NullableValueForm.Shadow:
-                    writer.AppendLine($"{plan.ValueUnmarshalMethodName}(ref {Value}, ref {Native}.Value, hStream);");
-                    break;
-                case NullableValueForm.Named:
-                    writer.AppendLine($"{Value} = {Native}.Value;");
-                    break;
-                case NullableValueForm.ArrayView:
-                    ArrayViewFieldEmitter.WriteUnmarshal(
-                        writer, GetArrayValue(plan), Value, $"{Native}.Value", dialect);
-                    break;
-                default:
-                    writer.AppendLine($"fixed (byte* pField = {Native}.Value)");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine($"{Value} = *(({plan.ValueTypeName}*)pField);");
-                    }
-
-                    break;
-            }
-
+            WriteValueFromNative(writer, plan, dialect);
             writer.AppendLine($"{Host} = {Value};");
         }
 
         writer.AppendLine();
+    }
+
+    // <value> is read from native.Value by the form of the value: its Unmarshal_, a copy, the array view, or the bytes
+    private static void WriteValueFromNative(SourceWriter writer, NullableShadowPlan plan, ITranspilerDialect dialect)
+    {
+        switch (plan.ValueForm)
+        {
+            case NullableValueForm.Shadow:
+                writer.AppendLine($"{plan.ValueUnmarshalMethodName}(ref {Value}, ref {Native}.Value, hStream);");
+                break;
+            case NullableValueForm.Named:
+                writer.AppendLine($"{Value} = {Native}.Value;");
+                break;
+            case NullableValueForm.ArrayView:
+                ArrayViewFieldEmitter.WriteUnmarshal(writer, GetArrayValue(plan), Value, $"{Native}.Value", dialect);
+                break;
+            default:
+                writer.AppendLine($"fixed (byte* pField = {Native}.Value)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"{Value} = *(({plan.ValueTypeName}*)pField);");
+                }
+
+                break;
+        }
     }
 
     // public static void CopyArrays_<key>(ref <T?> host, HostArrayCopies copies)
@@ -213,7 +222,8 @@ internal static class NullableShadowEmitter
         writer.Append($"public static void {held.MethodName}");
         using (writer.Parentheses())
         {
-            writer.Append($"ref {plan.NullableTypeName} {Host}, {StructArrayHelperEmitter.HeldArraysType} {StructArrayHelperEmitter.HeldParameter}");
+            writer.Append($"ref {plan.NullableTypeName} {Host}, ");
+            writer.Append($"{StructArrayHelperEmitter.HeldArraysType} {StructArrayHelperEmitter.HeldParameter}");
         }
 
         writer.AppendLine();
@@ -255,7 +265,13 @@ internal static class NullableShadowEmitter
         }
 
         writer.AppendLine();
-        writer.Append($"public static bool {helpers.HoldsArrayMethodName}");
+        WriteHoldsArrayItems(writer, plan, helpers.HoldsArrayMethodName);
+    }
+
+    // public static bool HoldsArray_<key>(ReadOnlySpan<<T?>> items, object array)
+    private static void WriteHoldsArrayItems(SourceWriter writer, NullableShadowPlan plan, string methodName)
+    {
+        writer.Append($"public static bool {methodName}");
         using (writer.Parentheses())
         {
             writer.Append($"{HostTypeNames.ReadOnlySpan}<{plan.NullableTypeName}> items, object array");
@@ -267,7 +283,7 @@ internal static class NullableShadowEmitter
             writer.AppendLine("for (int i = 0; i < items.Length; i++)");
             using (writer.Scope())
             {
-                writer.AppendLine($"if ({helpers.HoldsArrayMethodName}(items[i], array))");
+                writer.AppendLine($"if ({methodName}(items[i], array))");
                 using (writer.Scope())
                 {
                     writer.AppendLine("return true;");

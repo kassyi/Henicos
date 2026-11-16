@@ -290,69 +290,86 @@ internal readonly record struct KernelParameterShape
         // well
         if (HostShadowStructs.Has(marshaledType))
         {
-            var hasArrayFields = HostShadowStructs.HoldsArrayFields(marshaledType);
-            return shape with
-            {
-                Kind = KernelParameterKind.CustomStruct,
-                IsNullableStruct = HostShadowStructs.TryGetNullableValue(marshaledType, out _),
-                CudaAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cuda) : 0,
-                CpuAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cpu) : 0,
-                AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
-                MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
-                UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
-                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
-                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
-                    : null,
-                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
-                    IsShadowStructElement(parameter.Type),
-                HasArrayFields = hasArrayFields,
-                CpuHoldsArrayMethodName = hasArrayFields
-                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
-                    : null,
-                HeldArraysMethodName = hasArrayFields
-                    ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(marshaledType, kernelClass)
-                    : null,
-                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
-                Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass)
-            };
+            return ClassifyCustomStruct(parameter, shape, marshaledType, kernelClass);
         }
 
         if (marshaledType.TryGetArrayLikeElementType(out var elementType))
         {
-            var cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass);
-            return shape with
-            {
-                Kind = KernelParameterKind.Array,
-                CudaAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cuda),
-                CpuAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cpu),
-                Container = GetContainer(marshaledType),
-                ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
-                BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
-                IsShadowStructBuffer = IsShadowStructElement(elementType),
-                CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
-                    ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
-                    : null,
-                HeldArraysMethodName = cpu.ConvertedElementHasArrayFields
-                    ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(elementType, kernelClass)
-                    : null,
-                Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
-                Cpu = cpu
-            };
+            return ClassifyArray(shape, marshaledType, elementType, kernelClass);
         }
 
-        return shape.IsByRef
-            ? shape with
-            {
-                BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
-                    ? GetBufferElementTypeName(parameter.Type, kernelClass)
-                    : null,
-                CudaAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cuda),
-                CpuAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cpu),
-                IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
-                    IsShadowStructElement(parameter.Type)
-            }
-            : shape;
+        return shape.IsByRef ? ClassifyReference(parameter, shape, kernelClass) : shape;
     }
+
+    // A user struct or a Nullable of one, by value or by reference
+    private static KernelParameterShape ClassifyCustomStruct(IParameterSymbol parameter,
+        in KernelParameterShape shape, ITypeSymbol marshaledType, INamedTypeSymbol? kernelClass)
+    {
+        var hasArrayFields = HostShadowStructs.HoldsArrayFields(marshaledType);
+        return shape with
+        {
+            Kind = KernelParameterKind.CustomStruct,
+            IsNullableStruct = HostShadowStructs.TryGetNullableValue(marshaledType, out _),
+            CudaAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cuda) : 0,
+            CpuAliasAlignment = shape.IsByRef ? GetAliasAlignment(marshaledType, HostDialects.Cpu) : 0,
+            AotStructPath = AotHostNames.GetAotStructPath(marshaledType, kernelClass),
+            MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType, kernelClass),
+            UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType, kernelClass),
+            BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                : null,
+            IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                IsShadowStructElement(parameter.Type),
+            HasArrayFields = hasArrayFields,
+            CpuHoldsArrayMethodName = hasArrayFields
+                ? AotHostNames.GetQualifiedHoldsArrayMethodName(marshaledType, kernelClass)
+                : null,
+            HeldArraysMethodName = hasArrayFields
+                ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(marshaledType, kernelClass)
+                : null,
+            Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
+            Cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass)
+        };
+    }
+
+    // An array-like value: T[], Span, Memory, ArraySegment, ImmutableArray and their read-only forms
+    private static KernelParameterShape ClassifyArray(in KernelParameterShape shape, ITypeSymbol marshaledType,
+        ITypeSymbol elementType, INamedTypeSymbol? kernelClass)
+    {
+        var cpu = ParameterTransfer.Create(marshaledType, HostDialects.Cpu, kernelClass);
+        return shape with
+        {
+            Kind = KernelParameterKind.Array,
+            CudaAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cuda),
+            CpuAliasAlignment = GetAliasAlignment(elementType, HostDialects.Cpu),
+            Container = GetContainer(marshaledType),
+            ElementTypeName = elementType.GetFullyQualifiedCsharpName(),
+            BufferElementTypeName = GetBufferElementTypeName(elementType, kernelClass),
+            IsShadowStructBuffer = IsShadowStructElement(elementType),
+            CpuHoldsArrayMethodName = cpu.ConvertedElementHasArrayFields
+                ? AotHostNames.GetQualifiedHoldsArrayMethodName(elementType, kernelClass)
+                : null,
+            HeldArraysMethodName = cpu.ConvertedElementHasArrayFields
+                ? AotHostNames.GetQualifiedAliasHeldArraysMethodName(elementType, kernelClass)
+                : null,
+            Cuda = ParameterTransfer.Create(marshaledType, HostDialects.Cuda, kernelClass),
+            Cpu = cpu
+        };
+    }
+
+    // A scalar passed by ref, out or in
+    private static KernelParameterShape ClassifyReference(IParameterSymbol parameter, in KernelParameterShape shape,
+        INamedTypeSymbol? kernelClass) =>
+        shape with
+        {
+            BufferElementTypeName = shape.RefKind is RefKind.Ref or RefKind.Out
+                ? GetBufferElementTypeName(parameter.Type, kernelClass)
+                : null,
+            CudaAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cuda),
+            CpuAliasAlignment = GetAliasAlignment(parameter.Type, HostDialects.Cpu),
+            IsShadowStructBuffer = shape.RefKind is RefKind.Ref or RefKind.Out &&
+                IsShadowStructElement(parameter.Type)
+        };
 
     // The device alignment of an element or referenced value; a reference type, which no device memory holds as it is,
     // gets 0 (the runtime then derives it from the size)

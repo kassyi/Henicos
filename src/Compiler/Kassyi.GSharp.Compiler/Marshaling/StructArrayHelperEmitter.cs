@@ -25,61 +25,8 @@ internal static class StructArrayHelperEmitter
     // otherwise write in place, so every array they hold, at any depth, is copied as well. Only a struct that holds
     // arrays gets the method.
     internal static void WriteCopyArraysMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout,
-        IAssemblySymbol launcherAssembly)
-    {
-        if (!TransferClassifier.TryFindArrayField(s, out _))
-        {
-            return;
-        }
-
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
-        writer.Append("public static void ");
-        writer.AppendCopyArraysMethodName(s);
-        using (writer.Parentheses())
-        {
-            writer.Append("ref ");
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
-            writer.Append($", {HostArrayCopiesType} {CopiesParameter}");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            StructBlockCopyEmitter.WriteHostMirrorBinding(writer, s, hasMirror);
-            foreach (var member in StructAbiMembers.Get(s))
-            {
-                WriteCopyArraysMember(writer, member);
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteCopyArraysMember(SourceWriter writer, StructAbiMember member)
-    {
-        // GSH0078 reports the member; a fixed buffer holds only primitives
-        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
-            member.Kind == StructAbiMemberKind.FixedBuffer ||
-            !HoldsArrays(member.Type))
-        {
-            return;
-        }
-
-        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
-        {
-            // host[k] is the element of the inline array, whatever the field's accessibility
-            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
-            using (writer.Scope())
-            {
-                WriteCopyArraysValue(writer, "host[k]", member.Type);
-            }
-
-            return;
-        }
-
-        WriteCopyArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
-    }
+        IAssemblySymbol launcherAssembly) =>
+        WriteStructMethod(writer, s, structLayout, launcherAssembly, new CopyArraysAction());
 
     // _ = copies.Copy(ref <value>);
     // or if (copies.Copy(ref <value>)) { for (...) CopyArrays_<E>(ref <value>[i], copies); }
@@ -136,62 +83,8 @@ internal static class StructArrayHelperEmitter
     // (HostAliasHeldArrays), as C# sees one memory in an array field and a slice of the same array (#1849). Only a
     // struct that holds arrays gets the method.
     internal static void WriteAliasHeldArraysMethod(SourceWriter writer, INamedTypeSymbol s,
-        StructLayoutInfo structLayout, ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
-    {
-        if (!TransferClassifier.TryFindArrayField(s, out _))
-        {
-            return;
-        }
-
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
-        writer.Append("public static void ");
-        writer.AppendAliasHeldArraysMethodName(s);
-        using (writer.Parentheses())
-        {
-            writer.Append("ref ");
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
-            writer.Append($", {HeldArraysType} {HeldParameter}");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            StructBlockCopyEmitter.WriteHostMirrorBinding(writer, s, hasMirror);
-            foreach (var member in StructAbiMembers.Get(s))
-            {
-                WriteAliasHeldArraysMember(writer, member, dialect);
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteAliasHeldArraysMember(SourceWriter writer, StructAbiMember member,
-        ITranspilerDialect dialect)
-    {
-        // GSH0078 reports the member; a fixed buffer holds only primitives
-        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
-            member.Kind == StructAbiMemberKind.FixedBuffer ||
-            !HoldsComparableArrays(member.Type))
-        {
-            return;
-        }
-
-        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
-        {
-            // host[k] is the element of the inline array, whatever the field's accessibility
-            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
-            using (writer.Scope())
-            {
-                WriteAliasHeldArraysValue(writer, "host[k]", member.Type, dialect);
-            }
-
-            return;
-        }
-
-        WriteAliasHeldArraysValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type, dialect);
-    }
+        StructLayoutInfo structLayout, ITranspilerDialect dialect, IAssemblySymbol launcherAssembly) =>
+        WriteStructMethod(writer, s, structLayout, launcherAssembly, new AliasHeldArraysAction(dialect));
 
     // AliasHeldArrays_<S>(ref <value>, held);   for a struct that holds arrays
     // if (<value> != null) { held.Add(<value>, <alignment>, 0, <converted>);
@@ -250,29 +143,14 @@ internal static class StructArrayHelperEmitter
             return;
         }
 
-        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
-        writer.Append("public static bool ");
-        writer.AppendHoldsArrayMethodName(s);
-        using (writer.Parentheses())
-        {
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
-            writer.Append(", object array");
-        }
+        WriteStructMethod(writer, s, structLayout, launcherAssembly, new HoldsArrayAction());
+        WriteHoldsArrayItemsMethod(writer, s);
+    }
 
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            StructBlockCopyEmitter.WriteHostMirrorBinding(writer, s, hasMirror);
-            foreach (var member in StructAbiMembers.Get(s))
-            {
-                WriteHoldsArrayMember(writer, member);
-            }
-
-            writer.AppendLine("return false;");
-        }
-
-        writer.AppendLine();
+    // public static bool HoldsArray_<key>(ReadOnlySpan<<S>> items, object array)
+    // { for (int i = 0; i < items.Length; i++) { if (HoldsArray_<key>(items[i], array)) { return true; } } return false; }
+    private static void WriteHoldsArrayItemsMethod(SourceWriter writer, INamedTypeSymbol s)
+    {
         writer.Append("public static bool ");
         writer.AppendHoldsArrayMethodName(s);
         using (writer.Parentheses())
@@ -308,31 +186,6 @@ internal static class StructArrayHelperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteHoldsArrayMember(SourceWriter writer, StructAbiMember member)
-    {
-        // GSH0078 reports the member; a fixed buffer holds only primitives
-        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
-            member.Kind == StructAbiMemberKind.FixedBuffer ||
-            !HoldsComparableArrays(member.Type))
-        {
-            return;
-        }
-
-        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
-        {
-            // host[k] is the element of the inline array, whatever the field's accessibility
-            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
-            using (writer.Scope())
-            {
-                WriteHoldsArrayValue(writer, "host[k]", member.Type);
-            }
-
-            return;
-        }
-
-        WriteHoldsArrayValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
-    }
-
     // if (ReferenceEquals(<value>, array) [|| HoldsArray_<E>(<value>, array)]) { return true; }    (a T[] value)
     // if (HoldsArray_<S>(<value>, array)) { return true; }                          (a struct that holds T[] fields)
     private static void WriteHoldsArrayValue(SourceWriter writer, string value, ITypeSymbol type)
@@ -362,6 +215,152 @@ internal static class StructArrayHelperEmitter
         {
             writer.AppendLine("return true;");
         }
+    }
+
+    // public static <return type> <name>([ref ]<S> host, <extra parameter>)
+    // { <host mirror binding>; <the action on each member that holds arrays>; <the action's last statement> }
+    // [WHY] CopyArrays_, AliasHeldArrays_ and HoldsArray_ walk the same members of a struct (the members that hold
+    // arrays, an inline array element by element) and differ only in what they do with each value, so one walker
+    // takes the action and a new array form is added in one place
+    private static void WriteStructMethod<TAction>(SourceWriter writer, INamedTypeSymbol s,
+        StructLayoutInfo structLayout, IAssemblySymbol launcherAssembly, TAction action)
+        where TAction : struct, IMemberAction
+    {
+        if (!TransferClassifier.TryFindArrayField(s, out _))
+        {
+            return;
+        }
+
+        var hasMirror = NativeStructEmitter.NeedsHostMirror(s, structLayout, launcherAssembly);
+        writer.Append($"public static {action.ReturnType} ");
+        action.WriteName(writer, s);
+        using (writer.Parentheses())
+        {
+            writer.Append(action.HostModifier);
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(hasMirror ? $" {StructMarshalingEmitter.MirroredHostParameter}" : " host");
+            writer.Append($", {action.ExtraParameter}");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            StructBlockCopyEmitter.WriteHostMirrorBinding(writer, s, hasMirror);
+            foreach (var member in StructAbiMembers.Get(s))
+            {
+                WriteMember(writer, member, action);
+            }
+
+            action.WriteEnd(writer);
+        }
+
+        writer.AppendLine();
+    }
+
+    private static void WriteMember<TAction>(SourceWriter writer, StructAbiMember member, TAction action)
+        where TAction : struct, IMemberAction
+    {
+        // GSH0078 reports the member; a fixed buffer holds only primitives
+        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
+            member.Kind == StructAbiMemberKind.FixedBuffer ||
+            !action.Holds(member.Type))
+        {
+            return;
+        }
+
+        if (member.Kind == StructAbiMemberKind.InlineArrayElement)
+        {
+            // host[k] is the element of the inline array, whatever the field's accessibility
+            writer.AppendLine($"for (int k = 0; k < {member.ElementCount}; k++)");
+            using (writer.Scope())
+            {
+                action.WriteValue(writer, "host[k]", member.Type);
+            }
+
+            return;
+        }
+
+        action.WriteValue(writer, $"host.{member.Name.ToCSharpIdentifier()}", member.Type);
+    }
+
+    // What a helper method does with the members of a struct that hold arrays
+    private interface IMemberAction
+    {
+        string ReturnType { get; }
+
+        // "ref " when the method takes the struct by reference, otherwise empty
+        string HostModifier { get; }
+
+        // The parameter after the struct
+        string ExtraParameter { get; }
+
+        void WriteName(SourceWriter writer, ITypeSymbol type);
+
+        // Whether a member of this type is visited
+        bool Holds(ITypeSymbol type);
+
+        void WriteValue(SourceWriter writer, string value, ITypeSymbol type);
+
+        // The statement after the last member
+        void WriteEnd(SourceWriter writer);
+    }
+
+    private readonly struct CopyArraysAction : IMemberAction
+    {
+        public string ReturnType => "void";
+
+        public string HostModifier => "ref ";
+
+        public string ExtraParameter => $"{HostArrayCopiesType} {CopiesParameter}";
+
+        public void WriteName(SourceWriter writer, ITypeSymbol type) => writer.AppendCopyArraysMethodName(type);
+
+        public bool Holds(ITypeSymbol type) => HoldsArrays(type);
+
+        public void WriteValue(SourceWriter writer, string value, ITypeSymbol type) =>
+            WriteCopyArraysValue(writer, value, type);
+
+        public void WriteEnd(SourceWriter writer)
+        {
+        }
+    }
+
+    private readonly struct AliasHeldArraysAction(ITranspilerDialect dialect) : IMemberAction
+    {
+        public string ReturnType => "void";
+
+        public string HostModifier => "ref ";
+
+        public string ExtraParameter => $"{HeldArraysType} {HeldParameter}";
+
+        public void WriteName(SourceWriter writer, ITypeSymbol type) => writer.AppendAliasHeldArraysMethodName(type);
+
+        public bool Holds(ITypeSymbol type) => HoldsComparableArrays(type);
+
+        public void WriteValue(SourceWriter writer, string value, ITypeSymbol type) =>
+            WriteAliasHeldArraysValue(writer, value, type, dialect);
+
+        public void WriteEnd(SourceWriter writer)
+        {
+        }
+    }
+
+    private readonly struct HoldsArrayAction : IMemberAction
+    {
+        public string ReturnType => "bool";
+
+        public string HostModifier => "";
+
+        public string ExtraParameter => "object array";
+
+        public void WriteName(SourceWriter writer, ITypeSymbol type) => writer.AppendHoldsArrayMethodName(type);
+
+        public bool Holds(ITypeSymbol type) => HoldsComparableArrays(type);
+
+        public void WriteValue(SourceWriter writer, string value, ITypeSymbol type) =>
+            WriteHoldsArrayValue(writer, value, type);
+
+        public void WriteEnd(SourceWriter writer) => writer.AppendLine("return false;");
     }
 
     // A T[], or a user struct with an array field at any depth (TransferClassifier.TryFindArrayField) or a Nullable of
