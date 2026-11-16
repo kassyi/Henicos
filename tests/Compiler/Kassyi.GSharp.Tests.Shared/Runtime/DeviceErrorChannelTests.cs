@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.ErrorSites;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Naming;
 using Kassyi.GSharp.Runtime.Aot;
@@ -14,7 +16,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// <summary>
 /// Verifies the device runtime error channel and CPU/GPU exception parity (#729).
 /// </summary>
-public sealed class DeviceErrorChannelTests
+public partial class DeviceErrorChannelTests
 {
     public static TheoryData<GSharpErrorCode, Type> AllErrorCodesAndExceptionTypes() =>
         new()
@@ -69,6 +71,155 @@ public sealed class DeviceErrorChannelTests
         Assert.Equal("(7,3,1)", ex.Data["GSharp.ThreadIndex"]);
         Assert.Equal("(2,4,1)", ex.Data["GSharp.BlockIndex"]);
         Assert.Equal(nameof(CUresult.CudaErrorIllegalInstruction), ex.Data["GSharp.CudaError"]);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(GSharpErrorCode.ArgumentNull, typeof(ArgumentNullException), "Value cannot be null.", "array")]
+    [InlineData(GSharpErrorCode.Argument, typeof(ArgumentException), "Destination is too short.", "destination")]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, typeof(ArgumentOutOfRangeException), "Count is out.", "count")]
+    public void ErrorMapper_ArgumentErrorNamingAParameter_SetsParamNameOnceInTheMessage(
+        GSharpErrorCode code,
+        Type expectedExceptionType,
+        string text,
+        string parameter)
+    {
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-{code}",
+            [new GSharpErrorSite(2u, "MyKernels.cu.cs", 7, 3, "MyKernel", $"{text} (Parameter '{parameter}')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 2u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.IsType(expectedExceptionType, ex);
+        Assert.Equal(parameter, ex.ParamName);
+        Assert.StartsWith($"{text} in MyKernel at MyKernels.cu.cs(7,3)", ex.Message);
+        Assert.EndsWith($"(Parameter '{parameter}')", ex.Message);
+        Assert.Equal(
+            ex.Message.IndexOf("(Parameter '", StringComparison.Ordinal),
+            ex.Message.LastIndexOf("(Parameter '", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void ErrorMapper_EveryArgumentExceptionMessageOfTheCompiler_IsAKnownBuiltinMessage()
+    {
+        foreach (var message in ArgumentExceptionMessages.All)
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(message),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.NotNull(ex.ParamName);
+            Assert.Contains(ex.ParamName, message);
+        }
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Resources/Prelude.cu")]
+    [InlineData("Resources/Prelude/Types.hpp")]
+    [InlineData("Resources/StackLinq.cuh")]
+    public void ErrorMapper_EveryParameterMessageOfThePrelude_IsAKnownBuiltinMessage(string preludeFile)
+    {
+        // C++ text has no syntax tree: the literals of the prelude that name a parameter are read from the file
+        var text = File.ReadAllText(
+            RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", preludeFile));
+#pragma warning disable RS0030 // C++ text of the prelude has no syntax tree
+        var literals = Regex.Matches(text, @"""((?:[^""\\]|\\.)*\(Parameter '[^']*'\))""");
+#pragma warning restore RS0030
+        Assert.NotEmpty(literals);
+
+        foreach (var literal in literals.Select(static m => m.Groups[1].Value))
+        {
+            var slot = new GSharpDeviceErrorSlot
+            {
+                Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+                SiteId = GSharpErrorMapper.ComputeBuiltinMessageId(literal),
+            };
+
+            var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+            Assert.True(ex.ParamName is not null, $"The mapper does not know \"{literal}\" of {preludeFile}");
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_ArgumentErrorWithoutAParameter_HasNoParamName()
+    {
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.ArgumentOutOfRange | GSharpErrorMapper.CompletionBit,
+        };
+
+        var ex = Assert.IsType<ArgumentOutOfRangeException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorMapper_MessageEndingInAnEmptyParameterName_KeepsItsText()
+    {
+        // new ArgumentException(message, "") drops the suffix, so an empty name must not be taken from the text
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            "test-module-empty-param-name",
+            [new GSharpErrorSite(3u, "MyKernels.cu.cs", 9, 1, "MyKernel", "Destination is too short. (Parameter '')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)GSharpErrorCode.Argument | GSharpErrorMapper.CompletionBit,
+            SiteId = 3u,
+            ModuleId = moduleId,
+        };
+
+        var ex = Assert.IsType<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot));
+
+        Assert.Null(ex.ParamName);
+        Assert.Contains("(Parameter '')", ex.Message);
+    }
+
+    [Theory]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(GSharpErrorCode.Argument, true)]
+    [InlineData(GSharpErrorCode.ArgumentOutOfRange, false)]
+    [InlineData(GSharpErrorCode.ArgumentNull, false)]
+    public void ErrorMapper_ArgumentErrorWithAnInnerException_KeepsParamNameOnlyWhereTheConstructorTakesBoth(
+        GSharpErrorCode code,
+        bool keepsParamName)
+    {
+        // ArgumentException(message, paramName, innerException) exists; the other two types have no such constructor
+        var moduleId = GSharpErrorMapper.RegisterErrorSites(
+            $"test-module-param-inner-{code}",
+            [new GSharpErrorSite(4u, "MyKernels.cu.cs", 11, 5, "MyKernel", "Bad value. (Parameter 'count')")]);
+        var slot = new GSharpDeviceErrorSlot
+        {
+            Code = (uint)code | GSharpErrorMapper.CompletionBit,
+            SiteId = 4u,
+            ModuleId = moduleId,
+        };
+        var inner = new InvalidOperationException("inner");
+
+        var ex = Assert.IsAssignableFrom<ArgumentException>(GSharpErrorMapper.CreateExceptionFromSlot(in slot, inner));
+
+        Assert.Equal(keepsParamName ? "count" : null, ex.ParamName);
+        Assert.Contains("(Parameter 'count')", ex.Message);
+        Assert.Same(inner, ex.InnerException);
     }
 
     [Fact]
@@ -264,487 +415,4 @@ public sealed class DeviceErrorChannelTests
 
         static int Count(string text, string part) => text.Split(part).Length - 1;
     }
-
-#if !GSHARP_CUDA
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqViolationsOnCpuManagedAndNative_ThrowsStandardExceptions()
-    {
-        int[] data = [1, 2, 3, 4];
-        int[] result = [0];
-
-        // 1. Managed execution
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            Assert.Throws<InvalidOperationException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqFirstNoMatchKernel(data, 100, result, blockDimX: 1));
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-                DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 99, result, blockDimX: 1));
-        }
-
-        // 2. Native CPU execution
-        var firstEx = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqFirstNoMatchKernel(data, 100, result, blockDimX: 1));
-        Assert.Contains("Sequence contains no matching element", firstEx.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), firstEx.Data["GSharp.ErrorCode"]);
-        Assert.Equal("(0,0,0)", firstEx.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", firstEx.Data["GSharp.BlockIndex"]);
-
-        var elemEx = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 99, result, blockDimX: 1));
-        Assert.Contains("Index was out of range.", elemEx.Message);
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), elemEx.Data["GSharp.ErrorCode"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_ConcurrentTrapAllThreadsOnCpuNative_FirstWriterWins()
-    {
-        int[] data = [1, 2, 3, 4];
-        int[] result = new int[256];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchConcurrentTrapAllThreadsKernel(data, result, gridDimX: 4, blockDimX: 64));
-        Assert.Contains("Sequence contains no matching element", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.NotNull(ex.Data["GSharp.ThreadIndex"]);
-        Assert.NotNull(ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_ThreeDimensionalCoordinatesOnCpuNative_CapturedInExceptionData()
-    {
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchCoordinate3DTrapKernel(
-                data,
-                targetTx: 2,
-                targetTy: 1,
-                targetTz: 1,
-                targetBx: 1,
-                targetBy: 2,
-                targetBz: 1,
-                result,
-                gridDimX: 3,
-                gridDimY: 4,
-                gridDimZ: 2,
-                blockDimX: 4,
-                blockDimY: 3,
-                blockDimZ: 2));
-
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("(2,1,1)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(1,2,1)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_EndToEndExecutionOnCpuNative_CarriesSourceLocationAndMemberName()
-    {
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 999, result, blockDimX: 1));
-
-        Assert.Contains("Index was out of range.", ex.Message);
-        Assert.Contains("in StackLinqElementAtKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqElementAtKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_GridOneHundredBlocksOnCpuNative_PreservesBlockCoordinate()
-    {
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(data, targetBlock: 37, result, gridDimX: 100, blockDimX: 32));
-
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(37,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Contains("of block (37,0,0)", ex.Message);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqFirstOnEmptySequenceOnCpuNative_CarriesSourceLocationAndMemberName()
-    {
-        int[] data = [1, 2, 3];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqFirstEmptyKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains no elements", ex.Message);
-        Assert.Contains("in StackLinqFirstEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqFirstEmptyKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqSingleOnMultipleElementsOnCpuNative_CarriesSourceLocationAndMemberName()
-    {
-        int[] data = [10, 20];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqSingleMultipleKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains more than one element", ex.Message);
-        Assert.Contains("in StackLinqSingleMultipleKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqSingleMultipleKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqMaxOnEmptySequenceOnCpuNative_CarriesSourceLocationAndMemberName()
-    {
-        int[] data = [1, 2, 3];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqMaxEmptyKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains no elements", ex.Message);
-        Assert.Contains("in StackLinqMaxEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqMaxEmptyKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.HappyPath)]
-    public void SwitchExpression_MatchedArmsOnCpuManagedAndNative_ReturnsArmValues()
-    {
-        int[] keys = [1, 0];
-        int[] managed = new int[keys.Length];
-        int[] native = new int[keys.Length];
-
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, managed, blockDimX: 2);
-        }
-
-        DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, native, blockDimX: 2);
-
-        Assert.Equal([20, 10], managed);
-        Assert.Equal([20, 10], native);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void SwitchExpression_UnmatchedArmOnCpuManagedAndNative_ThrowsWithSourceLocation()
-    {
-        int[] keys = [1, 2];
-        int[] result = new int[keys.Length];
-
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            Assert.Throws<SwitchExpressionException>(() =>
-                DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
-        }
-
-        // The native build throws the exception C# defines, as the managed path does
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
-
-        Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
-        Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
-        Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
-    }
-
-    [Fact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void SwitchExpression_UnmatchedArmInDeviceFunctionOnCpuNative_ThrowsWithSourcePlace()
-    {
-        int[] keys = [2];
-        int[] result = [0];
-
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
-                keys,
-                result,
-                blockDimX: 1
-            )
-        );
-
-        Assert.Contains(
-            "Non-exhaustive switch expression failed to match its input at DeviceErrorChannelKernels.cu.cs(108,44)",
-            ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-    }
-#else
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_CudaExecution_ThrowsStandardExceptionWithCoordinates()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchCoordinate3DTrapKernel(
-                data,
-                targetTx: 2,
-                targetTy: 1,
-                targetTz: 1,
-                targetBx: 1,
-                targetBy: 2,
-                targetBz: 1,
-                result,
-                gridDimX: 3,
-                gridDimY: 4,
-                gridDimZ: 2,
-                blockDimX: 4,
-                blockDimY: 3,
-                blockDimZ: 2));
-
-        Assert.Contains("Index was out of range.", ex.Message);
-        Assert.Contains("in thread (2,1,1) of block (1,2,1)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("(2,1,1)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(1,2,1)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_ConcurrentTrapOnCuda_FirstWriterWinsWithoutRace()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [1, 2, 3, 4];
-        int[] result = new int[256];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchConcurrentTrapAllThreadsKernel(
-                data, result, gridDimX: 4, blockDimX: 64));
-
-        Assert.Contains("Sequence contains no matching element", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.NotNull(ex.Data["GSharp.ThreadIndex"]);
-        Assert.NotNull(ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_CudaExecution_CarriesSourceLocationAndMemberName()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqElementAtKernel(data, 999, result, blockDimX: 1));
-
-        Assert.Contains("Index was out of range.", ex.Message);
-        Assert.Contains("in StackLinqElementAtKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqElementAtKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_GridOneHundredBlocksOnCuda_PreservesBlockCoordinate()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [10, 20, 30];
-        int[] result = [0];
-
-        var ex = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            DeviceErrorChannelKernels.LaunchBlockIndex100TrapKernel(data, targetBlock: 37, result, gridDimX: 100, blockDimX: 32));
-
-        Assert.Equal(nameof(GSharpErrorCode.ArgumentOutOfRange), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(37,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Contains("of block (37,0,0)", ex.Message);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqFirstOnEmptySequenceOnCuda_CarriesSourceLocationAndMemberName()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [1, 2, 3];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqFirstEmptyKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains no elements", ex.Message);
-        Assert.Contains("in StackLinqFirstEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqFirstEmptyKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqSingleOnMultipleElementsOnCuda_CarriesSourceLocationAndMemberName()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [10, 20];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqSingleMultipleKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains more than one element", ex.Message);
-        Assert.Contains("in StackLinqSingleMultipleKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqSingleMultipleKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void Trap_StackLinqMaxOnEmptySequenceOnCuda_CarriesSourceLocationAndMemberName()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] data = [1, 2, 3];
-        int[] result = [0];
-
-        var ex = Assert.Throws<InvalidOperationException>(() =>
-            DeviceErrorChannelKernels.LaunchStackLinqMaxEmptyKernel(data, result, blockDimX: 1));
-
-        Assert.Contains("Sequence contains no elements", ex.Message);
-        Assert.Contains("in StackLinqMaxEmptyKernel at DeviceErrorChannelKernels.cu.cs", ex.Message);
-        Assert.Contains("in thread (0,0,0) of block (0,0,0)", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.InvalidOperation), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("StackLinqMaxEmptyKernel", ex.Data["GSharp.MemberName"]);
-        Assert.NotNull(ex.Data["GSharp.SourceLocation"]);
-        Assert.StartsWith("DeviceErrorChannelKernels.cu.cs", ex.Data["GSharp.SourceLocation"]?.ToString());
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Equal("(0,0,0)", ex.Data["GSharp.BlockIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.HappyPath)]
-    public void SwitchExpression_MatchedArmsOnCuda_ReturnsArmValues()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] keys = [1, 0];
-        int[] result = new int[keys.Length];
-
-        DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2);
-
-        Assert.Equal([20, 10], result);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void SwitchExpression_UnmatchedArmOnCuda_CarriesSourceLocation()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] keys = [1, 2];
-        int[] result = new int[keys.Length];
-
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchKernel(keys, result, blockDimX: 2));
-
-        Assert.Contains("Non-exhaustive switch expression failed to match its input.", ex.Message);
-        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-        Assert.Equal("SwitchExpressionNoMatchKernel", ex.Data["GSharp.MemberName"]);
-        Assert.Equal("DeviceErrorChannelKernels.cu.cs(97,21)", ex.Data["GSharp.SourceLocation"]);
-        Assert.Equal("(1,0,0)", ex.Data["GSharp.ThreadIndex"]);
-        Assert.Null(ex.InnerException);
-    }
-
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.SadPath)]
-    public void SwitchExpression_UnmatchedArmInDeviceFunctionOnCuda_ThrowsSwitchExpressionException()
-    {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
-
-        int[] keys = [2];
-        int[] result = [0];
-
-        var ex = Assert.Throws<SwitchExpressionException>(() =>
-            DeviceErrorChannelKernels.LaunchSwitchExpressionNoMatchInDeviceFunctionKernel(
-                keys,
-                result,
-                blockDimX: 1
-            )
-        );
-
-        Assert.Equal(nameof(GSharpErrorCode.SwitchExpression), ex.Data["GSharp.ErrorCode"]);
-        Assert.Null(ex.InnerException);
-    }
-#endif
 }

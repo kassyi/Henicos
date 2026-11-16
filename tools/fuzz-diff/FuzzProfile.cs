@@ -15,7 +15,7 @@ public enum FuzzProfile
 
 /// <summary>
 /// Converts <see cref="FuzzProfile"/> to and from the one-letter codes (<c>M</c>, <c>C</c>, <c>G</c>) that the
-/// generator options, <c>known-issues.json</c>, the child commands and <c>summary.json</c> use.
+/// generator options, <c>known-issues.yml</c>, the child commands and <c>summary.json</c> use.
 /// </summary>
 internal static class FuzzProfileCodes
 {

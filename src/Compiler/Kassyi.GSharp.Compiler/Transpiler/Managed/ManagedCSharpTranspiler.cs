@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -31,44 +33,77 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
-            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
+        var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
+            ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName, loweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
+        var callees = GetCallees(lowered.CallSites, semanticModel);
+        var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
-                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
-        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
-            methodSymbol.AreLocalsZeroed(), isDeviceFunction: false, accessors, isUnsafe);
+                       ManagedStateMachineEmitter.HasPointerField(frame);
+        var compilation = semanticModel.Compilation;
+        var accessors = new ManagedAccessorSet(methodSymbol, compilation);
 
-        var accessibility =
-            KernelFrameAccessibility.Create(methodSymbol, GetFrameFieldTypes(regularFields, copiedParameters));
+        // A callee without a frame (a file-local type, GSH0119, or the diagnostics of the callee) leaves a body that
+        // throws, and no call frames
+        var callFrames = ManagedStateMachineAvailability.PlanCallFrames(callees, methodSymbol.ContainingType,
+            compilation, out var unavailable) ?? ImmutableArray<ManagedCallFrame>.Empty;
+        var bodySource = unavailable is null
+            ? CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, kernelName,
+                methodSymbol.AreLocalsZeroed(),
+                new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.Kernel, accessors, isUnsafe, callFrames))
+            : CreateUnavailableFrameThrow(kernelName, unavailable);
+
+        var accessibility = KernelFrameAccessibility.Create(methodSymbol,
+            GetFrameFieldTypes(frame),
+            ManagedStateMachineAvailability.GetCallFrames(callFrames, compilation));
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, contextName, regularFields, copiedParameters, lowered.CallSites, semanticModel,
-            accessibility.Context, Accessibility.Public, isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            writer, contextName, frame, callFrames, accessibility.Context,
+            Accessibility.Public, isUnsafe: isUnsafe);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
-            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
+            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, frame,
             bodySource, accessibility.StateMachine, isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
     }
 
     // The types of the context's fields: the copied parameters and the hoisted locals
-    private static ImmutableArray<ITypeSymbol> GetFrameFieldTypes(ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters)
+    private static ImmutableArray<ITypeSymbol> GetFrameFieldTypes(StateMachineFrame frame)
     {
-        var types = ImmutableArray.CreateBuilder<ITypeSymbol>(copiedParameters.Length + regularFields.Length);
-        copiedParameters
+        var types = ImmutableArray.CreateBuilder<ITypeSymbol>();
+        frame.CopiedParameters
             .AsStackEnumerable()
             .Select(static p => p.Type)
             .AddTo(types);
-        regularFields
+        frame.Slots
             .AsStackEnumerable()
-            .Select(static f => f.ResolvedType)
+            .Where(static s => s.Kind == FrameSlotKind.Field)
+            .Select(static s => s.Type)
             .AddTo(types);
-        return types.MoveToImmutable();
+        return types.ToImmutable();
     }
+
+    // The functions of the calls that may suspend, in call order
+    private static ImmutableArray<IMethodSymbol> GetCallees(IReadOnlyList<InvocationExpressionSyntax> callSites,
+        SemanticModel semanticModel)
+    {
+        var callees = ImmutableArray.CreateBuilder<IMethodSymbol>(callSites.Count);
+        foreach (var callSite in callSites)
+        {
+            callees.Add(semanticModel.GetSymbol(callSite) as IMethodSymbol
+                        ?? throw new InvalidOperationException(
+                            "A call that may suspend does not resolve to a device function."));
+        }
+
+        return callees.MoveToImmutable();
+    }
+
+    // throw new global::System.NotSupportedException("<kernel> cannot run on the managed CPU path: ...");
+    private static string CreateUnavailableFrameThrow(string methodName, IMethodSymbol callee) =>
+        $"throw new global::System.NotSupportedException(\"{methodName} cannot run on the managed CPU path: the " +
+        $"managed state machine of '{callee.ContainingType.Name}.{callee.Name}' is not generated " +
+        $"({GSharpDiagnostics.FileLocalTypeInManagedCopy.Id}, or the diagnostics of that function).\");";
 
     /// <summary>
     /// The lowered body of <paramref name="methodName"/> with the context accesses of its resume locals turned back into
@@ -107,28 +142,44 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
-            ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
+        var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
+            ManagedContextFields.ProcessContextFields(
+                lowered.ContextFields, semanticModel, functionName, lowered.LoweredBody);
         var copiedParameters = plan.GetCopiedParameters(lowered);
+        var callees = GetCallees(lowered.CallSites, semanticModel);
+        var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
-                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
-        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
+                       ManagedStateMachineEmitter.HasPointerField(frame);
+        var compilation = semanticModel.Compilation;
+        var accessors = new ManagedAccessorSet(methodSymbol, compilation);
+        // The generator emits a state machine only when every callee has a frame (ManagedStateMachineAvailability)
+        var callFrames = ManagedStateMachineAvailability.PlanCallFrames(callees,
+                             methodSymbol.ContainingType, compilation, out _)
+                         ?? throw new InvalidOperationException(
+                             $"The managed state machine of '{functionName}' calls a function without a frame.");
         var bodySource = CreateBody(lowered, unhoistedLocals, renamedLocals, semanticModel, functionName,
-            methodSymbol.AreLocalsZeroed(), isDeviceFunction: true, accessors, isUnsafe);
+            methodSymbol.AreLocalsZeroed(),
+            new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.SuspendingDeviceFunction, accessors, isUnsafe,
+                callFrames));
 
-        // As visible as the function (a consumer of another assembly calls a public one); the frame's fields are the
-        // assembly's own (#538 3rd review M1)
-        var accessibility = ManagedStateMachineAvailability.IsEffectivelyPublic(methodSymbol)
-            ? Accessibility.Public
-            : Accessibility.Internal;
+        // As visible as the function, narrowed to the types its frame holds: the one answer that every caller uses
+        // (ManagedStateMachineAvailability), so the frame, its entries and its callers cannot disagree
+        var accessibility = ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol, compilation);
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel, accessibility,
-            Accessibility.Internal, isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
-        ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
-            writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
+            writer, frameName, frame, callFrames, accessibility, Accessibility.Internal,
             isUnsafe: isUnsafe);
+        ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
+            writer, frameName, stateMachineName, methodSymbol, frame, bodySource, accessibility,
+            isUnsafe: isUnsafe);
+        if (ManagedStateMachineAvailability.HasEntries(methodSymbol, accessibility))
+        {
+            // With the function's declared accessibility: the callers of other classes run the private frame through
+            // them
+            ManagedStateMachineEmitter.EmitFrameEntries(writer, frameName, stateMachineName, methodSymbol,
+                frame.CopiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
+        }
         accessors.WriteTo(writer);
         return writer.ToString();
     }
@@ -261,8 +312,7 @@ internal static class ManagedCSharpTranspiler
     private static string CreateBody(LoweredStateMachine lowered,
         Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
-        SemanticModel semanticModel, string methodName, bool zeroFill, bool isDeviceFunction,
-        ManagedAccessorSet accessors, bool isUnsafe)
+        SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
         if (lowered.HeldRefLocals is [var heldRefLocal, ..])
         {
@@ -271,14 +321,12 @@ internal static class ManagedCSharpTranspiler
 
         var body = RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals, semanticModel, methodName,
             zeroFill);
-        return RewriteAndNormalizeBody(body, semanticModel, isDeviceFunction, accessors, isUnsafe);
+        return RewriteAndNormalizeBody(body, rewriter);
     }
 
-    private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
-        bool isDeviceFunction, ManagedAccessorSet accessors, bool isUnsafe = false)
+    private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, ManagedExecutionRewriter rewriter)
     {
-        var rewriter = new ManagedExecutionRewriter(semanticModel,
-            isDeviceFunction ? ManagedBodyKind.SuspendingDeviceFunction : ManagedBodyKind.Kernel, accessors, isUnsafe);
+        var isDeviceFunction = rewriter.BodyKind == ManagedBodyKind.SuspendingDeviceFunction;
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
         // A device function's state machine is emitted by every assembly that exports its device code, so it is written

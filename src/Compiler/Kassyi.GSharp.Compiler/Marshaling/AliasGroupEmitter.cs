@@ -56,6 +56,7 @@ internal static class AliasGroupEmitter
         using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
         {
             AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
+            WriteClearedOutArguments(writer, sharing);
             writer.AppendLine($"if ({Aliases} != null)");
             using (writer.Scope())
             {
@@ -138,7 +139,7 @@ internal static class AliasGroupEmitter
             }
             else
             {
-                writer.AppendLine($"{method}(ref {shape.Identifier}, {Held});");
+                writer.AppendLine($"{method}(ref {shape.ReferenceExpression}, {Held});");
             }
         }
 
@@ -276,6 +277,7 @@ internal static class AliasGroupEmitter
         WriteHeldArrays(writer, sharing, isCuda: false);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
         AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
+        WriteClearedOutArguments(writer, sharing);
         return scope;
     }
 
@@ -305,6 +307,22 @@ internal static class AliasGroupEmitter
     /// <summary>CPU: unpins the held arrays, after the arguments took their copies.</summary>
     public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan) =>
         writer.AppendLineIf(plan.HasHeldArrays, $"{Held}?.Free();");
+
+    // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out struct that holds arrays
+    // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the
+    // caller's value, which C# reads through the ref or in parameter that refers to the same variable (#1841)
+    private static void WriteClearedOutArguments(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        var plan = sharing.Aliases;
+        for (var k = 0; k < plan.Candidates.Length; k++)
+        {
+            var shape = sharing.Parameters[plan.Candidates[k]];
+            if (shape.RefKind == RefKind.Out && shape.HasArrayFields)
+            {
+                writer.AppendLine($"if (!({MemberTest(plan, plan.Candidates[k])})) {shape.Identifier} = default;");
+            }
+        }
+    }
 
     // Span: if (HostAliasCopies.TryGetHostView<T>(__gsharp_aliases, <k>, <ranges>, out Span<T> copy))
     //     { <name> = copy; }

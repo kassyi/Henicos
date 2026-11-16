@@ -302,7 +302,11 @@ native.N = host.N;
 }
 public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, global::System.IntPtr hStream = default)
 {
-if (host.S != null && native.S.Data != global::System.IntPtr.Zero)
+if (native.S.Data == global::System.IntPtr.Zero)
+{
+host.S = default;
+}
+else if (host.S != null)
 {
 int size = checked(host.S.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -318,7 +322,11 @@ handle.Free();
 }
 }
 }
-if (host.X != null && native.X.Data != global::System.IntPtr.Zero)
+if (native.X.Data == global::System.IntPtr.Zero)
+{
+host.X = default;
+}
+else if (host.X != null)
 {
 int size = checked(host.X.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -334,7 +342,11 @@ handle.Free();
 }
 }
 }
-if (host.T != null && native.T.Data != global::System.IntPtr.Zero)
+if (native.T.Data == global::System.IntPtr.Zero)
+{
+host.T = default;
+}
+else if (host.T != null)
 {
 int size = checked(host.T.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -352,7 +364,11 @@ handle.Free();
 }
 host.R = native.R;
 host.V = native.V;
-if (host.CallResult != null && native.CallResult.Data != global::System.IntPtr.Zero)
+if (native.CallResult.Data == global::System.IntPtr.Zero)
+{
+host.CallResult = default;
+}
+else if (host.CallResult != null)
 {
 int size = checked(host.CallResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -368,7 +384,11 @@ handle.Free();
 }
 }
 }
-if (host.PutResult != null && native.PutResult.Data != global::System.IntPtr.Zero)
+if (native.PutResult.Data == global::System.IntPtr.Zero)
+{
+host.PutResult = default;
+}
+else if (host.PutResult != null)
 {
 int size = checked(host.PutResult.Length * sizeof(global::System.Single));
 if (size > 0)
@@ -385,6 +405,29 @@ handle.Free();
 }
 }
 host.N = native.N;
+}
+public static void AliasHeldArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.S != null)
+{
+held.Add(host.S, 4, 0, false);
+}
+if (host.X != null)
+{
+held.Add(host.X, 4, 0, false);
+}
+if (host.T != null)
+{
+held.Add(host.T, 4, 0, false);
+}
+if (host.CallResult != null)
+{
+held.Add(host.CallResult, 4, 0, false);
+}
+if (host.PutResult != null)
+{
+held.Add(host.PutResult, 4, 0, false);
+}
 }
 #pragma warning restore CS8500
 }
@@ -443,6 +486,7 @@ public static unsafe void LaunchBlackScholesKernel(global::Henicos.Benchmarks.Co
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BlackScholesKernels.BlackScholesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BlackScholesKernels.BlackScholesKernel");
 global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesKernel(__gsharp_csharp_arg_0));
 return;

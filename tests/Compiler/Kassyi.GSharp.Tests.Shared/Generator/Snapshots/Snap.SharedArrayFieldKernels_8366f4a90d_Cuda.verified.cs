@@ -180,7 +180,11 @@ native.B.Length = host.B.Length;
 }
 public static unsafe void Unmarshal_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, ref AotContexts.SharedArrayPair native, global::System.IntPtr hStream = default)
 {
-if (host.A != null && native.A.Data != global::System.IntPtr.Zero)
+if (native.A.Data == global::System.IntPtr.Zero)
+{
+host.A = default;
+}
+else if (host.A != null)
 {
 int size = checked(host.A.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -196,7 +200,11 @@ handle.Free();
 }
 }
 }
-if (host.B != null && native.B.Data != global::System.IntPtr.Zero)
+if (native.B.Data == global::System.IntPtr.Zero)
+{
+host.B = default;
+}
+else if (host.B != null)
 {
 int size = checked(host.B.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -211,6 +219,17 @@ finally
 handle.Free();
 }
 }
+}
+}
+public static void AliasHeldArrays_SharedArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.A != null)
+{
+held.Add(host.A, 4, 0, false);
+}
+if (host.B != null)
+{
+held.Add(host.B, 4, 0, false);
 }
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
@@ -256,7 +275,11 @@ native.Data.Length = host.Data.Length;
 }
 public static unsafe void Unmarshal_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, ref AotContexts.SharedArrayHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -271,6 +294,13 @@ finally
 handle.Free();
 }
 }
+}
+}
+public static void AliasHeldArrays_SharedArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
 }
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
@@ -321,7 +351,11 @@ native.Data.Length = host.Data.Length;
 public static unsafe void Unmarshal_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, ref AotContexts.ConvertBag native, global::System.IntPtr hStream = default)
 {
 host.N = native.N;
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -336,6 +370,13 @@ finally
 handle.Free();
 }
 }
+}
+}
+public static void AliasHeldArrays_ConvertBag(ref global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
 }
 }
 #pragma warning restore CS8500
@@ -373,6 +414,7 @@ public static unsafe void LaunchTwoFieldsKernel(global::Kassyi.GSharp.Tests.Shar
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayFieldKernels.TwoFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedArrayFieldKernels.TwoFieldsKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayPair __gsharp_csharp_arg_0 = p;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.TwoFieldsKernel(__gsharp_csharp_arg_0));
 return;
@@ -480,6 +522,7 @@ public static unsafe void LaunchTwoStructsKernel(global::Kassyi.GSharp.Tests.Sha
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayFieldKernels.TwoStructsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedArrayFieldKernels.TwoStructsKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder __gsharp_csharp_arg_0 = first;
 global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayHolder __gsharp_csharp_arg_1 = second;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.TwoStructsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -597,6 +640,7 @@ public static unsafe void LaunchElementFieldsKernel(global::Kassyi.GSharp.Tests.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "SharedArrayFieldKernels.ElementFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "SharedArrayFieldKernels.ElementFieldsKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.ConvertBag[] __gsharp_csharp_arg_0 = bags;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.SharedArrayFieldKernels.ElementFieldsKernel(__gsharp_csharp_arg_0));
 return;

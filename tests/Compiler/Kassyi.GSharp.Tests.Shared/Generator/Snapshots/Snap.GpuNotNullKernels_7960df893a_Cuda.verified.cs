@@ -170,7 +170,11 @@ native.Offset = host.Offset;
 }
 public static unsafe void Unmarshal_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, ref AotContexts.NotNullHolder native, global::System.IntPtr hStream = default)
 {
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -187,6 +191,13 @@ handle.Free();
 }
 }
 host.Offset = native.Offset;
+}
+public static void AliasHeldArrays_NotNullHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
 }
 #pragma warning restore CS8500
 }
@@ -226,6 +237,7 @@ public static unsafe void LaunchSumKernel(global::Kassyi.GSharp.Tests.Shared.Cor
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuNotNullKernels.SumKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuNotNullKernels.SumKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder __gsharp_csharp_arg_0 = h;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.GpuNotNullKernels.SumKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -375,6 +387,7 @@ public static unsafe void LaunchDeviceFunctionKernel(global::Kassyi.GSharp.Tests
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuNotNullKernels.DeviceFunctionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuNotNullKernels.DeviceFunctionKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder __gsharp_csharp_arg_0 = h;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.GpuNotNullKernels.DeviceFunctionKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -511,6 +524,7 @@ public static unsafe void LaunchOptionalKernel(global::System.Int32[] o, global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuNotNullKernels.OptionalKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuNotNullKernels.OptionalKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = o;
 global::System.Int32[]? __gsharp_csharp_arg_1 = bias;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.GpuNotNullKernels.OptionalKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -695,6 +709,7 @@ public static unsafe void LaunchLengthKernel(global::Kassyi.GSharp.Tests.Shared.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "GpuNotNullKernels.LengthKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "GpuNotNullKernels.LengthKernel");
 global::Kassyi.GSharp.Tests.Shared.Core.NotNullHolder __gsharp_csharp_arg_0 = h;
 global::System.Int32[] __gsharp_csharp_arg_1 = o;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Core.GpuNotNullKernels.LengthKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

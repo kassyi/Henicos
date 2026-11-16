@@ -1,0 +1,355 @@
+# The expressions whose effects the IR classifies differently from the syntax walk of the lowering and the
+# emitters (ExpressionEffects), per GPU method or emitted struct member of the IR corpus, for a known reason.
+# IrClassificationEquivalenceTests.EveryGpuMethod_ClassifiesAsTheSyntaxPassesDo builds the list again on every
+# run and fails on any difference; a received file goes to tmp/, and the full list of differences to
+# tmp/IrClassificationEquivalence.<assembly>.received.txt. The test output prints the total of each reason.
+#
+#   file:   the source file, relative to tests/Compiler/Kassyi.GSharp.Tests.Shared
+#   method: the containing type and the method (an accessor, constructor or operator by its metadata name)
+#   reason: the known reason of the difference (IrEffectDifferences.Reason)
+#   count:  how many such expressions the method has
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableStackLinqSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/AssignmentFormsDifferentialKernels.cu.cs", method: "AssignmentFormsDifferentialKernels.DiscardKernel", reason: "known, a discard is written by no one", count: 2}
+- {file: "Differential/AssignmentFormsDifferentialKernels.cu.cs", method: "AssignmentFormsDifferentialKernels.NullableConversionKernel", reason: "known, a field of a struct temporary reads no memory", count: 1}
+- {file: "Differential/AssignmentFormsDifferentialKernels.cu.cs", method: "AssignmentFormsDifferentialKernels.NullableConversionKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.NullableStructValueAccessKernel", reason: "known, an initializer writes the new value", count: 4}
+- {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.StackLinqElementAtKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/BoundsAndMemoryDifferentialKernels.cu.cs", method: "BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoDifferentialKernels.CallerLineKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoDifferentialKernels.LineWithSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/CrossAssemblyDifferentialKernels.cu.cs", method: "CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel", reason: "known, an initializer writes the new value", count: 4}
+- {file: "Differential/CrossAssemblyDifferentialKernels.cu.cs", method: "CrossAssemblyDifferentialKernels.CrossAssemblyFunctionsAndMacrosKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/DefaultValueDifferentialKernels.cu.cs", method: "DefaultValueDifferentialKernels.DefaultStructKernel", reason: "known, a field of a struct temporary reads no memory", count: 1}
+- {file: "Differential/DefaultValueDifferentialKernels.cu.cs", method: "DefaultValueDifferentialKernels.DefaultStructKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/DefaultValueDifferentialKernels.cu.cs", method: "DefaultValueDifferentialKernels.ZeroStructBesideAValueKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/ExpressionEmissionDifferentialKernels.cu.cs", method: "ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel", reason: "known, a field of a struct temporary reads no memory", count: 2}
+- {file: "Differential/ExpressionEmissionDifferentialKernels.cu.cs", method: "ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "DiffFieldKeywordConstructorStep..ctor", reason: "known, the location of this reads nothing", count: 1}
+- {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "DiffFieldKeywordOrder.get_X", reason: "known, the location of this reads nothing", count: 1}
+- {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "Differential/ImplicitCallDifferentialKernels.cu.cs", method: "ImplicitCallDifferentialKernels.PinnableReferenceKernel", reason: "known, an initializer writes the new value", count: 5}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.ForUnrollRefContextKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortComparableStructKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortComparableStructKernel", reason: "known, an initializer writes the new value", count: 8}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortComparerKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortEnumKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortIntKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.SpanSortKeyValueComparerKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.UsingMutatingGuardDisposedStateKernel", reason: "known, an initializer writes the new value", count: 3}
+- {file: "Differential/LanguageControlAndResourceDifferentialKernels.cu.cs", method: "LanguageControlAndResourceDifferentialKernels.UsingMutatingGuardGetterValKernel", reason: "known, an initializer writes the new value", count: 3}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "DiffIdentityWrap.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "DiffLinearMeter.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.EvalMacrosInDeviceFunction", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroArithmeticKernel", reason: "known, an operator macro is taken as writing memory", count: 4}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroCastAndShiftKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroEvaluationOrderKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.OperatorMacroInDeviceFunctionKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.SuspendAndCombineMacro", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.SuspendAndCombineMacro", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "Differential/LanguageConversionsAndMacrosDifferentialKernels.cu.cs", method: "LanguageConversionsAndMacrosDifferentialKernels.UserDefinedImplicitConversionsKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/MacroNamedArgumentDifferentialKernels.cu.cs", method: "MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/MacroNamedArgumentDifferentialKernels.cu.cs", method: "MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsWithBarrierKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/MarshalingAliasingDifferentialKernels.cu.cs", method: "MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/MarshalingBoundaryDifferentialKernels.cu.cs", method: "MarshalingBoundaryDifferentialKernels.AutoLayoutAllPositionsKernel", reason: "known, an initializer writes the new value", count: 10}
+- {file: "Differential/MarshalingBoundaryDifferentialKernels.cu.cs", method: "MarshalingBoundaryDifferentialKernels.ExplicitLayoutAndUnionPositionsKernel", reason: "known, an initializer writes the new value", count: 5}
+- {file: "Differential/MarshalingBoundaryDifferentialKernels.cu.cs", method: "MarshalingBoundaryDifferentialKernels.VectorAlignmentAndExternalStructsKernel", reason: "known, an initializer writes the new value", count: 14}
+- {file: "Differential/MarshalingNullableDifferentialKernels.cu.cs", method: "MarshalingNullableDifferentialKernels.ArraysKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/MarshalingNullableDifferentialKernels.cu.cs", method: "MarshalingNullableDifferentialKernels.FieldsKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/MarshalingNullableDifferentialKernels.cu.cs", method: "MarshalingNullableDifferentialKernels.ReturnInnerKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/NullableDifferentialKernels.cu.cs", method: "NullableDifferentialKernels.EmptyArrayIsNotNullKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "Differential/NullableDifferentialKernels.cu.cs", method: "NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel", reason: "known, an operator macro is taken as writing memory", count: 5}
+- {file: "Differential/NullableDifferentialKernels.cu.cs", method: "NullableDifferentialKernels.NullableCoalesceAndSideEffects", reason: "known, an initializer writes the new value", count: 3}
+- {file: "Differential/NullableFieldOrderDifferentialKernels.cu.cs", method: "NullableFieldOrderDifferentialKernels.ReadNullableStructFieldKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/PendingBugsDifferentialKernels.cu.cs", method: "PendingBugsDifferentialKernels.SelectTakeZeroSideEffectKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.AccessorCallKernel", reason: "known, an initializer writes the new value", count: 4}
+- {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "RecvGetCounter.get_Next", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "RecvGetView.get_Current", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "RecvGetView.get_Touch", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.OperatorMacroAcrossBarrierDevice", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.OperatorMacroOnKernelValueParameterAcrossBarrierKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.ContainsEvaluationOrderKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.ContainsNaNKernel", reason: "known, a by-value extension receiver is not written", count: 6}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.DoubleSequentialSumKernel", reason: "known, a by-value extension receiver is not written", count: 5}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.FloatSequentialSumKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.FloatingExtremaAndZeroContainsKernel", reason: "known, a by-value extension receiver is not written", count: 14}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.Int32AverageKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.Int32StackLinqMatrixKernel", reason: "known, a by-value extension receiver is not written", count: 53}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.NarrowAndInt64StackLinqKernel", reason: "known, a by-value extension receiver is not written", count: 11}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.ParallelSumStackLinqKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.SingleFusedAverageKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.SingleUnfusedAverageKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqElementAtTwoKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqElementAtZeroKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqFusedFirstKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqFusedFirstPredicateKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqFusedLastKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqFusedLastPredicateKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSingleOneElementKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSingleOrDefaultEmptyKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSingleOrDefaultOneElementKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSingleOrDefaultPredicateNoneKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSinglePredicateUniqueKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqSkipWhileSideEffectCountKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.StackLinqTakeWhileSideEffectCountKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqDifferentialKernels.cu.cs", method: "StackLinqDifferentialKernels.UnfusedSelectEvaluationKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "Differential/StackLinqLocalQueryDifferentialKernels.cu.cs", method: "StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel", reason: "known, a by-value extension receiver is not written", count: 10}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.DeviceDoubleSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.DeviceDoubleSumTransitive", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.DeviceFloatSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.DeviceFloatSumTransitive", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.DoubleSumMatrixKernel", reason: "known, a by-value extension receiver is not written", count: 5}
+- {file: "Differential/StackLinqSumDifferentialKernels.cu.cs", method: "StackLinqSumDifferentialKernels.FloatSumMatrixKernel", reason: "known, a by-value extension receiver is not written", count: 5}
+- {file: "Differential/StackLinqUnfusedDifferentialKernels.cu.cs", method: "StackLinqUnfusedDifferentialKernels.IndexedLambdaKernel", reason: "known, a by-value extension receiver is not written", count: 8}
+- {file: "Differential/StackLinqUnfusedDifferentialKernels.cu.cs", method: "StackLinqUnfusedDifferentialKernels.UnfusedOperatorKernel", reason: "known, a by-value extension receiver is not written", count: 19}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "DiffLiftedWrap.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "DiffScaledInt.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "DiffStructCounter.set_ResetTo", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "DiffStructCounter.set_ResetTo", reason: "known, the location of this reads nothing", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "DiffStructReadonlyHolder..ctor", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "M1ExplicitScaledInt.op_Explicit", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "Repro1103Wrap.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "StructDifferentialKernels.ReadInAfterMutatingPropHolder", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/StructDifferentialKernels.cu.cs", method: "StructDifferentialKernels.StructMutationAndCopySemantics", reason: "known, an initializer writes the new value", count: 5}
+- {file: "Differential/StructMutatingGetterDifferentialKernels.cu.cs", method: "MutGetHolder..ctor", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/StructMutatingGetterDifferentialKernels.cu.cs", method: "StructMutatingGetterDifferentialKernels.MutatingGetterKernel", reason: "known, an initializer writes the new value", count: 4}
+- {file: "Differential/SwitchDifferentialKernels.cu.cs", method: "SwitchDifferentialKernels.NullCoalesceAndNullCheckMatchingKernel", reason: "known, an operator macro is taken as writing memory", count: 4}
+- {file: "Differential/ThrowOrderDifferentialKernels.cu.cs", method: "ThrowOrderDifferentialKernels.Make", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/TypeTestDifferentialKernels.cu.cs", method: "TypeTestDifferentialKernels.TypeTestKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/UnrollShadowDifferentialKernels.cu.cs", method: "UnrollShadowDifferentialKernels.UnrollShadowKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analysis/CSharpExecutionCases.cs", method: "Kernels.FloatSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analysis/CSharpExecutionCases.cs", method: "Kernels.IntSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analysis/CSharpExecutionCases.cs", method: "Kernels.OperatorMacro", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analysis/CSharpExecutionCases.cs", method: "Kernels.OperatorMacro", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.InitializerOnly", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Extensions.AddGeneric", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Extensions.AddToIndex", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.AddAt", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.Direct", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.DoubleSumSelector", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.FloatSumDirect", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.IntSumPlain", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.Plain", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.Suspends", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analysis/NonNullProofCases.cs", method: "Reads.DeviceNewStruct", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/CrossBarrierFlowKernels.cu.cs", method: "CrossBarrierFlowKernels.StackLinqLambdaAfterBarrierKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/CrossBarrierFlowKernels.cu.cs", method: "CrossBarrierFlowKernels.StackLinqLambdaBeforeBarrierKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/CrossBarrierRefStructParameterKernels.cu.cs", method: "CrossBarrierRefStructParameterKernels.Pair", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.BarrierBetweenKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerGetterKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/FlowSensitiveUniformityKernels.cu.cs", method: "FlowSensitiveUniformityKernels.InterlockedRefLocalKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BinaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BlockGetterKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.CompoundOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.IncrementOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.StructOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UnaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformConstructorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformGetterKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, a field of a struct temporary reads no memory", count: 2}
+- {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldOuter.AddToOwnFields", reason: "known, the location of this reads nothing", count: 3}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "BarrierKernels.Sync", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "DivisionFunctions.Divide", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "LocalKernels.Run", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "MacroFunctions.Rewritten", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "MacroFunctions.Rewritten", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "PlainKernels.Plain", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/FileLocalType_ManagedBody.cu.cs", method: "SuspendingKernels.Wait", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.BlockDependentKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.CooperativeKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.DelegateConditionKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.DeviceFunctionSelectorKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.DivergentKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.EarlyExitKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.ExtensionDeviceCallKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.FloatKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.IfElseDivergentKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.InDeviceFunction", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.LambdaBlockIndexKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.LambdaDeviceCallKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.LambdaThreadIndexKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.OrderDependentKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.PrivateSourceKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.SharedKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.SharedMemoryBlockInputKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.SideEffectKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.StoredInLocalKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.StructFieldVariantInputKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.VariantInputKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/ParallelAggregate/ParallelAggregateWarnings.cs", method: "ParallelAggregateWarnings.WhereThreadIndexKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/PendingBugs/HostOnlyStackLinqProhibitedKernels.cu.cs", method: "HostOnlyStackLinqProhibitedKernels.CallCopyToInKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/PendingBugs/HostOnlyStackLinqProhibitedKernels.cu.cs", method: "HostOnlyStackLinqProhibitedKernels.CallSumSequentialInKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/PendingBugs/HostOnlyStackLinqProhibitedKernels.cu.cs", method: "HostOnlyStackLinqProhibitedKernels.CallToArrayInKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/PendingBugs/RecursiveExtensionBarrierKernels.cu.cs", method: "RecursiveExtensionBarrierKernels.RunKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Analyzers/PendingBugs/StackLinqChainDepthBypassKernels.cu.cs", method: "StackLinqChainDepthBypassKernels.ChainBypassedViaOfType", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/PendingBugs/StackLinqChainDepthBypassKernels.cu.cs", method: "StackLinqChainDepthBypassKernels.ChainBypassedViaStaticInvocation", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/RefOutReassignmentSadPath.cs", method: "GEN17_RefOutReassignmentSadPathCase.KernelWithRefParamReassignment", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/SpanSort/SpanSortUnsupported.cs", method: "SpanSortUnsupported.ComparisonVariableKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanSort/SpanSortUnsupported.cs", method: "SpanSortUnsupported.GenericComparerKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanSort/SpanSortUnsupported.cs", method: "SpanSortUnsupported.NativeIntegerKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanSort/SpanSortUnsupported.cs", method: "SpanSortUnsupported.SeveralComparersKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanSort/SpanSortUnsupported.cs", method: "SpanSortUnsupported.UnorderedElementKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.AsSpanIndexKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.IndexOfKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.ReadOnlyContainsKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.ReplaceKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.SequenceEqualKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.SupportedAllMembersKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "TestCases/Analyzers/StackArrays/StackArrayEscapes.cu.cs", method: "StackArrayEscapeKernels.TupleAndStructKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqCopyToKernels.cu.cs", method: "TestKernelContainer.StackLinqCopyToKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqHostOnlyOperatorKernels.cu.cs", method: "TestKernelContainer.StackLinqHostOnlyOperatorKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqOfTypeKernels.cu.cs", method: "TestKernelContainer.StackLinqOfTypeKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqStateOverloadKernels.cu.cs", method: "TestKernelContainer.StackLinqStateOverloadKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqStructContainsKernels.cu.cs", method: "TestKernelContainer.StackLinqStructContainsKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqStructSumKernels.cu.cs", method: "StackLinqMoney.op_Addition", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/StackLinqState/StackLinqStructSumKernels.cu.cs", method: "TestKernelContainer.StackLinqStructSumKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "TestCases/Analyzers/StructSizeDiagnostics.cs", method: "StructSizeDiagnosticKernels.AtLimitKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/StructSizeDiagnostics.cs", method: "StructSizeDiagnosticKernels.GridScratchKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/StructSizeDiagnostics.cs", method: "StructSizeDiagnosticKernels.OverLimitKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/StructSizeDiagnostics.cs", method: "StructSizeDiagnosticKernels.PaddingKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "FileLocalHolder.HoldsFileLocal", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "FrameBase.HoldsProtected", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "FrameOwner.HoldsPrivate", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/UnsupportedMethodInStructInit.cs", method: "SYN90_UnsupportedMethodInStructInitCase.KernelWithUnsupportedMethodInStructInit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_HappyPath.cs", method: "GSH_62_UserDefinedOperator_HappyPath.MacroOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_HappyPath.cs", method: "HostVec_UserDefinedOpTest.op_Addition", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_HappyPath.cs", method: "HostVec_UserDefinedOpTest.op_Increment", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_HappyPath.cs", method: "HostVec_UserDefinedOpTest.op_Multiply", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_HappyPath.cs", method: "HostVec_UserDefinedOpTest.op_UnaryNegation", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.AddInDevice", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.BinaryKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.CompoundKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.IncrementKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.SystemNumericsVectorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "GSH_62_UserDefinedOperator_SadPath.UnaryKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "V2.op_Addition", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "V2.op_Increment", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "V2.op_Multiply", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/UserDefinedOperator_SadPath.cs", method: "V2.op_UnaryNegation", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Analyzers/WmmaUserMarker/UserMarkerDefault.cu.cs", method: "UserMarkerDefaultKernels.UserMarkerDefaultKernel", reason: "known, a field of a struct temporary reads no memory", count: 1}
+- {file: "TestCases/ComprehensiveSpecKernel.cu.cs", method: "ComprehensiveSpecKernel.ProcessPhysics", reason: "known, an initializer writes the new value", count: 3}
+- {file: "TestCases/Diagnostics/AssignmentFormsUnsupported.cu.cs", method: "AssignmentFormsUnsupportedKernels.DeconstructNonTupleKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "Acc.op_Addition", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.CompoundKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs", method: "DynamicSharedMemoryWithoutTableKernels.ComputedPropertyKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ExtensionCallDiagnostics.cs", method: "ExtensionCallKernels.IndependentReceiverKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordMacroHolder.set_P", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordPropertyUnsupportedKernels.MacroTargetKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordPropertyUnsupportedKernels.MacroTargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/ImplicitCallForms.cu.cs", method: "ImplicitCallFormKernels.InstancePinnableKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroContext.cu.cs", method: "OperatorMacroContextKernels.NoContextKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroContext.cu.cs", method: "OperatorMacroContextKernels.TwoContextsKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroMissingTarget.cu.cs", method: "OperatorMacroMissingTargetKernels.MissingTargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.AmbiguousKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.BuiltInAgainstUserDefinedKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.MutualConversionKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.NoOverloadKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.ReadOnlyReferenceKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.RefResultKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "OperatorMacroOverloadKernels.TargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroOverload.cu.cs", method: "ShiftCount.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "CastProbe.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "CastValue.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "NarrowValue.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "OperatorMacroPositionKernels.ConvertedNestedKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "OperatorMacroPositionKernels.NestedBufferKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "OperatorMacroPositionKernels.OutsideAssignmentKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/OperatorMacroPositions.cu.cs", method: "OperatorMacroPositionKernels.UserDefinedCastKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Diagnostics/OperatorMacroUnreachableTarget.cu.cs", method: "OperatorMacroUnreachableTargetKernels.UnreachableKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroContextAssignmentKernels.AssignedContextKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroContextAssignmentKernels.ComputedPropertyTargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroContextAssignmentKernels.UnassignedContextKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroContextAssignmentKernels.UnassignedNestedContext", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroTargetAssignmentKernels.BranchesKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroTargetAssignmentKernels.OutResultKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroTargetAssignmentKernels.PartlyAssignedStructKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroTargetAssignmentKernels.SumInto", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.AddInto", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.CompoundAssignmentKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.GenericTargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.IncrementKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.LiftedOperatorKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/OperatorMacroUnsupportedForms.cu.cs", method: "OperatorMacroUnsupportedFormKernels.UnassignedTargetKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.BarePropertyKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.ConversionKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.IndexerKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.UnaryOperatorKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.UnaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWrites.cu.cs", method: "ReadOnlyArrayWriteKernels.StructAliasKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/SharedMemoryWithoutCount.cu.cs", method: "SharedMemoryWithoutCountKernels.AcceptedKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/StackLinqLocalLayout.cs", method: "StackLinqLocalKernels.LocalQueriesKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "Counter.op_Decrement", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "Counter.op_Increment", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "UnmappedOperatorKernels.BuiltInOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "UnmappedOperatorKernels.StepOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "UnmappedOperatorKernels.SystemOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 6}
+- {file: "TestCases/Diagnostics/UnmarkedMethodCallLowered.cs", method: "UnmarkedLoweredKernels.GroupKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Diagnostics/WithExpressionUnsupported.cu.cs", method: "WithExpressionUnsupportedKernels.ReadOnlyMemberKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Generator/MutantSwitches_Instrumented.cs", method: "Kernels.Twice", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Generator/MutantSwitches_Original.cs", method: "Kernels.Twice", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Generator/NativeModuleAssembly.cu.cs", method: "Kernels.SortValues", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Sum", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Generators/DeviceExportManagedVersionLibrary.cs", method: "Ops.Twice", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Generators/DeviceExportStructs.cs", method: "SortedPair..ctor", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Generators/GpuKernel_MacroContextName.cu.cs", method: "MacroCtxKernels.MacroCtxKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Generators/GpuKernel_StackLinqUnfused.cu.cs", method: "StackLinqUnfusedKernels.ElementAtKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Generators/GpuKernel_StackLinqUnfused.cu.cs", method: "StackLinqUnfusedKernels.SortKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Generators/ManagedOperatorMacroForms.cs", method: "ManagedOperatorMacroFormKernels.FormKernel", reason: "known, an operator macro is taken as writing memory", count: 5}
+- {file: "TestCases/Generators/ManagedOperatorMacroForms.cs", method: "ManagedOperatorMacroFormKernels.InFunction", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.UsingKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Generators/StateMachineVisibility.cs", method: "LibSm.MakeSecret", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Instantiation/GenericCopySource.cs", method: "Vec.op_Addition", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Ir/IrBuilderCases.cs", method: "Ir.MakeCell", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Ir/IrBuilderCases.cs", method: "Money.op_Addition", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Ir/IrClassifierCases.cs", method: "Cases.DiscardOut", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Wrapped.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/MacroOperatorTranspilation.cu.cs", method: "TestKernels.MacroKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Runtime/ErrorSiteLineEndingCases.cs", method: "ErrorSiteLineEndingKernels.SitesOnSeveralLinesKernel", reason: "known, a by-value extension receiver is not written", count: 3}
+- {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.HellPattern", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.MultipleSelect", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.MultipleWhere", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.SimpleWhereSelectSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqTestKernel.cu.cs", method: "StackLinqTestKernel.RunLinq", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqTestKernel.cu.cs", method: "StackLinqTestKernel.RunLinqAny", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqTestKernel.cu.cs", method: "StackLinqTestKernel.RunLinqFirst", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqTestKernel.cu.cs", method: "StackLinqTestKernel.RunLinqIndexedAndSelectorSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/StackLinqTestKernel.cu.cs", method: "StackLinqTestKernel.RunLinqSum", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Transpiler/Emission/ArrayNullCheckShapeKernels.cu.cs", method: "ArrayNullCheckShapeKernels.BoundaryKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/Emission/BigIntRefShiftKernels.cu.cs", method: "BigIntRefShiftKernels.ShiftKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Transpiler/Emission/SkipLocalsInitKernels.cu.cs", method: "SkipLocalsInitKernels.GenericKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Transpiler/Emission/SkipLocalsInitKernels.cu.cs", method: "SkipLocalsInitKernels.PropertySkipsKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/Emission/SpillOrderMutatingGetterShapeKernels.cu.cs", method: "SpillOrderMutatingGetterShapeKernels.MutatingGetterAfterStructIdentifierArgumentKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/Emission/SpillOrderMutatingGetterShapeKernels.cu.cs", method: "SpillOrderMutatingGetterShapeKernels.MutatingIndexerAfterStructIdentifierArgumentKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/EvaluationOrderCases.cs", method: "OrderFieldKeyword.get_FieldThenWrite", reason: "known, the location of this reads nothing", count: 1}
+- {file: "TestCases/Transpiler/EvaluationOrderCases.cs", method: "OrderStructWithGetters.get_ComputedInner", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/EvaluationOrderCases.cs", method: "OrderView.get_Touch", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/KernelHiddenParameterCases.cs", method: "Kernels.GridSumKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Transpiler/LanguageFeaturesPending/AggregateBindingCase.cs", method: "AggregateBindingCase.Kernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Transpiler/LanguageFeaturesPending/ExplicitConversionAndCustomIndexerCase.cs", method: "ExplicitAndIndexedStruct.op_Explicit", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Transpiler/LanguageFeaturesPending/IndexedStackLinqCase.cs", method: "IndexedStackLinqCase.Kernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Transpiler/LanguageFeaturesPending/OperatorMacroInsideStructDisposeCase.cs", method: "OperatorMacroOps.Add", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/LanguageFeaturesPending/TakeLastUnfusedCase.cs", method: "TakeLastUnfusedCase.Kernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.AddKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.ContextKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.ConversionKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.NestedKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.ShiftKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/OperatorMacroPlanCases.cs", method: "Kernels.SpillKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs", method: "GenericStructSharedMemorySiteKeyKernels.UseComputedPropSharedMemoryBufKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Transpiler/PendingBugs/GenericStructSharedMemorySiteKeyKernels.cu.cs", method: "GenericStructSharedMemorySiteKeyKernels.UseGenericCtorAndOpBufKernel", reason: "known, an operator macro is taken as writing memory", count: 2}
+- {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqCapturingLambdaLocalKernels.cu.cs", method: "UnfusedStackLinqCapturingLambdaLocalKernels.UnfusedQueryWithCapturingLambdaInLocalKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs", method: "UnfusedStackLinqMissingTemplatesKernels.TakeLastElementAtOrDefaultKernel", reason: "known, a by-value extension receiver is not written", count: 2}
+- {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs", method: "UnfusedStackLinqMissingTemplatesKernels.UnfusedSelectorSumAndPredicateLastOrDefaultKernel", reason: "known, a by-value extension receiver is not written", count: 1}

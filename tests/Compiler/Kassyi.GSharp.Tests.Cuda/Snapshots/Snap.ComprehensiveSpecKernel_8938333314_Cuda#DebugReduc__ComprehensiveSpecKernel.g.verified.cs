@@ -276,11 +276,11 @@ if(__gsharp_id_7_tx==0)
 atomicAdd(&(*__gsharp_id_1_totalMagnitude),__gsharp_id_21_dynamicCache[0]);
 (*__gsharp_id_2_successFlag)=true;
 }
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8>();
 __gsharp_id_31_inlineVec[0]=123;
 __gsharp_id_31_inlineVec[1]=456;
 {
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState>();
 __gsharp_id_32_state.__gsharp_mb_Buffer[0]=__gsharp_id_31_inlineVec[0];
 __gsharp_id_32_state.__gsharp_mb_Buffer[1]=__gsharp_id_31_inlineVec[1];
 unsigned long long __gsharp_id_33_carry = 0;
@@ -350,7 +350,7 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 }
 __gsharp_layout_checked_ProcessPhysics = true;
 }
-successFlag = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out successFlag);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -371,29 +371,29 @@ void** __gsharp_kernel_params = stackalloc void*[7];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
-__gsharp_alias_ranges[1] = (nint)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[2] = sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[3] = sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Single);
 __gsharp_alias_ranges[8] = sizeof(global::System.Single);
 __gsharp_alias_ranges[9] = sizeof(global::System.Single);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[13] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[14] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[16] = 1;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 2}, "particles,totalMagnitude,successFlag");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 2}, "particles,totalMagnitude,successFlag");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 // Marshal array: particles
@@ -468,26 +468,26 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
-__gsharp_alias_ranges[1] = (nint)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[2] = sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[3] = sizeof(global::DebugReduc.PhysicsVector);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Single);
 __gsharp_alias_ranges[8] = sizeof(global::System.Single);
 __gsharp_alias_ranges[9] = sizeof(global::System.Single);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[13] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[14] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
 __gsharp_alias_ranges[16] = 1;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 // Copy back array: particles

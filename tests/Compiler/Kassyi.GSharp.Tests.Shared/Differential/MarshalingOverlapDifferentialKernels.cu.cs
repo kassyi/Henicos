@@ -129,6 +129,22 @@ public static partial class MarshalingOverlapDifferentialKernels
         }
     }
 
+    // The caller's variable is read through the ref before the kernel assigns the out, as C# reads it
+    [GpuKernel]
+    public static void OutAndRefOneVariableKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = second;
+        }
+    }
+
     [GpuKernel]
     public static void TwoRefStructsKernel(
         ref DiffOverlapPoint first,
@@ -328,6 +344,196 @@ public static partial class MarshalingOverlapDifferentialKernels
             observed[0] = second.X;
             second.Y += 100;
             observed[1] = first.Y;
+        }
+    }
+
+    // --- Out beside other arguments that refer to its variable: the order of the writes, three, an element ---
+    [GpuKernel]
+    public static void OutThenRefWriteKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        second = 9;
+    }
+
+    [GpuKernel]
+    public static void RefThenOutWriteKernel(out int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        second = 9;
+        first = 7;
+    }
+
+    [GpuKernel]
+    public static void OutAndTwoRefsOneVariableKernel(
+        out int first,
+        ref int second,
+        ref int third,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = second;
+        }
+
+        first = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = third;
+        }
+    }
+
+    [GpuKernel]
+    public static void OutElementAndItsArrayKernel(out int element, int[] array, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = array[1];
+        }
+
+        element = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[1] = array[1];
+        }
+    }
+
+    // An out struct that holds an array: the kernel assigns default, as the C# method would
+    [GpuKernel]
+    public static void OutStructWithArrayKernel(out DiffDeepBag bag, [Out] int[] observed)
+    {
+        bag = default;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = 1;
+        }
+    }
+
+    // --- An in parameter and a ref or out parameter that receive one variable: the in shows the writes (C# passes
+    // in by reference) ---
+    [GpuKernel]
+    public static void InAndRefOneVariableKernel(in int first, ref int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second += 10;
+            observed[0] = first;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndOutOneVariableKernel(in int first, out int second, [Out] int[] observed)
+    {
+        second = 7;
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = first;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndRefConvertedKernel(
+        in DiffVec2Padded first,
+        ref DiffVec2Padded second,
+        [Out] float[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second.A += 10f;
+            observed[0] = first.A;
+        }
+    }
+
+    [GpuKernel]
+    public static void InFieldAndRefStructKernel(in int field, ref DiffOverlapPoint whole, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            whole.Y += 10;
+            observed[0] = field;
+        }
+    }
+
+    [GpuKernel]
+    public static void InStructAndRefFieldKernel(in DiffOverlapPoint whole, ref int field, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            field += 10;
+            observed[0] = whole.Y;
+        }
+    }
+
+    // An in element of an array that the same launch passes: the write to the array shows through the in
+    [GpuKernel]
+    public static void InElementAndItsArrayKernel(in int element, int[] array, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            array[0] = 42;
+            observed[0] = element;
+        }
+    }
+
+    [GpuKernel]
+    public static void InElementAndItsSliceKernel(in int element, Span<int> slice, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            slice[0] = 42;
+            observed[0] = element;
+        }
+    }
+
+    [GpuKernel]
+    public static void InAndTwoRefsOneVariableKernel(
+        in int first,
+        ref int second,
+        ref int third,
+        [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            second += 10;
+            third += 100;
+            observed[0] = first;
+        }
+    }
+
+    // The in is read before the out is assigned: the caller's value, as C# reads it
+    [GpuKernel]
+    public static void InReadBeforeOutKernel(in int first, out int second, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = first;
+        }
+
+        second = 7;
+    }
+    // An out struct that holds arrays and a ref to the same variable: the ref reads the caller's value until the
+    // out is assigned, as C# does, so the launcher must not clear the variable or drop its arrays first
+    [GpuKernel]
+    public static void OutStructAndRefOfItKernel(out DiffDeepBag bag, ref DiffDeepBag other, [Out] int[] observed)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            observed[0] = other.Tag;
+            observed[1] = other.Data[1];
+        }
+
+        bag = default;
+        if (ThreadIndex.X == 0)
+        {
+            observed[2] = other.Tag;
         }
     }
 

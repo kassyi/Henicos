@@ -394,7 +394,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 out var requiredIncludesCuda, cudaStructs, errorSites));
             var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
                 out var requiredIncludesCpp, cppStructs, errorSites));
-            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
+            // A kernel that names a file-local type has no copy: the user's method runs, or nothing (GSH0119)
+            var managedCSharpSource = host.ManagedMode == ManagedKernelMode.Copy
+                ? MethodTranspiler.GenerateManagedCSharpSource(in plan)
+                : string.Empty;
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
@@ -523,10 +526,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
+            // A private frame (one that holds a private type of the class) is run from other classes and assemblies
+            // through its entries, which have the accessibility of the function (#1884, #1991)
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
                                          managedCSharpSource.Length > 0;
+            var privateManagedFrame = hasManagedStateMachine &&
+                                      ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol,
+                                          compilation) == Accessibility.Private;
             var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
                                     managedCSharpSource.Length > 0;
+            var managedForms = new ExportedManagedForms(
+                StateMachine: hasManagedStateMachine,
+                PrivateFrame: privateManagedFrame,
+                Version: hasManagedVersion
+            );
             DeviceExportRecord export = default;
             var structExports = default(EquatableArray<DeviceExportRecord>);
             // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
@@ -541,7 +554,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                             ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
                         ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
                             ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
-                        frameName, frames, hasManagedStateMachine, hasManagedVersion);
+                        frameName, frames, managedForms);
                 structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -664,7 +677,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
         ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
-        bool hasManagedStateMachine, bool hasManagedVersion)
+        ExportedManagedForms managedForms)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
@@ -695,14 +708,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             DynamicSharedMemorySites: siteNames.MoveToImmutable().AsEquatableArray(),
             Effect: DeviceExportEmitter.FormatEffect(DeviceFunctionEffects.Classify(method, compilation)),
             // The records and the state machines are emitted together (GSharpExportDeviceCode)
-            ManagedStateMachine: hasManagedStateMachine,
-            ManagedVersion: hasManagedVersion,
+            ManagedStateMachine: managedForms.StateMachine,
+            ManagedVersion: managedForms.Version,
             DivergentConditionParameters: divergence.ConditionParameters,
             DivergentExitOnlyParameters: divergence.ExitOnlyParameters,
             HasExitOnlyBarrier: divergence.HasExitOnlyBarrier,
             ReachesArrivalBarrier: SuspensionAnalysis.ReachesArrivalBarrier(method, compilation),
             ReachesSharedMemory: CSharpExecutionAnalysis.ReachesSharedMemory(method, compilation),
-            ReachesGeneratedMeaning: CSharpExecutionAnalysis.ReachesGeneratedMeaning(method, compilation));
+            ReachesGeneratedMeaning: CSharpExecutionAnalysis.ReachesGeneratedMeaning(method, compilation),
+            PrivateManagedFrame: managedForms.PrivateFrame);
 
         return new DeviceExportRecord(
             DeviceExportRecord.FunctionKind,

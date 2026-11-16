@@ -1,8 +1,3 @@
-#if GSHARP_CPU
-using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Runtime;
-#endif
-
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 /// <summary>
@@ -11,8 +6,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// </summary>
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class ConditionalCallTests : TranspilerTestBase
+public partial class ConditionalCallTests : TranspilerTestBase
 {
+    static partial void RunManagedPathIfSupported(Action check);
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void ConditionalCall_InKernel_IsRemoved() =>
@@ -165,11 +161,6 @@ public class ConditionalCallTests : TranspilerTestBase
     private static void OnEveryPath(Action check)
     {
         check();
-#if GSHARP_CPU
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            check();
-        }
-#endif
+        RunManagedPathIfSupported(check);
     }
 }

@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Tests.Generators;
 public class TestArchitectureAnalyzer : DiagnosticAnalyzer
 {
 #pragma warning disable RS2008 // Repository-internal analyzer; not shipped, so analyzer release tracking does not apply.
-    // Title and severity are carried over from the former diagnostics.json entry (formerly in the GSH range); the
+    // Title and severity are carried over from the former diagnostics.yml entry (formerly in the GSH range); the
     // message names the attributes that count. IDs use the repository-internal HNT prefix.
     public static readonly DiagnosticDescriptor TestMethodMustHaveCategoryTrait = new(
         id: "HNT0002",

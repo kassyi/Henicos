@@ -7,9 +7,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// <summary>A barrier or a warp shuffle inside a switch section on the native dialects (#708).</summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
-public class SwitchSuspensionTests : TranspilerTestBase
+public partial class SwitchSuspensionTests : TranspilerTestBase
 {
-    private static readonly Action<Action> s_runNative = launch => launch();
+    internal static readonly Action<Action> s_runNative = launch => launch();
 
     [SkippableTheory]
     [Scenario(TestScenario.HappyPath)]
@@ -96,14 +96,4 @@ public class SwitchSuspensionTests : TranspilerTestBase
     [InlineData(1)]
     public void SwitchSuspension_GotoCaseEnum_MatchesCaseByValue(int flag) =>
         SwitchSuspensionScenarios.GotoCaseEnum(s_runNative, flag);
-
-#if GSHARP_CPU
-    [SkippableTheory]
-    [Scenario(TestScenario.Boundary)]
-    [InlineData(float.NaN)]
-    [InlineData(1f)]
-    [InlineData(2f)]
-    public void SwitchSuspension_NaNCase_MatchesNaN(float selector) =>
-        SwitchSuspensionScenarios.NaNCase(s_runNative, selector);
-#endif
 }

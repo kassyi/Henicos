@@ -68,12 +68,12 @@ internal static class StructMarshalMethodEmitter
             return;
         }
 
-        if (member.Type.TryGetArrayLikeElementType(out var elementType))
+        if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteMarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
+            WriteMarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
+        else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
             writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -104,9 +104,17 @@ internal static class StructMarshalMethodEmitter
 
     private const string ArrayProxy = "global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy";
 
-    internal static void WriteMarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType, ITranspilerDialect dialect)
+    // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
+    internal static void WriteMarshalArrayLikeMember(SourceWriter writer, string host, string native,
+        ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
+        if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })
+        {
+            var view = ArrayFieldView.Create(arrayLikeType, dialect);
+            ArrayViewFieldEmitter.WriteMarshal(writer, view, host, native, dialect);
+            return;
+        }
+
         if (!dialect.IsCuda)
         {
             WriteCpuMarshalArrayMember(writer, host, native, elementType, dialect);
@@ -167,7 +175,7 @@ internal static class StructMarshalMethodEmitter
             $"out {native}.Data, (global::System.IntPtr)size, hStream));");
         writer.AppendLine($"{StructMarshalingEmitter.CudaArraysParameter}?.Add({host}, {native}.Data);");
 
-        if (!TypeLayoutCalculator.IsUserStruct(elementType))
+        if (!HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
         {
             StructBlockCopyEmitter.WritePinnedCopy(writer, host, $"{native}.Data", toDevice: true);
             return;

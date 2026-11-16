@@ -352,7 +352,11 @@ public static unsafe void Unmarshal_DiffFieldKeywordWithArray(ref global::Kassyi
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>());
 if (!AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray");
 ref AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray, AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(ref hostValue);
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -369,6 +373,16 @@ handle.Free();
 }
 }
 host.P = native.P;
+}
+public static void AliasHeldArrays_DiffFieldKeywordWithArray(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray hostValue, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>());
+if (!AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray");
+ref AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray, AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(ref hostValue);
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
 }
 #pragma warning restore CS8500
 }
@@ -396,7 +410,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1498390687u).leng
 {
 return;
 }
-auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly{};
+auto __gsharp_id_3_s = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordSetterOnly>();
 __gsharp_id_3_s.__gsharp_mb_X(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1555112170u)%1000);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_tid, 1711410347u)=__gsharp_id_3_s.__gsharp_mb_X();
 }
@@ -412,6 +426,7 @@ public static unsafe void LaunchFieldKeywordSetterOnly(global::System.Int32[] in
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -591,7 +606,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1568001593u).leng
 {
 return;
 }
-auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly{};
+auto __gsharp_id_3_s = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordGetterOnly>();
 __gsharp_id_3_s.__gsharp_mb_X(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 588069854u)%1000);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_2_tid, 1408684803u)=__gsharp_id_3_s.__gsharp_mb_X();
 }
@@ -607,6 +622,7 @@ public static unsafe void LaunchFieldKeywordGetterOnly(global::System.Int32[] in
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -786,7 +802,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1275607961u).leng
 {
 return;
 }
-auto __gsharp_id_3_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+auto __gsharp_id_3_s = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth>();
 __gsharp_id_3_s.__gsharp_mb_X(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1661643076u)%1000);
 ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_3_s.__gsharp_mb_X();
@@ -808,6 +824,7 @@ public static unsafe void LaunchFieldKeywordCompound(global::System.Int32[] inpu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -997,7 +1014,7 @@ return;
 }
 int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 2104398050u)%1000;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
-auto __gsharp_id_5_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies{};
+auto __gsharp_id_5_s = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBlockBodies>();
 __gsharp_id_5_s.__gsharp_mb_X(__gsharp_id_3_v);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o, 1737210383u)=__gsharp_id_5_s.__gsharp_mb_X();
 __gsharp_id_5_s.__gsharp_mb_X(__gsharp_neg_i32(__gsharp_id_3_v));
@@ -1015,6 +1032,7 @@ public static unsafe void LaunchFieldKeywordBlockBodies(global::System.Int32[] i
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1196,7 +1214,7 @@ return;
 }
 int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1970454752u)%1000;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
-auto __gsharp_id_5_prefix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+auto __gsharp_id_5_prefix = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth>();
 __gsharp_id_5_prefix.__gsharp_mb_X(__gsharp_id_3_v);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o, 680379767u)=([&]() {
 auto __gsharp_seq_0 = __gsharp_id_5_prefix.__gsharp_mb_X();
@@ -1205,7 +1223,7 @@ __gsharp_id_5_prefix.__gsharp_mb_X(__gsharp_seq_1);
 return __gsharp_seq_1;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,1), 809572659u)=__gsharp_id_5_prefix.__gsharp_mb_X();
-auto __gsharp_id_6_postfix = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+auto __gsharp_id_6_postfix = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth>();
 __gsharp_id_6_postfix.__gsharp_mb_X(__gsharp_id_3_v);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,2), 1896366143u)=([&]() {
 auto __gsharp_seq_2 = __gsharp_id_6_postfix.__gsharp_mb_X();
@@ -1227,6 +1245,7 @@ public static unsafe void LaunchFieldKeywordSteps(global::System.Int32[] inputs,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1423,6 +1442,7 @@ public static unsafe void LaunchFieldKeywordInit(global::System.Int32[] inputs, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordInit");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordInit(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1675,6 +1695,7 @@ public static unsafe void LaunchFieldKeywordWith(global::System.Int32[] inputs, 
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordWith(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1882,6 +1903,7 @@ public static unsafe void LaunchFieldKeywordConstructor(global::System.Int32[] i
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2113,6 +2135,7 @@ public static unsafe void LaunchFieldKeywordConstructorStep(global::System.Int32
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2294,7 +2317,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 182610393u).lengt
 return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
-auto __gsharp_id_4_counting = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting{};
+auto __gsharp_id_4_counting = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordCounting>();
 __gsharp_id_4_counting.__gsharp_mb_X(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1791818275u)%1000);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 884165967u)=__gsharp_id_4_counting.__gsharp_mb_X();
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1036054359u)=__gsharp_id_4_counting.__gsharp_mb_X();
@@ -2313,6 +2336,7 @@ public static unsafe void LaunchFieldKeywordMutatingGetter(global::System.Int32[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2516,6 +2540,7 @@ public static unsafe void LaunchFieldKeywordComputedReader(global::System.Int32[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2716,7 +2741,7 @@ return;
 }
 int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1328160562u)%1000;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,3);
-auto __gsharp_id_5_partial = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial{};
+auto __gsharp_id_5_partial = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordPartial>();
 __gsharp_id_5_partial.__gsharp_mb_X(__gsharp_id_3_v);
 ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_5_partial.__gsharp_mb_X();
@@ -2725,7 +2750,7 @@ auto __gsharp_seq_2 = (int)__gsharp_add_i32(__gsharp_seq_0,__gsharp_seq_1);
 __gsharp_id_5_partial.__gsharp_mb_X(__gsharp_seq_2);
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o, 643381643u)=__gsharp_id_5_partial.__gsharp_mb_X();
-auto __gsharp_id_6_plain = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto{};
+auto __gsharp_id_6_plain = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordAuto>();
 __gsharp_id_6_plain.__gsharp_mb_X=__gsharp_id_3_v;
 __gsharp_id_6_plain.__gsharp_mb_X=__gsharp_add_i32(__gsharp_id_6_plain.__gsharp_mb_X,3);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,1), 181171075u)=__gsharp_id_6_plain.__gsharp_mb_X;
@@ -2744,6 +2769,7 @@ public static unsafe void LaunchFieldKeywordPartial(global::System.Int32[] input
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2954,7 +2980,7 @@ return;
 }
 int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 2018994542u)%1000;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
-auto __gsharp_id_5_target = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth{};
+auto __gsharp_id_5_target = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordBoth>();
 int __gsharp_id_6_other;
 ([&]() {
 auto __gsharp_tuple_0 = __gsharp_id_3_v;
@@ -2980,6 +3006,7 @@ public static unsafe void LaunchFieldKeywordDeconstruction(global::System.Int32[
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3157,7 +3184,7 @@ return;
 }
 int __gsharp_id_3_v = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 771156856u)%1000;
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
-auto __gsharp_id_5_scaled = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled{};
+auto __gsharp_id_5_scaled = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibScaled>();
 __gsharp_id_5_scaled.__gsharp_mb_X(__gsharp_id_3_v);
 __gsharp_id_5_scaled.__gsharp_mb_Y=__gsharp_id_3_v;
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_4_o, 1896904171u)=__gsharp_id_5_scaled.__gsharp_mb_X();
@@ -3175,6 +3202,7 @@ public static unsafe void LaunchFieldKeywordLibrary(global::System.Int32[] input
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3359,7 +3387,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 608233753u).lengt
 {
 return;
 }
-auto __gsharp_id_3_holder = __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder{};
+auto __gsharp_id_3_holder = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroHolder>();
 auto __gsharp_id_4_a = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibMacroValue __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_V = __gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1129080183u)%1000; return __gsharp_tmp; }
 ());
@@ -3559,7 +3587,7 @@ if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_inputs, 1491391861u).leng
 return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
-auto __gsharp_id_4_s = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordOrder{};
+auto __gsharp_id_4_s = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffFieldKeywordOrder>();
 __gsharp_id_4_s.__gsharp_mb_X(__gsharp_array_at(__gsharp_id_0_inputs, __gsharp_id_2_tid, 1446998974u)%1000);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o, 1123788095u)=__gsharp_id_4_s.__gsharp_mb_X();
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1055531127u)=__gsharp_id_4_s.__gsharp_mb_X();
@@ -3576,6 +3604,7 @@ public static unsafe void LaunchFieldKeywordOrder(global::System.Int32[] inputs,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3789,6 +3818,7 @@ __gsharp_layout_checked_FieldKeywordPropertyBlockCopy = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyBlockCopy");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyBlockCopy");
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordPacked[] __gsharp_csharp_arg_0 = items;
 global::System.Int64[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyBlockCopy(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -3986,6 +4016,7 @@ public static unsafe void LaunchFieldKeywordPropertyMemberwise(global::Kassyi.GS
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyMemberwise");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyMemberwise");
 global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray[] __gsharp_csharp_arg_0 = items;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyMemberwise(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

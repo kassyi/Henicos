@@ -169,6 +169,7 @@ public static unsafe void LaunchInterlockedKernel(global::System.Int32[] intBuf,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "InvocationAndIntrinsicsKernels.InterlockedKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = intBuf;
 global::System.UInt32[] __gsharp_csharp_arg_1 = uintBuf;
 global::System.Int64[] __gsharp_csharp_arg_2 = longBuf;
@@ -479,6 +480,7 @@ __gsharp_layout_checked_InterlockedEdgeCasesKernel = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = array;
 global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct[] __gsharp_csharp_arg_1 = structArray;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.InterlockedEdgeCasesKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -670,6 +672,7 @@ public static unsafe void LaunchMathKernel(global::System.Double[] doubleInputs,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "InvocationAndIntrinsicsKernels.MathKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = doubleInputs;
 global::System.Double[] __gsharp_csharp_arg_1 = doubleOutputs;
 global::System.Single[] __gsharp_csharp_arg_2 = floatInputs;
@@ -963,6 +966,7 @@ public static unsafe void LaunchMathEdgeCasesKernel(global::System.Single[] floa
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "InvocationAndIntrinsicsKernels.MathEdgeCasesKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = floatSpecialInputs;
 global::System.Single[] __gsharp_csharp_arg_1 = floatSpecialResults;
 global::System.Double[] __gsharp_csharp_arg_2 = doubleSpecialInputs;

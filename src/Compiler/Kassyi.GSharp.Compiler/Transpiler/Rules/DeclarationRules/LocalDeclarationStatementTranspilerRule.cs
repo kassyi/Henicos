@@ -67,7 +67,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             }
             else
             {
-                WriteStaticSharedMemory(variable, count, typeArg, ref context);
+                WriteStaticSharedMemory(variable, count, constantCount.Value, typeArg, ref context);
             }
 
             if (i < node.Declaration.Variables.Count - 1)
@@ -107,8 +107,11 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
     }
 
     // __shared__ <T> <name>[<n>];
+    // [WHY] C++ has no array of 0 elements, so an empty declaration (a count of 0, like new int[0]) is declared with
+    // one element, as the CPU paths allocate at least one byte. C# reaches no element of it either way: the count
+    // stays 0
     private static void WriteStaticSharedMemory(VariableDeclaratorSyntax declarator, ExpressionSyntax count,
-        ITypeSymbol typeArg, ref TranspileContext context)
+        int constantCount, ITypeSymbol typeArg, ref TranspileContext context)
     {
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, typeArg);
@@ -116,7 +119,14 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
         using (context.Emitter.Writer.Brackets())
         {
-            context.Visitor.Visit(count);
+            if (constantCount == 0)
+            {
+                context.Emitter.Writer.Append('1');
+            }
+            else
+            {
+                context.Visitor.Visit(count);
+            }
         }
 
         context.Emitter.Writer.Append(";");

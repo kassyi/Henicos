@@ -17,9 +17,11 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Syntax)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class SharedMemoryLimitTests : TranspilerTestBase
+public partial class SharedMemoryLimitTests : TranspilerTestBase
 {
     private const string LimitMessage = "G#: dynamic shared memory exceeds sharedMemBytes";
+
+    private const string NegativeCountMessage = "G#: the count of a shared memory declaration is negative";
 
     // Issue (a): 32 ints need 128 bytes
     [SkippableTheory]
@@ -42,30 +44,56 @@ public class SharedMemoryLimitTests : TranspilerTestBase
         Assert.Contains("SharedMemoryLimitKernels.cu.cs(", exception.Message);
     }
 
-    // A negative count arrives as at least 2^63 bytes and int.MaxValue ints are 8 GB: both exceed sharedMemBytes before any
-    // memory is handed out. The step ends there, and the process goes on: the next launch runs
+    // int.MaxValue ints are 8 GB, which exceed sharedMemBytes before any memory is handed out. The step ends there, and
+    // the process goes on: the next launch runs
     [SkippableTheory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData(false, -1, false)]
-    [InlineData(false, -1, true)]
-    [InlineData(false, int.MaxValue, false)]
-    [InlineData(false, int.MaxValue, true)]
-    [InlineData(true, -1, false)]
-    [InlineData(true, -1, true)]
-    [InlineData(true, int.MaxValue, false)]
-    [InlineData(true, int.MaxValue, true)]
-    public void DynamicDeclaration_NegativeOrHugeCount_ThrowsAndProcessContinues(
-        bool forceManaged,
-        int count,
-        bool withBarrier)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void DynamicDeclaration_HugeCount_ThrowsAndProcessContinues(bool forceManaged, bool withBarrier)
     {
         SkipUndefinedOnCuda();
         var output = new int[32];
 
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Run(forceManaged, () => Launch(withBarrier, output, count, sharedMemBytes: 128)));
+            Run(forceManaged, () => Launch(withBarrier, output, int.MaxValue, sharedMemBytes: 128)));
 
         Assert.Contains(LimitMessage, exception.Message);
+        Run(forceManaged, () => Launch(withBarrier, output, 32, sharedMemBytes: 128));
+        Assert.Equal(Enumerable.Range(0, 32).Select(i => withBarrier ? (i + 1) % 32 + 1 : 2 * i), output);
+    }
+
+    // A negative count is reported as such on every path, before anything is placed, with the same exception (#1790);
+    // the CPU paths add the count and the declaration. CUDA runs these cells too: every thread computes the same count,
+    // records the error and exits (sm_70 and later), so the launch ends without a fault and the process goes on
+    [SkippableTheory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(false, -1, false)]
+    [InlineData(false, -1, true)]
+    [InlineData(false, int.MinValue, false)]
+    [InlineData(false, int.MinValue, true)]
+    [InlineData(true, -1, false)]
+    [InlineData(true, -1, true)]
+    [InlineData(true, int.MinValue, false)]
+    [InlineData(true, int.MinValue, true)]
+    public void DynamicDeclaration_NegativeCount_ThrowsAndProcessContinues(
+        bool forceManaged,
+        int count,
+        bool withBarrier)
+    {
+        var output = new int[32];
+
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Run(forceManaged, () => Launch(withBarrier, output, count, sharedMemBytes: 128)));
+
+        Assert.Contains(NegativeCountMessage, exception.Message);
+        if (!IsCudaDialect)
+        {
+            Assert.Contains($"{NegativeCountMessage} ({count}, SharedMemoryLimitKernels.cu.cs(", exception.Message);
+        }
+
         Run(forceManaged, () => Launch(withBarrier, output, 32, sharedMemBytes: 128));
         Assert.Equal(Enumerable.Range(0, 32).Select(i => withBarrier ? (i + 1) % 32 + 1 : 2 * i), output);
     }
@@ -229,23 +257,6 @@ public class SharedMemoryLimitTests : TranspilerTestBase
                 sharedMemBytes: sharedMemBytes);
         }
     }
-
-#if GSHARP_CPU
-    // A static declaration of 2^32 + 128 bytes: the managed path computed the size in int, got 128 bytes and threw
-    // IndexOutOfRangeException at an element inside the declared count. It now fails as the native path does when it
-    // cannot allocate the buffer, before allocating anything (#1280 review)
-    [Fact]
-    [Scenario(TestScenario.Boundary)]
-    public void StaticDeclaration_MoreThanIntMaxValueBytesManaged_ThrowsInvalidOperationException()
-    {
-        var output = new double[1];
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            Run(true, () => SharedMemoryHugeStaticKernels.LaunchHugeStaticKernel(output, blockDimX: 1)));
-
-        Assert.Equal("G#: the static shared memory of a declaration could not be allocated", exception.Message);
-    }
-#endif
 
     // The managed path exists only on the CPU dialects
     private void Run(bool forceManaged, Action launch)

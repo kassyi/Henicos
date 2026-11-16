@@ -586,11 +586,11 @@ if(__gsharp_id_7_tx==0)
 atomicAdd(&(*__gsharp_id_1_totalMagnitude),__gsharp_id_21_dynamicCache[0]);
 (*__gsharp_id_2_successFlag)=true;
 }
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8 __gsharp_id_31_inlineVec = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8>();
 __gsharp_id_31_inlineVec[0]=123;
 __gsharp_id_31_inlineVec[1]=456;
 {
-__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState{};
+__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState __gsharp_id_32_state = __gsharp_type<__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState>();
 __gsharp_id_32_state.__gsharp_mb_Buffer[0]=__gsharp_id_31_inlineVec[0];
 __gsharp_id_32_state.__gsharp_mb_Buffer[1]=__gsharp_id_31_inlineVec[1];
 unsigned long long __gsharp_id_33_carry = 0;
@@ -660,7 +660,7 @@ if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System
 }
 __gsharp_layout_checked_ProcessPhysics = true;
 }
-successFlag = default;
+global::System.Runtime.CompilerServices.Unsafe.SkipInit(out successFlag);
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ComprehensiveSpecKernel.ProcessPhysics");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
@@ -670,6 +670,7 @@ using (global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope __gsha
 {
 global::System.IntPtr __gsharp_hfunc = global::DebugReduc.ComprehensiveSpecKernel.__gsharp_hfunc_ProcessPhysics.Resolve(global::DebugReduc.ComprehensiveSpecKernel.s_errorSites);
 global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare(__gsharp_hfunc, sharedMemBytes, "ComprehensiveSpecKernel.ProcessPhysics");
+global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups? __gsharp_aliases = null;
 global::System.IntPtr __gsharp_d_0 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_1 = global::System.IntPtr.Zero;
 global::System.IntPtr __gsharp_d_2 = global::System.IntPtr.Zero;
@@ -677,6 +678,34 @@ uint __gsharp_epoch = global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.NextL
 try
 {
 void** __gsharp_kernel_params = stackalloc void*[7];
+// Find the arguments that overlap and give each group one device region
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[2] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[3] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = sizeof(global::System.Single);
+__gsharp_alias_ranges[8] = sizeof(global::System.Single);
+__gsharp_alias_ranges[9] = sizeof(global::System.Single);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[14] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[16] = 1;
+__gsharp_alias_ranges[17] = 0;
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {11, 3, 2}, "particles,totalMagnitude,successFlag");
+if (__gsharp_aliases != null)
+{
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
+}
+}
 // Marshal array: particles
 int __gsharp_size_0 = checked((particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector));
 global::System.IntPtr* __gsharp_proxy_0 = stackalloc global::System.IntPtr[2];
@@ -685,17 +714,30 @@ __gsharp_proxy_0[0] = global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.IsNull(
 ((int*)(__gsharp_proxy_0 + 1))[1] = 0;
 if (__gsharp_size_0 > 0)
 {
+if (__gsharp_aliases?.IsMember(0) == true)
+{
+__gsharp_d_0 = __gsharp_aliases.GetDevicePointer(0);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 fixed (global::DebugReduc.PhysicsVector* __gsharp_p_0 = particles)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_0, (global::System.IntPtr)__gsharp_p_0, (global::System.IntPtr)__gsharp_size_0, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
 __gsharp_proxy_0[0] = __gsharp_d_0;
 }
 __gsharp_kernel_params[0] = __gsharp_proxy_0;
 // Marshal ref/out scalar: totalMagnitude
 int __gsharp_size_1 = sizeof(global::System.Single);
+if (__gsharp_aliases?.IsMember(1) == true)
+{
+__gsharp_d_1 = __gsharp_aliases.GetDevicePointer(1);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
 // Fast zero-allocation copy to device
 fixed (global::System.Single* __gsharp_p_temp_1 = &totalMagnitude)
@@ -703,10 +745,18 @@ fixed (global::System.Single* __gsharp_p_temp_1 = &totalMagnitude)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyHtoDAsync_v2(__gsharp_d_1, (global::System.IntPtr)__gsharp_p_temp_1, (global::System.IntPtr)__gsharp_size_1, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
 __gsharp_kernel_params[1] = &__gsharp_d_1;
 // Marshal ref/out scalar: successFlag
 int __gsharp_size_2 = sizeof(global::System.Boolean);
+if (__gsharp_aliases?.IsMember(2) == true)
+{
+__gsharp_d_2 = __gsharp_aliases.GetDevicePointer(2);
+}
+else
+{
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemAllocAsync(out __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
+}
 __gsharp_kernel_params[2] = &__gsharp_d_2;
 // Marshal scalar struct: largeStructVal
 __gsharp_kernel_params[3] = &largeStructVal;
@@ -724,8 +774,34 @@ hStream, // Stream
 __gsharp_kernel_params,
 global::System.IntPtr.Zero // Extra
 ));
+if (__gsharp_aliases != null)
+{
+fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(particles), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref totalMagnitude), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref successFlag))
+{
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
+__gsharp_alias_ranges[1] = (global::System.IntPtr)(particles?.Length ?? 0) * sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[2] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[3] = sizeof(global::DebugReduc.PhysicsVector);
+__gsharp_alias_ranges[4] = 4;
+__gsharp_alias_ranges[5] = 0;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[7] = sizeof(global::System.Single);
+__gsharp_alias_ranges[8] = sizeof(global::System.Single);
+__gsharp_alias_ranges[9] = sizeof(global::System.Single);
+__gsharp_alias_ranges[10] = 4;
+__gsharp_alias_ranges[11] = 0;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[14] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[15] = sizeof(global::System.Boolean);
+__gsharp_alias_ranges[16] = 1;
+__gsharp_alias_ranges[17] = 0;
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
+}
+}
 // Copy back array: particles
-if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero)
+if (__gsharp_size_0 > 0 && __gsharp_d_0 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(0) == true))
 {
 fixed (global::DebugReduc.PhysicsVector* __gsharp_p_0 = particles)
 {
@@ -733,12 +809,17 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
+if (!(__gsharp_aliases?.IsMember(1) == true))
+{
 // Fast zero-allocation copy from device for scalar: totalMagnitude
 fixed (global::System.Single* __gsharp_ptr_1 = &totalMagnitude)
 {
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_1, __gsharp_d_1, (global::System.IntPtr)__gsharp_size_1, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
+if (!(__gsharp_aliases?.IsMember(2) == true))
+{
 successFlag = default;
 // Fast zero-allocation copy from device for scalar: successFlag
 fixed (global::System.Boolean* __gsharp_ptr_2 = &successFlag)
@@ -746,14 +827,16 @@ fixed (global::System.Boolean* __gsharp_ptr_2 = &successFlag)
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemcpyDtoHAsync_v2((global::System.IntPtr)__gsharp_ptr_2, __gsharp_d_2, (global::System.IntPtr)__gsharp_size_2, hStream));
 global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuStreamSynchronize(hStream));
 }
+}
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ThrowIfLaunchError(__gsharp_epoch);
 }
 finally
 {
 global::Kassyi.GSharp.Runtime.Aot.LaunchErrorRecords.ReleaseLaunchEpoch(__gsharp_epoch);
-if (__gsharp_d_0 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
-if (__gsharp_d_1 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
-if (__gsharp_d_2 != global::System.IntPtr.Zero) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
+if (__gsharp_d_0 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(0) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_0, hStream);
+if (__gsharp_d_1 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(1) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_1, hStream);
+if (__gsharp_d_2 != global::System.IntPtr.Zero && !(__gsharp_aliases?.IsMember(2) == true)) global::Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemFreeAsync(__gsharp_d_2, hStream);
+__gsharp_aliases?.FreeDevice(hStream);
 }
 }
 }
@@ -964,7 +1047,7 @@ The G# compiler natively intercepts these syntax tree nodes and fails the build 
 1. **GSH0001**: `Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array.` (Triggered by `new object()`)
 2. **GSH0002**: `The string type is not supported in GPU kernels` (Triggered by `string s = "hello"`)
 3. **GSH0003**: `The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels` (Fallback trigger for any unknown syntax node)
-4. **GSH0004**: `Method 'BadKernel' is marked with [GpuKernel] but returns an unsupported type 'System.String'.`
+4. **GSH0004**: `Method 'BadKernel' returns unsupported type 'System.String'. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator.`
 
 ## Conclusion
 

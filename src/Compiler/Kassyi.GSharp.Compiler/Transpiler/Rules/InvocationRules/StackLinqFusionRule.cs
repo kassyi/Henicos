@@ -88,7 +88,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         using (writer.ImmediatelyInvokedLambda("auto"))
         {
             writer.Append($"auto&& {FusionSource} = ");
-            context.Visitor.Visit(chain.SourceArrayExpression);
+            ArrayNullCheck.AppendLinqSource(chain.SourceArrayExpression, ref context);
             writer.AppendLine(";");
 
             EmitInitializations(in chain, folded, ref context, terminalStrategy, in terminalStage);
@@ -214,24 +214,38 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             in chain,
             in terminalStage
         );
-        WriteReturn(kind, context.Emitter.Writer);
+        // The exact sum of an integer Sum is range-checked once, after the partial sums are combined
+        var narrow = chain.Terminal == StackLinqOperator.Sum ? SumStrategy.GetNarrowFunction(in terminalStage) : null;
+        WriteReturn(kind, narrow, context.Emitter.Writer);
     }
 
-    private static void WriteReturn(FinalReturnKind kind, SourceWriter writer)
+    // return [<narrow>(]<result or reduction>[)];
+    private static void WriteReturn(FinalReturnKind kind, string? narrowFunction, SourceWriter writer)
     {
+        var narrow = narrowFunction is null ? "" : narrowFunction + "(";
+        var closer = narrowFunction is null ? "" : ")";
         switch (kind)
         {
             case FinalReturnKind.GridReduce:
-                writer.Append($"return {GridReduce}({FusionResult}, {Plus}{{}}, {GridScratch});");
+                // [WHY] The total of a whole grid can pass 2^63 (2^32 elements of 2^31), so an int or uint sum combines the
+                // block totals as wide sums; the sum of one block cannot (a block holds at most 2^31 elements)
+                var widen = narrowFunction switch
+                {
+                    NarrowSumInt32 => WideFromInt64,
+                    NarrowSumUInt32 => WideFromUInt64,
+                    _ => null
+                };
+                var value = widen is null ? FusionResult : $"{widen}({FusionResult})";
+                writer.Append($"return {narrow}{GridReduce}({value}, {Plus}{{}}, {GridScratch}){closer};");
                 break;
             case FinalReturnKind.BlockReduce:
-                writer.Append($"return {BlockReduce}({FusionResult}, {Plus}{{}});");
+                writer.Append($"return {narrow}{BlockReduce}({FusionResult}, {Plus}{{}}){closer};");
                 break;
             case FinalReturnKind.FloatCast:
                 writer.Append($"return (float){FusionResult};");
                 break;
             case FinalReturnKind.Plain:
-                writer.Append($"return {FusionResult};");
+                writer.Append($"return {narrow}{FusionResult}{closer};");
                 break;
             default:
                 throw new InvalidOperationException($"Unknown {nameof(FinalReturnKind)}: {kind}");

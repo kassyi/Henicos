@@ -55,6 +55,12 @@ public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, in
   array (`T[]`, `ArraySegment<T>`, `ImmutableArray<T>`); those members must agree on the size of their elements, and
   elements that hold references are never reinterpreted. A group that breaks this throws `NotSupportedException` on
   the CPU paths only.
+- **An `in` parameter beside a `ref` or `out` parameter**: C# passes `in` by reference, so a write through a `ref` or
+  `out` parameter that receives the same variable (or a field of it, or the struct that holds it) shows through the `in`
+  parameter. A kernel whose `in` (or `ref readonly`) parameter has a `ref` or `out` parameter of its own type, or one
+  that holds it or is held by it as a field at any depth, receives that `in` parameter by address; the launcher takes it
+  by reference (`in`), copies it in only, and compares it with the other by-reference arguments as above. Any other
+  `in` parameter of a kernel is a value, as before.
 
 Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native C++ CUDA.
 

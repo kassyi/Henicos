@@ -180,6 +180,7 @@ public static unsafe void LaunchForUnrollNamedArgumentsKernel(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = ys;
 global::System.Int32[] __gsharp_csharp_arg_2 = r;
@@ -425,6 +426,7 @@ public static unsafe void LaunchGridStrideLoopNamedArgumentsKernel(global::Syste
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MacroNamedArgumentDifferentialKernels.GridStrideLoopNamedArgumentsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MacroNamedArgumentDifferentialKernels.GridStrideLoopNamedArgumentsKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::System.Int32 __gsharp_csharp_arg_2 = bias;

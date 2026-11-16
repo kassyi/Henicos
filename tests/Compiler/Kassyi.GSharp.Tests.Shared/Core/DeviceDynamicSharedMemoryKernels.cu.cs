@@ -308,8 +308,8 @@ public static partial class DeviceDynamicSharedMemoryKernels
     }
 
     // A negative count after a 128-byte region. Its size, (unsigned long long)(long long)(negative) * sizeof(int),
-    // plus the offset 128 wraps past 2^64; the placement must fail instead of moving the cursor back, which would let the
-    // third declaration overlap the first
+    // plus the offset 128 would wrap past 2^64; the placement must fail instead of moving the cursor back, which would
+    // let the third declaration overlap the first. It fails as a negative count, before anything is placed (#1790)
     [GpuKernel]
     public static void NegativeCountKernel(int[] output, int n, int negative)
     {

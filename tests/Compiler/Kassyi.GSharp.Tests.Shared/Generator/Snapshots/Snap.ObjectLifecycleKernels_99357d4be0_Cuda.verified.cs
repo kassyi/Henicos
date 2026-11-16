@@ -165,6 +165,7 @@ __gsharp_layout_checked_Kernel_LifecycleUpdate = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ObjectLifecycleKernels.Kernel_LifecycleUpdate");
 global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] __gsharp_csharp_arg_0 = states;
 global::System.Int32 __gsharp_csharp_arg_1 = length;
 global::System.Int32 __gsharp_csharp_arg_2 = multiplier;
@@ -333,6 +334,7 @@ __gsharp_layout_checked_Kernel_FactoryInitialization = true;
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ObjectLifecycleKernels.Kernel_FactoryInitialization");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputValues;
 global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] __gsharp_csharp_arg_1 = outputStates;
 global::System.Int32 __gsharp_csharp_arg_2 = length;

@@ -12,6 +12,7 @@ Kernel:
     LaunchExportPrefix: __gsharp_launch_
     ContextPrefix: __gsharp_context_
     StateMachinePrefix: __gsharp_statemachine_
+    InByAddressSuffix: __gsharp_in_by_address
 
 StateMachine:
   Summary: Per-thread state machine context (CPU dialects).
@@ -58,6 +59,11 @@ SuspendingCall:
     Root: { Value: __gsharp_root, Prelude: WarpAndHints.hpp }
     FrameTypePrefix: __gsharp_frame_
     CallFramePrefix: __gsharp_call_frame_
+    # The entries of a managed frame that is private to its class (it holds a private nested type), through which a
+    # caller of another class creates and numbers the frame it holds as an object, and runs the state machine on it.
+    # Followed by the body of the function's name (GlobalCppNames.GetKernelDerivedName).
+    NumberFramePrefix: __gsharp_number_frame_
+    EnterPrefix: __gsharp_enter_
     Result: __gsharp_result
     # Marks a call to a device function that may suspend: __gsharp_resume(call, frameIndex[, result]).
     ResumeCall: __gsharp_resume
@@ -137,6 +143,10 @@ Lowering:
     SyncGridNextLabelPrefix: __gsharp_sg_next_
     # The end of a loop body where the lanes that continue wait for the others (__gsharp_ReconvergeContinue_<n>, #844)
     ReconvergeContinueLabelPrefix: __gsharp_ReconvergeContinue_
+    # The continue and break targets that the emitter writes for a labeled loop or switch that a labeled break or
+    # continue jumps to (__gsharp_LabeledContinue_<id>_<name>, __gsharp_LabeledBreak_<id>_<name>, #1990)
+    LabeledBreakLabelPrefix: __gsharp_LabeledBreak_
+    LabeledContinueLabelPrefix: __gsharp_LabeledContinue_
     # The label after a Gpu.SingleThread body with a return (__gsharp_st_end_<body>), which a return of the body jumps to;
     # the C++ emitter and the managed rewrite both spell it
     SingleThreadEndLabelPrefix: __gsharp_st_end_
@@ -221,6 +231,8 @@ Launcher:
     AliasHeld: __gsharp_alias_held
     # The CPU launcher's HostArrayCopies: one copy per host array that the kernel gets instead of the caller's (#985)
     ArrayCopies: __gsharp_array_copies
+    # Field suffix for the by-address kernel function handle on CUDA (#1940)
+    ByAddressFieldSuffix: __gsharp_by_address
     GridDimX: __gsharp_grid_dim_x
     GridDimY: __gsharp_grid_dim_y
     GridDimZ: __gsharp_grid_dim_z
@@ -280,10 +292,14 @@ Launcher:
     DevicePointerPrefix: __gsharp_d_
     ProxyPrefix: __gsharp_proxy_
     NullableProxyPrefix: __gsharp_nullable_
+    # The AotContexts shadow struct of a Nullable<T>, and the key of its Marshal_ / Unmarshal_ methods; the rest of the
+    # name is the marshal key of T
+    NullableShadowPrefix: __gsharp_nullable_of_
     NativePrefix: __gsharp_native_
     PinnedPrefix: __gsharp_p_
     PinnedTempPrefix: __gsharp_p_temp_
     ScalarPointerPrefix: __gsharp_ptr_
+    InValuePrefix: __gsharp_in_val_
     SizePrefix: __gsharp_size_
     ShadowPrefix: __gsharp_shadow_
     SharedShadowPrefix: __gsharp_shared_shadow_
@@ -337,8 +353,12 @@ Prelude:
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
     # NullReferenceException on every build; declared by ErrorChannel.hpp and the CUDA prelude
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
+    # The array a StackLinq query starts from: a null array fails with ArgumentNullException (source)
+    SourceArgument: { Value: __gsharp_source_argument, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
     ArrayAt: { Value: __gsharp_array_at, Prelude: ErrorChannel.hpp }
+    # The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988)
+    ArrayIndexU64: { Value: __gsharp_array_index_u64, Prelude: Types.hpp }
     # The array of a Gpu.NotNull call: a null array fails with NullReferenceException, a null kernel argument included
     ArrayNotNull: { Value: __gsharp_array_not_null, Prelude: ErrorChannel.hpp }
     # A by-value struct argument of a device function: the non-nullable array fields it reaches, checked at the call
@@ -425,6 +445,9 @@ Prelude:
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
     TempAddress: { Value: __gsharp_temp_address, Prelude: StandardTypes.hpp }
+    # The type T as one name: __gsharp_type<long long>{} is the default value of a type that is written with several
+    # words or as a pointer, where a plain long long{} or int*{} is not a functional cast (DefaultValue)
+    TypedValue: { Value: __gsharp_type, Prelude: StandardTypes.hpp }
     # A stack array viewed as a span (StackArrayLocals.AppendView). Declared by Types.hpp and by the CUDA prelude.
     StackAllocSpan: { Value: __gsharp_stackalloc_span, Prelude: Types.hpp }
     # The null checks of the array operands of System.Array methods (SpanMemberTranspilerRule). Declared by Types.hpp and
@@ -471,6 +494,17 @@ StackLinq:
     BlockSize: { Value: __gsharp_block_size, Prelude: ../Prelude.cu }
     BlockReduce: { Value: __gsharp_block_reduce, Prelude: ../Prelude.cu }
     Plus: { Value: __gsharp_plus, Prelude: ../Prelude.cu }
+    # The exact integer Sum: a 64-bit accumulator for int and uint, __gsharp_wide_sum (128 bits) for long and ulong, and the
+    # range check of the result (OverflowException)
+    WideSum: { Value: __gsharp_wide_sum, Prelude: IntegerSemantics.hpp }
+    WideFromInt64: { Value: __gsharp_wide_from_i64, Prelude: IntegerSemantics.hpp }
+    WideFromUInt64: { Value: __gsharp_wide_from_u64, Prelude: IntegerSemantics.hpp }
+    WideAddInt64: { Value: __gsharp_wide_add_i64, Prelude: IntegerSemantics.hpp }
+    WideAddUInt64: { Value: __gsharp_wide_add_u64, Prelude: IntegerSemantics.hpp }
+    NarrowSumInt32: { Value: __gsharp_sum_i32, Prelude: ../StackLinq.cuh }
+    NarrowSumUInt32: { Value: __gsharp_sum_u32, Prelude: ../StackLinq.cuh }
+    NarrowSumInt64: { Value: __gsharp_sum_i64, Prelude: ../StackLinq.cuh }
+    NarrowSumUInt64: { Value: __gsharp_sum_u64, Prelude: ../StackLinq.cuh }
     # The Grid strategy (cooperative CUDA kernels): the hidden last kernel parameter and the reduction over the grid
     GridScratch: __gsharp_grid_scratch
     GridBlockRank: { Value: __gsharp_grid_block_rank, Prelude: ../Prelude.cu }
@@ -532,6 +566,11 @@ IntegerSemantics:
     RemainderInt64: { Value: __gsharp_rem_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderUInt32: { Value: __gsharp_rem_u32, Prelude: IntegerDivision.hpp }
     RemainderUInt64: { Value: __gsharp_rem_u64, Prelude: IntegerDivision.hpp }
+    # Math.Abs of a signed integer: OverflowException for the minimum value on every build (#947)
+    AbsInt32: { Value: __gsharp_abs_i32, Prelude: IntegerDivision.hpp }
+    AbsInt64: { Value: __gsharp_abs_i64, Prelude: IntegerDivision.hpp }
+    AbsInt16: { Value: __gsharp_abs_i16, Prelude: IntegerDivision.hpp }
+    AbsSByte: { Value: __gsharp_abs_i8, Prelude: IntegerDivision.hpp }
     # The signed ones above are also the managed form of a division that may divide the minimum by -1 (the GPU result
     # where .NET throws OverflowException); x /= y and x %= y of such an int or long target, by reference
     DivideAssignInt32: { Value: __gsharp_div_assign_i32, Managed: ManagedGpuContext.IntegerDivision.cs }
