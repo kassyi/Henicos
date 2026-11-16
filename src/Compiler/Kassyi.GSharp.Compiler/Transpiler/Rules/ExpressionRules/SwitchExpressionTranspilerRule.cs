@@ -295,8 +295,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 writer.Append(ConstexprLiteral.FormatCppConstant(type, operation.Arms[index].Value.ConstantValue.Value));
                 break;
             case ArmConversion.DefaultValue when plan.Operation is { Type: { } type }:
-                context.Emitter.Dialect.AppendType(ref context, type);
-                writer.Append("{}");
+                DefaultValue.AppendZero(type, ref context);
                 break;
             case ArmConversion.Construct when plan.Operation is { Type: { } type }:
                 context.Emitter.Dialect.AppendType(ref context, type);

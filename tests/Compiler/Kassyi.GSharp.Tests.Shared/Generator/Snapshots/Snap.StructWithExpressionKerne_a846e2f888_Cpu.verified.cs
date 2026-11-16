@@ -3709,7 +3709,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_1_a = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFourInts{};
+auto __gsharp_id_1_a = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFourInts>();
 __gsharp_id_1_a[0]=5;
 __gsharp_id_1_a[3]=8;
 auto __gsharp_id_2_b = ([&]() {
@@ -4041,7 +4041,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_1_a = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFixedBufferStruct{};
+auto __gsharp_id_1_a = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithFixedBufferStruct>();
 __gsharp_id_1_a.__gsharp_mb_Buffer[0]=5;
 __gsharp_id_1_a.__gsharp_mb_Buffer[2]=6;
 __gsharp_id_1_a.__gsharp_mb_Tag=1;
