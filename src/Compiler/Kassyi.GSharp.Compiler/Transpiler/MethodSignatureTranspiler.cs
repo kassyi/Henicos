@@ -60,6 +60,7 @@ internal static class MethodSignatureTranspiler
                 return;
             }
 
+            NullableLayoutAssertEmitter.Write(methodSymbol, ref context);
             WriteKernelMethodPrefix(ref context);
             methodName = GlobalCppNames.GetKernelName(methodSymbol);
             if (hasContext)

@@ -35,11 +35,10 @@ internal readonly record struct ParameterTransfer(
     public static ParameterTransfer Create(ITypeSymbol marshaledType, ITranspilerDialect dialect,
         INamedTypeSymbol? kernelClass)
     {
-        if (TypeLayoutCalculator.IsUserStruct(marshaledType))
+        if (HostShadowStructs.Has(marshaledType))
         {
             return new ParameterTransfer(
-                marshaledType is INamedTypeSymbol named &&
-                TypeLayoutCalculator.GetStructLayout(named, dialect).Transfer == TransferClass.Identical,
+                !HostShadowStructs.IsConverted(marshaledType, dialect),
                 null,
                 null,
                 null,
@@ -72,8 +71,7 @@ internal readonly record struct ParameterTransfer(
             return default;
         }
 
-        var hasArrayFields = element is INamedTypeSymbol namedElement &&
-            TransferClassifier.TryFindArrayField(namedElement, out _);
+        var hasArrayFields = HostShadowStructs.HoldsArrayFields(element);
         return new ParameterTransfer(
             false,
             AotHostNames.GetAotStructPath(element, kernelClass),
