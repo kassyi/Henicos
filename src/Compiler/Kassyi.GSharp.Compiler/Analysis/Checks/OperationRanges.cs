@@ -26,7 +26,7 @@ internal static class OperationRanges
             return IntegerRange.Constant(constant);
         }
 
-        if (IntegerRange.OfType(UnderlyingOrSelf(operand.Type)?.SpecialType ?? SpecialType.None) is not { } range)
+        if (OfType(operand.Type) is not { } range)
         {
             return null;
         }
@@ -51,18 +51,15 @@ internal static class OperationRanges
     }
 
     /// <summary>
-    /// The values of <c>ThreadIndex</c>, <c>BlockIndex</c>, <c>BlockDimension</c> and <c>GridDimension</c> of G#: a
-    /// block holds at most 1024 threads on every path (the launch limits that the CPU paths enforce as the GPU does),
-    /// so a thread index is 0 to 1023 and a block dimension 1 to 1024; a block index is not negative and a grid
-    /// dimension is at least 1. Null for any other operand.
+    /// The values of <paramref name="property"/> when it is a launch index or dimension of G# (<c>ThreadIndex.X</c>
+    /// and the others of <see cref="OfLaunchIntrinsic(IOperation)"/>); null for any other property.
     /// </summary>
-    public static IntegerRange? OfLaunchIntrinsic(IOperation operand)
+    public static IntegerRange? OfLaunchIntrinsic(IPropertySymbol property)
     {
-        if (operand is not IPropertyReferenceOperation
-            {
-                Property: { IsStatic: true, Name: "X" or "Y" or "Z", Type.SpecialType: SpecialType.System_Int32 },
-                Property.ContainingType: { } type
-            } ||
+        if (!property.IsStatic ||
+            property.Type.SpecialType != SpecialType.System_Int32 ||
+            property.Name is not ("X" or "Y" or "Z") ||
+            property.ContainingType is not { } type ||
             !type.ContainingNamespace.IsCoreNamespace())
         {
             return null;
@@ -78,16 +75,40 @@ internal static class OperationRanges
         };
     }
 
+    /// <summary>
+    /// Whether <paramref name="property"/> is the <c>Length</c> of an array (<c>System.Array</c>) or of
+    /// <c>Span&lt;T&gt;</c> / <c>ReadOnlySpan&lt;T&gt;</c>, which is never negative.
+    /// </summary>
+    public static bool IsLength(IPropertySymbol property) =>
+        !property.IsStatic &&
+        property.Name == "Length" &&
+        property.Type.SpecialType == SpecialType.System_Int32 &&
+        (property.ContainingType.SpecialType == SpecialType.System_Array ||
+         (property.ContainingType is { Name: "Span" or "ReadOnlySpan", IsGenericType: true } span &&
+          span.ContainingNamespace.IsSystemNamespace()));
+
+    /// <summary>
+    /// The range of every value of <paramref name="type"/> (an enum by its underlying type); null for a type that is
+    /// not an integer.
+    /// </summary>
+    public static IntegerRange? OfType(ITypeSymbol? type) =>
+        IntegerRange.OfType(UnderlyingOrSelf(type)?.SpecialType ?? SpecialType.None);
+
+    /// <summary>
+    /// The values of <c>ThreadIndex</c>, <c>BlockIndex</c>, <c>BlockDimension</c> and <c>GridDimension</c> of G#: a
+    /// block holds at most 1024 threads on every path (the launch limits that the CPU paths enforce as the GPU does),
+    /// so a thread index is 0 to 1023 and a block dimension 1 to 1024; a block index is not negative and a grid
+    /// dimension is at least 1. Null for any other operand.
+    /// </summary>
+    public static IntegerRange? OfLaunchIntrinsic(IOperation operand) =>
+        operand is IPropertyReferenceOperation { Property: var p } ? OfLaunchIntrinsic(p) : null;
+
     // The most threads a block holds on every GPU G# targets, and on the CPU paths
     private const int MaxThreadsPerBlock = 1024;
 
     // a.Length of an array (System.Array) or of Span<T> / ReadOnlySpan<T>
     private static bool IsLength(IOperation operand) =>
-        operand is IPropertyReferenceOperation { Property: { Name: "Length", IsStatic: false } property } &&
-        property.Type.SpecialType == SpecialType.System_Int32 &&
-        (property.ContainingType.SpecialType == SpecialType.System_Array ||
-         property.ContainingType is { Name: "Span" or "ReadOnlySpan", IsGenericType: true } span &&
-         span.ContainingNamespace.IsSystemNamespace());
+        operand is IPropertyReferenceOperation { Property: var p } && IsLength(p);
 
     private static ITypeSymbol? UnderlyingOrSelf(ITypeSymbol? type) =>
         type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } ? underlying : type;

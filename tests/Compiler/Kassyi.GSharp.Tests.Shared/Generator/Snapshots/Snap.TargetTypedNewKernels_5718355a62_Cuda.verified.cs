@@ -121,9 +121,9 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Nested
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_2_c1 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_2_c1 = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>();
 __gsharp_id_2_c1.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,100);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_3_c2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{});
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_3_c2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>());
 __gsharp_id_3_c2.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,200);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1075879374u)=__gsharp_add_i32(__gsharp_id_2_c1.__gsharp_mb_Value,__gsharp_id_3_c2.__gsharp_mb_Value);
 }
@@ -139,6 +139,7 @@ public static unsafe void LaunchHappyPathKernel(global::System.Int32[] output, u
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.HappyPathKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.HappyPathKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.HappyPathKernel(__gsharp_csharp_arg_0));
 return;
@@ -274,7 +275,7 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__T
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_id_2_p = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_1_tid; __gsharp_tmp.__gsharp_mb_Child = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{}; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_1_tid; __gsharp_tmp.__gsharp_mb_Child = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>(); return __gsharp_tmp; }
 ());
 __gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_1_tid,5);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1317535476u)=__gsharp_add_i32(__gsharp_id_2_p.__gsharp_mb_Id,__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value);
@@ -291,6 +292,7 @@ public static unsafe void LaunchNestedInitializerKernel(global::System.Int32[] o
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.NestedInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.NestedInitializerKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.NestedInitializerKernel(__gsharp_csharp_arg_0));
 return;

@@ -53,7 +53,7 @@ internal sealed class SwitchJumpRewriter(
     }
 
     public override SyntaxNode? VisitBreakStatement(BreakStatementSyntax node) =>
-        _breakDepth > 0 ? node : GotoFrom(node, endLabel);
+        _breakDepth > 0 || LabeledJumpSyntax.GetLabelName(node) != null ? node : GotoFrom(node, endLabel);
 
     public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
     {

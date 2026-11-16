@@ -176,6 +176,7 @@ public static unsafe void LaunchSingleMaxMinKernel(global::System.Single[] left,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathMaxMinKernels.SingleMaxMinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathMaxMinKernels.SingleMaxMinKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = left;
 global::System.Single[] __gsharp_csharp_arg_1 = right;
 global::System.Single[] __gsharp_csharp_arg_2 = result;
@@ -406,6 +407,7 @@ public static unsafe void LaunchDoubleMaxMinKernel(global::System.Double[] left,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathMaxMinKernels.DoubleMaxMinKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathMaxMinKernels.DoubleMaxMinKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = left;
 global::System.Double[] __gsharp_csharp_arg_1 = right;
 global::System.Double[] __gsharp_csharp_arg_2 = result;
@@ -630,6 +632,7 @@ public static unsafe void LaunchSingleClampKernel(global::System.Single[] value,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathMaxMinKernels.SingleClampKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathMaxMinKernels.SingleClampKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = value;
 global::System.Single[] __gsharp_csharp_arg_1 = min;
 global::System.Single[] __gsharp_csharp_arg_2 = max;
@@ -910,6 +913,7 @@ public static unsafe void LaunchDoubleClampKernel(global::System.Double[] value,
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathMaxMinKernels.DoubleClampKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathMaxMinKernels.DoubleClampKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = value;
 global::System.Double[] __gsharp_csharp_arg_1 = min;
 global::System.Double[] __gsharp_csharp_arg_2 = max;
@@ -1192,6 +1196,7 @@ public static unsafe void LaunchMixedOperandMaxKernel(global::System.Single[] si
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathMaxMinKernels.MixedOperandMaxKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathMaxMinKernels.MixedOperandMaxKernel");
 global::System.Single[] __gsharp_csharp_arg_0 = single;
 global::System.Double[] __gsharp_csharp_arg_1 = wide;
 global::System.Int32[] __gsharp_csharp_arg_2 = whole;

@@ -53,7 +53,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         TranspileMemberAccess(node, symbol, ref context);
     }
 
-    // Span<T>.Empty, Span<T>.IsEmpty and the Span / ReadOnlySpan properties that G# does not support.
+    // Span<T>.Empty, the IsEmpty / IsDefault members of the array views, and the Span / ReadOnlySpan properties that G#
+    // does not support.
     private static bool TryTranspileSpanProperty(
         MemberAccessExpressionSyntax node,
         IPropertySymbol property,
@@ -62,12 +63,22 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         switch (SpanWriteClassifier.ClassifyProperty(property))
         {
             case SpanPropertyKind.Empty:
-                context.Emitter.Dialect.AppendType(ref context, property.Type);
-                context.Emitter.Writer.Append("{}");
+                DefaultValue.AppendZero(property.Type, ref context);
                 return true;
-            case SpanPropertyKind.IsEmpty:
-                StackArrayLocals.AppendView(node.Expression, ref context);
+            case SpanPropertyKind.IsEmpty or SpanPropertyKind.IsDefaultOrEmpty:
+                // The IsEmpty of a default ImmutableArray<T> throws as C# does, through the check of its array;
+                // IsDefaultOrEmpty reads no array, and a default array has no element either
+                AppendMemberReceiver(node, property, ref context);
                 context.Emitter.Writer.Append(".IsEmpty()");
+                return true;
+            case SpanPropertyKind.IsDefault:
+                // (<array>.data==nullptr): a null array is the one with no data pointer, an empty one has it
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    AppendMemberReceiver(node, property, ref context);
+                    context.Emitter.Writer.Append(".data==nullptr");
+                }
+
                 return true;
             case SpanPropertyKind.Unsupported:
                 context.Reporter.Fail(

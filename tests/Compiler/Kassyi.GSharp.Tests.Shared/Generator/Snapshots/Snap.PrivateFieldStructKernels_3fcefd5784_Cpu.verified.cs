@@ -156,8 +156,16 @@ if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
 ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 host._scale = native._scale;
+if (native._data.Data == global::System.IntPtr.Zero)
+{
+host._data = default;
+}
 Unmarshal_PfInner(ref host._inner, ref native._inner, hStream);
-if (host._items != null && native._items.Data != global::System.IntPtr.Zero)
+if (native._items.Data == global::System.IntPtr.Zero)
+{
+host._items = default;
+}
+else if (host._items != null)
 {
 AotContexts.PfInner* shadow = (AotContexts.PfInner*)native._items.Data;
 for (int i = 0; i < host._items.Length; i++)
@@ -260,6 +268,10 @@ public static unsafe void Unmarshal_PfInner(ref global::Kassyi.GSharp.Tests.Shar
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
 ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
+if (native._values.Data == global::System.IntPtr.Zero)
+{
+host._values = default;
+}
 host._bias = native._bias;
 }
 public static void CopyArrays_PfInner(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
@@ -365,6 +377,10 @@ public static unsafe void Unmarshal_LibInternalFieldHolder(ref global::Kassyi.GS
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
 ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Hidden = native.Hidden;
 host.Wide = native.Wide;
 }
@@ -663,6 +679,7 @@ private unsafe delegate void __gsharp_delegate_StepPrivateFieldsKernel(uint grid
 public static unsafe void LaunchStepPrivateFieldsKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_pin_0 = &holder)
@@ -804,6 +821,33 @@ finally
 {
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchStepPrivateFieldsKernelPtr(global::System.IntPtr holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepPrivateFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepPrivateFieldsKernel", "LaunchStepPrivateFieldsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStepPrivateFieldsKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchStepPrivateFieldsKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchStepPrivateFieldsKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfHolder*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfHolder*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepPrivateFieldsKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, (global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfHolder*)holder);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 public const string ReadExplicitSwappedKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PfExplicitSwapped__
@@ -992,6 +1036,7 @@ private unsafe delegate void __gsharp_delegate_ReadExplicitSwappedKernel(uint gr
 public static unsafe void LaunchReadExplicitSwappedKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped value, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped __gsharp_csharp_arg_0 = value;
@@ -1128,6 +1173,39 @@ fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Inter
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (output?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchReadExplicitSwappedKernelPtr(global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfExplicitSwapped value, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
+}
+if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.ReadExplicitSwappedKernel", "LaunchReadExplicitSwappedKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReadExplicitSwappedKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchReadExplicitSwappedKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchReadExplicitSwappedKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfExplicitSwapped*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.PfExplicitSwapped*, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__ReadExplicitSwappedKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &value, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 public const string StepLibraryInternalFieldsKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibInternalFieldHolder__
@@ -1292,6 +1370,7 @@ private unsafe delegate void __gsharp_delegate_StepLibraryInternalFieldsKernel(u
 public static unsafe void LaunchStepLibraryInternalFieldsKernel(ref global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 fixed (global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_pin_0 = &holder)
@@ -1433,6 +1512,33 @@ finally
 {
 foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchStepLibraryInternalFieldsKernelPtr(global::System.IntPtr holder, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("PrivateFieldStructKernels.StepLibraryInternalFieldsKernel", "LaunchStepLibraryInternalFieldsKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchStepLibraryInternalFieldsKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchStepLibraryInternalFieldsKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchStepLibraryInternalFieldsKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.LibInternalFieldHolder*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.LibInternalFieldHolder*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__PrivateFieldStructKernels__StepLibraryInternalFieldsKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, (global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.AotContexts.LibInternalFieldHolder*)holder);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 }

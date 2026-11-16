@@ -81,6 +81,13 @@ public sealed class ExceptionPolicy
     public string? ParamName { get; init; }
 
     /// <summary>
+    /// Gets or initializes a value indicating whether <see cref="ParamName"/> is checked even when it is
+    /// <see langword="null"/>: an exception without a parameter name then fails the policy of one that names one, and
+    /// the reverse.
+    /// </summary>
+    public bool ParamNameIsExact { get; init; }
+
+    /// <summary>
     /// Gets or initializes a value indicating whether on <see cref="DiffPath.Cuda"/> the thrown exception must wrap a
     /// <c>CudaException</c> as <see cref="Exception.InnerException"/>.
     /// </summary>
@@ -153,7 +160,7 @@ public sealed class ExceptionPolicy
             return false;
         }
 
-        if (!string.IsNullOrEmpty(ParamName))
+        if (!string.IsNullOrEmpty(ParamName) || ParamNameIsExact)
         {
             string? actualParam = (actual as ArgumentException)?.ParamName;
             if (actualParam != ParamName)

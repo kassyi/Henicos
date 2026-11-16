@@ -1,8 +1,5 @@
 using System;
 using Xunit;
-#if GSHARP_CPU
-using Kassyi.GSharp.Tests.Shared.Helpers;
-#endif
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
@@ -67,7 +64,7 @@ internal sealed record ShadowCase(Func<int[]> Launch, int[] Expected)
 /// </summary>
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class ManagedShadowedLocalTests : TranspilerTestBase
+public partial class ManagedShadowedLocalTests : TranspilerTestBase
 {
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -104,53 +101,6 @@ public class ManagedShadowedLocalTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void ManagedVersion_LambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
         RunNative(ShadowCase.ManagedVersion);
-
-#if GSHARP_CPU
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void GridStrideLoop_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.GridStrideLoop);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void SingleThread_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.SingleThread);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ForUnroll_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.ForUnroll);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void NestedAndLater_ManagedLambdaLocalsShadowOuterNames_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.NestedAndLater);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void LocalFunction_ManagedShadowsAndIsShadowed_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.LocalFunction);
-
-    [Fact]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ManagedVersion_ManagedLambdaLocalShadowsMethodLocal_PreservesOuterAndInnerValues() =>
-        RunManaged(ShadowCase.ManagedVersion);
-
-    private static void RunManaged(ShadowCase shadowCase)
-    {
-        int[] result = [];
-
-        ManagedKernelRun.Run(() => result = shadowCase.Launch());
-
-        Assert.Equal(shadowCase.Expected, result);
-    }
-#endif
 
     private static void RunNative(ShadowCase shadowCase) => Assert.Equal(shadowCase.Expected, shadowCase.Launch());
 }

@@ -126,6 +126,7 @@ public static unsafe void LaunchFloorCeilingKernel(global::System.Double[] doubl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathFloorCeilingKernels.FloorCeilingKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathFloorCeilingKernels.FloorCeilingKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = doubleInputs;
 global::System.Double[] __gsharp_csharp_arg_1 = doubleFloor;
 global::System.Double[] __gsharp_csharp_arg_2 = doubleCeiling;
@@ -531,6 +532,7 @@ public static unsafe void LaunchPowKernel(global::System.Double[] doubleBases, g
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathFloorCeilingKernels.PowKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathFloorCeilingKernels.PowKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = doubleBases;
 global::System.Double[] __gsharp_csharp_arg_1 = doubleExponents;
 global::System.Double[] __gsharp_csharp_arg_2 = doubleResults;
@@ -936,6 +938,7 @@ public static unsafe void LaunchRoundKernel(global::System.Double[] doubleInputs
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MathFloorCeilingKernels.RoundKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MathFloorCeilingKernels.RoundKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = doubleInputs;
 global::System.Double[] __gsharp_csharp_arg_1 = doubleResults;
 global::System.Single[] __gsharp_csharp_arg_2 = floatInputs;

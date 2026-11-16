@@ -97,8 +97,7 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
         }
         else
         {
-            context.Emitter.Dialect.AppendType(ref context, plan.ValueType);
-            writer.Append("{}");
+            DefaultValue.AppendZero(plan.ValueType, ref context);
         }
     }
 

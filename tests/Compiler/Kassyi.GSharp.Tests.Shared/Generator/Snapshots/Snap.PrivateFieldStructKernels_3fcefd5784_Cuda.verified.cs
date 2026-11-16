@@ -251,7 +251,11 @@ if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.
 if (!AotContexts.PfHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfHolder");
 ref AotContexts.PfHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder, AotContexts.PfHolder.__gsharp_host_mirror>(ref hostValue);
 host._scale = native._scale;
-if (host._data != null && native._data.Data != global::System.IntPtr.Zero)
+if (native._data.Data == global::System.IntPtr.Zero)
+{
+host._data = default;
+}
+else if (host._data != null)
 {
 int size = checked(host._data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -268,7 +272,11 @@ handle.Free();
 }
 }
 Unmarshal_PfInner(ref host._inner, ref native._inner, hStream);
-if (host._items != null && native._items.Data != global::System.IntPtr.Zero)
+if (native._items.Data == global::System.IntPtr.Zero)
+{
+host._items = default;
+}
+else if (host._items != null)
 {
 int size = checked(host._items.Length * sizeof(AotContexts.PfInner));
 if (size > 0)
@@ -361,7 +369,11 @@ public static unsafe void Unmarshal_PfInner(ref global::Kassyi.GSharp.Tests.Shar
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.PfInner.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner>());
 if (!AotContexts.PfInner.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Syntax.PfInner");
 ref AotContexts.PfInner.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.PfInner, AotContexts.PfInner.__gsharp_host_mirror>(ref hostValue);
-if (host._values != null && native._values.Data != global::System.IntPtr.Zero)
+if (native._values.Data == global::System.IntPtr.Zero)
+{
+host._values = default;
+}
+else if (host._values != null)
 {
 int size = checked(host._values.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -517,7 +529,11 @@ public static unsafe void Unmarshal_LibInternalFieldHolder(ref global::Kassyi.GS
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder>());
 if (!AotContexts.LibInternalFieldHolder.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder");
 ref AotContexts.LibInternalFieldHolder.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder, AotContexts.LibInternalFieldHolder.__gsharp_host_mirror>(ref hostValue);
-if (host.Data != null && native.Data.Data != global::System.IntPtr.Zero)
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+else if (host.Data != null)
 {
 int size = checked(host.Data.Length * sizeof(global::System.Int32));
 if (size > 0)
@@ -661,6 +677,7 @@ public static unsafe void LaunchStepPrivateFieldsKernel(ref global::Kassyi.GShar
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepPrivateFieldsKernel");
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_pin_0 = &holder)
 {
 global::Kassyi.GSharp.Tests.Shared.Syntax.PfHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;
@@ -805,6 +822,7 @@ public static unsafe void LaunchReadExplicitSwappedKernel(global::Kassyi.GSharp.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.ReadExplicitSwappedKernel");
 global::Kassyi.GSharp.Tests.Shared.Syntax.PfExplicitSwapped __gsharp_csharp_arg_0 = value;
 global::System.Int32[] __gsharp_csharp_arg_1 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateFieldStructKernels.ReadExplicitSwappedKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -955,6 +973,7 @@ public static unsafe void LaunchStepLibraryInternalFieldsKernel(ref global::Kass
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "PrivateFieldStructKernels.StepLibraryInternalFieldsKernel");
 fixed (global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_pin_0 = &holder)
 {
 global::Kassyi.GSharp.Tests.DeviceLibrary.LibInternalFieldHolder* __gsharp_csharp_arg_0 = __gsharp_csharp_pin_0;

@@ -255,7 +255,7 @@ public class ScalarFuzzGeneratorTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.Boundary)]
-    public void KnownIssueFilter_CatalogAndAvoidanceHandlers_HaveOneToOneMappingAndRejectInvalidJson()
+    public void KnownIssueFilter_CatalogAndAvoidanceHandlers_HaveOneToOneMappingAndRejectInvalidCatalog()
     {
         var entries = KnownIssueFilter.LoadEntries();
         var catalogAvoidIssues = new HashSet<int>();
@@ -268,21 +268,23 @@ public class ScalarFuzzGeneratorTests
             }
         }
 
-        // Every "avoid" entry in known-issues.json must have a code avoidance handler in KnownIssueFilter.SupportedAvoidanceIssues, and every code avoidance handler must have an entry in known-issues.json.
+        // Every "avoid" entry in known-issues.yml must have a code avoidance handler in KnownIssueFilter.SupportedAvoidanceIssues, and every code avoidance handler must have an entry in known-issues.yml.
         // mutant: KnownIssueFilter.s_supportedAvoidanceIssues: remove `Issue1102ComplexTupleDeconstruction` from the set
         // input: KnownIssueFilter.LoadEntries() vs KnownIssueFilter.SupportedAvoidanceIssues
         Assert.True(
             catalogAvoidIssues.SetEquals(KnownIssueFilter.SupportedAvoidanceIssues),
             $"Catalog avoid issues [{string.Join(", ", catalogAvoidIssues)}] must match SupportedAvoidanceIssues [{string.Join(", ", KnownIssueFilter.SupportedAvoidanceIssues)}].");
 
-        string missingPath = Path.Combine(Path.GetTempPath(), $"missing_known_issues_{Guid.NewGuid():N}.json");
+        string missingPath = Path.Combine(Path.GetTempPath(), $"missing_known_issues_{Guid.NewGuid():N}.yml");
         Assert.Throws<FileNotFoundException>(() => KnownIssueFilter.LoadEntries(missingPath));
 
-        string corruptPath = Path.Combine(Path.GetTempPath(), $"corrupt_known_issues_{Guid.NewGuid():N}.json");
+        string corruptPath = Path.Combine(Path.GetTempPath(), $"corrupt_known_issues_{Guid.NewGuid():N}.yml");
         try
         {
-            File.WriteAllText(corruptPath, "{ not valid json");
-            Assert.ThrowsAny<System.Text.Json.JsonException>(() => KnownIssueFilter.LoadEntries(corruptPath));
+            // A repeated key is an error of the YAML parser, reported with the file and the line
+            File.WriteAllText(corruptPath, "- issue: 1\n  issue: 2\n");
+            var error = Assert.Throws<InvalidDataException>(() => KnownIssueFilter.LoadEntries(corruptPath));
+            Assert.Contains($"{corruptPath}(2)", error.Message, StringComparison.Ordinal);
         }
         finally
         {

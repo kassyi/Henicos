@@ -30,14 +30,15 @@ internal static class ArithmeticConversions
     /// Covers the arithmetic, bitwise and comparison operators. The shifts promote each operand on its own in both
     /// languages, and a user-defined or lifted operator has no C++ arithmetic conversion to compare with.
     /// </remarks>
-    public static bool TryGetPromotedType(IBinaryOperation operation, [NotNullWhen(true)] out ITypeSymbol? type)
+    public static bool TryGetPromotedType(BinaryOperatorKind kind, bool isBuiltIn, ITypeSymbol? left,
+        ITypeSymbol? right, ITypeSymbol? leftSource, ITypeSymbol? rightSource,
+        [NotNullWhen(true)] out ITypeSymbol? type)
     {
         type = null;
-        if (operation.OperatorMethod != null || operation.IsLifted || !IsPromotingOperator(operation.OperatorKind) ||
-            operation.LeftOperand.Type is not { } left || operation.RightOperand.Type is not { } right ||
+        if (!isBuiltIn || !IsPromotingOperator(kind) ||
+            left is null || right is null ||
             left.SpecialType != right.SpecialType ||
-            GetSourceType(operation.LeftOperand) is not { } leftSource ||
-            GetSourceType(operation.RightOperand) is not { } rightSource)
+            leftSource is null || rightSource is null)
         {
             return false;
         }
@@ -52,19 +53,30 @@ internal static class ArithmeticConversions
         return true;
     }
 
+    public static bool TryGetPromotedType(IBinaryOperation operation, [NotNullWhen(true)] out ITypeSymbol? type) =>
+        TryGetPromotedType(
+            operation.OperatorKind,
+            operation.OperatorMethod == null && !operation.IsLifted,
+            operation.LeftOperand.Type,
+            operation.RightOperand.Type,
+            GetSourceType(operation.LeftOperand),
+            GetSourceType(operation.RightOperand),
+            out type);
+
     /// <summary>
     /// The type C# converts the operand of <paramref name="operation"/> to, when the integral promotions of C++ would
     /// keep another one (<see langword="uint"/> under unary minus: <see langword="long"/> in C# (C# spec §12.4.7.2),
     /// <c>unsigned int</c> in C++).
     /// </summary>
-    public static bool TryGetPromotedType(IUnaryOperation operation, [NotNullWhen(true)] out ITypeSymbol? type)
+    public static bool TryGetPromotedType(UnaryOperatorKind kind, bool isBuiltIn, ITypeSymbol? result,
+        ITypeSymbol? source, [NotNullWhen(true)] out ITypeSymbol? type)
     {
         type = null;
-        if (operation.OperatorMethod != null || operation.IsLifted ||
-            operation.OperatorKind is not (UnaryOperatorKind.Minus or UnaryOperatorKind.Plus or
+        if (!isBuiltIn ||
+            kind is not (UnaryOperatorKind.Minus or UnaryOperatorKind.Plus or
                 UnaryOperatorKind.BitwiseNegation) ||
-            operation.Type is not { } result || !result.SpecialType.IsArithmetic() ||
-            GetSourceType(operation.Operand) is not { } source || !source.SpecialType.IsArithmetic() ||
+            result is null || !result.SpecialType.IsArithmetic() ||
+            source is null || !source.SpecialType.IsArithmetic() ||
             PromoteIntegral(source.SpecialType) == result.SpecialType)
         {
             return false;
@@ -74,18 +86,26 @@ internal static class ArithmeticConversions
         return true;
     }
 
+    public static bool TryGetPromotedType(IUnaryOperation operation, [NotNullWhen(true)] out ITypeSymbol? type) =>
+        TryGetPromotedType(
+            operation.OperatorKind,
+            operation.OperatorMethod == null && !operation.IsLifted,
+            operation.Type,
+            GetSourceType(operation.Operand),
+            out type);
+
     /// <summary>
     /// The type of <paramref name="operation"/>, which C# converts both branches to, when C++ would give the
     /// conditional another one: a target-typed <c>c ? u : n</c> (C# spec §12.18) is <see langword="long"/> or
     /// <see langword="double"/> in C#, and <c>unsigned int</c> in C++, which converts branches of different types with
     /// the usual arithmetic conversions ([expr.cond]).
     /// </summary>
-    public static bool TryGetPromotedType(IConditionalOperation operation, [NotNullWhen(true)] out ITypeSymbol? type)
+    public static bool TryGetPromotedConditionalType(bool isRef, ITypeSymbol? result, ITypeSymbol? trueSource,
+        ITypeSymbol? falseSource, [NotNullWhen(true)] out ITypeSymbol? type)
     {
         type = null;
-        if (operation.IsRef || operation.WhenFalse is not { } whenFalse ||
-            operation.Type is not { } result || !result.SpecialType.IsArithmetic() ||
-            GetSourceType(operation.WhenTrue) is not { } trueSource || GetSourceType(whenFalse) is not { } falseSource)
+        if (isRef || result is null || !result.SpecialType.IsArithmetic() ||
+            trueSource is null || falseSource is null)
         {
             return false;
         }
@@ -103,12 +123,27 @@ internal static class ArithmeticConversions
         return true;
     }
 
+    public static bool TryGetPromotedType(IConditionalOperation operation, [NotNullWhen(true)] out ITypeSymbol? type) =>
+        TryGetPromotedConditionalType(
+            operation.IsRef,
+            operation.Type,
+            GetSourceType(operation.WhenTrue),
+            operation.WhenFalse is { } falseOp ? GetSourceType(falseOp) : null,
+            out type);
+
+    /// <summary>
+    /// Whether an operand with <paramref name="source"/> type (an operand of an operation whose operands C# converts to
+    /// <paramref name="type"/>) has another C# type before that conversion, so that the emitter converts it.
+    /// </summary>
+    public static bool IsConverted(ITypeSymbol? source, ITypeSymbol type) =>
+        source is null || source.SpecialType != type.SpecialType;
+
     /// <summary>
     /// Whether <paramref name="operand"/> (an operand of an operation whose operands C# converts to
     /// <paramref name="type"/>) has another C# type before that conversion, so that the emitter converts it.
     /// </summary>
     public static bool IsConverted(IOperation operand, ITypeSymbol type) =>
-        GetSourceType(operand) is not { } source || source.SpecialType != type.SpecialType;
+        IsConverted(GetSourceType(operand), type);
 
     /// <summary>
     /// Writes <paramref name="syntax"/> (the operand <paramref name="operand"/>) converted to <paramref name="type"/>: a

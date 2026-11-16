@@ -2,9 +2,6 @@
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
-#if GSHARP_CUDA
-using Kassyi.GSharp.Runtime;
-#endif
 using Xunit;
 using static Kassyi.GSharp.Tests.Shared.Differential.MarshalingDifferentialTestHelpers;
 
@@ -17,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Category(TestCategory.Differential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Collection(TestCollections.GlobalStateSequential)]
-public sealed class MarshalingLaunchPtrDifferentialTests
+public partial class MarshalingLaunchPtrDifferentialTests
 {
     private const int PtrLengthGuardedScaleCount = 64;
 
@@ -40,58 +37,13 @@ public sealed class MarshalingLaunchPtrDifferentialTests
         },
         Oracle = static (b, s) => MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
             b.Get<int>("data"), 3, b.Get<int>("outLen"), gridDimX: s.GridX, blockDimX: s.BlockX),
-        Launch = static (b, s) =>
-        {
-            int[] data = b.Get<int>("data");
-            int[] outLen = b.Get<int>("outLen");
-#if GSHARP_CUDA
-            using var scope = b.PinOrUpload();
-            MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernelPtr(
-                scope.GetArray("data"), 3, scope.GetArray("outLen"), gridDimX: s.GridX, blockDimX: s.BlockX);
-#else
-            MarshalingAliasingDifferentialKernels.LaunchPtrLengthGuardedScaleKernel(
-                data, 3, outLen, gridDimX: s.GridX, blockDimX: s.BlockX);
-#endif
-        },
+        Launch = GetPtrLengthGuardedScaleLaunch(),
     };
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void LaunchPtr_NonOverloadedIntPtrWithLengthGuard_MatchesSequentialOracle() =>
         DifferentialRunner.Run(s_ptrLengthGuardedScale);
-
-#if GSHARP_CUDA
-    // --- Launch{Kernel}Ptr passes a null array that is not optional, as the array launcher passes one: the kernel's
-    // read of it throws, as in C# ---
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void LaunchPtr_NullNonOptionalArray_ThrowsAtTheRead()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const int rows = 4;
-        int[] src = [1, 2, 3, 4];
-        int[] dst = new int[rows];
-
-        using var ctxScope = new GpuKernelLoader.CudaContextScope();
-        using GpuBuffer<int> dSrc = new(rows);
-        using GpuBuffer<int> dDst = new(rows);
-        dSrc.CopyToDevice(src);
-
-        // A pointer launch reports a device error at the next synchronization
-        Assert.Throws<NullReferenceException>(() =>
-        {
-            BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
-                default, dDst.ToProxy(), rows, blockDimX: rows);
-            GpuKernelLoader.SynchronizeDevice();
-        });
-
-        // A null optional array is null, which the kernel tests before it reads it
-        BoundsAndMemoryDifferentialKernels.LaunchNullArrayOptionalValidKernelPtr(
-            dSrc.ToProxy(), dDst.ToProxy(), rows, default, blockDimX: rows);
-        dDst.CopyToHost(dst);
-        Assert.Equal(src, dst);
-    }
-#endif
 
     // --- Launch{Kernel}Ptr with overloaded GpuBuffer<T> signature ---
     private const int OverloadedPtrCount = 64;
@@ -129,30 +81,7 @@ public sealed class MarshalingLaunchPtrDifferentialTests
             MarshalingAliasingDifferentialKernels.LaunchOverloadedPtrKernel(
                 srcFloat, dstFloat, OverloadedPtrCount, gridDimX: s.GridX, blockDimX: s.BlockX);
         },
-#if GSHARP_CUDA
-        LaunchPtr = static (b, s) =>
-        {
-            int[] srcInt = b.Get<int>("srcInt");
-            int[] dstInt = b.Get<int>("dstInt");
-            float[] srcFloat = b.Get<float>("srcFloat");
-            float[] dstFloat = b.Get<float>("dstFloat");
-
-            using var ctxScope = new GpuKernelLoader.CudaContextScope();
-            using GpuBuffer<int> dSrcInt = new(OverloadedPtrCount);
-            using GpuBuffer<int> dDstInt = new(OverloadedPtrCount);
-            dSrcInt.CopyToDevice(srcInt);
-            MarshalingAliasingDifferentialKernels.LaunchOverloadedPtrKernelPtr(
-                dSrcInt, dDstInt, OverloadedPtrCount, gridDimX: s.GridX, blockDimX: s.BlockX);
-            dDstInt.CopyToHost(dstInt);
-
-            using GpuBuffer<float> dSrcFloat = new(OverloadedPtrCount);
-            using GpuBuffer<float> dDstFloat = new(OverloadedPtrCount);
-            dSrcFloat.CopyToDevice(srcFloat);
-            MarshalingAliasingDifferentialKernels.LaunchOverloadedPtrKernelPtr(
-                dSrcFloat, dDstFloat, OverloadedPtrCount, gridDimX: s.GridX, blockDimX: s.BlockX);
-            dDstFloat.CopyToHost(dstFloat);
-        },
-#endif
+        LaunchPtr = GetOverloadedLaunchPtr(),
     };
 
     [SkippableFact]
@@ -192,38 +121,15 @@ public sealed class MarshalingLaunchPtrDifferentialTests
             MarshalingAliasingDifferentialKernels.LaunchPtrConvertStructAndRefKernel(
                 items, ref accum, PtrConvertStructAndRefCount, gridDimX: s.GridX, blockDimX: s.BlockX);
         },
-#if GSHARP_CUDA
-        LaunchPtr = static (b, s) =>
-        {
-            int[] items = b.Get<int>("items");
-            ref DiffVec2Padded accum = ref b.GetScalarRef<DiffVec2Padded>("accum");
-            MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded nativeAccum = default;
-            MarshalingAliasingDifferentialKernels.AotContexts.Marshal_DiffVec2Padded(
-                ref accum, ref nativeAccum, deviceArrays: null, hStream: IntPtr.Zero);
-
-            using var ctxScope = new GpuKernelLoader.CudaContextScope();
-            using GpuBuffer<int> dItems = new(PtrConvertStructAndRefCount);
-            using GpuBuffer<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded> dAccum = new(1);
-            dItems.CopyToDevice(items);
-            dAccum.CopyToDevice(
-                new ReadOnlySpan<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
-            MarshalingAliasingDifferentialKernels.LaunchPtrConvertStructAndRefKernelPtr(
-                dItems.ToProxy(),
-                dAccum.DevicePointer,
-                PtrConvertStructAndRefCount,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX);
-            dItems.CopyToHost(items);
-            dAccum.CopyToHost(
-                new Span<MarshalingAliasingDifferentialKernels.AotContexts.DiffVec2Padded>(ref nativeAccum));
-            MarshalingAliasingDifferentialKernels.AotContexts.Unmarshal_DiffVec2Padded(
-                ref accum, ref nativeAccum, hStream: IntPtr.Zero);
-        },
-#endif
+        LaunchPtr = GetPtrConvertStructAndRefLaunchPtr(),
     };
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void LaunchPtr_RefConvertStruct_MatchesExpected() =>
         DifferentialRunner.Run(s_ptrConvertStructAndRef);
+
+    private static partial Action<DiffBuffers, LaunchShape> GetPtrLengthGuardedScaleLaunch();
+    private static partial Action<DiffBuffers, LaunchShape>? GetOverloadedLaunchPtr();
+    private static partial Action<DiffBuffers, LaunchShape>? GetPtrConvertStructAndRefLaunchPtr();
 }

@@ -50,10 +50,17 @@ internal static class IntegerSemantics
     /// the C++ of the expression as written is undefined (nvcc and MSVC give 0). Every other integer constant is folded
     /// as well, so that no constant expression depends on what C++ does with it.
     /// </remarks>
-    public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) =>
-        operation is { ConstantValue: { HasValue: true, Value: { } value }, Type: { } type } &&
-        (GetWidth(type) != 0 || TryGetNarrowEnumResultType(operation, out _))
+    public static (ITypeSymbol Type, object Value)? GetConstant(ITypeSymbol? type, Optional<object?> constantValue,
+        bool isNarrowEnumOperation) =>
+        type is not null && constantValue is { HasValue: true, Value: { } value } &&
+        (GetWidth(type) != 0 || isNarrowEnumOperation)
             ? (type, value)
+            : null;
+
+    /// <inheritdoc cref="GetConstant(ITypeSymbol, Optional{object}, bool)"/>
+    public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) =>
+        operation is { Type: { } type, ConstantValue: { HasValue: true } constantValue }
+            ? GetConstant(type, constantValue, GetWidth(type) == 0 && TryGetNarrowEnumResultType(operation, out _))
             : null;
 
     /// <summary>
@@ -61,77 +68,136 @@ internal static class IntegerSemantics
     /// <see langword="ushort"/>) of an enum unary <c>~</c> or binary <c>+ - &amp; | ^</c> operation, which C++ promotes to
     /// <c>int</c> and must be cast back (#995); <see langword="false"/> for any other operation.
     /// </summary>
-    public static bool TryGetNarrowEnumResultType(IOperation? operation, [NotNullWhen(true)] out ITypeSymbol? resultType)
-    {
-        resultType = operation switch
-        {
-            IUnaryOperation { OperatorKind: UnaryOperatorKind.BitwiseNegation, OperatorMethod: null, IsLifted: false, Type: { } t } =>
-                UnderlyingOrSelf(t),
-            IBinaryOperation
+    public static bool TryGetNarrowEnumResultType(in IntegerBinaryFacts facts,
+        [NotNullWhen(true)] out ITypeSymbol? resultType) =>
+        TryGetNarrowUnderlying(facts.IsBuiltIn && IsNarrowEnumBinary(facts.Kind) ? facts.Type : null, out resultType);
+
+    /// <inheritdoc cref="TryGetNarrowEnumResultType(in IntegerBinaryFacts, out ITypeSymbol)"/>
+    public static bool TryGetNarrowEnumResultType(in IntegerUnaryFacts facts,
+        [NotNullWhen(true)] out ITypeSymbol? resultType) =>
+        TryGetNarrowUnderlying(
+            facts.IsBuiltIn && facts.Kind == UnaryOperatorKind.BitwiseNegation ? facts.Type : null,
+            out resultType
+        );
+
+    /// <inheritdoc cref="TryGetNarrowEnumResultType(in IntegerBinaryFacts, out ITypeSymbol)"/>
+    public static bool TryGetNarrowEnumResultType(IOperation? operation,
+        [NotNullWhen(true)] out ITypeSymbol? resultType) =>
+        TryGetNarrowUnderlying(
+            operation switch
             {
-                OperatorKind: BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or BinaryOperatorKind.And or
-                BinaryOperatorKind.Or or BinaryOperatorKind.ExclusiveOr,
-                OperatorMethod: null,
-                IsLifted: false,
-                Type: { } t
-            } => UnderlyingOrSelf(t),
-            _ => null
-        };
-        return resultType?.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte or
-            SpecialType.System_Int16 or SpecialType.System_UInt16;
+                IBinaryOperation { OperatorMethod: null, IsLifted: false } binary
+                    when IsNarrowEnumBinary(binary.OperatorKind) => binary.Type,
+                IUnaryOperation
+                {
+                    OperatorKind: UnaryOperatorKind.BitwiseNegation,
+                    OperatorMethod: null,
+                    IsLifted: false
+                } unary => unary.Type,
+                _ => null
+            },
+            out resultType
+        );
+
+    // The binary operators of an enum that C++ computes in int: + - & | ^
+    private static bool IsNarrowEnumBinary(BinaryOperatorKind kind) =>
+        kind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or BinaryOperatorKind.And or
+            BinaryOperatorKind.Or or BinaryOperatorKind.ExclusiveOr;
+
+    // The underlying type of <type> when it is byte, sbyte, short or ushort
+    private static bool TryGetNarrowUnderlying(ITypeSymbol? type, [NotNullWhen(true)] out ITypeSymbol? resultType)
+    {
+        resultType = UnderlyingOrSelf(type);
+        if (resultType?.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte or
+            SpecialType.System_Int16 or SpecialType.System_UInt16)
+        {
+            return true;
+        }
+
+        resultType = null;
+        return false;
     }
 
     /// <summary>
-    /// The Prelude function that <paramref name="operation"/> is written as (<c>__gsharp_add_i32(a,b)</c>), or
+    /// The Prelude function that <paramref name="facts"/> is written as (<c>__gsharp_add_i32(a,b)</c>), or
     /// <see langword="null"/> for an operator that C++ gives the C# result (then <see cref="GetShiftMask"/> tells whether
     /// its count is masked).
     /// </summary>
-    public static string? GetBinaryHelper(IBinaryOperation operation)
+    public static string? GetBinaryHelper(in IntegerBinaryFacts facts)
     {
-        if (!IsIntrinsicIntegerOperation(operation) || UnderlyingOrSelf(operation.Type) is not { } type)
+        if (!IsIntrinsicIntegerOperation(facts) || UnderlyingOrSelf(facts.Type) is not { } type)
         {
             return null;
         }
 
-        var (helper, _) = Lookup(operation.OperatorKind, type.SpecialType);
-        if (IsDivision(operation.OperatorKind))
+        var (helper, _) = Lookup(facts.Kind, type.SpecialType);
+        if (IsDivision(facts.Kind))
         {
-            return DecideDivision(operation.LeftOperand, operation.RightOperand, type.SpecialType) == DivisionCheck.None
+            return DecideDivision(facts.Left, facts.Right, type.SpecialType) == DivisionCheck.None
                 ? null
                 : helper;
         }
 
-        var arithmetic = operation.OperatorKind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or
+        var arithmetic = facts.Kind is BinaryOperatorKind.Add or BinaryOperatorKind.Subtract or
             BinaryOperatorKind.Multiply;
-        return arithmetic && FitsWithoutWrap(operation) ? null : helper;
+        return arithmetic && FitsWithoutWrap(facts) ? null : helper;
     }
+
+    public static string? GetBinaryHelper(IBinaryOperation operation) =>
+        GetBinaryHelper(IntegerBinaryFacts.Of(operation));
 
     /// <summary>
     /// The mask of the count of a shift that stays a C++ operator (<c>&lt;&lt;</c> of uint and ulong, <c>&gt;&gt;</c>,
     /// <c>&gt;&gt;&gt;</c> of uint and ulong): 31 or 63; 0 for any other operation.
     /// </summary>
-    public static int GetShiftMask(IBinaryOperation operation) =>
-        IsIntrinsicIntegerOperation(operation) && UnderlyingOrSelf(operation.Type) is { } type
-            ? Lookup(operation.OperatorKind, type.SpecialType).ShiftMask
+    public static int GetShiftMask(in IntegerBinaryFacts facts) =>
+        IsIntrinsicIntegerOperation(facts) && UnderlyingOrSelf(facts.Type) is { } type
+            ? Lookup(facts.Kind, type.SpecialType).ShiftMask
             : 0;
 
-    /// <summary>The Prelude function that writes unary minus <paramref name="operation"/> (<c>__gsharp_neg_i32</c>), or null.</summary>
-    public static string? GetNegationHelper(IUnaryOperation operation)
+    public static int GetShiftMask(IBinaryOperation operation) =>
+        GetShiftMask(IntegerBinaryFacts.Of(operation));
+
+    /// <summary>
+    /// The Prelude function that writes unary minus <paramref name="facts"/> (<c>__gsharp_neg_i32</c>), or null.
+    /// </summary>
+    public static string? GetNegationHelper(in IntegerUnaryFacts facts)
     {
-        if (operation.OperatorKind != UnaryOperatorKind.Minus || operation.OperatorMethod != null || operation.IsLifted ||
-            operation.ConstantValue.HasValue || GetWidth(operation.Type) is not (var width and not 0) ||
-            !IsSigned(operation.Type))
+        if (facts.Kind != UnaryOperatorKind.Minus || !facts.IsBuiltIn ||
+            facts.HasConstantValue || GetWidth(facts.Type) is not (var width and not 0) ||
+            !IsSigned(facts.Type))
         {
             return null;
         }
 
         // -x overflows only for the minimum value of the type
-        if (OperationRanges.Of(operation.Operand) is { } range && range.Min > MinValue(width))
+        if (facts.Operand is { } range && range.Min > MinValue(width))
         {
             return null;
         }
 
         return Pick(width, Names.NegateInt32, Names.NegateInt64);
+    }
+
+    public static string? GetNegationHelper(IUnaryOperation operation) =>
+        GetNegationHelper(IntegerUnaryFacts.Of(operation));
+
+    /// <summary>
+    /// The Prelude function of the step of the increment or decrement <paramref name="facts"/> of an integer type
+    /// that promotes to <see langword="int"/> or is <see langword="int"/> or <see langword="long"/>:
+    /// <c>__gsharp_add_i32</c> for <c>++</c>, <c>__gsharp_sub_i32</c> for <c>--</c> (the other one for
+    /// <paramref name="undo"/>; #722, #1079), before the loop counter analysis; null for a user-defined or lifted
+    /// operator.
+    /// </summary>
+    public static string? GetStepHelper(in IntegerStepFacts facts, bool undo)
+    {
+        if (!facts.IsBuiltIn)
+        {
+            return null;
+        }
+
+        var add = facts.IsIncrement != undo;
+        return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, Promote(facts.Type)).Helper;
     }
 
     /// <summary>
@@ -148,7 +214,7 @@ internal static class IntegerSemantics
     public static string? GetIncrementHelper(IIncrementOrDecrementOperation operation, ExpressionSyntax node,
         ref TranspileContext context)
     {
-        if (GetStepHelper(operation, undo: false) is not { } helper)
+        if (GetStepHelper(IntegerStepFacts.Of(operation), undo: false) is not { } helper)
         {
             return null;
         }
@@ -168,51 +234,44 @@ internal static class IntegerSemantics
     /// (<c>__gsharp_sub_i32</c> for <c>++</c>), which gives the old value of a postfix step that wraps.
     /// </summary>
     public static string? GetStepUndoHelper(IIncrementOrDecrementOperation operation) =>
-        GetStepHelper(operation, undo: true);
+        GetStepHelper(IntegerStepFacts.Of(operation), undo: true);
 
     /// <summary>
-    /// The type that the result of the increment or decrement <paramref name="operation"/> is cast back to, when the
+    /// The type that the result of the increment or decrement <paramref name="facts"/> is cast back to, when the
     /// target is narrower than <see langword="int"/> (<c>short++</c> computes in int, #1079); null when it is not.
     /// </summary>
-    public static ITypeSymbol? GetStepNarrowing(IIncrementOrDecrementOperation operation) =>
-        UnderlyingOrSelf(operation.Target.Type) is { } target && Promote(target) == SpecialType.System_Int32 &&
+    public static ITypeSymbol? GetStepNarrowing(in IntegerStepFacts facts) =>
+        UnderlyingOrSelf(facts.TargetType) is { } target && Promote(target) == SpecialType.System_Int32 &&
         target.SpecialType != SpecialType.System_Int32
             ? target
             : null;
 
-    // __gsharp_add_i32 / __gsharp_sub_i32 for a predefined integer ++ / -- that promotes to int or is int or long (the
-    // other one for <undo>), before the loop counter analysis
-    private static string? GetStepHelper(IIncrementOrDecrementOperation operation, bool undo)
-    {
-        if (operation.OperatorMethod != null || operation.IsLifted)
-        {
-            return null;
-        }
-
-        var add = (operation.Kind == OperationKind.Increment) != undo;
-        return Lookup(add ? BinaryOperatorKind.Add : BinaryOperatorKind.Subtract, Promote(operation.Type)).Helper;
-    }
+    public static ITypeSymbol? GetStepNarrowing(IIncrementOrDecrementOperation operation) =>
+        GetStepNarrowing(IntegerStepFacts.Of(operation));
 
     /// <summary>
-    /// The Prelude function of the operator of the compound assignment <paramref name="operation"/>
+    /// The Prelude function of the operator of the compound assignment <paramref name="facts"/>
     /// (<c>__gsharp_add_i32</c> for an int <c>+=</c>), which <see cref="IntegerSemanticsEmitter.AppendStep"/> and the
     /// form that evaluates the operands into temporaries call; null for an assignment that C++ gives the C# result (see
     /// <see cref="GetCompoundShiftMask"/>).
     /// </summary>
-    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation)
+    public static string? GetCompoundHelper(in IntegerCompoundFacts facts)
     {
-        if (operation.OperatorMethod != null || operation.IsLifted)
+        if (!facts.IsBuiltIn)
         {
             return null;
         }
 
-        var type = GetCompoundOperatorType(operation);
-        var helper = Lookup(operation.OperatorKind, type).Helper;
-        return helper != null && IsDivision(operation.OperatorKind) &&
-               DecideDivision(operation.Target, operation.Value, type) == DivisionCheck.None
+        var type = GetCompoundOperatorType(facts.Kind, facts.TargetType, facts.ValueType);
+        var helper = Lookup(facts.Kind, type).Helper;
+        return helper != null && IsDivision(facts.Kind) &&
+               DecideDivision(facts.Target, facts.Value, type) == DivisionCheck.None
             ? null
             : helper;
     }
+
+    public static string? GetCompoundHelper(ICompoundAssignmentOperation operation) =>
+        GetCompoundHelper(IntegerCompoundFacts.Of(operation));
 
     /// <summary>
     /// Whether <paramref name="helper"/>, from <see cref="GetBinaryHelper"/> or <see cref="GetCompoundHelper"/>, is a
@@ -227,22 +286,29 @@ internal static class IntegerSemantics
     /// The mask of the count of a compound shift that stays a C++ operator (<c>&gt;&gt;=</c>, and <c>&lt;&lt;=</c> and
     /// <c>&gt;&gt;&gt;=</c> of uint and ulong): 31 or 63; 0 for any other assignment.
     /// </summary>
-    public static int GetCompoundShiftMask(ICompoundAssignmentOperation operation) =>
-        operation.OperatorMethod == null && !operation.IsLifted
-            ? Lookup(operation.OperatorKind, GetCompoundOperatorType(operation)).ShiftMask
+    public static int GetCompoundShiftMask(in IntegerCompoundFacts facts) =>
+        facts.IsBuiltIn
+            ? Lookup(facts.Kind, GetCompoundOperatorType(facts.Kind, facts.TargetType, facts.ValueType)).ShiftMask
             : 0;
 
+    public static int GetCompoundShiftMask(ICompoundAssignmentOperation operation) =>
+        GetCompoundShiftMask(IntegerCompoundFacts.Of(operation));
+
     /// <summary>
-    /// The type that the result of the operator of the compound assignment <paramref name="operation"/> is cast back to,
+    /// The type that the result of the operator of the compound assignment <paramref name="facts"/> is cast back to,
     /// when the target is narrower than the operator (<c>short += 1</c> computes in int); null when it is not, and for
     /// a target that is not an integer (a floating-point <c>%=</c> has the type of its target).
     /// </summary>
-    public static ITypeSymbol? GetCompoundNarrowing(ICompoundAssignmentOperation operation) =>
-        UnderlyingOrSelf(operation.Target.Type) is { } target &&
-        GetCompoundOperatorType(operation) is var operatorType and not SpecialType.None &&
+    public static ITypeSymbol? GetCompoundNarrowing(in IntegerCompoundFacts facts) =>
+        UnderlyingOrSelf(facts.TargetType) is { } target &&
+        GetCompoundOperatorType(facts.Kind, facts.TargetType, facts.ValueType) is var operatorType and
+            not SpecialType.None &&
         target.SpecialType != operatorType
             ? target
             : null;
+
+    public static ITypeSymbol? GetCompoundNarrowing(ICompoundAssignmentOperation operation) =>
+        GetCompoundNarrowing(IntegerCompoundFacts.Of(operation));
 
     // The one table of the integer operators, keyed by the operator kind (a compound assignment has the kind of its
     // binary operator) and the type of the operator: the Prelude function of a signed int or long operator that C++
@@ -349,7 +415,7 @@ internal static class IntegerSemantics
             IBinaryOperation binary => GetBinaryHelper(binary) != null,
             IUnaryOperation unary => GetNegationHelper(unary) != null,
             // The step of a for loop, the only one the counter analysis keeps as an operator, is never an operand
-            IIncrementOrDecrementOperation step => GetStepHelper(step, undo: false) != null,
+            IIncrementOrDecrementOperation step => GetStepHelper(IntegerStepFacts.Of(step), undo: false) != null,
             ICompoundAssignmentOperation compound => GetCompoundHelper(compound) != null,
             _ => false
         };
@@ -358,25 +424,26 @@ internal static class IntegerSemantics
     // A predefined, non-lifted operator on integers whose result is not a constant (a constant is written as its value,
     // GetConstant). The left operand has the type of the operator (converted to it), which a pointer difference
     // (byte* - byte* is long) does not
-    private static bool IsIntrinsicIntegerOperation(IBinaryOperation operation) =>
-        operation.OperatorMethod == null && !operation.IsLifted && !operation.ConstantValue.HasValue &&
-        UnderlyingOrSelf(operation.Type) is { } type &&
-        UnderlyingOrSelf(operation.LeftOperand.Type)?.SpecialType == type.SpecialType;
+    private static bool IsIntrinsicIntegerOperation(in IntegerBinaryFacts facts) =>
+        facts.IsBuiltIn && !facts.HasConstantValue &&
+        UnderlyingOrSelf(facts.Type) is { } type &&
+        UnderlyingOrSelf(facts.LeftType)?.SpecialType == type.SpecialType;
 
     // The type of the operator of a compound assignment of an integer target: the binary numeric promotion of the target
     // and the value (C# spec §12.4.7.3, §12.21.4), which does not depend on whether the bound value already carries the
     // conversion to it; for a shift, the promoted type of the target (§12.11). Null for a pointer (p += n) or a
     // floating-point value, which have operators of their own.
-    internal static SpecialType GetCompoundOperatorType(ICompoundAssignmentOperation operation)
+    internal static SpecialType GetCompoundOperatorType(BinaryOperatorKind kind, ITypeSymbol? targetType,
+        ITypeSymbol? valueType)
     {
-        var target = Promote(operation.Target.Type);
-        if (target == SpecialType.None || operation.OperatorKind is BinaryOperatorKind.LeftShift or
+        var target = Promote(targetType);
+        if (target == SpecialType.None || kind is BinaryOperatorKind.LeftShift or
                 BinaryOperatorKind.RightShift or BinaryOperatorKind.UnsignedRightShift)
         {
             return target;
         }
 
-        var value = Promote(operation.Value.Type);
+        var value = Promote(valueType);
         if (value == SpecialType.None)
         {
             return SpecialType.None;
@@ -395,6 +462,9 @@ internal static class IntegerSemantics
 
         return SpecialType.System_Int64;
     }
+
+    internal static SpecialType GetCompoundOperatorType(ICompoundAssignmentOperation operation) =>
+        GetCompoundOperatorType(operation.OperatorKind, operation.Target.Type, operation.Value.Type);
 
     // The integral promotions: an integer type narrower than int is int; None for any type that is not an integer
     private static SpecialType Promote(ITypeSymbol? type) => UnderlyingOrSelf(type)?.SpecialType switch
@@ -416,7 +486,8 @@ internal static class IntegerSemantics
     /// whose range is not known spans the operator type): the facts of the syntax path for
     /// <see cref="DivisionCheckRule.Decide"/>, which the transpiler and <see cref="ExpressionTraps"/> both read.
     /// </summary>
-    internal static DivisionCheck DecideDivision(IOperation dividend, IOperation divisor, SpecialType operatorType)
+    internal static DivisionCheck DecideDivision(IntegerRange? dividend, IntegerRange? divisor,
+        SpecialType operatorType)
     {
         if (IntegerRange.OfType(operatorType) is not { } operatorRange)
         {
@@ -425,23 +496,26 @@ internal static class IntegerSemantics
 
         return DivisionCheckRule.Decide(
             operatorType,
-            OperationRanges.Of(dividend) ?? operatorRange,
-            OperationRanges.Of(divisor) ?? operatorRange
+            dividend ?? operatorRange,
+            divisor ?? operatorRange
         );
     }
 
+    internal static DivisionCheck DecideDivision(IOperation dividend, IOperation divisor, SpecialType operatorType) =>
+        DecideDivision(OperationRanges.Of(dividend), OperationRanges.Of(divisor), operatorType);
+
     // Whether the operand ranges bound the exact result inside the type of the operation, so that it cannot wrap
-    private static bool FitsWithoutWrap(IBinaryOperation operation)
+    private static bool FitsWithoutWrap(in IntegerBinaryFacts facts)
     {
-        if (GetWidth(operation.Type) is not (var width and not 0) ||
-            OperationRanges.Of(operation.LeftOperand) is not { Min: var leftMin, Max: var leftMax } ||
-            OperationRanges.Of(operation.RightOperand) is not { Min: var rightMin, Max: var rightMax })
+        if (GetWidth(facts.Type) is not (var width and not 0) ||
+            facts.Left is not { Min: var leftMin, Max: var leftMax } ||
+            facts.Right is not { Min: var rightMin, Max: var rightMax })
         {
             return false;
         }
 
         BigInteger min, max;
-        switch (operation.OperatorKind)
+        switch (facts.Kind)
         {
             case BinaryOperatorKind.Add:
                 (min, max) = (leftMin + rightMin, leftMax + rightMax);

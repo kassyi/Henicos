@@ -4,7 +4,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class SharedMemoryTests : TranspilerTestBase
+public partial class SharedMemoryTests : TranspilerTestBase
 {
     [SkippableTheory]
     [InlineData(1)]
@@ -47,31 +47,4 @@ public class SharedMemoryTests : TranspilerTestBase
 
         Assert.Equal(32, output[0]);
     }
-
-#if GSHARP_CPU
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void MBarrier_CpuDialectLaunch_ThrowsNotSupportedException()
-    {
-        var output = new int[32];
-
-        Assert.Throws<NotSupportedException>(() =>
-            SharedMemoryRefIndexerKernels.LaunchMBarrierSharedMemoryKernel(output, blockDimX: 32));
-    }
-#else
-    [SkippableFact]
-    [Scenario(TestScenario.HappyPath)]
-    public void MBarrier_SharedMemoryWrites_SynchronizesSharedMemoryWrites()
-    {
-        EnsureCapability(DialectCapabilities.SharedMemory);
-        var output = new int[32];
-
-        SharedMemoryRefIndexerKernels.LaunchMBarrierSharedMemoryKernel(output, blockDimX: 32);
-
-        for (int tid = 0; tid < 32; tid++)
-        {
-            Assert.Equal(3 * ((tid + 1) % 32), output[tid]);
-        }
-    }
-#endif
 }

@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 using static Kassyi.GSharp.Compiler.Analysis.MemoryOperations;
 
@@ -28,7 +29,8 @@ internal static class MemoryRecording
     }
 
     // <local> = <value> for a local of array, span or SharedMemory<T> type: a copy of a reference to memory is the same
-    // memory; a SharedMemory<T> made here is a memory of its own; any other array (a stack array) belongs to the thread
+    // memory, also through a flow capture (c ? a : b); a SharedMemory<T> made here is a memory of its own; any other
+    // array (a stack array) belongs to the thread
     public static void Hold(MemoryValues values, MemoryReferences references, ILocalSymbol local, IOperation value)
     {
         if (GetName(value) is { } name)
@@ -36,10 +38,37 @@ internal static class MemoryRecording
             AllocateName(values, name);
             references.AddSource(local, value);
         }
+        else if (Unwrap(value) is IFlowCaptureReferenceOperation)
+        {
+            references.AddSource(local, value);
+        }
         else if (local.Type.IsSharedMemoryType())
         {
             values.MemoryOf(local);
         }
+    }
+
+    // <capture> = <value>: a flow capture refers to what it holds as a local would: a reference to memory (the array
+    // of alias = c ? a : b), a location (the element a[i] of a[i] = c ? x : y, captured before the value branches and
+    // then assigned through the capture), or another capture. The receiver of a with expression is captured as the
+    // copy the expression changes, so its location is not one the capture writes
+    public static void Capture(MemoryValues values, MemoryReferences references, IFlowCaptureOperation capture)
+    {
+        var value = capture.Value;
+        if (GetName(value) is { } name)
+        {
+            AllocateName(values, name);
+        }
+        else if (IsLocation(ContainingFieldLocation(value)) && capture.Syntax.Parent is not WithExpressionSyntax)
+        {
+            AllocateLocation(values, ContainingFieldLocation(value));
+        }
+        else if (Unwrap(value) is not IFlowCaptureReferenceOperation)
+        {
+            return;
+        }
+
+        references.AddCaptureSource(capture.Id, value);
     }
 
     // What a call may write: its by-reference locations, the element a struct member is called on, the memory of its

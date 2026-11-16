@@ -84,6 +84,12 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandC
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext;
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift);
 
+__forceinline__ __device__ bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(GSharpArray<const unsigned int> __gsharp_id_0_a, GSharpArray<const unsigned int> __gsharp_id_1_b);
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsLeft(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<const unsigned int> __gsharp_id_1_left, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsRight(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<const unsigned int> __gsharp_id_1_left, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
+
 __forceinline__ __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
 
 __forceinline__ __device__ unsigned int __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(GSharpArray<const unsigned int> __gsharp_id_0_dA, int __gsharp_id_1_i, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords);
@@ -132,7 +138,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(404,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(404,48)"")[__gsharp_id_2_i]&__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(405,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(474,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(474,48)"")[__gsharp_id_2_i]&__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(475,48)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -146,7 +152,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(434,13)"")=~__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(434,49)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(504,13)"")=~__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(504,49)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -160,7 +166,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(414,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(414,48)"")[__gsharp_id_2_i]|__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(415,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(484,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(484,48)"")[__gsharp_id_2_i]|__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(485,48)"")[__gsharp_id_2_i];
 }
 }
 }
@@ -174,39 +180,79 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_i = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(424,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(424,48)"")[__gsharp_id_2_i]^__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(425,48)"")[__gsharp_id_2_i];
+__gsharp_array_at((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_ResultBuffer, __gsharp_id_2_i, ""G#: a null array is read at GpuBigIntKernels.cu.cs(494,13)"")=__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(494,48)"")[__gsharp_id_2_i]^__gsharp_array_not_null((*__gsharp_id_0_ctx).__gsharp_mb_Operands.__gsharp_mb_RightOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(495,48)"")[__gsharp_id_2_i];
 }
 }
 }
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftLeft_o0(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift){
-auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(382,20)"");
+auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(391,20)"");
+auto __gsharp_id_4_result = __gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer;
+if(__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(__gsharp_id_3_left,__gsharp_id_4_result))
+{
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+{
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsLeft(__gsharp_id_4_result,__gsharp_id_3_left,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
+}
+return;
+}
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
 unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
 for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
-int __gsharp_id_4_i = (int)__gsharp_gsl_0;
+int __gsharp_id_5_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_4_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(__gsharp_id_3_left,__gsharp_id_4_i,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
+__gsharp_id_4_result[__gsharp_id_5_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(__gsharp_id_3_left,__gsharp_id_5_i,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
 }
 }
 }
 }
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ExecuteShiftRight_o0(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_0_ctx, int __gsharp_id_1_wordShift, int __gsharp_id_2_bitShift){
-auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(392,20)"");
+auto __gsharp_id_3_left = __gsharp_array_not_null(__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_LeftOperand, ""G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(419,20)"");
+auto __gsharp_id_4_result = __gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer;
+if(__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(__gsharp_id_3_left,__gsharp_id_4_result))
+{
+if((threadIdx.x|threadIdx.y|threadIdx.z|blockIdx.x|blockIdx.y|blockIdx.z)==0)
+{
+__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsRight(__gsharp_id_4_result,__gsharp_id_3_left,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
+}
+return;
+}
 {
 unsigned int __gsharp_gsl_n_0 = __gsharp_grid_stride_count(__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
 unsigned int __gsharp_gsl_s_0 = __gsharp_grid_stride_step();
 for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 < __gsharp_gsl_n_0; __gsharp_gsl_0 += __gsharp_gsl_s_0)
 {
-int __gsharp_id_4_i = (int)__gsharp_gsl_0;
+int __gsharp_id_5_i = (int)__gsharp_gsl_0;
 {
-__gsharp_id_0_ctx.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_4_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(__gsharp_id_3_left,__gsharp_id_4_i,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
+__gsharp_id_4_result[__gsharp_id_5_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(__gsharp_id_3_left,__gsharp_id_5_i,__gsharp_id_1_wordShift,__gsharp_id_2_bitShift,__gsharp_id_0_ctx.__gsharp_mb_NumberOfWords);
 }
 }
+}
+}
+
+__forceinline__ __device__ bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__IsSameArray(GSharpArray<const unsigned int> __gsharp_id_0_a, GSharpArray<const unsigned int> __gsharp_id_1_b){
+const unsigned int* __gsharp_id_2_pa = __gsharp_id_0_a;
+const unsigned int* __gsharp_id_3_pb = __gsharp_id_1_b;
+{
+return __gsharp_id_2_pa==__gsharp_id_3_pb;
+}
+}
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsLeft(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<const unsigned int> __gsharp_id_1_left, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords){
+for(int __gsharp_id_5_i = __gsharp_sub_i32(__gsharp_id_4_numWords,1);__gsharp_id_5_i>=0;__gsharp_id_5_i--)
+{
+__gsharp_id_0_result[__gsharp_id_5_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedLeftWord(__gsharp_id_1_left,__gsharp_id_5_i,__gsharp_id_2_wordShift,__gsharp_id_3_bitShift,__gsharp_id_4_numWords);
+}
+}
+
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftWordsRight(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<const unsigned int> __gsharp_id_1_left, int __gsharp_id_2_wordShift, int __gsharp_id_3_bitShift, int __gsharp_id_4_numWords){
+for(int __gsharp_id_5_i = 0;__gsharp_id_5_i<__gsharp_id_4_numWords;__gsharp_id_5_i++)
+{
+__gsharp_id_0_result[__gsharp_id_5_i]=__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntKernels__ShiftedRightWord(__gsharp_id_1_left,__gsharp_id_5_i,__gsharp_id_2_wordShift,__gsharp_id_3_bitShift,__gsharp_id_4_numWords);
 }
 }
 
@@ -535,7 +581,11 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
-if (host.LeftOperand != null && native.LeftOperand.Data != global::System.IntPtr.Zero)
+if (native.LeftOperand.Data == global::System.IntPtr.Zero)
+{
+host.LeftOperand = default;
+}
+else if (host.LeftOperand != null)
 {
 int size = checked(host.LeftOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -551,7 +601,11 @@ handle.Free();
 }
 }
 }
-if (host.RightOperand != null && native.RightOperand.Data != global::System.IntPtr.Zero)
+if (native.RightOperand.Data == global::System.IntPtr.Zero)
+{
+host.RightOperand = default;
+}
+else if (host.RightOperand != null)
 {
 int size = checked(host.RightOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -567,7 +621,11 @@ handle.Free();
 }
 }
 }
-if (host.TargetOperand != null && native.TargetOperand.Data != global::System.IntPtr.Zero)
+if (native.TargetOperand.Data == global::System.IntPtr.Zero)
+{
+host.TargetOperand = default;
+}
+else if (host.TargetOperand != null)
 {
 int size = checked(host.TargetOperand.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -583,7 +641,11 @@ handle.Free();
 }
 }
 }
-if (host.ResultBuffer != null && native.ResultBuffer.Data != global::System.IntPtr.Zero)
+if (native.ResultBuffer.Data == global::System.IntPtr.Zero)
+{
+host.ResultBuffer = default;
+}
+else if (host.ResultBuffer != null)
 {
 int size = checked(host.ResultBuffer.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -599,7 +661,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant != null && native.Constant.Data != global::System.IntPtr.Zero)
+if (native.Constant.Data == global::System.IntPtr.Zero)
+{
+host.Constant = default;
+}
+else if (host.Constant != null)
 {
 int size = checked(host.Constant.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -615,7 +681,11 @@ handle.Free();
 }
 }
 }
-if (host.Constant3 != null && native.Constant3.Data != global::System.IntPtr.Zero)
+if (native.Constant3.Data == global::System.IntPtr.Zero)
+{
+host.Constant3 = default;
+}
+else if (host.Constant3 != null)
 {
 int size = checked(host.Constant3.Length * sizeof(global::System.UInt32));
 if (size > 0)
@@ -631,7 +701,11 @@ handle.Free();
 }
 }
 }
-if (host.CarryBuffer != null && native.CarryBuffer.Data != global::System.IntPtr.Zero)
+if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
+{
+host.CarryBuffer = default;
+}
+else if (host.CarryBuffer != null)
 {
 int size = checked(host.CarryBuffer.Length * sizeof(global::System.Int64));
 if (size > 0)
@@ -702,6 +776,7 @@ public static unsafe void LaunchShiftLeftKernel(global::Kassyi.GSharp.Stdlib.Gpu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftLeftKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.ShiftLeftKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::System.Int32 __gsharp_csharp_arg_1 = wordShift;
 global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
@@ -840,6 +915,7 @@ public static unsafe void LaunchShiftRightKernel(global::Kassyi.GSharp.Stdlib.Gp
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.ShiftRightKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.ShiftRightKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::System.Int32 __gsharp_csharp_arg_1 = wordShift;
 global::System.Int32 __gsharp_csharp_arg_2 = bitShift;
@@ -978,6 +1054,7 @@ public static unsafe void LaunchAndKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.AndKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.AndKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.AndKernel(__gsharp_csharp_arg_0));
 return;
@@ -1106,6 +1183,7 @@ public static unsafe void LaunchOrKernel(global::Kassyi.GSharp.Stdlib.GpuMath.Bi
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.OrKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.OrKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.OrKernel(__gsharp_csharp_arg_0));
 return;
@@ -1234,6 +1312,7 @@ public static unsafe void LaunchXorKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.XorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.XorKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.XorKernel(__gsharp_csharp_arg_0));
 return;
@@ -1362,6 +1441,7 @@ public static unsafe void LaunchNotKernel(global::Kassyi.GSharp.Stdlib.GpuMath.B
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BigIntContextOperationKernels.NotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BigIntContextOperationKernels.NotKernel");
 global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext __gsharp_csharp_arg_0 = ctx;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Stdlib.BigIntContextOperationKernels.NotKernel(__gsharp_csharp_arg_0));
 return;

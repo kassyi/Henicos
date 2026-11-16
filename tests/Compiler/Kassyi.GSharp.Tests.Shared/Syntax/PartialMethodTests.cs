@@ -1,14 +1,10 @@
-#if GSHARP_CPU
-using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Runtime;
-#endif
-
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [Category(TestCategory.Syntax)]
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class PartialMethodTests : TranspilerTestBase
+public partial class PartialMethodTests : TranspilerTestBase
 {
+    static partial void RunManagedPathIfSupported(Action check);
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void PartialMethod_KernelAndDeviceFunctionWithImplementation_RunsImplementingBodies() =>
@@ -65,11 +61,6 @@ public class PartialMethodTests : TranspilerTestBase
     private static void OnEveryPath(Action check)
     {
         check();
-#if GSHARP_CPU
-        using (GpuExecution.Use(KernelExecution.Managed))
-        {
-            check();
-        }
-#endif
+        RunManagedPathIfSupported(check);
     }
 }

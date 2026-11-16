@@ -161,6 +161,7 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 
 1. **Partial Class Injection**: The Source Generator enhances the user's kernel class (which must be declared with the `partial` modifier, enforced by `GSH0036`) by emitting additional launcher methods and nested interop contexts directly into `[ContainingType]` (e.g., `MyKernels`).
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]Ptr` is generated.
+    - **Both dialects**: the CUDA and the CPU dialect emit the same launchers with the same signatures and accessibility (`Launch[KernelName]`, `Launch[KernelName]Ptr`, and the typed `Launch[KernelName]Ptr` of an overloaded kernel), so code that calls them builds with either dialect. On the CPU dialect, `Launch[KernelName]Ptr` takes host addresses and calls the native CPU launcher through an unmanaged function pointer (`delegate* unmanaged[Cdecl]`, from `CpuKernelLoader.LoadAotKernelPtr`). It runs only on the native CPU path for now: on the managed path (`KernelExecution.Managed`, or no native library) it throws `NotSupportedException`, and under `KernelExecution.CSharp` it throws as the CUDA one does.
     - **Overloaded kernels**: `Launch[KernelName]` stays a C# overload with the kernel's own parameter types. Because the `IntPtr` form of `Launch[KernelName]Ptr` would erase the element types, an overloaded kernel's public `Launch[KernelName]Ptr` takes each array-like and `ref` / `out` parameter as a typed `GpuBuffer<T>` and forwards to a private `IntPtr` implementation. The other per-kernel host members are keyed `[KernelName]__o{n}`. Kernels whose launch wrappers or warmup methods still get the same name and parameter types (overloads such as `int[]` and `ref int`, or `Scale(ref S)` and `ScalePtr(nint)`, whose `LaunchScalePtr` both take an `IntPtr`) are reported as [GSH0059](../03_bcl_api/diagnostics/GSH0059.md).
 3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, `hStream` defaulting to `default`, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
@@ -186,7 +187,7 @@ public partial class MyKernels
 }
 ```
 
-6. **Launch Limits**: Before any work, every launcher (CUDA, native CPU and managed, and the `[CudaImport]` / YAML `moduleName` launchers of external modules) checks the launch dimensions against the limits that every GPU enforces, through `LaunchLimits.CheckLaunch`: each dimension at least 1, `gridDimX` at most 2^31 - 1, `gridDimY` and `gridDimZ` at most 65535, `blockDimX` and `blockDimY` at most 1024, `blockDimZ` at most 64, and at most 1024 threads per block. A launch beyond them throws `ArgumentOutOfRangeException` whose `ParamName` is the dimension, on every path; the CUDA path no longer leaves it to the driver's `CUDA_ERROR_INVALID_VALUE`. These are the only launch limits of the CPU paths: they accept every launch that the GPU accepts, and the run time or the memory of the machine never adds a limit. The launcher counts the blocks of the grid in 64 bits and the native CPU launcher runs them with a 64-bit loop. The managed path still keeps a context for every thread of the grid in one array, so a launch with more threads than `Array.MaxLength` throws `NotSupportedException` there (an implementation limit of that path, tracked in #1443).
+6. **Launch Limits**: Before any work, every launcher (CUDA, native CPU and managed, and the `[CudaImport]` / YAML `moduleName` launchers of external modules) checks the launch dimensions against the limits that every GPU enforces, through `LaunchLimits.CheckLaunch`: each dimension at least 1, `gridDimX` at most 2^31 - 1, `gridDimY` and `gridDimZ` at most 65535, `blockDimX` and `blockDimY` at most 1024, `blockDimZ` at most 64, and at most 1024 threads per block. A launch beyond them throws `ArgumentOutOfRangeException` whose `ParamName` is the dimension, on every path; the CUDA path no longer leaves it to the driver's `CUDA_ERROR_INVALID_VALUE`. In addition, the CPU launchers (native, managed and the C# execution, and the C# execution of a CUDA build) check `sharedMemBytes` plus the static shared memory of the kernel (taken as 0 for now) against the smallest shared memory per block with opt-in over the GPUs the fatbin may run on (§1.5.1), through `LaunchLimits.CheckTargetSharedMemory`, and throw `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before any thread runs (for example, `G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of the target GPU sm_86 (GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.ReduceKernel).`); the CUDA path checks the real device instead (`DynamicSharedMemoryOptIn`). The CPU paths accept every launch that the GPU accepts and reject what any of the declared target GPUs rejects, and the run time or the memory of the machine never adds a limit. The launcher counts the blocks of the grid in 64 bits and the native CPU launcher runs them with a 64-bit loop. The managed path still keeps a context for every thread of the grid in one array, so a launch with more threads than `Array.MaxLength` throws `NotSupportedException` there (an implementation limit of that path, tracked in #1443).
 
 ### 1.4.2 Ahead-Of-Time (AOT) Fatbin Loading
 
@@ -275,10 +276,10 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 
 ### 1.5.1 Target GPU Architectures (`GSharpTargetArchitectures`)
 
-`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin. It is read by the `GSharpCompileCuda` target (not by the generator) and is a list of entries separated by `;`. Each entry takes one of the forms below; `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time. `XY` is the compute capability without the dot (`89`, `100`), optionally followed by `a` or `f` (`sm_90a`, which keeps the suffix on the PTX as well).
+`GSharpTargetArchitectures` selects the GPU code that nvcc puts into the fatbin, and sets the per-block shared memory limit that the generator writes into the CPU launchers (`LaunchLimits.CheckTargetSharedMemory`). It is read by both the `GSharpCompileCuda` target and the source generator (`build_property.GSharpTargetArchitectures`) and is a list of entries separated by `;`. Each entry takes one of the forms below; `code=sm_XY` adds native code (SASS) for compute capability X.Y, and `code=compute_XY` adds PTX that the driver compiles (JIT) for the GPU at load time. `XY` is the compute capability without the dot (`89`, `100`), optionally followed by `a` or `f` (`sm_90a`, which keeps the suffix on the PTX as well).
 
 | Entry | nvcc options |
-| :- | :- |
+| :--- | :--- |
 | `compute_XY,sm_XY` / `compute_XY,compute_XY` | `-gencode arch=compute_XY,code=sm_XY` / `code=compute_XY` |
 | `sm_XY` | `-gencode arch=compute_XY,code=sm_XY -gencode arch=compute_XY,code=compute_XY` (what `nvcc -arch=sm_XY` means) |
 | `compute_XY` | `-gencode arch=compute_XY,code=compute_XY` |
@@ -288,7 +289,7 @@ Any other entry (a typo, an `arch,code` pair whose `arch` is an `sm_` architectu
 When the property is empty, the default is `compute_86,sm_86;compute_86,compute_86` (`CompileCudaToFatbinTask.DefaultTargetArchitectures`):
 
 | GPU compute capability | What runs |
-| :- | :- |
+| :--- | :--- |
 | 8.6, 8.9 (for example RTX 30xx, RTX 40xx) | The sm_86 SASS. A cubin runs on its own major version from its minor version up |
 | 8.7 (Jetson Orin, Tegra), 9.0 and newer (Hopper, Blackwell) | The compute_86 PTX, JIT-compiled by the driver on the first load and then kept in the driver's JIT cache (`CUDA_CACHE_PATH`). Tegra GPUs are not binary compatible with the desktop sm_86 SASS |
 | 7.5 (Turing, T4), 8.0 (A100) | Nothing: loading the module throws `InvalidOperationException`, which names the GPU and lists the images in the fatbin |
@@ -307,11 +308,35 @@ Next to each fatbin, the build writes `<fatbin>.nvcc`, a record of the nvcc opti
 
 The record does not cover the `NVCC_PREPEND_FLAGS` / `NVCC_APPEND_FLAGS` environment variables, the version of the host C++ compiler, or the headers that the generated source includes. After changing one of them, rebuild (`dotnet build --no-incremental`) or delete the fatbins under `obj/`.
 
+#### Shared Memory Limit of the Target GPUs
+
+From `GSharpTargetArchitectures`, the generator finds every compute capability in its table (`GpuArchitectureLimits.Table`) that the fatbin may run on (SASS runs on its own major version from its minor version up, except Tegra `8.7`; an `a` suffix (`sm_90a`) runs on that compute capability only; an `f` suffix (`sm_100f`) runs on its family; PTX `compute_XY` runs on `X.Y` and every newer GPU) and takes the smallest per-block shared memory limit with opt-in over them (with the default setting, `sm_86`'s 99 KB = 101376 bytes):
+
+| Compute capability | Shared memory per block (with opt-in) |
+| :--- | :--- |
+| 7.5 | 64 KB (65536 bytes) |
+| 8.0, 8.7 (Tegra) | 163 KB (166912 bytes) |
+| 8.6, 8.9 | 99 KB (101376 bytes) |
+| 9.0, 10.0, 10.3, 10.7, 11.0 | 227 KB (232448 bytes; on 10.7, the 327 KB oversized mode requires a kernel marker) |
+| 12.0, 12.1 | 99 KB (101376 bytes) |
+
+When `GSharpTargetArchitectures` names a compute capability that is not in the table, the generator reports warning [GSH0114](../03_bcl_api/diagnostics/GSH0114.md) once per project with kernels. If no known compute capability is reached, only the fixed dimension limits (`LaunchLimits.CheckLaunch`) are emitted.
+
 ### 1.5.2 Native Sources and the Artifact Manifest
 
 Each time the generator writes the native module (`Kassyi.GSharp.Kernels_{assembly}.g.cu` or `.g.cpp`, with the assembly name escaped as the generated names are (`Henicos.Benchmarks` gives `Kassyi.GSharp.Kernels_Henicos_x00002eBenchmarks`), with its `.gsym.json`), it also writes `$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts`, which lists the file name of that module. An assembly without kernels gets an empty list. The `GSharpCompileCuda` and `GSharpCompileCpu` targets compile only the listed `.cu` and `.cpp` files, not every such file under `obj/`, and add them, the manifest and the symbol files to `FileWrites`.
 
 A source that an earlier build wrote and the current one did not (the other dialect after `GSharpTargetDialect` changed, an old assembly name, kernels that were all removed) is therefore not compiled again, and MSBuild's `IncrementalClean` deletes it together with its fatbin or native library at the end of the build. The generator writes nothing in an IDE design-time build, so the manifest of the last real build stays in place.
+
+### 1.5.3 Minimum .NET SDK Version Check (GS0005)
+
+G# builds its Roslyn source generator against Roslyn 5.9, which is bundled in .NET SDK 10.0.400 and later. Building a project that references G# with an older .NET SDK (such as SDK 10.0.303 / Roslyn 5.6) stops the build before C# compilation begins with error `GS0005`:
+
+```
+error GS0005: G# needs the .NET SDK 10.0.400 or later (Roslyn 5.9) because its source generator is built against Roslyn 5.9; this build uses <version>.
+```
+
+The `GSharpCheckMinimumSdkVersion` target in `Kassyi.GSharp.Compiler.targets` checks `$(NETCoreSdkVersion)` before `CoreCompile` using `[MSBuild]::VersionLessThan`.
 
 ## 1.6 Expression Lowering (IIFE)
 
@@ -413,7 +438,7 @@ A kernel can call a `[GpuDeviceFunction]` of a referenced assembly, use its stru
 
 - **Library side**: the generator of the declaring assembly writes one `[assembly: GpuDeviceExport(...)]` per device function and per struct (`GSharpSharedDeviceExports.g.cs`). A record holds the transpiled text for CUDA and for C++, the global C++ names the text refers to (per dialect), the defined names (the constructors of a struct), and what the analyses of a consumer need: whether the function suspends at a barrier, reaches a block barrier, depends on parallel execution (GSH0035), reaches dynamic shared memory, and what a call writes (the effect for the C# order of evaluation). A struct is recorded by the assembly that declares it; the definition of a struct that no G# assembly records (a `Kassyi.GSharp.Core` vector type) stays in the text of the records that name it, under its include guard.
 - **Consumer side**: the generator reads the records of its references from metadata (no file I/O), finds the records that its own text names (`__gsharp_fn_` / `__gsharp_ty_` / `__gsharp_ctor_`), follows their references, and places the imported text before its own device code: the declarations of the functions, the structs, the `Dispose` definitions, then the bodies (on the CPU dialects, the body of a suspending callee before its caller's, whose frame embeds the callee's). Only what is reached is copied.
-- **Managed fallback**: the CPU wrapper calls the C# method of a library function; for a function that suspends, it calls the managed state machine that the library emits with its records (in the partial class that declares the function, as visible as the function: `public` when the function and its containing types are, otherwise `internal`). The library leaves the state machine out, and records so, when it could not compile: a containing type that is not `partial`, a type the function names that is less visible than `internal`, or a suspending callee without one. A consumer whose managed form needs it gets GSH0089. For a function that does not suspend and expands an operator macro (directly or through a call), the library emits its managed version (`__gsharp_managed_{path}`, with the function's own accessibility) and records so (`ManagedVersion`); a consumer's managed code calls that version.
+- **Managed fallback**: the CPU wrapper calls the C# method of a library function; for a function that suspends, it calls the managed state machine that the library emits with its records (in the partial class that declares the function, as visible as the function: `public` when the function and its containing types are, otherwise `internal`; when the frame holds a private nested type of the class, the frame is `private`, the library emits `__gsharp_number_frame_` and `__gsharp_enter_` entries with the function's accessibility and records `PrivateManagedFrame`, and a consumer holds the frame as `object?` and runs the function through those entries). The library leaves the state machine out, and records so, when it could not compile: a containing type that is not `partial`, a file-local type that its body names, that its frame would hold or that contains it, or a suspending callee without one. A consumer whose managed form needs it gets GSH0089. For a function that does not suspend and expands an operator macro (directly or through a call), the library emits its managed version (`__gsharp_managed_{path}`, with the function's own accessibility) and records so (`ManagedVersion`); a consumer's managed code calls that version.
 - **Versions**: each record carries a hash of the preludes, `InternalNames.yml` and the record format. A record written by another G# version, or one that the library's build could not transpile for the consumer's dialect, is not imported.
 - **Diagnostics**: a use that the native module cannot import is reported at the use, also when the problem is in a record that the used one reaches: no record ([GSH0088](../03_bcl_api/diagnostics/GSH0088.md)), a record of another G# version or one that failed in the dialect ([GSH0089](../03_bcl_api/diagnostics/GSH0089.md)), or a C++ name that two assemblies give to the same C# path ([GSH0090](../03_bcl_api/diagnostics/GSH0090.md)). An iterator of another assembly is GSH0003.
 

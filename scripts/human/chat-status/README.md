@@ -19,7 +19,7 @@ chat that only reported is idle, not waiting for an answer.
 | `chat-status/summary.js` | Finding the Claude Code CLI, the prompt, the answer, starting the summarizer, `runSummarizer` |
 | `chat-status/summarizer.js` | The summarizer process the hook starts detached |
 | `chat-status/antigravity.js` | Antigravity's own files: subagent conversations, the title of a conversation |
-| `chat-status/self-test.js`, `self-test-summary.js`, `self-test-antigravity.js` | `--self-test` (a fake CLI, fake Antigravity folders; never the real CLI) |
+| `chat-status/self-test.js`, `self-test-summary.js`, `self-test-open-questions.js`, `self-test-antigravity.js` | `--self-test` (a fake CLI, fake Antigravity folders; never the real CLI) |
 
 ## Where
 
@@ -76,7 +76,8 @@ Claude Code removes its file at `SessionEnd`; Antigravity has no event for the e
 | `askVerdict` | For `reply`: `heuristic` when the hook wrote `openQuestions`, `haiku` once Claude Haiku replaced them |
 | `openBefore`, `turnPrompt` | For `reply`: the open questions before the turn and the prompt the person sent in it (null when none), the input of Haiku |
 | `summaryOf` | The `since` of the wait Haiku last judged |
-| `firstPrompt` | The first prompt of the chat, at most 500 characters (`UserPromptSubmit`, else the start of the transcript) |
+| `firstPrompt` | The first prompt of the chat, at most 500 characters (`UserPromptSubmit`, else the start of the transcript), without the IDE and system tags (`<ide_opened_file>`, `<ide_selection>`, `<system-reminder>`, ...) that every stored prompt loses |
+| `recentPrompts` | The latest prompts, newest first, at most 3 of 300 characters (a prompt in front stays once): Haiku names the chat from them, so that a long or compacted chat is titled by its current work |
 | `lastPrompt`, `promptedAt` | The end of the latest prompt (2000 characters) and when it was sent (Antigravity: the first `PreInvocation` after a wait; its text from the transcript or `lastUserInput`) |
 | `stoppedAt` | When the last turn ended |
 | `title` | A title by Claude Haiku (kept when a later answer has none) |
@@ -125,6 +126,16 @@ without one; a rhetorical question, one in code or a quoted item does not; a rep
 question only). The summarizer writes the list (`askVerdict: haiku`) and the title only while the chat still waits in
 the state it judged, so a newer state is never overwritten. A failed, late or unreadable answer (prose around the
 JSON) leaves the heuristic's list, so no question is dropped because Haiku failed.
+
+Only questions the agent asks are open. The prompt tells Haiku which blocks the person wrote (`first_prompt`,
+`recent_prompts`, `turn_prompt`) and which the agent wrote (`open_before`, `latest`), and that a sentence of the person
+is never an open question. Wording alone is not trusted: `groundedOpen` (`open-questions.js`) drops an answered
+question that is not one open before (about the same text) and that the prompt of the turn or a recent prompt shares
+more character pairs with than the latest text does (a question the latest text supports, half of its pairs, stays; so
+does one that no text explains, since a paraphrase cannot be told from a mistake then). The drop is noted in
+`errors.log`. The title is asked for from the current work (recent prompts, the turn prompt, the latest text); the
+first prompt only tells how the chat began. `SessionStart` with `compact` is not used: the recent prompts make a
+compaction irrelevant.
 
 The CLI: `GSHARP_CHAT_STATUS_CLAUDE` names it (a `.js` file runs with node; a missing file means none), else the
 `CLAUDE_CODE_EXECPATH` of the Claude Code that runs the hook (kept in `claude-executable.txt`), else that file, else

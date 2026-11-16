@@ -1,0 +1,859 @@
+# The G# diagnostics, one entry per ID. The build turns this file into GSharpDiagnostics (the diagnostics mode of
+# Kassyi.GSharp.Compiler.Generators); edit it here, never in the generated code. Keep the entries in ascending ID order
+# per prefix (gaps are allowed: an ID may be reserved for a planned issue), and give every entry not marked obsolete a
+# page under docs/spec/en/03_bcl_api/diagnostics/ (node scripts/agent/manage-diagnostics.js --check-docs).
+#
+#   name:               the GSharpDiagnostics member; a C# identifier, unique
+#   id:                 GSH followed by four digits, unique
+#   title:              the short title of the descriptor
+#   messageFormat:      the message, with {0}, {1}, ... for its arguments
+#   category:           the category of the descriptor
+#   defaultSeverity:    Error, Warning, Info or Hidden
+#   isEnabledByDefault: true or false
+#   isObsolete:         true for a diagnostic that is kept but no longer reported (optional, default false)
+#   description:        the long description of the descriptor (optional)
+
+- name: AotArtifactWriteFailed
+  id: GSH0000
+  title: "AOT Artifact Error"
+  messageFormat: "Failed to write AOT artifact to '{0}': {1}"
+  category: Build
+  defaultSeverity: Info
+  isEnabledByDefault: true
+
+- name: ObjectCreationNotSupported
+  id: GSH0001
+  title: "Object creation not supported in GPU kernels"
+  messageFormat: "Object creation ('new') is not supported in GPU kernels. Only struct instantiation, SharedMemory<T> and an array of a constant size that initializes a local variable are allowed; use stackalloc for a temporary array."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StringNotSupported
+  id: GSH0002
+  title: "String usage not supported in GPU kernels"
+  messageFormat: "The string type is not supported in GPU kernels"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnsupportedSyntax
+  id: GSH0003
+  title: "Unsupported syntax in GPU kernel"
+  messageFormat: "The syntax '{0}' is not supported in GSharp GPU kernels"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: KernelReturnMustBeVoidOrBlittable
+  id: GSH0004
+  title: "GPU method return type must be void or blittable"
+  messageFormat: "Method '{0}' returns unsupported type '{1}'. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: GpuBigIntExprDirectAssignment
+  id: GSH0005
+  title: "GpuBigIntExpr must be assigned via .Value"
+  messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: InlinePtxArgumentMustBeStringLiteral
+  id: GSH0006
+  title: "InlinePtx argument must be a string literal"
+  messageFormat: "The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ForeachNotSupported
+  id: GSH0007
+  title: "Foreach is not allowed in GPU kernels"
+  messageFormat: "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: LinqNotSupported
+  id: GSH0008
+  title: "LINQ is not allowed in GPU kernels"
+  messageFormat: "The GPU method '{0}' uses LINQ query expressions, which are not supported on the GPU"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ImplicitVarNeedsSuffix
+  id: GSH0009
+  title: "Implicit var with literal needs suffix"
+  messageFormat: "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: PreludeMissing
+  id: GSH0010
+  title: "GSharp Prelude missing"
+  messageFormat: "Could not find exactly one embedded resource ending with 'Prelude.cu' in {0}. Found {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: MacroLambdaRequiresParameter
+  id: GSH0011
+  title: "Macro lambda requires a parameter"
+  messageFormat: "{0} lambda must declare a parameter for the loop variable"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: MacroArgumentMustBeConstant
+  id: GSH0012
+  title: "Macro arguments must be compile-time constants"
+  messageFormat: "The argument '{0}' of macro '{1}' must be a compile-time constant"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ExcessiveSharedMemoryWarning
+  id: GSH0013
+  title: "Excessive static shared memory usage"
+  messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: LargeStructByValueWarning
+  id: GSH0014
+  title: "Large struct passed by value (Deprecated)"
+  messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer. (Deprecated, replaced by GSH0064)"
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: false
+  isObsolete: true
+
+- name: AutoAllocateReturnInLoopWarning
+  id: GSH0015
+  title: "Auto-allocated array in loop"
+  messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: UnrollFactorMustBeNonNegativeConstant
+  id: GSH0016
+  title: "Unroll factor must be a non-negative compile-time constant"
+  messageFormat: "The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnrollHintMustPrecedeLoop
+  id: GSH0017
+  title: "Unroll hint must precede a loop"
+  messageFormat: "Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: HostIntrinsicCallError
+  id: GSH0018
+  title: "GPU intrinsic called from host"
+  messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ManualEnumeratorNotSupported
+  id: GSH0019
+  title: "Manual GetEnumerator calls are not supported"
+  messageFormat: "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead so that the transpiler emits the enumerator loop for foreach itself."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: MissingIDisposable
+  id: GSH0020
+  title: "Missing IDisposable implementation"
+  messageFormat: "A class holds a disposable GPU resource (e.g., GpuWorkspace) but does not implement IDisposable"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UndisposedField
+  id: GSH0021
+  title: "Undisposed GPU resource (Deprecated)"
+  messageFormat: "The Dispose() method does not explicitly invoke .Dispose() on all owned GPU resources (Deprecated, replaced by composite scopes)"
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: false
+  isObsolete: true
+
+- name: UndisposedGpuScope
+  id: GSH0022
+  title: "Undisposed GPU scope"
+  messageFormat: "The Dispose() method must explicitly invoke .Dispose() on the owned IGpuResourceScope '{0}'"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: PropertyGetterSideEffect
+  id: GSH0023
+  title: "Property getter side-effect"
+  messageFormat: "Property getters must not allocate disposable resources"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CastOperatorSideEffect
+  id: GSH0024
+  title: "Cast operator side-effect"
+  messageFormat: "Implicit or explicit cast operators must not allocate disposable resources"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnguardedMultiAllocation
+  id: GSH0025
+  title: "Unguarded multi-allocation"
+  messageFormat: "Multiple allocations in a constructor must be guarded with try-catch to avoid partial leaks"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StaticDisposableAllocation
+  id: GSH0026
+  title: "Static disposable allocation"
+  messageFormat: "Static fields must not allocate disposable resources"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DisposingBorrowedResource
+  id: GSH0027
+  title: "Disposing borrowed resource"
+  messageFormat: "Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use [TakesOwnership]."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DisposableInDim
+  id: GSH0028
+  title: "Disposable resource in Default Interface Method"
+  messageFormat: "Default Interface Methods (DIM) cannot take ownership or dispose of resources"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ManualUnmanagedAllocation
+  id: GSH0029
+  title: "Manual unmanaged allocation detected"
+  messageFormat: "Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: SyncGridRequiresCooperativeKernel
+  id: GSH0030
+  title: "Gpu.SyncGrid requires [GpuKernel(Cooperative = true)]"
+  messageFormat: "The method '{0}' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DirectGpuKernelInvocation
+  id: GSH0031
+  title: "Direct invocation of [GpuKernel] is prohibited"
+  messageFormat: "Do not call [GpuKernel] method '{0}' directly. Use the generated 'Launch{0}' launcher method instead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnrolledLoopMustBeStatic
+  id: GSH0032
+  title: "Unrolled loop bounds must be statically deterministic"
+  messageFormat: "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [GpuConstexpr] parameters."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnrolledLoopMayBeIgnored
+  id: GSH0033
+  title: "Unrolled loop may be silently ignored"
+  messageFormat: "The loop marked with Gpu.Hint.Unroll contains dynamic control flow (break, return, goto) and may be silently ignored by the nvcc compiler"
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: ParamsModifierNotSupported
+  id: GSH0034
+  title: "The 'params' modifier is prohibited in GPU device code"
+  messageFormat: "The parameter '{0}' in method '{1}' uses the 'params' modifier, which incurs heap allocation. Use parameter structs, fixed buffers, or explicit arguments instead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ParallelDependentCallFromSingleThreadContext
+  id: GSH0035
+  title: "Cannot call parallel-dependent processing from a single-thread context"
+  messageFormat: "The method or operator '{0}' depends on parallel execution (e.g., GridStrideLoop or SyncGrid) and cannot be called from within a single-thread context"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: KernelClassMustBePartial
+  id: GSH0036
+  title: "GPU code type must be partial"
+  messageFormat: "The type '{0}' that contains or encloses GPU code must be declared partial to support source generation of contexts and launch methods."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DivergentBarrierProhibited
+  id: GSH0037
+  title: "Barrier in a lambda or local function that the CPU dialects do not split"
+  messageFormat: "{0}"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ExceptionHandlingInKernelProhibited
+  id: GSH0038
+  title: "Exception handling is not supported in GPU kernels"
+  messageFormat: "The try-catch-finally construct is not supported in GPU kernels. Exceptions cannot be thrown or caught on the GPU."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CrossBarrierRefStructProhibited
+  id: GSH0039
+  title: "ref structs cannot be held across barrier synchronization"
+  messageFormat: "A ref or ref struct variable '{0}' cannot be held across a Gpu.SyncThreads() barrier. This is restricted by the C# state machine model."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CrossBarrierGotoProhibited
+  id: GSH0040
+  title: "goto statements cannot cross barrier synchronization"
+  messageFormat: "A goto statement cannot jump across a Gpu.SyncThreads() barrier. Ensure the goto label and statement are within the same barrier phase."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CrossBarrierLocalPointerProhibited
+  id: GSH0041
+  title: "Stack pointers cannot be held across barrier synchronization"
+  messageFormat: "A pointer to a local variable or stackalloc block cannot cross a Gpu.SyncThreads() barrier because the CPU emulator rewinds the stack frame."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ExternalBarrierCallProhibited
+  id: GSH0042
+  title: "Gpu.SyncThreads() cannot be called from methods that are not GPU code"
+  messageFormat: "Gpu.SyncThreads() can only be called within a [GpuKernel] or [GpuDeviceFunction] method or their local functions. Other methods are not lowered into the CPU state machine."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: FixedBlockBarrierProhibited
+  id: GSH0043
+  title: "Gpu.SyncThreads() cannot be called inside a fixed block"
+  messageFormat: "Gpu.SyncThreads() cannot be called inside a fixed block. The GC pin is released when the CPU emulator suspends, causing potential access violations upon resume."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: RecursiveBarrierProhibited
+  id: GSH0045
+  title: "Recursive local functions cannot contain Gpu.SyncThreads()"
+  messageFormat: "The local function '{0}' is recursive and contains or calls Gpu.SyncThreads(). This prevents static AST inlining for state machine generation."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: AsyncYieldInKernelProhibited
+  id: GSH0046
+  title: "async, await, and yield return are prohibited in GPU kernels"
+  messageFormat: "The async and await keywords are not supported in GPU methods, and yield is supported only in a [GpuDeviceFunction] that returns IEnumerable<T>."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: LockStatementInKernelProhibited
+  id: GSH0047
+  title: "The lock statement is prohibited in GPU kernels"
+  messageFormat: "The lock statement is not supported in GPU kernels. Use atomic operations provided by the Gpu.Atomic class instead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: InternalCompilerError
+  id: GSH0048
+  title: "Source Generator Internal Error"
+  messageFormat: "Internal compiler error in G# Transpiler: {0}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: InvalidTakesOwnershipTarget
+  id: GSH0049
+  title: "[TakesOwnership] applied to non-IDisposable type"
+  messageFormat: "[TakesOwnership] can only be applied to types that implement IDisposable"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: TakesOwnershipOnlyAllowedOnConstructors
+  id: GSH0050
+  title: "[TakesOwnership] is only allowed on constructor parameters"
+  messageFormat: "[TakesOwnership] is only supported on constructor parameters for static lifecycle management"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: TakesOwnershipByRefNotSupported
+  id: GSH0051
+  title: "Cannot take ownership of a reference parameter"
+  messageFormat: "Cannot take ownership of a reference parameter (ref, in, out)"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: NativeApiYamlSyntaxError
+  id: GSH0052
+  title: "Native API definition is not valid YAML"
+  messageFormat: "Native API definition '{0}' could not be parsed: {1}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: NativeApiSchemaViolation
+  id: GSH0053
+  title: "Native API definition violates the schema"
+  messageFormat: "Native API definition '{0}' is invalid: {1}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IntrinsicNotImplementedByDialect
+  id: GSH0054
+  title: "An intrinsic is not implemented by the target dialect"
+  messageFormat: "'{0}' is not implemented by the '{1}' dialect; the call is replaced with a runtime failure"
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: DoubleUnderscoreIdentifier
+  id: GSH0055
+  title: "Identifier containing '__' is reserved"
+  messageFormat: "'{0}' contains '__', which is reserved for the G# compiler and the C++ implementation; rename it"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CppKeywordIdentifier
+  id: GSH0056
+  title: "GPU method name is a C++ keyword (Deprecated)"
+  messageFormat: "'{0}' is a keyword in C++/CUDA and cannot be used as a GPU method name. (Deprecated, method names are renamed automatically)"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: false
+  isObsolete: true
+
+- name: MalformedTrustedKey
+  id: GSH0057
+  title: "Malformed trusted key line"
+  messageFormat: "Line {1} of '{0}' is not a valid trusted key: {2}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DuplicateAotContextName
+  id: GSH0058
+  title: "Two structs share one AotContexts name"
+  messageFormat: "The structs '{0}' and '{1}' both map to '{2}' in '{3}'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments."
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IndistinguishableKernelOverloads
+  id: GSH0059
+  title: "A kernel declares or makes G# generate a member that its class already has"
+  messageFormat: "The [GpuKernel] method '{0}' declares or makes G# generate the member '{1}', which {2}. Rename the kernel."
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UserDefinedOperatorNotSupported
+  id: GSH0060
+  title: "User-defined operators are not supported in GPU code"
+  messageFormat: "The user-defined operator '{0}' of '{1}' is not supported in GPU code. Call a [GpuDeviceFunction] method instead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: RecursiveDeviceFunctionBarrierProhibited
+  id: GSH0061
+  title: "Device functions that reach a barrier cannot be recursive"
+  messageFormat: "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle and calls itself directly or through other device functions. The CPU state machine needs a frame of static size for every call."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: SuspendingCallInUnsupportedContext
+  id: GSH0062
+  title: "A call that suspends at a barrier is not supported in this context"
+  messageFormat: "'{0}' {2}, so it cannot be called {1}. The CPU state machine splits a kernel or device function at such a call only in the statements of its body, including the operands of '&&', '||' and '?:'."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: SharedMemoryDeclarationsShareLine
+  id: GSH0063
+  title: "Shared memory declarations on one line share a buffer in managed execution"
+  messageFormat: "This SharedMemory<T> declaration is on the same line as another one of '{0}'. Under managed execution a device function without barriers identifies a declaration only by its file, line and method name, so both get the same buffer. Put each declaration on its own line."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: KernelParameterSpaceExceeded
+  id: GSH0064
+  title: "Kernel parameters exceed the parameter space limit"
+  messageFormat: "The parameters of kernel '{0}' take {1} bytes with the ones G# adds, which exceeds the {2}-byte kernel parameter limit of CUDA, so nvcc rejects the kernel. Pass large data through an array or a device buffer instead of by value."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StaticMemberAccessNotSupported
+  id: GSH0065
+  title: "Non-const static fields and properties are not supported in GPU code"
+  messageFormat: "The static member '{0}.{1}' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: InstanceDeviceFunctionNotSupported
+  id: GSH0066
+  title: "Instance [GpuDeviceFunction] methods are not supported"
+  messageFormat: "The method '{0}.{1}' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DiscardedDisposableAllocation
+  id: GSH0067
+  title: "Disposable resource is created and discarded"
+  messageFormat: "The '{0}' created here is discarded without being bound to a variable, so it can never be disposed"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UndisposedDisposableLocal
+  id: GSH0068
+  title: "Disposable local is never disposed"
+  messageFormat: "The local '{0}' owns a disposable resource but leaves its scope without being disposed. Use 'using', call Dispose(), or transfer ownership."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: SharedMemoryDisposableNotSupported
+  id: GSH0069
+  title: "SharedMemory element type must not be disposable"
+  messageFormat: "SharedMemory<T> cannot hold the disposable type '{0}'. Shared memory is released with the thread block, so its elements are never disposed."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IteratorShapeNotSupported
+  id: GSH0070
+  title: "Iterator method must be a static [GpuDeviceFunction] returning IEnumerable<T> with a value-type element"
+  messageFormat: "Iterator method '{0}' is not supported on the GPU: {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IteratorValueMustBeEnumeratedInPlace
+  id: GSH0071
+  title: "Iterator value must be consumed directly by foreach"
+  messageFormat: "The iterator value '{0}' cannot be passed, returned, reassigned, or selected conditionally; enumerate it directly with foreach (or bind it once to a local and foreach that local)."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IteratorBodyConstructNotSupported
+  id: GSH0072
+  title: "Unsupported construct in or around an iterator"
+  messageFormat: "Construct '{0}' is not supported inside an iterator or a foreach over an iterator."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: IteratorExpansionTooLarge
+  id: GSH0073
+  title: "Iterator expansion copies the foreach body too many times"
+  messageFormat: "Expanding the iterator '{0}' at this foreach would copy the loop body {1} times (limit {2})"
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: CopyAsyncWaitGroupCountOutOfRange
+  id: GSH0074
+  title: "CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7"
+  messageFormat: "The argument 'pendingGroups' of Gpu.CopyAsyncWaitGroup must be a compile-time integer constant between 0 and 7"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: InvalidCopyAsyncArgument
+  id: GSH0075
+  title: "Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source"
+  messageFormat: "The argument '{0}' of Gpu.CopyAsync is not valid: {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnsupportedWarpMatrixOperation
+  id: GSH0076
+  title: "Unsupported warp matrix fragment or operation"
+  messageFormat: "'{0}' is not a supported warp matrix fragment or operation: {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DivergentDynamicSharedMemory
+  id: GSH0077
+  title: "Dynamic SharedMemory<T> reached by only some threads or with a thread-dependent count"
+  messageFormat: "{0}. On CUDA each thread places the dynamic SharedMemory<T> regions of its block in the order it first reaches them, with the count it computes, so threads that reach them differently may disagree on where a region is."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: StructLayoutNotRepresentable
+  id: GSH0078
+  title: "Struct cannot be laid out on the device"
+  messageFormat: "The struct '{0}' cannot be laid out on the device: {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: FieldTypeHasNoDeviceRepresentation
+  id: GSH0079
+  title: "Struct field type has no device representation"
+  messageFormat: "The type '{0}' of field '{1}' has no device representation."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StructArrayConvertedPerElement
+  id: GSH0080
+  title: "Struct array or returned struct is converted element by element"
+  messageFormat: "The values of '{0}' are converted element by element because its host and device layouts differ ({1}). Reorder the fields or avoid array fields to transfer them as one block."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: StructArrayFieldAllocatedPerElement
+  id: GSH0081
+  title: "Struct array allocates the array field of each element"
+  messageFormat: "Each element of the array of '{0}' allocates and copies its array field '{1}' separately."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: LaunchDependentDivergentBarrier
+  id: GSH0083
+  title: "Barrier that only some threads may reach, depending on the launch or on run-time values"
+  messageFormat: "'{0}' may be reached by only some threads of the {1}: whether a thread reaches it depends on a branch whose outcome depends on the launch configuration or on run-time values. Move the barrier out of the branch, or make every thread of the {1} take the same side."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: BarrierAfterDivergentExit
+  id: GSH0084
+  title: "Barrier after an exit that only some threads take"
+  messageFormat: "{0} without reaching {1}, which the other threads of the {2} still reach. A barrier that some threads skip because they left is not guaranteed to synchronize the others on the GPU; move the exit after the barrier, or make every thread reach the barrier."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: DeviceFunctionNotExported
+  id: GSH0088
+  title: "Device code of another assembly is not exported"
+  messageFormat: "'{0}' is declared in '{1}', whose G# device code export holds no record of it. Build '{1}' with this version of G#, without GSharpExportDeviceCode=false; if it already exports device code, its build reported GSH0048 for '{0}', or '{0}' is a construction of a generic struct that '{1}' does not use itself."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DeviceExportUnusable
+  id: GSH0089
+  title: "Device code of another assembly cannot be used"
+  messageFormat: "The device code of '{0}' in '{1}' cannot be used: {2}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: DeviceExportNameCollision
+  id: GSH0090
+  title: "Device code of two assemblies has the same C++ name"
+  messageFormat: "'{0}' of '{1}' and the same path in '{2}' both become the C++ name '{3}'. Rename the namespace or the type in one of them."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StackArrayEscapes
+  id: GSH0091
+  title: "Stack array outlives its scope"
+  messageFormat: "The stack array '{0}' cannot be {1}: G# keeps it in a C++ array that ends with the innermost block, switch section or statement body around it. Copy the elements instead, or keep the use inside that scope."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: WarpShuffleWidthNotPowerOfTwo
+  id: GSH0095
+  title: "Warp shuffle width must be 1, 2, 4, 8, 16 or 32"
+  messageFormat: "The width of Warp.{0} is {1}; it must be 1, 2, 4, 8, 16 or 32. CUDA leaves the result of a shuffle with any other width undefined."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ParallelAggregateRunsSequentially
+  id: GSH0099
+  title: "An AsParallel() aggregate runs sequentially in each thread"
+  messageFormat: "'{0}' runs sequentially in each thread because {1}. Each thread still receives the sum of the whole sequence."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: ParallelAggregateNotCooperative
+  id: GSH0100
+  title: "Every block reduces the whole sequence of an AsParallel() aggregate"
+  messageFormat: "The kernel '{0}' is not cooperative, so every block reduces the whole sequence of '{1}'. Mark it [GpuKernel(Cooperative = true)] to divide the work across the grid."
+  category: GSharpTranspiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: MethodTooComplexToCompile
+  id: GSH0102
+  title: "Method is too deeply nested or too complex to compile"
+  messageFormat: "The method '{0}' is too deeply nested or too complex to compile; split it into smaller methods."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+  description: "An expression or control flow structure within the method exceeds compiler evaluation depth limits or exhausts the execution stack."
+
+- name: ErrorSiteIdCollision
+  id: GSH0103
+  title: "Error site ID collision in device error channel"
+  messageFormat: "Error site ID collision (0x{0:X8}): '{1}' at {2}({3},{4}) and '{5}' at {6}({7},{8}) produced the same site ID."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: KernelParameterConflictsWithLaunchParameter
+  id: GSH0106
+  title: "Kernel parameter name conflicts with a launch parameter"
+  messageFormat: "Parameter '{0}' of kernel '{1}' has the same name as a launch wrapper parameter ({2}). Rename the parameter."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnmarkedMethodCalledFromGpuCode
+  id: GSH0107
+  title: "A method without [GpuDeviceFunction] is called from GPU code"
+  messageFormat: "The method '{0}' is called from GPU code but is not compiled for the GPU: {1}"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: StructFieldTypeInaccessibleToLauncher
+  id: GSH0108
+  title: "Struct field type is not accessible to the generated launcher"
+  messageFormat: "The type '{0}' of field '{1}' is not accessible from '{2}', where the generated launcher copies the field. Make the type internal or public."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: UnmappedMethodCalledFromGpuCode
+  id: GSH0109
+  title: "A method without a device implementation is called from GPU code"
+  messageFormat: "The method '{0}' has no implementation in the '{1}' dialect and cannot be called from GPU code{2}"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CudaImportParameterNotSupported
+  id: GSH0110
+  title: "The launcher of a [CudaImport] method cannot pass a parameter to the kernel"
+  messageFormat: "Parameter '{0}' of [CudaImport] method '{1}' has type '{2}', which the launcher cannot pass to the kernel: {3}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: KernelDeclarationNotSupported
+  id: GSH0111
+  title: "[GpuKernel] is only allowed on an ordinary static method of a class"
+  messageFormat: "[GpuKernel] cannot be applied to {0}. A kernel must be an ordinary static method of a class; move the body to a [GpuDeviceFunction] method and call it from such a kernel."
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: KernelParameterHasNoDeviceRepresentation
+  id: GSH0112
+  title: "Kernel parameter type has no device representation"
+  messageFormat: "Parameter '{0}' of kernel '{1}' has the type '{2}', which holds references to managed objects and has no device representation. Pass the values the kernel reads, or structs, instead."
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: CudaImportDeclarationNotSupported
+  id: GSH0113
+  title: "G# cannot generate the launcher of a [CudaImport] declaration"
+  messageFormat: "[CudaImport] method '{0}' cannot have a generated launcher: {1}"
+  category: GSharpCompiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: TargetArchitectureLimitsUnknown
+  id: GSH0114
+  title: "G# has no launch limits for a GSharpTargetArchitectures architecture"
+  messageFormat: "GSharpTargetArchitectures includes {0}, whose compute capability G# has no launch limits for; the launch limits of the target GPUs are taken from the other architectures only"
+  category: GSharpCompiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: SharedMemorySizeNegative
+  id: GSH0117
+  title: "SharedMemory<T> count must not be negative"
+  messageFormat: "SharedMemory<T> cannot have a negative count ({0})"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: ReadOnlyArrayWritten
+  id: GSH0118
+  title: "A [GpuReadOnly] array is written"
+  messageFormat: "The [GpuReadOnly] array '{0}' is written: {1}. [GpuReadOnly] promises that no thread writes the array while the kernel runs, through any alias. Remove the write, or remove the attribute."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: FileLocalTypeInManagedCopy
+  id: GSH0119
+  title: "A file-local type cannot be named by the managed copy that G# generates"
+  messageFormat: "'{0}' is a file-local type, which generated code cannot name. The managed path of the CPU dialect copies the body of '{1}' into a generated file because {2}, so a kernel that needs that copy cannot run on the managed path: its managed launch throws. The GPU, the native CPU path and the C# execution are not affected. Declare the type without 'file', for example as a private type nested in the class that uses it."
+  category: GSharpCompiler
+  defaultSeverity: Warning
+  isEnabledByDefault: true
+
+- name: StackLinqChainTooDeep
+  id: SLQ0001
+  title: "StackLinq method chain is too deep"
+  messageFormat: "StackLinq method chain exceeds the maximum allowed depth of {0}. Too many nested operators will cause template instantiation limits and compiler crashes. Consider breaking the query into multiple variables."
+  category: CompilerLimits
+  defaultSeverity: Error
+  isEnabledByDefault: true
+  description: "Excessive method chaining on StackLinq types can lead to compiler resource exhaustion during C++ transpilation."

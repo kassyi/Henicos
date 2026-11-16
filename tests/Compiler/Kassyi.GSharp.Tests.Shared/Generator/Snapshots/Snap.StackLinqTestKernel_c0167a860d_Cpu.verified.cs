@@ -31,10 +31,15 @@ public partial class StackLinqTestKernel
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1260318727u, "StackLinqTestKernel.cs", 16, 25, "RunLinq", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1411466591u, "StackLinqTestKernel.cs", 21, 13, "RunLinq", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(127687090u, "StackLinqTestKernel.cs", 31, 28, "RunLinqAny", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(589825123u, "StackLinqTestKernel.cs", 32, 13, "RunLinqAny", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1579284963u, "StackLinqTestKernel.cs", 42, 23, "RunLinqSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(612402383u, "StackLinqTestKernel.cs", 43, 13, "RunLinqSum", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1428952171u, "StackLinqTestKernel.cs", 53, 25, "RunLinqFirst", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1582384235u, "StackLinqTestKernel.cs", 54, 13, "RunLinqFirst", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1995239331u, "StackLinqTestKernel.cs", 64, 23, "RunLinqIndexedAndSelectorSum", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1299316303u, "StackLinqTestKernel.cs", 69, 13, "RunLinqIndexedAndSelectorSum", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
@@ -62,7 +67,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_count = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1260318727u);
 int __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -208,6 +213,7 @@ private unsafe delegate void __gsharp_delegate_RunLinq(uint gridDimX, uint gridD
 public static unsafe void LaunchRunLinq(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinq");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinq");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -340,6 +346,39 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchRunLinqPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinq");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinq");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqTestKernel.RunLinq", "LaunchRunLinqPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRunLinq");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchRunLinqPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchRunLinq, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinq", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 public const string RunLinqAny_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqAny {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqAny* __gsharp_all_contexts = nullptr;
@@ -360,7 +399,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 bool __gsharp_id_2_hasEven = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 127687090u);
 bool __gsharp_fusion_res = false;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -500,6 +539,7 @@ private unsafe delegate void __gsharp_delegate_RunLinqAny(uint gridDimX, uint gr
 public static unsafe void LaunchRunLinqAny(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqAny");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqAny");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -632,6 +672,39 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchRunLinqAnyPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqAny");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqAny");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqTestKernel.RunLinqAny", "LaunchRunLinqAnyPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRunLinqAny");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchRunLinqAnyPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchRunLinqAny, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqAny", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 public const string RunLinqSum_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqSum {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqSum* __gsharp_all_contexts = nullptr;
@@ -652,8 +725,8 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_sum = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
-int __gsharp_fusion_res = 0;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1579284963u);
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -665,7 +738,7 @@ return __gsharp_mul_i32(__gsharp_id_3_x,2);
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_0_data, 0, 612402383u)=__gsharp_id_2_sum;
 }
@@ -792,6 +865,7 @@ private unsafe delegate void __gsharp_delegate_RunLinqSum(uint gridDimX, uint gr
 public static unsafe void LaunchRunLinqSum(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqSum");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqSum");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -924,6 +998,39 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchRunLinqSumPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqSum");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqSum");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqTestKernel.RunLinqSum", "LaunchRunLinqSumPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRunLinqSum");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchRunLinqSumPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchRunLinqSum, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqSum", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 public const string RunLinqFirst_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqFirst {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqFirst* __gsharp_all_contexts = nullptr;
@@ -944,7 +1051,7 @@ int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)b
 if(__gsharp_id_1_tid==0)
 {
 int __gsharp_id_2_first = ([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1428952171u);
 int __gsharp_fusion_res = {};
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1084,6 +1191,7 @@ private unsafe delegate void __gsharp_delegate_RunLinqFirst(uint gridDimX, uint 
 public static unsafe void LaunchRunLinqFirst(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqFirst");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqFirst");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -1216,6 +1324,39 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 }
 }
 #pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchRunLinqFirstPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqFirst");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqFirst");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqTestKernel.RunLinqFirst", "LaunchRunLinqFirstPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRunLinqFirst");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchRunLinqFirstPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchRunLinqFirst, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqFirst", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 public const string RunLinqIndexedAndSelectorSum_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqIndexedAndSelectorSum {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqIndexedAndSelectorSum* __gsharp_all_contexts = nullptr;
@@ -1235,7 +1376,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_1_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
 if(__gsharp_id_1_tid==0)
 {
-int __gsharp_id_2_sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_id_0_data),[&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
+int __gsharp_id_2_sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(__gsharp_source_argument(__gsharp_id_0_data, 1995239331u)),[&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
 return __gsharp_id_3_x>5&&__gsharp_id_4_i%2==0;
 }
 ),[&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
@@ -1370,6 +1511,7 @@ private unsafe delegate void __gsharp_delegate_RunLinqIndexedAndSelectorSum(uint
 public static unsafe void LaunchRunLinqIndexedAndSelectorSum(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = data;
@@ -1500,6 +1642,39 @@ fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Inter
 __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (data?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchRunLinqIndexedAndSelectorSumPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("data", data.Length, "The array length must not be negative.");
+}
+if (data.Data == global::System.IntPtr.Zero && data.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "data");
+}
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "StackLinqTestKernel.RunLinqIndexedAndSelectorSum");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("StackLinqTestKernel.RunLinqIndexedAndSelectorSum", "LaunchRunLinqIndexedAndSelectorSumPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchRunLinqIndexedAndSelectorSum");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchRunLinqIndexedAndSelectorSumPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchRunLinqIndexedAndSelectorSum, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__StackLinqTestKernel__RunLinqIndexedAndSelectorSum", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = data.Data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
 }

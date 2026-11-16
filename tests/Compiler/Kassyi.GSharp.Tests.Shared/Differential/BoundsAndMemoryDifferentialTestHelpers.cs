@@ -7,8 +7,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// <summary>
 /// Shared test constants, helpers, and naming utilities for bounds and memory differential tests.
 /// </summary>
-internal static class BoundsAndMemoryDifferentialTestHelpers
+internal static partial class BoundsAndMemoryDifferentialTestHelpers
 {
+    private static partial ExceptionPolicy CreateNullArrayPolicy(int line, int column);
     internal const int DefaultRows = 64;
     internal const int SimultaneousRows = 256;
     internal const int CanaryStart = BoundsAndMemoryDifferentialKernels.CanaryPad;
@@ -26,30 +27,12 @@ internal static class BoundsAndMemoryDifferentialTestHelpers
     // (line and column in BoundsAndMemoryDifferentialKernels.cu.cs) through the kernel's error site table; the managed
     // path throws .NET's own exception, which carries no place, so the place is checked where CUDA is the only path
     internal static ExceptionPolicy NullArrayRead(int line, int column) =>
-#if GSHARP_CUDA
-        new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
-        {
-            SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
-            Line = line,
-            Column = column,
-        };
-#else
-        new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
-#endif
+        CreateNullArrayPolicy(line, column);
 
     // A null passed where a device function parameter is not nullable, or given to Gpu.NotNull: NullReferenceException
     // on every path; CUDA, the only path of Tests.Cuda, reports the place of the argument or the call
     internal static ExceptionPolicy NullArrayArgument(int line, int column) =>
-#if GSHARP_CUDA
-        new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
-        {
-            SourceFile = nameof(BoundsAndMemoryDifferentialKernels),
-            Line = line,
-            Column = column,
-        };
-#else
-        new(typeof(NullReferenceException), DiffPaths.CheckedPaths());
-#endif
+        CreateNullArrayPolicy(line, column);
 
     internal static int[] CreateCanaryBacking()
     {

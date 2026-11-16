@@ -9,6 +9,7 @@ import * as path from "node:path";
 import { readCommand } from "./command-reader.ts";
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
 import { commandKeys, type KeyContext } from "./estimate-key.ts";
+import { EstimatePlaceChecks } from "./estimate-place-checks.ts";
 import { RunHistory } from "./history.ts";
 
 type AssertModule = typeof Assert;
@@ -129,6 +130,20 @@ export function checkEstimateShape(assert: AssertModule): void {
   assert.strictEqual(keysOf("dotnet run --project tools/x").shape, "dotnet:run");
   assert.strictEqual(keysOf(`dotnet build ${Cuda} && dotnet test ${Cuda} --no-build`).kind, "build&test");
   assert.deepStrictEqual(keysOf("echo hi"), { normalized: "", shape: "", kind: "" }, "trivial steps only");
+  // A project or script outside the worktree (a scratch project) is not the repository's work: a kind of its own
+  assert.strictEqual(keysOf("dotnet msbuild C:\\scratch\\probe\\test.proj -target:Run").kind, "dotnet:outside");
+  assert.strictEqual(keysOf("dotnet build ../other/App.csproj").kind, "build:outside", "relative, still outside");
+  assert.strictEqual(keysOf(`dotnet build ${Cpu}`).kind, "build", "inside stays as it was");
+  assert.strictEqual(keysOf("node C:\\scratch\\probe.mjs 1").kind, "node:outside");
+  assert.strictEqual(keysOf("node scripts/x.js").kind, "node");
+  assert.strictEqual(
+    keysOf("dotnet build C:\\scratch\\a.csproj", { cwd: "", worktree: "" }).kind,
+    "build",
+    "no context",
+  );
+  // Inline code (a probe, a sleep) is its own kind too
+  assert.deepStrictEqual(keysOf('node -e "setTimeout(()=>0,5000)"').kind, "node:eval");
+  assert.strictEqual(keysOf("node -p 1").kind, "node:eval");
   // A command that cannot be read has the kind of its first program and nothing else
   assert.deepStrictEqual(keysOf("dotnet build $(pwd)/X"), { normalized: "", shape: "", kind: "dotnet" });
   assert.deepStrictEqual(keysOf("dotnet build 'x"), { normalized: "", shape: "", kind: "dotnet" });
@@ -177,6 +192,11 @@ export function checkEstimateFallback(assert: AssertModule): void {
     const kind = history.estimateWithFallback(`dotnet build tests/Compiler/App.Integration`, Windows);
     assert.strictEqual(kind?.from, "kind");
     assert.strictEqual(kind?.typicalMs, sec(200), "median of the three builds: 200 s, 300 s, 90 s");
+    // A scratch project outside the worktree never takes the repository's build times, and inline node code
+    // never takes those of the repository's scripts
+    assert.strictEqual(history.estimateWithFallback("dotnet build C:\\scratch\\probe.csproj", Windows), null);
+    rec("node scripts/human/x.js", sec(600));
+    assert.strictEqual(history.estimateWithFallback('node -e "setTimeout(()=>0,5000)"', Windows), null);
     // nothing alike
     assert.strictEqual(history.estimateWithFallback("python make-art.py", Windows), null);
     assert.strictEqual(
@@ -238,6 +258,10 @@ export function checkEstimateAccuracy(assert: AssertModule): void {
       "errors 0% and 75%: median 37.5, one of two within 50%",
     );
     assert.strictEqual(rows.find((r) => r.level === "none")?.medianErrorPercent, 5900);
+    // Times off counts both ways alike: 100 for 400 is x4, 60000 for 1000 is x60
+    assert.strictEqual(shape?.medianFactor, 2.5, "x1 and x4: median 2.5");
+    assert.strictEqual(rows.find((r) => r.level === "none")?.medianFactor, 60);
+    assert.ok(formatAccuracy(rows).includes("x60.0"), "the table shows times off");
     assert.ok(formatAccuracy(rows).includes("shape"), "the table names the levels");
     assert.ok(formatAccuracy([]).includes("no estimate"), "an empty log says so");
 
@@ -261,4 +285,5 @@ export const EstimateChecks: Record<string, (assert: AssertModule) => void> = {
   checkEstimateShape,
   checkEstimateFallback,
   checkEstimateAccuracy,
+  ...EstimatePlaceChecks,
 };

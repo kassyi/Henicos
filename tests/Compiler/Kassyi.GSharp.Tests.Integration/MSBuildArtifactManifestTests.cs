@@ -129,6 +129,27 @@ public class MSBuildArtifactManifestTests : IDisposable
         Directory.Exists(Path.Combine(_objDir, "GSharpNativeDlls")).Should().BeFalse();
     }
 
+    // An IDE (Visual Studio, Rider, the C# Dev Kit, MSBuildWorkspace) runs design-time builds on every edit; they
+    // must not run nvcc or the C++ compiler on the sources the last real build left in obj/
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Build_DesignTimeBuild_CompilesNoNativeSource()
+    {
+        WriteObjFile("X.g.cu");
+        WriteObjFile("Y.g.cpp");
+        WriteManifest("X.g.cu", "Y.g.cpp");
+
+        await BuildAsync(
+            "-t:Compile",
+            "-p:DesignTimeBuild=true",
+            "-p:SkipCompilerExecution=true",
+            "-p:ProvideCommandLineArgs=true"
+        );
+
+        Directory.Exists(Path.Combine(_objDir, "GSharpFatbins")).Should().BeFalse("no fatbin is built at design time");
+        Directory.Exists(Path.Combine(_objDir, "GSharpNativeDlls")).Should().BeFalse("no DLL is built at design time");
+    }
+
     private string WriteObjFile(string fileName)
     {
         var path = Path.Combine(_objDir, fileName);
@@ -139,9 +160,13 @@ public class MSBuildArtifactManifestTests : IDisposable
     private void WriteManifest(params string[] fileNames) =>
         File.WriteAllLines(Path.Combine(_objDir, ManifestFileName), fileNames);
 
-    private async Task BuildAsync()
+    private async Task BuildAsync(params string[] extraArguments)
     {
-        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(_projectDir, "Producer.csproj");
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(
+            _projectDir,
+            "Producer.csproj",
+            extraArguments: extraArguments
+        );
         exitCode.Should().Be(0, $"the build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
 }

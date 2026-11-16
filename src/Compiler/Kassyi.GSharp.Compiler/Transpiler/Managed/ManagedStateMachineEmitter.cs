@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -25,24 +27,29 @@ internal static class ManagedStateMachineEmitter
     // scoped <type> <name> = default;                                (a stackalloc span, bound where it is declared)
     // E* __gsharp_resume_storage_<name> = stackalloc E[<length>];
     // E* <name> = default;                                           (a stackalloc pointer)
-    private static void AppendResumeLocal(SourceWriter writer, ManagedContextField local)
+    private static void AppendResumeLocal(SourceWriter writer, FrameSlot slot)
     {
-        if (local.Resume is not { Kind: not ResumeLocalKind.Initialized } resume)
+        var spelling = GetSpelling(slot);
+
+        if (slot.Kind == FrameSlotKind.SharedMemory)
         {
-            AppendFieldType(writer, local);
-            writer.Append($" {local.Name}");
-            if (local.Declarator.Initializer is { } initializer)
+            AppendFieldType(writer, slot);
+            writer.Append($" {slot.Name}");
+            if (spelling.Initializer is { } initializer)
             {
-                writer.Append($" {ToSource(initializer.WithoutTrivia())}");
+                writer.Append($" {initializer}");
             }
 
             writer.AppendLine(";");
             return;
         }
 
-        if (resume is { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType })
+        if (slot.Kind == FrameSlotKind.RedeclaredStack)
         {
-            if (resume.Type is IPointerTypeSymbol)
+            var elementType = slot.ElementType
+                              ?? throw new InvalidOperationException(
+                                  $"The stackalloc slot '{slot.Name}' has no element type.");
+            if (slot.Type is IPointerTypeSymbol)
             {
                 writer.AppendCsharpTypeName(elementType);
                 writer.Append("*");
@@ -54,60 +61,57 @@ internal static class ManagedStateMachineEmitter
                 writer.Append(">");
             }
 
-            writer.Append($" {local.StorageName} = stackalloc ");
+            writer.Append($" {ManagedContextField.GetStorageName(slot.Name)} = stackalloc ");
             writer.AppendCsharpTypeName(elementType);
-            writer.AppendLine($"[{resume.Length}];");
+            writer.AppendLine($"[{slot.Length}];");
         }
 
-        writer.AppendIf(resume.Type.IsRefLikeType, "scoped ");
-        AppendFieldType(writer, local);
-        writer.AppendLine($" {local.Name} = default;");
+        writer.AppendIf(slot.Type.IsRefLikeType, "scoped ");
+        AppendFieldType(writer, slot);
+        writer.AppendLine($" {slot.Name} = default;");
     }
 
     /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
-    public static void AppendFieldType(SourceWriter writer, ManagedContextField field)
+    public static void AppendFieldType(SourceWriter writer, FrameSlot slot)
     {
-        if (field.DeclaredType.IsVar)
+        var spelling = GetSpelling(slot);
+
+        if (spelling.WrittenType is { } writtenType)
         {
-            writer.AppendCsharpTypeName(field.ResolvedType);
+            writer.Append(writtenType);
         }
         else
         {
-            // Without trivia: a comment above the original declaration would otherwise land inside the emitted one
-            writer.Append(ToSource(field.DeclaredType.WithoutTrivia()));
+            writer.AppendCsharpTypeName(slot.Type);
         }
     }
 
     /// <param name="writer">The writer.</param>
     /// <param name="contextName">The class.</param>
-    /// <param name="regularFields">The hoisted locals.</param>
-    /// <param name="copiedParameters">The parameters that the class keeps.</param>
-    /// <param name="callSites">The calls that may suspend, whose frames the class holds.</param>
-    /// <param name="semanticModel">The model of the calls.</param>
+    /// <param name="frame">The state machine frame.</param>
+    /// <param name="callFrames">The frames of the calls that may suspend, in call order, which the class holds.</param>
     /// <param name="accessibility">The class's accessibility.</param>
     /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
     /// <param name="isUnsafe">Whether the context is an unsafe struct rather than a class.</param>
-    /// <param name="warpSiteCount">The warp collectives of the body (<see cref="LoweredStateMachine.WarpSiteCount"/>).</param>
     /// <remarks>
-    /// A call frame field is internal: the frame of a device function that is not public is an internal class. Every
-    /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because a
-    /// frame of a public device function may belong to a caller in another assembly.
+    /// A call frame field is internal: the frame of a device function that is not public is an internal or private
+    /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame private to a class that
+    /// does not contain this one is an <see cref="object"/>, which the callee's entries create on first use. Every
+    /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because
+    /// a frame of a public device function may belong to a caller in another assembly.
     /// </remarks>
     public static void EmitContextClass(
         SourceWriter writer,
         string contextName,
-        ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters,
-        IReadOnlyList<InvocationExpressionSyntax> callSites,
-        SemanticModel semanticModel,
+        StateMachineFrame frame,
+        ImmutableArray<ManagedCallFrame> callFrames,
         Accessibility accessibility,
         Accessibility memberAccessibility,
-        bool isUnsafe = false,
-        int warpSiteCount = 0)
+        bool isUnsafe = false)
     {
         writer.AppendLine(EditorBrowsableNever);
         var typeKeyword = isUnsafe ? "unsafe struct" : "class";
-        var warpFrame = warpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
+        var warpFrame = frame.WarpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
         var members = GeneratedMemberAccessibility.ToKeyword(memberAccessibility);
         var type = GeneratedMemberAccessibility.ToKeyword(accessibility);
         using (writer.Scope($"{type} {typeKeyword} {contextName}{warpFrame} {{"))
@@ -115,38 +119,50 @@ internal static class ManagedStateMachineEmitter
             writer.AppendLine($"{members} int {GSharpInternalNames.StateMachine.State};");
             writer.AppendLine($"{members} uint {GSharpInternalNames.StateMachine.WarpPath};");
 
-            foreach (var parameter in copiedParameters)
+            foreach (var parameter in frame.CopiedParameters)
             {
                 writer.Append($"{members} ");
                 writer.AppendCsharpTypeName(parameter.Type);
                 writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
             }
 
-            foreach (var field in regularFields)
+            foreach (var slot in frame.Slots)
             {
-                writer.Append($"{members} ");
-                AppendFieldType(writer, field);
-                writer.AppendLine($" {field.Name};");
+                if (slot.Kind == FrameSlotKind.Field)
+                {
+                    writer.Append($"{members} ");
+                    AppendFieldType(writer, slot);
+                    writer.AppendLine($" {slot.Name};");
+                }
             }
 
-            // Each call that may suspend keeps the callee's frame, which is declared in the callee's class
-            for (var i = 0; i < callSites.Count; i++)
-            {
-                var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
-                             ?? throw new InvalidOperationException(
-                                 "A call that may suspend does not resolve to a device function.");
-                writer.Append("internal ");
-                AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
-                writer.AppendLine(isUnsafe
-                    ? $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};"
-                    : $" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
-            }
-
-            EmitWarpFrameMembers(writer, members, isUnsafe, warpSiteCount);
-            EmitWarpPathNumbering(writer, callSites.Count);
+            EmitCallFrameFields(writer, callFrames, isUnsafe);
+            EmitWarpFrameMembers(writer, members, isUnsafe, frame.WarpSiteCount);
+            EmitWarpPathNumbering(writer, callFrames);
         }
 
         writer.AppendLine();
+    }
+
+    // Each call that may suspend keeps the callee's frame, which is declared in the callee's class:
+    // internal <frame type> __gsharp_call_frame_<i>[ = new()];  or  internal object? __gsharp_call_frame_<i>;
+    private static void EmitCallFrameFields(SourceWriter writer, ImmutableArray<ManagedCallFrame> callFrames,
+        bool isUnsafe)
+    {
+        for (var i = 0; i < callFrames.Length; i++)
+        {
+            var frameField = GSharpInternalNames.SuspendingCall.CallFramePrefix + i;
+            if (callFrames[i].ThroughEntry)
+            {
+                writer.AppendLine($"internal object? {frameField};");
+                continue;
+            }
+
+            writer.Append("internal ");
+            AppendDeviceFunctionMember(writer, callFrames[i].Callee,
+                GSharpInternalNames.SuspendingCall.FrameTypePrefix);
+            writer.AppendLine(isUnsafe ? $" {frameField};" : $" {frameField} = new();");
+        }
     }
 
     private const string ManagedWarpFrameInterface = "global::Kassyi.GSharp.Core.IManagedWarpFrame";
@@ -174,15 +190,27 @@ internal static class ManagedStateMachineEmitter
     // The launcher numbers the frames of every thread in the same order, so a frame has the same number in every lane and
     // a different one from any other frame of the thread (the native path uses the frame's offset in the context).
     // public uint __gsharp_number_warp_paths(uint next) { __gsharp_warp_path = next++; next = __gsharp_call_frame_<i>.__gsharp_number_warp_paths(next); ... return next; }
-    private static void EmitWarpPathNumbering(SourceWriter writer, int callSiteCount)
+    // A frame held through the entries: next = <callee class>.__gsharp_number_frame_<callee>(ref
+    // __gsharp_call_frame_<i>, next);
+    private static void EmitWarpPathNumbering(SourceWriter writer, ImmutableArray<ManagedCallFrame> callFrames)
     {
         var number = GSharpInternalNames.StateMachine.NumberWarpPaths;
         using (writer.Scope($"public uint {number}(uint next) {{"))
         {
             writer.AppendLine($"{GSharpInternalNames.StateMachine.WarpPath} = next++;");
-            for (var i = 0; i < callSiteCount; i++)
+            for (var i = 0; i < callFrames.Length; i++)
             {
-                writer.AppendLine($"next = {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i}.{number}(next);");
+                var frameField = GSharpInternalNames.SuspendingCall.CallFramePrefix + i;
+                if (!callFrames[i].ThroughEntry)
+                {
+                    writer.AppendLine($"next = {frameField}.{number}(next);");
+                    continue;
+                }
+
+                writer.Append("next = ");
+                AppendDeviceFunctionMember(writer, callFrames[i].Callee,
+                    GSharpInternalNames.SuspendingCall.NumberFramePrefix);
+                writer.AppendLine($"(ref {frameField}, next);");
             }
 
             writer.AppendLine("return next;");
@@ -209,8 +237,7 @@ internal static class ManagedStateMachineEmitter
         string frameName,
         string stateMachineName,
         IMethodSymbol methodSymbol,
-        ImmutableArray<IParameterSymbol> copiedParameters,
-        ImmutableArray<ManagedContextField> localInits,
+        StateMachineFrame frame,
         string bodySource,
         Accessibility accessibility,
         bool isUnsafe)
@@ -219,16 +246,21 @@ internal static class ManagedStateMachineEmitter
         using (writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe))
         {
             writer.AppendLine(EditorBrowsableNever);
-            AppendDeviceStateMachineSignature(writer, frameName, stateMachineName, methodSymbol, copiedParameters,
+            var context = GSharpInternalNames.StateMachine.Context;
+            AppendDeviceStateMachineSignature(writer, isUnsafe ? $"{frameName}* {context}" : $"{frameName} {context}",
+                stateMachineName, methodSymbol, frame.CopiedParameters,
                 GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
             using (writer.Scope(" {"))
             {
-                foreach (var localInit in localInits)
+                foreach (var slot in frame.Slots)
                 {
-                    AppendResumeLocal(writer, localInit);
+                    if (IsResumeLocal(slot))
+                    {
+                        AppendResumeLocal(writer, slot);
+                    }
                 }
 
-                AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+                AppendCopiedParameterInitialization(writer, frame.CopiedParameters, isUnsafe);
                 writer.AppendLine(bodySource);
                 writer.AppendLine("throw new global::System.InvalidOperationException(" +
                                   "\"The device function state machine reached an unknown state.\");");
@@ -238,20 +270,155 @@ internal static class ManagedStateMachineEmitter
         writer.AppendLine();
     }
 
-    // <accessibility> static [unsafe] bool <state machine>(<parameters>, <frame> __gsharp_ctx[, ref <result> __gsharp_result])
-    // Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out parameters
-    private static void AppendDeviceStateMachineSignature(SourceWriter writer, string frameName, string stateMachineName,
+    /// <summary>
+    /// Writes the entries of a device function whose frame is private to its class
+    /// (<see cref="ManagedStateMachineAvailability.HasEntries"/>), through which a caller of another class holds the
+    /// frame as an <see cref="object"/>: one creates the frame when it is missing and numbers it for the warp
+    /// collectives, the other creates it when it is missing and runs the state machine on it.
+    /// </summary>
+    /// <param name="writer">The writer.</param>
+    /// <param name="frameName">The frame type.</param>
+    /// <param name="stateMachineName">The state machine.</param>
+    /// <param name="methodSymbol">The device function.</param>
+    /// <param name="copiedParameters">The parameters that the frame keeps.</param>
+    /// <param name="accessibility">
+    /// The entries' accessibility: the function's declared one (public, internal, protected, protected internal or
+    /// private protected).
+    /// </param>
+    /// <param name="isUnsafe">
+    /// Whether the frame is an unsafe struct, which the entries keep in a one-element array on the pinned object heap
+    /// and take by pointer.
+    /// </param>
+    /// <remarks>
+    /// [WHY] A caller outside the class cannot name a private frame, but it can hold one as an object, and only the
+    /// class's own members cast it back. The frame is created on first use rather than by the caller's initializer, so
+    /// that an unsafe context (a struct without a constructor) holds it as well. An unsafe frame may keep pointers into
+    /// itself across a resume (the address of a hoisted local), which the direct form keeps valid because the frame is
+    /// a field of the context the launcher pins for the whole launch; a boxed frame could move between two calls, so
+    /// the entries allocate it pinned (<c>GC.AllocateArray(1, pinned: true)</c>) and reach it in place, never through a
+    /// copy.
+    /// </remarks>
+    public static void EmitFrameEntries(
+        SourceWriter writer,
+        string frameName,
+        string stateMachineName,
+        IMethodSymbol methodSymbol,
+        ImmutableArray<IParameterSymbol> copiedParameters,
+        Accessibility accessibility,
+        bool isUnsafe)
+    {
+        var context = GSharpInternalNames.StateMachine.Context;
+        var keyword = ToEntryKeyword(accessibility);
+        // ((<frame>)(__gsharp_ctx ??= new <frame>()))  or  ((<frame>[])(__gsharp_ctx ??= GC.AllocateArray<<frame>>(1,
+        // pinned: true)))[0]
+        var frame = isUnsafe
+            ? $"(({frameName}[])({context} ??= {PinnedArray}<{frameName}>(1, pinned: true)))[0]"
+            : $"(({frameName})({context} ??= new {frameName}()))";
+        using (writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe))
+        {
+            // <accessibility> static uint __gsharp_number_frame_<path>(ref object? __gsharp_ctx, uint next) =>
+            // <frame>.__gsharp_number_warp_paths(next);
+            var number = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.NumberFramePrefix,
+                methodSymbol);
+            writer.AppendLine(EditorBrowsableNever);
+            writer.AppendLine(
+                $"{keyword} static uint {number}(ref object? {context}, uint next) => " +
+                $"{frame}.{GSharpInternalNames.StateMachine.NumberWarpPaths}(next);");
+
+            writer.AppendLine(EditorBrowsableNever);
+            AppendDeviceStateMachineSignature(writer, $"ref object? {context}",
+                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.EnterPrefix, methodSymbol),
+                methodSymbol, copiedParameters, keyword, isUnsafe);
+            AppendEnterBody(writer, frameName, stateMachineName, methodSymbol, copiedParameters, frame, isUnsafe);
+        }
+
+        writer.AppendLine();
+    }
+
+    // The body of the entry that runs the state machine on <frame>, after its signature:
+    //  => <state machine>(<arguments>, <frame>[, ref __gsharp_result]);
+    // or, for an unsafe frame (the array never moves; fixed only lets C# take the address of its element):
+    //  { fixed (<frame type>* __gsharp_frame = &<frame>) { return <state machine>(<arguments>, __gsharp_frame[, ...]);
+    // } }
+    private static void AppendEnterBody(SourceWriter writer, string frameName, string stateMachineName,
+        IMethodSymbol methodSymbol, ImmutableArray<IParameterSymbol> copiedParameters, string frame, bool isUnsafe)
+    {
+        if (!isUnsafe)
+        {
+            writer.Append(" => ");
+            AppendStateMachineCall(writer, stateMachineName, methodSymbol, copiedParameters, frame);
+            writer.AppendLine(";");
+            return;
+        }
+
+        using (writer.Scope(" {"))
+        {
+            using (writer.Scope($"fixed ({frameName}* {EntryFramePointer} = &{frame}) {{"))
+            {
+                writer.Append("return ");
+                AppendStateMachineCall(writer, stateMachineName, methodSymbol, copiedParameters, EntryFramePointer);
+                writer.AppendLine(";");
+            }
+        }
+    }
+
+    // The keyword of a declared accessibility that the entries copy from their function
+    private static string ToEntryKeyword(Accessibility accessibility) => accessibility switch
+    {
+        Accessibility.Public => "public",
+        Accessibility.Internal => "internal",
+        Accessibility.Protected => "protected",
+        Accessibility.ProtectedOrInternal => "protected internal",
+        Accessibility.ProtectedAndInternal => "private protected",
+        _ => throw new ArgumentOutOfRangeException(nameof(accessibility), accessibility,
+            "The entries of a frame belong to a function that is not private.")
+    };
+
+    private const string PinnedArray = "global::System.GC.AllocateArray";
+
+    // The pointer to the pinned frame in the entry of an unsafe frame; a local of the entry, which has no other
+    private const string EntryFramePointer = "__gsharp_frame";
+
+    // <state machine>(<ref kind> <parameter>, ..., <frame>[, ref __gsharp_result]): the entry's parameters passed on as
+    // the state machine declares them
+    private static void AppendStateMachineCall(SourceWriter writer, string stateMachineName, IMethodSymbol methodSymbol,
+        ImmutableArray<IParameterSymbol> copiedParameters, string frame)
+    {
+        writer.Append(stateMachineName);
+        using (writer.Parentheses())
+        {
+            foreach (var p in methodSymbol.Parameters)
+            {
+                writer.Append(p.RefKind switch
+                {
+                    RefKind.Ref or RefKind.Out => "ref ",
+                    RefKind.In or RefKind.RefReadOnlyParameter => "in ",
+                    _ => ""
+                });
+                writer.Append(IsCopied(copiedParameters, p)
+                    ? $"{GSharpInternalNames.StateMachine.CopiedParameterPrefix}{p.Name}, "
+                    : $"{p.Name.ToCSharpIdentifier()}, ");
+            }
+
+            writer.Append(frame);
+            writer.AppendIf(!methodSymbol.ReturnsVoid, $", ref {GSharpInternalNames.SuspendingCall.Result}");
+        }
+    }
+
+    // <accessibility> static [unsafe] bool <name>(<parameters>, <frame parameter type> __gsharp_ctx[, ref <result>
+    // __gsharp_result]) with <frame parameter type> the frame, a pointer to an unsafe frame, or what the caller passes
+    // it as. Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out
+    // parameters
+    private static void AppendDeviceStateMachineSignature(SourceWriter writer, string frameParameter, string name,
         IMethodSymbol methodSymbol, ImmutableArray<IParameterSymbol> copiedParameters, string accessibility, bool isUnsafe)
     {
         writer.Append($"{accessibility} static ");
         writer.AppendIf(isUnsafe, "unsafe ");
-        writer.Append($"bool {stateMachineName}");
+        writer.Append($"bool {name}");
         using (writer.Parentheses())
         {
             AppendParameterList(writer, methodSymbol, copiedParameters);
-            writer.Append(isUnsafe
-                ? $"{frameName}* {GSharpInternalNames.StateMachine.Context}"
-                : $"{frameName} {GSharpInternalNames.StateMachine.Context}");
+            writer.Append(frameParameter);
             if (!methodSymbol.ReturnsVoid)
             {
                 writer.Append(", ref ");
@@ -307,18 +474,23 @@ internal static class ManagedStateMachineEmitter
             .AsStackEnumerable()
             .Any(parameter, static (copied, target) => copied.IsEqualTo(target));
 
-    internal static bool HasPointerField(
-        ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters) =>
-        copiedParameters
+    internal static bool HasPointerField(StateMachineFrame frame) =>
+        frame.CopiedParameters
             .AsStackEnumerable()
             .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
-        regularFields
+        frame.Slots
             .AsStackEnumerable()
-            .Any(static f => f.ResolvedType is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
-                             f.DeclaredType.DescendantNodesAndSelf()
-                                 .AsStackEnumerable()
-                                 .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax));
+            .Where(static s => s.Kind == FrameSlotKind.Field)
+            .Any(static s => s.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol || GetSpelling(s).NamesPointer);
+
+    // The slots declared again before the state switch: every slot that is neither a field nor a held ref
+    private static bool IsResumeLocal(FrameSlot slot) =>
+        slot.Kind is FrameSlotKind.Redeclared or FrameSlotKind.RedeclaredStack or FrameSlotKind.SharedMemory
+            or FrameSlotKind.Unsupported;
+
+    // The frames this writer reads are built by ManagedContextFields, which spells every slot
+    private static ManagedSlotSpelling GetSpelling(FrameSlot slot) =>
+        slot.Managed ?? throw new InvalidOperationException($"The slot '{slot.Name}' has no managed spelling.");
 
     public static void EmitStateMachineMethod(
         SourceWriter writer,
@@ -326,8 +498,7 @@ internal static class ManagedStateMachineEmitter
         string stateMachineName,
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
-        ImmutableArray<IParameterSymbol> copiedParameters,
-        ImmutableArray<ManagedContextField> localInits,
+        StateMachineFrame frame,
         string bodySource,
         Accessibility accessibility,
         bool isUnsafe = false)
@@ -336,16 +507,19 @@ internal static class ManagedStateMachineEmitter
         using var suppression =
             writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters,
-            GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult,
+            frame.CopiedParameters, GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
         using (writer.Scope(" {"))
         {
-            foreach (var localInit in localInits)
+            foreach (var slot in frame.Slots)
             {
-                AppendResumeLocal(writer, localInit);
+                if (IsResumeLocal(slot))
+                {
+                    AppendResumeLocal(writer, slot);
+                }
             }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+            AppendCopiedParameterInitialization(writer, frame.CopiedParameters, isUnsafe);
             writer.AppendLine(bodySource);
         }
     }
