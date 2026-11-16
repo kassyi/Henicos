@@ -2039,7 +2039,7 @@ __gsharp_switch_1_state_0:
 __gsharp_array_at(__gsharp_id_1_dst, 0, 790900600u)=1;
 int __gsharp_id_2_sum = ([&]() -> auto {
 auto&& __gsharp_fusion_src = __gsharp_id_0_source;
-int __gsharp_fusion_res = 0;
+long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
 for (int __gsharp_i = __gsharp_fusion_lo; __gsharp_i < __gsharp_fusion_hi; __gsharp_i++)
@@ -2051,7 +2051,7 @@ return (__gsharp_id_3_x<0?__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__Threa
 )(__gsharp_val_0);
 __gsharp_fusion_res += __gsharp_val_1;
 }
-return __gsharp_fusion_res;
+return __gsharp_sum_i32(__gsharp_fusion_res);
 }());
 __gsharp_array_at(__gsharp_id_1_dst, 1, 249422352u)=__gsharp_id_2_sum;
 __gsharp_state=-1;

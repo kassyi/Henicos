@@ -2201,7 +2201,7 @@ inline int __gsharp_fn_FileLocalRepro__LocalMath_f0__Thrice(int __gsharp_id_0_x)
 return __gsharp_mul_i32(__gsharp_id_0_x,3);
 }
 
-#error ""FileLocalType_ManagedBody.cs(46,25): GSH0004: Method 'Id' is marked with [GpuKernel] but returns unsupported type 'T'. GpuKernel methods must return void or an unmanaged blittable type.""
+#error ""FileLocalType_ManagedBody.cs(46,25): GSH0004: Method 'Id' returns unsupported type 'T'. Kernels and device functions must return void or an unmanaged blittable type; a device function may also be a device iterator.""
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_FileLocalRepro__Pair__
 #define __GSHARP_STRUCT___gsharp_ty_FileLocalRepro__Pair__

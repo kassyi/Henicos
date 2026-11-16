@@ -178,6 +178,10 @@ native.Offset = host.Offset;
 }
 public static unsafe void Unmarshal_DiffNonNullableHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, ref AotContexts.DiffNonNullableHolder native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Offset = native.Offset;
 }
 public static void CopyArrays_DiffNonNullableHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNonNullableHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
