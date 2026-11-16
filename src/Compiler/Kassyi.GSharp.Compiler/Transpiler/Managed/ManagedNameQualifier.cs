@@ -73,12 +73,14 @@ internal static class ManagedNameQualifier
         }
 
         var receiverParameter = extension.Parameters[0];
-        var receiverModifier = receiverParameter.RefKind switch
+        var isVariable = ManagedCallForms.ReceiverNeedsVariableTest(receiverParameter.RefKind) &&
+            IsVariableOfType(access.Expression, receiverParameter.Type, semanticModel);
+        var receiverModifier = ManagedCallForms.GetReceiverModifier(receiverParameter.RefKind, isVariable) switch
         {
-            RefKind.Ref => SyntaxKind.RefKeyword,
-            RefKind.In or RefKind.RefReadOnlyParameter when IsVariableOfType(access.Expression, receiverParameter.Type,
-                semanticModel) => SyntaxKind.InKeyword,
-            _ => SyntaxKind.None
+            ManagedArgumentModifier.Ref => SyntaxKind.RefKeyword,
+            ManagedArgumentModifier.In => SyntaxKind.InKeyword,
+            ManagedArgumentModifier.None => SyntaxKind.None,
+            _ => throw new InvalidOperationException()
         };
 
         var receiver = visitor.Visit(access.Expression) as ExpressionSyntax ?? access.Expression;
@@ -193,14 +195,15 @@ internal static class ManagedNameQualifier
         semanticModel.GetOriginalNode(node) is SimpleNameSyntax original &&
         string.Equals(original.Identifier.ValueText, node.Identifier.ValueText, StringComparison.Ordinal);
 
-    // What the name names: a namespace, a type, a static member, or the attribute class of an attribute's name (which
-    // binds to the constructor)
-    private static bool TryGetNamedSymbol(SimpleNameSyntax node, ISymbol symbol, [NotNullWhen(true)] out ISymbol? named)
-    {
-        named = symbol switch
+    /// <summary>
+    /// Discovers what the name targets: a namespace, a type, a static member, or the attribute class of an attribute's
+    /// name (which binds to the constructor).
+    /// </summary>
+    internal static ISymbol? GetNamedSymbol(ISymbol symbol, bool isAttributeName) =>
+        symbol switch
         {
             IMethodSymbol { MethodKind: MethodKind.Constructor, ContainingType: { } attributeType }
-                when node.Parent is AttributeSyntax attribute && attribute.Name == node => attributeType,
+                when isAttributeName => attributeType,
             INamespaceSymbol { IsGlobalNamespace: false } => symbol,
             INamedTypeSymbol { TypeKind: not TypeKind.Error } => symbol,
             IArrayTypeSymbol or IPointerTypeSymbol => symbol,
@@ -209,6 +212,12 @@ internal static class ManagedNameQualifier
                 when symbol.ContainingType != null => symbol,
             _ => null
         };
+
+    // What the name names: a namespace, a type, a static member, or the attribute class of an attribute's name (which
+    // binds to the constructor)
+    private static bool TryGetNamedSymbol(SimpleNameSyntax node, ISymbol symbol, [NotNullWhen(true)] out ISymbol? named)
+    {
+        named = GetNamedSymbol(symbol, node.Parent is AttributeSyntax attribute && attribute.Name == node);
         return named != null;
     }
 
@@ -223,8 +232,10 @@ internal static class ManagedNameQualifier
                 named.Name.EndsWith(AttributeSuffix, StringComparison.Ordinal));
     }
 
-    // The full name of what contains the symbol, from global::; empty for the global namespace
-    private static string GetContainerName(ISymbol symbol) =>
+    /// <summary>
+    /// The full name of what contains the symbol, from global::; empty for the global namespace.
+    /// </summary>
+    internal static string GetContainerName(ISymbol symbol) =>
         symbol.ContainingType is { } containingType
             ? containingType.GetFullyQualifiedCsharpName()
             : GetNamespaceName(symbol.ContainingNamespace);
