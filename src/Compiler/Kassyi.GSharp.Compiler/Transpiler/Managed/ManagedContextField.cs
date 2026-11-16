@@ -11,6 +11,10 @@ internal readonly record struct ManagedContextField(
     string Name,
     ResumeLocal? Resume = null)
 {
+    /// <summary>The managed stackalloc storage of the resume local named <paramref name="name"/>.</summary>
+    public static string GetStorageName(string name) =>
+        GSharpInternalNames.Lowering.ResumeStoragePrefix + name.TrimStart('@');
+
     /// <summary>The managed stackalloc storage that a resume local is bound to where it is declared.</summary>
-    public string StorageName => GSharpInternalNames.Lowering.ResumeStoragePrefix + Name.TrimStart('@');
+    public string StorageName => GetStorageName(Name);
 }

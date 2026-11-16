@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -31,15 +33,16 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
+        var callees = GetCallees(lowered.CallSites, semanticModel);
+        var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
-                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
+                       ManagedStateMachineEmitter.HasPointerField(frame);
         var compilation = semanticModel.Compilation;
         var accessors = new ManagedAccessorSet(methodSymbol, compilation);
-        var callees = GetCallees(lowered.CallSites, semanticModel);
 
         // A callee without a frame (a file-local type, GSH0119, or the diagnostics of the callee) leaves a body that
         // throws, and no call frames
@@ -52,33 +55,33 @@ internal static class ManagedCSharpTranspiler
             : CreateUnavailableFrameThrow(kernelName, unavailable);
 
         var accessibility = KernelFrameAccessibility.Create(methodSymbol,
-            GetFrameFieldTypes(regularFields, copiedParameters),
+            GetFrameFieldTypes(frame),
             ManagedStateMachineAvailability.GetCallFrames(callFrames, compilation));
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, contextName, regularFields, copiedParameters, callFrames, accessibility.Context,
-            Accessibility.Public, isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            writer, contextName, frame, callFrames, accessibility.Context,
+            Accessibility.Public, isUnsafe: isUnsafe);
         ManagedStateMachineEmitter.EmitStateMachineMethod(
-            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, copiedParameters, localInits,
+            writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, frame,
             bodySource, accessibility.StateMachine, isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
         return writer.ToString();
     }
 
     // The types of the context's fields: the copied parameters and the hoisted locals
-    private static ImmutableArray<ITypeSymbol> GetFrameFieldTypes(ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters)
+    private static ImmutableArray<ITypeSymbol> GetFrameFieldTypes(StateMachineFrame frame)
     {
-        var types = ImmutableArray.CreateBuilder<ITypeSymbol>(copiedParameters.Length + regularFields.Length);
-        copiedParameters
+        var types = ImmutableArray.CreateBuilder<ITypeSymbol>();
+        frame.CopiedParameters
             .AsStackEnumerable()
             .Select(static p => p.Type)
             .AddTo(types);
-        regularFields
+        frame.Slots
             .AsStackEnumerable()
-            .Select(static f => f.ResolvedType)
+            .Where(static s => s.Kind == FrameSlotKind.Field)
+            .Select(static s => s.Type)
             .AddTo(types);
-        return types.MoveToImmutable();
+        return types.ToImmutable();
     }
 
     // The functions of the calls that may suspend, in call order
@@ -139,16 +142,18 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals, slots) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
+        var callees = GetCallees(lowered.CallSites, semanticModel);
+        var frame = new StateMachineFrame(copiedParameters, slots, callees, lowered.WarpSiteCount);
 
         var isUnsafe = ManagedStateMachineAvailability.NeedsUnsafe(methodSymbol, methodDecl) ||
-                       ManagedStateMachineEmitter.HasPointerField(regularFields, copiedParameters);
+                       ManagedStateMachineEmitter.HasPointerField(frame);
         var compilation = semanticModel.Compilation;
         var accessors = new ManagedAccessorSet(methodSymbol, compilation);
         // The generator emits a state machine only when every callee has a frame (ManagedStateMachineAvailability)
-        var callFrames = ManagedStateMachineAvailability.PlanCallFrames(GetCallees(lowered.CallSites, semanticModel),
+        var callFrames = ManagedStateMachineAvailability.PlanCallFrames(callees,
                              methodSymbol.ContainingType, compilation, out _)
                          ?? throw new InvalidOperationException(
                              $"The managed state machine of '{functionName}' calls a function without a frame.");
@@ -162,17 +167,17 @@ internal static class ManagedCSharpTranspiler
         var accessibility = ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol, compilation);
         using var writer = new SourceWriter();
         ManagedStateMachineEmitter.EmitContextClass(
-            writer, frameName, regularFields, copiedParameters, callFrames, accessibility, Accessibility.Internal,
-            isUnsafe: isUnsafe, warpSiteCount: lowered.WarpSiteCount);
+            writer, frameName, frame, callFrames, accessibility, Accessibility.Internal,
+            isUnsafe: isUnsafe);
         ManagedStateMachineEmitter.EmitDeviceStateMachineMethod(
-            writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits, bodySource, accessibility,
+            writer, frameName, stateMachineName, methodSymbol, frame, bodySource, accessibility,
             isUnsafe: isUnsafe);
         if (ManagedStateMachineAvailability.HasEntries(methodSymbol, accessibility))
         {
             // With the function's declared accessibility: the callers of other classes run the private frame through
             // them
             ManagedStateMachineEmitter.EmitFrameEntries(writer, frameName, stateMachineName, methodSymbol,
-                copiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
+                frame.CopiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
         }
         accessors.WriteTo(writer);
         return writer.ToString();

@@ -69,7 +69,7 @@ public abstract class StateMachineTestBase
     {
         var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform);
 
-        var (localInits, regularFields, unhoistedLocals, renamedLocals) =
+        var (localInits, regularFields, unhoistedLocals, renamedLocals, _) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, methodName);
         var rewritten = ManagedCSharpTranspiler.RewriteResumeLocals(lowered.LoweredBody, unhoistedLocals, renamedLocals,
             model, methodName, zeroFill: true);
