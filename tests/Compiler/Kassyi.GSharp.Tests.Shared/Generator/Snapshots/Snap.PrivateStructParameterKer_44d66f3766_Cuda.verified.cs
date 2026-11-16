@@ -157,6 +157,13 @@ handle.Free();
 }
 host.Scale = native.Scale;
 }
+public static void AliasHeldArrays_PrivateStructParameterKernels_Bag(ref global::Kassyi.GSharp.Tests.Shared.Syntax.PrivateStructParameterKernels.Bag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Values != null)
+{
+held.Add(host.Values, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string ScaleKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PrivateStructParameterKernels__Bag__

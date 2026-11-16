@@ -288,6 +288,10 @@ public static unsafe void Unmarshal_GpuBigIntContext(ref global::Kassyi.GSharp.S
 Unmarshal_OperandContext(ref host.Operands, ref native.Operands, hStream);
 host.NumberOfWords = native.NumberOfWords;
 }
+public static void AliasHeldArrays_GpuBigIntContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+AliasHeldArrays_OperandContext(ref host.Operands, held);
+}
 public static void CopyArrays_GpuBigIntContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 CopyArrays_OperandContext(ref host.Operands, copies);
@@ -425,6 +429,37 @@ host.Constant3 = default;
 if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
 {
 host.CarryBuffer = default;
+}
+}
+public static void AliasHeldArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.LeftOperand != null)
+{
+held.Add(host.LeftOperand, 4, 0, false);
+}
+if (host.RightOperand != null)
+{
+held.Add(host.RightOperand, 4, 0, false);
+}
+if (host.TargetOperand != null)
+{
+held.Add(host.TargetOperand, 4, 0, false);
+}
+if (host.ResultBuffer != null)
+{
+held.Add(host.ResultBuffer, 4, 0, false);
+}
+if (host.Constant != null)
+{
+held.Add(host.Constant, 4, 0, false);
+}
+if (host.Constant3 != null)
+{
+held.Add(host.Constant3, 4, 0, false);
+}
+if (host.CarryBuffer != null)
+{
+held.Add(host.CarryBuffer, 8, 0, false);
 }
 }
 public static void CopyArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

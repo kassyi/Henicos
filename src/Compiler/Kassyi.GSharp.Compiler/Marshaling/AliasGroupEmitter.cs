@@ -20,11 +20,15 @@ internal static class AliasGroupEmitter
     private const string Native = GSharpInternalNames.Launcher.AliasNative;
     private const string Index = GSharpInternalNames.Launcher.AliasIndex;
     private const string Handles = GSharpInternalNames.Launcher.AliasHandles;
+    private const string Held = GSharpInternalNames.Launcher.AliasHeld;
 
     // HostAliasGroups? __gsharp_aliases = null;
     /// <summary>Declares the groups of the launch, before the launcher's <c>try</c> block.</summary>
-    public static void WriteDeclaration(SourceWriter writer, in LaunchAliasPlan plan) =>
+    public static void WriteDeclaration(SourceWriter writer, in LaunchAliasPlan plan)
+    {
         writer.AppendLineIf(plan.IsActive, $"{GroupsType}? {Aliases} = null;");
+        writer.AppendLineIf(plan.HasHeldArrays, $"{StructArrayHelperEmitter.HeldArraysType}? {Held} = null;");
+    }
 
     /// <summary>
     /// The condition that parameter <paramref name="parameterIndex"/> is a member of a group, or <see langword="null"/>
@@ -48,27 +52,40 @@ internal static class AliasGroupEmitter
         }
 
         writer.AppendLine("// Find the arguments that overlap and give each group one device region");
+        WriteHeldArrays(writer, sharing, isCuda: true);
         using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
         {
-            AliasRangeEmitter.WriteFind(writer, plan.Ranges);
+            AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
             WriteClearedOutArguments(writer, sharing);
             writer.AppendLine($"if ({Aliases} != null)");
             using (writer.Scope())
             {
-                writer.AppendLine($"{Aliases}.CopyToDevice({AliasRangeEmitter.RangesSpan(plan.Ranges)}, hStream);");
-                for (var k = 0; k < plan.Candidates.Length && sharing.UsesTable; k++)
-                {
-                    var shape = sharing.Parameters[plan.Candidates[k]];
-                    if (shape.IsSharableArray)
-                    {
-                        writer.AppendLine($"if ({Aliases}.IsMember({k})) " +
-                            $"{DeviceArrays}.AddShared({shape.Identifier}, {Aliases}.GetDevicePointer({k}));");
-                    }
-                }
-
-                WriteConversions(writer, plan, toDevice: true, isCuda: true);
+                WriteCudaGroupRegions(writer, sharing);
             }
         }
+    }
+
+    // __gsharp_aliases.CopyToDevice(<ranges>, hStream); [__gsharp_alias_held.AddRegions(...);]
+    // [if (__gsharp_aliases.IsMember(<k>)) __gsharp_device_arrays.AddShared(<array>, <region>);] <conversions>
+    private static void WriteCudaGroupRegions(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        var plan = sharing.Aliases;
+        var ranges = AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays);
+        writer.AppendLine($"{Aliases}.CopyToDevice({ranges}, hStream);");
+        var table = sharing.UsesTable ? DeviceArrays : "null";
+        writer.AppendLineIf(plan.HasHeldArrays,
+            $"{Held}.AddRegions({Aliases}, {plan.Ranges.Length}, {table});");
+        for (var k = 0; k < plan.Candidates.Length && sharing.UsesTable; k++)
+        {
+            var shape = sharing.Parameters[plan.Candidates[k]];
+            if (shape.IsSharableArray)
+            {
+                writer.AppendLine($"if ({Aliases}.IsMember({k})) " +
+                    $"{DeviceArrays}.AddShared({shape.Identifier}, {Aliases}.GetDevicePointer({k}));");
+            }
+        }
+
+        WriteConversions(writer, plan, toDevice: true, isCuda: true);
     }
 
     // if (__gsharp_aliases != null) { <pins> { __gsharp_aliases.CopyToHost(<ranges>, hStream); } }
@@ -86,15 +103,66 @@ internal static class AliasGroupEmitter
         {
             using (AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges))
             {
-                writer.AppendLine($"{Aliases}.CopyToHost({AliasRangeEmitter.RangesSpan(plan.Ranges)}, hStream);");
+                writer.AppendLine(
+                    $"{Aliases}.CopyToHost({AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)}, hStream);");
                 WriteConversions(writer, plan, toDevice: false, isCuda: true);
             }
         }
     }
 
     /// <summary>CUDA: frees the regions of the groups, in the launcher's <c>finally</c> block.</summary>
-    public static void WriteCudaFree(SourceWriter writer, in LaunchAliasPlan plan) =>
+    public static void WriteCudaFree(SourceWriter writer, in LaunchAliasPlan plan)
+    {
         writer.AppendLineIf(plan.IsActive, $"{Aliases}?.FreeDevice(hStream);");
+        writer.AppendLineIf(plan.HasHeldArrays, $"{Held}?.Free();");
+    }
+
+    // __gsharp_alias_held = new(); <the AliasHeldArrays_ call of each struct argument>; __gsharp_alias_held.Pin();
+    // [WHY] The arrays that the struct arguments hold are pinned for the launch and take part in the comparison as
+    // whole arrays, so that a slice of one of them joins its group (#1849)
+    private static void WriteHeldArrays(SourceWriter writer, in ArraySharingPlan sharing, bool isCuda)
+    {
+        var plan = sharing.Aliases;
+        if (!plan.HasHeldArrays)
+        {
+            return;
+        }
+
+        writer.AppendLine($"{Held} = new();");
+        foreach (var index in plan.HeldSources)
+        {
+            WriteHeldArraysOf(writer, sharing, index, isCuda);
+        }
+
+        writer.AppendLine($"{Held}.Pin();");
+    }
+
+    // held.CopiesBack = <bool>; <the AliasHeldArrays_ call of the argument, or of each of its elements>
+    // [WHY] A read-only container is copied in only, so the arrays that its elements hold are not copied back; each
+    // element is passed through Unsafe.AsRef, as the method takes a ref and the element is a ref readonly
+    private static void WriteHeldArraysOf(SourceWriter writer, in ArraySharingPlan sharing, int index, bool isCuda)
+    {
+        var shape = sharing.Parameters[index];
+        var method = shape.HeldArraysMethodName ?? throw new InvalidOperationException(
+            $"Parameter '{shape.Identifier}' holds no arrays.");
+        var copiesBack = isCuda
+            ? !shape.IsArray || sharing.CopiesBack(index)
+            : !(shape.IsArray && (sharing.NeedsKernelCopy(index) || shape.IsReadOnlyContainer));
+        writer.AppendLine($"{Held}.CopiesBack = {(copiesBack ? "true" : "false")};");
+        if (!shape.IsArray)
+        {
+            writer.AppendLine($"{method}(ref {shape.ReferenceExpression}, {Held});");
+            return;
+        }
+
+        var element = $"{shape.SpanExpression}[{Index}]";
+        var reference = shape.IsReadOnlyContainer ? $"{HostTypeNames.Unsafe}.AsRef(in {element})" : element;
+        writer.AppendLine($"for (int {Index} = 0; {Index} < {shape.SpanExpression}.Length; {Index}++)");
+        using (writer.Scope())
+        {
+            writer.AppendLine($"{method}(ref {reference}, {Held});");
+        }
+    }
 
     // List<IntPtr>? __gsharp_alias_handles = null;   (CPU, before the try block that frees them)
     // [WHY] Created only with the groups (WriteCpuConversions), so that a launch without an overlap allocates nothing
@@ -177,7 +245,7 @@ internal static class AliasGroupEmitter
                 writer.AppendLine($"if ({layout}.ConversionKey != {conversion.Key}) continue;");
                 writer.Append($"{HostTypeNames.Span}<{conversion.HostType}> {Host} = ");
                 writer.AppendLine($"{StagingType}.GetHostElements<{conversion.HostType}>({Aliases}, {Group}, " +
-                    $"{AliasRangeEmitter.RangesSpan(plan.Ranges)});");
+                    $"{AliasRangeEmitter.RangesSpan(plan.Ranges, plan.HasHeldArrays)});");
                 writer.Append($"{HostTypeNames.Span}<{conversion.ShadowType}> {Native} = ");
                 writer.AppendLine($"{StagingType}.GetBuffer<{conversion.ShadowType}>({Aliases}, {Group});");
                 writer.AppendLine($"if ({layout}.{(toDevice ? "CopiesIn" : "CopiesBack")})");
@@ -224,11 +292,39 @@ internal static class AliasGroupEmitter
 
         writer.AppendLine("// Find the arguments that overlap: the [In] members of a group share one copy");
         WriteDeclaration(writer, plan);
+        WriteHeldArrays(writer, sharing, isCuda: false);
         var scope = AliasRangeEmitter.WritePinnedRanges(writer, plan.Ranges);
-        AliasRangeEmitter.WriteFind(writer, plan.Ranges);
+        AliasRangeEmitter.WriteFind(writer, plan.Ranges, plan.HasHeldArrays);
         WriteClearedOutArguments(writer, sharing);
         return scope;
     }
+
+    // if (__gsharp_aliases != null)
+    // { __gsharp_alias_held.ShareCopies(__gsharp_aliases, <n>, <ranges>, __gsharp_array_copies); }
+    // [WHY] A held array in a group of [In] arguments is copied once, with the group, and every holder of it takes that
+    // copy (HostArrayCopies), so that a write through the field is seen through the slice (#1849). After the table of
+    // the launch is declared, before the arguments take their copies
+    /// <summary>CPU: gives the held arrays of the groups their group's copy in the launch's copy table.</summary>
+    public static void WriteCpuHeldCopies(SourceWriter writer, in ArraySharingPlan sharing)
+    {
+        var plan = sharing.Aliases;
+        if (!plan.HasHeldArrays || !sharing.UsesCopyTable)
+        {
+            return;
+        }
+
+        var ranges = AliasRangeEmitter.RangesSpan(plan.Ranges, heldArrays: true);
+        writer.AppendLine($"if ({Aliases} != null)");
+        using (writer.Scope())
+        {
+            var copies = GSharpInternalNames.Launcher.ArrayCopies;
+            writer.AppendLine($"{Held}.ShareCopies({Aliases}, {plan.Ranges.Length}, {ranges}, {copies});");
+        }
+    }
+
+    /// <summary>CPU: unpins the held arrays, after the arguments took their copies.</summary>
+    public static void WriteCpuHeldRelease(SourceWriter writer, in LaunchAliasPlan plan) =>
+        writer.AppendLineIf(plan.HasHeldArrays, $"{Held}?.Free();");
 
     // if (!(__gsharp_aliases?.IsMember(<k>) == true)) <out name> = default;   for each out struct that holds arrays
     // [WHY] An out argument that no other argument refers to is cleared, as it always was; one that does keeps the
@@ -353,7 +449,7 @@ internal static class AliasGroupEmitter
     // HostAliasCopies.<method><<T>>(__gsharp_aliases, <k>, <ranges>,   (the out arguments follow)
     private static string CopyCall(in ArraySharingPlan sharing, int parameterIndex, string method, string element) =>
         $"{CopiesType}.{method}<{element}>({Aliases}, {sharing.Aliases.MemberIndexOf(parameterIndex)}, " +
-        $"{AliasRangeEmitter.RangesSpan(sharing.Aliases.Ranges)}, ";
+        $"{AliasRangeEmitter.RangesSpan(sharing.Aliases.Ranges, sharing.Aliases.HasHeldArrays)}, ";
 
     // ", <copies>, <CopyArrays_>": an element that holds arrays gets copies of them too, through the launch's
     // HostArrayCopies; empty for other elements

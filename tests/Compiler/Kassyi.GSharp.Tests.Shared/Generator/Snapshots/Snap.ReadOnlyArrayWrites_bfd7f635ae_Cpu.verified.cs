@@ -128,6 +128,17 @@ if (native.Free.Data == global::System.IntPtr.Zero)
 host.Free = default;
 }
 }
+public static void AliasHeldArrays_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Fixed != null)
+{
+held.Add(host.Fixed, 4, 0, false);
+}
+if (host.Free != null)
+{
+held.Add(host.Free, 4, 0, false);
+}
+}
 public static void CopyArrays_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.Fixed);

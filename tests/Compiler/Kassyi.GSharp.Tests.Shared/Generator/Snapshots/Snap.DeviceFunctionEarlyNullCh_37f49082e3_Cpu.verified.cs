@@ -124,6 +124,14 @@ if (native.Other.Data == global::System.IntPtr.Zero)
 host.Other = default;
 }
 }
+public static void AliasHeldArrays_DeviceFunctionOuterBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+AliasHeldArrays_DeviceFunctionInnerBag(ref host.Inner, held);
+if (host.Other != null)
+{
+held.Add(host.Other, 4, 0, false);
+}
+}
 public static void CopyArrays_DeviceFunctionOuterBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 CopyArrays_DeviceFunctionInnerBag(ref host.Inner, copies);
@@ -176,6 +184,13 @@ public static unsafe void Unmarshal_DeviceFunctionInnerBag(ref global::Kassyi.GS
 if (native.Data.Data == global::System.IntPtr.Zero)
 {
 host.Data = default;
+}
+}
+public static void AliasHeldArrays_DeviceFunctionInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
 }
 }
 public static void CopyArrays_DeviceFunctionInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

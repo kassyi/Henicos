@@ -213,6 +213,14 @@ handle.Free();
 }
 }
 }
+public static void AliasHeldArrays_DeviceFunctionOuterBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionOuterBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+AliasHeldArrays_DeviceFunctionInnerBag(ref host.Inner, held);
+if (host.Other != null)
+{
+held.Add(host.Other, 4, 0, false);
+}
+}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct DeviceFunctionInnerBag
 {
@@ -275,6 +283,13 @@ finally
 handle.Free();
 }
 }
+}
+}
+public static void AliasHeldArrays_DeviceFunctionInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Core.DeviceFunctionInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
 }
 }
 #pragma warning restore CS8500

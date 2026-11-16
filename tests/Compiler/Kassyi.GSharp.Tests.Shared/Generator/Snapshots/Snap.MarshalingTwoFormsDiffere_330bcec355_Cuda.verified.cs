@@ -158,29 +158,29 @@ void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
@@ -265,26 +265,26 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))
@@ -430,35 +430,35 @@ void** __gsharp_kernel_params = stackalloc void*[5];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(allReads))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[24];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[24];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_3;
-__gsharp_alias_ranges[19] = (nint)(allReads?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[18] = (global::System.IntPtr)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[19] = (global::System.IntPtr)(allReads?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[20] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[21] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[22] = 4;
 __gsharp_alias_ranges[23] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), new byte[] {1, 3, 10, 10}, "first,second,observed,allReads");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), new byte[] {1, 3, 10, 10}, "first,second,observed,allReads");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), hStream);
 }
 }
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
@@ -570,32 +570,32 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(allReads))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[24];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[24];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_3;
-__gsharp_alias_ranges[19] = (nint)(allReads?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[18] = (global::System.IntPtr)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[19] = (global::System.IntPtr)(allReads?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[20] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[21] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[22] = 4;
 __gsharp_alias_ranges[23] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))
@@ -757,29 +757,29 @@ void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
@@ -864,26 +864,26 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))
@@ -1028,35 +1028,35 @@ void** __gsharp_kernel_params = stackalloc void*[5];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in second)), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref third), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[24];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[24];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[13] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_3;
-__gsharp_alias_ranges[19] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[18] = (global::System.IntPtr)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[19] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[20] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[21] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[22] = 4;
 __gsharp_alias_ranges[23] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), new byte[] {1, 1, 3, 10}, "first,second,third,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), new byte[] {1, 1, 3, 10}, "first,second,third,observed");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), hStream);
 }
 }
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true || __gsharp_aliases?.IsMember(1) == true;
@@ -1167,32 +1167,32 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in second)), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref third), __gsharp_alias_pin_3 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[24];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[24];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
 __gsharp_alias_ranges[13] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_alias_ranges[18] = (nint)__gsharp_alias_pin_3;
-__gsharp_alias_ranges[19] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[18] = (global::System.IntPtr)__gsharp_alias_pin_3;
+__gsharp_alias_ranges[19] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[20] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[21] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[22] = 4;
 __gsharp_alias_ranges[23] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 24), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 24), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(2) == true))
@@ -1368,29 +1368,29 @@ void** __gsharp_kernel_params = stackalloc void*[4];
 // Find the arguments that overlap and give each group one device region
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
+__gsharp_aliases = global::Kassyi.GSharp.Runtime.Interop.HostAliasGroups.Find(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), new byte[] {1, 3, 10}, "first,second,observed");
 if (__gsharp_aliases != null)
 {
-__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToDevice(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 bool __gsharp_in_aliased = __gsharp_aliases?.IsMember(0) == true;
@@ -1475,26 +1475,26 @@ if (__gsharp_aliases != null)
 {
 fixed (byte* __gsharp_alias_pin_0 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in first)), __gsharp_alias_pin_1 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.StartOf(ref second), __gsharp_alias_pin_2 = &global::Kassyi.GSharp.Runtime.Interop.HostAliasPins.Start(observed))
 {
-nint* __gsharp_alias_ranges = stackalloc nint[18];
-__gsharp_alias_ranges[0] = (nint)__gsharp_alias_pin_0;
+global::System.IntPtr* __gsharp_alias_ranges = stackalloc global::System.IntPtr[18];
+__gsharp_alias_ranges[0] = (global::System.IntPtr)__gsharp_alias_pin_0;
 __gsharp_alias_ranges[1] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[2] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[3] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[4] = 4;
 __gsharp_alias_ranges[5] = 0;
-__gsharp_alias_ranges[6] = (nint)__gsharp_alias_pin_1;
+__gsharp_alias_ranges[6] = (global::System.IntPtr)__gsharp_alias_pin_1;
 __gsharp_alias_ranges[7] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[8] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[9] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[10] = 4;
 __gsharp_alias_ranges[11] = 0;
-__gsharp_alias_ranges[12] = (nint)__gsharp_alias_pin_2;
-__gsharp_alias_ranges[13] = (nint)(observed?.Length ?? 0) * sizeof(global::System.Int32);
+__gsharp_alias_ranges[12] = (global::System.IntPtr)__gsharp_alias_pin_2;
+__gsharp_alias_ranges[13] = (global::System.IntPtr)(observed?.Length ?? 0) * sizeof(global::System.Int32);
 __gsharp_alias_ranges[14] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[15] = sizeof(global::System.Int32);
 __gsharp_alias_ranges[16] = 4;
 __gsharp_alias_ranges[17] = 0;
-__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<nint>(__gsharp_alias_ranges, 18), hStream);
+__gsharp_aliases.CopyToHost(new global::System.ReadOnlySpan<global::System.IntPtr>(__gsharp_alias_ranges, 18), hStream);
 }
 }
 if (!(__gsharp_aliases?.IsMember(1) == true))

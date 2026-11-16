@@ -54,6 +54,10 @@ internal enum NullableValueForm
 /// <param name="ArrayValue">
 /// The view of an array-like value for <see cref="NullableValueForm.ArrayView"/>, otherwise <see langword="null"/>.
 /// </param>
+/// <param name="HeldArrays">
+/// The methods that collect the held arrays, or <see langword="null"/> when the value is not a struct that holds
+/// arrays.
+/// </param>
 /// <param name="ArrayHelpers">
 /// The CPU methods that copy and find the arrays the value holds, or <see langword="null"/> when it holds none or on
 /// CUDA.
@@ -75,7 +79,8 @@ internal sealed record NullableShadowPlan(
     string ArraysParameter,
     string ArraysParameterType,
     ArrayFieldView? ArrayValue,
-    NullableArrayHelpers? ArrayHelpers)
+    NullableArrayHelpers? ArrayHelpers,
+    NullableHeldArrays? HeldArrays)
 {
     /// <summary>Plans the shadow of <paramref name="nullableType"/> under <paramref name="dialect"/>.</summary>
     /// <exception cref="InvalidOperationException">
@@ -114,7 +119,12 @@ internal sealed record NullableShadowPlan(
             StructArrayHelperEmitter.ArraysParameter(dialect),
             dialect.IsCuda ? $"{StructMarshalingEmitter.DeviceArrayRegionsType}?" : $"{HostTypeNames.PointerList}?",
             isArray ? ArrayFieldView.Create(value, dialect) : null,
-            PlanArrayHelpers(nullableType, value, isArray, dialect));
+            PlanArrayHelpers(nullableType, value, isArray, dialect),
+            !isArray && HostShadowStructs.HoldsArrayFields(value)
+                ? new NullableHeldArrays(
+                    AotHostNames.GetAliasHeldArraysMethodName(nullableType),
+                    AotHostNames.GetAliasHeldArraysMethodName(value))
+                : null);
     }
 
     // CopyArrays_ for a value that holds arrays or is one (the [In] copy of the view), HoldsArray_ for a value whose
@@ -134,6 +144,14 @@ internal sealed record NullableShadowPlan(
             isArray ? null : AotHostNames.GetHoldsArrayMethodName(value));
     }
 }
+
+/// <summary>
+/// The <c>AliasHeldArrays_</c> methods of a <c>Nullable&lt;T&gt;</c> whose value is a struct that holds arrays, and of
+/// that value, for the comparison of the held arrays with the slices of a launch.
+/// </summary>
+/// <param name="MethodName">The method of the <c>Nullable&lt;T&gt;</c>.</param>
+/// <param name="ValueMethodName">The method of the value.</param>
+internal sealed record NullableHeldArrays(string MethodName, string ValueMethodName);
 
 /// <summary>
 /// The CPU array helpers of a <c>Nullable&lt;T&gt;</c> whose value holds arrays (<see cref="NullableShadowPlan"/>).

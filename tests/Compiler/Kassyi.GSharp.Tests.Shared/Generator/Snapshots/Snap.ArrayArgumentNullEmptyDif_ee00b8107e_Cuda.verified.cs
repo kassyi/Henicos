@@ -247,6 +247,13 @@ handle.Free();
 }
 host.Tag = native.Tag;
 }
+public static void AliasHeldArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string NullableArrayKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ArrayArgumentNullEmptyDifferentialKernels__NullableArrayKernel(GSharpArray<int> __gsharp_id_0_a, int __gsharp_id_1_mode, GSharpArray<int> __gsharp_id_2_o, unsigned int __gsharp_epoch){

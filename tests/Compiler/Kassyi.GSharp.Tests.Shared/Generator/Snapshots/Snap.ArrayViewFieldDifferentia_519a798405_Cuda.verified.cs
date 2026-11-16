@@ -287,6 +287,9 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 Unmarshal___gsharp_nullable_of_Memory_Int32(ref host.Optional, ref native.Optional, hStream);
 Unmarshal___gsharp_nullable_of_ArraySegment_Int32(ref host.OptionalSegment, ref native.OptionalSegment, hStream);
 }
+public static void AliasHeldArrays_ArrayViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct __gsharp_nullable_of_Memory_Int32
 {
@@ -432,6 +435,10 @@ public static unsafe void Unmarshal_OuterViewFields(ref global::Kassyi.GSharp.Te
 host.Tag = native.Tag;
 Unmarshal_NestedViewFields(ref host.Inner, ref native.Inner, hStream);
 }
+public static void AliasHeldArrays_OuterViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+AliasHeldArrays_NestedViewFields(ref host.Inner, held);
+}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 40)]
 public unsafe partial struct NestedViewFields
 {
@@ -523,6 +530,9 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 }
+}
+public static void AliasHeldArrays_NestedViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.NestedViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
 public unsafe partial struct ArrayViewElementFields
@@ -688,6 +698,9 @@ global::Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(global::Kassyi.
 }
 }
 }
+}
+public static void AliasHeldArrays_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct ArrayViewElement

@@ -149,6 +149,22 @@ host.Result = default;
 host.Modulus = native.Modulus;
 Unmarshal_DualNttContext(ref host.Ntt, ref native.Ntt, hStream);
 }
+public static void AliasHeldArrays_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.OperandA != null)
+{
+held.Add(host.OperandA, 4, 0, false);
+}
+if (host.OperandB != null)
+{
+held.Add(host.OperandB, 4, 0, false);
+}
+if (host.Result != null)
+{
+held.Add(host.Result, 4, 0, false);
+}
+AliasHeldArrays_DualNttContext(ref host.Ntt, held);
+}
 public static void CopyArrays_FermatContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.FermatContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.OperandA);
@@ -247,6 +263,21 @@ if (native.Twiddles.Data == global::System.IntPtr.Zero)
 host.Twiddles = default;
 }
 host.Length = native.Length;
+}
+public static void AliasHeldArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Buffer1 != null)
+{
+held.Add(host.Buffer1, 4, 0, false);
+}
+if (host.Buffer2 != null)
+{
+held.Add(host.Buffer2, 4, 0, false);
+}
+if (host.Twiddles != null)
+{
+held.Add(host.Twiddles, 4, 0, false);
+}
 }
 public static void CopyArrays_DualNttContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.DualNttContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -356,6 +387,25 @@ if (native.Scratch.Data == global::System.IntPtr.Zero)
 host.Scratch = default;
 }
 host.Length = native.Length;
+}
+public static void AliasHeldArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.OperandA != null)
+{
+held.Add(host.OperandA, 4, 0, false);
+}
+if (host.OperandB != null)
+{
+held.Add(host.OperandB, 4, 0, false);
+}
+if (host.Result != null)
+{
+held.Add(host.Result, 4, 0, false);
+}
+if (host.Scratch != null)
+{
+held.Add(host.Scratch, 4, 0, false);
+}
 }
 public static void CopyArrays_CryptoContext(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CryptoContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {

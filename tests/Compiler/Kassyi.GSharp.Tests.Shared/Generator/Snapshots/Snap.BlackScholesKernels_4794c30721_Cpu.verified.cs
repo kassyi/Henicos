@@ -167,6 +167,29 @@ host.PutResult = default;
 }
 host.N = native.N;
 }
+public static void AliasHeldArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.S != null)
+{
+held.Add(host.S, 4, 0, false);
+}
+if (host.X != null)
+{
+held.Add(host.X, 4, 0, false);
+}
+if (host.T != null)
+{
+held.Add(host.T, 4, 0, false);
+}
+if (host.CallResult != null)
+{
+held.Add(host.CallResult, 4, 0, false);
+}
+if (host.PutResult != null)
+{
+held.Add(host.PutResult, 4, 0, false);
+}
+}
 public static void CopyArrays_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.S);
