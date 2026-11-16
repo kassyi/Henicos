@@ -14,7 +14,8 @@ internal sealed class IrVariableTable(IrBuildContext context)
     {
         if (!_variables.TryGetValue(local, out var variable))
         {
-            variable = IrVariable.CreateLocal(local, context.Region, DeclarationSourceOf(local));
+            var form = IrSpelling.DeclaredTypeFormOf(local, context.CancellationToken);
+            variable = IrVariable.CreateLocal(local, context.Region, DeclarationSourceOf(local), form);
             _variables.Add(local, variable);
         }
 

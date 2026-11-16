@@ -10,5 +10,5 @@ internal sealed class IrExpressionStatement(IrExpression expression, IrSource so
 
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrExpressionStatement Update(IrExpression expression) =>
-        expression == Expression ? this : new IrExpressionStatement(expression, Source);
+        expression == Expression ? this : KeepSpelling(new IrExpressionStatement(expression, Source));
 }

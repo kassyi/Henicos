@@ -16,10 +16,15 @@ namespace Kassyi.GSharp.Compiler.Targets;
 /// The architectures of the setting (as written, <c>sm_72</c>, <c>compute_130</c>) whose compute capability the table
 /// does not have; their limits are left out.
 /// </param>
+/// <param name="MaxSharedMemoryPerBlockAllowingOversized">
+/// The smallest shared memory per block, in bytes, when kernels allowing oversized shared memory use their oversized
+/// configuration.
+/// </param>
 internal readonly record struct TargetLimits(
     EquatableArray<GpuArchitecture> Architectures,
     int MaxSharedMemoryPerBlockOptIn,
-    EquatableArray<string> UnknownArchitectures)
+    EquatableArray<string> UnknownArchitectures,
+    int MaxSharedMemoryPerBlockAllowingOversized)
 {
     /// <summary>Whether at least one compute capability the fatbin may run on is in the table.</summary>
     public bool IsKnown => !Architectures.IsDefaultOrEmpty;
@@ -38,4 +43,61 @@ internal readonly record struct TargetLimits(
         )
         ? strictest.Name
         : "";
+
+    /// <summary>
+    /// The SASS name (<c>sm_86</c>) of the oldest compute capability whose limit allowing oversized shared memory is
+    /// <see cref="MaxSharedMemoryPerBlockAllowingOversized"/>, to name the GPU that rejects a launch; empty when
+    /// <see cref="IsKnown"/> is <see langword="false"/>.
+    /// </summary>
+    public string OversizedSharedMemoryLimitArchitecture => Architectures
+        .AsStackEnumerable()
+        .TryFirst(
+            MaxSharedMemoryPerBlockAllowingOversized,
+            static (row, limit) =>
+                (row.MaxOversizedSharedMemoryPerBlock > row.MaxSharedMemoryPerBlockOptIn
+                    ? row.MaxOversizedSharedMemoryPerBlock
+                    : row.MaxSharedMemoryPerBlockOptIn) == limit,
+            out var strictest
+        )
+        ? strictest.Name
+        : "";
+
+    /// <summary>
+    /// Whether at least one compute capability is known, no unknown architecture is present, and no target GPU has an
+    /// oversized shared memory configuration (for diagnostic GSH0116).
+    /// </summary>
+    public bool HasNoOversizedTarget =>
+        IsKnown &&
+        UnknownArchitectures.IsDefaultOrEmpty &&
+        !Architectures.AsStackEnumerable().Any(
+            static row => row.MaxOversizedSharedMemoryPerBlock > row.MaxSharedMemoryPerBlockOptIn);
+
+    /// <summary>
+    /// Plans the target GPU shared memory check for a kernel, returning the maximum bytes, the architecture name, and
+    /// any oversized shared memory hint for unmarked kernels.
+    /// </summary>
+    public TargetSharedMemoryPlan? PlanSharedMemoryCheck(bool allowsOversized)
+    {
+        if (!IsKnown)
+        {
+            return null;
+        }
+
+        if (allowsOversized)
+        {
+            return new TargetSharedMemoryPlan(
+                MaxSharedMemoryPerBlockAllowingOversized,
+                OversizedSharedMemoryLimitArchitecture,
+                HintMaxBytes: 0);
+        }
+
+        var hint = MaxSharedMemoryPerBlockAllowingOversized > MaxSharedMemoryPerBlockOptIn
+            ? MaxSharedMemoryPerBlockAllowingOversized
+            : 0;
+
+        return new TargetSharedMemoryPlan(
+            MaxSharedMemoryPerBlockOptIn,
+            SharedMemoryLimitArchitecture,
+            HintMaxBytes: hint);
+    }
 }

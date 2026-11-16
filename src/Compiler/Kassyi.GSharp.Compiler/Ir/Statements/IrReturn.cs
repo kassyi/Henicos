@@ -11,5 +11,5 @@ internal sealed class IrReturn(IrExpression? value, IrSource source) : IrStateme
 
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrReturn Update(IrExpression? value) =>
-        value == Value ? this : new IrReturn(value, Source);
+        value == Value ? this : KeepSpelling(new IrReturn(value, Source));
 }

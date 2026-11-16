@@ -20,5 +20,5 @@ internal sealed class IrNullTest(IrExpression operand, bool isNegated, ITypeSymb
 
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrNullTest Update(IrExpression operand) =>
-        operand == Operand ? this : new IrNullTest(operand, IsNegated, Type, Category, Source);
+        operand == Operand ? this : KeepSpelling(new IrNullTest(operand, IsNegated, Type, Category, Source));
 }

@@ -107,6 +107,9 @@ internal sealed class IrPrinter
             case IrIf @if:
                 WriteIf(@if);
                 break;
+            case IrWhile @while:
+                WriteWhile(@while);
+                break;
             case IrOpaqueStatement opaque:
                 WriteOpaque(opaque);
                 break;
@@ -188,6 +191,14 @@ internal sealed class IrPrinter
             EndLine();
             WriteStatement(@else);
         }
+    }
+
+    private void WriteWhile(IrWhile @while)
+    {
+        _writer.Append("while ");
+        _expressions.WriteExpression(@while.Condition);
+        EndLine();
+        WriteStatement(@while.Body);
     }
 
     /// <summary>A statement on one line, with the temporaries numbered as in this printer.</summary>

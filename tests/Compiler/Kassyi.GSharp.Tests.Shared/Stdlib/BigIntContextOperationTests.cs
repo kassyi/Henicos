@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]
-public class BigIntContextOperationTests : TranspilerTestBase
+public partial class BigIntContextOperationTests : TranspilerTestBase
 {
     private const int Words = 4;
     private static readonly uint[] s_left = [0x80000001u, 0x00000003u, 0xF0F0F0F0u, 0x12345678u];
@@ -102,22 +102,6 @@ public class BigIntContextOperationTests : TranspilerTestBase
             Assert.Equal(s_left[i] ^ s_right[i], xor[i]);
             Assert.Equal(~s_left[i], not[i]);
         }
-    }
-
-    // The device function reads the operand through Gpu.NotNull: the native CPU build names the place in the message
-    [SkippableFact]
-    [Scenario(TestScenario.SadPath)]
-    public void ShiftLeft_NullLeftOperand_ThrowsNullReference()
-    {
-        Skip.If(IsCudaDialect, "The CUDA null cases run as differential cases (NullArrayAndFieldDifferentialTests).");
-        var result = new uint[Words];
-
-        var exception = Assert.Throws<NullReferenceException>(() =>
-            BigIntContextOperationKernels.LaunchShiftLeftKernel(Context(null, null, result), 0, 1, blockDimX: 2));
-
-        Assert.StartsWith("G#: Gpu.NotNull was given a null array at GpuBigIntKernels.cu.cs(", exception.Message,
-            StringComparison.Ordinal);
-        Assert.Equal(new uint[Words], result);
     }
 
     private static GpuBigIntContext Context(uint[]? left, uint[]? right, uint[] result) => new()

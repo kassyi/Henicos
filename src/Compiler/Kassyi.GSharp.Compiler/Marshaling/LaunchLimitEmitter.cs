@@ -23,25 +23,33 @@ internal static class LaunchLimitEmitter
     {
         writer.AppendLine(
             $"long {GridBlockCount} = {LaunchLimitsType}.CheckLaunch({Dimensions}, {GetNameLiteral(kernel)});");
-        if (limits.IsKnown)
+        if (limits.PlanSharedMemoryCheck(kernel.AllowsOversizedSharedMemory) is { } plan)
         {
-            WriteTargetSharedMemoryCheck(writer, limits.MaxSharedMemoryPerBlockOptIn,
-                limits.SharedMemoryLimitArchitecture, kernel.MessageName);
+            WriteTargetSharedMemoryCheck(writer, plan.MaxBytes, plan.Architecture, kernel.MessageName,
+                plan.HintMaxBytes);
         }
     }
 
     /// <summary>
-    /// Emits
-    /// <c>LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, limit, "sm_86", "Type.Kernel");</c>.
+    /// Emits <c>LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, limit, "sm_86", "Type.Kernel");</c>, or the
+    /// 6-argument overload with <paramref name="hintMaxBytes"/> when a hint applies.
     /// </summary>
     public static void WriteTargetSharedMemoryCheck(SourceWriter writer, int maxBytes, string architecture,
-        string kernelName)
+        string kernelName, int hintMaxBytes = 0)
     {
         var archLiteral = SymbolDisplay.FormatLiteral(architecture, quote: true);
         var nameLiteral = SymbolDisplay.FormatLiteral(kernelName, quote: true);
-        writer.AppendLine(
-            $"{LaunchLimitsType}.CheckTargetSharedMemory(sharedMemBytes, 0, {maxBytes}, {archLiteral}, " +
-            $"{nameLiteral});");
+        writer.Append($"{LaunchLimitsType}.CheckTargetSharedMemory");
+        using (writer.Parentheses())
+        {
+            writer.Append($"sharedMemBytes, 0, {maxBytes}, {archLiteral}, {nameLiteral}");
+            if (hintMaxBytes > 0)
+            {
+                writer.Append($", {hintMaxBytes}");
+            }
+        }
+
+        writer.AppendLine(";");
     }
 
     /// <summary>

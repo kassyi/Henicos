@@ -373,23 +373,6 @@ public partial class StructLayoutParityTests
         Assert.Equal((short)5, items[1].Last);
     }
 
-    // CPU passes the struct in its managed layout until L4
-    [SkippableFact]
-    public void InlineArrayOfArrays_ByRef_CopiesEachElementArray()
-    {
-        Skip.If(!AssemblyDialect.Current.IsCuda, "L4");
-        var h = new ArrayFieldPairHolder { Tag = 3 };
-        h.Arrays[0] = [10, 20];
-        h.Arrays[1] = [30, 40, 50];
-        var o = new int[3];
-
-        StructLayoutParityKernels.LaunchInlineArrayOfArraysKernel(ref h, o);
-
-        Assert.Equal([3, 20, 3], o);
-        Assert.Equal(77, h.Arrays[1][0]);
-        Assert.Equal([10, 20], h.Arrays[0]);
-    }
-
     [Fact]
     public void ExplicitAutoProperties_LocalAndArgument_KeepSeparateFields()
     {

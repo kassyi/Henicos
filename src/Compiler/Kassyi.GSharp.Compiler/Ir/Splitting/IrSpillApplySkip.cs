@@ -48,6 +48,13 @@ internal enum IrSpillApplySkip
     OverflowContextOperand,
 
     /// <summary>
+    /// The condition of a <see langword="while"/> loop holds a split: it is evaluated before every iteration, so what
+    /// it evaluates before the split goes where the loop is flattened, not before the statement; the syntax passes
+    /// lower it in their second round.
+    /// </summary>
+    LoopCondition,
+
+    /// <summary>
     /// The statement of the prepared body is not the statement of the source the plan was made for: an expansion, a
     /// removal or Stryker's switches changed it.
     /// </summary>

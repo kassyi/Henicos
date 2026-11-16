@@ -244,7 +244,8 @@ internal sealed class IrClassificationEquivalence
             {
                 found.Add(new EffectDifference(expression, kind, old, ir,
                     $"{where}: {syntax} ({(isLocation ? "location" : "value")}): " +
-                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}"));
+                    $"syntax reads {old.Reads} writes {old.Writes}, IR reads {ir.Reads} writes {ir.Writes}, " +
+                    $"syntax throws {old.MayThrow}, IR throws {ir.MayThrow}"));
             }
         }
 

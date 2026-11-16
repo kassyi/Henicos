@@ -21,5 +21,7 @@ internal sealed class IrUnary(IrOperator<UnaryOperatorKind> @operator, IrExpress
 
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrUnary Update(IrExpression operand) =>
-        operand == Operand ? this : new IrUnary(Operator, operand, Type, Category, ConstantValue, Source);
+        operand == Operand
+            ? this
+            : KeepSpelling(new IrUnary(Operator, operand, Type, Category, ConstantValue, Source));
 }

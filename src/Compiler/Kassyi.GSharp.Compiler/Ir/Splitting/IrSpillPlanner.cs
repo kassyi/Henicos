@@ -28,7 +28,8 @@ namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 /// </para>
 /// <para>
 /// A statement whose split cannot be planned stays on the syntax-based lowering (<see cref="IrSpillFallback"/>).
-/// Loops, switches and lambdas are opaque in the IR, so their statements are such fallbacks for now.
+/// A <see langword="while"/> loop plans its condition and then its body; other loops, switches and lambdas are opaque
+/// in the IR, so their statements are such fallbacks for now.
 /// </para>
 /// </remarks>
 internal sealed class IrSpillPlanner
@@ -60,7 +61,7 @@ internal sealed class IrSpillPlanner
     /// <summary>Whether a call below <paramref name="node"/>, or the node itself, splits.</summary>
     public bool Holds(IrNode node) => _marks.Holds(node);
 
-    // A block and the branches of an if hold statements of their own; the condition of an if is evaluated before them
+    // A block, an if and a while hold statements of their own; the condition is evaluated before them
     private static void PlanStatement(IrStatement statement, Compilation compilation,
         ImmutableArray<IrStatementSpillPlan>.Builder plans)
     {
@@ -81,6 +82,10 @@ internal sealed class IrSpillPlanner
                     PlanStatement(@else, compilation, plans);
                 }
 
+                return;
+            case IrWhile @while:
+                PlanExpression(@while, @while.Condition, compilation, plans);
+                PlanStatement(@while.Body, compilation, plans);
                 return;
             case IrOpaqueStatement opaque:
                 PlanOpaque(opaque, plans);
