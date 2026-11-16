@@ -177,6 +177,58 @@ public class GpuArchitectureLimitsTests
         );
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("sm_107a")]
+    [InlineData("compute_107,sm_107")]
+    public void Resolve_TargetHasOnlyComputeCapability107_RaisesLimitAllowingOversized(string setting)
+    {
+        var limits = GpuArchitectureLimits.Resolve(setting);
+
+        Assert.Equal(227 * KiB, limits.MaxSharedMemoryPerBlockOptIn);
+        Assert.Equal("sm_107", limits.SharedMemoryLimitArchitecture);
+        Assert.Equal(327 * KiB, limits.MaxSharedMemoryPerBlockAllowingOversized);
+        Assert.Equal("sm_107", limits.OversizedSharedMemoryLimitArchitecture);
+        Assert.False(limits.HasNoOversizedTarget);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(null, 99 * KiB, "sm_86")]
+    [InlineData("compute_100,sm_100", 227 * KiB, "sm_100")]
+    [InlineData("sm_107", 99 * KiB, "sm_120")]
+    public void Resolve_ArchitecturesWithoutOversizedAcrossAllTargets_LeavesLimitUnchanged(
+        string? setting,
+        int expectedBytes,
+        string expectedArch)
+    {
+        var limits = GpuArchitectureLimits.Resolve(setting);
+
+        Assert.Equal(expectedBytes, limits.MaxSharedMemoryPerBlockOptIn);
+        Assert.Equal(expectedBytes, limits.MaxSharedMemoryPerBlockAllowingOversized);
+        Assert.Equal(expectedArch, limits.SharedMemoryLimitArchitecture);
+        Assert.Equal(expectedArch, limits.OversizedSharedMemoryLimitArchitecture);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Table_OversizedConfiguration_IsPresentOnlyOnComputeCapability107()
+    {
+        var row107 = Assert.Single(GpuArchitectureLimits.Table, static r => r.Major == 10 && r.Minor == 7);
+        Assert.Equal(227 * KiB, row107.MaxSharedMemoryPerBlockOptIn);
+        Assert.Equal(327 * KiB, row107.MaxOversizedSharedMemoryPerBlock);
+
+        foreach (var row in GpuArchitectureLimits.Table)
+        {
+            if (row.Major == 10 && row.Minor == 7)
+            {
+                continue;
+            }
+
+            Assert.Equal(0, row.MaxOversizedSharedMemoryPerBlock);
+        }
+    }
+
     private static string[] Versions(TargetLimits limits) =>
         limits.Architectures.Select(row => $"{row.Major}.{row.Minor}").ToArray();
 }

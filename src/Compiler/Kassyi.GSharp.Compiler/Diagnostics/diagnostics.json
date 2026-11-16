@@ -913,6 +913,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "OversizedSharedMemoryHasNoTarget",
+    "id": "GSH0116",
+    "title": "No GPU of GSharpTargetArchitectures has an oversized shared memory configuration",
+    "messageFormat": "'{0}' allows oversized shared memory, but no GPU of GSharpTargetArchitectures ({1}) has an oversized shared memory configuration; the property has no effect",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "SharedMemorySizeNegative",
     "id": "GSH0117",
     "title": "SharedMemory<T> count must not be negative",

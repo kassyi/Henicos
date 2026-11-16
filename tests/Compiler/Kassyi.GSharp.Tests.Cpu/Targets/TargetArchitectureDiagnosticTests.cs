@@ -65,7 +65,7 @@ public class TargetArchitectureDiagnosticTests
         const string defaultCall = check + "101376, \"sm_86\", \"MyKernel.Run\");";
         Assert.Contains(defaultCall, byDefault);
         Assert.Contains(check + "232448, \"sm_90\", \"MyKernel.Run\");", hopper);
-        Assert.Contains(check + "232448, \"sm_107\", \"MyKernel.Run\");", blackwell107);
+        Assert.Contains(check + "232448, \"sm_107\", \"MyKernel.Run\", 334848);", blackwell107);
         Assert.DoesNotContain("CheckTargetSharedMemory", unknown);
 
         // LaunchRun comes first, then LaunchRunPtr
