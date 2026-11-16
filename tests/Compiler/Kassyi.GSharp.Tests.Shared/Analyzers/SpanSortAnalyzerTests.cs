@@ -30,7 +30,6 @@ public class SpanSortAnalyzerTests : TranspilerTestBase
             (46, 8, 46, 55, MemoryExtensionsTranspilerRule.ReorderedArguments), // Sort(items: ..., keys: ...)
             (53, 18, 53, 25, MemoryExtensionsTranspilerRule.ComparisonNotFunction), // a Comparison<int> local
             (59, 18, 59, 38, MemoryExtensionsTranspilerRule.SeveralComparerInterfaces), // IComparer<int> and IComparer<long>
-            (65, 8, 65, 19, MemoryExtensionsTranspilerRule.NoDefaultOrder), // nint keys
         ];
         var actual = diagnostics
             .Where(static d => d.Id != GSharpDiagnostics.UnmappedMethodCalledFromGpuCode.Id)

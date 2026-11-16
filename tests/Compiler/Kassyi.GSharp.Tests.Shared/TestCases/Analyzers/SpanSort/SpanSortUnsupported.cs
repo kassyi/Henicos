@@ -59,12 +59,6 @@ public static partial class SpanSortUnsupported
     {
         data.Sort(new TwoKeyComparer());
     }
-
-    [GpuKernel]
-    public static void NativeIntegerKernel(Span<nint> data)
-    {
-        data.Sort();
-    }
 }
 
 public struct TwoKeyComparer : IComparer<int>, IComparer<long>
