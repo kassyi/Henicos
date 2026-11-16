@@ -58,12 +58,19 @@ internal static class IrEffectDifferences
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
             when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
+        // The syntax walk treats is null as throwing
+        IrNullTest when Differs(ir, old, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "an is null pattern throws nothing",
         _ => null
     };
 
     // The IR counts more than the syntax walk
     private static string? MoreReason(IrExpression node, ExpressionEffects old, ExpressionEffects ir) => node switch
     {
+        // The IR does not prove an array non-null yet
+        IrPropertyReference { Property.ContainingType.SpecialType: SpecialType.System_Array }
+            when Differs(old, ir, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "the IR does not prove an array non-null yet",
         // An operator macro is taken as writing memory; its target is not looked at
         IrUnary { Operator.Method: not null } or IrBinary { Operator.Method: not null }
             or IrCompoundAssignment { Operator.Method: not null } or IrIncrement { OperatorMethod: not null }
@@ -75,12 +82,13 @@ internal static class IrEffectDifferences
     /// <summary>Whether the reads and writes of <paramref name="effects"/> lie within those of
     /// <paramref name="bound"/>.</summary>
     public static bool IsWithin(ExpressionEffects effects, ExpressionEffects bound) =>
-        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes);
+        effects.Reads.IsSubsetOf(bound.Reads) && effects.Writes.IsSubsetOf(bound.Writes) &&
+        (!effects.MayThrow || bound.MayThrow);
 
     // narrow lies within wide, and wide within narrow plus exactly the given reads and writes
     private static bool Differs(ExpressionEffects narrow, ExpressionEffects wide, VariableSet reads = default,
-        VariableSet writes = default) =>
-        IsWithin(narrow, wide) && IsWithin(wide, narrow.Union(new ExpressionEffects(reads, writes)));
+        VariableSet writes = default, bool throws = false) =>
+        IsWithin(narrow, wide) && IsWithin(wide, narrow.Union(new ExpressionEffects(reads, writes, throws)));
 
     private static VariableSet Memory() => new() { Memory = true };
 
