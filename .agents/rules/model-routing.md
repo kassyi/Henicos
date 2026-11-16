@@ -1,6 +1,6 @@
 ---
-trigger: always_on
-description: When to use Fable for the hardest design and verification work, and handing math problems to the user.
+trigger: model_decision
+description: Read before choosing a model for a subagent, using Fable, or meeting a math optimization or complexity problem to hand to the user.
 ---
 
 # Routing Hard Problems (Fable / Deep Think)

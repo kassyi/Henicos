@@ -1,22 +1,27 @@
 #!/usr/bin/env node
 // Checks the frontmatter of the agent rule files (.agents/rules/*.md), which Antigravity needs to load a rule: a file
-// without it is never loaded automatically. Each file must start with a YAML block that sets `trigger` (always_on,
-// glob or model_decision; manual is refused, since nothing would load it), a `description`, and for `glob` a quoted
-// `globs` string of comma-separated patterns that start with `**/`. It also checks the limits of Antigravity: each
-// file at most 24,000 bytes (longer ones are cut), and the always-on rules with AGENTS.md within a share of the
-// 20,000-token rules budget, leaving room for the global rules (estimated at 4 bytes per token for ASCII and one token
-// per other character). Every rule file must be imported by CLAUDE.md, which Claude Code reads.
+// without it is never loaded automatically. Each file must start with a YAML block that sets `trigger` (always_on or
+// model_decision; glob is refused, since Antigravity does not load glob rules, and manual too, since nothing would load
+// it), a `description` that says when to read the rule, and for model_decision optionally `paths`, a quoted string of
+// comma-separated patterns relative to the repository root, the files whose reading or editing makes Claude Code load
+// the rule (the agent setup, `just update-agents`, copies it to .claude/rules with them; Antigravity ignores the key).
+// It also checks the limits of Antigravity: each file at most 24,000 bytes (longer ones are cut), and the always-on
+// rules with AGENTS.md within a share of the 20,000-token rules budget, leaving room for the global rules (estimated at
+// 4 bytes per token for ASCII and one token per other character). AGENTS.md must link every tracked rule, and CLAUDE.md
+// must import AGENTS.md and no rule (an import loads at every start, whatever the trigger).
 // Usage: node scripts/human/check-rule-frontmatter.js [--root <dir>] [--self-test] [--help]
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
-const Triggers = ['always_on', 'glob', 'model_decision'];
-const Keys = ['trigger', 'globs', 'description'];
+const Triggers = ['always_on', 'model_decision'];
+const Keys = ['trigger', 'description', 'paths'];
 const MaxFileBytes = 24000;
-// The 20,000-token budget is shared with the global rules of each machine (~/.gemini/GEMINI.md)
-const MaxAlwaysOnTokens = 14000;
+// The 20,000-token budget is shared with the global rules of each machine (~/.gemini/GEMINI.md, plugin rules), and
+// this estimate counts low: at 14,000 by this count Antigravity already moved the largest rule out of the prompt.
+const MaxAlwaysOnTokens = 8000;
 
 const helpText = [
     'Usage: node scripts/human/check-rule-frontmatter.js [--root <dir>] [--self-test]',
@@ -25,8 +30,8 @@ const helpText = [
     '  --self-test  Check the parser and the rules on fixed inputs.',
     '  --help       Show this help.',
     '',
-    'Exits 1 when a rule file has no valid frontmatter, is too large, is missing from CLAUDE.md, or the always-on',
-    'rules exceed their share of the rules budget.',
+    'Exits 1 when a rule file has no valid frontmatter or is too large, AGENTS.md does not link a rule, CLAUDE.md',
+    'imports a rule or not AGENTS.md, or the always-on rules exceed their share of the rules budget.',
 ].join('\n');
 
 /** The frontmatter of a Markdown text as { fields, error }; fields maps each key to its raw value. */
@@ -62,7 +67,9 @@ function checkFields(fields) {
         }
     }
     const trigger = fields.get('trigger');
-    if (!Triggers.includes(trigger)) {
+    if (trigger === 'glob') {
+        problems.push('Antigravity does not load glob rules; use trigger: model_decision with paths');
+    } else if (!Triggers.includes(trigger)) {
         const given = trigger === undefined ? 'missing' : trigger;
         problems.push(`trigger must be one of ${Triggers.join(', ')}, not ${given}`);
     }
@@ -73,21 +80,21 @@ function checkFields(fields) {
         // A plain YAML value ends at " #" (a comment) and may not hold ": " (a key) or start with an indicator
         problems.push('the description holds ": ", " #" or a leading YAML indicator; rephrase it');
     }
-    const globs = fields.get('globs');
-    if (trigger === 'glob') {
+    const paths = fields.get('paths');
+    if (paths !== undefined) {
         // A plain YAML value starting with * is an alias, so the patterns are one double-quoted string
-        const quoted = /^"([^"]+)"$/.exec(globs ?? '');
-        if (!quoted) {
-            problems.push('a glob rule needs globs: "<pattern>, <pattern>" in double quotes');
+        const quoted = /^"([^"]+)"$/.exec(paths);
+        if (trigger !== 'model_decision') {
+            problems.push('paths is only read with trigger: model_decision');
+        } else if (!quoted) {
+            problems.push('paths needs "<pattern>, <pattern>" in double quotes');
         } else {
             for (const pattern of quoted[1].split(',').map((p) => p.trim())) {
-                if (!pattern.startsWith('**/')) {
-                    problems.push(`glob ${pattern} must start with **/ (Antigravity matches absolute paths)`);
+                if (pattern === '' || pattern.startsWith('/') || pattern.startsWith('./')) {
+                    problems.push(`path pattern "${pattern}" must be relative to the repository root`);
                 }
             }
         }
-    } else if (globs !== undefined) {
-        problems.push('globs is only read with trigger: glob');
     }
     return problems;
 }
@@ -106,14 +113,34 @@ function estimateTokens(text) {
     return Math.ceil(ascii / 4) + other;
 }
 
+/**
+ * The rule files of the checkout: the tracked ones when git can tell, so that a rule the agent setup copies in and
+ * .gitignore hides is left to that setup.
+ */
+function ruleFiles(root, rulesDir) {
+    const listed = spawnSync('git', ['ls-files', '--', '.agents/rules'], { cwd: root, encoding: 'utf8' });
+    if (listed.status === 0 && listed.stdout.trim() !== '') {
+        return listed.stdout
+            .split(/\r?\n/)
+            .filter((p) => /^\.agents\/rules\/[^/]+\.md$/.test(p) && fs.existsSync(path.join(root, p)))
+            .map((p) => p.slice('.agents/rules/'.length))
+            .sort();
+    }
+    return fs.readdirSync(rulesDir).filter((f) => f.endsWith('.md')).sort();
+}
+
 /** The problems of the rule files of a checkout, and the always-on token estimate. */
 function checkRoot(root) {
     const rulesDir = path.join(root, '.agents', 'rules');
     const problems = [];
     const claudePath = path.join(root, 'CLAUDE.md');
     const claude = fs.existsSync(claudePath) ? fs.readFileSync(claudePath, 'utf8') : '';
-    let alwaysOn = estimateTokens(fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8'));
-    const files = fs.readdirSync(rulesDir).filter((f) => f.endsWith('.md')).sort();
+    if (!/^@AGENTS\.md\s*$/m.test(claude)) {
+        problems.push('CLAUDE.md: does not import AGENTS.md (@AGENTS.md)');
+    }
+    const agents = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
+    let alwaysOn = estimateTokens(agents);
+    const files = ruleFiles(root, rulesDir);
     for (const file of files) {
         const full = path.join(rulesDir, file);
         const text = fs.readFileSync(full, 'utf8');
@@ -122,8 +149,11 @@ function checkRoot(root) {
         if (bytes > MaxFileBytes) {
             problems.push(`${where}: ${bytes} bytes, over the ${MaxFileBytes}-byte limit of a rule file`);
         }
-        if (!claude.includes(`@.agents/rules/${file}`)) {
-            problems.push(`${where}: not imported by CLAUDE.md (@.agents/rules/${file})`);
+        if (claude.includes(`@.agents/rules/${file}`)) {
+            problems.push(`${where}: imported by CLAUDE.md, so Claude Code loads it at every start; remove the import`);
+        }
+        if (!agents.includes(`(.agents/rules/${file})`)) {
+            problems.push(`${where}: not linked from the rules index of AGENTS.md`);
         }
         const { fields, error } = parseFrontmatter(text);
         if (error) {
@@ -138,7 +168,7 @@ function checkRoot(root) {
     if (alwaysOn > MaxAlwaysOnTokens) {
         problems.push(
             `the always-on rules and AGENTS.md come to about ${alwaysOn} tokens, over ${MaxAlwaysOnTokens}: ` +
-                'make a rule glob or model_decision, or shorten one',
+                'make a rule model_decision, or move its details into a model_decision reference',
         );
     }
     return { problems, alwaysOn, files: files.length };
@@ -152,12 +182,15 @@ function selfTest() {
     assert.strictEqual(parseFrontmatter('# Title\n').error, 'does not start with a --- frontmatter block');
     assert.match(parseFrontmatter('---\ntrigger: glob\n').error, /no closing/);
     assert.deepStrictEqual(checkFields(ok('---\r\ntrigger: always_on\r\ndescription: d\r\n---\r\n')), []);
-    assert.deepStrictEqual(checkFields(rule('trigger: glob', 'globs: "**/*.cs, **/src/**"', 'description: d')), []);
+    assert.deepStrictEqual(checkFields(rule('trigger: model_decision', 'description: d', 'paths: "**/*.cs, src/**"')), []);
+    assert.deepStrictEqual(checkFields(rule('trigger: model_decision', 'description: d')), []);
+    assert.match(checkFields(rule('trigger: glob', 'description: d'))[0], /does not load glob rules/);
+    assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'paths: **/*.cs'))[0], /double quotes/);
+    assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'paths: "/src/**"'))[0], /relative/);
+    assert.match(checkFields(rule('trigger: always_on', 'description: d', 'paths: "src/**"'))[0], /only read/);
+    assert.match(checkFields(rule('trigger: model_decision', 'description: d', 'globs: "**/x"'))[0], /unknown key/);
     assert.match(checkFields(ok('---\ntrigger: manual\ndescription: d\n---\n'))[0], /trigger must be/);
-    assert.match(checkFields(ok('---\ntrigger: glob\nglobs: **/*.cs\ndescription: d\n---\n'))[0], /double quotes/);
-    assert.match(checkFields(ok('---\ntrigger: glob\nglobs: "src/**"\ndescription: d\n---\n'))[0], /must start with/);
     assert.match(checkFields(ok('---\ntrigger: always_on\n---\n'))[0], /no description/);
-    assert.match(checkFields(ok('---\ntrigger: always_on\ndescription: d\nglobs: "**/x"\n---\n'))[0], /only read/);
     assert.match(checkFields(rule('trigger: always_on', 'description: d', 'alwaysApply: true'))[0], /unknown key/);
     assert.match(checkFields(rule('trigger: always_on', 'description: Add # intent at the end'))[0], /rephrase/);
     assert.match(checkFields(ok('---\ntrigger: always_on\ndescription: Rules: none\n---\n'))[0], /rephrase/);

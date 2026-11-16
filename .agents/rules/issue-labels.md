@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: Colors of the GitHub labels (three tiers, one hue family per label, checked in GitHub dark mode) and how to color a new label.
+description: Read before creating or recoloring a GitHub label - three tiers by style, one hue family per label, the dark-mode check.
 ---
 
 # GitHub Label Colors

@@ -1,7 +1,7 @@
 ---
-trigger: glob
-globs: "**/src/Compiler/**"
-description: Invariants of the generator pipeline - diagnostics, original spans, struct guards, ref/out, design-time I/O, evaluation order.
+trigger: model_decision
+description: Read before changing the compiler under src/Compiler - diagnostics, original spans, struct guards, ref/out, design-time I/O, evaluation order.
+paths: "src/Compiler/**"
 ---
 
 # Generator Pipeline Invariants
