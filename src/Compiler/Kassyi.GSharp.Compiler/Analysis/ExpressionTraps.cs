@@ -200,8 +200,8 @@ internal static class ExpressionTraps
 
     // x / y and x % y of an integer type, as the divisor check decides it (DivisionCheckRule, the definition the
     // transpiler writes from): y == 0 raises DivideByZeroException; MinValue / -1, whose GPU result G# gives, is
-    // counted with it. A native-sized integer (nint, nuint), which the rule has no range for, may fail unless its
-    // divisor is a constant other than 0 and -1
+    // counted with it. A native-sized integer (nint, nuint) is taken without a range: it may fail unless its divisor is
+    // a constant other than 0 and -1
     private static bool MayFailDivision(BinaryOperatorKind kind, ITypeSymbol? operatorType, IOperation dividend,
         IOperation divisor)
     {

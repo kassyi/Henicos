@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Reports, in GPU code (GSH0003): a member of <c>System.Math</c> or <c>System.MathF</c> that the project's dialect
 /// maps to a native function, used as a method group (its native function is an overload set, which converts to no
 /// delegate); a member of <c>System.Threading.Interlocked</c> or <c>System.Numerics.BitOperations</c> that
-/// <c>[BclIntrinsicMap]</c> maps and that takes a <c>nint</c> / <c>nuint</c> or is used as a method group (#570); and
+/// <c>[BclIntrinsicMap]</c> maps and that is used as a method group (#570); and
 /// the host-only StackLinq operators.
 /// </summary>
 /// <remarks>
