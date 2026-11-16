@@ -150,6 +150,7 @@ internal sealed class MacroLambdaSubstituter(
             NameEqualsSyntax => true,
             AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment => assignment.Left == node,
             GotoStatementSyntax => true,
+            BreakStatementSyntax or ContinueStatementSyntax => true,
             _ => false
         };
 }

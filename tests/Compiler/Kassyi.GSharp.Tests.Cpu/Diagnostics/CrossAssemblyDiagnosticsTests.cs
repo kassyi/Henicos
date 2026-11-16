@@ -57,7 +57,7 @@ public class CrossAssemblyDiagnosticsTests
     [Scenario(TestScenario.SadPath)]
     public async Task RecordOfAnotherPrelude_MismatchedPreludeHash_ReportsGsh0089(string dialect)
     {
-        var library = BuildHandWritten("0123456789abcdef", cudaFailed: false, cppFailed: false);
+        var library = BuildHandWritten(preludeHash: "0123456789abcdef", cudaFailed: false, cppFailed: false);
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -78,7 +78,7 @@ public class CrossAssemblyDiagnosticsTests
         bool cppFailed,
         int expected)
     {
-        var library = BuildHandWritten(DeviceExportRecord.CurrentPreludeHash, cudaFailed, cppFailed);
+        var library = BuildHandWritten(preludeHash: null, cudaFailed, cppFailed);
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -151,8 +151,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenInternalError.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenInternalError.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -170,8 +169,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task UsingOfStructThatFailedInTheDialect_FailedTypeUsage_ReportsGsh0089(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenLease.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenLease.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "LeaseConsumer.cs"), library);
 
@@ -192,8 +190,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenSuspendingRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DeviceFunctionConsumer.cs"),
             library);
@@ -214,8 +211,7 @@ public class CrossAssemblyDiagnosticsTests
         int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenSuspendingRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenSuspendingRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -246,8 +242,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task DependencyThatFailedInTheDialect_TransitiveUsage_ReportsGsh0089AtUse(string dialect, int expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenChain.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenChain.cs"));
 
         var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
 
@@ -359,8 +354,7 @@ public class CrossAssemblyDiagnosticsTests
     public async Task ImportedDivergentParameter_CrossAssemblyDeviceFunction_ReportsGsh0083(string dialect)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenDivergentRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal));
+            HandWrittenExportRecords.Read(Folder + "HandWrittenDivergentRecord.cs"));
 
         var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "DivergentCallConsumer.cs"),
             library);
@@ -381,8 +375,7 @@ public class CrossAssemblyDiagnosticsTests
     public void ImportedRecord_WithoutReachesGeneratedMeaningKey_FallsBackToManagedVersion(string traits, bool expected)
     {
         var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenTraitRecord.cs")
-                .Replace("PRELUDE_HASH", DeviceExportRecord.CurrentPreludeHash, StringComparison.Ordinal)
+            HandWrittenExportRecords.Read(Folder + "HandWrittenTraitRecord.cs")
                 .Replace("TRAITS", traits, StringComparison.Ordinal));
         var compilation = DeviceLibraryBuilder.CreateConsumer(s_consumer, library);
 
@@ -392,16 +385,71 @@ public class CrossAssemblyDiagnosticsTests
         Assert.Equal(expected, imported.Record.Traits.ReachesGeneratedMeaning);
     }
 
+    // #1991: a suspending function of another assembly whose record sets ManagedStateMachine and PrivateManagedFrame is
+    // run through its generated entries (Entry); without PrivateManagedFrame it is held by its frame type (Direct);
+    // without ManagedStateMachine it has no managed frame (Unavailable)
+    [Theory]
+    [InlineData(", ManagedStateMachine = true, PrivateManagedFrame = true", "Entry")]
+    [InlineData(", ManagedStateMachine = true", "Direct")]
+    [InlineData(", PrivateManagedFrame = true", "Unavailable")]
+    [InlineData("", "Unavailable")]
+    [Scenario(TestScenario.Boundary)]
+    public void ImportedSuspendingFunction_RecordedTraits_ChoosesTheCallForm(string traits, string expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            HandWrittenExportRecords.Read(Folder + "HandWrittenPrivateFrameRecord.cs")
+                .Replace("TRAITS", traits, StringComparison.Ordinal));
+        var compilation = DeviceLibraryBuilder.CreateConsumer(ConsumerOfTwiceOnly(), library);
+        var callee = Assert.IsAssignableFrom<INamedTypeSymbol>(compilation.GetTypeByMetadataName("XasmLib.LibMath"))
+            .GetMembers("Twice")
+            .OfType<IMethodSymbol>()
+            .Single();
+        var within = Assert.IsAssignableFrom<INamedTypeSymbol>(
+            compilation.GetTypeByMetadataName("CrossAssemblyConsumer.ConsumerKernels"));
+
+        var form = ManagedStateMachineAvailability.GetCallForm(callee, within, compilation);
+
+        Assert.Equal(expected, form.ToString());
+    }
+
+    // A record written by the #1884 format (formatVersion: 3, before PrivateManagedFrame) differs from the current
+    // format version and reports GSH0089 ("written by another version of G#"); a current record with
+    // ManagedStateMachine = true, PrivateManagedFrame = true reports nothing on either dialect (#1991)
+    [Theory]
+    [InlineData("Cpu", 3, "", 1)]
+    [InlineData("Cuda", 3, "", 1)]
+    [InlineData("Cpu", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cuda", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ImportedSuspendingFunction_RecordOfThePreviousFormat_ReportsGsh0089(
+        string dialect,
+        int formatVersion,
+        string traits,
+        int expected)
+    {
+        // formatVersion: 3 is the record written by the #1884 version; keep it at 3 across future format bumps so that
+        // it continues to check that the previous format is rejected as another version (GSH0089)
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
+            HandWrittenExportRecords.Read(Folder + "HandWrittenPrivateFrameRecord.cs", formatVersion: formatVersion)
+                .Replace("TRAITS", traits, StringComparison.Ordinal));
+
+        var diagnostics = await RunAsync(dialect, ConsumerOfTwiceOnly(), library);
+
+        var ranges = diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id,
+            expected > 0 ? "written by another version of G#" : null);
+        Assert.Equal(expected, ranges.Count);
+        Assert.All(ranges, static range => Assert.Equal((Analyzer, 11, 43, 11, 48), range));
+    }
+
     // The consumer without the struct use (the hand-written library records only Twice)
     private static string ConsumerOfTwiceOnly() =>
         s_consumer
             .Replace("var pair = new Pair(data[0]);", "var pair = data[0];          ", StringComparison.Ordinal)
             .Replace("data[1] = pair.A;", "data[1] = pair;  ", StringComparison.Ordinal);
 
-    private static MetadataReference BuildHandWritten(string preludeHash, bool cudaFailed, bool cppFailed) =>
+    private static MetadataReference BuildHandWritten(string? preludeHash, bool cudaFailed, bool cppFailed) =>
         DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_library,
-            RoslynTestUtility.ReadTestCase(Folder + "HandWrittenRecord.cs")
-                .Replace("PRELUDE_HASH", preludeHash, StringComparison.Ordinal)
+            HandWrittenExportRecords.Read(Folder + "HandWrittenRecord.cs", preludeHash: preludeHash)
                 .Replace("CUDA_FAILED", cudaFailed ? "true" : "false", StringComparison.Ordinal)
                 .Replace("CPP_FAILED", cppFailed ? "true" : "false", StringComparison.Ordinal));
 

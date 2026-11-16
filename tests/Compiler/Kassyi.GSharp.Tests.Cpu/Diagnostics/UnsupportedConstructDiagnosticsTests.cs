@@ -530,4 +530,76 @@ public class UnsupportedConstructDiagnosticsTests
             [(Analyzer, 37, 34, 37, 41)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "passed as a delegate"));
     }
+
+    // A C# 15 union lowers to a struct whose single field 'object? Value' boxes the case: GSH0078 reports the boxed
+    // field at the local's type, and GSH0003 reports the synthesized case constructors and the type patterns in switch
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task TypeUnion_BoxedValueFieldAndSwitchCases_ReportsGsh0078AndGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
+
+        Assert.Equal(
+            [(Analyzer, 56, 13, 56, 16)],
+            diagnostics.Ranges(
+                GSharpDiagnostics.StructLayoutNotRepresentable.Id,
+                "field 'Value' has the reference type 'object?'"));
+        Assert.Equal(
+            [
+                (Analyzer, 56, 34, 56, 53),
+                (Analyzer, 56, 56, 56, 79),
+                (Analyzer, 57, 31, 57, 36),
+                (Analyzer, 57, 49, 57, 54)
+            ],
+            diagnostics
+                .Where(static d => d.StartLine is 56 or 57)
+                .ToImmutableArray()
+                .Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+    }
+
+    // A C# 15 closed class hierarchy is still a class hierarchy: allocating a case in a kernel reports GSH0001 at new
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ClosedClassHierarchy_CaseObjectCreation_ReportsGsh0001AtNew(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 64, 36, 64, 48),
+                (Analyzer, 64, 51, 64, 63)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.ObjectCreationNotSupported.Id));
+    }
+
+    // A labeled break or continue whose target loop or switch contains a split point is reported as GSH0003 until
+    // the lowering handles it (#1990)
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LabeledJumpTargetWithSplitPoint_SplitTarget_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/LabeledJumpSplitTargetDiagnostics.cu.cs",
+            dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 22, 21, 22, 33),
+                (Analyzer, 27, 21, 27, 36),
+                (Analyzer, 47, 21, 47, 33),
+                (Analyzer, 68, 21, 68, 33),
+                (Analyzer, 85, 21, 85, 33),
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "labeled break or continue"));
+    }
 }

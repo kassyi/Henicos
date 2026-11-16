@@ -102,4 +102,29 @@ public class UnmappedOperatorDiagnosticsTests
                 .Where(static f => f.Failure.EndsWith(GSharpDiagnostics.UserDefinedOperatorNotSupported.Id))
                 .Order());
     }
+
+    // C# 14 user-defined compound assignment (void operator +=) and its paired binary operator + report GSH0060 at the
+    // operator token with the synthesized method name ('op_AdditionAssignment' and 'op_Addition')
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task UserDefinedCompoundAssignment_CSharp14CompoundOperator_ReportsGsh0060AtOperator(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CSharp14And15UnsupportedForms.cs",
+            dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 73, 15, 73, 17),
+                (Analyzer, 74, 15, 74, 17)
+            ],
+            diagnostics.Ranges(
+                GSharpDiagnostics.UserDefinedOperatorNotSupported.Id,
+                "'op_AdditionAssignment' of 'Acc'"));
+        Assert.Equal(
+            [(Analyzer, 75, 23, 75, 24)],
+            diagnostics.Ranges(GSharpDiagnostics.UserDefinedOperatorNotSupported.Id, "'op_Addition' of 'Acc'"));
+    }
 }

@@ -137,4 +137,18 @@ public static class Cases
         using var r = new Res { Log = log };
         return ref log[1];
     }
+
+    // break outer of the loop around the using from inside an inner loop leaves the using
+    public static void LabeledBreakOutOfOuterLoop(int[] log)
+    {
+        outer:
+        while (log[0] < 4)
+        {
+            using var d = new Res { Log = log };
+            while (log[1] < 2)
+            {
+                break outer;
+            }
+        }
+    }
 }

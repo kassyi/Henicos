@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -25,24 +27,29 @@ internal static class ManagedStateMachineEmitter
     // scoped <type> <name> = default;                                (a stackalloc span, bound where it is declared)
     // E* __gsharp_resume_storage_<name> = stackalloc E[<length>];
     // E* <name> = default;                                           (a stackalloc pointer)
-    private static void AppendResumeLocal(SourceWriter writer, ManagedContextField local)
+    private static void AppendResumeLocal(SourceWriter writer, FrameSlot slot)
     {
-        if (local.Resume is not { Kind: not ResumeLocalKind.Initialized } resume)
+        var spelling = GetSpelling(slot);
+
+        if (slot.Kind == FrameSlotKind.SharedMemory)
         {
-            AppendFieldType(writer, local);
-            writer.Append($" {local.Name}");
-            if (local.Declarator.Initializer is { } initializer)
+            AppendFieldType(writer, slot);
+            writer.Append($" {slot.Name}");
+            if (spelling.Initializer is { } initializer)
             {
-                writer.Append($" {ToSource(initializer.WithoutTrivia())}");
+                writer.Append($" {initializer}");
             }
 
             writer.AppendLine(";");
             return;
         }
 
-        if (resume is { Kind: ResumeLocalKind.StackAlloc, ElementType: { } elementType })
+        if (slot.Kind == FrameSlotKind.RedeclaredStack)
         {
-            if (resume.Type is IPointerTypeSymbol)
+            var elementType = slot.ElementType
+                              ?? throw new InvalidOperationException(
+                                  $"The stackalloc slot '{slot.Name}' has no element type.");
+            if (slot.Type is IPointerTypeSymbol)
             {
                 writer.AppendCsharpTypeName(elementType);
                 writer.Append("*");
@@ -54,39 +61,38 @@ internal static class ManagedStateMachineEmitter
                 writer.Append(">");
             }
 
-            writer.Append($" {local.StorageName} = stackalloc ");
+            writer.Append($" {ManagedContextField.GetStorageName(slot.Name)} = stackalloc ");
             writer.AppendCsharpTypeName(elementType);
-            writer.AppendLine($"[{resume.Length}];");
+            writer.AppendLine($"[{slot.Length}];");
         }
 
-        writer.AppendIf(resume.Type.IsRefLikeType, "scoped ");
-        AppendFieldType(writer, local);
-        writer.AppendLine($" {local.Name} = default;");
+        writer.AppendIf(slot.Type.IsRefLikeType, "scoped ");
+        AppendFieldType(writer, slot);
+        writer.AppendLine($" {slot.Name} = default;");
     }
 
     /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
-    public static void AppendFieldType(SourceWriter writer, ManagedContextField field)
+    public static void AppendFieldType(SourceWriter writer, FrameSlot slot)
     {
-        if (field.DeclaredType.IsVar)
+        var spelling = GetSpelling(slot);
+
+        if (spelling.WrittenType is { } writtenType)
         {
-            writer.AppendCsharpTypeName(field.ResolvedType);
+            writer.Append(writtenType);
         }
         else
         {
-            // Without trivia: a comment above the original declaration would otherwise land inside the emitted one
-            writer.Append(ToSource(field.DeclaredType.WithoutTrivia()));
+            writer.AppendCsharpTypeName(slot.Type);
         }
     }
 
     /// <param name="writer">The writer.</param>
     /// <param name="contextName">The class.</param>
-    /// <param name="regularFields">The hoisted locals.</param>
-    /// <param name="copiedParameters">The parameters that the class keeps.</param>
+    /// <param name="frame">The state machine frame.</param>
     /// <param name="callFrames">The frames of the calls that may suspend, in call order, which the class holds.</param>
     /// <param name="accessibility">The class's accessibility.</param>
     /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
     /// <param name="isUnsafe">Whether the context is an unsafe struct rather than a class.</param>
-    /// <param name="warpSiteCount">The warp collectives of the body (<see cref="LoweredStateMachine.WarpSiteCount"/>).</param>
     /// <remarks>
     /// A call frame field is internal: the frame of a device function that is not public is an internal or private
     /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame private to a class that
@@ -97,17 +103,15 @@ internal static class ManagedStateMachineEmitter
     public static void EmitContextClass(
         SourceWriter writer,
         string contextName,
-        ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters,
+        StateMachineFrame frame,
         ImmutableArray<ManagedCallFrame> callFrames,
         Accessibility accessibility,
         Accessibility memberAccessibility,
-        bool isUnsafe = false,
-        int warpSiteCount = 0)
+        bool isUnsafe = false)
     {
         writer.AppendLine(EditorBrowsableNever);
         var typeKeyword = isUnsafe ? "unsafe struct" : "class";
-        var warpFrame = warpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
+        var warpFrame = frame.WarpSiteCount > 0 ? $" : {ManagedWarpFrameInterface}" : "";
         var members = GeneratedMemberAccessibility.ToKeyword(memberAccessibility);
         var type = GeneratedMemberAccessibility.ToKeyword(accessibility);
         using (writer.Scope($"{type} {typeKeyword} {contextName}{warpFrame} {{"))
@@ -115,22 +119,25 @@ internal static class ManagedStateMachineEmitter
             writer.AppendLine($"{members} int {GSharpInternalNames.StateMachine.State};");
             writer.AppendLine($"{members} uint {GSharpInternalNames.StateMachine.WarpPath};");
 
-            foreach (var parameter in copiedParameters)
+            foreach (var parameter in frame.CopiedParameters)
             {
                 writer.Append($"{members} ");
                 writer.AppendCsharpTypeName(parameter.Type);
                 writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
             }
 
-            foreach (var field in regularFields)
+            foreach (var slot in frame.Slots)
             {
-                writer.Append($"{members} ");
-                AppendFieldType(writer, field);
-                writer.AppendLine($" {field.Name};");
+                if (slot.Kind == FrameSlotKind.Field)
+                {
+                    writer.Append($"{members} ");
+                    AppendFieldType(writer, slot);
+                    writer.AppendLine($" {slot.Name};");
+                }
             }
 
             EmitCallFrameFields(writer, callFrames, isUnsafe);
-            EmitWarpFrameMembers(writer, members, isUnsafe, warpSiteCount);
+            EmitWarpFrameMembers(writer, members, isUnsafe, frame.WarpSiteCount);
             EmitWarpPathNumbering(writer, callFrames);
         }
 
@@ -230,8 +237,7 @@ internal static class ManagedStateMachineEmitter
         string frameName,
         string stateMachineName,
         IMethodSymbol methodSymbol,
-        ImmutableArray<IParameterSymbol> copiedParameters,
-        ImmutableArray<ManagedContextField> localInits,
+        StateMachineFrame frame,
         string bodySource,
         Accessibility accessibility,
         bool isUnsafe)
@@ -242,16 +248,19 @@ internal static class ManagedStateMachineEmitter
             writer.AppendLine(EditorBrowsableNever);
             var context = GSharpInternalNames.StateMachine.Context;
             AppendDeviceStateMachineSignature(writer, isUnsafe ? $"{frameName}* {context}" : $"{frameName} {context}",
-                stateMachineName, methodSymbol, copiedParameters, GeneratedMemberAccessibility.ToKeyword(accessibility),
-                isUnsafe);
+                stateMachineName, methodSymbol, frame.CopiedParameters,
+                GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
             using (writer.Scope(" {"))
             {
-                foreach (var localInit in localInits)
+                foreach (var slot in frame.Slots)
                 {
-                    AppendResumeLocal(writer, localInit);
+                    if (IsResumeLocal(slot))
+                    {
+                        AppendResumeLocal(writer, slot);
+                    }
                 }
 
-                AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+                AppendCopiedParameterInitialization(writer, frame.CopiedParameters, isUnsafe);
                 writer.AppendLine(bodySource);
                 writer.AppendLine("throw new global::System.InvalidOperationException(" +
                                   "\"The device function state machine reached an unknown state.\");");
@@ -465,18 +474,23 @@ internal static class ManagedStateMachineEmitter
             .AsStackEnumerable()
             .Any(parameter, static (copied, target) => copied.IsEqualTo(target));
 
-    internal static bool HasPointerField(
-        ImmutableArray<ManagedContextField> regularFields,
-        ImmutableArray<IParameterSymbol> copiedParameters) =>
-        copiedParameters
+    internal static bool HasPointerField(StateMachineFrame frame) =>
+        frame.CopiedParameters
             .AsStackEnumerable()
             .Any(static p => p.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol) ||
-        regularFields
+        frame.Slots
             .AsStackEnumerable()
-            .Any(static f => f.ResolvedType is IPointerTypeSymbol or IFunctionPointerTypeSymbol ||
-                             f.DeclaredType.DescendantNodesAndSelf()
-                                 .AsStackEnumerable()
-                                 .Any(static n => n is PointerTypeSyntax or FunctionPointerTypeSyntax));
+            .Where(static s => s.Kind == FrameSlotKind.Field)
+            .Any(static s => s.Type is IPointerTypeSymbol or IFunctionPointerTypeSymbol || GetSpelling(s).NamesPointer);
+
+    // The slots declared again before the state switch: every slot that is neither a field nor a held ref
+    private static bool IsResumeLocal(FrameSlot slot) =>
+        slot.Kind is FrameSlotKind.Redeclared or FrameSlotKind.RedeclaredStack or FrameSlotKind.SharedMemory
+            or FrameSlotKind.Unsupported;
+
+    // The frames this writer reads are built by ManagedContextFields, which spells every slot
+    private static ManagedSlotSpelling GetSpelling(FrameSlot slot) =>
+        slot.Managed ?? throw new InvalidOperationException($"The slot '{slot.Name}' has no managed spelling.");
 
     public static void EmitStateMachineMethod(
         SourceWriter writer,
@@ -484,8 +498,7 @@ internal static class ManagedStateMachineEmitter
         string stateMachineName,
         IMethodSymbol methodSymbol,
         bool hasAutoResult,
-        ImmutableArray<IParameterSymbol> copiedParameters,
-        ImmutableArray<ManagedContextField> localInits,
+        StateMachineFrame frame,
         string bodySource,
         Accessibility accessibility,
         bool isUnsafe = false)
@@ -494,16 +507,19 @@ internal static class ManagedStateMachineEmitter
         using var suppression =
             writer.WarningSuppressed(ManagedPointerWarning.Id, ManagedPointerWarning.PinnedContext, isUnsafe);
         writer.AppendLine(EditorBrowsableNever);
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult, copiedParameters,
-            GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult,
+            frame.CopiedParameters, GeneratedMemberAccessibility.ToKeyword(accessibility), isUnsafe);
         using (writer.Scope(" {"))
         {
-            foreach (var localInit in localInits)
+            foreach (var slot in frame.Slots)
             {
-                AppendResumeLocal(writer, localInit);
+                if (IsResumeLocal(slot))
+                {
+                    AppendResumeLocal(writer, slot);
+                }
             }
 
-            AppendCopiedParameterInitialization(writer, copiedParameters, isUnsafe);
+            AppendCopiedParameterInitialization(writer, frame.CopiedParameters, isUnsafe);
             writer.AppendLine(bodySource);
         }
     }
