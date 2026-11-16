@@ -155,10 +155,15 @@ private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_er
 {
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1576878719u, "StackLinqSumDifferentialKernels.cs", 55, 22, "FloatSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1980104752u, "StackLinqSumDifferentialKernels.cs", 61, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(384636246u, "StackLinqSumDifferentialKernels.cs", 61, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1037500494u, "StackLinqSumDifferentialKernels.cs", 62, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2034799814u, "StackLinqSumDifferentialKernels.cs", 62, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(896941564u, "StackLinqSumDifferentialKernels.cs", 63, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1784046614u, "StackLinqSumDifferentialKernels.cs", 63, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2074061638u, "StackLinqSumDifferentialKernels.cs", 64, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(568954774u, "StackLinqSumDifferentialKernels.cs", 64, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1623649016u, "StackLinqSumDifferentialKernels.cs", 65, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(997788590u, "StackLinqSumDifferentialKernels.cs", 65, 20, "FloatSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1534428860u, "StackLinqSumDifferentialKernels.cs", 65, 50, "FloatSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240324742u, "StackLinqSumDifferentialKernels.cs", 66, 9, "FloatSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1170886551u, "StackLinqSumDifferentialKernels.cs", 66, 35, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
@@ -166,10 +171,15 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1379112652u, "StackLinqSum
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(88280963u, "StackLinqSumDifferentialKernels.cs", 67, 45, "FloatSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(628238559u, "StackLinqSumDifferentialKernels.cs", 74, 22, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(852901670u, "StackLinqSumDifferentialKernels.cs", 80, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1166921762u, "StackLinqSumDifferentialKernels.cs", 80, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1384585328u, "StackLinqSumDifferentialKernels.cs", 81, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(156406214u, "StackLinqSumDifferentialKernels.cs", 81, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(533107718u, "StackLinqSumDifferentialKernels.cs", 82, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1513127722u, "StackLinqSumDifferentialKernels.cs", 82, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1001814716u, "StackLinqSumDifferentialKernels.cs", 83, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(396155622u, "StackLinqSumDifferentialKernels.cs", 83, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285884470u, "StackLinqSumDifferentialKernels.cs", 84, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1657038426u, "StackLinqSumDifferentialKernels.cs", 84, 20, "DoubleSumMatrixKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(888229108u, "StackLinqSumDifferentialKernels.cs", 84, 50, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(63396192u, "StackLinqSumDifferentialKernels.cs", 85, 9, "DoubleSumMatrixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(235858114u, "StackLinqSumDifferentialKernels.cs", 85, 36, "DoubleSumMatrixKernel", "G#: a null array is passed where it is not nullable"),
@@ -204,7 +214,7 @@ __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,7);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o+0, 1980104752u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 384636246u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -216,7 +226,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return (float)__gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1037500494u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 2034799814u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -231,7 +241,7 @@ return __gsharp_id_4_x*1.0f;
 return (float)__gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 896941564u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1784046614u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -247,7 +257,7 @@ __gsharp_fusion_res += __gsharp_val_1;
 return (float)__gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 2074061638u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 568954774u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -265,7 +275,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return (float)__gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1623649016u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 997788590u);
 int __gsharp_stage_0_n = __gsharp_array_ref(__gsharp_id_0_data, 1534428860u).length;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -607,7 +617,7 @@ __gsharp_state = -1;return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_t,7);
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_id_3_o+0, 852901670u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1166921762u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -619,7 +629,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,1), 1384585328u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 156406214u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -634,7 +644,7 @@ return __gsharp_id_4_x*1.0;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,2), 533107718u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1513127722u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -650,7 +660,7 @@ __gsharp_fusion_res += __gsharp_val_1;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,3), 1001814716u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 396155622u);
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -668,7 +678,7 @@ __gsharp_fusion_res += __gsharp_val_0;
 return __gsharp_fusion_res;
 }());
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_3_o,4), 1285884470u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_data;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_data, 1657038426u);
 int __gsharp_stage_0_n = __gsharp_array_ref(__gsharp_id_0_data, 888229108u).length;
 double __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;

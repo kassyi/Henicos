@@ -49,13 +49,16 @@ internal static class ArgumentExceptionMessages
         "Index was out of range. Must be non-negative and less than the size of the collection. " +
         "(Parameter 'index')";
 
+    /// <summary>A StackLinq query that starts from a null array (<c>AsStackEnumerable</c>).</summary>
+    public const string LinqSource = "Value cannot be null. (Parameter 'source')";
+
     /// <summary><c>Span.CopyTo</c> into a shorter span (written by the prelude, not by an emitter).</summary>
     public const string SpanCopyToDestination = "Destination is too short. (Parameter 'destination')";
 
     /// <summary>Every message above, for the builtin list of the runtime.</summary>
     public static readonly string[] All = [
         FillStartIndex, FillCount, CopySource, CopyDestination, CopyLength, CopySourceIndex,
-        CopyDestinationIndex, ElementAtIndex,
+        CopyDestinationIndex, ElementAtIndex, LinqSource,
         SpanCopyToDestination,
     ];
 }
