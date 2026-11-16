@@ -123,6 +123,7 @@ public static unsafe void LaunchBitIntrinsicsKernel(global::System.UInt32[] inpu
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CarryAndBitIntrinsicKernels.BitIntrinsicsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CarryAndBitIntrinsicKernels.BitIntrinsicsKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = input;
 global::System.UInt32[] __gsharp_csharp_arg_1 = output;
 global::System.Int32 __gsharp_csharp_arg_2 = n;
@@ -305,6 +306,7 @@ public static unsafe void LaunchCarryChainKernel(global::System.UInt32[] a, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CarryAndBitIntrinsicKernels.CarryChainKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CarryAndBitIntrinsicKernels.CarryChainKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = a;
 global::System.UInt32[] __gsharp_csharp_arg_1 = b;
 global::System.UInt32[] __gsharp_csharp_arg_2 = sum;

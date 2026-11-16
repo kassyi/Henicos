@@ -496,6 +496,7 @@ public static unsafe void LaunchNullableCoalesceAndSideEffects(global::System.In
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableCoalesceAndSideEffects");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableCoalesceAndSideEffects");
 global::System.Int32[] __gsharp_csharp_arg_0 = hasA;
 global::System.Int32[] __gsharp_csharp_arg_1 = valsA;
 global::System.Int32[] __gsharp_csharp_arg_2 = hasB;
@@ -937,6 +938,7 @@ public static unsafe void LaunchNullableDeviceFunctionsAndKleeneLogic(global::Sy
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableDeviceFunctionsAndKleeneLogic");
 global::System.Int32[] __gsharp_csharp_arg_0 = hasA;
 global::System.Int32[] __gsharp_csharp_arg_1 = valsA;
 global::System.Int32[] __gsharp_csharp_arg_2 = hasB;
@@ -1289,6 +1291,7 @@ public static unsafe void LaunchNullableFloatCoalesceWithNaN(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableFloatCoalesceWithNaN");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableFloatCoalesceWithNaN");
 global::System.Int32[] __gsharp_csharp_arg_0 = hasA;
 global::System.Single[] __gsharp_csharp_arg_1 = valsA;
 global::System.Single[] __gsharp_csharp_arg_2 = fallbacks;
@@ -1599,6 +1602,7 @@ public static unsafe void LaunchCoalesceWiderNullableWithNarrowerNullable(global
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.CoalesceWiderNullableWithNarrowerNullable");
 global::System.Int32[] __gsharp_csharp_arg_0 = hasA;
 global::System.Int32[] __gsharp_csharp_arg_1 = valsA;
 global::System.Int32[] __gsharp_csharp_arg_2 = hasB;
@@ -2014,6 +2018,7 @@ public static unsafe void LaunchEmptyStackSpanNullComparisonReproKernel(global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.EmptyStackSpanNullComparisonReproKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;
@@ -2203,6 +2208,7 @@ public static unsafe void LaunchNullableArrayLikeDefaultValueNullCheckReproKerne
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableArrayLikeDefaultValueNullCheckReproKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;
@@ -2383,7 +2389,7 @@ auto __gsharp_coalesce_tmp = __gsharp_id_9_mus;
 return __gsharp_coalesce_tmp.HasValue ? static_cast<unsigned short>(__gsharp_coalesce_tmp.Value) : static_cast<unsigned short>(0);
 }());
 __gsharp_id_10_y=(unsigned short)__gsharp_add_i32(__gsharp_id_10_y,1);
-System_Nullable<unsigned char> __gsharp_id_11_mbNullForMax = ((__gsharp_id_6_c&4)==0?System_Nullable<unsigned char>{}:System_Nullable<unsigned char>{(unsigned char)255});
+System_Nullable<unsigned char> __gsharp_id_11_mbNullForMax = ((__gsharp_id_6_c&4)==0?__gsharp_type<System_Nullable<unsigned char>>():System_Nullable<unsigned char>{(unsigned char)255});
 unsigned short __gsharp_id_12_usMax = 65535;
 auto __gsharp_id_13_z = ([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_11_mbNullForMax;
@@ -2407,6 +2413,7 @@ public static unsafe void LaunchNarrowNullableCoalesceVarPromotionReproKernel(gl
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NarrowNullableCoalesceVarPromotionReproKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = conds;
 global::System.Byte[] __gsharp_csharp_arg_1 = ba;
 global::System.UInt16[] __gsharp_csharp_arg_2 = usa;
@@ -2703,6 +2710,7 @@ public static unsafe void LaunchNullableMemoryParamAndLocalReproKernel(global::S
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableMemoryParamAndLocalReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableMemoryParamAndLocalReproKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = dst;
 global::System.Int32 __gsharp_csharp_arg_1 = n;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.NullableDifferentialKernels.NullableMemoryParamAndLocalReproKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -2838,6 +2846,7 @@ public static unsafe void LaunchNullableMemoryKernelParamToLocalReproKernel(glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullableMemoryKernelParamToLocalReproKernel");
 global::System.Nullable<global::System.Memory<global::System.Int32>> __gsharp_csharp_arg_0 = bias;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;
@@ -3081,6 +3090,7 @@ public static unsafe void LaunchLiftedDoubleToNullableIntCastReproKernel(global:
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.LiftedDoubleToNullableIntCastReproKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.LiftedDoubleToNullableIntCastReproKernel");
 global::System.Double[] __gsharp_csharp_arg_0 = src;
 global::System.Int32[] __gsharp_csharp_arg_1 = conds;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;
@@ -3322,6 +3332,7 @@ public static unsafe void LaunchCoalesceAssignmentValueKernel(global::System.Int
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.CoalesceAssignmentValueKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.CoalesceAssignmentValueKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = conds;
 global::System.Int32[] __gsharp_csharp_arg_1 = vals;
 global::System.Int64[] __gsharp_csharp_arg_2 = dst;
@@ -3570,6 +3581,7 @@ public static unsafe void LaunchNullLiteralCastToArrayKernel(global::System.Int3
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.NullLiteralCastToArrayKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.NullLiteralCastToArrayKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = a;
 global::System.Int32[] __gsharp_csharp_arg_1 = dst;
 global::System.Int32 __gsharp_csharp_arg_2 = n;
@@ -3764,6 +3776,7 @@ public static unsafe void LaunchEmptyArrayIsNotNullKernel(global::System.Int32[]
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NullableDifferentialKernels.EmptyArrayIsNotNullKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NullableDifferentialKernels.EmptyArrayIsNotNullKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = empty;
 global::System.Int32[] __gsharp_csharp_arg_1 = other;
 global::System.Int32[] __gsharp_csharp_arg_2 = dst;

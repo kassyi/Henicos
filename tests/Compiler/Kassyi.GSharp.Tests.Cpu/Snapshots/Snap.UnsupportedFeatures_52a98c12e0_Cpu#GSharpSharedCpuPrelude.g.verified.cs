@@ -110,7 +110,7 @@ __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
-// T as a single name, so that __gsharp_type<unsigned char>{} and __gsharp_type<int*>{} are valid functional casts
+// T as a single name, so that __gsharp_type<unsigned char>() and __gsharp_type<int*>() are valid functional casts
 template <class T> using __gsharp_type = T;
 
 enum class GSharpErrorCode : int32_t {
@@ -1037,6 +1037,18 @@ inline A __gsharp_array_ref(A&& array, S site)
 if (array.data == nullptr)
 {
 __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
+}
+return static_cast<A&&>(array);
+}
+
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException (""source""). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_source_argument(A&& array, S site)
+{
+if (array.data == nullptr)
+{
+__gsharp_trap_abort(GSharpErrorCode::ArgumentNull, site);
 }
 return static_cast<A&&>(array);
 }

@@ -39,7 +39,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_2_carry=__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibFrameBase__Carry{};
+__gsharp_ctx->__gsharp_id_2_carry=__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__DeviceLibrary__LibFrameBase__Carry>();
 __gsharp_ctx->__gsharp_id_2_carry.__gsharp_mb_V=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_1_tid,3);
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_buffer, __gsharp_ctx->__gsharp_id_1_tid, ""G#: a null array is read at LibFrameBase.cu.cs(24,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,1);
 __gsharp_yielded_for_block_barrier=true;
@@ -313,6 +313,7 @@ private unsafe delegate void __gsharp_delegate_ProtectedFrameKernel(uint gridDim
 public static unsafe void LaunchProtectedFrameKernel(global::System.Int32[] buffer, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel", "it reaches LibFrameBase.KeepProtected() of another assembly, which reaches a barrier or a warp collective, and the C# execution runs one GPU thread at a time");
@@ -481,6 +482,7 @@ if (result.Data == global::System.IntPtr.Zero && result.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "result");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CrossAssemblyProtectedFrameKernels.ProtectedFrameKernel", "LaunchProtectedFrameKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchProtectedFrameKernel");

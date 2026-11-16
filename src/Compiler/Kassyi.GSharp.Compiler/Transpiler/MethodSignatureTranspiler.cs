@@ -60,8 +60,11 @@ internal static class MethodSignatureTranspiler
                 return;
             }
 
+            NullableLayoutAssertEmitter.Write(methodSymbol, ref context);
             WriteKernelMethodPrefix(ref context);
-            methodName = GlobalCppNames.GetKernelName(methodSymbol);
+            methodName = context.Emitter.Dialect.IsCuda && context.Emitter.TwoFormsPlan.HasTwoForms
+                ? context.Emitter.TwoFormsPlan.GetKernelName(context.Emitter.CurrentKernelForm)
+                : GlobalCppNames.GetKernelName(methodSymbol);
             if (hasContext)
             {
                 contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);
@@ -190,10 +193,11 @@ internal static class MethodSignatureTranspiler
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
-        var isReadOnlyRef = !isKernel &&
-                            (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
-                             p.Modifiers.Any(SyntaxKind.InKeyword) ||
-                             p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
+        var isReadOnlyRef = context.Emitter.IsParameterPassedByAddress(parameterSymbol) ||
+                            (!isKernel &&
+                             (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
+                              p.Modifiers.Any(SyntaxKind.InKeyword) ||
+                              p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword)));
         var isArray = typeSymbol.IsArrayLikeType();
 
         if ((isReadOnly && !isArray) || isReadOnlyRef)

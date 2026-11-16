@@ -105,7 +105,7 @@ return __gsharp_self;
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag>{}.__gsharp_mb_X,1);
+__gsharp_array_at(__gsharp_id_0_output, 0, 796983403u)=__gsharp_add_i32(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__DefaultShapeTag>().__gsharp_mb_X,1);
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_UserMarkerDefaultKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__WmmaUserMarker__UserMarkerDefaultKernels__UserMarkerDefaultKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -119,6 +119,7 @@ public static unsafe void LaunchUserMarkerDefaultKernel(global::System.Int32[] o
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "UserMarkerDefaultKernels.UserMarkerDefaultKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "UserMarkerDefaultKernels.UserMarkerDefaultKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.TestCases.Analyzers.WmmaUserMarker.UserMarkerDefaultKernels.UserMarkerDefaultKernel(__gsharp_csharp_arg_0));
 return;

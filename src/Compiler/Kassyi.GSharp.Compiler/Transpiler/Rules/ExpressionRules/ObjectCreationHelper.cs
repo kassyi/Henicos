@@ -314,6 +314,12 @@ internal static class ObjectCreationHelper
             return;
         }
 
+        if (argumentList is not { Arguments.Count: > 0 })
+        {
+            DefaultValue.AppendZero(typeSymbol, ref context);
+            return;
+        }
+
         context.Emitter.Dialect.AppendType(ref context, typeSymbol);
         TranspileArgumentListAsBraces(constructor, argumentList, ref context);
     }

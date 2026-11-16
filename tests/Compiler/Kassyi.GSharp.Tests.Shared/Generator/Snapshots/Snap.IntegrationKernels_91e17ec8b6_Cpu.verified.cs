@@ -213,7 +213,7 @@ case 1: return 2.0f;
 default: return 3.0f;
 }
 }());
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray __gsharp_id_16_arr = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray>();
 __gsharp_id_16_arr[0]=__gsharp_id_15_mag;
 __gsharp_id_16_arr[1]=__gsharp_id_15_mag*2.0f;
 __gsharp_id_16_arr[2]=__gsharp_id_15_mag*3.0f;
@@ -304,7 +304,7 @@ int __gsharp_id_34_bitwise = (__gsharp_shl_i32(__gsharp_id_32_a,1))|(__gsharp_id
 __gsharp_id_34_bitwise&=(-2);
 float __gsharp_id_35_finalVal = ((__gsharp_id_34_bitwise>0)?((__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t]>10.0f?10.0f:__gsharp_ctx->__gsharp_id_31_dynamicSharedMem[__gsharp_ctx->__gsharp_id_30_t])):0.0f);
 {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct __gsharp_id_36_fbs = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct>();
 __gsharp_id_36_fbs.__gsharp_mb_Data[0]=__gsharp_id_34_bitwise;
 __gsharp_id_35_finalVal+=__gsharp_id_36_fbs.__gsharp_mb_Data[0];
 }
@@ -629,6 +629,7 @@ private unsafe delegate void __gsharp_delegate_AllInOneKernel(uint gridDimX, uin
 public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "Tier1IntegrationKernels.AllInOneKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "Tier1IntegrationKernels.AllInOneKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("Tier1IntegrationKernels.AllInOneKernel", "it reaches SharedMemory<T>, and the C# execution runs one GPU thread at a time");
@@ -802,6 +803,7 @@ if (globalCounter.Data == global::System.IntPtr.Zero && globalCounter.Length != 
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "globalCounter");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "Tier1IntegrationKernels.AllInOneKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "Tier1IntegrationKernels.AllInOneKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("Tier1IntegrationKernels.AllInOneKernel", "LaunchAllInOneKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchAllInOneKernel");

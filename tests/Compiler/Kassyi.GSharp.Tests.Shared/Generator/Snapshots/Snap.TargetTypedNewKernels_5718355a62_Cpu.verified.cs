@@ -85,9 +85,9 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_2_c1 = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{};
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_2_c1 = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>();
 __gsharp_id_2_c1.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,100);
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_3_c2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{});
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_3_c2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>());
 __gsharp_id_3_c2.__gsharp_mb_Value=__gsharp_add_i32(__gsharp_id_1_tid,200);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1075879374u)=__gsharp_add_i32(__gsharp_id_2_c1.__gsharp_mb_Value,__gsharp_id_3_c2.__gsharp_mb_Value);
 __gsharp_state=-1;
@@ -212,6 +212,7 @@ private unsafe delegate void __gsharp_delegate_HappyPathKernel(uint gridDimX, ui
 public static unsafe void LaunchHappyPathKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.HappyPathKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.HappyPathKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
@@ -356,6 +357,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.HappyPathKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.HappyPathKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("TargetTypedNewKernels.HappyPathKernel", "LaunchHappyPathKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchHappyPathKernel");
@@ -418,7 +420,7 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = (int)threadIdx.x;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_id_2_p = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_1_tid; __gsharp_tmp.__gsharp_mb_Child = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct{}; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Id = __gsharp_id_1_tid; __gsharp_tmp.__gsharp_mb_Child = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct>(); return __gsharp_tmp; }
 ());
 __gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value=__gsharp_mul_i32(__gsharp_id_1_tid,5);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1317535476u)=__gsharp_add_i32(__gsharp_id_2_p.__gsharp_mb_Id,__gsharp_id_2_p.__gsharp_mb_Child.__gsharp_mb_Value);
@@ -546,6 +548,7 @@ private unsafe delegate void __gsharp_delegate_NestedInitializerKernel(uint grid
 public static unsafe void LaunchNestedInitializerKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.NestedInitializerKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.NestedInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
@@ -690,6 +693,7 @@ if (output.Data == global::System.IntPtr.Zero && output.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "output");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "TargetTypedNewKernels.NestedInitializerKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "TargetTypedNewKernels.NestedInitializerKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("TargetTypedNewKernels.NestedInitializerKernel", "LaunchNestedInitializerKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchNestedInitializerKernel");

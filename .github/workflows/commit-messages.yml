@@ -3,10 +3,11 @@ name: Commit messages
 # Fails a pull request with a commit whose subject is not a Conventional Commits subject (so no wip or fixup! commit
 # either). Pull requests are merged with a merge commit, so every commit of the branch reaches main as it is. A
 # workflow of its own, without the paths-ignore of the test workflow, so a change to docs/ or .agents/ alone is checked
-# too; it needs no build, only Node.
+# too; it needs no build, only Node. The title of the pull request is checked by the same rule, and `edited` runs the
+# check again when the title is renamed.
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -32,3 +33,9 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node scripts/human/check-commit-messages.js --github --base "origin/$BASE_REF" --head "$HEAD_SHA"
+
+      - name: Check the pull request title
+        # Passed through the environment, never written into the script: the title is text anyone can type.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/human/check-commit-messages.js --github --title "$PR_TITLE"

@@ -83,13 +83,13 @@ internal static class LauncherTypeAccess
             : null;
     }
 
-    // T[][] -> T, Span<T> -> T; any other type as it is
+    // T[][] -> T, Span<T> -> T, S?[] -> S (the shadow of a Nullable<S> names S); any other type as it is
     private static ITypeSymbol UnwrapArrayLikeElements(ITypeSymbol type)
     {
-        type = type.UnwrapNullableArrayLike() ?? type;
+        type = (type.UnwrapNullableArrayLike() ?? type).UnwrapNullable();
         while (type.TryGetArrayLikeElementType(out var element))
         {
-            type = element;
+            type = element.UnwrapNullable();
         }
 
         return type;

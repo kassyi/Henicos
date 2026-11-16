@@ -448,8 +448,11 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1556789360u, "OperatorMacr
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1834403479u, "OperatorMacroRoutingKernels.cs", 128, 44, "ExtensionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(647060939u, "OperatorMacroRoutingKernels.cs", 129, 9, "ExtensionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1975120283u, "OperatorMacroRoutingKernels.cs", 150, 9, "LambdaKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1692019890u, "OperatorMacroRoutingKernels.cs", 150, 21, "LambdaKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1381027323u, "OperatorMacroRoutingKernels.cs", 158, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1301752658u, "OperatorMacroRoutingKernels.cs", 158, 21, "ExtensionMethodGroupKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1451451327u, "OperatorMacroRoutingKernels.cs", 162, 9, "ExtensionMethodGroupKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(459056920u, "OperatorMacroRoutingKernels.cs", 162, 21, "ExtensionMethodGroupKernel", "Value cannot be null. (Parameter 'source')"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -956,7 +959,7 @@ finally
 public const string LambdaKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroRoutingKernels__LambdaKernel(GSharpArray<int> __gsharp_id_0_values, GSharpArray<int> __gsharp_id_1_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_array_at(__gsharp_id_1_result, 0, 1975120283u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_values;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_values, 1692019890u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1140,7 +1143,7 @@ public const string ExtensionMethodGroupKernel_Source = @"extern ""C"" __global_
 __gsharp_launch_epoch = __gsharp_epoch;
 GSharpArray<int> __gsharp_id_4_x = __gsharp_id_1_ten;
 __gsharp_array_at(__gsharp_id_3_result, 0, 1381027323u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_values;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_values, 1301752658u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;
@@ -1155,7 +1158,7 @@ return __gsharp_sum_i32(__gsharp_fusion_res);
 auto __gsharp_id_5_addTen = [__gsharp_id_0_x = (__gsharp_id_4_x)](int __gsharp_id_1_a) { return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RouteGroupExtensions__AddElement(__gsharp_id_0_x, __gsharp_id_1_a); };
 __gsharp_id_4_x=__gsharp_id_2_ninetyNine;
 __gsharp_array_at(__gsharp_id_3_result, 1, 1451451327u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_values;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_values, 459056920u);
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
 int __gsharp_fusion_hi = __gsharp_fusion_src.length;

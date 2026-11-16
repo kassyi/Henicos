@@ -55,12 +55,12 @@ internal static class StructUnmarshalMethodEmitter
             return;
         }
 
-        if (member.Type.TryGetArrayLikeElementType(out var elementType))
+        if (member.Type.IsArrayLikeType())
         {
             var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayMember(writer, $"host.{name}", $"native.{name}", elementType, dialect);
+            WriteUnmarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
         }
-        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
+        else if (HostShadowStructs.UsesShadow(member.Type, dialect))
         {
             writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -89,9 +89,17 @@ internal static class StructUnmarshalMethodEmitter
         }
     }
 
-    internal static void WriteUnmarshalArrayMember(SourceWriter writer, string host, string native,
-        ITypeSymbol elementType, ITranspilerDialect dialect)
+    // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)
+    internal static void WriteUnmarshalArrayLikeMember(SourceWriter writer, string host, string native,
+        ITypeSymbol arrayLikeType, ITranspilerDialect dialect)
     {
+        if (arrayLikeType is not IArrayTypeSymbol { ElementType: var elementType })
+        {
+            ArrayViewFieldEmitter.WriteUnmarshal(writer, ArrayFieldView.Create(arrayLikeType, dialect), host, native,
+                dialect);
+            return;
+        }
+
         if (!dialect.IsCuda)
         {
             WriteCpuUnmarshalArrayMember(writer, host, native, elementType, dialect);
@@ -108,7 +116,7 @@ internal static class StructUnmarshalMethodEmitter
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                if (TypeLayoutCalculator.IsUserStruct(elementType))
+                if (HostShadowStructs.UsesShadow(elementType, HostDialects.Cuda))
                 {
                     StructMarshalMethodEmitter.WriteShadowArray(writer, "tempArray", host, elementType);
 

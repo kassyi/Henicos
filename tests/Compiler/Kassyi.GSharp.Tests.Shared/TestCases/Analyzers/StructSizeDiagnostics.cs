@@ -201,6 +201,14 @@ public static partial class StructSizeDiagnosticKernels
         output[0] = block[10239];
     }
 
+    // An `in` struct that may share memory with the `ref` one is passed by value in one entry point and by address in
+    // the other; the by-value one is 32760 + 8 + 4 = 32772 bytes (the by-address one 8 + 8 + 4 = 20)
+    [GpuKernel]
+    public static void InBesideRefLargeKernel(in Bytes32760 source, ref Bytes32760 target)
+    {
+        target[0] = source[0];
+    }
+
     // `ref` is a pointer: 16 + 8 + 4 = 28 bytes
     [GpuKernel]
     public static void RefLargeKernel(int[] output, ref Ints40960 block)

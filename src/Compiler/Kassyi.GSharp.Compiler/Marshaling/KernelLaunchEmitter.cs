@@ -10,7 +10,7 @@ internal static class KernelLaunchEmitter
     // (DeviceArrayRegions, ArraySharingMode.Table)
     private const string DeviceArrays = GSharpInternalNames.Launcher.DeviceArrays;
 
-    private const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
+    internal const string KernelParams = GSharpInternalNames.Launcher.KernelParams;
 
     // The epoch of the launch, passed as the hidden last kernel parameter
     private const string LaunchEpoch = GSharpInternalNames.Launcher.Epoch;
@@ -34,7 +34,7 @@ internal static class KernelLaunchEmitter
         DeviceToHost,
     }
 
-    private static void WriteSynchronizedCopy(SourceWriter writer, CopyDirection direction, string destination,
+    internal static void WriteSynchronizedCopy(SourceWriter writer, CopyDirection direction, string destination,
         string source, string size, string stream = "hStream")
     {
         var method = direction is CopyDirection.HostToDevice ? "cuMemcpyHtoDAsync_v2" : "cuMemcpyDtoHAsync_v2";
@@ -94,34 +94,39 @@ internal static class KernelLaunchEmitter
     }
 
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
-    internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, in KernelHostModel kernel,
+    internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, in KernelEmission kernel,
         in ArraySharingPlan plan, bool isDevicePtr, bool isCheckedBuild = false)
     {
-        var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel);
+        var kernelParamCount = WriteKernelParamsDeclaration(writer, kernel.Host);
         AliasGroupEmitter.WriteCudaGroups(writer, plan);
+        if (!isDevicePtr && CudaTwoFormsLaunchEmitter.HasTwoForms(kernel.Host))
+        {
+            CudaTwoFormsLaunchEmitter.WriteDynamicSelection(writer, kernel, plan);
+        }
+
         WriteParameterMarshals(writer, plan, isDevicePtr);
-        AutoResultEmitter.WriteCudaMarshal(writer, kernel, kernel.Parameters.Length);
+        AutoResultEmitter.WriteCudaMarshal(writer, kernel.Host, kernel.Host.Parameters.Length);
         // The epoch is the last slot, the grid scratch the one before it
-        WriteGridScratchAllocation(writer, kernel, kernelParamCount - 2);
+        WriteGridScratchAllocation(writer, kernel.Host, kernelParamCount - 2);
         writer.AppendLine($"{KernelParams}[{kernelParamCount - 1}] = &{LaunchEpoch};");
         writer.AppendLine();
 
-        WriteLaunchKernelCall(writer, kernel.IsCooperative);
+        WriteLaunchKernelCall(writer, kernel.Host.IsCooperative);
         AliasGroupEmitter.WriteCudaCopyBack(writer, plan);
 
-        for (var i = 0; i < kernel.Parameters.Length; i++)
+        for (var i = 0; i < kernel.Host.Parameters.Length; i++)
         {
             WriteParameterUnmarshal(writer, plan, i, isDevicePtr);
         }
 
-        AutoResultEmitter.WriteCudaCopyBack(writer, kernel);
+        AutoResultEmitter.WriteCudaCopyBack(writer, kernel.Host);
         writer.AppendLineIf(isCheckedBuild,
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
         // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
         // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing
         // synchronizes first, so that it finds its record.
-        writer.AppendLineIf(!isDevicePtr && !isCheckedBuild && !CopyBackAlwaysSynchronizes(kernel),
+        writer.AppendLineIf(!isDevicePtr && !isCheckedBuild && !CopyBackAlwaysSynchronizes(kernel.Host),
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         writer.AppendLineIf(ReadsOwnRecord(isDevicePtr, isCheckedBuild),
             $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});");
@@ -273,7 +278,21 @@ internal static class KernelLaunchEmitter
                 WriteArrayMarshal(writer, plan, paramIndex);
                 break;
             case KernelParameterKind.RefScalar:
-                WriteRefOrOutScalarMarshal(writer, plan, paramIndex);
+                if (shape.IsInReference)
+                {
+                    if (!isDevicePtr)
+                    {
+                        CudaTwoFormsLaunchEmitter.WriteInScalarMarshal(writer, plan, paramIndex);
+                    }
+                    else
+                    {
+                        WriteScalarMarshal(writer, shape, paramIndex);
+                    }
+                }
+                else
+                {
+                    WriteRefOrOutScalarMarshal(writer, plan, paramIndex);
+                }
                 break;
             default:
                 WriteScalarMarshal(writer, shape, paramIndex);
@@ -298,29 +317,18 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {shape.Identifier}, ref {native}, {DeviceArraysFor(shape)}, hStream");
+                $"{shape.RefArgument}, ref {native}, {DeviceArraysFor(shape)}, hStream");
         }
 
         writer.AppendLine(";");
 
-        if (shape.RefKind is RefKind.Ref or RefKind.Out)
+        if (shape.IsInReference)
         {
-            var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
-            var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
-            writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
-            writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
-            using (WriteGroupMemberBranch(writer, plan, paramIndex))
-            {
-                WriteDeviceAllocation(writer, device, size);
-                if (shape.RefKind == RefKind.Ref)
-                {
-                    writer.AppendLine("// Fast zero-allocation copy to device");
-                    var source = $"({IntPtrType})(&{native})";
-                    WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, source, size);
-                }
-            }
-
-            writer.AppendLine($"{KernelParams}[{paramIndex}] = &{device};");
+            CudaTwoFormsLaunchEmitter.WriteInCustomStructMarshal(writer, plan, paramIndex, native);
+        }
+        else if (shape.IsByRef)
+        {
+            WriteRefOrOutStructMarshal(writer, plan, paramIndex, native);
         }
         else
         {
@@ -370,7 +378,7 @@ internal static class KernelLaunchEmitter
     // else { <the caller's own region> }   (returns the else scope; an empty scope when the parameter is no member)
     // [WHY] A group of overlapping arguments has one region, which the launcher filled before the marshaling
     // (AliasGroupEmitter.WriteCudaGroups); a member takes its address in it instead of a copy of its own (#857)
-    private static SourceWriterScope WriteGroupMemberBranch(SourceWriter writer, in ArraySharingPlan plan,
+    internal static SourceWriterScope WriteGroupMemberBranch(SourceWriter writer, in ArraySharingPlan plan,
         int paramIndex)
     {
         if (AliasGroupEmitter.MemberTest(plan.Aliases, paramIndex) is not { } member)
@@ -390,7 +398,7 @@ internal static class KernelLaunchEmitter
     }
 
     // CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out <device>, (IntPtr)<size>, hStream));
-    private static void WriteDeviceAllocation(SourceWriter writer, string device, string size) =>
+    internal static void WriteDeviceAllocation(SourceWriter writer, string device, string size) =>
         writer.AppendLine(
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuMemAllocAsync(" +
             $"out {device}, ({IntPtrType}){size}, hStream));");
@@ -630,7 +638,29 @@ internal static class KernelLaunchEmitter
     private static void WriteShadowRent(SourceWriter writer, in KernelParameterShape shape) =>
         writer.AppendLine($"{KernelHostNames.GetLocal(LauncherLocal.Shadow, shape)} = {HostTypeNames.ArrayPoolShared}.Rent({KernelHostNames.GetLocal(LauncherLocal.Size, shape)});");
 
-    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
+    internal static void WriteRefOrOutStructMarshal(
+        SourceWriter writer, in ArraySharingPlan plan, int paramIndex, string native)
+    {
+        var shape = plan.Parameters[paramIndex];
+        var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
+        var device = KernelHostNames.GetLocal(LauncherLocal.DevicePointer, shape);
+        writer.AppendLine($"// Marshal ref/out struct: {shape.Identifier}");
+        writer.AppendLine($"int {size} = sizeof({shape.AotStructPath});");
+        using (WriteGroupMemberBranch(writer, plan, paramIndex))
+        {
+            WriteDeviceAllocation(writer, device, size);
+            if (shape.RefKind != RefKind.Out)
+            {
+                writer.AppendLine("// Fast zero-allocation copy to device");
+                var source = $"({IntPtrType})(&{native})";
+                WriteSynchronizedCopy(writer, CopyDirection.HostToDevice, device, source, size);
+            }
+        }
+
+        writer.AppendLine($"{KernelParams}[{paramIndex}] = &{device};");
+    }
+
+    internal static void WriteRefOrOutScalarMarshal(SourceWriter writer, in ArraySharingPlan plan, int paramIndex)
     {
         var shape = plan.Parameters[paramIndex];
         var size = KernelHostNames.GetLocal(LauncherLocal.Size, shape);
@@ -642,7 +672,7 @@ internal static class KernelLaunchEmitter
         {
             WriteDeviceAllocation(writer, device, size);
 
-            if (shape.RefKind == RefKind.Ref)
+            if (shape.RefKind != RefKind.Out)
             {
                 writer.AppendLine("// Fast zero-allocation copy to device");
                 writer.AppendLine($"fixed ({shape.TypeName}* {pinnedTemp} = &{shape.Identifier})");
@@ -699,7 +729,8 @@ internal static class KernelLaunchEmitter
         bool isDevicePtr)
     {
         var shape = plan.Parameters[paramIndex];
-        if (IsPassedThrough(shape, isDevicePtr))
+        // An in parameter is read by the kernel and never copied back
+        if (IsPassedThrough(shape, isDevicePtr) || shape.IsInReference)
         {
             return;
         }
@@ -741,7 +772,7 @@ internal static class KernelLaunchEmitter
             writer.Append(shape.UnmarshalMethodName);
             using (writer.Parentheses())
             {
-                writer.Append($"ref {shape.Identifier}, ref {native}, hStream");
+                writer.Append($"{shape.RefArgument}, ref {native}, hStream");
             }
 
             writer.AppendLine(";");

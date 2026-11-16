@@ -41,7 +41,7 @@ __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <class T> __device__ __host__ inline const T* __gsharp_temp_address(const T& v) { return &v; }
 
-// T as a single name, so that __gsharp_type<unsigned char>{} and __gsharp_type<int*>{} are valid functional casts
+// T as a single name, so that __gsharp_type<unsigned char>() and __gsharp_type<int*>() are valid functional casts
 template <class T> using __gsharp_type = T;
 
 // --- C# integer semantics (both dialects; IntegerSemantics.cs decides where the transpiler calls them) ---
@@ -1172,6 +1172,18 @@ __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site))
 }
 return static_cast<A&&>(array);
 }
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException (""source""). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_source_argument(A&& array, S site)
+{
+if (array.data == nullptr)
+{
+__gsharp_inline_trap(GSharpErrorCode::ArgumentNull, __gsharp_inline_site(site));
+}
+return static_cast<A&&>(array);
+}
+
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>

@@ -520,7 +520,7 @@ internal static class GpuCodeConstraints
 
     /// <summary>
     /// The loop that the <c>Gpu.Hint.Unroll</c> statement <paramref name="hint"/> applies to: the next statement of the same
-    /// block or switch section, when it is a <c>for</c>, <c>while</c> or <c>do</c> loop (GSH0017).
+    /// block or switch section (unwrapping any labels), when it is a <c>for</c>, <c>while</c> or <c>do</c> loop (GSH0017).
     /// </summary>
     public static StatementSyntax? GetUnrolledLoop(ExpressionStatementSyntax hint)
     {
@@ -544,6 +544,11 @@ internal static class GpuCodeConstraints
         }
 
         var nextStmt = statements[index + 1];
+        while (nextStmt is LabeledStatementSyntax labeled)
+        {
+            nextStmt = labeled.Statement;
+        }
+
         return nextStmt is ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax ? nextStmt : null;
     }
 

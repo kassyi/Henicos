@@ -93,7 +93,7 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag,__gsharp_mb_Count)==4,""Kassyi.GSharp.Tests.Shared.Differential.DiffWeightedBag.Count: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ImplicitCallDifferentialKernels__CreateWeightedBag(GSharpArray<int> __gsharp_id_0_values){
-auto __gsharp_id_1_bag = __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag{};
+auto __gsharp_id_1_bag = __gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__DiffWeightedBag>();
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<__gsharp_id_0_values.length;__gsharp_id_2_i++)
 {
 __gsharp_id_1_bag.__gsharp_mb_Sum=__gsharp_add_i32(__gsharp_id_1_bag.__gsharp_mb_Sum,__gsharp_mul_i32(__gsharp_id_0_values[__gsharp_id_2_i],__gsharp_add_i32(__gsharp_id_2_i,1)));
@@ -292,6 +292,7 @@ public static unsafe void LaunchCollectionBuilderKernel(global::System.Int32[] i
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ImplicitCallDifferentialKernels.CollectionBuilderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ImplicitCallDifferentialKernels.CollectionBuilderKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitCallDifferentialKernels.CollectionBuilderKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -546,6 +547,7 @@ public static unsafe void LaunchPinnableReferenceKernel(global::System.Int32[] i
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ImplicitCallDifferentialKernels.PinnableReferenceKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ImplicitCallDifferentialKernels.PinnableReferenceKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = inputs;
 global::System.Int32[] __gsharp_csharp_arg_1 = r;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Differential.ImplicitCallDifferentialKernels.PinnableReferenceKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));

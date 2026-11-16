@@ -205,6 +205,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(810532960u, "CallerInfoDif
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(331731828u, "CallerInfoDifferentialKernels.cs", 80, 9, "CallerLineKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(788976138u, "CallerInfoDifferentialKernels.cs", 83, 9, "CallerLineKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(940997348u, "CallerInfoDifferentialKernels.cs", 84, 9, "CallerLineKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1226024750u, "CallerInfoDifferentialKernels.cs", 84, 21, "CallerLineKernel", "Value cannot be null. (Parameter 'source')"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1417588917u, "CallerInfoDifferentialKernels.cs", 92, 20, "CallerLineManagedVersionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1159802896u, "CallerInfoDifferentialKernels.cs", 93, 9, "CallerLineManagedVersionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(158106789u, "CallerInfoDifferentialKernels.cs", 93, 30, "CallerLineManagedVersionKernel", "G#: a null array is passed where it is not nullable"),
@@ -278,7 +279,7 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CallerInfoDiffer
 ;
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,11), 788976138u)=__gsharp_id_5_LocalLine();
 __gsharp_array_at(__gsharp_id_1_r, __gsharp_add_i32(__gsharp_id_4_o,12), 940997348u)=([&]() -> auto {
-auto&& __gsharp_fusion_src = __gsharp_id_0_xs;
+auto&& __gsharp_fusion_src = __gsharp_source_argument(__gsharp_id_0_xs, 1226024750u);
 int __gsharp_stage_0_n = 1;
 long long __gsharp_fusion_res = 0;
 int __gsharp_fusion_lo = 0;
@@ -436,6 +437,7 @@ private unsafe delegate void __gsharp_delegate_CallerLineKernel(uint gridDimX, u
 public static unsafe void LaunchCallerLineKernel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -588,6 +590,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineKernel", "LaunchCallerLineKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCallerLineKernel");
@@ -754,6 +757,7 @@ private unsafe delegate void __gsharp_delegate_CallerLineManagedVersionKernel(ui
 public static unsafe void LaunchCallerLineManagedVersionKernel(global::System.Single[] data, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineManagedVersionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineManagedVersionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineManagedVersionKernel", "it reaches a float or double StackLinq Sum, which only the generated code sums in order");
@@ -903,6 +907,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineManagedVersionKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineManagedVersionKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineManagedVersionKernel", "LaunchCallerLineManagedVersionKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCallerLineManagedVersionKernel");
@@ -1103,6 +1108,7 @@ private unsafe delegate void __gsharp_delegate_CallerLineSuspendingCallKernel(ui
 public static unsafe void LaunchCallerLineSuspendingCallKernel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel", "it reaches Gpu.SyncThreads(), and the C# execution runs one GPU thread at a time");
@@ -1252,6 +1258,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel", "LaunchCallerLineSuspendingCallKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCallerLineSuspendingCallKernel");
@@ -1440,6 +1447,7 @@ private unsafe delegate void __gsharp_delegate_CallerLineIteratorKernel(uint gri
 public static unsafe void LaunchCallerLineIteratorKernel(global::System.Int32[] xs, global::System.Int32[] r, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineIteratorKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineIteratorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = xs;
@@ -1592,6 +1600,7 @@ if (r.Data == global::System.IntPtr.Zero && r.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "r");
 }
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CallerInfoDifferentialKernels.CallerLineIteratorKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CallerInfoDifferentialKernels.CallerLineIteratorKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("CallerInfoDifferentialKernels.CallerLineIteratorKernel", "LaunchCallerLineIteratorKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchCallerLineIteratorKernel");
