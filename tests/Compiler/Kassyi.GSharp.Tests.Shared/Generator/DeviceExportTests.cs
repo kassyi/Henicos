@@ -504,8 +504,9 @@ public class DeviceExportTests
         bool HasPrivateFrame(string id) => records.Single(r => r.Id == id).GetBool("PrivateManagedFrame");
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitPublic(System.Int32[],System.Int32)"));
         Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.WaitPublic(System.Int32[],System.Int32)"));
-        Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)"));
-        Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)"));
+        const string WaitHidden = "M:StateMachineCase.LibSm.WaitHidden(StateMachineCase.Hidden,System.Int32[],System.Int32)";
+        Assert.True(HasStateMachine(WaitHidden));
+        Assert.False(HasPrivateFrame(WaitHidden));
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
         Assert.False(HasPrivateFrame("M:StateMachineCase.LibSm.Inner.WaitNested(System.Int32[],System.Int32)"));
         Assert.True(HasStateMachine("M:StateMachineCase.LibSm.WaitPrivate(System.Int32[],System.Int32)"));

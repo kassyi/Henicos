@@ -12,7 +12,8 @@ using Kassyi.GSharp.Core;
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.G", CppName = "__gsharp_fn_H__Lib__G",
     CudaSignature = "/*G_CUDA_SIGNATURE*/", CudaBody = "/*G_CUDA_BODY*/",
     CppSignature = "/*G_CPP_SIGNATURE*/", CppBody = "/*G_CPP_BODY*/", CudaFailed = true)]
-[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Dup", CppName = "__gsharp_fn_H__Lib__Dup",
+[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Dup",
+    CppName = "__gsharp_fn_H__Lib__Dup",
     CudaSignature = "/*DUP_SIGNATURE*/", CudaBody = "/*DUP_BODY_ASSEMBLY_NAME*/",
     CppSignature = "/*DUP_SIGNATURE*/", CppBody = "/*DUP_BODY_ASSEMBLY_NAME*/")]
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Struct", "T:H.S", CppName = "__gsharp_ty_H__S",
@@ -26,12 +27,14 @@ using Kassyi.GSharp.Core;
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Struct", "T:H.Zeta", CppName = "__gsharp_ty_H__Zeta",
     DefinedNames = new[] { "__gsharp_ctor_H__Zeta" }, DefinedIds = new[] { "M:H.Zeta.#ctor(System.Int32)" },
     CudaBody = "/*ZETA_BODY*/", CppBody = "/*ZETA_BODY*/")]
-[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Relay", CppName = "__gsharp_fn_H__Lib__Relay",
+[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Relay",
+    CppName = "__gsharp_fn_H__Lib__Relay",
     CudaReferences = new[] { "__gsharp_fn_H__Lib__Wait" }, CppReferences = new[] { "__gsharp_fn_H__Lib__Wait" },
     FrameName = "__gsharp_frame_H__Lib__Relay", FrameDependencies = new[] { "__gsharp_frame_H__Lib__Wait" },
     Suspends = true, CudaSignature = "/*RELAY_SIGNATURE*/", CudaBody = "/*RELAY_BODY*/",
     CppSignature = "/*RELAY_SIGNATURE*/", CppBody = "/*RELAY_BODY*/")]
-[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Wait", CppName = "__gsharp_fn_H__Lib__Wait",
+[assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Function", "M:H.Lib.Wait",
+    CppName = "__gsharp_fn_H__Lib__Wait",
     FrameName = "__gsharp_frame_H__Lib__Wait", Suspends = true, CudaSignature = "/*WAIT_SIGNATURE*/",
     CudaBody = "/*WAIT_BODY*/", CppSignature = "/*WAIT_SIGNATURE*/", CppBody = "/*WAIT_BODY*/")]
 [assembly: GpuDeviceExport(FORMAT_VERSION, "PRELUDE_HASH", "Struct", "T:H.Lost", CppName = "__gsharp_ty_H__Lost",

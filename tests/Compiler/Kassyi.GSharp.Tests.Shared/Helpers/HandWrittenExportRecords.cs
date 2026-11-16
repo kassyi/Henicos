@@ -21,7 +21,8 @@ internal static class HandWrittenExportRecords
             !raw.Contains(PreludeHashMarker, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"The hand-written export record test case '{testCase}' is missing '{FormatVersionMarker}' or '{PreludeHashMarker}'.");
+                $"The hand-written export record test case '{testCase}' is missing '{FormatVersionMarker}' or " +
+                $"'{PreludeHashMarker}'.");
         }
 
         var version = (formatVersion ?? DeviceExportRecord.CurrentFormatVersion)
@@ -34,7 +35,8 @@ internal static class HandWrittenExportRecords
             replaced.Contains(PreludeHashMarker, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                $"The hand-written export record test case '{testCase}' still contains '{FormatVersionMarker}' or '{PreludeHashMarker}'.");
+                $"The hand-written export record test case '{testCase}' still contains '{FormatVersionMarker}' or " +
+                $"'{PreludeHashMarker}'.");
         }
 
         return replaced;
