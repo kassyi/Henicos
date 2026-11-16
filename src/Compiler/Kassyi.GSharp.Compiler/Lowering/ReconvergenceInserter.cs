@@ -128,14 +128,16 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             {
                 if (region.First == i)
                 {
+                    var peeled = ImmutableArray.CreateBuilder<LabeledStatementSyntax>();
                     while (statements[i] is LabeledStatementSyntax labeled)
                     {
+                        peeled.Add(labeled);
                         rewritten.Add(labeled.WithStatement(SyntaxFactory.EmptyStatement()));
                         statements = statements.Replace(statements[i], (StatementSyntax)labeled.Statement);
                     }
 
                     var site = RegionCount++;
-                    _open.Add(new Region(site, statements[i], region, statements));
+                    _open.Add(new Region(site, statements[i], region, statements, peeled.ToImmutable()));
                     rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, site));
                 }
             }
@@ -358,7 +360,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 break;
             case GotoStatementSyntax gotoStatement when gotoStatement.IsKind(SyntaxKind.GotoStatement):
                 if (gotoStatement.Expression is IdentifierNameSyntax { Identifier.ValueText: var targetName } &&
-                    ReconvergenceSyntax.FindLabel(gotoStatement, targetName) is { } targetLabel)
+                    FindLabel(gotoStatement, targetName) is { } targetLabel)
                 {
                     for (var r = _open.Count - 1; r >= 0; r--)
                     {
@@ -422,11 +424,60 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         return null;
     }
 
+    private LabeledStatementSyntax? FindLabel(GotoStatementSyntax gotoStatement, string targetName)
+    {
+        if (ReconvergenceSyntax.FindLabel(gotoStatement, targetName) is { } targetLabel)
+        {
+            return targetLabel;
+        }
+
+        for (var r = _open.Count - 1; r >= 0; r--)
+        {
+            if (!_open[r].PeeledLabels.IsDefaultOrEmpty)
+            {
+                foreach (var peeled in _open[r].PeeledLabels)
+                {
+                    if (peeled.Identifier.ValueText == targetName)
+                    {
+                        return peeled;
+                    }
+                }
+            }
+
+            foreach (var statement in _open[r].EnclosingStatements)
+            {
+                if (ReconvergenceSyntax.FindLabelInChain(statement, targetName) is { } labeled)
+                {
+                    return labeled;
+                }
+            }
+        }
+
+        for (var t = _targets.Count - 1; t >= 0; t--)
+        {
+            if (_targets[t].Node is SwitchStatementSyntax switchStmt)
+            {
+                foreach (var section in switchStmt.Sections)
+                {
+                    foreach (var statement in section.Statements)
+                    {
+                        if (ReconvergenceSyntax.FindLabelInChain(statement, targetName) is { } labeled)
+                        {
+                            return labeled;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     // The regions that a goto stays inside: those around its label. C# lets a goto reach only a label of a block around it
     private int FindLabelDepth(GotoStatementSyntax gotoStatement)
     {
         if (gotoStatement.Expression is not IdentifierNameSyntax { Identifier.ValueText: var name } ||
-            ReconvergenceSyntax.FindLabel(gotoStatement, name) is not { } label)
+            FindLabel(gotoStatement, name) is not { } label)
         {
             return 0;
         }
@@ -617,7 +668,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         int Site,
         SyntaxNode Extent,
         JumpRegion? JumpRegion = null,
-        SyntaxList<StatementSyntax> EnclosingStatements = default);
+        SyntaxList<StatementSyntax> EnclosingStatements = default,
+        ImmutableArray<LabeledStatementSyntax> PeeledLabels = default);
 
     // A loop or switch that a break leaves (the regions from BreakDepth on are inside it) and, for a loop, where a
     // continue goes (the regions from ContinueDepth on are inside its body region)

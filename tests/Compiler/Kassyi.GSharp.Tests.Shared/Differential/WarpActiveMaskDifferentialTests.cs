@@ -565,13 +565,20 @@ public class WarpActiveMaskDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ActiveMask_GotoBackToRangeStart_RunsWithoutError()
     {
+        var expectedFirst32 = PerLane(32, static t => (t & 1) == 0, 0x55555555u);
+        var expectedCpuAfter = Enumerable.Range(0, 32).Select(static t => (t & 1) == 0 ? 0x55555555u : 0xAAAAAAAAu).ToArray();
+        var expectedCudaAfter = Enumerable.Repeat(0xFFFFFFFFu, 32).ToArray();
+
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();
             var output = new uint[64];
             path.Run(() => WarpActiveMaskDifferentialKernels.LaunchGotoBackToRangeStartKernel(
                 output, blockDimX: 32));
-            Assert.Equal(64, output.Length);
+
+            var expected = expectedFirst32.Concat(path.Path == DiffPath.Cuda ? expectedCudaAfter : expectedCpuAfter).ToArray();
+            Assert.True(expected.SequenceEqual(output),
+                $"{path.Name}: expected [{Format(expected)}], got [{Format(output)}]");
         }
     }
 }
