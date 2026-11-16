@@ -203,7 +203,11 @@ native.Limit = host.Limit;
 }
 public static unsafe void Unmarshal_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, ref AotContexts.ElementCount native, global::System.IntPtr hStream = default)
 {
-if (host.Base != null && native.Base.Data != global::System.IntPtr.Zero)
+if (native.Base.Data == global::System.IntPtr.Zero)
+{
+host.Base = default;
+}
+else if (host.Base != null)
 {
 int size = checked(host.Base.Length * sizeof(global::System.UInt32));
 if (size > 0)

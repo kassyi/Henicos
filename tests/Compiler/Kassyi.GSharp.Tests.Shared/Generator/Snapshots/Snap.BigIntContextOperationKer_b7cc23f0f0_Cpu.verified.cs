@@ -396,6 +396,34 @@ native.CarryBuffer.Length = host.CarryBuffer.Length;
 }
 public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, global::System.IntPtr hStream = default)
 {
+if (native.LeftOperand.Data == global::System.IntPtr.Zero)
+{
+host.LeftOperand = default;
+}
+if (native.RightOperand.Data == global::System.IntPtr.Zero)
+{
+host.RightOperand = default;
+}
+if (native.TargetOperand.Data == global::System.IntPtr.Zero)
+{
+host.TargetOperand = default;
+}
+if (native.ResultBuffer.Data == global::System.IntPtr.Zero)
+{
+host.ResultBuffer = default;
+}
+if (native.Constant.Data == global::System.IntPtr.Zero)
+{
+host.Constant = default;
+}
+if (native.Constant3.Data == global::System.IntPtr.Zero)
+{
+host.Constant3 = default;
+}
+if (native.CarryBuffer.Data == global::System.IntPtr.Zero)
+{
+host.CarryBuffer = default;
+}
 }
 public static void CopyArrays_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {

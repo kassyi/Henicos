@@ -8,10 +8,15 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
 {
     public static readonly KernelSignatureRule Instance = new();
 
-    // [WHY] CUDA limits the parameters of a kernel to 4 KB (4096 bytes).
-    private const int KernelParameterSpaceLimitBytes = 4096;
+    // [WHY] The parameter space of a kernel is 32,764 bytes from CUDA 12.1 on Volta and newer, and 4,096 bytes before.
+    // G# builds with CUDA 13.0 or newer, whose oldest target is compute capability 7.5, so every build G# supports has
+    // the larger limit, and nvcc rejects a kernel above it ("Formal parameter space overflowed ... max 32764 bytes").
+    private const int KernelParameterSpaceLimitBytes = 32764;
 
     private const int DevicePointerBytes = 8;
+
+    // The limit is the CUDA one, so every user parameter is laid out as CUDA lays it out, whatever dialect the build has
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
@@ -102,18 +107,16 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
         var offset = 0;
         foreach (var parameter in kernel.Parameters)
         {
-            var layout = parameter.RefKind != RefKind.None
+            var layout = parameter.IsPassedByPointer(isKernel: true)
                 ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
-                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, context.Dialect);
+                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, s_cudaDialect);
 
             offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
         }
 
-        // A kernel that returns a value takes the pointer to its result buffer as a hidden last parameter
-        if (!kernel.ReturnsVoid)
-        {
-            offset = TypeLayoutCalculator.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
-        }
+        // The parameters G# appends on CUDA (result buffer, grid aggregate scratch, launch epoch), where the limit
+        // holds; a CPU dialect build of the same kernel is checked against the GPU it is meant for
+        offset = KernelHiddenParameters.For(node, kernel, context.SemanticModel, isCuda: true).AppendTo(offset);
 
         if (offset > KernelParameterSpaceLimitBytes)
         {
