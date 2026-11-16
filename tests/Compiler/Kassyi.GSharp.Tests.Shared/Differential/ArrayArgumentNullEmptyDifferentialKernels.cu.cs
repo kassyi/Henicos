@@ -265,7 +265,9 @@ public static class ArrayArgumentReads
     /// <summary>The same query from a sequence stored in a local, which is not fused into one loop.</summary>
     public const int StackLinqStoredSum = 12;
 
-    /// <summary><c>a.AsStackEnumerable().Where((v, i) =&gt; i &gt;= 0).Sum()</c>: an indexed lambda, not fused.</summary>
+    /// <summary>
+    /// <c>a.AsStackEnumerable().Where((v, i) =&gt; i &gt;= 0).Sum()</c>: an indexed lambda, not fused.
+    /// </summary>
     public const int StackLinqIndexedSum = 13;
 
     /// <summary>The same query in a device function, which has no error site table.</summary>
