@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
-/// Kernels for oversized shared memory testing (#799 PR-E2).
+/// Kernels for oversized shared memory testing (#799).
 /// </summary>
 public static partial class OversizedSharedMemoryKernels
 {
