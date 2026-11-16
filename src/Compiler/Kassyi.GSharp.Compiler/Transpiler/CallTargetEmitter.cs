@@ -102,7 +102,7 @@ internal static class CallTargetEmitter
     }
 
     // __gsharp_unsupported("<method> is not implemented by the <dialect> dialect")
-    // (__gsharp_unsupported("<method> is not implemented by the <dialect> dialect"), <return type>{})
+    // (__gsharp_unsupported("<method> is not implemented by the <dialect> dialect"), __gsharp_type<<return type>>())
     // [WHY] The arguments are not evaluated: the failure stops the launch, and the dialect has no definition to pass
     // them to. A call with a value gives the default of its type so that the expression around it still compiles.
     private static void AppendRuntimeFailure(ITypeSymbol returnType, CallTargetPlan plan, ref TranspileContext context)
@@ -118,8 +118,7 @@ internal static class CallTargetEmitter
         using (writer.Parentheses())
         {
             writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"{message}\"), ");
-            context.Emitter.Dialect.AppendType(ref context, returnType);
-            writer.Append("{}");
+            DefaultValue.AppendZero(returnType, ref context);
         }
     }
 
