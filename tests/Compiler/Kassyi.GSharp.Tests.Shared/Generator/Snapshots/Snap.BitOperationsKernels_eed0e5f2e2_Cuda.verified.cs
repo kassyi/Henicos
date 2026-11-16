@@ -153,6 +153,7 @@ public static unsafe void LaunchRotate32Kernel(global::System.UInt32[] val, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.Rotate32Kernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.Rotate32Kernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = val;
 global::System.Int32[] __gsharp_csharp_arg_1 = shift;
 global::System.UInt32[] __gsharp_csharp_arg_2 = rotLeftRes;
@@ -434,6 +435,7 @@ public static unsafe void LaunchRotate64Kernel(global::System.UInt64[] val, glob
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.Rotate64Kernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.Rotate64Kernel");
 global::System.UInt64[] __gsharp_csharp_arg_0 = val;
 global::System.Int32[] __gsharp_csharp_arg_1 = shift;
 global::System.UInt64[] __gsharp_csharp_arg_2 = rotLeftRes;
@@ -739,6 +741,7 @@ public static unsafe void LaunchInterlockedReorderedNamedArgsKernel(global::Syst
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.InterlockedReorderedNamedArgsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.InterlockedReorderedNamedArgsKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = targets;
 global::System.Int32[] __gsharp_csharp_arg_1 = results;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.InterlockedReorderedNamedArgsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -930,6 +933,7 @@ public static unsafe void LaunchInterlockedLongReorderedNamedArgsKernel(global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.InterlockedLongReorderedNamedArgsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.InterlockedLongReorderedNamedArgsKernel");
 global::System.Int64[] __gsharp_csharp_arg_0 = targets;
 global::System.Int64[] __gsharp_csharp_arg_1 = results;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.InterlockedLongReorderedNamedArgsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1115,6 +1119,7 @@ public static unsafe void LaunchRotationReorderedNamedArgsKernel(global::System.
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.RotationReorderedNamedArgsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.RotationReorderedNamedArgsKernel");
 global::System.UInt32[] __gsharp_csharp_arg_0 = values;
 global::System.UInt32[] __gsharp_csharp_arg_1 = results;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.RotationReorderedNamedArgsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1300,6 +1305,7 @@ public static unsafe void LaunchRotationLongReorderedNamedArgsKernel(global::Sys
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.RotationLongReorderedNamedArgsKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.RotationLongReorderedNamedArgsKernel");
 global::System.UInt64[] __gsharp_csharp_arg_0 = values;
 global::System.UInt64[] __gsharp_csharp_arg_1 = results;
 global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.RotationLongReorderedNamedArgsKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
@@ -1488,6 +1494,7 @@ public static unsafe void LaunchReorderedNamedArgsEvaluationOrderKernel(global::
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "BitOperationsKernels.ReorderedNamedArgsEvaluationOrderKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "BitOperationsKernels.ReorderedNamedArgsEvaluationOrderKernel");
 global::System.Int32[] __gsharp_csharp_arg_0 = targets;
 global::System.Int32[] __gsharp_csharp_arg_1 = intResults;
 global::System.UInt32[] __gsharp_csharp_arg_2 = u32Results;

@@ -135,20 +135,44 @@ public class EvaluationOrderAnalysisTests
     }
 
     // C# on the CLR checks an array element of every type, a struct included, when a simple assignment stores the
-    // value, after the right side; a ref argument or a compound assignment checks it as it names it
+    // value, after the right side; a ref argument or a compound assignment checks it as it names it, and a ulong
+    // array index converts with conv.ovf.i.un when the index is evaluated (#1988)
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ElementTarget")]
+    [InlineData("ElementTargetWithUIntIndex")]
+    [InlineData("ElementTargetWithLongIndex")]
     [InlineData("EnumElementTarget")]
     [InlineData("StructElementTarget")]
     public void OfAssignmentTarget_ArrayElement_LeavesTheElementCheckToTheStore(string method)
     {
         var (element, model) = GetResult(method);
         var (checkedIndex, checkedModel) = GetResult("ElementTargetWithCheckedIndex");
+        var (ulongIndex, ulongModel) = GetResult("ElementTargetWithULongIndex");
 
         Assert.True(ExpressionEffects.OfLocation(element, model).MayThrow);
         Assert.False(ExpressionEffects.OfAssignmentTarget(element, model).MayThrow);
         Assert.True(ExpressionEffects.OfAssignmentTarget(checkedIndex, checkedModel).MayThrow);
+        // mutant: ExpressionTraps.MayTrapBeforeStore not checking SpecialType.System_UInt64 returns false here
+        Assert.True(ExpressionEffects.OfAssignmentTarget(ulongIndex, ulongModel).MayThrow);
+    }
+
+    // Only a C# array element access with a ulong index emits __gsharp_array_index_u64 (#1988)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ElementTargetWithULongIndex", true)]
+    [InlineData("ElementTarget", false)]
+    [InlineData("ElementTargetWithUIntIndex", false)]
+    [InlineData("ElementTargetWithLongIndex", false)]
+    [InlineData("SpanElementWithIntIndex", false)]
+    [InlineData("StructIndexerWithULongIndex", false)]
+    [InlineData("PointerElementWithULongIndex", false)]
+    public void NeedsOverflowCheck_ElementAccess_IsTrueOnlyForArrayWithULongIndex(string method, bool expected)
+    {
+        var (element, model) = GetResult(method);
+
+        // mutant: ArrayElementIndex.NeedsOverflowCheck always false or skipping the IArrayTypeSymbol check fails here
+        Assert.Equal(expected, ArrayElementIndex.NeedsOverflowCheck((ElementAccessExpressionSyntax)element, model));
     }
 
     [Theory]

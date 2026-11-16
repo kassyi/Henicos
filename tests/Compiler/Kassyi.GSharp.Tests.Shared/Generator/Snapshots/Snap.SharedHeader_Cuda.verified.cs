@@ -680,9 +680,52 @@ __device__ inline const T* end() const { return data + length; }
 __device__ inline int size() const { return length; }
 __device__ inline T& operator[](int index) { return data[index]; }
 __device__ inline const T& operator[](int index) const { return data[index]; }
+// An element at a C# index of type uint, long or ulong. The index is compared with the length at its own width:
+// narrowing it to int first would wrap 2^32 to element 0. An exact match also wins over the built-in pointer subscript
+// reached through operator T*(), which made a long long index ambiguous (MSVC C2666, nvcc)
+__device__ inline T& operator[](unsigned int index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+__device__ inline const T& operator[](unsigned int index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+__device__ inline T& operator[](long index) { return data[ElementIndex(static_cast<long long>(index))]; }
+__device__ inline const T& operator[](long index) const { return data[ElementIndex(static_cast<long long>(index))]; }
+__device__ inline T& operator[](unsigned long index) { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+__device__ inline const T& operator[](unsigned long index) const { return data[ElementIndex(static_cast<unsigned long long>(index))]; }
+__device__ inline T& operator[](long long index) { return data[ElementIndex(index)]; }
+__device__ inline const T& operator[](long long index) const { return data[ElementIndex(index)]; }
+__device__ inline T& operator[](unsigned long long index) { return data[ElementIndex(index)]; }
+__device__ inline const T& operator[](unsigned long long index) const { return data[ElementIndex(index)]; }
+// IndexOutOfRangeException outside the array, as C# throws it at ldelem / stelem; a negative index is a large unsigned one.
+// Only the checked build checks, as for an int index (semantics charter: a release CUDA build keeps three checks)
+__device__ inline int ElementIndex(long long index) const {
+#ifdef GSHARP_CHECKED
+if (static_cast<unsigned long long>(index) >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+__gsharp_trap(GSharpErrorCode::IndexOutOfRange, ""Index was outside the bounds of the array."");
+}
+#endif
+return static_cast<int>(index);
+}
+__device__ inline int ElementIndex(unsigned long long index) const {
+#ifdef GSHARP_CHECKED
+if (index >= static_cast<unsigned long long>(static_cast<unsigned int>(length))) {
+__gsharp_trap(GSharpErrorCode::IndexOutOfRange, ""Index was outside the bounds of the array."");
+}
+#endif
+return static_cast<int>(index);
+}
 __device__ inline operator T*() { return data; }
 __device__ inline operator const T*() const { return data; }
 };
+
+// The checked conversion of a ulong array index to long before the array is checked for null or bounds (#1988): C#
+// converts the index with conv.ovf.i.un when it is evaluated, so an index above long.MaxValue throws OverflowException
+// before a null check or the right side of an assignment. Only the checked build checks, as for the bounds above
+__device__ inline long long __gsharp_array_index_u64(unsigned long long index) {
+#ifdef GSHARP_CHECKED
+if (index > 0x7FFFFFFFFFFFFFFFull) {
+__gsharp_trap(GSharpErrorCode::Overflow, ""Arithmetic operation resulted in an overflow."");
+}
+#endif
+return static_cast<long long>(index);
+}
 
 // A stack array (T name[N]) viewed as a span, for a receiver or a template argument that deduces GSharpArray<T>
 template <typename T, int N>
@@ -1172,6 +1215,18 @@ __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site))
 }
 return static_cast<A&&>(array);
 }
+// The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
+// as the C# method throws ArgumentNullException (""source""). The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_source_argument(A&& array, S site)
+{
+if (array.data == nullptr)
+{
+__gsharp_inline_trap(GSharpErrorCode::ArgumentNull, __gsharp_inline_site(site));
+}
+return static_cast<A&&>(array);
+}
+
 // The element array[index] as a location, with the check of __gsharp_array_ref. The array and the index are both
 // evaluated before the check, as C# evaluates them before ldelem / stelem throws (#706)
 template <typename A, typename I, typename S>

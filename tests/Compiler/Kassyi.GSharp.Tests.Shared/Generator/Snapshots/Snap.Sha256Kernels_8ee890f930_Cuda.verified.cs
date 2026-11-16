@@ -196,6 +196,7 @@ public static unsafe void LaunchSha256Kernel(global::System.Byte[] input, global
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "Sha256Kernels.Sha256Kernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "Sha256Kernels.Sha256Kernel");
 global::System.Byte[] __gsharp_csharp_arg_0 = input;
 global::System.UInt32[] __gsharp_csharp_arg_1 = output;
 global::System.Int32 __gsharp_csharp_arg_2 = numMessages;

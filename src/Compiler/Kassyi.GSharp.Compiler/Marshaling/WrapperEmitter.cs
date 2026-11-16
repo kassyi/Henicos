@@ -187,11 +187,12 @@ internal static class WrapperEmitter
             if (config.IsCuda)
             {
                 CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
-                    config.IsCheckedBuild);
+                    config.IsCheckedBuild, config.TargetLimits);
             }
             else
             {
-                CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName);
+                CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
+                    config.TargetLimits);
             }
         }
     }

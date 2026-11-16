@@ -81,6 +81,8 @@ public static class GSharpErrorMapper
                      "destinationIndex must be greater than or equal to '0'. (Parameter 'destinationIndex')",
                      "Index was out of range. Must be non-negative and less than the size of the collection. " +
                      "(Parameter 'index')",
+                     // A StackLinq query that starts from a null array (__gsharp_source_argument)
+                     "Value cannot be null. (Parameter 'source')",
                  ])
         {
             dict[ComputeBuiltinMessageId(message)] = message;

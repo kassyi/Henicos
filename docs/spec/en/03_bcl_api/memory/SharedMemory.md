@@ -201,13 +201,17 @@ Console.WriteLine(bytes); // 28
 
 On CUDA a block can use 48 KB of shared memory (static plus dynamic) on every GPU, and more on GPUs that allow it once the kernel opts in (99 KB on sm_86 and sm_89, 163 KB on sm_80, 227 KB on sm_90). The `sharedMemBytes` of the launch is the request: when it is larger than what the kernel currently allows, the CUDA launcher (also the launcher of a `[CudaImport]` kernel) opts the kernel in to the device maximum (`cuFuncSetAttribute(CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES)`). It does this once per kernel, so later launches make no extra driver call. The opt-in only permits the memory the launch asks for; it adds no work or synchronization and does not change the results.
 
-When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes and the limit:
+When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes, the limit and the driver error:
 
 ```text
-G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of this GPU (sm_86) (Kernels.TileKernel).
+G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of this GPU (sm_86); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.TileKernel).
 ```
 
-The CPU paths do not check this limit yet (#799).
+The CPU paths (native, managed and C# execution, and the C# execution of a CUDA build) check `sharedMemBytes` plus the static shared memory of the kernel (taken as 0 for now) against the smallest opt-in limit over the target GPUs from `GSharpTargetArchitectures` ([§1.5.1](../../02_architecture/01_aot_transpiler.md#151-target-gpu-architectures-gsharptargetarchitectures), default `sm_86` = 101376 bytes), and throw the same `ArgumentOutOfRangeException` before any thread runs:
+
+```text
+G#: sharedMemBytes 101377 plus 0 bytes of static shared memory exceeds the 101376 bytes of shared memory per block of the target GPU sm_86 (GSharpTargetArchitectures); the GPU rejects the launch with CUDA_ERROR_INVALID_VALUE (Kernels.TileKernel).
+```
 
 #### Growing a declaration
 
@@ -229,7 +233,7 @@ Declare a region that grows last, or declare it with its largest count first.
 | A count of 0 | Empty region | Empty region | Empty region; an element access throws `IndexOutOfRangeException` |
 | A larger count for a region that is not the last | Trap | `InvalidOperationException` | The same exception |
 
-A negative count fails on every path before anything is placed; then the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`. A static declaration of a negative constant count is a compile-time error instead ([GSH0117](../diagnostics/GSH0117.md)). The CPU path does not check the limits of the GPU model (48 KB per block without the opt-in): it checks the meaning of the kernel, not the size of a particular GPU. On sm_70 and later, a failed check records its error and ends the thread without a GPU fault: the launch throws the exception named in the table (`ArgumentOutOfRangeException`, `InvalidOperationException`) and the process keeps its CUDA context, so the next launch runs. Only a thread that cannot record its error (no error record for the launch, or before sm_70) executes a trap, which surfaces as a `CudaException` and leaves the CUDA context of the process unusable. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
+A negative count fails on every path before anything is placed; then the check is `bytes > sharedMemBytes || offset + bytes > sharedMemBytes`. A static declaration of a negative constant count is a compile-time error instead ([GSH0117](../diagnostics/GSH0117.md)). The CPU paths do not require a separate opt-in above 48 KB (they accept up to the target GPU's opt-in limit directly), and check `sharedMemBytes` against the opt-in limit of the target GPUs from `GSharpTargetArchitectures` before any thread runs. On sm_70 and later, a failed check records its error and ends the thread without a GPU fault: the launch throws the exception named in the table (`ArgumentOutOfRangeException`, `InvalidOperationException`) and the process keeps its CUDA context, so the next launch runs. Only a thread that cannot record its error (no error record for the launch, or before sm_70) executes a trap, which surfaces as a `CudaException` and leaves the CUDA context of the process unusable. Size `sharedMemBytes` from the calculation above, and keep counts non-negative.
 
 #### Threads must reach dynamic declarations alike
 

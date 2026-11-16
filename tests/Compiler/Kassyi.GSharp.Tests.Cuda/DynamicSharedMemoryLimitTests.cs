@@ -175,8 +175,8 @@ public class DynamicSharedMemoryLimitTests : TranspilerTestBase
         Assert.Equal("sharedMemBytes", ex.ParamName);
         Assert.StartsWith(
             $"G#: sharedMemBytes {bytes} plus {staticBytes} bytes of static shared memory exceeds the {limit} bytes of " +
-            $"shared memory per block of this GPU (sm_{DeviceComputeCapability()}) " +
-            "(DynamicSharedMemoryLimitKernels.FillAndSumKernel).", ex.Message);
+            $"shared memory per block of this GPU (sm_{DeviceComputeCapability()}); the GPU rejects the launch with " +
+            "CUDA_ERROR_INVALID_VALUE (DynamicSharedMemoryLimitKernels.FillAndSumKernel).", ex.Message);
         Assert.All(output, static value => Assert.Equal(0u, value));
     }
 

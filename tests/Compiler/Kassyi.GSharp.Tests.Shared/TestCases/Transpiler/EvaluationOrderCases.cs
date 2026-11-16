@@ -32,6 +32,7 @@ public struct OrderStructWithGetters
     public OrderInner ComputedInner => new OrderInner { V = Value };
     public OrderInner MutatingInner => new OrderInner { V = ++Value };
     public OrderInner this[int step] => new OrderInner { V = Value += step };
+    public int this[ulong step] => Value;
 
     // Properties of the implicit this
     public void ImplicitThisMutatingGetterRead() { var result = Value + MutatingNext; }
@@ -524,4 +525,10 @@ public static void LocalFunctionCall()
         var result = s[i];
     }
     public static void ElementTargetWithCheckedIndex(int[] d, int[] a) { var result = d[a.Length]; }
+    public static void ElementTargetWithUIntIndex(int[] d, uint i) { var result = d[i]; }
+    public static void ElementTargetWithLongIndex(int[] d, long i) { var result = d[i]; }
+    public static void ElementTargetWithULongIndex(int[] d, ulong i) { var result = d[i]; }
+    public static void SpanElementWithIntIndex(System.Span<int> s, int i) { var result = s[i]; }
+    public static void StructIndexerWithULongIndex(OrderStructWithGetters s, ulong i) { var result = s[i]; }
+    public static unsafe void PointerElementWithULongIndex(int* p, ulong i) { var result = p[i]; }
 }
