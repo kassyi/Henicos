@@ -16,31 +16,34 @@ The tier is told by style, the label by hue family.
 
 | Tier | Style | Labels |
 | :- | :- | :- |
-| Kind: what the issue or PR is | Vivid (HCT chroma 60–80, tone 45–68), any hue family but purple | bug, feature, refactor, test, documentation, performance, chore |
+| Kind: what the issue or PR is | Vivid (HCT chroma 42–80, tone 45–68), any hue family but purple | bug, feature, refactor, test, documentation, performance, chore |
 | Process: review and grouping | Purple only (HCT hue 290–295), lighter for less certain | agent-reviewed, tracking, human-reviewed |
-| Note: how something was found | Pastel (HCT chroma 38–45, tone 85–88) | found-by:* |
+| Note: how something was found | Pastel (HCT chroma 22–45, tone 85–88) | found-by:* |
 | Added by a bot | Mid gray 969699 | dependencies, github_actions (Dependabot) |
 
 Purple belongs to the process tier because it carries no verdict: green reads as "OK" and red or yellow as a warning.
 
 ## 2. Current colors
 
+The HCT values are measured from the hex color (the HCT conversion of the npm package `@material/material-color-utilities`), rounded; they are not the targets a color was picked from. A new row is measured the same way.
+
 | Label | Family | Color | HCT (H / C / T) |
 | :- | :- | :- | :- |
 | bug | red (Material 3 error) | D3372F | 25 / 80 / 48 |
-| performance | orange | CB6900 | 55 / 70 / 55 |
-| chore | gold | D39D00 | 85 / 60 / 68 |
+| performance | orange | CB6900 | 55 / 58 / 55 |
+| chore | gold | D39D00 | 85 / 54 / 68 |
 | test | green | 068A3A | 150 / 60 / 50 |
-| documentation | cyan | 0091A1 | 210 / 50 / 55 |
-| feature | blue | 0071D9 | 262 / 70 / 48 |
+| documentation | cyan | 0091A1 | 210 / 42 / 55 |
+| feature | blue | 0071D9 | 262 / 62 / 48 |
 | refactor | magenta | C3379D | 345 / 75 / 48 |
-| agent-reviewed | purple, light | D6CBFF | 295 / 45 / 84 |
-| tracking | purple, middle | BCB2FF | 292 / 45 / 76 |
-| human-reviewed | purple, deep | 8679FF | 290 / 75 / 58 |
-| found-by:audit | pink | FFC6CC | 10 / 45 / 85 |
-| found-by:matrix | cream | FFD889 | 85 / 45 / 88 |
+| agent-reviewed | purple, light | D6CBFF | 295 / 29 / 84 |
+| tracking | purple, middle | BCB2FF | 292 / 42 / 76 |
+| human-reviewed | purple, deep | 8679FF | 290 / 65 / 58 |
+| found-by:audit | pink | FFC6CC | 10 / 22 / 85 |
+| found-by:matrix | cream | FFD889 | 85 / 33 / 88 |
 | found-by:differential | mint | 95EDD8 | 180 / 38 / 88 |
-| dependencies, github_actions | gray | 969699 | 260 / 4 / 62 |
+| found-by:review | lime | BBE183 | 130 / 45 / 85 |
+| dependencies, github_actions | gray | 969699 | 255 / 4 / 62 |
 
 ## 3. Adding a label
 
