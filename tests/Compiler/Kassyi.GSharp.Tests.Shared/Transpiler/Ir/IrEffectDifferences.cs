@@ -21,6 +21,16 @@ internal static class IrEffectDifferences
     public static string? Reason(IrExpression node, string kind, ExpressionEffects old, ExpressionEffects ir,
         Compilation compilation)
     {
+        // An implicit user-defined conversion runs its operator where the operand is evaluated: the IR counts it on
+        // the conversion, which has the span of the operand; the syntax walk counts it on the operation that holds
+        // the operand, which the IR counts as well
+        if (kind == More && node is IrConversion { IsImplicit: true, Conversion.Method: not null } &&
+            Differs(old, ir, throws: true))
+        {
+            return IrClassificationEquivalence.KnownPrefix +
+                   "an implicit user-defined conversion throws at its operand";
+        }
+
         if (node is IrConversion { IsImplicit: true, Operand.ConstantValue.HasValue: false } conversion)
         {
             // An implicit conversion has the span of its operand, which is not compared on its own
@@ -61,6 +71,9 @@ internal static class IrEffectDifferences
         // The syntax walk treats is null as throwing
         IrNullTest when Differs(ir, old, throws: true) =>
             IrClassificationEquivalence.KnownPrefix + "an is null pattern throws nothing",
+        // The syntax walk does not list nameof among the operations that raise nothing; it is a constant
+        IrConstant or IrConversion { IsImplicit: true, Operand: IrConstant } when Differs(ir, old, throws: true) =>
+            IrClassificationEquivalence.KnownPrefix + "a nameof is a constant",
         _ => null
     };
 
