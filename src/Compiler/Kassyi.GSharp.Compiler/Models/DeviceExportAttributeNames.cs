@@ -54,6 +54,7 @@ internal static class DeviceExportAttributeNames
         public const string DynamicSharedMemorySites = "DynamicSharedMemorySites";
         public const string Effect = "Effect";
         public const string ManagedStateMachine = "ManagedStateMachine";
+        public const string PrivateManagedFrame = "PrivateManagedFrame";
         public const string ManagedVersion = "ManagedVersion";
         public const string DivergentConditionParameters = "DivergentConditionParameters";
         public const string DivergentExitOnlyParameters = "DivergentExitOnlyParameters";

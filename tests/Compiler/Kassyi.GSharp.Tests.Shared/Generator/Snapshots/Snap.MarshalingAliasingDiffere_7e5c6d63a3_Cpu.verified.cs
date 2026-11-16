@@ -250,6 +250,10 @@ native.Scale = host.Scale;
 }
 public static unsafe void Unmarshal_DiffNestedDeep(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNestedDeep host, ref AotContexts.DiffNestedDeep native, global::System.IntPtr hStream = default)
 {
+if (native.Indices.Data == global::System.IntPtr.Zero)
+{
+host.Indices = default;
+}
 Unmarshal_DiffInnerBag(ref host.Inner, ref native.Inner, hStream);
 host.Scale = native.Scale;
 }
@@ -306,6 +310,10 @@ native.Bias = host.Bias;
 }
 public static unsafe void Unmarshal_DiffInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInnerBag host, ref AotContexts.DiffInnerBag native, global::System.IntPtr hStream = default)
 {
+if (native.Weights.Data == global::System.IntPtr.Zero)
+{
+host.Weights = default;
+}
 host.Bias = native.Bias;
 }
 public static void CopyArrays_DiffInnerBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffInnerBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
@@ -356,6 +364,10 @@ native.Tag = host.Tag;
 }
 public static unsafe void Unmarshal_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, ref AotContexts.DiffDeepBag native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Tag = native.Tag;
 }
 public static void CopyArrays_DiffDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
@@ -439,6 +451,10 @@ fixed (byte* pField = native.bias)
 {
 host.bias = *((global::System.Numerics.Vector2*)pField);
 }
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 }
 public static void CopyArrays_DiffPrimaryCtorBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffPrimaryCtorBag hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -501,6 +517,14 @@ native.Second.Length = host.Second.Length;
 }
 public static unsafe void Unmarshal_DiffArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffArrayPair host, ref AotContexts.DiffArrayPair native, global::System.IntPtr hStream = default)
 {
+if (native.First.Data == global::System.IntPtr.Zero)
+{
+host.First = default;
+}
+if (native.Second.Data == global::System.IntPtr.Zero)
+{
+host.Second = default;
+}
 }
 public static void CopyArrays_DiffArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
@@ -573,6 +597,10 @@ native.Fallback = host.Fallback;
 }
 public static unsafe void Unmarshal_DiffNullableDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag host, ref AotContexts.DiffNullableDeepBag native, global::System.IntPtr hStream = default)
 {
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.Fallback = native.Fallback;
 }
 public static void CopyArrays_DiffNullableDeepBag(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffNullableDeepBag host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

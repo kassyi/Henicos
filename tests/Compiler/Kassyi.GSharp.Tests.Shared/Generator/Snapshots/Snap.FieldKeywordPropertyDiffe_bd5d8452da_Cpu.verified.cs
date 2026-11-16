@@ -264,6 +264,10 @@ public static unsafe void Unmarshal_DiffFieldKeywordWithArray(ref global::Kassyi
 if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray>());
 if (!AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray");
 ref AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray, AotContexts.DiffFieldKeywordWithArray.__gsharp_host_mirror>(ref hostValue);
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
 host.P = native.P;
 }
 public static void CopyArrays_DiffFieldKeywordWithArray(ref global::Kassyi.GSharp.Tests.Shared.Differential.DiffFieldKeywordWithArray hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

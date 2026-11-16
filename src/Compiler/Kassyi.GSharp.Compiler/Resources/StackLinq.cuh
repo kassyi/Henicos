@@ -451,16 +451,18 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 }
             }
             if (site_id != 0) __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, site_id);
-            else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range.");
+            else __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')");
             return decltype(source.Current())();
         }
 
         template <typename TSource>
         __device__ static inline auto ElementAtOrDefault(TSource source, int index) {
-            int count = 0;
-            while (source.MoveNext()) {
-                if (count == index) return source.Current();
-                count++;
+            if (index >= 0) {
+                int count = 0;
+                while (source.MoveNext()) {
+                    if (count == index) return source.Current();
+                    count++;
+                }
             }
             return decltype(source.Current())();
         }

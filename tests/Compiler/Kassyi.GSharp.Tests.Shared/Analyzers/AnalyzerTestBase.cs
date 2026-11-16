@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.IO;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -31,8 +33,14 @@ public abstract class AnalyzerTestBase
             ? string.Join(Environment.NewLine, analyzerDiagnostics)
             : "No Diagnostics";
 
+        var snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analyzers", "Snapshots");
+        if (!Directory.Exists(snapshotsDir))
+        {
+            snapshotsDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Analyzers", "Snapshots");
+        }
+
         await Verifier.Verify(output, "txt")
-            .UseDirectory("Snapshots")
+            .UseDirectory(snapshotsDir)
             .UseFileName($"Snap.{testName}");
     }
 }

@@ -31,6 +31,31 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
+    public async Task DeviceFunctionReturnType_UnsupportedType_ReportsGsh0004WithoutGpuKernelWording(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Analyzers/DeviceFunctionReturnType_SadPath.cs",
+            dialect
+        );
+
+        Assert.Equal(
+            [
+                (Analyzer, 9, 26, 9, 39)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id));
+
+        var gsh0004 = Assert.Single(
+            diagnostics.Where(static d => d.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id)
+        );
+        Assert.Equal(DiagnosticOrigin.Analyzer, gsh0004.Origin);
+        Assert.DoesNotContain("[GpuKernel]", gsh0004.Message, StringComparison.Ordinal);
+        Assert.Contains("device function", gsh0004.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
     public async Task DeviceFunction_InstanceMethod_ReportsGsh0066AtMethodName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Analyzers/InstanceDeviceFunction_SadPath.cs", dialect);
@@ -71,9 +96,12 @@ public class KernelSignatureDiagnosticsTests
 
         Assert.Equal(
             [
-                (Analyzer, 65, 24, 65, 39),
-                (Analyzer, 71, 24, 71, 37),
-                (Analyzer, 78, 23, 78, 35)
+                (Analyzer, 100, 24, 100, 39),
+                (Analyzer, 107, 24, 107, 43),
+                (Analyzer, 113, 24, 113, 37),
+                (Analyzer, 132, 24, 132, 35),
+                (Analyzer, 199, 24, 199, 37),
+                (Analyzer, 213, 24, 213, 41)
             ],
             diagnostics.Ranges(GSharpDiagnostics.KernelParameterSpaceExceeded.Id));
     }

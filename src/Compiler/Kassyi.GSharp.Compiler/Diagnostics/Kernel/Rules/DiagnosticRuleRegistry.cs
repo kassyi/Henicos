@@ -21,6 +21,7 @@ internal static class DiagnosticRuleRegistry
         ParallelAggregateRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
+        ReadOnlyArrayWriteRule.Instance,
         RuntimeOnlyTypeRule.Instance,
         SharedMemoryDisposableRule.Instance,
         SharedMemorySizeRule.Instance,

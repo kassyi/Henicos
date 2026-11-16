@@ -51,9 +51,23 @@ internal readonly record struct OmittedArgument(
             : new OmittedArgument(OmittedArgumentKind.None);
     }
 
-    /// <summary>Writes the argument as <see cref="Plan"/> decided it for <paramref name="parameter"/>.</summary>
+    /// <summary>
+    /// Writes the argument as <see cref="Plan"/> decided it for <paramref name="parameter"/>. An <c>in</c> or
+    /// <c>ref readonly</c> parameter is a C++ pointer, and C# passes a reference to a temporary that holds the value,
+    /// so the value is wrapped in <c>__gsharp_temp_address&lt;T&gt;(</c>.
+    /// </summary>
     public void Append(IParameterSymbol parameter, ref TranspileContext context)
     {
+        var byAddress = Kind != OmittedArgumentKind.None &&
+                        parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter;
+        if (byAddress)
+        {
+            context.Emitter.Writer.Append(GSharpInternalNames.Prelude.TempAddress);
+            context.Emitter.Writer.Append('<');
+            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            context.Emitter.Writer.Append(">(");
+        }
+
         switch (Kind)
         {
             case OmittedArgumentKind.DefaultSyntax when DefaultSyntax is not null:
@@ -65,6 +79,11 @@ internal readonly record struct OmittedArgument(
             case OmittedArgumentKind.DefaultOfType:
                 context.Emitter.Writer.Append("{}");
                 break;
+        }
+
+        if (byAddress)
+        {
+            context.Emitter.Writer.Append(')');
         }
     }
 }
