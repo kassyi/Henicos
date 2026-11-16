@@ -31,16 +31,6 @@ internal static class ArrayNullCheck
     // The trap kind of the site ID, which tells the site apart from another trap at the same place
     private const string TrapKind = "ArrayNull";
 
-    /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
-    public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
-
-    /// <summary>
-    /// The text of a null passed where a device function parameter is not nullable, followed by the place.
-    /// </summary>
-    public const string ArgumentMessagePrefix = ArgumentSiteMessage + PlaceSeparator;
-
-    private const string ArgumentTrapKind = "ArrayNullArgument";
-
     // The trap kind of the check of the array a StackLinq query starts from
     private const string LinqSourceTrapKind = "LinqSourceNull";
 
@@ -385,11 +375,6 @@ internal static class ArrayNullCheck
         string? currentMemberName) =>
         PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
 
-    /// <summary>Plans the error site of an argument check from a report location.</summary>
-    internal static NullCheckSite PlanArgumentSite(Location location, Compilation compilation,
-        ErrorSiteTable? table, string? currentMemberName) =>
-        PlanSite(location, null, ArgumentSiteMessage, ArgumentTrapKind, compilation, table, currentMemberName);
-
     // The method that holds the receiver in the user's source, past lambdas and local functions.
     // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
     // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
@@ -409,82 +394,6 @@ internal static class ArrayNullCheck
 
         return symbol is IMethodSymbol method ? method.Name : null;
     }
-
-    /// <summary>
-    /// The Prelude helper that checks a device function argument (#1409, the plan of <see cref="PlanArgument"/>):
-    /// <c>__gsharp_array_ref</c> for a non-nullable array, <c>__gsharp_struct_ref</c> for a struct that reaches
-    /// non-nullable array fields. The caller writes it, then in parentheses the argument and
-    /// <see cref="AppendArgumentCheckTail"/>.
-    /// </summary>
-    public static string GetArgumentCheckHelper(ArgumentCheck check) =>
-        check.Kind == ArgumentCheckKind.Array ? GSharpInternalNames.Prelude.ArrayRef : GSharpInternalNames.Prelude.StructRef;
-
-    /// <summary>
-    /// Writes what follows the argument in the check: <c>, &lt;site&gt;</c>, and for a struct one getter per field chain,
-    /// <c>, [](const auto&amp; s) -&gt; decltype(auto) { return (s.&lt;field&gt;...); }</c>.
-    /// </summary>
-    public static void AppendArgumentCheckTail(ArgumentCheck check, ref TranspileContext context)
-    {
-        var writer = context.Emitter.Writer;
-        writer.Append(", ");
-        AppendSite(writer, check.Site);
-        foreach (var path in check.Fields)
-        {
-            writer.Append(", [](const auto& s) -> decltype(auto) { return (s");
-            foreach (var field in path)
-            {
-                writer.Append(".");
-                CppNameResolver.AppendSymbolName(field, ref context);
-            }
-
-            writer.Append("); }");
-        }
-    }
-
-    /// <summary>The kind of check a device function parameter needs.</summary>
-    internal static ArgumentCheckKind GetArgumentCheckKind(IParameterSymbol parameter)
-    {
-        if (!NonNullProof.NeedsBoundaryCheck(parameter))
-        {
-            return ArgumentCheckKind.None;
-        }
-
-        return parameter.Type is IArrayTypeSymbol ? ArgumentCheckKind.Array : ArgumentCheckKind.Struct;
-    }
-
-    /// <summary>
-    /// The check an argument of a device function call needs (#1409): none when the parameter has no non-nullable array
-    /// to guard or the argument is proven (<see cref="NonNullProof"/>), otherwise the array or the struct fields to check
-    /// and the place to report.
-    /// </summary>
-    public static ArgumentCheck PlanArgument(ExpressionSyntax argument, IParameterSymbol parameter,
-        ref TranspileContext context)
-    {
-        if (!ChecksArgument(argument, parameter, context.Query.SemanticModel))
-        {
-            return ArgumentCheck.None;
-        }
-
-        // ChecksArgument has decided the kind is not None; the parameter type alone tells the two apart
-        var site = PlanArgumentSite(argument, ref context);
-        return parameter.Type is IArrayTypeSymbol
-            ? new ArgumentCheck(ArgumentCheckKind.Array, site, ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty)
-            : new ArgumentCheck(ArgumentCheckKind.Struct, site, NonNullProof.GetNonNullableArrayFields(parameter.Type));
-    }
-
-    /// <summary>
-    /// Whether <paramref name="argument"/>, passed to <paramref name="parameter"/> of a device function, is checked at
-    /// the call (<see cref="PlanArgument"/>): the parameter asks for it and the argument is not proven.
-    /// </summary>
-    public static bool ChecksArgument(ExpressionSyntax argument, IParameterSymbol parameter, SemanticModel model) =>
-        GetArgumentCheckKind(parameter) is var kind && kind != ArgumentCheckKind.None &&
-        !(kind == ArgumentCheckKind.Array
-            ? NonNullProof.IsProvenNonNull(argument, model)
-            : NonNullProof.IsProvenStruct(argument, model));
-
-    // The place of a null passed where the parameter is not nullable
-    private static NullCheckSite PlanArgumentSite(ExpressionSyntax argument, ref TranspileContext context) =>
-        PlanSite(argument, null, ArgumentSiteMessage, ArgumentTrapKind, ref context);
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
     internal static void AppendSite(SourceWriter writer, NullCheckSite site)
@@ -542,28 +451,3 @@ internal static class ArrayNullCheck
 /// names the place, when the method has no table.
 /// </summary>
 internal readonly record struct NullCheckSite(uint SiteId, string Message);
-
-/// <summary>What the check of a device function argument tests (<see cref="ArrayNullCheck.PlanArgument"/>).</summary>
-internal enum ArgumentCheckKind
-{
-    /// <summary>No check: the parameter has no non-nullable array, or the argument is proven.</summary>
-    None,
-
-    /// <summary>The argument is a non-nullable array.</summary>
-    Array,
-
-    /// <summary>The argument is a struct; its non-nullable array fields are tested.</summary>
-    Struct
-}
-
-/// <summary>
-/// The check of one device function argument: its kind, the place a failure reports, and for a struct the chains of
-/// fields to the non-nullable arrays it tests.
-/// </summary>
-internal readonly record struct ArgumentCheck(ArgumentCheckKind Kind, NullCheckSite Site,
-    ImmutableArray<ImmutableArray<IFieldSymbol>> Fields)
-{
-    /// <summary>The argument needs no check.</summary>
-    public static ArgumentCheck None { get; } =
-        new(ArgumentCheckKind.None, default, ImmutableArray<ImmutableArray<IFieldSymbol>>.Empty);
-}
