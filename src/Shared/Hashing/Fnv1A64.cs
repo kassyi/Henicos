@@ -26,6 +26,9 @@ internal struct Fnv1A64
     /// <summary>Gets the hash of everything appended so far.</summary>
     public readonly ulong Value => _hash;
 
+    /// <summary>Mixes in one byte.</summary>
+    public void Append(byte value) => Append((uint)value);
+
     /// <summary>Mixes in one UTF-16 code unit (not a UTF-8 byte).</summary>
     public void Append(char value) => Append((uint)value);
 
