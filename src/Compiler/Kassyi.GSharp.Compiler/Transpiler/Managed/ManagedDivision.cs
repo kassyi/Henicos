@@ -5,7 +5,7 @@ using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// The managed form of an int or long <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
+/// The managed form of an int, long or nint <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
 /// the type by -1 (#718): .NET throws <see cref="OverflowException"/> there, while G# gives the GPU result (MinValue,
 /// and 0 for the remainder) on every path. The managed path calls a <c>ManagedGpuContext</c> function instead, in
 /// kernel bodies and, through the managed version of a device function (#711), in device functions. A division that
@@ -34,14 +34,16 @@ internal static class ManagedDivision
             operation.Syntax.RawKind != node.RawKind ||
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             operation.ConstantValue.HasValue ||
-            operation.Type?.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_Int64) ||
-            !MayNeedHelper(operation.Type.SpecialType, OperationRanges.Of(operation.LeftOperand),
+            operation.Type is not { } operationType ||
+            IntegerSemantics.Canonical(operationType.SpecialType) is not
+                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
+            !MayNeedHelper(type, OperationRanges.Of(operation.LeftOperand),
                 OperationRanges.Of(operation.RightOperand)))
         {
             return null;
         }
 
-        return DecideBinary(operation.OperatorKind == BinaryOperatorKind.Divide, operation.Type.SpecialType);
+        return DecideBinary(operation.OperatorKind == BinaryOperatorKind.Divide, type);
     }
 
     // The operator type of x /= y is the promotion of the target and the value; only an int or long target can hold
@@ -53,7 +55,7 @@ internal static class ManagedDivision
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             IntegerSemantics.GetCompoundOperatorType(operation) is not
                 (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
-            operation.Target.Type?.SpecialType != type ||
+            IntegerSemantics.Canonical(operation.Target.Type?.SpecialType ?? SpecialType.None) != type ||
             !MayNeedHelper(type, OperationRanges.Of(operation.Target), OperationRanges.Of(operation.Value)))
         {
             return null;

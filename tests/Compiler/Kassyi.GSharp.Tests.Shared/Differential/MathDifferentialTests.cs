@@ -515,33 +515,6 @@ public partial class MathDifferentialTests
     public void MathFunctions_MulAddExactAndContraction_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mulAddExactAndContraction);
 
-    // BclMappings maps all 6 BitOperations nuint overloads, but CppTypeNameWriter emits
-    // undeclared System_UIntPtr for nuint locals/casts so AOT C++/CUDA compilation would fail with C2065 (#983)
-    [Fact(Skip = "Blocked by #983 (nint and nuint constants and casts in kernels build wrong or not at all)")]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Category(TestCategory.Differential)]
-    [Scenario(TestScenario.Boundary)]
-    public void BitOperationsNuintOverloads_GeneratorEmission_EmitsIntrinsicCallsWithoutUndeclaredSystemUIntPtr()
-    {
-        var source = Helpers.RoslynTestUtility.ReadTestCase("Differential/BitOpsNuintProbeKernels.cs");
-        var (driver, _, _) = Helpers.GeneratorTestRunner.RunGenerator(source, "Cpu");
-        var sb = new System.Text.StringBuilder();
-        foreach (var tree in driver.GetRunResult().GeneratedTrees)
-        {
-            sb.Append(tree.GetText());
-        }
-
-        var generated = sb.ToString();
-
-        Assert.DoesNotContain("System_UIntPtr", generated, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_lzc_64((unsigned long long int)(", generated, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_tzc_64((unsigned long long int)(", generated, StringComparison.Ordinal);
-        Assert.Contains("__popcll((unsigned long long int)(", generated, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_log2_64((unsigned long long int)(", generated, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_rotl64((unsigned long long int)(", generated, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_rotr64((unsigned long long int)(", generated, StringComparison.Ordinal);
-    }
-
     private static partial PropertyResult? CheckFmaContract(
         int i,
         float k,

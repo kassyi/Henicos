@@ -137,6 +137,9 @@ internal static class ConstexprLiteral
         SpecialType.System_UInt32 => FormatUInt32(value),
         SpecialType.System_Int64 => FormatInt64(value),
         SpecialType.System_UInt64 => FormatUInt64(value),
+        // A nint is a long and a nuint a ulong on the 64-bit devices, whose C# literal is cast to the native type
+        SpecialType.System_IntPtr => FormatNativeInteger("nint", FormatInt64(value)),
+        SpecialType.System_UIntPtr => FormatNativeInteger("nuint", FormatUInt64(value)),
         SpecialType.System_Single => FormatSingle(Convert.ToSingle(value, CultureInfo.InvariantCulture)),
         SpecialType.System_Double => FormatDouble(Convert.ToDouble(value, CultureInfo.InvariantCulture)),
         _ => throw new ArgumentOutOfRangeException(
@@ -145,6 +148,11 @@ internal static class ConstexprLiteral
             $"Type '{specialType}' is not a supported [GpuConstexpr] parameter type."
         )
     };
+
+    private static (string Cpp, string CSharp) FormatNativeInteger(string csharpType, (string Cpp, string CSharp) literal) =>
+        (literal.Cpp, literal.CSharp.StartsWith("-", StringComparison.Ordinal)
+            ? $"({csharpType})({literal.CSharp})"
+            : $"({csharpType}){literal.CSharp}");
 
     private static (string Cpp, string CSharp) FormatBoolean(object value)
     {
