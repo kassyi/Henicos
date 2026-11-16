@@ -88,6 +88,12 @@ public struct Emitter(
     internal ErrorSiteTable? ErrorSites;
 
     /// <summary>
+    /// The body is not a kernel: a device function has no error site table of its own, so its failed checks carry
+    /// their text (and the place in it) instead of a site.
+    /// </summary>
+    internal bool IsDeviceFunction;
+
+    /// <summary>
     /// The current member or kernel method name being transpiled.
     /// </summary>
     internal string? CurrentMemberName;

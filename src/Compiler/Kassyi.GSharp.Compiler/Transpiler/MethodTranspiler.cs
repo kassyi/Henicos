@@ -80,6 +80,7 @@ public static class MethodTranspiler
 
         ref var context = ref session.Context;
         context.Emitter.ErrorSites = errorSites;
+        context.Emitter.IsDeviceFunction = plan.Kind != MethodEmissionKind.Kernel;
         context.Emitter.CurrentMemberName = plan.Symbol?.Name;
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
