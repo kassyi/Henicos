@@ -175,7 +175,7 @@ internal static class IrSpillRewriter
                     var condition = Substitute(conditional.Condition);
                     var whenTrue = Branch(step.Branches[0], temporary, conditional.WhenTrue);
                     var whenFalse = Branch(step.Branches[1], temporary, conditional.WhenFalse);
-                    statements.Add(new IrIf(condition, whenTrue, whenFalse, source));
+                    statements.Add(new IrIf(condition, whenTrue, whenFalse, source, conditional.Uniformity));
                     _replaced[conditional] = temporary;
                     return;
                 }
@@ -189,7 +189,7 @@ internal static class IrSpillRewriter
                         : new IrUnary(new IrOperator<UnaryOperatorKind>(UnaryOperatorKind.Not, null, false), read,
                             logical.Type, IrCategory.Value, default, source);
                     statements.Add(new IrIf(condition, Branch(step.Branches[0], temporary, logical.Right), null,
-                        source));
+                        source, logical.Uniformity));
                     _replaced[logical] = temporary;
                     return;
                 }

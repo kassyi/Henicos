@@ -38,5 +38,6 @@ internal sealed class IrCompoundAssignment(IrOperator<BinaryOperatorKind> @opera
     public IrCompoundAssignment Update(IrExpression target, IrExpression value) =>
         target == Target && value == Value
             ? this
-            : new IrCompoundAssignment(Operator, target, value, InConversion, OutConversion, Category, Source);
+            : KeepSpelling(new IrCompoundAssignment(Operator, target, value, InConversion, OutConversion, Category,
+                Source));
 }

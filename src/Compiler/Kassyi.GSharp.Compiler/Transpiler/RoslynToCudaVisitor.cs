@@ -282,6 +282,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
+        var guards = Context.Emitter.ActiveGuards.Count;
         // A block written without braces is in the C++ scope of the list around it, which declares its locals
         if (!CppBlockScopes.IsWrittenWithoutBraces(node))
         {
@@ -289,6 +290,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
 
         VisitStatements(node.Statements, 0);
+        Context.Emitter.EndGuardScope(guards);
     }
 
     /// <summary>

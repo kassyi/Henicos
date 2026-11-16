@@ -15,5 +15,5 @@ internal sealed class IrBlock(ImmutableArray<IrStatement> statements, ImmutableA
 
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrBlock Update(ImmutableArray<IrStatement> statements) =>
-        statements == Statements ? this : new IrBlock(statements, Locals, Source);
+        statements == Statements ? this : KeepSpelling(new IrBlock(statements, Locals, Source));
 }

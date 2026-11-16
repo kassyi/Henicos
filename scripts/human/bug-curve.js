@@ -2,7 +2,8 @@
 // Draws the number of open issues in the milestones M1-M3 for each day as a stacked area SVG,
 // with the issues opened (up) and closed (down) as bars on the same axis. The bars sum a day, a week
 // or a month, whichever keeps them readable for the length of the chart (--bucket fixes it).
-// The milestone of an issue is its current one; GitHub keeps no cheap history of it.
+// The milestone of an issue is its current one; GitHub keeps no cheap history of it. Issues with the
+// tracking label are left out: they group other issues as sub-issues and are not bugs of their own.
 // Needs an authenticated `gh` (GH_TOKEN in GitHub Actions), unless --issues gives the issues.
 //
 // Usage: node scripts/human/bug-curve.js --out <file.svg> [--repo <owner/name>]
@@ -86,9 +87,16 @@ function parseArgs(argv) {
   return options;
 }
 
-// Returns the issue lines ("<created_at>\t<closed_at>\t<milestone>") of every issue (not pull request) with a milestone.
+// The label of an issue that groups other issues as sub-issues (a parent), which the chart does not count.
+const TrackingLabel = 'tracking';
+
+// Returns the issue lines ("<created_at>\t<closed_at>\t<milestone>") of every issue (not pull request) with a
+// milestone, except the tracking issues.
 function fetchIssueLines(repo) {
-  const jq = '.[] | select(.pull_request == null and .milestone != null) | [.created_at, (.closed_at // ""), .milestone.title] | @tsv';
+  const jq =
+    '.[] | select(.pull_request == null and .milestone != null) | ' +
+    `select([.labels[].name] | index("${TrackingLabel}") | not) | ` +
+    '[.created_at, (.closed_at // ""), .milestone.title] | @tsv';
   return execFileSync(
     'gh',
     ['api', '--paginate', `repos/${repo}/issues?state=all&per_page=100`, '--jq', jq],

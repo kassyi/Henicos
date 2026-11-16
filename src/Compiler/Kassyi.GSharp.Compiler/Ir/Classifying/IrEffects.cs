@@ -31,6 +31,11 @@ namespace Kassyi.GSharp.Compiler.Ir.Classifying;
 /// <c>IrClassificationEquivalenceTests</c> compares both walks over every GPU method and struct member of the tests and
 /// names each difference.
 /// </para>
+/// <para>
+/// <see cref="ExpressionEffects.MayThrow"/> follows from <see cref="IrTraps"/> (the same cases as
+/// <see cref="ExpressionTraps"/>). The length of an array is counted as throwing until non-null proofs are added
+/// to the IR.
+/// </para>
 /// </remarks>
 internal static class IrEffects
 {
@@ -40,7 +45,7 @@ internal static class IrEffects
     {
         var walker = new IrEffectWalker(compilation);
         walker.AddValue(expression);
-        return walker.ToEffects();
+        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression));
     }
 
     /// <summary>
@@ -59,7 +64,7 @@ internal static class IrEffects
             walker.ReadRoot(root);
         }
 
-        return walker.ToEffects();
+        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression));
     }
 
     /// <summary>
@@ -71,6 +76,17 @@ internal static class IrEffects
     {
         var walker = new IrEffectWalker(compilation);
         walker.WriteRoot(walker.AddLocation(expression));
-        return walker.ToEffects();
+        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression));
+    }
+
+    /// <summary>
+    /// The effects of evaluating <paramref name="target"/> to the location an assignment writes: the reads of its index
+    /// and receiver, and whether evaluating the target may trap before the value is stored.
+    /// </summary>
+    public static ExpressionEffects OfAssignmentTarget(IrExpression target, Compilation compilation)
+    {
+        var walker = new IrEffectWalker(compilation);
+        walker.AddLocation(target);
+        return walker.ToEffects().WithThrow(IrTraps.MayTrapBeforeStore(target));
     }
 }

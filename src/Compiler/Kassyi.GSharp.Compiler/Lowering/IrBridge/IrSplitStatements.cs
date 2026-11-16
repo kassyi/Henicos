@@ -123,6 +123,13 @@ internal sealed class IrSplitStatements
                 }
 
                 return;
+            case IrWhile @while:
+                // [WHY] The syntax passes lower a loop: its condition in their second round, its body where the writer
+                // does not descend (IrSplitLoweringPass.Writer walks blocks and ifs only). The loop is recorded so
+                // that a plan of its condition is reported as skipped (LoopCondition); the statements of its body are
+                // not recorded
+                AddOwn(@while);
+                return;
             default:
                 AddOwn(statement);
                 return;
@@ -142,8 +149,9 @@ internal sealed class IrSplitStatements
         list.Add(statement);
     }
 
-    // [WHY] Only a statement reached through blocks and ifs is a statement of the IR: a split point inside a loop, a
-    // switch, a try or a lambda is inside an opaque node, so a method without any other one has nothing to plan
+    // [WHY] Only a statement reached through blocks and ifs is a statement of the IR: a split point inside a loop
+    // (a while is a node, but the writer does not descend into it), a switch, a try or a lambda is inside an opaque
+    // node, so a method without any other one has nothing to plan
     private static bool HasPlannableSplit(BlockSyntax prepared) =>
         prepared.DescendantNodes()
             .AsStackEnumerable()

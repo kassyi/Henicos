@@ -9,11 +9,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal readonly record struct CSharpExecutionPlan
 {
-    /// <summary>
-    /// The target GPU per-block shared memory check emitted at the start of a CUDA launcher's C# branch.
-    /// </summary>
-    internal readonly record struct TargetSharedMemoryCheck(int MaxBytes, string Architecture);
-
     /// <summary>The kernel in the exception messages, as <c>Type.Method</c>.</summary>
     public string MessageName { get; init; }
 
@@ -38,7 +33,7 @@ internal readonly record struct CSharpExecutionPlan
     /// The target GPU shared memory check at the start of the branch (CUDA launchers that run the kernel only), or
     /// <see langword="null"/>.
     /// </summary>
-    public TargetSharedMemoryCheck? TargetCheck { get; init; }
+    public TargetSharedMemoryPlan? TargetCheck { get; init; }
 
     /// <summary>Whether the kernel returns a value.</summary>
     public bool ReturnsValue => ReturnTypeName is not null;
@@ -73,13 +68,10 @@ internal readonly record struct CSharpExecutionPlan
         in TargetLimits targetLimits)
     {
         var plan = Create(kernel, isDevicePtr);
-        if (plan.CannotRunReason is null && targetLimits.IsKnown)
+        if (plan.CannotRunReason is null &&
+            targetLimits.PlanSharedMemoryCheck(kernel.AllowsOversizedSharedMemory) is { } check)
         {
-            return plan with
-            {
-                TargetCheck = new TargetSharedMemoryCheck(targetLimits.MaxSharedMemoryPerBlockOptIn,
-                    targetLimits.SharedMemoryLimitArchitecture)
-            };
+            return plan with { TargetCheck = check };
         }
 
         return plan;

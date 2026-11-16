@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Targets;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>Roslyn analyzer that validates C# syntax rules inside GPU kernel and device methods.</summary>
@@ -23,9 +25,14 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             var exports = !(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
                                 .TryGetValue("build_property.GSharpExportDeviceCode", out var export) &&
                             string.Equals(export, "false", StringComparison.OrdinalIgnoreCase));
+            // The launch limits of the target GPUs, resolved once per compilation from the MSBuild property
+            start.Options.AnalyzerConfigOptionsProvider.GlobalOptions
+                .TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
+            var targetLimits = GpuArchitectureLimits.Resolve(architectures);
             // One GSH0036 per type declaration, however many GPU methods it holds or encloses
             var reportedTypes = new ConcurrentDictionary<TypeDeclarationSyntax, byte>();
-            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect, exports, reportedTypes),
+            start.RegisterSyntaxNodeAction(
+                context => AnalyzeMethod(context, dialect, exports, targetLimits, reportedTypes),
                 SyntaxKind.MethodDeclaration);
             // An operator or an accessor that is GPU code is a method of its type as well: that type is reopened too
             start.RegisterSyntaxNodeAction(context => AnalyzeOtherMember(context, reportedTypes),
@@ -36,13 +43,14 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
                 SyntaxKind.InitAccessorDeclaration,
                 SyntaxKind.AddAccessorDeclaration,
                 SyntaxKind.RemoveAccessorDeclaration);
-            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports),
+            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect, exports, targetLimits),
                 SyntaxKind.DestructorDeclaration);
         });
     }
 
     // A finalizer marked as GPU code is reported by its rule (GpuFinalizerRule); the generator does not emit it
-    private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports)
+    private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
+        in TargetLimits targetLimits)
     {
         var destructor = (DestructorDeclarationSyntax)context.Node;
         if (context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(destructor) is not { } symbol ||
@@ -52,7 +60,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         var validationContext = new ValidationContext(context.SemanticModel, symbol, context.ReportDiagnostic, dialect,
-            exports);
+            exports, targetLimits);
         using var walker = GpuKernelValidationWalker.Rent(validationContext);
         walker.Visit(destructor);
     }
@@ -109,7 +117,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
-        ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
+        in TargetLimits targetLimits, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -148,7 +156,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
         var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, diagnostics.Add, dialect,
-            exports);
+            exports, targetLimits);
         using (var walker = GpuKernelValidationWalker.Rent(validationContext))
         {
             walker.Visit(methodDeclaration);

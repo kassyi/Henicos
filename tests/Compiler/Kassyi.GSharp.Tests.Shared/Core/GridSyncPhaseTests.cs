@@ -15,10 +15,9 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Compiler)]
 [Collection(TestCollections.GlobalStateSequential)]
-public class GridSyncPhaseTests : TranspilerTestBase
+public partial class GridSyncPhaseTests : TranspilerTestBase
 {
     private const int ThreadsPerBlock = 32;
-    private const string NeverCompletes = "on the GPU the grid sync never completes";
 
     // The issue's launch (4 blocks) and more blocks than the OpenMP threads of any test machine, so that one OpenMP thread
     // runs several blocks in each phase
@@ -86,60 +85,6 @@ public class GridSyncPhaseTests : TranspilerTestBase
         Assert.Equal(Enumerable.Range(0, threads).Select(g => (g + 32) % threads + 1), output);
     }
 
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void BlockFinishesBeforeGridSync_WhileOthersWait_ThrowsInvalidOperationException(bool forceManaged)
-    {
-        SkipNeverCompletesOnCuda();
-        var a = new int[4 * ThreadsPerBlock];
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            Run(forceManaged, () => GridSyncPhaseKernels.LaunchBlockFinishesBeforeGridSyncKernel(a, gridDimX: 4, blockDimX: ThreadsPerBlock)));
-
-        Assert.Contains("G#: block (0,0,0) of GridSyncPhaseKernels.BlockFinishesBeforeGridSyncKernel finished while other blocks wait at Gpu.SyncGrid", exception.Message);
-        Assert.Contains(NeverCompletes, exception.Message);
-        // No block went past the grid sync
-        Assert.DoesNotContain(2, a);
-    }
-
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void RepresentativeThreadFinishes_WhileBlockWaitsAtGridSync_ThrowsInvalidOperationException(
-        bool forceManaged)
-    {
-        SkipNeverCompletesOnCuda();
-        var a = new int[2 * ThreadsPerBlock];
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            Run(forceManaged, () => GridSyncPhaseKernels.LaunchRepresentativeFinishesBeforeGridSyncKernel(a, gridDimX: 2, blockDimX: ThreadsPerBlock)));
-
-        Assert.Contains("G#: thread (0,0,0) of block (1,0,0) of GridSyncPhaseKernels.RepresentativeFinishesBeforeGridSyncKernel finished while other threads of its block wait at Gpu.SyncGrid", exception.Message);
-        Assert.Contains(NeverCompletes, exception.Message);
-        Assert.DoesNotContain(2, a);
-    }
-
-    [SkippableTheory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData(false, 1)]
-    [InlineData(true, 1)]
-    [InlineData(false, 2)]
-    [InlineData(true, 2)]
-    public void GridSync_InNonCooperativeKernel_ThrowsArgumentException(bool forceManaged, int blocks)
-    {
-        Skip.If(IsCudaDialect, "A grid sync in a launch that is not cooperative is undefined on CUDA; only the CPU paths check it.");
-        var a = new int[blocks * ThreadsPerBlock];
-
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            Run(forceManaged, () => GridSyncPhaseKernels.LaunchNotCooperativeKernel(a, gridDimX: (uint)blocks, blockDimX: ThreadsPerBlock)));
-
-        Assert.Contains("G#: Gpu.SyncGrid reached in GridSyncPhaseKernels.NotCooperativeKernel, which is not [GpuKernel(Cooperative = true)]", exception.Message);
-        Assert.DoesNotContain(2, a);
-    }
-
     // The managed path exists only on the CPU dialects
     private void Run(bool forceManaged, Action launch)
     {
@@ -150,7 +95,4 @@ public class GridSyncPhaseTests : TranspilerTestBase
             launch();
         }
     }
-
-    private void SkipNeverCompletesOnCuda() =>
-        Skip.If(IsCudaDialect, "The GPU never completes this grid sync; only the CPU paths turn it into an exception.");
 }

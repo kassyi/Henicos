@@ -24,7 +24,33 @@ public class GpuKernelAttribute : Attribute
 
 | Name | Description |
 | --- | --- |
+| [AllowOversizedSharedMemory](#allowoversizedsharedmemory) | Gets or sets a value indicating whether a launch of this kernel may use an oversized shared memory configuration of the GPU. |
 | [Cooperative](#cooperative) | Gets or sets a value indicating whether this kernel is launched as a cooperative kernel (`cuLaunchCooperativeKernel` / CUDA Cooperative Groups). |
+
+## AllowOversizedSharedMemory
+
+Gets or sets a value indicating whether a launch of this kernel may use an oversized shared memory configuration of the GPU.
+
+```csharp
+public bool AllowOversizedSharedMemory { get; set; }
+```
+
+GPUs of compute capability 10.7 can give one block up to 327 KB of shared memory (static plus dynamic) instead of 227 KB, but only for a kernel that asks for it: while such a launch runs, the kernel has only 8 KB of L1 cache. Setting the property is that request. The amount is still the `sharedMemBytes` of each launch:
+
+- On CUDA, a launch whose `sharedMemBytes` fits the normal limit of the GPU makes the same driver calls with or without the property. A larger launch on a GPU that has an oversized configuration sets the kernel's shared memory mode (`CU_FUNC_ATTRIBUTE_SHARED_MEMORY_MODE`) once, before its first such launch. On a GPU without one, the property changes nothing.
+- On the CPU paths (native, managed and `KernelExecution.CSharp`), a launch is checked against the smallest limit among the GPUs that the fatbin of `GSharpTargetArchitectures` may run on. For a kernel with the property, a GPU that has an oversized configuration counts with its oversized limit. The property therefore raises the CPU limit only when every target GPU has an oversized configuration:
+
+| `GSharpTargetArchitectures` | GPUs it may run on | Without the property | With the property |
+| :- | :- | :- | :- |
+| default (`compute_86,sm_86;compute_86,compute_86`) | 8.6 to 12.1 | 101376 (sm_86) | 101376 (sm_86) |
+| `compute_86,sm_86` | 8.6, 8.9 | 101376 (sm_86) | 101376 (sm_86), and warning [GSH0116](../diagnostics/GSH0116.md) |
+| `compute_100,sm_100` | 10.0, 10.3, 10.7 | 232448 (sm_100) | 232448 (sm_100) |
+| `compute_107,sm_107` or `sm_107a` | 10.7 | 232448 (sm_107) | 334848 (sm_107) |
+
+A launch above the limit throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) on every path, before any thread runs. When the property would have let it run, the message says so.
+
+> [!NOTE]
+> The CUDA side of this property has not been run on a GPU of compute capability 10.7. It follows the CUDA 13.4 headers and the CUDA Programming Guide; the decision of when to set the mode is covered by tests without a GPU, and a GPU without an oversized configuration (sm_86) is tested to behave as without the property.
 
 ## Cooperative
 

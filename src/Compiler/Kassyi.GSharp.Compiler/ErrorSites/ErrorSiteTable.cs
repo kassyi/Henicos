@@ -39,6 +39,15 @@ internal sealed class ErrorSiteTable
     }
 
     /// <summary>
+    /// Registers an error site for <paramref name="location"/> and returns its deterministic 31-bit site ID.
+    /// </summary>
+    public uint Register(Location location, string memberName, string defaultMessage, string trapKind = "")
+    {
+        var entry = CreateSite(location, memberName, defaultMessage, trapKind);
+        return RegisterEntry(entry);
+    }
+
+    /// <summary>
     /// Registers an error site with line/column coordinates and returns its deterministic 31-bit site ID.
     /// </summary>
     public uint Register(string file, int line, int column, string memberName, string defaultMessage, string trapKind = "")
@@ -65,18 +74,17 @@ internal sealed class ErrorSiteTable
     }
 
     /// <summary>
-    /// Creates an <see cref="ErrorSiteEntry"/> from a syntax node and semantic model using <see cref="SemanticModelExtensions.GetReportLocation"/>.
+    /// Creates an <see cref="ErrorSiteEntry"/> from a report location.
     /// </summary>
     public static ErrorSiteEntry CreateSite(
-        SyntaxNode node,
-        SemanticModel? semanticModel,
+        Location location,
         string memberName,
         string defaultMessage,
         string trapKind = "",
         string exceptionType = "")
     {
         var kind = string.IsNullOrEmpty(trapKind) ? defaultMessage : trapKind;
-        if (semanticModel?.GetReportLocation(node) is { } location && location != Location.None)
+        if (location != Location.None)
         {
             var span = location.GetLineSpan();
             var fileName = Path.GetFileName(span.Path);
@@ -84,9 +92,10 @@ internal sealed class ErrorSiteTable
             {
                 var start = span.StartLinePosition;
                 var end = span.EndLinePosition;
-                var siteId = ComputeSiteId(fileName, start.Line + 1, start.Character + 1, end.Line + 1, end.Character + 1, kind);
-                return new ErrorSiteEntry(siteId, fileName, start.Line + 1, start.Character + 1, memberName, defaultMessage,
-                    exceptionType);
+                var siteId = ComputeSiteId(
+                    fileName, start.Line + 1, start.Character + 1, end.Line + 1, end.Character + 1, kind);
+                return new ErrorSiteEntry(
+                    siteId, fileName, start.Line + 1, start.Character + 1, memberName, defaultMessage, exceptionType);
             }
         }
 
@@ -95,6 +104,18 @@ internal sealed class ErrorSiteTable
         var fallbackId = ComputeSiteId(SourcePlace.Unknown, 0, 0, 0, 0, kind + "@" + memberName);
         return new ErrorSiteEntry(fallbackId, SourcePlace.Unknown, 0, 0, memberName, defaultMessage, exceptionType);
     }
+
+    /// <summary>
+    /// Creates an <see cref="ErrorSiteEntry"/> from a syntax node and semantic model, at the location
+    /// <see cref="SemanticModelExtensions.GetReportLocation"/> gives.
+    /// </summary>
+    public static ErrorSiteEntry CreateSite(
+        SyntaxNode node,
+        SemanticModel? semanticModel,
+        string memberName,
+        string defaultMessage,
+        string trapKind = "") =>
+        CreateSite(semanticModel?.GetReportLocation(node) ?? Location.None, memberName, defaultMessage, trapKind);
 
     /// <summary>
     /// Aggregates error sites across all kernels in a module, deduplicating identical entries

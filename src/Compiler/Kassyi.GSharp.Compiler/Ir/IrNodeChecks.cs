@@ -162,4 +162,10 @@ internal static class IrNodeChecks
     // An identity conversion may rename the elements of a tuple: (int, int) to (int A, int B)
     private static ITypeSymbol WithoutTupleNames(ITypeSymbol type) =>
         type is INamedTypeSymbol { IsTupleType: true, TupleUnderlyingType: { } underlying } ? underlying : type;
+
+    /// <summary>I26: the condition of a while loop is a bool value.</summary>
+    public static string? WhileCondition(IrExpression condition) =>
+        condition.Type.SpecialType == SpecialType.System_Boolean && condition.Category == IrCategory.Value
+            ? null
+            : "I26: the condition of a while loop is not a bool value";
 }

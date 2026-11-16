@@ -5,8 +5,8 @@ worktrees and people share. One scheduler process grants slots of a CPU pool and
 its command through `run` and waits until it is granted.
 
 How to use it (commands, options, the `just` recipes, what an agent should do) is in
-[job-queue.md](../../../.agents/rules/job-queue.md). This file is for changing the queue
-itself.
+[job-queue.md](../../../.agents/rules/job-queue.md) (the short form) and
+[job-queue-reference.md](../../../.agents/rules/job-queue-reference.md). This file is for changing the queue itself.
 
 ```sh
 node scripts/human/job-queue.js run -- "dotnet build X && dotnet test X --no-build"
@@ -258,7 +258,7 @@ their old meaning.
    scripts/human/job-queue/images`.
 7. Update the usage text in `cli.ts`, the header of `job-queue.js`, the catalog row in
    [agent-scripts.md](../../../.agents/rules/agent-scripts.md) and
-   [job-queue.md](../../../.agents/rules/job-queue.md) with a change of behavior.
+   [job-queue-reference.md](../../../.agents/rules/job-queue-reference.md) with a change of behavior.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
 `scripts/agent/check-queued-command.js`; the GPU lock is `scripts/human/gpu-lock.js`.
