@@ -10,10 +10,28 @@ internal static class ReconvergenceSyntax
     {
         foreach (var ancestor in from.Ancestors())
         {
+            if (ancestor is SwitchSectionSyntax section)
+            {
+                if (section.Parent is SwitchStatementSyntax switchStmt)
+                {
+                    foreach (var sec in switchStmt.Sections)
+                    {
+                        foreach (var statement in sec.Statements)
+                        {
+                            if (FindLabelInChain(statement, name) is { } labeled)
+                            {
+                                return labeled;
+                            }
+                        }
+                    }
+                }
+
+                continue;
+            }
+
             var statements = ancestor switch
             {
                 BlockSyntax block => block.Statements,
-                SwitchSectionSyntax section => section.Statements,
                 _ => default
             };
             foreach (var statement in statements)
@@ -126,8 +144,41 @@ internal static class ReconvergenceSyntax
             GotoStatementSyntax gotoStatement when gotoStatement.IsKind(SyntaxKind.GotoCaseStatement) ||
                                                    gotoStatement.IsKind(SyntaxKind.GotoDefaultStatement) =>
                 EnclosingSwitchIs(gotoStatement, switchStatement),
+            GotoStatementSyntax gotoStatement when gotoStatement.IsKind(SyntaxKind.GotoStatement) =>
+                IsCrossSectionGoto(gotoStatement, switchStatement),
             _ => false
         };
+
+    private static bool IsCrossSectionGoto(GotoStatementSyntax gotoStatement, SwitchStatementSyntax switchStatement)
+    {
+        if (gotoStatement.Expression is IdentifierNameSyntax { Identifier.ValueText: var name } &&
+            FindLabel(gotoStatement, name) is { } label)
+        {
+            SwitchSectionSyntax? targetSection = null;
+            for (var c = label.Parent; c != null; c = c.Parent)
+            {
+                if (c is SwitchSectionSyntax sec)
+                {
+                    targetSection = sec;
+                    break;
+                }
+            }
+
+            SwitchSectionSyntax? sourceSection = null;
+            for (var c = gotoStatement.Parent; c != null; c = c.Parent)
+            {
+                if (c is SwitchSectionSyntax sec)
+                {
+                    sourceSection = sec;
+                    break;
+                }
+            }
+
+            return targetSection != null && targetSection != sourceSection && targetSection.Parent == switchStatement;
+        }
+
+        return false;
+    }
 
     private static bool EnclosingSwitchIs(SyntaxNode node, SwitchStatementSyntax switchStatement)
     {
