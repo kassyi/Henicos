@@ -101,9 +101,12 @@ public class LabeledJumpDifferentialTests
     public void BreakAndContinueOuterFor_MatchesOracle() =>
         DifferentialRunner.Run(s_breakAndContinueOuterFor);
 
-    [SkippableFact(Timeout = 5000)]
-    public async Task LabeledWhile_MatchesOracle() =>
-        await Task.Run(() => DifferentialRunner.Run(s_labeledWhile));
+    // No timeout: both loops of the kernel are bounded (i grows first in the outer body, the inner one stops at
+    // safety), so a wrong jump gives a wrong value, which the comparison catches. A wall-clock limit in a parallel run
+    // measured the load of the runner instead (#2043).
+    [SkippableFact]
+    public void LabeledWhile_MatchesOracle() =>
+        DifferentialRunner.Run(s_labeledWhile);
 
     [SkippableFact]
     public void SwitchInLabeledLoop_MatchesOracle() =>
