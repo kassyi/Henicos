@@ -28,7 +28,7 @@ UnsupportedOperation	None	ElementAccessExpression	95
 UnsupportedOperation	None	IdentifierName	4
 UnsupportedOperation	None	MakeRefExpression	1
 UnsupportedOperation	None	PointerIndirectionExpression	38
-UnsupportedOperation	None	StackAllocArrayCreationExpression	70
+UnsupportedOperation	None	StackAllocArrayCreationExpression	72
 UnsupportedOperation	Range	RangeExpression	1
 UnsupportedOperation	SwitchExpression	SwitchExpression	50
 UnsupportedOperation	TranslatedQuery	QueryExpression	1
