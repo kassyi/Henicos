@@ -24,8 +24,12 @@ internal sealed class UnsupportedConstructRule :
     ISyntaxValidationRule<InvocationExpressionSyntax>,
     ISyntaxValidationRule<MemberAccessExpressionSyntax>,
     ISyntaxValidationRule<IdentifierNameSyntax>,
-    ISyntaxValidationRule<BinaryExpressionSyntax>
+    ISyntaxValidationRule<BinaryExpressionSyntax>,
+    ISyntaxValidationRule<BreakStatementSyntax>,
+    ISyntaxValidationRule<ContinueStatementSyntax>
 {
+    public const string LabeledJumpTargetContainsSplitPoint =
+        "a labeled break or continue whose target statement contains a barrier, warp collective or suspending call";
     public static readonly UnsupportedConstructRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
@@ -83,6 +87,55 @@ internal sealed class UnsupportedConstructRule :
 
     public void Analyze(CheckedStatementSyntax node, ref ValidationContext context) =>
         context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+
+    public void Analyze(BreakStatementSyntax node, ref ValidationContext context) =>
+        ReportLabeledJumpToSplitTarget(node, ref context);
+
+    public void Analyze(ContinueStatementSyntax node, ref ValidationContext context) =>
+        ReportLabeledJumpToSplitTarget(node, ref context);
+
+    private static void ReportLabeledJumpToSplitTarget(StatementSyntax jump, ref ValidationContext context)
+    {
+        if (LabeledJumpSyntax.FindTarget(jump) is { } target &&
+            ContainsSplitPoint(target, context.SemanticModel))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, jump, LabeledJumpTargetContainsSplitPoint);
+        }
+    }
+
+    // Whether <statement> reaches a split point in the same function: a barrier or warp collective that splits the
+    // state machine (SyncIntrinsicClassifier, which also covers Gpu.SyncGrid(body)), or a call to a suspending device
+    // function (SuspensionAnalysis). A nested lambda or local function other than the body of Gpu.ForUnroll,
+    // Gpu.GridStrideLoop or Gpu.SyncGrid(body) is its own function.
+    private static bool ContainsSplitPoint(StatementSyntax statement, SemanticModel model)
+    {
+        foreach (var node in statement.DescendantNodesAndSelf(n => !IsNonInlinedNestedFunction(n, model)))
+        {
+            if (node is InvocationExpressionSyntax invocation &&
+                model.GetSymbol(invocation) is IMethodSymbol callee &&
+                !RemovedCalls.IsInRemovedCall(invocation, model) &&
+                (SyncIntrinsicClassifier.Classify(callee).SplitsStateMachine ||
+                 SuspensionAnalysis.IsSuspendingFunction(callee, model.Compilation)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNonInlinedNestedFunction(SyntaxNode node, SemanticModel model) =>
+        node switch
+        {
+            LocalFunctionStatementSyntax => true,
+            LambdaExpressionSyntax lambda =>
+                GpuMacroClassifier.ClassifyBody(lambda, model).Kind is not (
+                    GpuMacroKind.ForUnroll or
+                    GpuMacroKind.GridStrideLoop or
+                    GpuMacroKind.SyncGrid),
+            AnonymousMethodExpressionSyntax => true,
+            _ => false,
+        };
 
     // A kernel runs only through its launcher; in device code a call of it has no C++ form (#880). A call that C#
     // removes, or one in its arguments, never runs (#1728)

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Frames;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -85,8 +87,10 @@ public static class MethodTranspiler
         var lowered = plan.GetLoweredFor(dialect);
         context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
         var resumeLocals = ImmutableArray<ResumeLocal>.Empty;
+        StateMachineFrame? frame = null;
         if (lowered != null)
         {
+            frame = LoweredFrameBuilder.BuildNative(lowered, in plan, context.Emitter.Dialect);
             (lowered, resumeLocals) = ResumeLocalEmitter.Separate(lowered, in plan, context.Emitter.Dialect);
         }
 
@@ -96,10 +100,10 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
         DynamicSharedMemoryEmitter.BeginMethod(in plan, ref context);
-        WriteStateMachineHeader(in plan, lowered, ref context);
+        WriteStateMachineHeader(in plan, lowered, frame, ref context);
         try
         {
-            WriteMethodBody(in plan, lowered, resumeLocals, ref context);
+            WriteMethodBody(in plan, lowered, frame, resumeLocals, ref context);
         }
         catch (InsufficientExecutionStackException)
         {
@@ -169,7 +173,7 @@ public static class MethodTranspiler
 
     // The frame struct of a state machine (a plan with one always has a symbol), then the signature of the function
     private static void WriteStateMachineHeader(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
-        ref TranspileContext context)
+        StateMachineFrame? frame, ref TranspileContext context)
     {
         var isSuspendingDevice = context.Emitter.IsSuspendingDeviceFunction;
         if (lowered != null && plan.Symbol is { } loweredSymbol)
@@ -178,8 +182,7 @@ public static class MethodTranspiler
                 ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
                 : GSharpInternalNames.Kernel.ContextPrefix;
             var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
-            WriteContextStruct(frameName, plan.Declaration.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
-                ref context);
+            WriteContextStruct(frameName, frame ?? throw MissingFrame(), in plan, isSuspendingDevice, ref context);
         }
 
         if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
@@ -313,10 +316,10 @@ public static class MethodTranspiler
     internal static string GenerateManagedVersionSource(in MethodEmissionPlan plan) =>
         ManagedCSharpTranspiler.GenerateManagedVersion(in plan);
 
-    // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the values the thread
-    // published at warp collectives; a device function frame reaches them through the root. Both hold their copied
-    // parameters, and the visit counts of the warp collectives of their body.
-    private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
+    // A kernel context also holds the values the thread published at warp collectives; a device function frame
+    // reaches them through the root. Both hold their copied parameters, and the visit counts of the warp collectives
+    // of their body.
+    private static void WriteContextStruct(string contextName, StateMachineFrame frame,
         in MethodEmissionPlan plan, bool isFrame, ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope($"struct {contextName} {{", "};"))
@@ -327,28 +330,28 @@ public static class MethodTranspiler
                 WriteThreadStateFields(contextName, in plan, ref context);
             }
 
-            if (lowered.WarpSiteCount > 0)
+            if (frame.WarpSiteCount > 0)
             {
                 context.Emitter.Writer.AppendLine(
-                    $"uint32_t {GSharpInternalNames.StateMachine.WarpVisits}[{lowered.WarpSiteCount}] = {{}};");
+                    $"uint32_t {GSharpInternalNames.StateMachine.WarpVisits}[{frame.WarpSiteCount}] = {{}};");
             }
 
-            foreach (var parameter in plan.GetCopiedParameters(lowered))
+            foreach (var parameter in frame.CopiedParameters)
             {
                 WriteCopiedParameterMember(parameter, ref context);
             }
 
-            foreach (var field in lowered.ContextFields)
+            foreach (var slot in frame.Slots)
             {
-                // Field types come from HoistedFieldTypeResolver
-                var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
-                WriteMember(typeSymbol, CppNameResolver.Resolve(field, context.Query.SemanticModel, context.Emitter.Dialect),
-                    ref context);
+                if (slot.Kind is FrameSlotKind.Field or FrameSlotKind.SharedMemory or FrameSlotKind.HeldRef)
+                {
+                    WriteMember(slot.Type, slot.Name, ref context);
+                }
             }
 
-            for (var i = 0; i < lowered.CallSites.Count; i++)
+            for (var i = 0; i < frame.CallFrameCallees.Length; i++)
             {
-                var callee = GetSuspendingCallee(lowered.CallSites[i], ref context);
+                var callee = frame.CallFrameCallees[i];
                 context.Emitter.Writer.AppendLine(
                     $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee)} {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};");
             }
@@ -408,7 +411,7 @@ public static class MethodTranspiler
         var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
         if (!parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var syntax))
         {
-            WriteMember(parameter.Type, name, ref context);
+            WriteMember(parameter.Type, name.ToString(), ref context);
             return;
         }
 
@@ -419,19 +422,19 @@ public static class MethodTranspiler
     }
 
     // <type> <name>;
-    private static void WriteMember(ITypeSymbol type, in CppName name, ref TranspileContext context)
+    private static void WriteMember(ITypeSymbol type, string name, ref TranspileContext context)
     {
         StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
         context.Emitter.Dialect.AppendType(ref context, type);
-        context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
+        context.Emitter.Writer.Append(' ').Append(name).AppendLine(";");
     }
 
-    internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
-        context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
-        ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
+    // Transpile builds the frame whenever there is a lowered state machine
+    private static InvalidOperationException MissingFrame() =>
+        new("A lowered state machine has no frame.");
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
-        ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
+        StateMachineFrame? frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
@@ -454,7 +457,7 @@ public static class MethodTranspiler
 
             if (lowered != null)
             {
-                WriteStateMachineBody(in plan, lowered, resumeLocals, ref context);
+                WriteStateMachineBody(in plan, lowered, frame ?? throw MissingFrame(), resumeLocals, ref context);
             }
             else if (plan.Declaration.Body != null)
             {
@@ -470,7 +473,7 @@ public static class MethodTranspiler
     // The lowered body with the macros that name the state and the grid sync flag, after the copied parameters and the
     // storage of the resume locals
     private static void WriteStateMachineBody(in MethodEmissionPlan plan, LoweredStateMachine lowered,
-        ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
+        StateMachineFrame frame, ImmutableArray<ResumeLocal> resumeLocals, ref TranspileContext context)
     {
         var isFrame = context.Emitter.IsSuspendingDeviceFunction;
         // The grid sync flag belongs to the thread, so a device function sets it on the root
@@ -488,8 +491,8 @@ public static class MethodTranspiler
             context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.SuspendingCall.Root} = {GSharpInternalNames.StateMachine.Context};");
         }
 
-        WriteCopiedParameterInitialization(lowered, in plan, ref context);
-        ResumeLocalEmitter.WriteDeclarations(resumeLocals, ref context);
+        WriteCopiedParameterInitialization(frame.CopiedParameters, ref context);
+        ResumeLocalEmitter.WriteDeclarations(frame, resumeLocals, ref context);
         context.Visitor.Visit(lowered.LoweredBody);
 
         if (isFrame)
@@ -524,10 +527,9 @@ public static class MethodTranspiler
     }
 
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
-    private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, in MethodEmissionPlan plan,
+    private static void WriteCopiedParameterInitialization(ImmutableArray<IParameterSymbol> parameters,
         ref TranspileContext context)
     {
-        var parameters = plan.GetCopiedParameters(lowered);
         if (parameters.Length == 0)
         {
             return;

@@ -42,7 +42,7 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
     }
 
     /// <summary>
@@ -106,8 +106,16 @@ internal static class LoopStatementTranspilers
             StructOrdering.RegisterUsedStructIfApplicable(elementType, ref context);
         }
 
+        var compilation = context.Query.SemanticModel.Compilation;
+        var forEachForExpansion =
+            compilation.ContainsSyntaxTree(node.SyntaxTree) && node.Parent is LabeledStatementSyntax labeledParent
+                ? (ForEachStatementSyntax)LoweringAnnotations
+                    .AnnotateOriginalSpans(labeledParent, compilation)
+                    .Statement
+                : node;
+
         var expandedBlock = IteratorInliner.Expand(
-            node,
+            forEachForExpansion,
             iteratorMethod,
             sourceInvocation,
             new IteratorExpansionContext(context.Query.SemanticModel, context.Emitter.Dialect, context.Reporter),
@@ -174,7 +182,7 @@ internal static class LoopStatementTranspilers
 
         if (conversionHelper == null)
         {
-            context.Visitor.VisitStatementOrBlock(node.Statement);
+            LoopBodyWriter.Write(node, node.Statement, ref context);
             return;
         }
 
@@ -206,15 +214,7 @@ internal static class LoopStatementTranspilers
             }
 
             context.Emitter.Writer.AppendLine(";");
-            if (node.Statement is BlockSyntax block)
-            {
-                context.Visitor.VisitBlock(block);
-            }
-            else
-            {
-                context.Visitor.Visit(node.Statement);
-                context.Emitter.Writer.AppendLine();
-            }
+            LoopBodyWriter.WriteInOpenScope(node, node.Statement, visitBlockDirectlyWhenUnlabeled: true, ref context);
         }
     }
 
@@ -270,7 +270,7 @@ internal static class LoopStatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
     }
 
     /// <summary>
@@ -282,7 +282,7 @@ internal static class LoopStatementTranspilers
         context.Emitter.Writer
             .Append("do")
             .AppendLine();
-        context.Visitor.VisitStatementOrBlock(node.Statement);
+        LoopBodyWriter.Write(node, node.Statement, ref context);
         context.Emitter.Writer.Append("while");
         using (context.Emitter.Writer.Parentheses())
         {

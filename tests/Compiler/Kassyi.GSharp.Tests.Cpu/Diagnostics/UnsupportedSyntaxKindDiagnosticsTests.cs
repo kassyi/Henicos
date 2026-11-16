@@ -1,0 +1,110 @@
+using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
+
+namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
+
+/// <summary>
+/// A syntax kind that no transpiler rule handles reaches <c>DefaultVisit</c>; the analyzer runs the transpiler and
+/// reports it as GSH0003 at the node, and the generator reports nothing (S-46).
+/// </summary>
+[Category(TestCategory.Compiler)]
+public class UnsupportedSyntaxKindDiagnosticsTests
+{
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task CheckedAndUnchecked_ExpressionsAndStatements_ReportsGsh0003AtNode(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
+
+        Assert.Equal([(Analyzer, 12, 19, 12, 39)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'CheckedExpression'"));
+        Assert.Equal([(Analyzer, 13, 9, 16, 10)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedStatement'"));
+    }
+
+    // Line 47: unchecked inside a constant expression (unchecked((int)3e10) * 1), which is written as its value and so is
+    // never visited; line 48: the whole constant is unchecked
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task UncheckedInsideAConstant_ConstantContext_ReportsGsh0003AtNode(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 47, 19, 47, 39), (Analyzer, 48, 19, 48, 46)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedExpression'"));
+    }
+
+    [Theory]
+    [InlineData("Cpu", "'IndexExpression'", 13, 26, 13, 28)]
+    [InlineData("Cuda", "'IndexExpression'", 13, 26, 13, 28)]
+    [InlineData("Cpu", "'TupleExpression'", 20, 21, 20, 33)]
+    [InlineData("Cuda", "'TupleExpression'", 20, 21, 20, 33)]
+    [InlineData("Cpu", "'ForEachVariableStatement'", 32, 9, 35, 10)]
+    [InlineData("Cuda", "'ForEachVariableStatement'", 32, 9, 35, 10)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SyntaxWithoutARule_UnrecognizedSyntax_ReportsGsh0003AtNode(
+        string dialect,
+        string kind,
+        int startLine,
+        int startColumn, int endLine, int endColumn)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxKinds.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, startLine, startColumn, endLine, endColumn)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, kind));
+    }
+
+    // A kind that C# 12 added (the spread element of a collection expression) is reported without being listed anywhere,
+    // and its kernel's native source becomes #error
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task NewerSyntaxKind_UnsupportedLanguageFeature_ReportsGsh0003FromAnalyzer(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxKinds.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 44, 23, 44, 30)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'SpreadElement'"));
+
+        // The generator states it in the kernel's native source, so the native build stops even without the analyzer
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(
+            RoslynTestUtility.ReadTestCase("Diagnostics/UnsupportedSyntaxKinds.cu.cs"), dialect);
+        Assert.Contains(
+            output.SyntaxTrees,
+            static tree => tree.ToString().Contains(
+                "#error \"\"(44,23): GSH0003: The syntax 'SpreadElement' is not supported in GSharp GPU kernels\"\"",
+                StringComparison.Ordinal));
+    }
+
+    // A C# 15 collection expression argument (with(...)) is reported as GSH0003 'WithElement' at the element and
+    // becomes #error in the kernel's native source
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task CollectionExpressionWithElement_CSharp15WithElement_ReportsGsh0003FromAnalyzer(string dialect)
+    {
+        const string TestCase = "Diagnostics/CSharp14And15UnsupportedForms.cs";
+        var source = RoslynTestUtility.ReadTestCase(TestCase);
+        var compilation = RoslynTestUtility.CreateCompilationAt(TestCase, source);
+        Assert.Empty(compilation.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
+
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 48, 26, 48, 33)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'WithElement'"));
+
+        var (_, output, _) = GeneratorTestRunner.RunGenerator(source, dialect);
+        Assert.Contains(
+            output.SyntaxTrees,
+            static tree => tree.ToString().Contains(
+                "#error \"\"(48,26): GSH0003: The syntax 'WithElement' is not supported in GSharp GPU kernels\"\"",
+                StringComparison.Ordinal));
+    }
+}

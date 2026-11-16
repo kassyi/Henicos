@@ -8,7 +8,9 @@ public class LoopRewriter : SplitPointBlockRewriter
 
     public override SyntaxNode VisitBreakStatement(BreakStatementSyntax node)
     {
-        if (_loopStack.Count == 0 || _loopStack.Peek().Break is not { } breakLabel)
+        if (LabeledJumpSyntax.GetLabelName(node) != null ||
+            _loopStack.Count == 0 ||
+            _loopStack.Peek().Break is not { } breakLabel)
         {
             return node;
         }
@@ -18,7 +20,9 @@ public class LoopRewriter : SplitPointBlockRewriter
 
     public override SyntaxNode VisitContinueStatement(ContinueStatementSyntax node)
     {
-        if (_loopStack.Count == 0 || _loopStack.Peek().Continue is not { } continueLabel)
+        if (LabeledJumpSyntax.GetLabelName(node) != null ||
+            _loopStack.Count == 0 ||
+            _loopStack.Peek().Continue is not { } continueLabel)
         {
             return node;
         }
