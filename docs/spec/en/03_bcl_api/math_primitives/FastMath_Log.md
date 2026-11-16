@@ -52,7 +52,7 @@ Usable in both CPU fallback (delegating to `MathF.Log`) and GPU device kernels (
 ### Error Bound
 
 - **GPU (CUDA `__logf`)**: Maximum absolute error is $2^{-21.41}$ (approx. $3.58 \times 10^{-7}$) for $x \in [0.5, 2.0]$, and within 3 ULP otherwise.
-- **CPU Fallback (`MathF.Log`)**: Correctly rounded (within 1 ULP).
+- **CPU Fallback (`MathF.Log`)**: Accurate to within 1 ULP (the platform math library; not guaranteed to be correctly rounded).
 
 ## See also
 

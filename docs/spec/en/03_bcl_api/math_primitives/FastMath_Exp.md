@@ -52,7 +52,7 @@ Usable in both CPU fallback (delegating to `MathF.Exp`) and GPU device kernels (
 ### Error Bound
 
 - **GPU (CUDA `__expf`)**: Maximum error is within $2 + \lfloor |1.173 \times x| \rfloor$ ULP.
-- **CPU Fallback (`MathF.Exp`)**: Correctly rounded (within 1 ULP).
+- **CPU Fallback (`MathF.Exp`)**: Accurate to within 1 ULP (the platform math library; not guaranteed to be correctly rounded).
 
 ## See also
 

@@ -97,7 +97,10 @@ public sealed class OutputPolicy
         ArgumentException.ThrowIfNullOrEmpty(reason);
         if (maxAbsoluteError < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxAbsoluteError), "Maximum absolute error cannot be negative.");
+            throw new ArgumentOutOfRangeException(
+                nameof(maxAbsoluteError),
+                "Maximum absolute error cannot be negative."
+            );
         }
 
         return new OutputPolicy(
@@ -115,14 +118,7 @@ public sealed class OutputPolicy
         where T : struct
     {
         ArgumentNullException.ThrowIfNull(compareFields);
-        return new OutputPolicy(
-            basePolicy?.Kind ?? OutputPolicyKind.Exact,
-            new StructElementComparer<T>(compareFields),
-            basePolicy?.MaxUlp ?? 0,
-            basePolicy?.Reason,
-            basePolicy?.AllowInfinityBoundary ?? false,
-            basePolicy?.MaxAbsoluteError ?? 0.0
-        );
+        return WithComparer(new StructElementComparer<T>(compareFields), basePolicy);
     }
 
     /// <summary>Creates a field-wise struct comparison policy using a policy-aware predicate.</summary>
@@ -134,14 +130,7 @@ public sealed class OutputPolicy
         where T : struct
     {
         ArgumentNullException.ThrowIfNull(fieldPredicate);
-        return new OutputPolicy(
-            basePolicy?.Kind ?? OutputPolicyKind.Exact,
-            new StructElementComparer<T>(fieldPredicate, formatter),
-            basePolicy?.MaxUlp ?? 0,
-            basePolicy?.Reason,
-            basePolicy?.AllowInfinityBoundary ?? false,
-            basePolicy?.MaxAbsoluteError ?? 0.0
-        );
+        return WithComparer(new StructElementComparer<T>(fieldPredicate, formatter), basePolicy);
     }
 
     /// <summary>Creates a field-wise struct comparison policy using a boolean predicate.</summary>
@@ -153,29 +142,29 @@ public sealed class OutputPolicy
         where T : struct
     {
         ArgumentNullException.ThrowIfNull(fieldPredicate);
-        return new OutputPolicy(
-            basePolicy?.Kind ?? OutputPolicyKind.Exact,
-            new StructElementComparer<T>(fieldPredicate, formatter),
-            basePolicy?.MaxUlp ?? 0,
-            basePolicy?.Reason,
-            basePolicy?.AllowInfinityBoundary ?? false,
-            basePolicy?.MaxAbsoluteError ?? 0.0
-        );
+        return WithComparer(new StructElementComparer<T>(fieldPredicate, formatter), basePolicy);
     }
 
     /// <summary>Creates a field-wise struct comparison policy using an <see cref="IElementComparer{T}"/>.</summary>
     public static OutputPolicy ForStruct<T>(IElementComparer<T> comparer, OutputPolicy? basePolicy = null)
     {
         ArgumentNullException.ThrowIfNull(comparer);
-        return new OutputPolicy(
-            basePolicy?.Kind ?? OutputPolicyKind.Exact,
-            comparer,
-            basePolicy?.MaxUlp ?? 0,
-            basePolicy?.Reason,
-            basePolicy?.AllowInfinityBoundary ?? false,
-            basePolicy?.MaxAbsoluteError ?? 0.0
-        );
+        return WithComparer(comparer, basePolicy);
     }
+
+    // A struct policy compares with its own comparer and keeps the kind and tolerances of its base policy (Exact
+    // without one)
+    private static OutputPolicy WithComparer(object comparer, OutputPolicy? basePolicy) =>
+        basePolicy is null
+            ? new OutputPolicy(OutputPolicyKind.Exact, comparer)
+            : new OutputPolicy(
+                basePolicy.Kind,
+                comparer,
+                basePolicy.MaxUlp,
+                basePolicy.Reason,
+                basePolicy.AllowInfinityBoundary,
+                basePolicy.MaxAbsoluteError
+            );
 
     /// <summary>Gets the kind of the policy.</summary>
     public OutputPolicyKind Kind { get; }
@@ -183,10 +172,15 @@ public sealed class OutputPolicy
     /// <summary>Gets the maximum allowed ULP distance when <see cref="Kind"/> is <see cref="OutputPolicyKind.Ulp"/>.</summary>
     public uint MaxUlp { get; }
 
-    /// <summary>Gets the maximum allowed absolute error when <see cref="Kind"/> is <see cref="OutputPolicyKind.Absolute"/>.</summary>
+    /// <summary>
+    /// Gets the maximum allowed absolute error when <see cref="Kind"/> is <see cref="OutputPolicyKind.Absolute"/>.
+    /// </summary>
     public double MaxAbsoluteError { get; }
 
-    /// <summary>Gets the documented reason for the tolerance when <see cref="Kind"/> is <see cref="OutputPolicyKind.Ulp"/> or <see cref="OutputPolicyKind.Absolute"/>.</summary>
+    /// <summary>
+    /// Gets the documented reason for the tolerance when <see cref="Kind"/> is <see cref="OutputPolicyKind.Ulp"/> or
+    /// <see cref="OutputPolicyKind.Absolute"/>.
+    /// </summary>
     public string? Reason { get; }
 
     /// <summary>Gets a value indicating whether <c>MaxValue</c> and <c>Infinity</c> are treated as 1-ULP adjacent under <see cref="OutputPolicyKind.Ulp"/>.</summary>

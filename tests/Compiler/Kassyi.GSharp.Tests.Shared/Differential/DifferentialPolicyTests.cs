@@ -323,44 +323,120 @@ public class DifferentialPolicyTests
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
-    [Scenario(TestScenario.Boundary)]
-    public void DiffPolicy_Absolute_ComparesWithinAbsoluteTolerance()
+    [Scenario(TestScenario.HappyPath)]
+    public void DiffPolicy_AbsoluteFactory_RecordsKindToleranceAndReason()
     {
-        var absPolicy = OutputPolicy.Absolute(1e-5, "test absolute error");
-        Assert.Equal(OutputPolicyKind.Absolute, absPolicy.Kind);
-        Assert.Equal(1e-5, absPolicy.MaxAbsoluteError);
-        Assert.Equal("test absolute error", absPolicy.Reason);
-        Assert.Equal("Absolute(1E-05, \"test absolute error\")", absPolicy.ToString());
+        var policy = OutputPolicy.Absolute(1e-5, "test absolute error");
 
-        // Single precision
-        Assert.True(CellsMatch(1.0f, 1.0f + 5e-6f, absPolicy));
-        Assert.True(CellsMatch(1.0f, 1.0f - 8e-6f, absPolicy));
-        Assert.False(CellsMatch(1.0f, 1.0f + 2e-5f, absPolicy));
-        Assert.False(CellsMatch(1.0f, 1.0f - 2e-5f, absPolicy));
+        Assert.Equal(OutputPolicyKind.Absolute, policy.Kind);
+        Assert.Equal(1e-5, policy.MaxAbsoluteError);
+        Assert.Equal("test absolute error", policy.Reason);
+        Assert.Equal("Absolute(1E-05, \"test absolute error\")", policy.ToString());
+    }
 
-        // NaN handling
-        Assert.True(CellsMatch(float.NaN, float.NaN, absPolicy));
-        Assert.False(CellsMatch(1.0f, float.NaN, absPolicy));
-        Assert.False(CellsMatch(float.NaN, 1.0f, absPolicy));
-
-        // Infinity handling
-        Assert.True(CellsMatch(float.PositiveInfinity, float.PositiveInfinity, absPolicy));
-        Assert.True(CellsMatch(float.NegativeInfinity, float.NegativeInfinity, absPolicy));
-        Assert.False(CellsMatch(float.PositiveInfinity, float.NegativeInfinity, absPolicy));
-        Assert.False(CellsMatch(float.PositiveInfinity, 1e30f, absPolicy));
-
-        // Double precision
-        var absDouble = OutputPolicy.Absolute(1e-9, "double tolerance");
-        Assert.True(CellsMatch(2.0, 2.0 + 5e-10, absDouble));
-        Assert.True(CellsMatch(2.0, 2.0 - 5e-10, absDouble));
-        Assert.False(CellsMatch(2.0, 2.0 + 2e-9, absDouble));
-        Assert.False(CellsMatch(2.0, 2.0 - 2e-9, absDouble));
-        Assert.True(CellsMatch(double.NaN, double.NaN, absDouble));
-        Assert.False(CellsMatch(2.0, double.NaN, absDouble));
-
-        // Argument validation
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void DiffPolicy_AbsoluteFactory_RejectsNegativeToleranceAndEmptyReason()
+    {
         Assert.Throws<ArgumentOutOfRangeException>(() => OutputPolicy.Absolute(-1.0, "negative"));
         Assert.Throws<ArgumentException>(() => OutputPolicy.Absolute(1.0, ""));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_AbsoluteSingle_AcceptsWithinToleranceOnBothSides()
+    {
+        var policy = OutputPolicy.Absolute(1e-5, "single tolerance");
+
+        Assert.True(CellsMatch(1.0f, 1.0f + 5e-6f, policy));
+        Assert.True(CellsMatch(1.0f, 1.0f - 8e-6f, policy));
+        Assert.False(CellsMatch(1.0f, 1.0f + 2e-5f, policy));
+        Assert.False(CellsMatch(1.0f, 1.0f - 2e-5f, policy));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_AbsoluteSingle_DifferenceEqualToTheTolerance_Matches()
+    {
+        // 0.5 is exact in float and double, so the difference equals the tolerance exactly
+        var policy = OutputPolicy.Absolute(0.5, "exact boundary");
+
+        Assert.True(CellsMatch(1.0f, 1.5f, policy));
+        Assert.False(CellsMatch(1.0f, 1.5000001f, policy));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_AbsoluteSingle_MatchesNaNAndInfinityOnlyWithThemselves()
+    {
+        var policy = OutputPolicy.Absolute(1e-5, "single tolerance");
+
+        Assert.True(CellsMatch(float.NaN, float.NaN, policy));
+        Assert.False(CellsMatch(1.0f, float.NaN, policy));
+        Assert.False(CellsMatch(float.NaN, 1.0f, policy));
+        Assert.True(CellsMatch(float.PositiveInfinity, float.PositiveInfinity, policy));
+        Assert.True(CellsMatch(float.NegativeInfinity, float.NegativeInfinity, policy));
+        Assert.False(CellsMatch(float.PositiveInfinity, float.NegativeInfinity, policy));
+        Assert.False(CellsMatch(float.PositiveInfinity, 1e30f, policy));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_AbsoluteDouble_AcceptsWithinToleranceAndMatchesNaNOnlyWithNaN()
+    {
+        var policy = OutputPolicy.Absolute(1e-9, "double tolerance");
+
+        Assert.True(CellsMatch(2.0, 2.0 + 5e-10, policy));
+        Assert.True(CellsMatch(2.0, 2.0 - 5e-10, policy));
+        Assert.False(CellsMatch(2.0, 2.0 + 2e-9, policy));
+        Assert.False(CellsMatch(2.0, 2.0 - 2e-9, policy));
+        Assert.True(CellsMatch(double.NaN, double.NaN, policy));
+        Assert.False(CellsMatch(2.0, double.NaN, policy));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void DiffPolicy_AbsoluteHalf_AcceptsWithinToleranceAndMatchesNaNOnlyWithNaN()
+    {
+        // Half has 10 fraction bits: the neighbours of 1 are 1 + 2^-10 and 1 - 2^-11
+        var policy = OutputPolicy.Absolute(0.001, "half tolerance");
+
+        Assert.True(CellsMatch((Half)1.0f, BitConverter.UInt16BitsToHalf(0x3C01), policy));
+        Assert.False(CellsMatch((Half)1.0f, BitConverter.UInt16BitsToHalf(0x3C02), policy));
+        Assert.True(CellsMatch(Half.NaN, Half.NaN, policy));
+        Assert.False(CellsMatch((Half)1.0f, Half.NaN, policy));
+        Assert.False(CellsMatch(Half.PositiveInfinity, Half.MaxValue, policy));
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void DiffPolicy_ForStructWithAbsoluteBase_KeepsKindToleranceAndReason()
+    {
+        var basePolicy = OutputPolicy.Absolute(0.25, "struct base tolerance");
+
+        var policy = OutputPolicy.ForStruct<DeepBagProbe>(
+            static (left, right) => left.Tag == right.Tag,
+            basePolicy: basePolicy
+        );
+
+        Assert.Equal(OutputPolicyKind.Absolute, policy.Kind);
+        Assert.Equal(0.25, policy.MaxAbsoluteError);
+        Assert.Equal("struct base tolerance", policy.Reason);
+        Assert.NotNull(policy.CustomComparer);
     }
 
     // ---- Helpers ----

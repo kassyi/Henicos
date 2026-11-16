@@ -498,62 +498,51 @@ public sealed class DiffBuffer<T> : DiffBuffer
 
     /// <summary>
     /// Compares <paramref name="x"/> and <paramref name="y"/> within <paramref name="maxAbsoluteError"/>,
-    /// rejecting one-sided <c>NaN</c>.
+    /// rejecting one-sided <c>NaN</c>. <see cref="float"/> and <see cref="Half"/> widen to <see cref="double"/>
+    /// exactly, so the difference is taken once, in <see cref="double"/>. Other types compare bitwise.
     /// </summary>
     internal static bool AbsoluteEqualValue(in T x, in T y, double maxAbsoluteError)
     {
+        if (!TryWidenToDouble(in x, out double dx) || !TryWidenToDouble(in y, out double dy))
+        {
+            return BitsEqual(in x, in y);
+        }
+
+        if (double.IsNaN(dx) || double.IsNaN(dy))
+        {
+            return double.IsNaN(dx) && double.IsNaN(dy);
+        }
+
+        if (double.IsInfinity(dx) || double.IsInfinity(dy))
+        {
+            return dx == dy;
+        }
+
+        return Math.Abs(dy - dx) <= maxAbsoluteError;
+    }
+
+    private static bool TryWidenToDouble(in T value, out double widened)
+    {
         if (typeof(T) == typeof(float))
         {
-            float fx = Unsafe.As<T, float>(ref Unsafe.AsRef(in x));
-            float fy = Unsafe.As<T, float>(ref Unsafe.AsRef(in y));
-            if (float.IsNaN(fx) || float.IsNaN(fy))
-            {
-                return float.IsNaN(fx) && float.IsNaN(fy);
-            }
-
-            if (float.IsInfinity(fx) || float.IsInfinity(fy))
-            {
-                return fx == fy;
-            }
-
-            return MathF.Abs(fy - fx) <= (float)maxAbsoluteError;
+            widened = Unsafe.As<T, float>(ref Unsafe.AsRef(in value));
+            return true;
         }
 
         if (typeof(T) == typeof(double))
         {
-            double dx = Unsafe.As<T, double>(ref Unsafe.AsRef(in x));
-            double dy = Unsafe.As<T, double>(ref Unsafe.AsRef(in y));
-            if (double.IsNaN(dx) || double.IsNaN(dy))
-            {
-                return double.IsNaN(dx) && double.IsNaN(dy);
-            }
-
-            if (double.IsInfinity(dx) || double.IsInfinity(dy))
-            {
-                return dx == dy;
-            }
-
-            return Math.Abs(dy - dx) <= maxAbsoluteError;
+            widened = Unsafe.As<T, double>(ref Unsafe.AsRef(in value));
+            return true;
         }
 
         if (typeof(T) == typeof(Half))
         {
-            Half hx = Unsafe.As<T, Half>(ref Unsafe.AsRef(in x));
-            Half hy = Unsafe.As<T, Half>(ref Unsafe.AsRef(in y));
-            if (Half.IsNaN(hx) || Half.IsNaN(hy))
-            {
-                return Half.IsNaN(hx) && Half.IsNaN(hy);
-            }
-
-            if (Half.IsInfinity(hx) || Half.IsInfinity(hy))
-            {
-                return hx == hy;
-            }
-
-            return Math.Abs((float)hy - (float)hx) <= (float)maxAbsoluteError;
+            widened = (double)Unsafe.As<T, Half>(ref Unsafe.AsRef(in value));
+            return true;
         }
 
-        return BitsEqual(in x, in y);
+        widened = 0;
+        return false;
     }
 
     // A primitive prints as the hex of its value (the bytes from the most significant); a struct prints its bytes in
