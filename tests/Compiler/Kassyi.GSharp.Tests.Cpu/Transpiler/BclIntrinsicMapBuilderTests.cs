@@ -89,7 +89,7 @@ public class BclIntrinsicMapBuilderTests
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     [InlineData(Platform.X64, "unsigned long long int")]
-    [InlineData(Platform.X86, "unsigned int")]
+    [InlineData(Platform.X86, "unsigned long long int")]
     public void UserAssemblyMappings_MapOnlyTheMatchingOverloads(Platform platform, string nativeSizedCast)
     {
         var source = RoslynTestUtility.ReadTestCase("Transpiler/BclIntrinsicMap/UserMappings.cs");
