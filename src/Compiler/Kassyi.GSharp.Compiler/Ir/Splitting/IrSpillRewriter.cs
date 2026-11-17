@@ -59,6 +59,42 @@ internal static class IrSpillRewriter
             writer.Temporaries.ToImmutable(), remaining));
     }
 
+    /// <summary>
+    /// The steps of the condition of the <see langword="while"/> loop of <paramref name="plan"/> as statements, and
+    /// the condition that reads their temporaries; <see langword="false"/> with the reason when the steps cannot be
+    /// applied.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="plan"/> is not for a <see langword="while"/> loop, or has a fallback.
+    /// </exception>
+    public static bool TryApplyLoopCondition(IrStatementSpillPlan plan,
+        [NotNullWhen(true)] out IrLoweredCondition? lowered, out IrSpillApplySkip skip)
+    {
+        if (plan.Statement is not IrWhile @while)
+        {
+            throw new ArgumentException("A loop condition plan must be for a while loop.", nameof(plan));
+        }
+
+        if (plan.Fallback != IrSpillFallback.None)
+        {
+            throw new ArgumentException("A plan with a fallback has no steps to apply.", nameof(plan));
+        }
+
+        skip = IrSpillApplySkips.OfSteps(plan);
+        if (skip != IrSpillApplySkip.None)
+        {
+            lowered = null;
+            return false;
+        }
+
+        var writer = new Writer(@while);
+        var statements = ImmutableArray.CreateBuilder<IrStatement>();
+        writer.WriteSteps(plan.Steps, statements, null);
+        lowered = new IrLoweredCondition(statements.ToImmutable(), writer.Condition(@while.Condition),
+            writer.Temporaries.ToImmutable());
+        return true;
+    }
+
     // Writes the steps of one statement; holds the temporaries made so far and the nodes they replace
     private sealed class Writer(IrStatement statement)
     {
@@ -124,6 +160,8 @@ internal static class IrSpillRewriter
                 ? null
                 : remaining;
         }
+
+        public IrExpression Condition(IrExpression condition) => Substitute(condition);
 
         private IrExpression Substitute(IrExpression expression) => _substitution.Apply(expression, _replaced);
 
@@ -206,8 +244,7 @@ internal static class IrSpillRewriter
             var locals = new List<IrVariable>();
             WriteSteps(steps, statements, locals);
             var source = value.Source.AsSynthesized();
-            statements.Add(new IrExpressionStatement(Assign(Write(temporary, source), Substitute(value), source),
-                source));
+            statements.Add(Statement(Assign(Write(temporary, source), Substitute(value), source), source));
             return new IrBlock(statements.ToImmutable(), locals.ToImmutableArray(), source);
         }
 
@@ -216,7 +253,7 @@ internal static class IrSpillRewriter
         {
             var source = location.Source.AsSynthesized();
             var discard = new IrDiscard(location.Type, source);
-            return new IrExpressionStatement(Assign(discard, Substitute(location), source), source);
+            return Statement(Assign(discard, Substitute(location), source), source);
         }
 
         // t op= <value'>; <target'> = t;
@@ -229,11 +266,14 @@ internal static class IrSpillRewriter
 
             var source = compound.Source.AsSynthesized();
             var apply = compound.Update(Write(temporary, source), Substitute(compound.Value));
-            statements.Add(new IrExpressionStatement(apply, source));
+            statements.Add(Statement(apply, source));
             var store = Assign(Substitute(compound.Target), Read(temporary, source), source);
-            statements.Add(new IrExpressionStatement(store, source));
+            statements.Add(Statement(store, source));
             _replaced[compound] = temporary;
         }
+
+        private static IrExpressionStatement Statement(IrExpression expression, IrSource source) =>
+            new(IrExpression.WithParentheses(expression, 0), source);
 
         private static IrAssignment Assign(IrExpression target, IrExpression value, IrSource source) =>
             new(target, value, false, target.Type, IrCategory.Value, source);

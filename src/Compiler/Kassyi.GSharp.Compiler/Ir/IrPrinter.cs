@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -22,6 +23,7 @@ internal sealed class IrPrinter
     private readonly IrExpressionPrinter _expressions;
     private readonly bool _oneLine;
     private bool _separatorPending;
+    private int _indent;
 
     private IrPrinter(SourceWriter writer, IrPrintOptions options, IrPrinter? outer = null, bool oneLine = false)
     {
@@ -87,6 +89,41 @@ internal sealed class IrPrinter
         return writer.ToString();
     }
 
+    /// <summary>Writes one state of a state machine with its statements indented.</summary>
+    public static string Print(IrState state, IrPrintOptions options = IrPrintOptions.None)
+    {
+        using var writer = new SourceWriter();
+        new IrPrinter(writer, options).WriteState(state);
+        return writer.ToString().TrimEnd('\r', '\n');
+    }
+
+    /// <summary>Writes all states of a state machine.</summary>
+    public static string Print(IrStateMachine machine, IrPrintOptions options = IrPrintOptions.None)
+    {
+        using var writer = new SourceWriter();
+        var printer = new IrPrinter(writer, options);
+        foreach (var state in machine.States)
+        {
+            printer.WriteState(state);
+        }
+
+        return writer.ToString().TrimEnd('\r', '\n');
+    }
+
+    private void WriteState(IrState state)
+    {
+        StartLine();
+        _writer.Append($"case {state.Number.ToString(CultureInfo.InvariantCulture)}:");
+        EndLine();
+        _indent++;
+        foreach (var statement in state.Statements)
+        {
+            WriteStatement(statement);
+        }
+
+        _indent--;
+    }
+
     private void WriteStatement(IrStatement statement)
     {
         StartLine();
@@ -113,8 +150,102 @@ internal sealed class IrPrinter
             case IrOpaqueStatement opaque:
                 WriteOpaque(opaque);
                 break;
+            case IrLabel label:
+                WriteLabel(label);
+                break;
+            case IrGoto @goto:
+                WriteGoto(@goto);
+                break;
+            case IrConditionalGoto conditionalGoto:
+                WriteConditionalGoto(conditionalGoto);
+                break;
+            case IrSuspend suspend:
+                WriteSuspend(suspend);
+                break;
+            case IrResumeCall resume:
+                WriteResumeCall(resume);
+                break;
+            case IrStateJump jump:
+                WriteStateJump(jump);
+                break;
+            case IrStateMachineExit:
+                _writer.Append("exit;");
+                EndLine();
+                break;
             default:
                 throw new InvalidOperationException("The IR printer has no form for " + statement.GetType().Name + ".");
+        }
+    }
+
+    private void WriteLabel(IrLabel label)
+    {
+        _writer.Append($"{label.Label.Name}: ;");
+        EndLine();
+    }
+
+    private void WriteGoto(IrGoto @goto)
+    {
+        _writer.Append($"goto {@goto.Target.Name};");
+        EndLine();
+    }
+
+    private void WriteConditionalGoto(IrConditionalGoto conditionalGoto)
+    {
+        WriteConditionBranchPrefix(conditionalGoto.Condition, conditionalGoto.JumpIfTrue);
+        _writer.Append($" goto {conditionalGoto.Target.Name};");
+        EndLine();
+    }
+
+    private void WriteSuspend(IrSuspend suspend)
+    {
+        _writer.Append(
+            $"suspend {suspend.Kind.ToString()} -> {suspend.ResumeState.ToString(CultureInfo.InvariantCulture)};");
+        EndLine();
+    }
+
+    private void WriteResumeCall(IrResumeCall resume)
+    {
+        _writer.Append($"resume {resume.CallFrame.ToString(CultureInfo.InvariantCulture)} ");
+        _expressions.WriteExpression(resume.Call);
+        if (resume.ResultTarget is { } target)
+        {
+            _writer.Append(" -> ");
+            _expressions.WriteExpression(target);
+        }
+
+        _writer.Append($" @{resume.State.ToString(CultureInfo.InvariantCulture)};");
+        EndLine();
+    }
+
+    private void WriteStateJump(IrStateJump jump)
+    {
+        if (jump.Condition is { } condition)
+        {
+            WriteConditionBranchPrefix(condition, jump.JumpIfTrue);
+            _writer.Append(" ");
+        }
+
+        _writer.Append($"goto case {jump.State.ToString(CultureInfo.InvariantCulture)};");
+        EndLine();
+    }
+
+    private void WriteConditionBranchPrefix(IrExpression condition, bool jumpIfTrue)
+    {
+        _writer.Append("if ");
+        using (_writer.Parentheses())
+        {
+            if (!jumpIfTrue)
+            {
+                _writer.Append("!");
+                using (_writer.Parentheses())
+                {
+                    _expressions.WriteExpression(condition);
+                }
+            }
+            else
+            {
+                _expressions.WriteExpression(condition);
+            }
         }
     }
 
@@ -226,6 +357,10 @@ internal sealed class IrPrinter
     {
         _writer.AppendIf(_separatorPending, " ");
         _separatorPending = false;
+        for (var i = 0; i < _indent; i++)
+        {
+            _writer.Append("    ");
+        }
     }
 
     /// <summary>Writes a variable: its name, with the region of an inlined copy, or a temporary by its

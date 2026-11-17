@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -14,9 +15,15 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
     private readonly IrPrintOptions _options = options;
 
     /// <summary>Writes an expression with its category and, as asked, its span.</summary>
-    public void WriteExpression(IrExpression expression)
+    public void WriteExpression(IrExpression expression) => WriteExpression(expression, includeCategory: true);
+
+    private void WriteExpression(IrExpression expression, bool includeCategory)
     {
-        _writer.Append(IrPrintText.Category(expression.Category));
+        if (includeCategory)
+        {
+            _writer.Append(IrPrintText.Category(expression.Category));
+        }
+
         WriteForm(expression);
         if ((_options & IrPrintOptions.Sources) != 0)
         {
@@ -47,6 +54,9 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
                 break;
             case IrCall call:
                 WriteCall(call);
+                break;
+            case IrRuntimeCall runtime:
+                WriteRuntimeCall(runtime);
                 break;
             default:
                 WriteOperatorForm(expression);
@@ -165,6 +175,30 @@ internal sealed class IrExpressionPrinter(IrPrinter owner, SourceWriter writer, 
 
         WriteEvaluationOrder(call.Arguments);
         WriteClassification(call.Classification);
+    }
+
+    private void WriteRuntimeCall(IrRuntimeCall call)
+    {
+        _writer.Append(call.Function.ToString());
+        if (call.Shuffle != WarpShuffleKind.None)
+        {
+            using (_writer.Brackets())
+            {
+                _writer.Append(call.Shuffle.ToString());
+            }
+        }
+
+        _writer.Append($"#{call.Site.ToString(CultureInfo.InvariantCulture)}");
+        using (_writer.Parentheses())
+        {
+            for (var index = 0; index < call.Arguments.Length; index++)
+            {
+                var argument = call.Arguments[index];
+                _writer.AppendIf(index > 0, ", ");
+                _writer.Append(IrPrintText.RefKindModifier(argument.RefKind));
+                WriteExpression(argument.Value, includeCategory: argument.RefKind == RefKind.None);
+            }
+        }
     }
 
     // [split=BlockBarrier, writes=Memory] after a classified call; nothing before the classify pass

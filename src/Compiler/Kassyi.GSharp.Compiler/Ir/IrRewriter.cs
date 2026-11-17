@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -38,11 +39,21 @@ internal abstract class IrRewriter
             @if.Else is { } @else ? VisitStatement(@else) : null),
         IrWhile @while => @while.Update(VisitExpression(@while.Condition), VisitStatement(@while.Body)),
         IrOpaqueStatement opaque => VisitOpaqueStatement(opaque),
+        IrLabel or IrGoto or IrSuspend or IrStateMachineExit => statement,
+        IrConditionalGoto conditionalGoto => conditionalGoto.Update(VisitExpression(conditionalGoto.Condition)),
+        IrResumeCall resume => resume.Update(
+            (IrCall)VisitExpression(resume.Call),
+            resume.ResultTarget is { } target ? (IrVariableReference)VisitExpression(target) : null),
+        IrStateJump jump => jump.Update(VisitOptional(jump.Condition)),
         _ => throw Unknown(statement)
     };
 
     /// <summary>Rewrites a block.</summary>
     public virtual IrBlock VisitBlock(IrBlock block) => block.Update(VisitList(block.Statements, VisitStatement));
+
+    /// <summary>Rewrites a state in an <see cref="IrStateMachine"/>.</summary>
+    public virtual IrState VisitState(IrState state) =>
+        state.Update(VisitList(state.Statements, VisitStatement), state.UnreachableFrom);
 
     /// <summary>Rewrites an expression.</summary>
     public virtual IrExpression VisitExpression(IrExpression expression) => expression switch
@@ -72,6 +83,7 @@ internal abstract class IrRewriter
             VisitList(array.Elements, VisitExpression)),
         IrSequence sequence => sequence.Update(VisitList(sequence.SideEffects, VisitStatement),
             VisitExpression(sequence.Value)),
+        IrRuntimeCall runtime => runtime.Update(VisitRuntimeArguments(runtime.Arguments)),
         IrOpaqueExpression opaque => VisitOpaqueExpression(opaque),
         IrConstant or IrVariableReference or IrDefaultValue or IrDiscard or IrInitializedObject => expression,
         _ => throw Unknown(expression)
@@ -106,6 +118,26 @@ internal abstract class IrRewriter
 
             rewritten ??= CopyPrefix(arguments, index);
             rewritten.Add(new IrArgument(argument.Parameter, value, argument.Kind, argument.EvaluationIndex));
+        }
+
+        return rewritten?.MoveToImmutable() ?? arguments;
+    }
+
+    /// <summary>Rewrites the values of <paramref name="arguments"/>; the same array when none changed.</summary>
+    protected ImmutableArray<IrRuntimeArgument> VisitRuntimeArguments(ImmutableArray<IrRuntimeArgument> arguments)
+    {
+        ImmutableArray<IrRuntimeArgument>.Builder? rewritten = null;
+        for (var index = 0; index < arguments.Length; index++)
+        {
+            var argument = arguments[index];
+            var value = VisitExpression(argument.Value);
+            if (rewritten is null && value == argument.Value)
+            {
+                continue;
+            }
+
+            rewritten ??= CopyPrefix(arguments, index);
+            rewritten.Add(new IrRuntimeArgument(value, argument.RefKind));
         }
 
         return rewritten?.MoveToImmutable() ?? arguments;
