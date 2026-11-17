@@ -124,6 +124,21 @@ public class ResumeLocalManagedTests : TranspilerTestBase
     public void LocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
         ResumeLocalScenarios.LocalFunctionCapturedInt(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.RecursiveLocalFuncCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void MutuallyRecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.MutuallyRecursiveLocalFuncCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void AsymmetricMutuallyRecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.AsymmetricMutuallyRecursiveLocalFuncCapturedInt(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

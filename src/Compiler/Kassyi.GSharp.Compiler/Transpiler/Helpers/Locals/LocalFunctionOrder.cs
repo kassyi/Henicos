@@ -133,9 +133,11 @@ internal sealed class LocalFunctionOrder
     private static void WriteGroup(IReadOnlyList<StatementSyntax> statements, IReadOnlyList<int> group,
         ref TranspileContext context)
     {
+        var groupPlan = CreateGroupCapturePlan(statements, group);
         foreach (var member in group)
         {
-            WriteImplementation((LocalFunctionStatementSyntax)statements[member], group, statements, ref context);
+            WriteImplementation((LocalFunctionStatementSyntax)statements[member], group, statements, in groupPlan,
+                ref context);
         }
 
         foreach (var member in group)
@@ -145,9 +147,29 @@ internal sealed class LocalFunctionOrder
         }
     }
 
+    private static LambdaCapturePlan CreateGroupCapturePlan(IReadOnlyList<StatementSyntax> statements,
+        IReadOnlyList<int> group)
+    {
+        var capturesContext = false;
+        var capturesRoot = false;
+        foreach (var member in group)
+        {
+            var function = (LocalFunctionStatementSyntax)statements[member];
+            var memberPlan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
+            capturesContext |= memberPlan.CapturesContext;
+            capturesRoot |= memberPlan.CapturesRoot;
+            if (capturesContext && capturesRoot)
+            {
+                break;
+            }
+        }
+
+        return new LambdaCapturePlan(capturesContext, capturesRoot);
+    }
+
     // auto <impl> = <capture>(auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
     private static void WriteImplementation(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
-        IReadOnlyList<StatementSyntax> statements, ref TranspileContext context)
+        IReadOnlyList<StatementSyntax> statements, in LambdaCapturePlan groupPlan, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var method = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function);
@@ -155,8 +177,7 @@ internal sealed class LocalFunctionOrder
         writer.Append("auto ");
         AppendGroupName(function, useSelves: false, ref context);
         writer.Append(" = ");
-        var plan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
-        LambdaCapture.Append(writer, plan);
+        LambdaCapture.Append(writer, groupPlan);
         writer.Append('(');
         foreach (var other in group)
         {
@@ -194,8 +215,10 @@ internal sealed class LocalFunctionOrder
         writer.Append("auto ");
         CppNameResolver.AppendDeclaredName(function, function.Identifier, ref context);
         writer.Append(" = ");
-        var plan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
-        LambdaCapture.Append(writer, plan);
+        // [WHY] On state-machine CPU dialects, a delegate created from the forwarder can outlive the state function
+        // where the stack-local implementation lambdas live. Because the forwarder body only forwards parameters to
+        // <impl>/<self>, capturing by value ([=]) copies the closure objects without referencing stack locals.
+        writer.Append(context.Emitter.Dialect.EmulatesThreadsWithStateMachine() ? "[=]" : "[&]");
         writer.Append('(');
         AppendParameters(function, ref context);
         writer.Append(") -> ");

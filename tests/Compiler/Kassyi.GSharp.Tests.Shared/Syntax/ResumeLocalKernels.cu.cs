@@ -281,4 +281,45 @@ public static partial class ResumeLocalKernels
         Gpu.SyncThreads();
         result[tid] = f();
     }
+
+    // A self-recursive local function converted to a delegate that captures a local variable across a barrier:
+    // result[t] = 2 + 1 + (t + 1) = t + 4
+    [GpuKernel]
+    public static void RecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int SumTo(int n) => n <= 0 ? v : n + SumTo(n - 1);
+        Func<int, int> f = SumTo;
+        Gpu.SyncThreads();
+        result[tid] = f(2);
+    }
+
+    // Mutually recursive local functions where both capture a local variable across a barrier:
+    // result[t] = t + 1
+    [GpuKernel]
+    public static void MutuallyRecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int A(int n) => n <= 0 ? v : B(n - 1);
+        int B(int n) => n <= 0 ? v : A(n - 1);
+        Func<int, int> f = A;
+        Gpu.SyncThreads();
+        result[tid] = f(2);
+    }
+
+    // Mutually recursive local functions where only one captures a local variable across a barrier:
+    // result[t] = t + 1
+    [GpuKernel]
+    public static void AsymmetricMutuallyRecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int A(int n) => n <= 0 ? 0 : B(n - 1);
+        int B(int n) => n <= 0 ? v : A(n - 1);
+        Func<int, int> f = A;
+        Gpu.SyncThreads();
+        result[tid] = f(1);
+    }
 }
