@@ -201,6 +201,8 @@ Console.WriteLine(bytes); // 28
 
 On CUDA a block can use 48 KB of shared memory (static plus dynamic) on every GPU, and more on GPUs that allow it once the kernel opts in (99 KB on sm_86 and sm_89, 163 KB on sm_80, 227 KB on sm_90). The `sharedMemBytes` of the launch is the request: when it is larger than what the kernel currently allows, the CUDA launcher (also the launcher of a `[CudaImport]` kernel) opts the kernel in to the device maximum (`cuFuncSetAttribute(CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES)`). It does this once per kernel, so later launches make no extra driver call. The opt-in only permits the memory the launch asks for; it adds no work or synchronization and does not change the results.
 
+GPUs of compute capability 10.7 have a third, oversized configuration of up to 327 KB per block, at the cost of an L1 cache of 8 KB while the kernel runs. A kernel uses it only when it is declared with `[GpuKernel(AllowOversizedSharedMemory = true)]` and a launch asks for more than 227 KB; see [AllowOversizedSharedMemory](../attributes/GpuKernelAttribute.md#allowoversizedsharedmemory).
+
 When the static shared memory of the kernel plus `sharedMemBytes` is more than the device allows per block, the CUDA launcher throws `ArgumentOutOfRangeException` (`ParamName` `sharedMemBytes`) before the launch, naming the kernel, the requested bytes, the limit and the driver error:
 
 ```text

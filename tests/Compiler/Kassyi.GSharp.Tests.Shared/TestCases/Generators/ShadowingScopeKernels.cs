@@ -33,6 +33,10 @@ namespace ShadowingScope
 
     public struct UIntPtr { }
 
+    public struct nint { }
+
+    public struct nuint { }
+
     public static class Unsafe { }
 
     public struct GCHandle { }
@@ -197,6 +201,14 @@ namespace ShadowingScope
             {
                 total = payload.Count;
             }
+        }
+
+        // A slice and a ref to an element of one array: the launcher compares their addresses (alias code), which
+        // writes the native integer type by its full name, as a type named nint here would shadow the keyword
+        [GpuKernel]
+        public static void OverlapKernel(global::System.Span<int> slice, ref int element)
+        {
+            slice[0] = element;
         }
 
         [GpuKernel]

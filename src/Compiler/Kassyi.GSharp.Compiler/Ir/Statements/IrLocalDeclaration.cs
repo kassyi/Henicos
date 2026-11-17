@@ -17,7 +17,14 @@ internal sealed class IrLocalDeclaration(IrVariable variable, IrExpression? init
     /// <summary>The initializer, or <see langword="null"/>.</summary>
     public IrExpression? Initializer { get; } = initializer;
 
+    /// <summary>
+    /// Whether the declaration takes its type from its initializer (C++ <c>auto</c>): written as
+    /// <see langword="var"/> and with an initializer. A declaration without one, a declaring reference
+    /// (<c>out var x</c>) and a variable declared again from the frame name the type.
+    /// </summary>
+    public bool DeducesType => Initializer is not null && Variable.DeclaredTypeForm == IrDeclaredTypeForm.Deduced;
+
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrLocalDeclaration Update(IrExpression? initializer) =>
-        initializer == Initializer ? this : new IrLocalDeclaration(Variable, initializer, Source);
+        initializer == Initializer ? this : KeepSpelling(new IrLocalDeclaration(Variable, initializer, Source));
 }

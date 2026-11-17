@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 
@@ -8,10 +9,18 @@ namespace Kassyi.GSharp.Compiler.Ir.Splitting;
 /// </summary>
 internal static class IrSpillApplySkips
 {
-    /// <summary>The first reason in the order of the steps to skip <paramref name="plan"/>; none when it is
-    /// rewritten.</summary>
+    /// <summary>
+    /// Whether to skip <paramref name="plan"/> (<see cref="IrSpillApplySkip.LoopCondition"/> for a
+    /// <see langword="while"/> loop; otherwise the first reason in the order of the steps); none when it is
+    /// rewritten.
+    /// </summary>
     public static IrSpillApplySkip Of(IrStatementSpillPlan plan)
     {
+        if (plan.Statement is IrWhile)
+        {
+            return IrSpillApplySkip.LoopCondition;
+        }
+
         var receivers = ExtensionReceiversOfSplits(plan.Statement);
         return Of(plan.Steps, receivers);
     }

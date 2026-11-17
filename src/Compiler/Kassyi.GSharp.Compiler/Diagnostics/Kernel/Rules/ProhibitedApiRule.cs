@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// Reports, in GPU code (GSH0003): a member of <c>System.Math</c> or <c>System.MathF</c> that the project's dialect
 /// maps to a native function, used as a method group (its native function is an overload set, which converts to no
 /// delegate); a member of <c>System.Threading.Interlocked</c> or <c>System.Numerics.BitOperations</c> that
-/// <c>[BclIntrinsicMap]</c> maps and that takes a <c>nint</c> / <c>nuint</c> or is used as a method group (#570); and
+/// <c>[BclIntrinsicMap]</c> maps and that is used as a method group (#570); and
 /// the host-only StackLinq operators.
 /// </summary>
 /// <remarks>
@@ -126,15 +126,7 @@ internal sealed class ProhibitedApiRule :
             return;
         }
 
-        if (TakesNativeInteger(method))
-        {
-            // A nint or nuint value does not build in GPU code yet (#983); the overloads are enabled there
-            context.ReportDiagnostic(
-                GSharpDiagnostics.UnsupportedSyntax,
-                locationNode,
-                $"{method.ContainingType.Name}.{method.FormatSignature()} (nint and nuint are not supported)");
-        }
-        else if (!IsInvoked(locationNode))
+        if (!IsInvoked(locationNode))
         {
             ReportMethodGroup(method, locationNode, ref context);
         }
@@ -146,11 +138,6 @@ internal sealed class ProhibitedApiRule :
             GSharpDiagnostics.UnsupportedSyntax,
             locationNode,
             $"{method.ContainingType.Name}.{method.FormatSignature()} (used as a method group)");
-
-    private static bool TakesNativeInteger(IMethodSymbol method) =>
-        method.Parameters
-            .AsStackEnumerable()
-            .Any(static p => p.Type.SpecialType is SpecialType.System_IntPtr or SpecialType.System_UIntPtr);
 
     // Whether the node is a call or the method it calls (Math.Abs in Math.Abs(x)); otherwise a method group
     private static bool IsInvoked(SyntaxNode node) =>

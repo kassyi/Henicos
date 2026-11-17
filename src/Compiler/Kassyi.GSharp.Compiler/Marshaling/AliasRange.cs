@@ -33,7 +33,7 @@ internal readonly record struct AliasRange(
     /// <summary>The range of an array-like argument: <c>Start(&lt;span&gt;)</c>, length times element size.</summary>
     public static AliasRange ForArray(string pinned, string span, string count, in AliasElement element,
         byte traits, string name) =>
-        new(pinned, $"Start({span})", $"(nint){count} * sizeof({element.HostType})", element.HostType,
+        new(pinned, $"Start({span})", $"({HostTypeNames.IntPtr}){count} * sizeof({element.HostType})", element.HostType,
             element.DeviceType, element.Alignment, element.ConversionKey, traits, name);
 
     /// <summary>The range of a value passed by reference: <c>StartOf(ref &lt;value&gt;)</c>, one element.</summary>

@@ -82,6 +82,9 @@
                   Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts')" />
       <!-- The symbol file next to each source, read by the demangler -->
       <FileWrites Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity).gsym.json')" />
+      <!-- The partition plan file when present -->
+      <_GSharpPartitionPlanFiles Include="$(IntermediateOutputPath)*.partition.json" />
+      <FileWrites Include="@(_GSharpPartitionPlanFiles)" Condition="Exists('%(_GSharpPartitionPlanFiles.Identity)')" />
     </ItemGroup>
   </Target>
 

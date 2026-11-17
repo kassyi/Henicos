@@ -27,6 +27,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Only branches and loops that hold a split point and whose condition may differ between the threads
 /// (<see cref="UniformityAnalysis.IsThreadVariant"/>) get a region; any other branch keeps the lanes together by itself.
 /// A condition the analysis cannot map back to the method counts as thread-dependent, which only costs a round. A
+/// switch that holds a split point also gets a region when any section has a nested exit, even if its expression
+/// is uniform, because lanes that jump out early would otherwise run ahead of the lanes that stay inside. A
 /// region whose end is the end of a kernel is left out: the lanes exit there.
 /// </para>
 /// <para>
@@ -355,7 +357,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 switchStatement.Sections
                     .AsStackEnumerable()
                     .Any(BarrierHelper.ContainsPhaseBarrier) &&
-                (IsThreadVariant(switchStatement.Expression) || HasWhenClause(switchStatement)),
+                (IsThreadVariant(switchStatement.Expression) || HasWhenClause(switchStatement) ||
+                 ReconvergenceSyntax.HasNestedExit(switchStatement)),
             WhileStatementSyntax whileStatement =>
                 BarrierHelper.ContainsPhaseBarrier(whileStatement) &&
                 (IsThreadVariant(whileStatement.Condition) || HasExit(whileStatement)),

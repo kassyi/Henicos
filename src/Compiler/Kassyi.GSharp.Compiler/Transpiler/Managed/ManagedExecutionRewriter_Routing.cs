@@ -17,23 +17,18 @@ internal sealed partial class ManagedExecutionRewriter
             return SpellCallee(callee, typeArguments: null, routed);
         }
 
-        return accessors.Spell(callee, routed
-            ? GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.MethodPrefix, callee)
-            : callee.Name);
+        return accessors.Spell(callee, ManagedRouting.GetAccessorName(callee, routed));
     }
 
     private bool IsRouted(IMethodSymbol method) =>
-        ManagedVersionAnalysis.HasManagedVersion(method, semanticModel.Compilation);
+        ManagedRouting.IsRouted(method, semanticModel.Compilation);
 
     // global::<containing type>.__gsharp_managed_<function path>[<type arguments>] when routed, otherwise
     // global::<containing type>.<name>[<type arguments>]
     private static ExpressionSyntax SpellCallee(IMethodSymbol callee, TypeArgumentListSyntax? typeArguments,
         bool routed)
     {
-        var identifier = routed
-            ? SyntaxFactory.Identifier(
-                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.MethodPrefix, callee))
-            : SyntaxFactory.Identifier(callee.Name.ToCSharpIdentifier());
+        var identifier = SyntaxFactory.Identifier(ManagedRouting.GetMemberName(callee, routed));
         SimpleNameSyntax name = typeArguments is null
             ? SyntaxFactory.IdentifierName(identifier)
             : SyntaxFactory.GenericName(identifier, typeArguments);
@@ -79,12 +74,11 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
-            semanticModel.GetSymbol(node) is IMethodSymbol { ReducedFrom: { } extension } reduced &&
-            extension.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-            IsRouted(extension))
+            semanticModel.GetSymbol(node) is IMethodSymbol symbol &&
+            ManagedRouting.GetBoundExtension(symbol, semanticModel.Compilation) is { } extension)
         {
             var receiver = (visited as MemberAccessExpressionSyntax)?.Expression ?? node.Expression;
-            return SpellBindCall(receiver, reduced, extension, typeArguments).WithTriviaFrom(node);
+            return SpellBindCall(receiver, symbol, extension, typeArguments).WithTriviaFrom(node);
         }
 
         return null;
@@ -97,22 +91,17 @@ internal sealed partial class ManagedExecutionRewriter
         IMethodSymbol extension,
         TypeArgumentListSyntax? typeArguments)
     {
+        var typeArgumentsList = ManagedRouting.GetBindTypeArguments(reduced, extension);
         using var writer = new SourceWriter();
         writer.Append(ManagedNames.Context)
             .Append('.')
             .Append(GSharpInternalNames.ManagedVersion.Bind)
             .Append('<');
-        writer.AppendCsharpTypeName(reduced.ReceiverType ?? extension.Parameters[0].Type);
-        for (var i = 0; i < reduced.Parameters.Length; i++)
+        writer.AppendCsharpTypeName(typeArgumentsList[0]);
+        for (var i = 1; i < typeArgumentsList.Length; i++)
         {
             writer.Append(", ");
-            writer.AppendCsharpTypeName(reduced.Parameters[i].Type);
-        }
-
-        if (!reduced.ReturnsVoid)
-        {
-            writer.Append(", ");
-            writer.AppendCsharpTypeName(reduced.ReturnType);
+            writer.AppendCsharpTypeName(typeArgumentsList[i]);
         }
 
         writer.Append('>');
@@ -130,8 +119,8 @@ internal sealed partial class ManagedExecutionRewriter
     private ExpressionSyntax RouteExtensionCall(InvocationExpressionSyntax node, ExpressionSyntax rewritten)
     {
         if (rewritten is not InvocationExpressionSyntax call ||
-            semanticModel.GetSymbol(node) is not IMethodSymbol { ReducedFrom: { } extension } ||
-            !IsRouted(extension))
+            semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
+            ManagedRouting.GetRoutedExtensionCall(symbol, semanticModel.Compilation) is not { } extension)
         {
             return rewritten;
         }
@@ -146,9 +135,8 @@ internal sealed partial class ManagedExecutionRewriter
     private bool TryGetRoutedMethod(ExpressionSyntax node, [NotNullWhen(true)] out IMethodSymbol? method)
     {
         method = null;
-        if (semanticModel.GetSymbol(node) is not IMethodSymbol { ReducedFrom: null } symbol ||
-            !symbol.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
-            !IsRouted(symbol))
+        if (semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
+            !ManagedRouting.IsRoutedReference(symbol, semanticModel.Compilation))
         {
             return false;
         }

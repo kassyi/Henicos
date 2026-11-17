@@ -11,12 +11,13 @@ public static class GeneratorTestRunner
 {
     /// <summary>Runs a DiagnosticAnalyzer on the given source text and returns reported diagnostics.</summary>
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source,
-        DiagnosticAnalyzer analyzer, string targetDialect = "Cuda")
+        DiagnosticAnalyzer analyzer, string targetDialect = "Cuda",
+        Dictionary<string, string>? additionalOptions = null)
     {
         var compilation = RoslynTestUtility.CreateCompilation(source);
         var analyzerOptions =
             new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty,
-                new TestAnalyzerConfigOptionsProvider(targetDialect));
+                new TestAnalyzerConfigOptionsProvider(targetDialect, additionalOptions));
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer), analyzerOptions);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }

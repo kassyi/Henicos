@@ -1,12 +1,15 @@
+using System.Collections.Immutable;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Statements;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Building;
 
 /// <summary>
 /// Builds the statements that have nodes (blocks, local declarations, expression statements, <see langword="return"/>,
-/// <see langword="if"/>); every other statement is an <see cref="IrOpaqueStatement"/> leaf.
+/// <see langword="if"/>, <see langword="while"/>); every other statement is an <see cref="IrOpaqueStatement"/> leaf.
 /// </summary>
 internal static class IrStatementBuilder
 {
@@ -19,21 +22,18 @@ internal static class IrStatementBuilder
             AddTo(statements, statement, context);
         }
 
-        var locals = ImmutableArray.CreateBuilder<IrVariable>(block.Locals.Length);
-        foreach (var local in block.Locals)
-        {
-            locals.Add(context.Variables.GetLocal(local));
-        }
-
-        return new IrBlock(statements.ToImmutable(), locals.MoveToImmutable(), context.SourceOf(block));
+        var locals = LocalsOf(block.Locals, context);
+        return new IrBlock(statements.ToImmutable(), locals, context.SourceOf(block));
     }
 
     /// <summary>Builds one statement; a declaration of several locals becomes a block of declarations.</summary>
     public static IrStatement Build(IOperation statement, IrBuildContext context)
     {
-        if (statement is IBlockOperation block)
+        if (statement is IBlockOperation { Syntax.Parent: not CheckedStatementSyntax } block)
         {
-            return BuildBlock(block, context);
+            var builtBlock = BuildBlock(block, context);
+            var blockComments = IrSpelling.CommentsBefore(statement.Syntax, statement.IsImplicit);
+            return blockComments.IsEmpty ? builtBlock : builtBlock.WithCommentsBefore(blockComments);
         }
 
         var built = ImmutableArray.CreateBuilder<IrStatement>();
@@ -49,10 +49,22 @@ internal static class IrStatementBuilder
         IrBuildContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        var first = statements.Count;
         switch (statement)
         {
+            case IBlockOperation { Syntax.Parent: CheckedStatementSyntax checkedStatement } checkedBlock:
+                // [WHY] The analyzer reports checked and unchecked statements (GSH0003), so they stay to the
+                // syntax rules.
+                // Roslyn binds the block of a checked statement, so the statement is the block's parent
+                statements.Add(new IrOpaqueStatement(checkedStatement, checkedBlock, IrOpaqueReason.UnsupportedShape,
+                    IrOpaqueSplit.Unclassified, context.SourceOf(checkedStatement, synthesized: false)));
+                break;
             case IBlockOperation block:
                 statements.Add(BuildBlock(block, context));
+                break;
+            case IWhileLoopOperation { ConditionIsTop: true, ConditionIsUntil: false, Condition: { } condition } loop:
+                statements.Add(new IrWhile(IrExpressionBuilder.BuildRead(condition, context), Build(loop.Body, context),
+                    LocalsOf(loop.Locals, context), context.SourceOf(loop)));
                 break;
             case IVariableDeclarationGroupOperation group:
                 AddDeclarations(statements, group, context);
@@ -74,6 +86,33 @@ internal static class IrStatementBuilder
                     IrOpaqueSplit.Unclassified, context.SourceOf(statement)));
                 break;
         }
+
+        var comments = IrSpelling.CommentsBefore(CommentSyntaxOf(statement), statement.IsImplicit);
+        if (statements.Count > first && !comments.IsEmpty)
+        {
+            statements[first] = statements[first].WithCommentsBefore(comments);
+        }
+    }
+
+    private static SyntaxNode CommentSyntaxOf(IOperation statement) =>
+        statement is IBlockOperation { Syntax.Parent: CheckedStatementSyntax checkedStatement }
+            ? checkedStatement
+            : statement.Syntax;
+
+    private static ImmutableArray<IrVariable> LocalsOf(ImmutableArray<ILocalSymbol> symbols, IrBuildContext context)
+    {
+        if (symbols.IsEmpty)
+        {
+            return ImmutableArray<IrVariable>.Empty;
+        }
+
+        var locals = ImmutableArray.CreateBuilder<IrVariable>(symbols.Length);
+        foreach (var local in symbols)
+        {
+            locals.Add(context.Variables.GetLocal(local));
+        }
+
+        return locals.MoveToImmutable();
     }
 
     // int a = 1, b = a; is one declaration per local, in the order written

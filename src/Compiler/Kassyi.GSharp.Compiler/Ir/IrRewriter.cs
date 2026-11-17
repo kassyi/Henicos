@@ -36,6 +36,7 @@ internal abstract class IrRewriter
         IrReturn @return => @return.Update(VisitOptional(@return.Value)),
         IrIf @if => @if.Update(VisitExpression(@if.Condition), VisitStatement(@if.Then),
             @if.Else is { } @else ? VisitStatement(@else) : null),
+        IrWhile @while => @while.Update(VisitExpression(@while.Condition), VisitStatement(@while.Body)),
         IrOpaqueStatement opaque => VisitOpaqueStatement(opaque),
         _ => throw Unknown(statement)
     };

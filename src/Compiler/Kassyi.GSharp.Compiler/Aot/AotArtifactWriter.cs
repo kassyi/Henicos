@@ -25,9 +25,11 @@ internal static class AotArtifactWriter
     /// <param name="context">The output context.</param>
     /// <param name="findImportedFullName">The full name of a shortened name that another assembly recorded, or null.</param>
     /// <param name="errorSites">The error sites recorded in the module, or null.</param>
+    /// <param name="partitionJson">The partition plan JSON string, or null.</param>
     public static void Write(in AotTarget target, GeneratorConfig config, string bodySource,
         SourceProductionContext context, Func<string, string?>? findImportedFullName = null,
-        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null)
+        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null,
+        string? partitionJson = null)
     {
         if (target.IsDesignTimeCompilation)
         {
@@ -42,7 +44,8 @@ internal static class AotArtifactWriter
             errorSites);
 
         var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = AotModuleNames.GetArtifactFileStem(target.ModuleName) + ext;
+        var stem = AotModuleNames.GetArtifactFileStem(target.ModuleName);
+        var fileName = stem + ext;
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
         if (string.IsNullOrEmpty(safeIntermediateOutputPath))
         {
@@ -52,14 +55,14 @@ internal static class AotArtifactWriter
         var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
         var gsymFilePath = filePath + ".gsym.json";
         var manifestPath = Path.Combine(safeIntermediateOutputPath, ManifestFileName);
+        var partitionPath = Path.Combine(safeIntermediateOutputPath, stem + ".partition.json");
 
         // The manifest goes last: when an earlier write fails, the manifest still names the source of the earlier build
         // instead of a source that was not written
-        WriteFiles(safeIntermediateOutputPath, context,
-            (filePath, fullSource),
-            (gsymFilePath, gsymContent),
-            (manifestPath, fileName + "\n")
-        );
+        var manifest = (manifestPath, fileName + "\n");
+        WriteFiles(safeIntermediateOutputPath, context, partitionJson is null
+            ? [(filePath, fullSource), (gsymFilePath, gsymContent), manifest]
+            : [(filePath, fullSource), (gsymFilePath, gsymContent), (partitionPath, partitionJson), manifest]);
     }
 
     /// <summary>
@@ -95,7 +98,10 @@ internal static class AotArtifactWriter
             foreach (var (path, content) in files)
             {
                 currentPath = path;
-                File.WriteAllText(path, content);
+                if (!HasSameContent(path, content))
+                {
+                    File.WriteAllText(path, content);
+                }
             }
         }
         catch (Exception ex)
@@ -110,6 +116,16 @@ internal static class AotArtifactWriter
         }
 #pragma warning restore RS1035
     }
+
+#pragma warning disable RS1035 // Do not do file IO in analyzers
+    private static bool HasSameContent(string path, string content)
+    {
+        var info = new FileInfo(path);
+        return info.Exists &&
+               info.Length == Encoding.UTF8.GetByteCount(content) &&
+               string.Equals(File.ReadAllText(path), content, StringComparison.Ordinal);
+    }
+#pragma warning restore RS1035
 
     /// <summary>Whether <paramref name="compilation"/> runs in an IDE worker, which must not overwrite the artifacts.</summary>
     public static bool IsDesignTimeCompilation(Compilation compilation)

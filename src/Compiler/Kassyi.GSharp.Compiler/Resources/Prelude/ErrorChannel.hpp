@@ -1,7 +1,8 @@
 // --- Runtime Error Channel (CPU Dialect) ---
-extern thread_local uint3 threadIdx;
-extern thread_local uint3 blockIdx;
-extern thread_local dim3 gridDim;
+inline thread_local uint3 threadIdx;
+inline thread_local uint3 blockIdx;
+inline thread_local dim3 blockDim;
+inline thread_local dim3 gridDim;
 
 // GSharpErrorCode and __gsharp_trap are declared in Types.hpp so GSharpArray<T>::CopyTo can report Argument errors.
 
@@ -324,12 +325,13 @@ inline A __gsharp_array_not_null(A&& array, S site)
     return static_cast<A&&>(array);
 }
 
-// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409): each field
-// that a getter names is checked as __gsharp_array_ref checks an array, at the call, and the struct is passed on
-template <typename T, typename S, typename... Get>
-inline T __gsharp_struct_ref(T&& value, S site, Get... get)
+// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409, #2044):
+// each check tests one field with its own site as __gsharp_array_ref checks an array, at the call, and the struct
+// is passed on
+template <typename T, typename... Check>
+inline T __gsharp_struct_ref(T&& value, Check... check)
 {
-    (static_cast<void>(__gsharp_array_ref(get(value), site)), ...);
+    (static_cast<void>(check(value)), ...);
     return static_cast<T&&>(value);
 }
 

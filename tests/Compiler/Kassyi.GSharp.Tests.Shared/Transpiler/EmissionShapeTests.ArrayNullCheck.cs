@@ -183,9 +183,9 @@ public partial class EmissionShapeTests
 #pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
         Assert.Single(Regex.Matches(kernel, Regex.Escape(ArrayRef + "__gsharp_id_0_p.__gsharp_mb_Data, ")));
 #pragma warning restore RS0030
-        var structRef = @"__gsharp_struct_ref\(__gsharp_id_\d+_(made|p), [^,]+, " +
-            @"\[\]\(const auto& s\) -> decltype\(auto\) \{ return \(s\.__gsharp_mb_Data\); \}\)";
 #pragma warning disable RS0030 // Category 5: reads the generated C++ of the kernel, which has no syntax tree
+        var structRef = @"__gsharp_struct_ref\(__gsharp_id_\d+_(made|p), " +
+            @"\[\]\(const auto& s\) \{ return " + Regex.Escape(ArrayRef) + @"s\.__gsharp_mb_Data, [^)]+\); \}\)";
         Assert.Equal(2, Regex.Matches(kernel, structRef).Count);
 #pragma warning restore RS0030
 

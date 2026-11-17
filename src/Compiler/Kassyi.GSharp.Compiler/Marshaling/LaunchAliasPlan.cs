@@ -21,13 +21,25 @@ internal readonly struct LaunchAliasPlan
     internal const byte SpanView = 16;
 
     private LaunchAliasPlan(ImmutableArray<int> candidates, ImmutableArray<byte> traits,
-        ImmutableArray<AliasRange> ranges, ImmutableArray<AliasConversion> conversions)
+        ImmutableArray<AliasRange> ranges, ImmutableArray<AliasConversion> conversions,
+        ImmutableArray<int> heldSources)
     {
         Candidates = candidates;
         Traits = traits;
         Ranges = ranges;
         Conversions = conversions;
+        HeldSources = heldSources;
     }
+
+    /// <summary>
+    /// The parameters whose struct, or elements that are structs, hold arrays in fields
+    /// (<see cref="KernelParameterShape.HeldArraysMethodName"/>), when the launcher compares those arrays by address
+    /// with its other arguments; empty otherwise.
+    /// </summary>
+    public ImmutableArray<int> HeldSources { get; }
+
+    /// <summary>Whether the launcher compares the arrays that struct arguments hold.</summary>
+    public bool HasHeldArrays => !HeldSources.IsDefaultOrEmpty;
 
     /// <summary>The parameters that the launcher compares, in parameter order; empty when it compares none.</summary>
     public ImmutableArray<int> Candidates { get; }
@@ -100,7 +112,7 @@ internal readonly struct LaunchAliasPlan
             // An out struct that holds arrays is compared as well: it keeps the caller's value when another argument
             // refers to the same variable (#1841) and is cleared otherwise, which only the comparison can tell
             copies |= IsConverted(shape, HostDialects.Cpu) || (shape.IsArray && sharing.NeedsKernelCopy(i)) ||
-                (shape.RefKind == RefKind.Out && shape.HasArrayFields);
+                shape.HeldArraysMethodName is not null || (shape.RefKind == RefKind.Out && shape.HasArrayFields);
             builder.Add(i, GetTraits(shape, copiesIn: true, copiesBack: !readOnly && !shape.IsInReference, spanView));
         }
 
@@ -126,13 +138,29 @@ internal readonly struct LaunchAliasPlan
 
     // [WHY] Without a slice or a by-reference argument, only T[] arguments can share memory, and two of them overlap
     // only when they are one array, which ArraySharingPlan already compares by identity
+    // [WHY] A slice or a by-reference argument beside a struct that holds arrays is compared with those arrays (#1849)
     private static bool HasPartialCandidate(EquatableArray<KernelParameterShape> parameters) =>
         parameters
             .AsStackEnumerable()
             .Any(static shape => IsCandidate(shape) && !shape.IsSharableArray) &&
+        (parameters
+            .AsStackEnumerable()
+            .Count(static shape => IsCandidate(shape)) > 1 ||
+         !GetHeldSources(parameters).IsEmpty);
+
+    // The parameters that hold arrays in the fields of their structs
+    // [WHY] An out struct is cleared before the kernel reads it (#1841), so its arrays are not held. A read-only
+    // container (ImmutableArray, ReadOnlySpan) is walked through a ref to each element that Unsafe.AsRef makes
+    private static ImmutableArray<int> GetHeldSources(EquatableArray<KernelParameterShape> parameters)
+    {
+        var sources = ImmutableArray.CreateBuilder<int>();
         parameters
             .AsStackEnumerable()
-            .Count(static shape => IsCandidate(shape)) > 1;
+            .Where(static shape => shape.HeldArraysMethodName is not null && shape.RefKind != RefKind.Out)
+            .Select(static shape => shape.Ordinal)
+            .AddTo(sources);
+        return sources.ToImmutable();
+    }
 
     // An array-like argument passed by value, or a scalar or struct passed by ref / out
     private static bool IsCandidate(in KernelParameterShape shape) =>
@@ -177,7 +205,8 @@ internal readonly struct LaunchAliasPlan
         }
 
         public LaunchAliasPlan ToPlan() =>
-            new(_candidates.ToImmutable(), _traits.ToImmutable(), _ranges.ToImmutable(), _conversions.ToImmutable());
+            new(_candidates.ToImmutable(), _traits.ToImmutable(), _ranges.ToImmutable(), _conversions.ToImmutable(),
+                GetHeldSources(parameters));
 
         private AliasElement GetElement(in KernelParameterShape shape)
         {

@@ -10,6 +10,7 @@ internal static class IrTestCases
 {
     public const string BuilderCases = "Ir/IrBuilderCases.cs";
     public const string OrderCases = "Transpiler/EvaluationOrderCases.cs";
+    public const string WhileCases = "Ir/IrWhileCases.cs";
     public const string NamedArgumentCases = "DefaultAndNamedArguments.cu.cs";
 
     private static readonly ConcurrentDictionary<string, Compilation> s_compilations = new(StringComparer.Ordinal);
@@ -33,6 +34,27 @@ internal static class IrTestCases
     }
 
     public static IrMethod BuildCase(string name) => Build(BuilderCases, "IrCases.Ir", name);
+
+    /// <summary>
+    /// Builds all ordinary methods with IR in <paramref name="type"/> of <paramref name="testCase"/>.
+    /// </summary>
+    public static IEnumerable<IrMethod> BuildAll(string testCase, string type)
+    {
+        var compilation = Compile(testCase);
+        var targetType = compilation.GetTypeByMetadataName(type) ??
+                         throw new InvalidOperationException($"Type '{type}' not found.");
+        foreach (var method in targetType.GetMembers().OfType<IMethodSymbol>())
+        {
+            if (method.MethodKind == MethodKind.Ordinary)
+            {
+                var built = IrBuilder.TryBuild(method, compilation, CancellationToken.None);
+                if (built is not null)
+                {
+                    yield return built;
+                }
+            }
+        }
+    }
 
     /// <summary>The initializer of the local named <c>result</c> in the body.</summary>
     public static IrExpression Result(IrMethod method) =>

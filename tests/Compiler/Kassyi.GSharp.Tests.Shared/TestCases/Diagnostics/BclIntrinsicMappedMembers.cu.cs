@@ -57,7 +57,7 @@ public static partial class BclIntrinsicMappedKernels
         output[0] = popCount(data[0]);
     }
 
-    // Mapped for nuint, but a nint or nuint value does not build in GPU code yet: GSH0003
+    // Mapped for nuint, which is a 64-bit unsigned integer in GPU code: no diagnostic
     [GpuKernel]
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void NuintOverloadKernel(ulong[] data, int[] output)

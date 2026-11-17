@@ -479,7 +479,7 @@ public static partial class MathDifferentialKernels
     }
 
     // System.Numerics.BitOperations uint/ulong mapped overloads + shift count masking + named arguments
-    // (nuint overloads emit undeclared System_UIntPtr in C++ [#983] and are verified via generator test)
+    // (the nuint overloads run in NativeIntegerDifferentialTests)
     [GpuKernel]
     public static void BitOperationsMatrixKernel(uint[] u32, ulong[] u64, int[] offsets, ulong[] r)
     {

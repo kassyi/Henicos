@@ -261,6 +261,17 @@ handle.Free();
 }
 }
 }
+public static void AliasHeldArrays_ReadOnlyWriteHolder(ref global::Kassyi.GSharp.Tests.TestCases.Diagnostics.ReadOnlyWriteHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Fixed != null)
+{
+held.Add(host.Fixed, 4, 0, false);
+}
+if (host.Free != null)
+{
+held.Add(host.Free, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string DirectKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__TestCases__Diagnostics__ReadOnlyWriteHolder__
