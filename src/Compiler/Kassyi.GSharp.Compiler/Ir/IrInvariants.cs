@@ -2,7 +2,6 @@ using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
-using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Compiler.Ir;
 

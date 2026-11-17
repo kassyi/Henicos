@@ -45,6 +45,36 @@ public static class IrLinearCases
         while (c && Warp.ShuffleSync(0xFFFFFFFFu, v, 0) > 0) { if (d) { Gpu.SyncThreads(); } }
     }
 
+    public static void TwoAndConditions(bool c, int v)
+    {
+        while (c && Warp.ShuffleSync(0xFFFFFFFFu, v, 0) > 0) { v++; }
+        while (c && Warp.ShuffleSync(0xFFFFFFFFu, v, 1) > 0) { v--; }
+    }
+
+    public static void NestedWhiles(int[] a, int n)
+    {
+        int i = 0;
+        while (i < n)
+        {
+            int j = 0;
+            while (j < n) { Gpu.SyncThreads(); j++; }
+            i++;
+        }
+    }
+
+    public static void ElseIfAfterSplit(int[] a, bool c, bool d)
+    {
+        if (c) { Gpu.SyncThreads(); }
+        else if (d) { a[0] = 1; }
+    }
+
+    public static void SplitInElseIf(int[] a, bool c, bool d)
+    {
+        if (c) { a[0] = 1; }
+        else if (d) { Gpu.SyncThreads(); }
+        else { }
+    }
+
     public static void ParenthesizedCompound(int[] a, int i, int v)
     {
         int x = (a[i] += Warp.ShuffleSync(0xFFFFFFFFu, v, 0));

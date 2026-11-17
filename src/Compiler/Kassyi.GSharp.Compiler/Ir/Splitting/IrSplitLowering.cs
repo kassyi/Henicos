@@ -106,15 +106,9 @@ internal static class IrSplitLowering
                 };
         }
 
-        foreach (var child in IrNodeChildren.Of(node))
-        {
-            if (HoldsSplit(child, trees))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return IrNodeChildren.Of(node)
+            .AsStackEnumerable()
+            .Any(trees, static (child, syntaxTrees) => HoldsSplit(child, syntaxTrees));
     }
 
     private static IrOpaqueStatement? FindFirstOpaqueStatement(IrNode node)
@@ -124,15 +118,11 @@ internal static class IrSplitLowering
             return opaque;
         }
 
-        foreach (var child in IrNodeChildren.Of(node))
-        {
-            if (FindFirstOpaqueStatement(child) is { } found)
-            {
-                return found;
-            }
-        }
-
-        return null;
+        return IrNodeChildren.Of(node)
+            .AsStackEnumerable()
+            .Select(static child => FindFirstOpaqueStatement(child))
+            .OfType<IrOpaqueStatement>()
+            .FirstOrDefault();
     }
 
     private sealed class BodyRewriter(

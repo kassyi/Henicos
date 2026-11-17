@@ -142,6 +142,104 @@ public class IrLinearizerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public void Linearize_TwoAndConditions_NumbersTheConditionIfsInLoopOrder()
+    {
+        // The condition ifs take their branch numbers in the second round, in the preorder of their loops.
+        string[] expected =
+        [
+            "__gsharp_WhileStart_0:",
+            "decl",
+            "if!goto __gsharp_BranchEnd_0",
+            "split",
+            "expr",
+            "__gsharp_BranchEnd_0:",
+            "if!goto __gsharp_WhileEnd_0",
+            "expr",
+            "__gsharp_WhileContinue_0:",
+            "goto __gsharp_WhileStart_0",
+            "__gsharp_WhileEnd_0:",
+            "__gsharp_WhileStart_1:",
+            "decl",
+            "if!goto __gsharp_BranchEnd_1",
+            "split",
+            "expr",
+            "__gsharp_BranchEnd_1:",
+            "if!goto __gsharp_WhileEnd_1",
+            "expr",
+            "__gsharp_WhileContinue_1:",
+            "goto __gsharp_WhileStart_1",
+            "__gsharp_WhileEnd_1:"
+        ];
+
+        Assert.Equal(expected, ShapesOf("TwoAndConditions"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Linearize_NestedWhiles_NumbersTheOuterLoopFirst()
+    {
+        string[] expected =
+        [
+            "decl",
+            "__gsharp_WhileStart_0:",
+            "if!goto __gsharp_WhileEnd_0",
+            "decl",
+            "__gsharp_WhileStart_1:",
+            "if!goto __gsharp_WhileEnd_1",
+            "split",
+            "expr",
+            "__gsharp_WhileContinue_1:",
+            "goto __gsharp_WhileStart_1",
+            "__gsharp_WhileEnd_1:",
+            "expr",
+            "__gsharp_WhileContinue_0:",
+            "goto __gsharp_WhileStart_0",
+            "__gsharp_WhileEnd_0:"
+        ];
+
+        Assert.Equal(expected, ShapesOf("NestedWhiles"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Linearize_ElseIfWithoutSplit_KeepsTheElseIf()
+    {
+        string[] expected =
+        [
+            "if!goto __gsharp_BranchElse_0",
+            "split",
+            "goto __gsharp_BranchEnd_0",
+            "__gsharp_BranchElse_0:",
+            "if",
+            "__gsharp_BranchEnd_0:"
+        ];
+
+        Assert.Equal(expected, ShapesOf("ElseIfAfterSplit"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Linearize_SplitInElseIfWithEmptyElse_FlattensBothIfs()
+    {
+        string[] expected =
+        [
+            "if!goto __gsharp_BranchElse_0",
+            "expr",
+            "goto __gsharp_BranchEnd_0",
+            "__gsharp_BranchElse_0:",
+            "if!goto __gsharp_BranchElse_1",
+            "split",
+            "goto __gsharp_BranchEnd_1",
+            "__gsharp_BranchElse_1:",
+            "__gsharp_BranchEnd_1:",
+            "__gsharp_BranchEnd_0:"
+        ];
+
+        Assert.Equal(expected, ShapesOf("SplitInElseIf"));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Linearize_RemovedCallAroundShuffle_KeepsTheIf()
     {
         string[] expected = ["if"];

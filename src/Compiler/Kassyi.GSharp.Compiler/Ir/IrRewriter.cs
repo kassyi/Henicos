@@ -42,8 +42,13 @@ internal abstract class IrRewriter
         IrLabel or IrGoto or IrSuspend or IrStateMachineExit => statement,
         IrConditionalGoto conditionalGoto => conditionalGoto.Update(VisitExpression(conditionalGoto.Condition)),
         IrResumeCall resume => resume.Update(
-            (IrCall)VisitExpression(resume.Call),
-            resume.ResultTarget is { } target ? (IrVariableReference)VisitExpression(target) : null),
+            VisitExpression(resume.Call) as IrCall ??
+            throw new InvalidOperationException("A rewriter replaced the call of a resuming call with another node."),
+            resume.ResultTarget is { } target
+                ? VisitExpression(target) as IrVariableReference ??
+                  throw new InvalidOperationException(
+                      "A rewriter replaced the result target of a resuming call with another node.")
+                : null),
         IrStateJump jump => jump.Update(VisitOptional(jump.Condition)),
         _ => throw Unknown(statement)
     };
