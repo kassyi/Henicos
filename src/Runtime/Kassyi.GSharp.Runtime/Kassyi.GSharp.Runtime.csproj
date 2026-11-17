@@ -35,6 +35,9 @@
     <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyStatus.cs" Link="Cryptography\Ed25519PublicKeyStatus.cs" />
+    <!-- One table of the exception types with an error code of their own, read by the compiler and the runtime. -->
+    <Compile Include="..\..\Shared\Errors\ThrowableException.cs" Link="Errors\ThrowableException.cs" />
+    <Compile Include="..\..\Shared\Errors\ThrowableExceptions.cs" Link="Errors\ThrowableExceptions.cs" />
   </ItemGroup>
 
   <ItemGroup>

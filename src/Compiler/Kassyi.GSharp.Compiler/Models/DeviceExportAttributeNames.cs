@@ -14,6 +14,9 @@ internal static class DeviceExportAttributeNames
     /// <summary>The name of <see cref="DeviceExportRecord.InternalError"/>.</summary>
     public const string InternalError = "InternalError";
 
+    /// <summary>The name of <see cref="DeviceExportRecord.ErrorSites"/>.</summary>
+    public const string ErrorSites = "ErrorSites";
+
     /// <summary>The names of the CUDA text of a record (<see cref="DeviceExportRecord.Cuda"/>).</summary>
     public static readonly DialectNames Cuda = new(
         References: "CudaReferences",
