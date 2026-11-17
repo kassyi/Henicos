@@ -45,5 +45,11 @@ public enum GSharpErrorCode
     /// Corresponds to <see cref="ArgumentNullException"/>: a null destination array of <c>CopyTo</c> on an
     /// <c>ArraySegment&lt;T&gt;</c> or <c>ImmutableArray&lt;T&gt;</c>.
     /// </summary>
-    ArgumentNull = 11
+    ArgumentNull = 11,
+
+    /// <summary>
+    /// Corresponds to a <c>throw</c> of an exception type that no other code names: the error site holds the type
+    /// (<see cref="GSharpErrorSite.ExceptionType"/>).
+    /// </summary>
+    Throw = 12
 }

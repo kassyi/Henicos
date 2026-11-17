@@ -6,10 +6,14 @@ namespace Kassyi.GSharp.Compiler.Aot;
 /// <param name="Source">The structs (definitions, then <c>Dispose</c> definitions), then the functions (declarations, then definitions).</param>
 /// <param name="Includes">The <c>#include</c> targets of the imported text.</param>
 /// <param name="FullNames">The full name of each imported name that its assembly shortened, for the symbol file.</param>
+/// <param name="ErrorSites">
+/// The error sites of the <c>throw</c> statements of the imported functions, which the module registers with its kernels.
+/// </param>
 internal readonly record struct ImportedDeviceCode(
     string Source,
     EquatableArray<string> Includes,
-    EquatableArray<(string Name, string FullName)> FullNames)
+    EquatableArray<(string Name, string FullName)> FullNames,
+    EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     /// <summary>The full name of <paramref name="name"/>, when it is an imported name that was shortened.</summary>
     public string? FindFullName(string name)

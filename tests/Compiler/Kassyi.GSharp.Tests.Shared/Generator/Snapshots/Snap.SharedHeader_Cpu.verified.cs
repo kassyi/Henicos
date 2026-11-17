@@ -126,7 +126,8 @@ DivideByZero = 7,
 Overflow = 8,
 DataRace = 9,
 SwitchExpression = 10,
-ArgumentNull = 11
+ArgumentNull = 11,
+Throw = 12
 };
 // A failed C# check: records the error and ends the thread's kernel step (ErrorChannel.hpp). [[noreturn]] belongs on
 // the first declaration, so that every check below already knows that the call does not return. inline and the cold

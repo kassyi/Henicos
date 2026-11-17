@@ -76,7 +76,7 @@ namespace DeviceExportStructsCase
         }
     }
 
-    // Its Dispose cannot be emitted (a throw): Holder's record fails, Cell<int>'s does not
+    // Its Dispose cannot be emitted (typeof has no device form): Holder's record fails, Cell<int>'s does not
     public struct Holder : IDisposable
     {
         public Cell<int> C;
@@ -88,7 +88,7 @@ namespace DeviceExportStructsCase
 
         public void Dispose()
         {
-            throw new InvalidOperationException();
+            var type = typeof(int);
         }
     }
 

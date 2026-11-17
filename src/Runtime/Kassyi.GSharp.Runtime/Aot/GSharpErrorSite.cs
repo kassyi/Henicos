@@ -15,4 +15,5 @@ public readonly record struct GSharpErrorSite(
     int Line,
     int Column,
     string MemberName,
-    string DefaultMessage);
+    string DefaultMessage,
+    string ExceptionType = "");
