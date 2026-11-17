@@ -172,7 +172,7 @@ __gsharp_switch_1_state_9:
 {
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,4);
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,500);
-auto __gsharp_id_6_LocalStep = [&]() {
+auto __gsharp_id_6_LocalStep = [&, __gsharp_ctx]() {
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,11);
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,22);
 }
