@@ -19,8 +19,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <see cref="ThrowableExceptions"/> lists maps to its <c>GSharpErrorCode</c>; any other type is recorded by its CLR
 /// name in the error site (<c>GSharpErrorCode::Throw</c>), which the host builds the exception from, so a type the host
 /// cannot build (abstract, no public constructor of <c>(string, Exception)</c>, <c>(string)</c> or <c>()</c>) is GSH0003.
-/// A device function has no error site table: it keeps the message and the place in the message, and a type that needs
-/// the table is GSH0003 there. A throw inside the scope of a <c>using</c> disposes the guards on CUDA
+/// A device function has no error site table for its other checks, but its throws register their own sites
+/// (<see cref="Emitter.ThrowSites"/>), which travel with the function to the module that places it. Without any table
+/// (the analyzer's pass) the message and the place are written in the text. A throw inside the scope of a <c>using</c> disposes the guards on CUDA
 /// (<see cref="UnwindingTrap"/>).
 /// </para>
 /// </remarks>
@@ -42,10 +43,6 @@ internal static class ThrowTranspiler
     /// <summary>The GSH0003 text for an exception type that the host cannot build.</summary>
     public const string ThrowTypeNotBuildable =
         "exception type that the host cannot build (it must be a non-abstract type with a public constructor of (string, Exception), (string) or ())";
-
-    /// <summary>The GSH0003 text for an exception type with no code of its own thrown in a device function.</summary>
-    public const string ThrowTypeInDeviceFunction =
-        "throw of an exception type without an error code in a device function (it has no error site table to name the type)";
 
     /// <summary>How a <c>throw</c> is written, decided before anything is written (Plan / Emit).</summary>
     /// <param name="ErrorCode">The <c>GSharpErrorCode</c> member.</param>
@@ -145,7 +142,7 @@ internal static class ThrowTranspiler
     private static void AppendTrap(SyntaxNode node, ThrowPlan plan, ref TranspileContext context)
     {
         ErrorSiteArgument site;
-        if (context.Emitter.ErrorSites is { } table)
+        if ((context.Emitter.ErrorSites ?? context.Emitter.ThrowSites) is { } table)
         {
             site = ErrorSiteArgument.FromSiteId(table.RegisterThrow(
                 node, context.Query.SemanticModel, context.Emitter.CurrentMemberName ?? "", plan.Thrown));
@@ -186,10 +183,6 @@ internal static class ThrowTranspiler
         else if (!IsHostBuildable(type) || !TryClrName(type, out clrName))
         {
             return Reject(ref context, node, ThrowTypeNotBuildable);
-        }
-        else if (context.Emitter.IsDeviceFunction)
-        {
-            return Reject(ref context, node, ThrowTypeInDeviceFunction);
         }
 
         var message = "";

@@ -60,9 +60,13 @@ public static class MethodTranspiler
     /// one (a device code export records them apart from the function). The returned text is the same either way.
     /// </param>
     /// <param name="errorSites">The error site table to register runtime trap sites, or null.</param>
+    /// <param name="throwSites">
+    /// The table for the <c>throw</c> statements of a device function, which has no <paramref name="errorSites"/>, or
+    /// null.
+    /// </param>
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes, StructSourceCollector? structSources = null,
-        ErrorSiteTable? errorSites = null)
+        ErrorSiteTable? errorSites = null, ErrorSiteTable? throwSites = null)
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
@@ -80,7 +84,7 @@ public static class MethodTranspiler
 
         ref var context = ref session.Context;
         context.Emitter.ErrorSites = errorSites;
-        context.Emitter.IsDeviceFunction = plan.Kind != MethodEmissionKind.Kernel;
+        context.Emitter.ThrowSites = throwSites;
         context.Emitter.CurrentMemberName = plan.Symbol?.Name;
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);

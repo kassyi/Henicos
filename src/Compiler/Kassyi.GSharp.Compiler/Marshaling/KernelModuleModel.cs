@@ -83,7 +83,12 @@ internal readonly record struct KernelModuleModel(
     /// <param name="emitsSource">
     /// Whether <c>GSharpEmitSource</c> adds a <c>{key}_Source</c> constant per kernel.
     /// </param>
-    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels, bool emitsSource)
+    /// <param name="deviceSites">
+    /// The error sites of the <c>throw</c> statements of the device functions of the module (its own and the imported
+    /// ones): every kernel registers them, since any kernel may call the functions.
+    /// </param>
+    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels, bool emitsSource,
+        EquatableArray<ErrorSiteEntry> deviceSites = default)
     {
         var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
         var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -104,8 +109,9 @@ internal readonly record struct KernelModuleModel(
         var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
         classOrder
             .AsStackEnumerable()
-            .Select((kernelsByClass, emitsSource), static (header, state) =>
-                KernelClassModel.Create(header, state.kernelsByClass[header.HintName], state.emitsSource)
+            .Select((kernelsByClass, emitsSource, deviceSites), static (header, state) =>
+                KernelClassModel.Create(header, state.kernelsByClass[header.HintName], state.emitsSource,
+                    state.deviceSites)
             )
             .AddTo(classes);
         var classModels = classes.MoveToImmutable();
