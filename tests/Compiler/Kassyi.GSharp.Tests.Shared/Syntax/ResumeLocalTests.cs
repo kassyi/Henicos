@@ -113,4 +113,14 @@ public class ResumeLocalTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void StackAllocPointer_CapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Lambda_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LambdaCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalFunction_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LocalFunctionCapturedInt(s_runNative);
 }

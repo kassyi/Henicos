@@ -128,8 +128,8 @@ internal sealed class LocalFunctionOrder
         WriteGroup(_statements, group, ref context);
     }
 
-    // auto <impl> = [&](auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
-    // auto <name> = [&](<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
+    // auto <impl> = <capture>(auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
+    // auto <name> = <capture>(<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
     private static void WriteGroup(IReadOnlyList<StatementSyntax> statements, IReadOnlyList<int> group,
         ref TranspileContext context)
     {
@@ -145,6 +145,7 @@ internal sealed class LocalFunctionOrder
         }
     }
 
+    // auto <impl> = <capture>(auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
     private static void WriteImplementation(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
         IReadOnlyList<StatementSyntax> statements, ref TranspileContext context)
     {
@@ -153,7 +154,10 @@ internal sealed class LocalFunctionOrder
         var returnType = method?.ReturnType;
         writer.Append("auto ");
         AppendGroupName(function, useSelves: false, ref context);
-        writer.Append(" = [&](");
+        writer.Append(" = ");
+        var plan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
+        LambdaCapture.Append(writer, plan);
+        writer.Append('(');
         foreach (var other in group)
         {
             writer.Append("auto& ");
@@ -180,6 +184,7 @@ internal sealed class LocalFunctionOrder
         writer.AppendLine(";");
     }
 
+    // auto <name> = <capture>(<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
     private static void WriteForwarder(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
         IReadOnlyList<StatementSyntax> statements, bool useSelves, ref TranspileContext context)
     {
@@ -188,7 +193,10 @@ internal sealed class LocalFunctionOrder
         var returnType = method?.ReturnType;
         writer.Append("auto ");
         CppNameResolver.AppendDeclaredName(function, function.Identifier, ref context);
-        writer.Append(" = [&](");
+        writer.Append(" = ");
+        var plan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
+        LambdaCapture.Append(writer, plan);
+        writer.Append('(');
         AppendParameters(function, ref context);
         writer.Append(") -> ");
         RefLocals.AppendReturnType(method, ref context);

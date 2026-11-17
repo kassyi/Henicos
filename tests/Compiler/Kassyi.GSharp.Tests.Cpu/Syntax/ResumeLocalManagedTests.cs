@@ -114,6 +114,16 @@ public class ResumeLocalManagedTests : TranspilerTestBase
     public void StackAllocPointer_ManagedCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Lambda_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LambdaCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LocalFunctionCapturedInt(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

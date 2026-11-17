@@ -5018,7 +5018,7 @@ if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_2_tid, 1155833972u)=7;
 }
-auto __gsharp_id_4_Add = [&]() {
+auto __gsharp_id_4_Add = [&, __gsharp_ctx]() {
 if(__gsharp_ctx->__gsharp_id_2_tid>1000)
 {
 return;

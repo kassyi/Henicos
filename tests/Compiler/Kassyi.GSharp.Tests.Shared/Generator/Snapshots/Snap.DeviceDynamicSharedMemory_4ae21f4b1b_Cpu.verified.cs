@@ -5180,7 +5180,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_id_4_CallPlainHelper = [&](int __gsharp_id_5_val) {
+auto __gsharp_id_4_CallPlainHelper = [&, __gsharp_ctx](int __gsharp_id_5_val) {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_ctx->__gsharp_id_1_n,__gsharp_id_5_val);
 }
 ;

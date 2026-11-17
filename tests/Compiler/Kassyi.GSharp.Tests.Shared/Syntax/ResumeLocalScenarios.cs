@@ -191,4 +191,22 @@ internal static class ResumeLocalScenarios
 
         Assert.Equal(new[] { 106, 105, 103, 100 }, result);
     }
+
+    public static void LambdaCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchLambdaCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
+
+    public static void LocalFunctionCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchLocalFunctionCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
 }

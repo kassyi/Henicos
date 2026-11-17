@@ -258,4 +258,27 @@ public static partial class ResumeLocalKernels
         Gpu.SyncThreads();
         result[tid] += 100;
     }
+
+    // A lambda that captures a local variable across a barrier: result[t] = t + 1
+    [GpuKernel]
+    public static void LambdaCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        Func<int> f = () => v;
+        Gpu.SyncThreads();
+        result[tid] = f();
+    }
+
+    // A local function that captures a local variable across a barrier: result[t] = t + 1
+    [GpuKernel]
+    public static void LocalFunctionCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int Get() => v;
+        Func<int> f = Get;
+        Gpu.SyncThreads();
+        result[tid] = f();
+    }
 }
