@@ -160,6 +160,7 @@ public class GenericCopiesTests
         Assert.False(copy.IsFaithful);
         Assert.DoesNotContain(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
         Assert.Contains(copy.Findings, f => f.Reason.Contains("narrow", StringComparison.Ordinal));
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("converts to", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -277,6 +278,51 @@ public class GenericCopiesTests
         Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_WrongShiftMaskWithPlanPresent_RejectsTheCopy()
+    {
+        var problems = CheckMutatedCopy(
+            "Shift",
+            "System.Byte",
+            copy =>
+            {
+                var seven = copy.DescendantTokens()
+                    .Single(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 7);
+                return copy.ReplaceToken(seven, SyntaxFactory.Literal(31));
+            });
+
+        Assert.NotEmpty(problems);
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("does not compile", StringComparison.Ordinal));
+        Assert.Contains(problems, p => p.Reason.Contains("narrow the shift", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Negate", "System.UInt32", "negate in the type")]
+    [InlineData("Negate", "System.SByte", "narrow the negation")]
+    public void Check_WrongNegationConstantWithPlanPresent_RejectsTheCopy(
+        string method,
+        string typeArgument,
+        string expectedReason)
+    {
+        var problems = CheckMutatedCopy(
+            method,
+            typeArgument,
+            copy =>
+            {
+                var zero = copy.DescendantTokens()
+                    .Single(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 0);
+                return copy.ReplaceToken(zero, SyntaxFactory.Literal(1));
+            });
+
+        Assert.NotEmpty(problems);
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("does not compile", StringComparison.Ordinal));
+        Assert.Contains(problems, p => p.Reason.Contains(expectedReason, StringComparison.Ordinal));
+    }
+
     [Theory]
     [Scenario(TestScenario.SadPath)]
     [InlineData("MaxValue", "System.Int32", "MaxValue", "MinValue")]
@@ -360,6 +406,7 @@ public class GenericCopiesTests
     [InlineData("MinMagnitude", "System.Char")]
     [InlineData("IsNaN", "System.Int32")]
     [InlineData("IsNaN", "System.Double")]
+    [InlineData("IsNaN", "System.Decimal")]
     [InlineData("Sign", "System.Char")]
     [InlineData("Max", "System.Char")]
     [InlineData("Min", "System.Char")]
@@ -625,6 +672,7 @@ public class GenericCopiesTests
         { "Pi", "System.Single" },
         { "Pi", "System.Double" },
         { "IsNaN", "System.Single" },
+        { "IsNaN", "System.Decimal" },
         { "Max", "System.Double" },
         { "Min", "System.Single" },
         { "OneOverZero", "System.Decimal" },

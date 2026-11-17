@@ -209,7 +209,8 @@ internal sealed class InstanceSymbolMap
         }
     }
 
-    // T.Abs and T.MaxMagnitude of an unsigned type, T.IsNaN of an integer type, T.Max, T.Min and T.Sign of char
+    // T.Abs and T.MaxMagnitude of an unsigned type, T.IsNaN of an integer type or decimal,
+    // T.Max, T.Min and T.Sign of char
     private static ConstrainedMember? ResolvePrivateMethod(string name, ITypeSymbol closed)
     {
         var isChar = closed.SpecialType == SpecialType.System_Char;
@@ -220,7 +221,8 @@ internal sealed class InstanceSymbolMap
                 new ConstrainedMember.MathCall(closed, "Max", isChar ? closed : null),
             "MinMagnitude" when BuiltinNumerics.IsUnsigned(closed) =>
                 new ConstrainedMember.MathCall(closed, "Min", isChar ? closed : null),
-            "IsNaN" when BuiltinNumerics.IsIntegral(closed) => new ConstrainedMember.FalseCall(closed),
+            "IsNaN" when BuiltinNumerics.IsIntegral(closed) || closed.SpecialType == SpecialType.System_Decimal =>
+                new ConstrainedMember.FalseCall(closed),
             "Max" when isChar => new ConstrainedMember.MathCall(closed, "Max", closed),
             "Min" when isChar => new ConstrainedMember.MathCall(closed, "Min", closed),
             "Sign" when isChar => new ConstrainedMember.MathCall(closed, "Sign", null),
