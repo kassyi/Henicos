@@ -13,8 +13,8 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// on CUDA: nothing after the throwing statement runs, the arguments of the exception are evaluated first, and the
 /// thread that throws is the only one that stops. The plain C# method of each kernel is the oracle for the type, the
 /// <c>ParamName</c>, the message (a prefix of it, since the CPU paths and CUDA append the place and the thread), the
-/// outputs and, for a <c>using</c>, the <c>Dispose</c> log. A throw in a device function has no error site on CUDA, so
-/// there only the type is compared (the place, the message and the parameter name are not carried).
+/// outputs and, for a <c>using</c>, the <c>Dispose</c> log. A throw in a device function carries its place, message and
+/// exception type as a throw in a kernel does (its error sites travel with the function to the kernels that call it).
 /// </summary>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Compiler)]
@@ -25,17 +25,15 @@ public class ThrowTests
     private const string KernelFile = "ThrowKernels.cu.cs";
 
     /// <summary>A form of <c>throw</c>: the kernel as plain C# and as a launch, and what is compared.</summary>
-    /// <param name="Kernel">The kernel's name, which the message of the native and CUDA paths names.</param>
+    /// <param name="Kernel">The name of the kernel or device function that holds the throw, which the message of the native and CUDA paths names.</param>
     /// <param name="Oracle">Runs the kernel as C#.</param>
     /// <param name="Launch">Launches the kernel.</param>
     /// <param name="CompareMessage">Whether the message of the throw is a text that the paths carry.</param>
-    /// <param name="InDeviceFunction">Whether the throw is in a device function, which has no error site on CUDA.</param>
     private sealed record ThrowCase(
         string Kernel,
         Action<int[], int> Oracle,
         Action<int[], int> Launch,
-        bool CompareMessage = true,
-        bool InDeviceFunction = false);
+        bool CompareMessage = true);
 
     private static readonly Dictionary<string, ThrowCase> s_forms = new()
     {
@@ -68,9 +66,9 @@ public class ThrowTests
         ["Arguments"] = new("ArgumentsKernel", ThrowKernels.ArgumentsKernel,
             (o, f) => ThrowKernels.LaunchArgumentsKernel(o, f)),
         ["ConditionalInDeviceFunction"] = new("Checked", ThrowKernels.ConditionalInDeviceFunctionKernel,
-            (o, f) => ThrowKernels.LaunchConditionalInDeviceFunctionKernel(o, f), InDeviceFunction: true),
+            (o, f) => ThrowKernels.LaunchConditionalInDeviceFunctionKernel(o, f)),
         ["ArrowBody"] = new("Always", ThrowKernels.ArrowBodyKernel,
-            (o, f) => ThrowKernels.LaunchArrowBodyKernel(o, f), InDeviceFunction: true),
+            (o, f) => ThrowKernels.LaunchArrowBodyKernel(o, f)),
         ["SwitchArm"] = new("SwitchArmKernel", ThrowKernels.SwitchArmKernel,
             (o, f) => ThrowKernels.LaunchSwitchArmKernel(o, f)),
         ["CoalesceValue"] = new("CoalesceValueKernel", ThrowKernels.CoalesceValueKernel,
@@ -79,6 +77,15 @@ public class ThrowTests
             (o, f) => ThrowKernels.LaunchCoalesceReferenceKernel(o, f)),
         ["Loop"] = new("LoopKernel", ThrowKernels.LoopKernel, (o, f) => ThrowKernels.LaunchLoopKernel(o, f)),
         // Gpu.SyncThreads needs a thread context, so the oracle is the same body without the barrier
+        ["DeviceLiteral"] = new("ThrowsLiteral", ThrowKernels.DeviceLiteralKernel,
+            (o, f) => ThrowKernels.LaunchDeviceLiteralKernel(o, f)),
+        ["DeviceUserType"] = new("ThrowsUser", ThrowKernels.DeviceUserTypeKernel,
+            (o, f) => ThrowKernels.LaunchDeviceUserTypeKernel(o, f)),
+        ["Deep"] = new("Inner", ThrowKernels.DeepKernel, (o, f) => ThrowKernels.LaunchDeepKernel(o, f)),
+        ["SharedFirst"] = new("Shared", ThrowKernels.SharedFirstKernel,
+            (o, f) => ThrowKernels.LaunchSharedFirstKernel(o, f)),
+        ["SharedSecond"] = new("Shared", ThrowKernels.SharedSecondKernel,
+            (o, f) => ThrowKernels.LaunchSharedSecondKernel(o, f)),
         ["Suspending"] = new("Suspending", (o, f) =>
             {
                 o[0] = 1;
@@ -90,7 +97,7 @@ public class ThrowTests
                 o[1] = 4;
                 o[2] = 9;
             },
-            (o, f) => ThrowKernels.LaunchSuspendingKernel(o, f), InDeviceFunction: true)
+            (o, f) => ThrowKernels.LaunchSuspendingKernel(o, f))
     };
 
     [SkippableTheory]
@@ -115,6 +122,11 @@ public class ThrowTests
     [InlineData("CoalesceValue")]
     [InlineData("CoalesceReference")]
     [InlineData("Loop")]
+    [InlineData("DeviceLiteral")]
+    [InlineData("DeviceUserType")]
+    [InlineData("Deep")]
+    [InlineData("SharedFirst")]
+    [InlineData("SharedSecond")]
     [InlineData("Suspending")]
     public void Form_FailOrNot_MatchesCSharpOnEveryPath(string form)
     {
@@ -136,6 +148,29 @@ public class ThrowTests
                 Assert.True(expectedOuts.SequenceEqual(outs),
                     $"{path.Name} {form} fail={fail}: expected outs [{string.Join(", ", expectedOuts)}], got [{string.Join(", ", outs)}]");
             }
+        }
+    }
+
+    // One device function with two throws, called from two kernels: each launch reports its own throw, at its own line
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void SharedDeviceFunction_CalledFromTwoKernels_ReportsDistinctPlaces()
+    {
+        var selected = DiffPaths.Available.Where(p => p.Path != DiffPath.Managed).ToArray();
+        Skip.If(selected.Length == 0, "No path of this build reports a place");
+        foreach (var path in selected)
+        {
+            path.Preflight?.Invoke();
+            var first = Record.Exception(() => path.Run(() => ThrowKernels.LaunchSharedFirstKernel(new int[4], 1)));
+            var second = Record.Exception(() => path.Run(() => ThrowKernels.LaunchSharedSecondKernel(new int[4], 1)));
+            Assert.NotNull(first);
+            Assert.NotNull(second);
+            var lines = new[] { PlaceLine(first.Message), PlaceLine(second.Message) };
+            Assert.True(lines[0] != lines[1], $"{path.Name}: both launches name line {lines[0]}");
+            Assert.Contains("shared one", first.Message, StringComparison.Ordinal);
+            Assert.Contains("shared two", second.Message, StringComparison.Ordinal);
+            Assert.Contains("\"shared one\"", ReadKernelLine(lines[0]), StringComparison.Ordinal);
+            Assert.Contains("\"shared two\"", ReadKernelLine(lines[1]), StringComparison.Ordinal);
         }
     }
 
@@ -206,7 +241,7 @@ public class ThrowTests
         DiffPathRunner[] selected)
     {
         Skip.If(selected.Length == 0, "No path of this build runs this launch");
-        var thrownCase = new ThrowCase(form + "Kernel", (_, _) => { }, (_, _) => { }, InDeviceFunction: form == "UsingCallee");
+        var thrownCase = new ThrowCase(form == "UsingCallee" ? "Throwing" : form + "Kernel", (_, _) => { }, (_, _) => { });
         foreach (var fail in new[] { 0, 1, 3 })
         {
             var expectedLog = new int[32];
@@ -256,12 +291,6 @@ public class ThrowTests
             return;
         }
 
-        var carriesDetail = !(thrownCase.InDeviceFunction && path.Path == DiffPath.Cuda);
-        if (!carriesDetail)
-        {
-            return;
-        }
-
         if (expected is ArgumentException expectedArgument)
         {
             Assert.Equal(expectedArgument.ParamName, ((ArgumentException)thrown).ParamName);
@@ -299,21 +328,26 @@ public class ThrowTests
         return at < 0 ? message : message.AsSpan(0, at).ToString();
     }
 
+    // The line of the place that a message names: ThrowKernels.cu.cs(<line>,<column>)
+    private static int PlaceLine(string message)
+    {
+        var start = message.IndexOf(KernelFile + "(", StringComparison.Ordinal);
+        Assert.True(start >= 0, $"the message names no place: {message}");
+        var numbers = message.AsSpan(start + KernelFile.Length + 1);
+        return int.Parse(numbers[..numbers.IndexOf(',')].ToString());
+    }
+
+    private static string ReadKernelLine(int line) =>
+        File.ReadLines(RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Core", KernelFile))
+            .ElementAt(line - 1);
+
     // The message names the file and the line of a throw: a kernel's statement, or the throw of a device function
     private static void AssertPlace(string label, ThrowCase thrownCase, string message)
     {
-        if (!thrownCase.InDeviceFunction)
-        {
-            Assert.Contains($"in {thrownCase.Kernel} at {KernelFile}(", message, StringComparison.Ordinal);
-        }
+        Assert.Contains($"in {thrownCase.Kernel} at {KernelFile}(", message, StringComparison.Ordinal);
 
-        var start = message.IndexOf(KernelFile + "(", StringComparison.Ordinal);
-        Assert.True(start >= 0, $"{label}: the message names no place: {message}");
-        var numbers = message.AsSpan(start + KernelFile.Length + 1);
-        var line = int.Parse(numbers[..numbers.IndexOf(',')].ToString());
-        var text = File.ReadLines(RepositoryPaths.Combine(
-                "tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Core", KernelFile))
-            .ElementAt(line - 1);
+        var line = PlaceLine(message);
+        var text = ReadKernelLine(line);
         Assert.True(text.Contains("throw", StringComparison.Ordinal) || text.Contains("=>", StringComparison.Ordinal),
             $"{label}: line {line} of {KernelFile} is not the throw: {text}");
     }

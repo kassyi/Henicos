@@ -20,15 +20,15 @@ public class ThrowDiagnosticsTests
         .Distinct()
         .ToList();
 
-    // throw ex; (line 35)
+    // throw ex; (line 27)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
     public async Task ThrowOfAVariable_ReportsGsh0003AtTheThrow(string dialect) =>
-        Assert.Equal([(35, 13, 35, 22)], await RangesAsync(dialect, ThrowTranspiler.ThrowOfExistingException));
+        Assert.Equal([(27, 13, 27, 22)], await RangesAsync(dialect, ThrowTranspiler.ThrowOfExistingException));
 
-    // throw; is only valid inside a catch clause, which is rejected as a whole at its try keyword (GSH0038, line 45)
+    // throw; is only valid inside a catch clause, which is rejected as a whole at its try keyword (GSH0038, line 37)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -38,7 +38,7 @@ public class ThrowDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         Assert.Equal(
-            [(45, 9, 45, 12)],
+            [(37, 9, 37, 12)],
             diagnostics.Ranges(GSharpDiagnostics.ExceptionHandlingInKernelProhibited.Id)
                 .Select(static r => (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
                 .Distinct());
@@ -49,19 +49,12 @@ public class ThrowDiagnosticsTests
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
     public async Task NonConstantMessage_ReportsGsh0003AtTheArgument(string dialect) =>
-        Assert.Equal([(61, 49, 61, 55)], await RangesAsync(dialect, ThrowTranspiler.ThrowTextNotConstant));
+        Assert.Equal([(53, 49, 53, 55)], await RangesAsync(dialect, ThrowTranspiler.ThrowTextNotConstant));
 
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
     public async Task TypeTheHostCannotBuild_ReportsGsh0003AtTheThrow(string dialect) =>
-        Assert.Equal([(71, 13, 71, 48)], await RangesAsync(dialect, ThrowTranspiler.ThrowTypeNotBuildable));
-
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task UserTypeInADeviceFunction_ReportsGsh0003AtTheThrowExpression(string dialect) =>
-        Assert.Equal([(76, 72, 76, 112)], await RangesAsync(dialect, ThrowTranspiler.ThrowTypeInDeviceFunction));
+        Assert.Equal([(63, 13, 63, 48)], await RangesAsync(dialect, ThrowTranspiler.ThrowTypeNotBuildable));
 }

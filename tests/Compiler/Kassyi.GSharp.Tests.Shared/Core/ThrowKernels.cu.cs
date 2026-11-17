@@ -327,6 +327,105 @@ public static partial class ThrowKernels
         outs[2] = 9;
     }
 
+    // A throw with a literal message and a parameter name in a device function
+    [GpuDeviceFunction]
+    public static int ThrowsLiteral(int v)
+    {
+        if (v != 0)
+        {
+            throw new ArgumentException("device message", "dp");
+        }
+
+        return 6;
+    }
+
+    [GpuKernel]
+    public static void DeviceLiteralKernel(int[] outs, int fail)
+    {
+        outs[0] = 1;
+        outs[1] = ThrowsLiteral(fail);
+        outs[2] = 9;
+    }
+
+    // A user-defined exception type thrown in a device function
+    [GpuDeviceFunction]
+    public static int ThrowsUser(int v)
+    {
+        if (v != 0)
+        {
+            throw new ThrowUserException("device user type");
+        }
+
+        return 6;
+    }
+
+    [GpuKernel]
+    public static void DeviceUserTypeKernel(int[] outs, int fail)
+    {
+        outs[0] = 1;
+        outs[1] = ThrowsUser(fail);
+        outs[2] = 9;
+    }
+
+    // A throw two device function calls deep: the place is the throw, not a call
+    [GpuDeviceFunction]
+    public static int Inner(int v)
+    {
+        if (v != 0)
+        {
+            throw new InvalidOperationException("inner");
+        }
+
+        return 5;
+    }
+
+    [GpuDeviceFunction]
+    public static int Middle(int v) => Inner(v) + 1;
+
+    [GpuDeviceFunction]
+    public static int Outer(int v) => Middle(v) + 1;
+
+    [GpuKernel]
+    public static void DeepKernel(int[] outs, int fail)
+    {
+        outs[0] = 1;
+        outs[1] = Outer(fail);
+        outs[2] = 9;
+    }
+
+    // One device function with two throws, called from two kernels: each reports the throw it reached
+    [GpuDeviceFunction]
+    public static int Shared(int which)
+    {
+        if (which == 1)
+        {
+            throw new InvalidOperationException("shared one");
+        }
+
+        if (which == 2)
+        {
+            throw new InvalidOperationException("shared two");
+        }
+
+        return 3;
+    }
+
+    [GpuKernel]
+    public static void SharedFirstKernel(int[] outs, int fail)
+    {
+        outs[0] = 1;
+        outs[1] = Shared(fail == 0 ? 0 : 1);
+        outs[2] = 9;
+    }
+
+    [GpuKernel]
+    public static void SharedSecondKernel(int[] outs, int fail)
+    {
+        outs[0] = 1;
+        outs[1] = Shared(fail == 0 ? 0 : 2);
+        outs[2] = 9;
+    }
+
     // Thread 0 of the launch throws between its two writes; every other thread writes both
     [GpuKernel]
     public static void OtherThreadsKernel(int[] outs, int fail)
