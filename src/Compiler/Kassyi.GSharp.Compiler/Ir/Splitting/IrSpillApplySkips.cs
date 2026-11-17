@@ -14,13 +14,15 @@ internal static class IrSpillApplySkips
     /// <see langword="while"/> loop; otherwise the first reason in the order of the steps); none when it is
     /// rewritten.
     /// </summary>
-    public static IrSpillApplySkip Of(IrStatementSpillPlan plan)
-    {
-        if (plan.Statement is IrWhile)
-        {
-            return IrSpillApplySkip.LoopCondition;
-        }
+    public static IrSpillApplySkip Of(IrStatementSpillPlan plan) =>
+        plan.Statement is IrWhile ? IrSpillApplySkip.LoopCondition : OfSteps(plan);
 
+    /// <summary>
+    /// Whether to skip the steps of <paramref name="plan"/> in their order without treating a <see langword="while"/>
+    /// loop condition as a skip.
+    /// </summary>
+    public static IrSpillApplySkip OfSteps(IrStatementSpillPlan plan)
+    {
         var receivers = ExtensionReceiversOfSplits(plan.Statement);
         return Of(plan.Steps, receivers);
     }
