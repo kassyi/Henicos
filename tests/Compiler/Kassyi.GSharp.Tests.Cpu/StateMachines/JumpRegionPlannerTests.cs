@@ -202,4 +202,24 @@ public class JumpRegionPlannerTests
         Assert.Single(plan.Regions);
         Assert.Empty(plan.Rejected);
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ForwardGotoIntoRangeMiddle_AdoptsItsRangeInsideTheOuterOne()
+    {
+        // goto M has no split point before M, but M lies inside the range of L that starts after the goto
+        var statements = ParseStatements(@"
+            if (a) goto M;
+            if (b) goto L;
+        M:
+            Split();
+        L:
+            int c = 3;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+        Assert.Equal((0, 3), (plan.Regions[0].First, plan.Regions[0].LabelIndex));
+        Assert.Equal((0, 2), (plan.Regions[1].First, plan.Regions[1].LabelIndex));
+    }
 }

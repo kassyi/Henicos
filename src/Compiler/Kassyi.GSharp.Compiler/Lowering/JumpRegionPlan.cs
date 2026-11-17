@@ -119,11 +119,13 @@ internal static class JumpRegionPlanner
             return JumpRegionPlan.Empty;
         }
 
-        // Expand crossing ranges until fixed point
+        // Expand crossing ranges, and adopt a range without a split point whose goto comes from before an adopted
+        // range and whose label lies in its middle (the lanes that take it must enter the outer range first), until
+        // nothing changes
         var changed = true;
         while (changed)
         {
-            changed = false;
+            changed = AdoptRangesIntoMiddle(minFirst, adopted);
             for (var i = 0; i < adopted.Count; i++)
             {
                 for (var j = 0; j < adopted.Count; j++)
@@ -189,6 +191,32 @@ internal static class JumpRegionPlanner
         return new JumpRegionPlan(regions.ToImmutable(), rejected.ToImmutable());
     }
 
+    // A label l whose earliest forward goto k lies before an adopted range [First, Last] with First < l <= Last
+    private static bool AdoptRangesIntoMiddle(int[] minFirst, List<CandidateRange> adopted)
+    {
+        var changed = false;
+        for (var l = 0; l < minFirst.Length; l++)
+        {
+            var k = minFirst[l];
+            if (k < 0 ||
+                adopted
+                    .AsStackEnumerable()
+                    .Any(l, static (range, label) => range.LabelIndex == label) ||
+                !adopted
+                    .AsStackEnumerable()
+                    .Any((k, l), static (range, jump) => jump.k < range.First && range.First < jump.l &&
+                                                        jump.l <= range.Last))
+            {
+                continue;
+            }
+
+            adopted.Add(new CandidateRange(l, k, l - 1));
+            changed = true;
+        }
+
+        return changed;
+    }
+
     private static bool HasAnyLabel(SyntaxList<StatementSyntax> statements)
     {
         for (var i = 0; i < statements.Count; i++)
@@ -228,7 +256,7 @@ internal static class JumpRegionPlanner
         {
             for (var cur = statements[i]; cur is LabeledStatementSyntax labeled; cur = labeled.Statement)
             {
-                if (labeled == targetLabel || labeled.Identifier.ValueText == targetLabel.Identifier.ValueText)
+                if (labeled == targetLabel)
                 {
                     return i;
                 }

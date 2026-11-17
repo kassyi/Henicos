@@ -38,6 +38,7 @@ public class ReconvergenceInserterTests
     [InlineData("UniformSwitchBreakKernel", "Mark(9)")]
     [InlineData("ForwardGotoKernel", "Mark(11)")]
     [InlineData("GotoOutOfUniformIfKernel", "Mark(12)")]
+    [InlineData("ForwardGotoOverNestedBlockKernel", "Mark(16)")]
     public void Insert_ThreadDependentBranch_ReconvergesAtItsImmediatePostDominator(string kernel,
         params string[] expected)
     {

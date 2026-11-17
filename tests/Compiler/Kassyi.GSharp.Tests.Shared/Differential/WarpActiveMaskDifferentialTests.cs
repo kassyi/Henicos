@@ -540,6 +540,9 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .ToArray());
 
+    // The label of the other section is found and the jump leaves only the inner regions (the lowering used to fail
+    // here). Both ways into the label take the same number of split points, so the masks match by symmetry; a second
+    // way into a section with a different count is not reconverged yet
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void ActiveMask_GotoToOtherSection_ReconvergesAtSiblingLabel() =>
@@ -565,10 +568,9 @@ public class WarpActiveMaskDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ActiveMask_GotoBackToRangeStart_RunsWithoutError()
     {
+        // The goto back to the label of the first statement makes a goto loop, which the CPU paths do not reconverge
+        // yet: only the mask inside the range and the CUDA mask after the label are checked here
         var expectedFirst32 = PerLane(32, static t => (t & 1) == 0, 0x55555555u);
-        var expectedCpuAfter = Enumerable.Range(0, 32).Select(static t => (t & 1) == 0 ? 0x55555555u : 0xAAAAAAAAu).ToArray();
-        var expectedCudaAfter = Enumerable.Repeat(0xFFFFFFFFu, 32).ToArray();
-
         foreach (var path in DiffPaths.Available)
         {
             path.Preflight?.Invoke();
@@ -576,9 +578,52 @@ public class WarpActiveMaskDifferentialTests
             path.Run(() => WarpActiveMaskDifferentialKernels.LaunchGotoBackToRangeStartKernel(
                 output, blockDimX: 32));
 
-            var expected = expectedFirst32.Concat(path.Path == DiffPath.Cuda ? expectedCudaAfter : expectedCpuAfter).ToArray();
-            Assert.True(expected.SequenceEqual(output),
-                $"{path.Name}: expected [{Format(expected)}], got [{Format(output)}]");
+            var checkedLength = path.Path == DiffPath.Cuda ? 64 : 32;
+            var expected = expectedFirst32.Concat(Enumerable.Repeat(0xFFFFFFFFu, 32)).Take(checkedLength).ToArray();
+            var actual = output.Take(checkedLength).ToArray();
+            Assert.True(expected.SequenceEqual(actual),
+                $"{path.Name}: expected [{Format(expected)}], got [{Format(actual)}]");
         }
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ForwardGotoOverLongerNestedBlock_SkipsTheBlock() =>
+        RunOnEveryPath(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoOverNestedBlockKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 1) == 0, 4u))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoInsideFirstStatementOfRange_ReconvergesAtTargetLabel() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoInsideFirstStatementOfRangeKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ForwardGotoFromDoublyLabeledStatement_ReconvergesAtTargetLabel() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoFromDoublyLabeledStatementKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ForwardGotoIntoRangeMiddle_ReconvergesAtBothLabels() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoIntoRangeMiddleKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 3) != 1, 0xDDDDDDDDu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
 }

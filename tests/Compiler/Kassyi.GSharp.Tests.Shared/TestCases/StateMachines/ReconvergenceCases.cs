@@ -251,4 +251,27 @@ public static class ReconvergenceCases
     L:
         Mark(15);
     }
+
+    [GpuKernel]
+    public static void ForwardGotoOverNestedBlockKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        if ((t & 1) != 0)
+        {
+            goto L;
+        }
+
+        {
+            r[t] = 1u;
+            r[t] = 2u;
+            r[t] = 3u;
+            r[t] = 4u;
+            m = Warp.ActiveMask();
+        }
+
+    L:
+        Mark(16);
+        r[t + 32] = m;
+    }
 }
