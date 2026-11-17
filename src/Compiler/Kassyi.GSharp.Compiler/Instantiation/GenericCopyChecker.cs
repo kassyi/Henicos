@@ -44,7 +44,7 @@ internal static class GenericCopyChecker
         }
 
         var pair = new PairCheck(model, copyModel, plan, map, new CopySymbolComparer(map, originalNodes),
-            CollectOperands(nodes, plan));
+            originalNodes);
         var replaced = CollectReplaced(nodes, plan);
         for (var i = 1; i < nodes.Length; i++)
         {
@@ -95,32 +95,6 @@ internal static class GenericCopyChecker
         }
     }
 
-    // The direct operands of the operators the copy narrows: C# promotes a small operand to int there, where the
-    // generic math operator takes the type itself, so only the type of an operand is compared, not its conversion
-    private static HashSet<int> CollectOperands(SyntaxNode[] nodes, GenericCopyPlan plan)
-    {
-        var operands = new HashSet<int>();
-        foreach (var rewrite in plan.Rewrites.Values)
-        {
-            if (!IsNarrowing(rewrite))
-            {
-                continue;
-            }
-
-            var root = nodes[rewrite.NodeIndex];
-            for (var i = rewrite.NodeIndex + 1; i < nodes.Length && root.Span.Contains(nodes[i].Span); i++)
-            {
-                if (nodes[i].Parent == root || nodes[i].Parent is ParenthesizedExpressionSyntax { Parent: var outer } &&
-                    outer == root)
-                {
-                    operands.Add(i);
-                }
-            }
-        }
-
-        return operands;
-    }
-
     // The rewrites that write the value of an operator in the type of the instance: the operands of C# are promoted
     private static bool IsNarrowing(CopyRewrite rewrite) =>
         rewrite is CopyRewrite.NarrowedOperator or CopyRewrite.NarrowedShift or CopyRewrite.TypedNegation or
@@ -165,19 +139,31 @@ internal static class GenericCopyChecker
         GenericCopyPlan plan,
         InstanceSymbolMap map,
         CopySymbolComparer comparer,
-        HashSet<int> operands)
+        Dictionary<SyntaxNode, int> originalNodes)
     {
         // The reason the copied node differs, or null
         public string? Compare(int index, SyntaxNode original, SyntaxNode copied)
         {
             var originalType = model.GetTypeInfo(original);
             var copyType = copyModel.GetTypeInfo(copied);
-            var isOperand = operands.Contains(index);
-            if (!comparer.SameType(Substitute(originalType.Type), copyType.Type) ||
-                (!isOperand && !comparer.SameType(Substitute(originalType.ConvertedType), copyType.ConvertedType)))
+            var expectedType = Substitute(originalType.Type);
+            if (!comparer.SameType(expectedType, copyType.Type))
             {
                 return $"the copy has the type '{copyType.Type?.Name}' " +
                        $"where the declaration has '{originalType.Type?.Name}'";
+            }
+
+            var promoted = false;
+            var expectedConverted = Substitute(originalType.ConvertedType);
+            if (!comparer.SameType(expectedConverted, copyType.ConvertedType))
+            {
+                promoted = IsAllowedPromotion(original, copied, expectedType, expectedConverted,
+                    copyType.ConvertedType);
+                if (!promoted)
+                {
+                    return $"the copy converts to '{copyType.ConvertedType?.Name}' " +
+                           $"where the declaration converts to '{originalType.ConvertedType?.Name}'";
+                }
             }
 
             if (plan.Rewrites.TryGetValue(index, out var rewrite))
@@ -188,38 +174,180 @@ internal static class GenericCopyChecker
                         CopyRewrite.StaticExtensionCall:
                         break;
                     case CopyRewrite.ConstrainedCall or CopyRewrite.ArgumentCall or CopyRewrite.MathCall:
-                        return CompareConversions(original, copied);
+                        return promoted ? null : CompareConversions(original, copied);
                     default:
                         return CompareWritten(rewrite, copied);
                 }
             }
+            else if (IsMissingNarrowing(original))
+            {
+                return "the copy does not narrow the operator";
+            }
 
-            return CompareSymbols(original, copied) ?? (isOperand ? null : CompareConversions(original, copied)) ??
+            return CompareSymbols(original, copied) ?? (promoted ? null : CompareConversions(original, copied)) ??
                    CompareConstants(original, copied);
         }
 
         // A node written as a constant, as false or as a narrowed operator: its value is what the plan says
         private string? CompareWritten(CopyRewrite rewrite, SyntaxNode copied)
         {
-            var constant = copyModel.GetConstantValue(copied);
             return rewrite switch
             {
-                CopyRewrite.IdentityConstant identity when !constant.HasValue ||
-                                                          !IsNumber(constant.Value, identity.Value) =>
+                CopyRewrite.IdentityConstant identity when !IsIdentityConstant(identity, copied) =>
                     "the copy does not give the identity of the type",
-                CopyRewrite.NameOf nameOf when !Equals(constant.Value, nameOf.Text) =>
+                CopyRewrite.NameOf nameOf when !Equals(copyModel.GetConstantValue(copied).Value, nameOf.Text) =>
                     "the copy does not give the name the declaration gives",
-                CopyRewrite.FalseCall when !Equals(constant.Value, false) =>
+                CopyRewrite.FalseCall when !Equals(copyModel.GetConstantValue(copied).Value, false) =>
                     "the copy does not give false",
                 _ => null,
             };
         }
 
+        // [WHY] A constant identity matches its numeric value (0m == 0.0m in C# decimal); when marked opaque to
+        // prevent constant folding of / 0 or checked overflow, it matches the emitter's ((T)Math.Max(c, c)) form.
+        private bool IsIdentityConstant(CopyRewrite.IdentityConstant identity, SyntaxNode copied)
+        {
+            var constant = copyModel.GetConstantValue(copied);
+            if (constant.HasValue)
+            {
+                return IsNumber(constant.Value, identity.Value);
+            }
+
+            return identity.Opaque && IsOpaqueIdentity(identity.Type, identity.Value, copied);
+        }
+
+        private bool IsOpaqueIdentity(ITypeSymbol type, int expected, SyntaxNode copied)
+        {
+            if (UnwrapNode(copied) is not CastExpressionSyntax cast ||
+                UnwrapNode(cast.Expression) is not InvocationExpressionSyntax invocation ||
+                invocation.ArgumentList.Arguments is not [var first, var second] ||
+                !first.RefKindKeyword.IsKind(SyntaxKind.None) ||
+                !second.RefKindKeyword.IsKind(SyntaxKind.None))
+            {
+                return false;
+            }
+
+            var mathType = copyModel.Compilation.GetTypeByMetadataName("System.Math");
+            if (copyModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol { Name: "Max", IsStatic: true } max ||
+                mathType is null || !SymbolEqualityComparer.Default.Equals(mathType, max.ContainingType))
+            {
+                return false;
+            }
+
+            return IsTypedNumber(first.Expression, type, expected) &&
+                   IsTypedNumber(second.Expression, type, expected);
+        }
+
+        private bool IsTypedNumber(ExpressionSyntax expression, ITypeSymbol expectedType, int expectedValue)
+        {
+            var constant = copyModel.GetConstantValue(expression);
+            return constant.HasValue && IsNumber(constant.Value, expectedValue) &&
+                   comparer.SameType(expectedType, copyModel.GetTypeInfo(expression).Type);
+        }
+
+        // [WHY] C# 12.4.7 promotes sbyte, byte, short, ushort and char to int on built-in operators, and System.Math
+        // has no char overload (widening char to ushort for Min/Max, or int via numeric promotion for Sign).
+        private bool IsAllowedPromotion(
+            SyntaxNode original,
+            SyntaxNode copied,
+            ITypeSymbol? expectedType,
+            ITypeSymbol? expectedConverted,
+            ITypeSymbol? copyConverted)
+        {
+            if (expectedType is null || copyConverted is null ||
+                !comparer.SameType(expectedType, expectedConverted) ||
+                copied is not ExpressionSyntax copiedExpr ||
+                copyModel.GetConversion(copiedExpr) is not
+                    { Exists: true, IsImplicit: true, IsNumeric: true, MethodSymbol: null })
+            {
+                return false;
+            }
+
+            if (IsMathCallCharPromotion(original, expectedType, copyConverted))
+            {
+                return true;
+            }
+
+            var promoted = BuiltinNumerics.GetPromotedSpecialType(expectedType);
+            if (promoted == SpecialType.None || copyConverted.SpecialType != promoted)
+            {
+                return false;
+            }
+
+            return UnwrapParent(original) is { } parent &&
+                   (HasNarrowingRewrite(parent) || IsPromotedUnnarrowedOperand(original, parent, expectedType));
+        }
+
+        private bool IsMathCallCharPromotion(
+            SyntaxNode original,
+            ITypeSymbol expectedType,
+            ITypeSymbol copyConverted)
+        {
+            if (expectedType.SpecialType != SpecialType.System_Char ||
+                UnwrapParent(original) is not ArgumentSyntax
+                {
+                    Parent: ArgumentListSyntax { Parent: InvocationExpressionSyntax call },
+                } ||
+                !originalNodes.TryGetValue(call, out var callIndex) ||
+                !plan.Rewrites.TryGetValue(callIndex, out var callRewrite) ||
+                callRewrite is not CopyRewrite.MathCall math)
+            {
+                return false;
+            }
+
+            return (math.Name is "Max" or "Min" && copyConverted.SpecialType == SpecialType.System_UInt16) ||
+                   (math.Name == "Sign" &&
+                    copyConverted.SpecialType == BuiltinNumerics.GetPromotedSpecialType(expectedType));
+        }
+
+        private bool HasNarrowingRewrite(SyntaxNode node) =>
+            originalNodes.TryGetValue(node, out var nodeIndex) &&
+            plan.Rewrites.TryGetValue(nodeIndex, out var nodeRewrite) &&
+            IsNarrowing(nodeRewrite);
+
+        private bool IsPromotedUnnarrowedOperand(SyntaxNode original, SyntaxNode parent, ITypeSymbol expectedType)
+        {
+            var isUnnarrowedNode = parent switch
+            {
+                BinaryExpressionSyntax binary => binary.Kind() is SyntaxKind.EqualsExpression or
+                    SyntaxKind.NotEqualsExpression or SyntaxKind.LessThanExpression or
+                    SyntaxKind.LessThanOrEqualExpression or SyntaxKind.GreaterThanExpression or
+                    SyntaxKind.GreaterThanOrEqualExpression,
+                AssignmentExpressionSyntax assignment => ReferenceEquals(UnwrapNode(assignment.Right), original) &&
+                    assignment.Kind() is SyntaxKind.AddAssignmentExpression or
+                        SyntaxKind.SubtractAssignmentExpression or SyntaxKind.MultiplyAssignmentExpression or
+                        SyntaxKind.ModuloAssignmentExpression or SyntaxKind.AndAssignmentExpression or
+                        SyntaxKind.OrAssignmentExpression or SyntaxKind.ExclusiveOrAssignmentExpression,
+                _ => false,
+            };
+            return isUnnarrowedNode && IsPromotedBuiltinOperator(parent, expectedType);
+        }
+
+        private bool IsMissingNarrowing(SyntaxNode node) =>
+            node is AssignmentExpressionSyntax assignment &&
+            assignment.Kind() is SyntaxKind.DivideAssignmentExpression or SyntaxKind.LeftShiftAssignmentExpression or
+                SyntaxKind.RightShiftAssignmentExpression or SyntaxKind.UnsignedRightShiftAssignmentExpression &&
+            model.GetTypeInfo(assignment).Type is { } type &&
+            map.Substitute(type) is { } closed &&
+            BuiltinNumerics.IsPromoted(closed) &&
+            IsPromotedBuiltinOperator(assignment, closed);
+
+        private bool IsPromotedBuiltinOperator(SyntaxNode node, ITypeSymbol closed) =>
+            model.GetSymbolInfo(node).Symbol is { } symbol &&
+            ConstrainedAccess.IsConstrainable(symbol) &&
+            ConstrainedAccess.Find(node, model, symbol) is ITypeParameterSymbol parameter &&
+            map.IsMapped(parameter) &&
+            map.ResolveConstrained(symbol, parameter) is ConstrainedMember.BuiltinOperator builtin &&
+            comparer.SameType(builtin.ClosedType, closed);
+
         private string? CompareSymbols(SyntaxNode original, SyntaxNode copied)
         {
             var symbol = model.GetSymbolInfo(original).Symbol;
             var copySymbol = copyModel.GetSymbolInfo(copied).Symbol;
-            if (ConstrainedAccess.IsConstrainable(symbol) && symbol is not null &&
+            // [WHY] Interface instance members accessed through a constrained type parameter resolve to the closed
+            // type's exact interface implementation (FindImplementationForInterfaceMember), just like static members.
+            if (symbol is not null &&
+                (ConstrainedAccess.IsConstrainable(symbol) || ConstrainedAccess.IsInterfaceInstanceMember(symbol)) &&
                 ConstrainedAccess.Find(original, model, symbol) is ITypeParameterSymbol parameter &&
                 map.IsMapped(parameter))
             {
@@ -274,26 +402,46 @@ internal static class GenericCopyChecker
 
         // The checked and unchecked operator of the same C# operator: the copy is in the same checked context
         private static bool SameOperator(string copyName, string? expectedName) =>
-            expectedName is not null &&
-            string.Equals(Unchecked(copyName), Unchecked(expectedName), StringComparison.Ordinal);
+            expectedName is not null && CopySymbolComparer.SameOperatorName(copyName, expectedName);
 
-        private static string Unchecked(string name) =>
-            name.StartsWith("op_Checked", StringComparison.Ordinal) ? "op_" + name["op_Checked".Length..] : name;
+        private static SyntaxNode? UnwrapParent(SyntaxNode node)
+        {
+            var current = node.Parent;
+            while (current is ParenthesizedExpressionSyntax or CheckedExpressionSyntax)
+            {
+                current = current.Parent;
+            }
+
+            return current;
+        }
+
+        private static SyntaxNode UnwrapNode(SyntaxNode node)
+        {
+            while (node is ParenthesizedExpressionSyntax or CheckedExpressionSyntax)
+            {
+                node = node is ParenthesizedExpressionSyntax parenthesized
+                    ? parenthesized.Expression
+                    : ((CheckedExpressionSyntax)node).Expression;
+            }
+
+            return node;
+        }
 
         private static bool IsNumber(object? value, int expected) =>
             value switch
             {
                 int i => i == expected,
-                uint u => u == expected,
+                uint u => expected >= 0 && u == (uint)expected,
                 long l => l == expected,
-                ulong ul => ul == (ulong)expected,
+                ulong ul => expected >= 0 && ul == (ulong)expected,
                 short s => s == expected,
-                ushort us => us == expected,
+                ushort us => expected >= 0 && us == (ushort)expected,
                 sbyte sb => sb == expected,
-                byte b => b == expected,
-                char c => c == expected,
-                float f => f.Equals(expected),
-                double d => d.Equals(expected),
+                byte b => expected >= 0 && b == (byte)expected,
+                char c => expected >= 0 && c == (char)expected,
+                float f => f == expected,
+                double d => d == expected,
+                decimal m => m == expected,
                 _ => false,
             };
 

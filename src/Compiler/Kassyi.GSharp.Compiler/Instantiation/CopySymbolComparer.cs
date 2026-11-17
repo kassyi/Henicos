@@ -72,18 +72,37 @@ internal sealed class CopySymbolComparer(InstanceSymbolMap map, IReadOnlyDiction
         }
     }
 
+    /// <summary>
+    /// Whether two operator metadata names refer to the same C# operator, treating <c>op_Checked*</c> and
+    /// <c>op_*</c> as the same operator when comparing a built-in operator.
+    /// </summary>
+    internal static bool SameOperatorName(string left, string right) =>
+        string.Equals(UncheckedOperatorName(left), UncheckedOperatorName(right), StringComparison.Ordinal);
+
+    // [WHY] Roslyn binds concrete decimal operators as BuiltinOperator while interface resolution finds the public
+    // metadata UserDefinedOperator/Conversion on System.Decimal; both name the same operator iff containing type,
+    // parameter types and return type match.
     private bool SameMethod(IMethodSymbol original, IMethodSymbol copy)
     {
         if (original.MethodKind == MethodKind.BuiltinOperator || copy.MethodKind == MethodKind.BuiltinOperator)
         {
-            return original.MethodKind == copy.MethodKind && original.Name == copy.Name &&
-                   SameType(original.ContainingType, copy.ContainingType) && SameParameterTypes(original, copy);
+            return IsOperatorKind(original.MethodKind) && IsOperatorKind(copy.MethodKind) &&
+                   SameOperatorName(original.Name, copy.Name) &&
+                   SameType(original.ContainingType, copy.ContainingType) &&
+                   SameParameterTypes(original, copy) &&
+                   SameType(original.ReturnType, copy.ReturnType);
         }
 
         return SameDefinition(original.OriginalDefinition, copy.OriginalDefinition) &&
                SameType(original.ContainingType, copy.ContainingType) &&
                SameTypes(original.TypeArguments, copy.TypeArguments);
     }
+
+    private static bool IsOperatorKind(MethodKind kind) =>
+        kind is MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator or MethodKind.Conversion;
+
+    private static string UncheckedOperatorName(string name) =>
+        name.StartsWith("op_Checked", StringComparison.Ordinal) ? "op_" + name["op_Checked".Length..] : name;
 
     private bool SameParameterTypes(IMethodSymbol original, IMethodSymbol copy)
     {

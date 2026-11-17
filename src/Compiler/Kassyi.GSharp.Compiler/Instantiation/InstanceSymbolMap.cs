@@ -107,10 +107,26 @@ internal sealed class InstanceSymbolMap
 
     private ConstrainedMember Resolve(ISymbol member, ITypeSymbol closed)
     {
-        var implementation = closed.FindImplementationForInterfaceMember(member);
+        // [WHY] FindImplementationForInterfaceMember requires the unconstructed generic method definition; then
+        // the implementation is constructed with the original method's type arguments.
+        var lookup = member is IMethodSymbol { IsGenericMethod: true } generic ? generic.ConstructedFrom : member;
+        var implementation = closed.FindImplementationForInterfaceMember(lookup);
         if (implementation is null)
         {
             return new ConstrainedMember.Unsupported(closed, $"'{closed.Name}' does not implement '{member.Name}'");
+        }
+
+        if (member is IMethodSymbol { IsGenericMethod: true } constructed &&
+            implementation is IMethodSymbol implMethod && implMethod.IsGenericMethod &&
+            implMethod.TypeParameters.Length == constructed.TypeArguments.Length)
+        {
+            var arguments = new ITypeSymbol[constructed.TypeArguments.Length];
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                arguments[i] = constructed.TypeArguments[i];
+            }
+
+            implementation = implMethod.ConstructedFrom.Construct(arguments);
         }
 
         if (implementation.ContainingType is { TypeKind: TypeKind.Interface } interfaceType)

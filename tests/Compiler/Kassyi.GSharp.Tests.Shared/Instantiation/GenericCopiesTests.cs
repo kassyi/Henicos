@@ -115,6 +115,110 @@ public class GenericCopiesTests
         Assert.Contains(copy.Findings, f => f.Reason.Contains("Odd.Ext", StringComparison.Ordinal));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_IdentityConstantWithWrongValue_RejectsTheCopy()
+    {
+        var compilation = CreateCompilation();
+        var decimalType = compilation.GetSpecialType(SpecialType.System_Decimal);
+        var instance = Instance(compilation, "Identities", decimalType);
+        var plan = GenericCopies.Plan(compilation, instance);
+        var rewrites = plan.Rewrites;
+        foreach (var entry in plan.Rewrites)
+        {
+            if (entry.Value is CopyRewrite.IdentityConstant { Value: 0 } identity)
+            {
+                rewrites = rewrites.SetItem(entry.Key, identity with { Value = 1 });
+            }
+        }
+
+        var wrongSet = GenericCopies.Create(compilation, [plan with { Rewrites = rewrites }]);
+        var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(wrongSet.Copies.Single().Declaration);
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
+            instance.Definition.DeclaringSyntaxReferences.Single().GetSyntax());
+        var problems = GenericCopyChecker.Check(
+            CopyNodeIndex.List(declaration),
+            declaration,
+            compilation.GetSemanticModel(declaration.SyntaxTree),
+            copyDeclaration,
+            wrongSet.Compilation.GetSemanticModel(copyDeclaration.SyntaxTree),
+            plan,
+            new InstanceSymbolMap(instance, compilation));
+
+        var identityProblems = problems
+            .Where(p => p.Reason.Contains("identity", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(2, identityProblems.Length);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_CompoundDivisionWithoutItsNarrowing_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.NarrowedCompoundDivision>("CheckedCompoundDivide", "System.SByte");
+
+        Assert.False(copy.IsFaithful);
+        Assert.DoesNotContain(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("narrow", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Check_DecimalIdentityWithDifferentScale_AcceptsTheCopy()
+    {
+        var compilation = CreateCompilation();
+        var decimalType = compilation.GetSpecialType(SpecialType.System_Decimal);
+        var instance = Instance(compilation, "Identities", decimalType);
+        var plan = GenericCopies.Plan(compilation, instance);
+        var set = GenericCopies.Create(compilation, [plan]);
+        var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(set.Copies.Single().Declaration);
+        var zeroTokens = copyDeclaration.DescendantTokens()
+            .Where(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 0)
+            .ToArray();
+        var scaledDeclaration = copyDeclaration.ReplaceTokens(
+            zeroTokens,
+            (_, _) => SyntaxFactory.Literal("0.0m", 0.0m));
+        var oldTree = copyDeclaration.SyntaxTree;
+        var newRoot = oldTree.GetRoot().ReplaceNode(copyDeclaration, scaledDeclaration);
+        var newTree = oldTree.WithRootAndOptions(newRoot, oldTree.Options);
+        var updatedCompilation = set.Compilation.ReplaceSyntaxTree(oldTree, newTree);
+        var updatedCopy = newTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(m => m.Identifier.ValueText == copyDeclaration.Identifier.ValueText);
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
+            instance.Definition.DeclaringSyntaxReferences.Single().GetSyntax());
+
+        var problems = GenericCopyChecker.Check(
+            CopyNodeIndex.List(declaration),
+            declaration,
+            compilation.GetSemanticModel(declaration.SyntaxTree),
+            updatedCopy,
+            updatedCompilation.GetSemanticModel(newTree),
+            plan,
+            new InstanceSymbolMap(instance, compilation));
+
+        Assert.Empty(problems);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_ConstrainedCallWithMoreSpecificOverload_RejectsTheCopy()
+    {
+        var (copy, _) = CreateCopy("CallOverloaded", "App.OverloadedTarget");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("binds", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_StringAdditionWithTypeParameter_RejectsTheCopy()
+    {
+        var (copy, _) = CreateCopy("ConcatWith", "System.String");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("binds", StringComparison.Ordinal));
+    }
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Sum", "System.Int32")]
@@ -148,6 +252,10 @@ public class GenericCopiesTests
     [InlineData("CheckedCompoundDivide", "System.Int16")]
     [InlineData("CompoundDivideAt", "System.SByte")]
     [InlineData("CheckedCompoundAdd", "System.Byte")]
+    [InlineData("CheckedCompoundAdd", "System.Char")]
+    [InlineData("CheckedCompoundAdd", "System.Int16")]
+    [InlineData("Less", "System.Byte")]
+    [InlineData("Less", "System.Char")]
     [InlineData("Increment", "System.Byte")]
     [InlineData("CheckedIncrement", "System.SByte")]
     [InlineData("MinValue", "System.Int32")]
@@ -161,6 +269,7 @@ public class GenericCopiesTests
     [InlineData("Abs", "System.Int16")]
     [InlineData("MaxMagnitude", "System.UInt64")]
     [InlineData("MaxMagnitude", "System.Char")]
+    [InlineData("MinMagnitude", "System.Char")]
     [InlineData("IsNaN", "System.Int32")]
     [InlineData("IsNaN", "System.Double")]
     [InlineData("Sign", "System.Char")]
@@ -343,6 +452,10 @@ public class GenericCopiesTests
         { "CheckedCompoundDivide", "System.Byte" },
         { "CheckedCompoundAdd", "System.SByte" },
         { "CheckedCompoundAdd", "System.UInt16" },
+        { "CheckedCompoundAdd", "System.Char" },
+        { "CheckedCompoundAdd", "System.Int16" },
+        { "Less", "System.Byte" },
+        { "Less", "System.Char" },
         { "ShiftAssign", "System.Byte" },
         { "ShiftAssign", "System.SByte" },
         { "ShiftAssign", "System.Int16" },
@@ -364,6 +477,7 @@ public class GenericCopiesTests
         { "MaxMagnitude", "System.UInt16" },
         { "MaxMagnitude", "System.Char" },
         { "MaxMagnitude", "System.SByte" },
+        { "MinMagnitude", "System.Char" },
         { "IsNaN", "System.Byte" },
         { "IsNaN", "System.Char" },
         { "Sign", "System.Char" },

@@ -47,6 +47,18 @@ namespace App
     {
     }
 
+    public interface IOverloaded
+    {
+        int Pick(object value);
+    }
+
+    public struct OverloadedTarget : IOverloaded
+    {
+        public int Pick(object value) => 1;
+
+        public int Pick(int value) => 2;
+    }
+
     public interface ICounter
     {
         int Next();
@@ -257,6 +269,14 @@ namespace App
         }
 
         public static int Recurse<T>(int n) where T : unmanaged => n <= 0 ? 0 : Recurse<T>(n - 1);
+
+        public static int CallOverloaded<T>(T x) where T : IOverloaded => x.Pick(1);
+
+        public static string ConcatWith<T>(string left, T right) => left + right;
+
+        public static bool Less<T>(T a, T b) where T : IComparisonOperators<T, T, bool> => a < b;
+
+        public static T MinMagnitude<T>(T a, T b) where T : INumberBase<T> => T.MinMagnitude(a, b);
     }
 
     public static partial class Outer<T> where T : unmanaged
