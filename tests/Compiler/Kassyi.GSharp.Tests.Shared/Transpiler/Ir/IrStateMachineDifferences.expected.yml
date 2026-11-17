@@ -3707,6 +3707,17 @@
 - {file: "TestCases/Diagnostics/CrossAssembly/SamePathConsumer.cs", method: "LibMath.Helper", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/CrossAssembly/TypeUseConsumer.cs", method: "TypeUseKernels.CallKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/CrossAssembly/TypeUseGenericConsumer.cs", method: "TypeUseKernels.CallKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.CallTakeKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.DelegateParameterKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.ObjectParameterKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.Take", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeArray", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeDelegate", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeIn", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeInt", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeMulticastDelegate", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeRef", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs", method: "DeviceFunctionHeapObjectParameterKernels.TakeSpan", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/DivergentDynamicSharedMemory.cu.cs", method: "DivergentDynamicSharedMemoryKernels.CallInBranchKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/DivergentDynamicSharedMemory.cu.cs", method: "DivergentDynamicSharedMemoryKernels.DeclarationInBranchKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/DivergentDynamicSharedMemory.cu.cs", method: "DivergentDynamicSharedMemoryKernels.LaneLoop", status: "NoStateMachine", count: 1}
