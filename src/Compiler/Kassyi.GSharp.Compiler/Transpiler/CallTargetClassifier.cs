@@ -156,6 +156,15 @@ internal static class CallTargetClassifier
     }
 
     /// <summary>
+    /// Whether <paramref name="reference"/> (a method name or its enclosing member access) is the target of an
+    /// invocation expression (<c>F(...)</c> or <c>T.F(...)</c>).
+    /// </summary>
+    public static bool IsCalledReference(ExpressionSyntax reference) =>
+        (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
+        (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
+         access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
+
+    /// <summary>
     /// Whether <paramref name="node"/> names a method without calling it (<c>U.F</c>, <c>F</c>), outside
     /// <c>nameof</c>: a method group that device code would name. The name of a conditional call (<c>u?.F()</c>) is
     /// called.

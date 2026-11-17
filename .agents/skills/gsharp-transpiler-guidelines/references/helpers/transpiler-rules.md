@@ -60,7 +60,8 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Which non-nullable array fields a struct reaches through struct fields (a call checks them) | `NonNullProof.GetNonNullableArrayFields` | |
 | Does a device function parameter need the check at the call | `NonNullProof.NeedsBoundaryCheck`, `NonNullProof.ChecksArguments` | |
 | The check of one call argument (plan, helper, tail) | `ArgumentNullCheck.PlanArgument`, `ArgumentNullCheck.ChecksArgument`, `ArgumentNullCheck.GetArgumentCheckKind`, `ArgumentNullCheck.GetArgumentCheckHelper`, `ArgumentNullCheck.AppendArgumentCheckTail` | |
-| A method group of such a function (GSH0003) | `NonNullProof.FailIfReferencedWithoutCall` | |
+| A method group of such a function (GSH0003) | `NonNullProof.FailIfReferencedWithoutCall` |
+| A method group of a device function that reaches a barrier or warp shuffle (GSH0062) | `SuspendingCallReference.FailIfReferencedWithoutCall` | |
 | May code of its method change a local or parameter after its declaration | `VariableWrites.IsWritten` | a walk for assignments written again |
 | Match invocation arguments to parameters (named arguments / defaults) | `ArgumentMatchingHelper.MatchArgumentsToParameters`, `ArgumentMatchingHelper.CreateDefaultArgument`; the argument of an omitted parameter (caller-info value, default clause, default value or `default(T)`) decided, then written: `OmittedArgument.Plan`, `.Append` (C++), `ArgumentMatchingHelper.CreateOmittedArgument` (C#); the parameter of one argument (by name, position or `params`): `.FindParameter`; the argument of one parameter: `ArgumentMatchingHelper.FindArgument` |
 | Substitute a generic struct's type parameters with concrete type arguments during emission | `StructTypeSubstitution.SubstituteTypeParameters` |
