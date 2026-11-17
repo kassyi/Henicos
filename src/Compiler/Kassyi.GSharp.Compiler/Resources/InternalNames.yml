@@ -227,6 +227,8 @@ Launcher:
     AliasNative: __gsharp_alias_native
     AliasIndex: __gsharp_alias_index
     AliasHandles: __gsharp_alias_handles
+    # The arrays that the struct arguments hold, which the launcher compares by address with its other arguments (#1849)
+    AliasHeld: __gsharp_alias_held
     # The CPU launcher's HostArrayCopies: one copy per host array that the kernel gets instead of the caller's (#985)
     ArrayCopies: __gsharp_array_copies
     # Field suffix for the by-address kernel function handle on CUDA (#1940)

@@ -162,6 +162,13 @@ handle.Free();
 }
 }
 }
+public static void AliasHeldArrays_NullableOrderArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Differential.NullableOrderArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Items != null)
+{
+held.Add(host.Items, 4, 0, false);
+}
+}
 #pragma warning restore CS8500
 }
 public const string ReadNullableArrayFieldKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableOrderArrayInner__

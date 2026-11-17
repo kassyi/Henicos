@@ -158,6 +158,80 @@ public static partial class ManagedGpuContext
     public static long __gsharp_rem_store_i64(ref long target, long current, long b) =>
         target = __gsharp_rem_i64(current, b);
 
+    // nint is a 64-bit integer in device code and takes the long result: the same functions for a nint operand, so that
+    // the generated managed code of a nint division calls them without a conversion
+
+    /// <summary>
+    /// The quotient of <paramref name="a"/> by <paramref name="b"/>, <c>MinValue / -1</c> giving MinValue.
+    /// </summary>
+    /// <param name="a">The dividend.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The quotient, rounded toward zero.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_div_i64(nint a, nint b) => b == -1 ? unchecked(-a) : a / b;
+
+    /// <summary>
+    /// The remainder of <paramref name="a"/> by <paramref name="b"/>, <c>MinValue % -1</c> giving 0.
+    /// </summary>
+    /// <param name="a">The dividend.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The remainder, with the sign of the dividend.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_rem_i64(nint a, nint b) => b == -1 ? 0 : a % b;
+
+    /// <summary><c>target /= b</c>, <c>MinValue / -1</c> giving MinValue.</summary>
+    /// <param name="target">The variable divided and assigned.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The value assigned.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_div_assign_i64(ref nint target, nint b) => target = __gsharp_div_i64(target, b);
+
+    /// <summary><c>target %= b</c>, <c>MinValue % -1</c> giving 0.</summary>
+    /// <param name="target">The variable divided and assigned.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The value assigned.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_rem_assign_i64(ref nint target, nint b) => target = __gsharp_rem_i64(target, b);
+
+    /// <summary>Reads <paramref name="target"/> into <paramref name="current"/> and returns the same
+    /// location.</summary>
+    /// <param name="target">The location of the compound assignment.</param>
+    /// <param name="current">The value of the location before the value of the assignment runs.</param>
+    /// <returns><paramref name="target"/>.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref nint __gsharp_read_ref_i64(ref nint target, out nint current)
+    {
+        current = target;
+        return ref target;
+    }
+
+    /// <summary>
+    /// Stores <c>current / b</c> into <paramref name="target"/>, <c>MinValue / -1</c> giving MinValue.
+    /// </summary>
+    /// <param name="target">The location of the compound assignment.</param>
+    /// <param name="current">The value the location held before the divisor was evaluated.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The value stored.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_div_store_i64(ref nint target, nint current, nint b) =>
+        target = __gsharp_div_i64(current, b);
+
+    /// <summary>Stores <c>current % b</c> into <paramref name="target"/>, <c>MinValue % -1</c> giving 0.</summary>
+    /// <param name="target">The location of the compound assignment.</param>
+    /// <param name="current">The value the location held before the divisor was evaluated.</param>
+    /// <param name="b">The divisor.</param>
+    /// <returns>The value stored.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static nint __gsharp_rem_store_i64(ref nint target, nint current, nint b) =>
+        target = __gsharp_rem_i64(current, b);
+
     // The compound assignment of a property whose receiver is found once and read before the value (the receiver or an
     // argument writes, may throw, or the value writes what it reads): the getter and the setter take the receiver,
     // which the reader hands on. A value type goes through a reference to its variable, a reference type by its object.

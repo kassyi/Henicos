@@ -118,7 +118,7 @@ internal static class BclIntrinsicMapBuilder
             return;
         }
 
-        var mapping = AdjustPlatformSpecificMapping(data, compilation);
+        var mapping = AdjustNativeIntegerMapping(data);
 
         foreach (var member in bclType.GetMembers(data.MethodName))
         {
@@ -130,40 +130,19 @@ internal static class BclIntrinsicMapBuilder
         }
     }
 
-    private static IntrinsicMappingInfo AdjustPlatformSpecificMapping(
-        IntrinsicAttributeData data,
-        Compilation compilation)
+    private static IntrinsicMappingInfo AdjustNativeIntegerMapping(IntrinsicAttributeData data)
     {
-        var cudaIntrinsicName = data.CudaIntrinsicName;
         var castFirstArgTo = data.CastFirstArgumentTo;
 
         if (data is { BclTypeFullName: "System.Numerics.BitOperations", ParameterTypes.Length: > 0 } &&
             data.ParameterTypes[0].Value is "System.UIntPtr" or "System.IntPtr")
         {
-            var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
-            if (is32Bit)
-            {
-                // Core maps the UIntPtr overloads to the 64-bit functions; switch to their 32-bit counterparts.
-                cudaIntrinsicName = cudaIntrinsicName switch
-                {
-                    GSharpInternalNames.Prelude.RotateLeftFor64 => GSharpInternalNames.Prelude.RotateLeftFor32,
-                    GSharpInternalNames.Prelude.RotateRightFor64 => GSharpInternalNames.Prelude.RotateRightFor32,
-                    GSharpInternalNames.Prelude.TrailingZeroCountFor64 => GSharpInternalNames.Prelude.TrailingZeroCountFor32,
-                    GSharpInternalNames.Prelude.Log2For64 => GSharpInternalNames.Prelude.Log2For32,
-                    GSharpInternalNames.Prelude.LeadingZeroCountFor64 => GSharpInternalNames.Prelude.LeadingZeroCountFor32,
-                    "__popcll" => "__popc",
-                    _ => cudaIntrinsicName
-                };
-
-                castFirstArgTo = "unsigned int";
-            }
-            else
-            {
-                castFirstArgTo = "unsigned long long int";
-            }
+            // nint and nuint are 64-bit in device code whatever the platform of the host project is, so the 64-bit
+            // functions Core maps them to stay
+            castFirstArgTo = "unsigned long long int";
         }
 
-        return new IntrinsicMappingInfo(cudaIntrinsicName, castFirstArgTo);
+        return new IntrinsicMappingInfo(data.CudaIntrinsicName, castFirstArgTo);
     }
 
     private static IEnumerable<IAssemblySymbol> GetCandidateAssemblies(Compilation compilation)

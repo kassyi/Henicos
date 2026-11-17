@@ -12,13 +12,29 @@ internal static class DialectCallSupport
         dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly);
 
     /// <summary>
+    /// Determines whether <paramref name="method"/> is classified as <c>Gpu.InlinePtx</c>.
+    /// </summary>
+    public static bool IsInlinePtx(IMethodSymbol method) =>
+        GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.InlinePtx;
+
+    /// <summary>
     /// Determines whether <paramref name="invocation"/> resolves to a <c>Gpu.InlinePtx</c> call.
     /// </summary>
     public static bool IsInlinePtxCall(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel) =>
         semanticModel.GetSymbol(invocation) is IMethodSymbol method &&
-        GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.InlinePtx;
+        IsInlinePtx(method);
+
+    /// <summary>
+    /// Determines whether <paramref name="method"/> is a <c>Gpu.InlinePtx</c> call that is unsupported on
+    /// <paramref name="dialect"/>.
+    /// </summary>
+    public static bool IsUnsupportedInlinePtx(
+        IMethodSymbol method,
+        ITranspilerDialect dialect) =>
+        !SupportsInlinePtx(dialect) &&
+        IsInlinePtx(method);
 
     /// <summary>
     /// Determines whether <paramref name="invocation"/> resolves to a <c>Gpu.InlinePtx</c> call that is unsupported on

@@ -72,6 +72,7 @@ internal static class StructMarshalingEmitter
         NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout, dialect, launcherAssembly);
         StructMarshalMethodEmitter.WriteMarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
         StructUnmarshalMethodEmitter.WriteUnmarshalMethod(writer, s, structLayout, dialect, launcherAssembly);
+        StructArrayHelperEmitter.WriteAliasHeldArraysMethod(writer, s, structLayout, dialect, launcherAssembly);
         if (!dialect.IsCuda)
         {
             StructArrayHelperEmitter.WriteCopyArraysMethod(writer, s, structLayout, launcherAssembly);

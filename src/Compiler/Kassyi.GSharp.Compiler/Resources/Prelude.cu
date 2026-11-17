@@ -1125,12 +1125,13 @@ __device__ __forceinline__ A __gsharp_array_not_null(A&& array, S site)
     }
     return static_cast<A&&>(array);
 }
-// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409): each field
-// that a getter names is checked as __gsharp_array_ref checks an array, at the call, and the struct is passed on
-template <typename T, typename S, typename... Get>
-__device__ __forceinline__ T __gsharp_struct_ref(T&& value, S site, Get... get)
+// A by-value struct argument of a device function whose parameter reaches non-nullable array fields (#1409, #2044):
+// each check tests one field with its own site as __gsharp_array_ref checks an array, at the call, and the struct
+// is passed on
+template <typename T, typename... Check>
+__device__ __forceinline__ T __gsharp_struct_ref(T&& value, Check... check)
 {
-    (static_cast<void>(__gsharp_array_ref(get(value), site)), ...);
+    (static_cast<void>(check(value)), ...);
     return static_cast<T&&>(value);
 }
 // [WHY] A trap stops the kernel, so a trap in the comparison of a sort needs no translation (ErrorChannel.hpp does it on the CPU)

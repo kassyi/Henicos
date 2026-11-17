@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// A member of <c>Interlocked</c> or <c>BitOperations</c> is rejected exactly when no <c>[BclIntrinsicMap]</c> maps
-/// it, the table the transpiler converts by (GSH0109); a mapped one that takes a nint or nuint (#983), and a mapped one
+/// it, the table the transpiler converts by (GSH0109); a mapped one
 /// used as a method group, also named through using static (#570), are reported as GSH0003.
 /// </summary>
 [Category(TestCategory.Compiler)]
@@ -19,6 +19,8 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
     [InlineData("Cpu", "MappedBitOperationsKernel")]
     [InlineData("Cuda", "MappedInterlockedKernel")]
     [InlineData("Cuda", "MappedBitOperationsKernel")]
+    [InlineData("Cpu", "NuintOverloadKernel")]
+    [InlineData("Cuda", "NuintOverloadKernel")]
     [Scenario(TestScenario.HappyPath)]
     public async Task Gsh0003_MappedInterlockedOrBitOperationsMember_ReportsNothing(string dialect, string kernel)
     {
@@ -32,12 +34,10 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
     [Theory]
     [InlineData("Cpu", "MappedMethodGroupKernel", "(used as a method group)", 47, 36, 47, 58)]
     [InlineData("Cpu", "UsingStaticMethodGroupKernel", "(used as a method group)", 56, 36, 56, 44)]
-    [InlineData("Cpu", "NuintOverloadKernel", "(nint and nuint are not supported)", 65, 21, 65, 43)]
     [InlineData("Cuda", "MappedMethodGroupKernel", "(used as a method group)", 47, 36, 47, 58)]
     [InlineData("Cuda", "UsingStaticMethodGroupKernel", "(used as a method group)", 56, 36, 56, 44)]
-    [InlineData("Cuda", "NuintOverloadKernel", "(nint and nuint are not supported)", 65, 21, 65, 43)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Gsh0003_MethodGroupOrNativeInteger_ReportsOneAtTheCall(string dialect, string kernel,
+    public async Task Gsh0003_MethodGroup_ReportsOneAtTheCall(string dialect, string kernel,
         string reason, int startLine, int startColumn, int endLine, int endColumn)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);

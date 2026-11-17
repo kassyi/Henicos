@@ -72,7 +72,7 @@ public class NullCheckFactsTests
         var method = IrTestCases.FindMethod(trapCompilation, "IrTrapCases.Traps", "TakesArray");
         var parameter = method.Parameters[0];
 
-        Assert.Equal(ArgumentCheckKind.Array, ArrayNullCheck.GetArgumentCheckKind(parameter));
+        Assert.Equal(ArgumentCheckKind.Array, ArgumentNullCheck.GetArgumentCheckKind(parameter));
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class NullCheckFactsTests
         var method = IrTestCases.FindMethod(trapCompilation, "IrTrapCases.Traps", "TakesNullableArray");
         var parameter = method.Parameters[0];
 
-        Assert.Equal(ArgumentCheckKind.None, ArrayNullCheck.GetArgumentCheckKind(parameter));
+        Assert.Equal(ArgumentCheckKind.None, ArgumentNullCheck.GetArgumentCheckKind(parameter));
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class NullCheckFactsTests
         var invocation = syntax.DescendantNodes().OfType<InvocationExpressionSyntax>().Single();
         var argument = invocation.ArgumentList.Arguments[0].Expression;
 
-        Assert.False(ArrayNullCheck.ChecksArgument(argument, parameter, model));
+        Assert.False(ArgumentNullCheck.ChecksArgument(argument, parameter, model));
     }
 
     [Fact]

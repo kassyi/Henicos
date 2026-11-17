@@ -141,4 +141,41 @@ public static class ReconvergenceCases
             r[t] = Warp.ActiveMask();
         }
     }
+
+    [GpuKernel]
+    public static void UniformSwitchBreakKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        switch (u)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                if ((t & 1) == 0)
+                {
+                    break;
+                }
+
+                r[t + 32] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(9);
+        r[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void UniformSwitchDirectBreakKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        switch (u)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        Mark(10);
+    }
 }

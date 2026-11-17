@@ -5,7 +5,7 @@ using Names = Kassyi.GSharp.Compiler.GSharpInternalNames.IntegerSemantics;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// The managed form of an int or long <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
+/// The managed form of an int, long or nint <c>/</c> or <c>%</c> (and <c>/=</c>, <c>%=</c>) that may divide the minimum of
 /// the type by -1 (#718): .NET throws <see cref="OverflowException"/> there, while G# gives the GPU result (MinValue,
 /// and 0 for the remainder) on every path. The managed path calls a <c>ManagedGpuContext</c> function instead, in
 /// kernel bodies and, through the managed version of a device function (#711), in device functions. A division that
@@ -34,15 +34,16 @@ internal static class ManagedDivision
             operation.Syntax.RawKind != node.RawKind ||
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             operation.ConstantValue.HasValue ||
-            operation.Type?.SpecialType is not (SpecialType.System_Int32 or SpecialType.System_Int64) ||
-            !MayDivideMinimumByMinusOne(operation.Type.SpecialType, operation.LeftOperand, operation.RightOperand))
+            operation.Type is not { } operationType ||
+            IntegerSemantics.Canonical(operationType.SpecialType) is not
+                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
+            !MayNeedHelper(type, OperationRanges.Of(operation.LeftOperand),
+                OperationRanges.Of(operation.RightOperand)))
         {
             return null;
         }
 
-        var helper = Pick(operation.OperatorKind == BinaryOperatorKind.Divide, operation.Type.SpecialType,
-            Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32, Names.RemainderInt64);
-        return new ManagedDivisionPlan(helper, ManagedDivisionForm.Call);
+        return DecideBinary(operation.OperatorKind == BinaryOperatorKind.Divide, type);
     }
 
     // The operator type of x /= y is the promotion of the target and the value; only an int or long target can hold
@@ -54,8 +55,8 @@ internal static class ManagedDivision
             operation is not { OperatorMethod: null, IsLifted: false, IsChecked: false } ||
             IntegerSemantics.GetCompoundOperatorType(operation) is not
                 (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
-            operation.Target.Type?.SpecialType != type ||
-            !MayDivideMinimumByMinusOne(type, operation.Target, operation.Value))
+            IntegerSemantics.Canonical(operation.Target.Type?.SpecialType ?? SpecialType.None) != type ||
+            !MayNeedHelper(type, OperationRanges.Of(operation.Target), OperationRanges.Of(operation.Value)))
         {
             return null;
         }
@@ -69,78 +70,174 @@ internal static class ManagedDivision
         // C# finds the location, reads the target, then evaluates the value (C# spec §12.21.4). A value that writes the
         // variable of the target (x /= (x = 5)) must not run before that read
         var valueWrites = ExpressionEffects.Of(value, model).Writes;
-        var divide = operation.OperatorKind == BinaryOperatorKind.Divide;
-        var helper = Pick(divide, type, Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32,
-            Names.RemainderInt64);
+        ManagedDivisionTarget targetKind;
+        var valueWritesTarget = false;
+        var repeatableProperty = false;
+        var receiverKind = ManagedPropertyReceiver.None;
+        ITypeSymbol? receiverType = null;
+        ITypeSymbol? propertyType = null;
+
         if (operation.Target is IPropertyReferenceOperation { Property.ReturnsByRef: false } property)
         {
-            return PlanProperty(property, valueWrites, helper, divide, model);
+            targetKind = ManagedDivisionTarget.Property;
+            repeatableProperty = IsRepeatableTarget(property, valueWrites, model);
+            if (!repeatableProperty)
+            {
+                // The rewriter writes the getter and the setter over the receiver of a written <receiver>.<name>; a
+                // target that is not one (a conditional access is not an assignment target in C# at all) keeps the
+                // operator
+                if (!property.Arguments.IsEmpty ||
+                    property.Syntax is not MemberAccessExpressionSyntax ||
+                    property.Instance is not { Type: { } instanceType } receiver ||
+                    property.Property is not { GetMethod: not null, SetMethod.IsInitOnly: false })
+                {
+                    receiverKind = ManagedPropertyReceiver.None;
+                }
+                else if (instanceType.IsReferenceType)
+                {
+                    receiverKind = ManagedPropertyReceiver.Object;
+                    receiverType = instanceType;
+                    propertyType = property.Type;
+                }
+                else if (instanceType.IsValueType && instanceType.TypeKind != TypeKind.TypeParameter &&
+                         IsReferenceable(receiver))
+                {
+                    receiverKind = ManagedPropertyReceiver.Variable;
+                    receiverType = instanceType;
+                    propertyType = property.Type;
+                }
+            }
         }
-
-        if (!IsReferenceable(operation.Target))
+        else if (!IsReferenceable(operation.Target))
         {
-            return null;
+            targetKind = ManagedDivisionTarget.Other;
         }
-
-        if (!valueWrites.Overlaps(ExpressionEffects.RootOf(target, model)))
+        else
         {
-            var assign = Pick(divide, type, Names.DivideAssignInt32, Names.DivideAssignInt64,
-                Names.RemainderAssignInt32, Names.RemainderAssignInt64);
-            return new ManagedDivisionPlan(assign, ManagedDivisionForm.AssignByReference);
+            valueWritesTarget = valueWrites.Overlaps(ExpressionEffects.RootOf(target, model));
+            targetKind = operation.Target is ILocalReferenceOperation { Local.RefKind: RefKind.None } or
+                                             IParameterReferenceOperation { Parameter.RefKind: RefKind.None }
+                ? ManagedDivisionTarget.ByValueVariable
+                : ManagedDivisionTarget.Location;
         }
 
-        // The value writes the target's variable: a local or a by-value parameter is read as the first argument, before
-        // the value; a location in memory is found once and read before the value through a reference
-        if (operation.Target is ILocalReferenceOperation { Local.RefKind: RefKind.None } or
-            IParameterReferenceOperation { Parameter.RefKind: RefKind.None })
-        {
-            return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
-        }
-
-        var store = Pick(divide, type, Names.DivideStoreInt32, Names.DivideStoreInt64, Names.RemainderStoreInt32,
-            Names.RemainderStoreInt64);
-        var read = type == SpecialType.System_Int32 ? Names.ReadReferenceInt32 : Names.ReadReferenceInt64;
-        return new ManagedDivisionPlan(store, ManagedDivisionForm.ReadFirst, read);
+        var facts = new ManagedCompoundDivisionFacts(
+            Divide: operation.OperatorKind == BinaryOperatorKind.Divide,
+            Type: type,
+            Target: targetKind,
+            ValueWritesTarget: valueWritesTarget,
+            RepeatableProperty: repeatableProperty,
+            Receiver: receiverKind,
+            ReceiverType: receiverType,
+            PropertyType: propertyType);
+        return DecideCompound(facts);
     }
 
-    // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and the
-    // arguments are written twice (for the get and for the set) when they neither write nor throw and the value does
-    // not write what they read. Otherwise a property (not an indexer) binds its receiver once: a value type by
-    // reference to its variable, a reference type by its value, as C# evaluates the receiver once and reads the
-    // property before the value
-    private static ManagedDivisionPlan? PlanProperty(IPropertyReferenceOperation property, VariableSet valueWrites,
-        string helper, bool divide, SemanticModel model)
+    /// <summary>
+    /// Whether the division or remainder in <paramref name="type"/> may divide the minimum of the type by -1.
+    /// </summary>
+    public static bool MayNeedHelper(SpecialType type, IntegerRange? dividend, IntegerRange? divisor) =>
+        type is SpecialType.System_Int32 or SpecialType.System_Int64 &&
+        IntegerSemantics.MayDivideMinimumByMinusOne(dividend, divisor, type);
+
+    /// <summary>
+    /// The plan of an int or long <c>/</c> or <c>%</c> that may divide the minimum of the type by -1.
+    /// </summary>
+    public static ManagedDivisionPlan DecideBinary(bool divide, SpecialType type)
     {
-        if (IsRepeatableTarget(property, valueWrites, model))
+        if (type is not (SpecialType.System_Int32 or SpecialType.System_Int64))
         {
-            return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
+            throw new InvalidOperationException($"Type {type} is not an integer type that can divide minimum by -1.");
         }
 
-        // The rewriter writes the getter and the setter over the receiver of a written <receiver>.<name>; a target that
-        // is not one (a conditional access is not an assignment target in C# at all) keeps the operator
-        if (!property.Arguments.IsEmpty ||
-            property.Syntax is not MemberAccessExpressionSyntax ||
-            property.Instance is not { Type: { } receiverType } receiver ||
-            property.Property is not { GetMethod: not null, SetMethod.IsInitOnly: false })
-        {
-            return null;
-        }
+        var helper = Pick(divide, type, Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32,
+            Names.RemainderInt64);
+        return new ManagedDivisionPlan(helper, ManagedDivisionForm.Call);
+    }
 
-        var store = divide ? Names.DividePropertyStore : Names.RemainderPropertyStore;
-        if (receiverType.IsReferenceType)
-        {
-            return new ManagedDivisionPlan(
-                divide ? Names.DividePropertyStoreOf : Names.RemainderPropertyStoreOf,
-                ManagedDivisionForm.PropertyOfObject,
-                Names.ReadPropertyOf,
-                receiverType,
-                property.Type);
-        }
+    /// <summary>
+    /// The plan of an int or long <c>/=</c> or <c>%=</c> that may divide the minimum of the type by -1; null when the
+    /// operator stays.
+    /// </summary>
+    public static ManagedDivisionPlan? DecideCompound(in ManagedCompoundDivisionFacts facts)
+    {
+        var helper = Pick(facts.Divide, facts.Type, Names.DivideInt32, Names.DivideInt64, Names.RemainderInt32,
+            Names.RemainderInt64);
 
-        return receiverType.IsValueType && receiverType.TypeKind != TypeKind.TypeParameter && IsReferenceable(receiver)
-            ? new ManagedDivisionPlan(store, ManagedDivisionForm.PropertyByReference, Names.ReadProperty,
-                receiverType, property.Type)
-            : null;
+        switch (facts.Target)
+        {
+            // A property or indexer: get once, divide, set once, as the compound assignment does. The receiver and
+            // the arguments are written twice (for the get and for the set) when they neither write nor throw and the
+            // value does not write what they read. Otherwise a property (not an indexer) binds its receiver once: a
+            // value type by reference to its variable, a reference type by its value, as C# evaluates the receiver
+            // once and reads the property before the value
+            case ManagedDivisionTarget.Property:
+                if (facts.RepeatableProperty)
+                {
+                    return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
+                }
+
+                switch (facts.Receiver)
+                {
+                    case ManagedPropertyReceiver.Object:
+                        if (facts.ReceiverType == null || facts.PropertyType == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Property of object requires ReceiverType and PropertyType.");
+                        }
+
+                        return new ManagedDivisionPlan(
+                            facts.Divide ? Names.DividePropertyStoreOf : Names.RemainderPropertyStoreOf,
+                            ManagedDivisionForm.PropertyOfObject,
+                            Names.ReadPropertyOf,
+                            facts.ReceiverType,
+                            facts.PropertyType);
+
+                    case ManagedPropertyReceiver.Variable:
+                        if (facts.ReceiverType == null || facts.PropertyType == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Property of variable requires ReceiverType and PropertyType.");
+                        }
+
+                        return new ManagedDivisionPlan(
+                            facts.Divide ? Names.DividePropertyStore : Names.RemainderPropertyStore,
+                            ManagedDivisionForm.PropertyByReference,
+                            Names.ReadProperty,
+                            facts.ReceiverType,
+                            facts.PropertyType);
+
+                    case ManagedPropertyReceiver.None:
+                    default:
+                        return null;
+                }
+
+            case ManagedDivisionTarget.Location:
+            case ManagedDivisionTarget.ByValueVariable:
+                if (!facts.ValueWritesTarget)
+                {
+                    var assign = Pick(facts.Divide, facts.Type, Names.DivideAssignInt32, Names.DivideAssignInt64,
+                        Names.RemainderAssignInt32, Names.RemainderAssignInt64);
+                    return new ManagedDivisionPlan(assign, ManagedDivisionForm.AssignByReference);
+                }
+
+                // The value writes the target's variable: a local or a by-value parameter is read as the first
+                // argument, before the value; a location in memory is found once and read before the value through a
+                // reference
+                if (facts.Target == ManagedDivisionTarget.ByValueVariable)
+                {
+                    return new ManagedDivisionPlan(helper, ManagedDivisionForm.Reassign);
+                }
+
+                var store = Pick(facts.Divide, facts.Type, Names.DivideStoreInt32, Names.DivideStoreInt64,
+                    Names.RemainderStoreInt32, Names.RemainderStoreInt64);
+                var read = facts.Type == SpecialType.System_Int32 ? Names.ReadReferenceInt32 : Names.ReadReferenceInt64;
+                return new ManagedDivisionPlan(store, ManagedDivisionForm.ReadFirst, read);
+
+            case ManagedDivisionTarget.Other:
+            default:
+                return null;
+        }
     }
 
     private static bool IsRepeatableTarget(IPropertyReferenceOperation property, VariableSet valueWrites,
@@ -160,16 +257,6 @@ internal static class ManagedDivision
         }
 
         return true;
-    }
-
-    private static bool MayDivideMinimumByMinusOne(SpecialType type, IOperation dividend, IOperation divisor)
-    {
-        var range = IntegerRange.OfType(type) ?? throw new InvalidOperationException($"{type} has no range.");
-        return DivisionCheckRule.MayDivideMinimumByMinusOne(
-            type,
-            OperationRanges.Of(dividend) ?? range,
-            OperationRanges.Of(divisor) ?? range
-        );
     }
 
     // A location that ref can take: a local, a parameter, a field, an array element, a ref-returning property, indexer
@@ -265,3 +352,67 @@ internal readonly record struct ManagedDivisionPlan(
     string? Reader = null,
     ITypeSymbol? ReceiverType = null,
     ITypeSymbol? ValueType = null);
+
+/// <summary>What the target of a <c>/=</c> or <c>%=</c> is, for <see cref="ManagedDivision.DecideCompound"/>.</summary>
+internal enum ManagedDivisionTarget
+{
+    /// <summary>A target that <c>ref</c> cannot take and that is not a property: the operator stays.</summary>
+    Other,
+
+    /// <summary>
+    /// A location that <c>ref</c> can take other than a by-value local or parameter: a field that is not read-only, an
+    /// array element, a ref local or parameter, a ref-returning property, indexer or call.
+    /// </summary>
+    Location,
+
+    /// <summary>A local or parameter that is not a reference (<c>RefKind.None</c>).</summary>
+    ByValueVariable,
+
+    /// <summary>A property or indexer that does not return by reference.</summary>
+    Property
+}
+
+/// <summary>
+/// How the receiver of a property target is bound once (<see cref="ManagedDivision.DecideCompound"/>).
+/// </summary>
+internal enum ManagedPropertyReceiver
+{
+    /// <summary>The property cannot be bound once (an indexer, a conditional access, no getter or an init setter, a
+    /// receiver of no type or of a value that ref cannot take): the operator stays.</summary>
+    None,
+
+    /// <summary>A reference type: the object it holds when the compound assignment starts.</summary>
+    Object,
+
+    /// <summary>A value type that is not a type parameter, through its variable.</summary>
+    Variable
+}
+
+/// <summary>The facts of a <c>/=</c> or <c>%=</c> that may divide the minimum by -1.</summary>
+/// <param name="Divide"><c>/=</c> rather than <c>%=</c>.</param>
+/// <param name="Type">The operator type, <see cref="SpecialType.System_Int32"/> or
+/// <see cref="SpecialType.System_Int64"/>.</param>
+/// <param name="Target">What the target is.</param>
+/// <param name="ValueWritesTarget">
+/// For a <see cref="ManagedDivisionTarget.Location"/> or <see cref="ManagedDivisionTarget.ByValueVariable"/> target:
+/// whether the value writes the variable the target is in (C# reads the target before the value). False otherwise.
+/// </param>
+/// <param name="RepeatableProperty">
+/// For a <see cref="ManagedDivisionTarget.Property"/> target: whether its receiver and arguments write nothing, throw
+/// nothing and read nothing the value writes, so they may be written twice. False otherwise.
+/// </param>
+/// <param name="Receiver">
+/// For a property that is not repeatable: how its receiver is bound once. <see cref="ManagedPropertyReceiver.None"/>
+/// otherwise.
+/// </param>
+/// <param name="ReceiverType">The receiver type when <paramref name="Receiver"/> is not None; otherwise null.</param>
+/// <param name="PropertyType">The property type when <paramref name="Receiver"/> is not None; otherwise null.</param>
+internal readonly record struct ManagedCompoundDivisionFacts(
+    bool Divide,
+    SpecialType Type,
+    ManagedDivisionTarget Target,
+    bool ValueWritesTarget,
+    bool RepeatableProperty,
+    ManagedPropertyReceiver Receiver,
+    ITypeSymbol? ReceiverType,
+    ITypeSymbol? PropertyType);

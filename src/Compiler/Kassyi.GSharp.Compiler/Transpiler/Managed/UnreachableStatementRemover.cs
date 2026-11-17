@@ -39,37 +39,46 @@ internal sealed class UnreachableStatementRemover : CSharpSyntaxRewriter
 
     private static SyntaxList<StatementSyntax> RemoveUnreachable(SyntaxList<StatementSyntax> statements)
     {
-        for (var i = 0; i < statements.Count - 1; i++)
+        // Most lists hold no jump before their last statement: they keep every statement without building the facts
+        if (!HasJumpBeforeLast(statements))
         {
-            if (!EndsUnconditionally(statements[i]))
-            {
-                continue;
-            }
-
-            var end = i + 1;
-            while (end < statements.Count && statements[end] is not (LabeledStatementSyntax or LocalDeclarationStatementSyntax))
-            {
-                end++;
-            }
-
-            if (end == i + 1)
-            {
-                continue;
-            }
-
-            SyntaxList<StatementSyntax> kept = default;
-            for (var j = 0; j < statements.Count; j++)
-            {
-                if (j <= i || j >= end)
-                {
-                    kept = kept.Add(statements[j]);
-                }
-            }
-
-            return RemoveUnreachable(kept);
+            return statements;
         }
 
-        return statements;
+        var reach = ImmutableArray.CreateBuilder<StatementReach>(statements.Count);
+        for (var i = 0; i < statements.Count; i++)
+        {
+            var statement = statements[i];
+            reach.Add(new StatementReach(EndsUnconditionally(statement),
+                statement is LabeledStatementSyntax or LocalDeclarationStatementSyntax));
+        }
+
+        var keptIndices = UnreachableStatements.FindKept(reach.MoveToImmutable());
+        if (keptIndices.Length == statements.Count)
+        {
+            return statements;
+        }
+
+        var kept = new SyntaxList<StatementSyntax>();
+        for (var i = 0; i < keptIndices.Length; i++)
+        {
+            kept = kept.Add(statements[keptIndices[i]]);
+        }
+
+        return kept;
+    }
+
+    private static bool HasJumpBeforeLast(SyntaxList<StatementSyntax> statements)
+    {
+        for (var i = 0; i < statements.Count - 1; i++)
+        {
+            if (EndsUnconditionally(statements[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // A jump, or a non-empty block whose last statement ends unconditionally
