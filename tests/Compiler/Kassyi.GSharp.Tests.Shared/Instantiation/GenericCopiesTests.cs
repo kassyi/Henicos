@@ -220,6 +220,86 @@ public class GenericCopiesTests
     }
 
     [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("CallStaticGen", "App.StaticGenExplicit")]
+    [InlineData("CallInstGen", "App.InstGenExplicit")]
+    public void Check_ExplicitGenericInterfaceMethod_RejectsTheCopy(string method, string typeArgument)
+    {
+        var (copy, _) = CreateCopy(method, typeArgument);
+
+        Assert.False(copy.IsFaithful);
+        Assert.DoesNotContain(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("explicitly", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_WrongNarrowedOperatorWithPlanPresent_RejectsTheCopy()
+    {
+        var problems = CheckMutatedCopy(
+            "Sum",
+            "System.Byte",
+            copy => copy.ReplaceNodes(
+                copy.DescendantNodes().OfType<BinaryExpressionSyntax>()
+                    .Where(b => b.IsKind(SyntaxKind.AddExpression))
+                    .Take(1),
+                (binary, _) => SyntaxFactory.BinaryExpression(
+                    SyntaxKind.SubtractExpression, binary.Left, binary.Right)));
+
+        Assert.NotEmpty(problems);
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("CheckedCompoundDivide", "System.SByte", SyntaxKind.DivideAssignmentExpression, "b")]
+    [InlineData("ShiftAssign", "System.Byte", SyntaxKind.LeftShiftAssignmentExpression, "n")]
+    public void Check_UnnarrowedCompoundRewriteWithPlanPresent_RejectsTheCopy(
+        string method,
+        string typeArgument,
+        SyntaxKind assignmentKind,
+        string rightName)
+    {
+        var problems = CheckMutatedCopy(
+            method,
+            typeArgument,
+            copy => copy.ReplaceNodes(
+                copy.DescendantNodes().OfType<AssignmentExpressionSyntax>().Take(1),
+                (original, _) =>
+                {
+                    var right = original.Right.DescendantNodes().OfType<IdentifierNameSyntax>()
+                        .Single(id => id.Identifier.ValueText == rightName);
+                    return SyntaxFactory.AssignmentExpression(assignmentKind, original.Left, right)
+                        .WithAdditionalAnnotations(original.GetAnnotations(CopyNodeIndex.AnnotationKind));
+                }));
+
+        Assert.NotEmpty(problems);
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("MaxValue", "System.Int32", "MaxValue", "MinValue")]
+    [InlineData("Max", "System.Char", "Max", "Min")]
+    public void Check_WrongStaticMemberOrMathCallWithPlanPresent_RejectsTheCopy(
+        string method,
+        string typeArgument,
+        string fromName,
+        string toName)
+    {
+        var problems = CheckMutatedCopy(
+            method,
+            typeArgument,
+            copy => copy.ReplaceTokens(
+                copy.DescendantTokens()
+                    .Where(t => t.IsKind(SyntaxKind.IdentifierToken) && t.ValueText == fromName)
+                    .ToArray(),
+                (_, _) => SyntaxFactory.Identifier(toName)));
+
+        Assert.NotEmpty(problems);
+    }
+
+    [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Sum", "System.Int32")]
     [InlineData("Sum", "App.Vec")]
@@ -267,6 +347,14 @@ public class GenericCopiesTests
     [InlineData("Identities", "System.Decimal")]
     [InlineData("Abs", "System.UInt32")]
     [InlineData("Abs", "System.Int16")]
+    [InlineData("AbsPlusB", "System.Byte")]
+    [InlineData("AbsPlusB", "System.Char")]
+    [InlineData("AbsLessB", "System.Byte")]
+    [InlineData("AbsLessB", "System.Char")]
+    [InlineData("CompoundAddAbs", "System.Byte")]
+    [InlineData("CompoundAddAbs", "System.Char")]
+    [InlineData("SignOfAbs", "System.Char")]
+    [InlineData("MaxOfAbs", "System.Char")]
     [InlineData("MaxMagnitude", "System.UInt64")]
     [InlineData("MaxMagnitude", "System.Char")]
     [InlineData("MinMagnitude", "System.Char")]
@@ -474,6 +562,14 @@ public class GenericCopiesTests
         { "Abs", "System.Byte" },
         { "Abs", "System.Char" },
         { "Abs", "System.Int16" },
+        { "AbsPlusB", "System.Byte" },
+        { "AbsPlusB", "System.Char" },
+        { "AbsLessB", "System.Byte" },
+        { "AbsLessB", "System.Char" },
+        { "CompoundAddAbs", "System.Byte" },
+        { "CompoundAddAbs", "System.Char" },
+        { "SignOfAbs", "System.Char" },
+        { "MaxOfAbs", "System.Char" },
         { "MaxMagnitude", "System.UInt16" },
         { "MaxMagnitude", "System.Char" },
         { "MaxMagnitude", "System.SByte" },
@@ -799,6 +895,37 @@ public class GenericCopiesTests
 
     private static string Describe(GenericCopy copy) =>
         string.Join("; ", copy.Findings.Select(f => $"{f.Location.GetLineSpan().StartLinePosition}: {f.Reason}"));
+
+    private static ImmutableArray<CopyProblem> CheckMutatedCopy(
+        string method,
+        string typeArgument,
+        Func<MethodDeclarationSyntax, MethodDeclarationSyntax> mutate)
+    {
+        var compilation = CreateCompilation();
+        var type = compilation.GetTypeByMetadataName(typeArgument) ??
+                   throw new InvalidOperationException($"No type '{typeArgument}'.");
+        var instance = Instance(compilation, method, type);
+        var plan = GenericCopies.Plan(compilation, instance);
+        var set = GenericCopies.Create(compilation, [plan]);
+        var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(set.Copies.Single().Declaration);
+        var mutated = mutate(copyDeclaration);
+        var oldTree = copyDeclaration.SyntaxTree;
+        var newTree = oldTree.WithRootAndOptions(oldTree.GetRoot().ReplaceNode(copyDeclaration, mutated),
+            oldTree.Options);
+        var updatedCompilation = set.Compilation.ReplaceSyntaxTree(oldTree, newTree);
+        var updatedCopy = newTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(m => m.Identifier.ValueText == copyDeclaration.Identifier.ValueText);
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
+            instance.Definition.DeclaringSyntaxReferences.Single().GetSyntax());
+        return GenericCopyChecker.Check(
+            CopyNodeIndex.List(declaration),
+            declaration,
+            compilation.GetSemanticModel(declaration.SyntaxTree),
+            updatedCopy,
+            updatedCompilation.GetSemanticModel(newTree),
+            plan,
+            new InstanceSymbolMap(instance, compilation));
+    }
 
     private static CSharpCompilation CreateCompilation() =>
         RoslynTestUtility.CreateCompilation(s_source)

@@ -28,7 +28,7 @@ internal static class ConstrainedAccess
         symbol is { IsStatic: false, ContainingType.TypeKind: TypeKind.Interface };
 
     // [WHY] Static abstract/virtual interface members record ConstrainedToType on the IOperation, while instance
-    // interface members (e.g. a.CompareTo(b), x.M()) have ConstrainedToType == null and constrain through Instance.Type.
+    // interface members (e.g. a.CompareTo(b), x.M()) have ConstrainedToType == null and constrain via Instance.Type.
     /// <summary>
     /// The type <paramref name="node"/> reaches <paramref name="member"/> through, or <see langword="null"/> when it
     /// reaches the member some other way.

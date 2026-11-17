@@ -47,6 +47,26 @@ namespace App
     {
     }
 
+    public interface IStaticGen
+    {
+        static abstract int Create<U>(U value);
+    }
+
+    public struct StaticGenExplicit : IStaticGen
+    {
+        static int IStaticGen.Create<U>(U value) => 1;
+    }
+
+    public interface IInstGen
+    {
+        int Pick<U>(U value);
+    }
+
+    public struct InstGenExplicit : IInstGen
+    {
+        int IInstGen.Pick<U>(U value) => 1;
+    }
+
     public interface IOverloaded
     {
         int Pick(object value);
@@ -277,6 +297,24 @@ namespace App
         public static bool Less<T>(T a, T b) where T : IComparisonOperators<T, T, bool> => a < b;
 
         public static T MinMagnitude<T>(T a, T b) where T : INumberBase<T> => T.MinMagnitude(a, b);
+
+        public static T AbsPlusB<T>(T a, T b) where T : INumber<T> => T.Abs(a) + b;
+
+        public static bool AbsLessB<T>(T a, T b) where T : INumber<T> => T.Abs(a) < b;
+
+        public static T CompoundAddAbs<T>(T a, T b) where T : INumber<T>
+        {
+            a += T.Abs(b);
+            return a;
+        }
+
+        public static int SignOfAbs<T>(T a) where T : INumber<T> => T.Sign(T.Abs(a));
+
+        public static T MaxOfAbs<T>(T a, T b) where T : INumber<T> => T.Max(T.Abs(a), b);
+
+        public static int CallStaticGen<T>(double d) where T : IStaticGen => T.Create(d);
+
+        public static int CallInstGen<T>(T x, double d) where T : IInstGen => x.Pick(d);
     }
 
     public static partial class Outer<T> where T : unmanaged

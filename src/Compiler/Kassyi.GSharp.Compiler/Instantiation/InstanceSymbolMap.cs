@@ -116,6 +116,9 @@ internal sealed class InstanceSymbolMap
             return new ConstrainedMember.Unsupported(closed, $"'{closed.Name}' does not implement '{member.Name}'");
         }
 
+        // [WHY] Constructed generic IMethodSymbol in Roslyn drops ExplicitInterfaceImplementations, so capture the
+        // explicit target from the unconstructed implementation before constructing its type arguments.
+        var target = GetExplicitTarget(implementation);
         if (member is IMethodSymbol { IsGenericMethod: true } constructed &&
             implementation is IMethodSymbol implMethod && implMethod.IsGenericMethod &&
             implMethod.TypeParameters.Length == constructed.TypeArguments.Length)
@@ -137,7 +140,6 @@ internal sealed class InstanceSymbolMap
         // A public member is bound by its name whether or not it also declares the interface member it implements
         // (the BCL's int.Max does: it is public and lists INumber<int>.Max); only a private explicit implementation
         // has no spelling of its own
-        var target = GetExplicitTarget(implementation);
         if (implementation.DeclaredAccessibility == Accessibility.Public || target is null)
         {
             return new ConstrainedMember.Member(closed, implementation);
