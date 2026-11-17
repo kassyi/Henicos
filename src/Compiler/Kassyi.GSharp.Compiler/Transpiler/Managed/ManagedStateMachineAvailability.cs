@@ -34,8 +34,8 @@ internal static class ManagedStateMachineAvailability
         GetFrameAccessibility(method, compilation) != Accessibility.NotApplicable;
 
     /// <summary>
-    /// The accessibility of the frame and the state machine of <paramref name="method"/>: <c>public</c>,
-    /// <c>internal</c> or <c>private</c>; <see cref="Accessibility.NotApplicable"/> when the state machine is left out.
+    /// The accessibility of the frame and the state machine of <paramref name="method"/>, or
+    /// <see cref="Accessibility.NotApplicable"/> when the state machine is left out.
     /// </summary>
     public static Accessibility GetFrameAccessibility(IMethodSymbol method, Compilation compilation) =>
         Get(method.OriginalDefinition, compilation, s_results.For(compilation),
@@ -78,13 +78,19 @@ internal static class ManagedStateMachineAvailability
 
     /// <summary>
     /// Whether the state machine of <paramref name="method"/>, whose frame has <paramref name="frame"/> accessibility,
-    /// has the entries through which the callers outside its class run it: the frame is private, and the function is
-    /// not. The entries take the function's parameters and have its declared accessibility (public, internal,
-    /// protected, protected internal or private protected), so every caller C# lets call the function can call them; a
-    /// private function has no callers outside its class.
+    /// has the entries through which callers that cannot name the frame directly run it: the frame is narrower than
+    /// the function's callers (including callers in other assemblies). The entries take the function's parameters and
+    /// have its declared accessibility (public, internal, protected, protected internal or private protected), so every
+    /// caller C# lets call the function can call them; a private function has no callers outside its class.
     /// </summary>
-    public static bool HasEntries(IMethodSymbol method, Accessibility frame) =>
-        frame == Accessibility.Private && method.DeclaredAccessibility != Accessibility.Private;
+    public static bool HasEntries(IMethodSymbol method, Accessibility frame) => frame switch
+    {
+        Accessibility.Private => method.DeclaredAccessibility != Accessibility.Private,
+        Accessibility.ProtectedAndInternal or Accessibility.Protected =>
+            method.DeclaredAccessibility is not (Accessibility.Private or Accessibility.ProtectedAndInternal),
+        Accessibility.ProtectedOrInternal => IsEffectivelyPublic(method),
+        _ => false
+    };
 
     /// <summary>
     /// The frame types that a context or frame names for <paramref name="frames"/> (<see cref="PlanCallFrames"/>):
@@ -290,27 +296,23 @@ internal static class ManagedStateMachineAvailability
     // function, which only code that C# rejects (CS0122) calls from outside its class; that code gets no frame and no
     // diagnostic of its own, and the generator does not throw for it, since it also runs on code still being typed
     private static SuspendingCallForm ChooseCallForm(Accessibility frame, IMethodSymbol callee,
-        INamedTypeSymbol within) =>
-        frame switch
-        {
-            Accessibility.NotApplicable => SuspendingCallForm.Unavailable,
-            Accessibility.Private when !IsWithin(within, callee.ContainingType) => HasEntries(callee, frame)
-                ? SuspendingCallForm.Entry
-                : SuspendingCallForm.Unavailable,
-            _ => SuspendingCallForm.Direct
-        };
-
-    private static bool IsWithin(INamedTypeSymbol type, INamedTypeSymbol container)
+        INamedTypeSymbol within)
     {
-        for (INamedTypeSymbol? current = type; current != null; current = current.ContainingType)
+        if (frame == Accessibility.NotApplicable)
         {
-            if (SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, container.OriginalDefinition))
-            {
-                return true;
-            }
+            return SuspendingCallForm.Unavailable;
         }
 
-        return false;
+        if (frame != Accessibility.Public &&
+            !AccessibilityConsistency.IsGeneratedAtLeastAsVisibleAs(
+                callee.ContainingType, frame, Accessibility.Private, within))
+        {
+            return HasEntries(callee, frame)
+                ? SuspendingCallForm.Entry
+                : SuspendingCallForm.Unavailable;
+        }
+
+        return SuspendingCallForm.Direct;
     }
 
     // The first file-local type that <type> is or holds (an element, a pointee, a type argument, a containing type):

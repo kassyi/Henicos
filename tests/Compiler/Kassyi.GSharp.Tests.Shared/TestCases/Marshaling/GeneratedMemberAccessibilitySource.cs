@@ -60,6 +60,10 @@ public class Host
     protected static class ProtectedNested
     {
     }
+
+    protected struct ProtectedStructNested
+    {
+    }
 }
 
 // The shapes of a C# oracle (a small project that put each keyword on a member of the container and named the type):
@@ -137,4 +141,19 @@ public class FamilyAndAssemblyHost
     public class InstanceK
     {
     }
+}
+
+public interface IProtectedBase
+{
+    protected struct S
+    {
+    }
+}
+
+public struct StructDerivedFromInterface : IProtectedBase
+{
+}
+
+public class ProtectedDerivedFromInterface : IProtectedBase
+{
 }

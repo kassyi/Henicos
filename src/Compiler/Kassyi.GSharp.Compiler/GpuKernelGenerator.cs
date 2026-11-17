@@ -526,13 +526,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
-            // A private frame (one that holds a private type of the class) is run from other classes and assemblies
-            // through its entries, which have the accessibility of the function (#1884, #1991)
+            // A frame narrower than external callers is run from other assemblies through its entries, which have the
+            // accessibility of the function (#1884, #1991, #1845)
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
                                          managedCSharpSource.Length > 0;
             var privateManagedFrame = hasManagedStateMachine &&
-                                      ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol,
-                                          compilation) == Accessibility.Private;
+                                      ManagedStateMachineAvailability.HasEntries(
+                                          methodSymbol,
+                                          ManagedStateMachineAvailability.GetFrameAccessibility(
+                                              methodSymbol, compilation));
             var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
                                     managedCSharpSource.Length > 0;
             var managedForms = new ExportedManagedForms(
