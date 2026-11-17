@@ -25,6 +25,7 @@ import { checkReconnects } from "./self-test-reconnect.ts";
 import { checkPause } from "./self-test-pause.ts";
 import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
+import { checkLib } from "./lib-checks.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -140,6 +141,7 @@ export async function selfTest(): Promise<void> {
     await named(name, () => check(assert));
   }
   await named("checkView", checkView);
+  await named("checkLib", checkLib);
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
