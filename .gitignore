@@ -102,6 +102,14 @@ dist-ssr/
 /.claude/commands/test-failed.ja.prompt.md
 /.claude/commands/write-bcl-xml-comment.en.prompt.md
 /.claude/commands/write-bcl-xml-comment.ja.prompt.md
+/.claude/rules/agent-scripts.md
+/.claude/rules/coding-style.md
+/.claude/rules/generator-invariants.md
+/.claude/rules/gsharp-naming-conventions.md
+/.claude/rules/job-queue.md
+/.claude/rules/semantics-charter.md
+/.claude/rules/test-architecture.md
+/.claude/rules/transpiler-emission.md
 /.claude/skills/architecture-mapper/
 /.claude/skills/ci.en/
 /.claude/skills/ci.ja/

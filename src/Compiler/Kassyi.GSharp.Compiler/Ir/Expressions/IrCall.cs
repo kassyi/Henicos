@@ -35,5 +35,5 @@ internal sealed class IrCall(IMethodSymbol method, IrExpression? receiver, Immut
         IrCallClassification classification) =>
         receiver == Receiver && arguments == Arguments && classification.Equals(Classification)
             ? this
-            : new IrCall(Method, receiver, arguments, classification, Type, Category, Source);
+            : KeepSpelling(new IrCall(Method, receiver, arguments, classification, Type, Category, Source));
 }

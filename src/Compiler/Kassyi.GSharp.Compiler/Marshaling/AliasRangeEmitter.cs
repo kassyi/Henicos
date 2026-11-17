@@ -14,6 +14,8 @@ internal static class AliasRangeEmitter
     public const string Aliases = GSharpInternalNames.Launcher.Aliases;
 
     private const string PinsType = "global::Kassyi.GSharp.Runtime.Interop.HostAliasPins";
+    private const string Held = GSharpInternalNames.Launcher.AliasHeld;
+    private const string IntPtrType = HostTypeNames.IntPtr;
     private const string Ranges = GSharpInternalNames.Launcher.AliasRanges;
     private const int RangeFields = 6;
 
@@ -35,11 +37,11 @@ internal static class AliasRangeEmitter
 
         writer.AppendLine(")");
         var scope = writer.Scope();
-        writer.AppendLine($"nint* {Ranges} = stackalloc nint[{ranges.Length * RangeFields}];");
+        writer.AppendLine($"{IntPtrType}* {Ranges} = stackalloc {IntPtrType}[{ranges.Length * RangeFields}];");
         for (var k = 0; k < ranges.Length; k++)
         {
             var at = k * RangeFields;
-            writer.AppendLine($"{Ranges}[{at}] = (nint){ranges[k].Pinned};");
+            writer.AppendLine($"{Ranges}[{at}] = ({IntPtrType}){ranges[k].Pinned};");
             writer.AppendLine($"{Ranges}[{at + 1}] = {ranges[k].ByteLength};");
             writer.AppendLine($"{Ranges}[{at + 2}] = sizeof({ranges[k].ElementType});");
             writer.AppendLine($"{Ranges}[{at + 3}] = sizeof({ranges[k].DeviceElementType});");
@@ -52,9 +54,13 @@ internal static class AliasRangeEmitter
 
     // __gsharp_aliases = HostAliasGroups.Find(<ranges>, new byte[] { <traits> }, "<names>");
     /// <summary>Writes the call that finds the groups, inside <see cref="WritePinnedRanges"/>.</summary>
-    public static void WriteFind(SourceWriter writer, ImmutableArray<AliasRange> ranges)
+    public static void WriteFind(SourceWriter writer, ImmutableArray<AliasRange> ranges, bool heldArrays = false)
     {
-        writer.Append($"{Aliases} = {GroupsType}.Find({RangesSpan(ranges)}, new byte[] ");
+        // With held arrays, their entries follow those of the arguments: the traits and the names are completed at run
+        // time, as the ranges are (HostAliasHeldArrays.Combine)
+        writer.Append($"{Aliases} = {GroupsType}.Find({RangesSpan(ranges, heldArrays)}, ");
+        writer.AppendIf(heldArrays, $"{Held}.Combine(");
+        writer.Append("new byte[] ");
         using (writer.Braces())
         {
             for (var k = 0; k < ranges.Length; k++)
@@ -64,17 +70,29 @@ internal static class AliasRangeEmitter
             }
         }
 
-        writer.Append(", \"");
+        writer.AppendIf(heldArrays, ")");
+        writer.Append(", ");
+        writer.AppendIf(heldArrays, $"{Held}.Combine(");
+        writer.Append("\"");
         for (var k = 0; k < ranges.Length; k++)
         {
             writer.AppendIf(k > 0, ",");
             writer.Append(ranges[k].Name);
         }
 
-        writer.AppendLine("\");");
+        writer.Append("\"");
+        writer.AppendIf(heldArrays, ")");
+        writer.AppendLine(");");
     }
 
     /// <summary>The range list as the span that the <c>HostAliasGroups</c> methods take.</summary>
     public static string RangesSpan(ImmutableArray<AliasRange> ranges) =>
-        $"new global::System.ReadOnlySpan<nint>({Ranges}, {ranges.Length * RangeFields})";
+        $"new global::System.ReadOnlySpan<{IntPtrType}>({Ranges}, {ranges.Length * RangeFields})";
+
+    /// <summary>
+    /// The range list, followed by the entries of the held arrays when the launch compares them
+    /// (<see cref="LaunchAliasPlan.HasHeldArrays"/>).
+    /// </summary>
+    public static string RangesSpan(ImmutableArray<AliasRange> ranges, bool heldArrays) =>
+        heldArrays ? $"{Held}.Combine({RangesSpan(ranges)})" : RangesSpan(ranges);
 }

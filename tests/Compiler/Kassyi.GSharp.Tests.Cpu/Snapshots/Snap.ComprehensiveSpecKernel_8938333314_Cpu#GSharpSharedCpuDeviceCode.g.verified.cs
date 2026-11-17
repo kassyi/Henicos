@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"struct __gsharp_ty_DebugReduc__PhysicsVector;
 __forceinline__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_0_v);
 
-__noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value);
+inline __noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value);
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__PhysicsVector__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__PhysicsVector__
@@ -30,7 +30,7 @@ __forceinline__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMa
 return (float)sqrt((double)(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z));
 }
 
-__noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
+inline __noinline__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
 return __gsharp_id_0_value>0;
 }
 

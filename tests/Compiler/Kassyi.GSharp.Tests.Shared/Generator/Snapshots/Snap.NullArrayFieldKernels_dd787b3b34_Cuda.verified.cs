@@ -248,6 +248,13 @@ handle.Free();
 }
 host.X = native.X;
 }
+public static void AliasHeldArrays_NullArrayHolder(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayHolder host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
+}
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct NullArrayPair
 {
@@ -363,6 +370,17 @@ finally
 handle.Free();
 }
 }
+}
+}
+public static void AliasHeldArrays_NullArrayPair(ref global::Kassyi.GSharp.Tests.Shared.Core.NullArrayPair host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.A != null)
+{
+held.Add(host.A, 4, 0, false);
+}
+if (host.B != null)
+{
+held.Add(host.B, 4, 0, false);
 }
 }
 #pragma warning restore CS8500

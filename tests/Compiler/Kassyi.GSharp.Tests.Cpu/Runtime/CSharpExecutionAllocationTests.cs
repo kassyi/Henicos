@@ -17,11 +17,10 @@ public class CSharpExecutionAllocationTests : TranspilerTestBase
 
     // [WHY] A lambda that captures a local of the whole launcher makes C# allocate its closure when the launcher
     // starts, on every path; the branch must capture only its own locals
-    [SkippableFact]
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Launch_DefaultValueKernel_AllocatesOnlyTheResultArrayBeyondAVoidKernel()
     {
-        Skip.If(IsCudaDialect, "A CUDA launch allocates in the driver bindings; the CPU launchers are measured.");
         for (var i = 0; i < 3; i++)
         {
             LaunchValueKernel();

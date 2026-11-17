@@ -128,8 +128,16 @@ internal static class CudaHostLaunchEmitter
 
         // [WHY] sharedMemBytes above 48 KB needs the function's opt-in; a request the device cannot hold is rejected
         // with the kernel's name instead of the driver's bare CUDA_ERROR_INVALID_VALUE (#545)
-        writer.AppendLine(
-            $"global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare({Func}, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)});");
+        // A kernel marked [GpuKernel(AllowOversizedSharedMemory = true)] also asks for the oversized configuration
+        writer.Append("global::Kassyi.GSharp.Runtime.Aot.DynamicSharedMemoryOptIn.Prepare");
+        using (writer.Parentheses())
+        {
+            writer.Append(
+                $"{Func}, sharedMemBytes, {SymbolDisplay.FormatLiteral(kernel.Host.MessageName, quote: true)}");
+            writer.AppendIf(kernel.Host.AllowsOversizedSharedMemory, ", allowsOversizedSharedMemory: true");
+        }
+
+        writer.AppendLine(";");
         writer.AppendLine();
     }
 

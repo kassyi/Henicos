@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// and TryCopyTo (#731).
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
-public class SpanCopyTests : SpanKernelPathTestBase
+public partial class SpanCopyTests : SpanKernelPathTestBase
 {
     // P3 CopyToOverlap: overlapping source and destination slices on the same buffer behave as memmove
     [SkippableTheory]
@@ -150,41 +150,5 @@ public class SpanCopyTests : SpanKernelPathTestBase
 
         Assert.Equal(expectedOk ? 1 : 0, ok[0]);
         Assert.Equal(expected, actual);
-    }
-
-    // P4 CopyToShort on CPU: throws ArgumentException and leaves destination untouched
-    [SkippableTheory]
-    [MemberData(nameof(SpanWriteTestHelpers.Paths), MemberType = typeof(SpanWriteTestHelpers))]
-    [TestTarget(ExecutionTarget.CpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void CopyTo_DestinationTooShort_ThrowsArgumentExceptionAndPreservesDestination(bool managed)
-    {
-        Skip.If(IsCudaDialect,
-            "A CUDA trap loses its code and spoils the context; the exception is checked on the CPU paths.");
-        int[] src = [1, 2, 3, 4];
-        int[] dst = [90, 91, 92];
-        var before = (int[])dst.Clone();
-
-        Assert.Throws<ArgumentException>(() => Run(managed,
-            () => SpanWriteKernels.LaunchCopyToDirectKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX)));
-        Assert.Equal(before, dst);
-    }
-
-    [SkippableFact]
-    [TestTarget(ExecutionTarget.GpuExecution)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.SadPath)]
-    public void CopyTo_DestinationTooShortInCuda_ThrowsArgumentExceptionWithoutInnerException()
-    {
-        Skip.IfNot(IsCudaDialect, "Checks the CUDA device error; the exception is checked on the CPU paths.");
-
-        int[] src = [1, 2, 3, 4];
-        int[] dst = [90, 91, 92];
-        // The failing thread records the error and exits; the launcher throws the exception the CPU paths throw
-        var ex = Assert.Throws<ArgumentException>(() =>
-            SpanWriteKernels.LaunchCopyToDirectKernel(src, dst, gridDimX: GridDimX, blockDimX: BlockDimX));
-        Assert.Null(ex.InnerException);
-        Assert.Equal([90, 91, 92], dst);
     }
 }

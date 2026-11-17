@@ -52,6 +52,14 @@ public static class HostAliasCopies
         [NotNullWhen(true)] out T[]? copy, out int start, HostArrayCopies? copies = null,
         HostArrayElementCopy<T>? copyArrays = null)
     {
+        // An argument that is in no group (a struct array whose fields the launch compares) takes no group copy
+        if (!groups.IsMember(index))
+        {
+            copy = null;
+            start = 0;
+            return false;
+        }
+
         ref var group = ref groups.GroupAt(groups.GetGroup(index));
         if (!group.KernelGetsCopy)
         {

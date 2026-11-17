@@ -18,6 +18,18 @@ public sealed class HostArrayCopies
 {
     private readonly Dictionary<object, object> _copies = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>
+    /// Records the copy of <paramref name="array"/> that another owner made (the copy of a group of overlapping
+    /// arguments), so that every holder of the array takes it.
+    /// </summary>
+    /// <param name="array">The host array.</param>
+    /// <param name="copy">The copy of the whole array.</param>
+    public void Share(object array, object copy)
+    {
+        _copies.TryAdd(array, copy);
+        _copies.TryAdd(copy, copy);
+    }
+
     /// <summary>Records an array that the kernel gets itself, so that no holder copies it.</summary>
     /// <param name="array">The array, or <see langword="null"/>.</param>
     public void Keep(object? array)

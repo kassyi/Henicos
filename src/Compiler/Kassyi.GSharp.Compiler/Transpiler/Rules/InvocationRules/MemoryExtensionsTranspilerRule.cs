@@ -14,7 +14,7 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 {
     /// <summary>The GSH0003 text for an element type that has no default order on the device.</summary>
     public const string NoDefaultOrder =
-        "MemoryExtensions.Sort of elements without a default order on the device (only numbers other than nint and nuint, char, bool, enums and structs that implement IComparable<T> in this compilation have one)";
+        "MemoryExtensions.Sort of elements without a default order on the device (only numbers, char, bool, enums and structs that implement IComparable<T> in this compilation have one)";
 
     /// <summary>The GSH0003 text for a comparer that is not a struct of this compilation.</summary>
     public const string ComparerNotStruct =

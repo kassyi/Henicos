@@ -113,7 +113,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             : null;
         var compoundOperator = CompoundOperator.ForAssignment(node, compound, ref context);
 
-        // C++ has no >>>=; the integer types are handled here (nint and nuint are not)
+        // C++ has no >>>=; every integer type, nint and nuint included, is handled here
         if (node.IsKind(SyntaxKind.UnsignedRightShiftAssignmentExpression) && compoundOperator?.Helper == null &&
             (compoundOperator?.ShiftMask ?? 0) == 0)
         {

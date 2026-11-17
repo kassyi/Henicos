@@ -6,6 +6,22 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public partial class StructLayoutParityTests
 {
+    // CPU passes the struct in its managed layout until L4
+    [Fact]
+    public void InlineArrayOfArrays_ByRef_CopiesEachElementArray()
+    {
+        var h = new ArrayFieldPairHolder { Tag = 3 };
+        h.Arrays[0] = [10, 20];
+        h.Arrays[1] = [30, 40, 50];
+        var o = new int[3];
+
+        StructLayoutParityKernels.LaunchInlineArrayOfArraysKernel(ref h, o);
+
+        Assert.Equal([3, 20, 3], o);
+        Assert.Equal(77, h.Arrays[1][0]);
+        Assert.Equal([10, 20], h.Arrays[0]);
+    }
+
     partial void AssertBoolCharByValue()
     {
         var boolCharInput = new BoolAndCharSequential { Flag1 = false, Flag2 = true, Ch = '\u3042', Value = 10 };

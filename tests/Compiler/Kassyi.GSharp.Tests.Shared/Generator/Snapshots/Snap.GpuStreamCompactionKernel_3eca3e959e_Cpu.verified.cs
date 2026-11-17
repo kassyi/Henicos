@@ -134,6 +134,13 @@ host.Base = default;
 host.Skip = native.Skip;
 host.Limit = native.Limit;
 }
+public static void AliasHeldArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Base != null)
+{
+held.Add(host.Base, 4, 0, false);
+}
+}
 public static void CopyArrays_GpuBigIntVectorKernels_ElementCountContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntVectorKernels.ElementCountContext host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = copies.Copy(ref host.Base);

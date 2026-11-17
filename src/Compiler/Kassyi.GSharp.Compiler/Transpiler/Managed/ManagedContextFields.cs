@@ -156,23 +156,52 @@ internal static class ManagedContextFields
         DeclarationKey key, HashSet<string> sharedNames, Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string kernelName)
     {
-        var name = field.Identifier.ValueText.ToCSharpIdentifier();
-        if (sharedNames.Contains(field.Identifier.ValueText))
+        var name = PlanFieldName(field.Identifier.ValueText, key.Symbol, key.Region,
+            sharedNames.Contains(field.Identifier.ValueText), kernelName);
+        if (name.Renamed)
         {
-            if (key.Symbol == null)
-            {
-                throw new InvalidOperationException(
-                    $"The hoisted local '{field.Identifier.ValueText}' of '{kernelName}' shares its name with another one and does not resolve to a symbol.");
-            }
-
-            name = GetDistinctName(key.Symbol, key.Region);
-            renamedLocals[key] = name;
+            renamedLocals[key] = name.Name;
         }
 
         // The field is declared in the generated file, which has none of the user's using directives
         return new ManagedContextField(field,
             ManagedNameQualifier.Qualify(declaration.Type, semanticModel),
-            HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
+            HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name.Name);
+    }
+
+    /// <summary>
+    /// Decides the field name for a hoisted local in a managed context.
+    /// </summary>
+    internal static ManagedFieldName PlanFieldName(string writtenName, ISymbol? symbol, int region, bool sharesName,
+        string kernelName)
+    {
+        if (sharesName)
+        {
+            if (symbol == null)
+            {
+                throw new InvalidOperationException(
+                    $"The hoisted local '{writtenName}' of '{kernelName}' shares its name with another one and " +
+                    "does not resolve to a symbol.");
+            }
+
+            return new ManagedFieldName(GetDistinctName(symbol, region), Renamed: true);
+        }
+
+        return new ManagedFieldName(writtenName.ToCSharpIdentifier(), Renamed: false);
+    }
+
+    /// <summary>
+    /// Decides whether a resume local needs a distinct name to avoid colliding with a local declared in the body.
+    /// </summary>
+    internal static ManagedFieldName PlanResumeLocalName(ManagedFieldName field, string writtenName, ISymbol? symbol,
+        int region, bool declaredInBody)
+    {
+        if (symbol == null || field.Renamed || !declaredInBody)
+        {
+            return field;
+        }
+
+        return new ManagedFieldName(GetDistinctName(symbol, region), Renamed: true);
     }
 
     // A ref struct or stackalloc pointer local is declared again on every resume. A SharedMemory<T> keeps its
@@ -194,15 +223,20 @@ internal static class ManagedContextFields
     private static ManagedContextField RenameIfTheBodyDeclares(ManagedContextField contextField, DeclarationKey key,
         HashSet<string> bodyNames, Dictionary<DeclarationKey, string> renamedLocals)
     {
-        if (key.Symbol == null || renamedLocals.ContainsKey(key) ||
-            !bodyNames.Contains(contextField.Declarator.Identifier.ValueText))
+        var planned = PlanResumeLocalName(
+            new ManagedFieldName(contextField.Name, renamedLocals.ContainsKey(key)),
+            contextField.Declarator.Identifier.ValueText,
+            key.Symbol,
+            key.Region,
+            bodyNames.Contains(contextField.Declarator.Identifier.ValueText));
+
+        if (planned.Renamed && !renamedLocals.ContainsKey(key))
         {
-            return contextField;
+            renamedLocals[key] = planned.Name;
+            return contextField with { Name = planned.Name };
         }
 
-        var distinctName = GetDistinctName(key.Symbol, key.Region);
-        renamedLocals[key] = distinctName;
-        return contextField with { Name = distinctName };
+        return contextField;
     }
 
     // The names that the locals left in the body, the parameters of its lambdas and its local functions declare. A
@@ -254,3 +288,8 @@ internal static class ManagedContextFields
     private static string GetDistinctName(ISymbol declared, int region) =>
         CppNameResolver.Resolve(declared, declared.Name, s_cppDialect, region).ToString();
 }
+
+/// <summary>The name of a hoisted local's field or resume local in a managed context.</summary>
+/// <param name="Name">The name to write.</param>
+/// <param name="Renamed">Whether <paramref name="Name"/> is the distinct name rather than the local's own.</param>
+internal readonly record struct ManagedFieldName(string Name, bool Renamed);

@@ -87,7 +87,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
-        // C++ has no >>>; the integer types are handled above (nint and nuint are not)
+        // C++ has no >>>; every integer type, nint and nuint included, is handled above
         if (node.IsKind(SyntaxKind.UnsignedRightShiftExpression))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());

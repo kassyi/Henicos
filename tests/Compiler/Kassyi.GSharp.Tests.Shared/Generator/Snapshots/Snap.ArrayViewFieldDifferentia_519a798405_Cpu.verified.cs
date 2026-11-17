@@ -137,6 +137,9 @@ host.Tag = native.Tag;
 Unmarshal___gsharp_nullable_of_Memory_Int32(ref host.Optional, ref native.Optional, hStream);
 Unmarshal___gsharp_nullable_of_ArraySegment_Int32(ref host.OptionalSegment, ref native.OptionalSegment, hStream);
 }
+public static void AliasHeldArrays_ArrayViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+}
 public static void CopyArrays_ArrayViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies.CopyView(ref host.Memory);
@@ -262,6 +265,10 @@ public static unsafe void Unmarshal_OuterViewFields(ref global::Kassyi.GSharp.Te
 host.Tag = native.Tag;
 Unmarshal_NestedViewFields(ref host.Inner, ref native.Inner, hStream);
 }
+public static void AliasHeldArrays_OuterViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+AliasHeldArrays_NestedViewFields(ref host.Inner, held);
+}
 public static void CopyArrays_OuterViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.OuterViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 CopyArrays_NestedViewFields(ref host.Inner, copies);
@@ -317,6 +324,9 @@ public static unsafe void Unmarshal_NestedViewFields(ref global::Kassyi.GSharp.T
 {
 host.Tag = native.Tag;
 }
+public static void AliasHeldArrays_NestedViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.NestedViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+}
 public static void CopyArrays_NestedViewFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.NestedViewFields host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
 {
 _ = global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies.CopyView(ref host.Memory);
@@ -370,6 +380,9 @@ native.Managed.Length = host.Managed.Length;
 }
 }
 public static unsafe void Unmarshal_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, ref AotContexts.ArrayViewElementFields native, global::System.IntPtr hStream = default)
+{
+}
+public static void AliasHeldArrays_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
 {
 }
 public static void CopyArrays_ArrayViewElementFields(ref global::Kassyi.GSharp.Tests.Shared.Differential.ArrayViewElementFields host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)

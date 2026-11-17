@@ -25,5 +25,5 @@ internal sealed class IrConversion(IrExpression operand, IrOperator<IrConversion
     public IrConversion Update(IrExpression operand) =>
         operand == Operand
             ? this
-            : new IrConversion(operand, Conversion, IsImplicit, Type, Category, ConstantValue, Source);
+            : KeepSpelling(new IrConversion(operand, Conversion, IsImplicit, Type, Category, ConstantValue, Source));
 }
