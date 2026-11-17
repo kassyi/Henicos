@@ -178,4 +178,100 @@ public static class ReconvergenceCases
 
         Mark(10);
     }
+
+    [GpuKernel]
+    public static void ForwardGotoKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        r[t] = Warp.ActiveMask();
+        if ((t & 1) != 0)
+        {
+            goto L;
+        }
+
+        r[t + 32] = Warp.ActiveMask();
+    L:
+        Mark(11);
+        r[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoOutOfUniformIfKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        r[t] = Warp.ActiveMask();
+        if (u == 0)
+        {
+            if ((t & 1) != 0)
+            {
+                goto L;
+            }
+
+            r[t + 32] = Warp.ActiveMask();
+        }
+
+    L:
+        Mark(12);
+        r[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void CrossingGotosKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        if ((t & 1) != 0)
+        {
+            goto fail;
+        }
+
+        r[t] = Warp.ActiveMask();
+        if ((t & 2) != 0)
+        {
+            goto done;
+        }
+
+    fail:
+        Mark(13);
+        r[t + 32] = Warp.ActiveMask();
+    done:
+        Mark(14);
+        r[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void ForwardGotoNoSplitKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        if ((t & 1) != 0)
+        {
+            goto L;
+        }
+
+        r[t] = 1u;
+    L:
+        Mark(15);
+    }
+
+    [GpuKernel]
+    public static void ForwardGotoOverNestedBlockKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        if ((t & 1) != 0)
+        {
+            goto L;
+        }
+
+        {
+            r[t] = 1u;
+            r[t] = 2u;
+            r[t] = 3u;
+            r[t] = 4u;
+            m = Warp.ActiveMask();
+        }
+
+    L:
+        Mark(16);
+        r[t + 32] = m;
+    }
 }
