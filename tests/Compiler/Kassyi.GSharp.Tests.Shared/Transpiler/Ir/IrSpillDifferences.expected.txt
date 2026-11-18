@@ -190,6 +190,14 @@
   IrSpillPlannerCases.cs Cases.TargetIndexWrittenByTheValue: r[t + 1] = SuspendWith(Inc(ref t), 0);
     ir:     spill(t + 1) spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
     syntax: spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LambdaWithRejectedGotoAndActiveMaskKernel: result[t] = Warp.ActiveMask();
+    ir:     spill(result) spill(t) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LocalFunctionWithRejectedGotoAndActiveMaskKernel: result[t] = Warp.ActiveMask();
+    ir:     spill(result) spill(t) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
 #991 an earlier operand of an operation that does not split
   IrSpillPlannerCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
     ir:     spill(a[0]) split(Suspend())

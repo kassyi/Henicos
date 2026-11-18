@@ -99,13 +99,17 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         block.WithStatements(RewriteList(block.Statements, isKernelBody: !_isDeviceFunction));
 
     // isKernelBody: the statements of the kernel body, whose last statement ends the thread
-    private SyntaxList<StatementSyntax> RewriteList(SyntaxList<StatementSyntax> statements, bool isKernelBody)
+    private SyntaxList<StatementSyntax> RewriteList(
+        SyntaxList<StatementSyntax> statements,
+        bool isKernelBody,
+        JumpRegionPlan? precomputedPlan = null)
     {
-        var plan = JumpRegionPlanner.Plan(statements, BarrierHelper.ContainsPhaseBarrier);
+        var plan = precomputedPlan ?? JumpRegionPlanner.Plan(
+            statements, BarrierHelper.ContainsPhaseBarrier, groupDetachedLabels: true);
         if (!plan.Rejected.IsEmpty)
         {
-            throw new InvalidOperationException(
-                $"A jump enters the middle of a reconvergence region at '{plan.Rejected[0].GetLocation()}'");
+            // Lowering runs even on methods with rejected jumps; omit range regions instead of throwing
+            plan = JumpRegionPlan.Empty;
         }
 
         var rewritten = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count * 2);
@@ -123,12 +127,25 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 }
             }
 
-            // The labels of a statement that opens a range stay in front of the enter, as empty statements; the
-            // statement itself is passed on as the node of the original tree, so that label lookups keep working
+            // Regions that open before the statement's own labels (GotoLoop and any ForwardRange enclosing it at First)
+            // emit enter before X: ; so X is inside them; remaining ForwardRanges emit enter after X: ;
             var statement = statements[i];
-            if (plan.Regions
-                .AsStackEnumerable()
-                .Any(i, static (region, index) => region.First == index))
+            var gotoLoopIndex = FindGotoLoopIndexAtFirst(plan.Regions, i);
+            for (var p = 0; p <= gotoLoopIndex; p++)
+            {
+                if (plan.Regions[p].First == i)
+                {
+                    OpenJumpRegion(
+                        rewritten,
+                        ranges,
+                        plan.Regions[p],
+                        statements[i],
+                        statements,
+                        firstStatementLabelsInside: true);
+                }
+            }
+
+            if (HasRegionAtFirstAfter(plan.Regions, i, gotoLoopIndex))
             {
                 while (statement is LabeledStatementSyntax labeled)
                 {
@@ -136,35 +153,98 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                     statement = labeled.Statement;
                 }
 
-                foreach (var region in plan.Regions)
+                for (var p = gotoLoopIndex + 1; p < plan.Regions.Length; p++)
                 {
-                    if (region.First == i)
+                    if (plan.Regions[p].First == i)
                     {
-                        var range = new Region(RegionCount++, statements[i], region, statements);
-                        _open.Add(range);
-                        ranges.Add(range);
-                        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, range.Site));
+                        OpenJumpRegion(
+                            rewritten,
+                            ranges,
+                            plan.Regions[p],
+                            statements[i],
+                            statements,
+                            firstStatementLabelsInside: false);
                     }
                 }
             }
 
-            var endsThread = isKernelBody && i == statements.Count - 1;
+            var endsThread = isKernelBody && i == statements.Count - 1 && !HasOpenGotoLoop(ranges);
             AddRewritten(rewritten, statement, endsThread);
+
+            for (var r = ranges.Count - 1; r >= 0; r--)
+            {
+                if (ranges[r].JumpRegion is { Kind: JumpRegionKind.GotoLoop, Last: var last } loop &&
+                    last == i)
+                {
+                    CloseRange(rewritten, ranges[r], statements[loop.LabelIndex]);
+                    ranges.RemoveAt(r);
+                }
+            }
         }
 
         return SyntaxFactory.List(rewritten);
     }
 
-    // __gsharp_ReconvergeJoin_<site>: ; __gsharp_warp_reconverge_arrive(...); in front of the labeled statement. The
-    // statements between have closed their own regions, so the range is the innermost open region
+    private static int FindGotoLoopIndexAtFirst(ImmutableArray<JumpRegion> regions, int index)
+    {
+        for (var i = 0; i < regions.Length; i++)
+        {
+            if (regions[i].First == index && regions[i].Kind == JumpRegionKind.GotoLoop)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool HasRegionAtFirstAfter(ImmutableArray<JumpRegion> regions, int index, int afterIndex)
+    {
+        for (var i = afterIndex + 1; i < regions.Length; i++)
+        {
+            if (regions[i].First == index)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasOpenGotoLoop(List<Region> ranges) =>
+        ranges
+            .AsStackEnumerable()
+            .Any(static region => region.JumpRegion?.Kind == JumpRegionKind.GotoLoop);
+
+    private void OpenJumpRegion(
+        ImmutableArray<StatementSyntax>.Builder rewritten,
+        List<Region> ranges,
+        JumpRegion region,
+        StatementSyntax extent,
+        SyntaxList<StatementSyntax> enclosingStatements,
+        bool firstStatementLabelsInside)
+    {
+        var range = new Region(RegionCount++, extent, region, enclosingStatements, firstStatementLabelsInside);
+        _open.Add(range);
+        ranges.Add(range);
+        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, range.Site));
+    }
+
+    // __gsharp_ReconvergeJoin_<site>: ; __gsharp_warp_reconverge_arrive(...); in front of the labeled statement for a
+    // ForwardRange, or arrive only after the last backward goto for a GotoLoop
     private void CloseRange(ImmutableArray<StatementSyntax>.Builder statements, Region range, StatementSyntax labeled)
     {
         if (_open.Count == 0 || !ReferenceEquals(_open[_open.Count - 1], range))
         {
-            throw new InvalidOperationException("A forward-goto range is not the innermost open region at its label");
+            throw new InvalidOperationException("A jump region is not the innermost open region at its end");
         }
 
-        statements.Add(LoweringSyntax.EmptyLabel($"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{range.Site}"));
+        if (range.JumpRegion?.Kind == JumpRegionKind.ForwardRange)
+        {
+            statements.Add(
+                LoweringSyntax.EmptyLabel($"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{range.Site}"));
+        }
+
         statements.Add(CreateArrive(range.Site, GetPlaceNode(labeled)));
         _open.RemoveAt(_open.Count - 1);
     }
@@ -244,63 +324,26 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         for (var s = 0; s < switchStatement.Sections.Count; s++)
         {
             sectionPlans[s] = JumpRegionPlanner.Plan(
-                switchStatement.Sections[s].Statements, BarrierHelper.ContainsPhaseBarrier);
+                switchStatement.Sections[s].Statements,
+                BarrierHelper.ContainsPhaseBarrier,
+                groupDetachedLabels: true);
         }
 
-        ValidateCrossSectionGotos(switchStatement, sectionPlans);
+        var hasRejectedCrossSection = !JumpRegionPlanner
+            .FindRejectedCrossSectionGotos(switchStatement, sectionPlans, groupDetachedLabels: true)
+            .IsEmpty;
 
         _targets.Add(new JumpTarget(switchStatement, IsLoop: false, _open.Count, ContinueDepth: 0, ContinueLabel: null));
         var sections = ImmutableArray.CreateBuilder<SwitchSectionSyntax>(switchStatement.Sections.Count);
-        foreach (var section in switchStatement.Sections)
+        for (var s = 0; s < switchStatement.Sections.Count; s++)
         {
-            sections.Add(section.WithStatements(RewriteList(section.Statements, isKernelBody: false)));
+            var section = switchStatement.Sections[s];
+            var sectionPlan = hasRejectedCrossSection ? JumpRegionPlan.Empty : sectionPlans[s];
+            sections.Add(section.WithStatements(RewriteList(section.Statements, isKernelBody: false, sectionPlan)));
         }
 
         _targets.RemoveAt(_targets.Count - 1);
         return switchStatement.WithSections(SyntaxFactory.List(sections));
-    }
-
-    private static void ValidateCrossSectionGotos(
-        SwitchStatementSyntax switchStatement,
-        JumpRegionPlan[] sectionPlans)
-    {
-        for (var s = 0; s < switchStatement.Sections.Count; s++)
-        {
-            var section = switchStatement.Sections[s];
-            foreach (var node in section.DescendantNodes(static n =>
-                         n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
-            {
-                if (node is GotoStatementSyntax gotoStmt &&
-                    gotoStmt.IsKind(SyntaxKind.GotoStatement) &&
-                    gotoStmt.Expression is IdentifierNameSyntax { Identifier.ValueText: var labelName })
-                {
-                    if (ReconvergenceSyntax.FindLabel(gotoStmt, labelName) is { } targetLabel)
-                    {
-                        for (var t = 0; t < switchStatement.Sections.Count; t++)
-                        {
-                            if (t == s)
-                            {
-                                continue;
-                            }
-
-                            var targetSection = switchStatement.Sections[t];
-                            var l = JumpRegionPlanner.FindStatementIndexForLabel(targetSection.Statements, targetLabel);
-                            if (l >= 0)
-                            {
-                                foreach (var range in sectionPlans[t].Regions)
-                                {
-                                    if (l > range.First && l <= range.Last)
-                                    {
-                                        throw new InvalidOperationException(
-                                            $"A jump enters the middle of a reconvergence region at '{gotoStmt.GetLocation()}'");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     // A loop whose body some lanes continue gets a region around its body, which ends where the body ends; the continue
@@ -472,12 +515,12 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 return true;
             }
 
-            // A label on the first statement itself is outside the range (the enter follows it); a label nested in
-            // that statement, or in any later statement of the range, is inside
+            // Labels directly on the first statement are outside when enter follows them, and inside when enter
+            // precedes them (FirstStatementLabelsInside); labels nested inside First or on later statements are inside
             for (var i = jumpRegion.First; i <= jumpRegion.Last; i++)
             {
                 var statement = region.EnclosingStatements[i];
-                if (i == jumpRegion.First)
+                if (i == jumpRegion.First && !region.FirstStatementLabelsInside)
                 {
                     while (statement is LabeledStatementSyntax labeled)
                     {
@@ -507,7 +550,27 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             return false;
         }
 
-        return IsLabelAttachedTo(statements[region.LabelIndex], label);
+        if (IsLabelAttachedTo(statements[region.LabelIndex], label))
+        {
+            return true;
+        }
+
+        if (!JumpRegionPlanner.IsDetachedLabelStatement(statements[region.LabelIndex]))
+        {
+            return false;
+        }
+
+        for (var i = region.LabelIndex + 1;
+             i < statements.Count && JumpRegionPlanner.IsDetachedLabelStatement(statements[i]);
+             i++)
+        {
+            if (IsLabelAttachedTo(statements[i], label))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsLabelAttachedTo(StatementSyntax statement, LabeledStatementSyntax label)
@@ -650,7 +713,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         int Site,
         SyntaxNode Extent,
         JumpRegion? JumpRegion = null,
-        SyntaxList<StatementSyntax> EnclosingStatements = default);
+        SyntaxList<StatementSyntax> EnclosingStatements = default,
+        bool FirstStatementLabelsInside = false);
 
     // A loop or switch that a break leaves (the regions from BreakDepth on are inside it) and, for a loop, where a
     // continue goes (the regions from ContinueDepth on are inside its body region)

@@ -857,6 +857,14 @@
   defaultSeverity: Warning
   isEnabledByDefault: true
 
+- name: ReconvergenceJumpProhibited
+  id: GSH0120
+  title: "goto cannot jump into a reconvergence range from outside"
+  messageFormat: "'goto {0}' jumps into the statements between '{1}:' and a goto to it that hold a warp collective or barrier, in a method that reaches Warp.ActiveMask(); the CPU paths cannot tell which lanes run together there. Move the label '{0}' out of that range, or write the loop as a while or for statement."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
 - name: StackLinqChainTooDeep
   id: SLQ0001
   title: "StackLinq method chain is too deep"

@@ -274,4 +274,96 @@ public static class ReconvergenceCases
         Mark(16);
         r[t + 32] = m;
     }
+
+    [GpuKernel]
+    public static void BackwardGotoKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto top;
+        }
+
+        Mark(17);
+        r[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void BackwardGotoNoSplitKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = 1u;
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto top;
+        }
+
+        Mark(18);
+    }
+
+    [GpuKernel]
+    public static void GotoLoopAtKernelEndKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t + n * 32] = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            r[t + 64] = Warp.ActiveMask();
+            goto top;
+        }
+    }
+
+    [GpuKernel]
+    public static void StackedLabelsOnSplitForwardToSecondBackwardToFirstKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        if ((t & 1) == 1)
+        {
+            goto Y;
+        }
+
+        r[t + 32] = 1u;
+    X:
+    Y:
+        r[t] = Warp.ActiveMask();
+        if (n++ < 1)
+        {
+            goto X;
+        }
+
+        Mark(19);
+    }
+
+    [GpuKernel]
+    public static void StackedLabelsOnSplitTwoBackwardGotosKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    X:
+    Y:
+        r[t] = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto X;
+        }
+
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto Y;
+        }
+
+        Mark(20);
+    }
 }

@@ -75,6 +75,92 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Equal((20, 22), (span.EndLinePosition.Line, span.EndLinePosition.Character));
     }
 
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_EntersRangeMiddle_ReportsGSH0120WithExactSpans(string dialect)
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", s_analyzer)
+            .WithDialect(dialect)
+            .GetDiagnosticsAsync();
+
+        Assert.All(diagnostics, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+
+        var actual = diagnostics
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 15, 13, 15, 25),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 46, 13, 46, 25),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 58, 17, 58, 29),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 90, 13, 90, 25),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 103, 17, 103, 26),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 201, 13, 201, 25),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 224, 17, 224, 26),
+                (GSharpDiagnostics.ReconvergenceJumpProhibited.Id, 249, 21, 249, 30)
+            ],
+            actual);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_CompilationWithGenerator_ReportsOnlyGSH0120WithoutInternalError(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        Assert.Equal(8, run.Analyzer.Length);
+        Assert.All(
+            run.Analyzer,
+            static d => Assert.Equal(GSharpDiagnostics.ReconvergenceJumpProhibited.Id, d.Id));
+        Assert.Empty(run.Generator);
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+        Assert.DoesNotContain(
+            run.Output.GetDiagnostics(),
+            static d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ReconvergenceJump_NestedFunctions_CudaDialect_ReportsNoDiagnostics()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", s_analyzer)
+            .WithDialect("Cuda")
+            .GetDiagnosticsAsync();
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_NestedFunctions_CpuDialect_DoesNotReportGSH0120()
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", s_analyzer)
+            .WithDialect("Cpu")
+            .GetDiagnosticsAsync();
+
+        Assert.DoesNotContain(
+            diagnostics,
+            static d => d.Id == GSharpDiagnostics.ReconvergenceJumpProhibited.Id);
+        Assert.Equal(3, diagnostics.Length);
+        Assert.All(
+            diagnostics,
+            static d => Assert.Equal(GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, d.Id));
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task CrossBarrierLocalPointer_Declaration_ReportsGSH0041()

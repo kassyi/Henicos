@@ -19,7 +19,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 /// <see cref="UniformityAnalysis"/> builds, which is where the GPU runs them together again.
 /// </summary>
 [Category(TestCategory.Compiler)]
-public class ReconvergenceInserterTests
+public class ReconvergenceInserterTests : StateMachineTestBase
 {
     private const string TestCase = "ReconvergenceCases.cs";
 
@@ -39,6 +39,7 @@ public class ReconvergenceInserterTests
     [InlineData("ForwardGotoKernel", "Mark(11)")]
     [InlineData("GotoOutOfUniformIfKernel", "Mark(12)")]
     [InlineData("ForwardGotoOverNestedBlockKernel", "Mark(16)")]
+    [InlineData("BackwardGotoKernel", "Mark(17)")]
     public void Insert_ThreadDependentBranch_ReconvergesAtItsImmediatePostDominator(string kernel,
         params string[] expected)
     {
@@ -57,6 +58,111 @@ public class ReconvergenceInserterTests
         Assert.Equal(new[] { "Mark(14)" }, joins);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_GotoLoop_ReconvergesAfterLoop() =>
+        VerifyPipelineLowerFromTestCase("GotoLoop.cs", inspect: static (lowered, _) =>
+        {
+            Assert.Contains(
+                lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+                static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
+            Assert.Contains(
+                lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+                static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+        });
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopAtKernelEnd_KeepsRegionOnLastBranch()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "GotoLoopAtKernelEndKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("GotoLoopAtKernelEndKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var enterCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
+
+        Assert.Equal(2, enterCount);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_StackedLabelsOnSplit_ForwardToSecondClosesBeforeLoopEnter()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "StackedLabelsOnSplitForwardToSecondBackwardToFirstKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException(
+                         "StackedLabelsOnSplitForwardToSecondBackwardToFirstKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var calls = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Select(static call => (
+                Name: (call.Expression as IdentifierNameSyntax)?.Identifier.ValueText ?? string.Empty,
+                Call: call))
+            .Where(static item =>
+                item.Name == GSharpInternalNames.Prelude.WarpRegionEnter ||
+                item.Name == GSharpInternalNames.Prelude.WarpReconvergeArrive ||
+                item.Name == GSharpInternalNames.Prelude.WarpReconvergePass ||
+                item.Name == GSharpInternalNames.Prelude.WarpRegionLeave)
+            .ToArray();
+
+        Assert.Equal(
+            [
+                GSharpInternalNames.Prelude.WarpRegionEnter,
+                GSharpInternalNames.Prelude.WarpReconvergeArrive,
+                GSharpInternalNames.Prelude.WarpReconvergePass,
+                GSharpInternalNames.Prelude.WarpRegionEnter,
+                GSharpInternalNames.Prelude.WarpReconvergeArrive,
+                GSharpInternalNames.Prelude.WarpReconvergePass
+            ],
+            calls.Select(static item => item.Name).ToArray());
+
+        // ForwardRange(0) arrive must sit in a case section reached by `if ((t & 1) == 1)` before GotoLoop(1) enters
+        var firstArriveSection = calls[1].Call.Ancestors().OfType<SwitchSectionSyntax>().First();
+        var arriveStateLabel = Assert.IsType<CaseSwitchLabelSyntax>(firstArriveSection.Labels[0]);
+        var entrySection = calls[0].Call.Ancestors().OfType<SwitchSectionSyntax>().First();
+        var branchGoto = Assert.Single(
+            entrySection.DescendantNodes().OfType<IfStatementSyntax>().Single()
+                .DescendantNodes().OfType<GotoStatementSyntax>());
+        var targetLiteral = Assert.IsType<LiteralExpressionSyntax>(branchGoto.Expression);
+        var arriveLiteral = Assert.IsType<LiteralExpressionSyntax>(arriveStateLabel.Value);
+        Assert.Equal(arriveLiteral.Token.Value, targetLiteral.Token.Value);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_StackedLabelsOnSplit_TwoBackwardGotosAddNoLeaves()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "StackedLabelsOnSplitTwoBackwardGotosKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException(
+                         "StackedLabelsOnSplitTwoBackwardGotosKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var enterCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
+        var arriveCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+
+        Assert.Equal(1, enterCount);
+        Assert.Equal(1, arriveCount);
+        Assert.DoesNotContain(
+            lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionLeave));
+    }
+
     // A uniform branch, a branch without a split point, and a branch that ends the kernel get no reconvergence point
     [Theory]
     [Scenario(TestScenario.Boundary)]
@@ -64,6 +170,7 @@ public class ReconvergenceInserterTests
     [InlineData("LastStatementKernel")]
     [InlineData("UniformSwitchDirectBreakKernel")]
     [InlineData("ForwardGotoNoSplitKernel")]
+    [InlineData("BackwardGotoNoSplitKernel")]
     public void Insert_UniformBranchOrKernelEnd_AddsNoReconvergencePoint(string kernel)
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));

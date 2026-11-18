@@ -733,4 +733,351 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t] = m;
         result[t + 32] = Warp.ActiveMask();
     }
+
+    [GpuKernel]
+    public static void BackwardGotoKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        int n = 0;
+    top:
+        m1 = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto top;
+        }
+
+        result[t] = m1;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopWithExitKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m1 = 0u;
+        uint m2 = 0u;
+    top:
+        m1 = Warp.ActiveMask();
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        m2 = Warp.ActiveMask();
+        n++;
+        if (n < 2)
+        {
+            goto top;
+        }
+
+    after:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void TwoBackwardGotosKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    top:
+        m = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto top;
+        }
+
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto top;
+        }
+
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void BackwardGotoToSecondLabelKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m1 = 0u;
+    first:
+    second:
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        m1 = Warp.ActiveMask();
+    after:
+        uint m2 = Warp.ActiveMask();
+        if (n++ < 1)
+        {
+            goto second;
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopExitAfterSplitKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m1 = 0u;
+    top:
+        m1 = Warp.ActiveMask();
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        if (n++ < 1)
+        {
+            goto top;
+        }
+
+    after:
+        result[t] = m1;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void ForwardGotoToLoopHeadKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m1 = 0u;
+        if ((t & 1) == 1)
+        {
+            goto top;
+        }
+
+        result[t + 64] = 1u;
+    top:
+        m1 = Warp.ActiveMask();
+        n++;
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto top;
+        }
+
+        result[t] = m1;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInsideLabeledStatementKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    top:
+        {
+            m = Warp.ActiveMask();
+            n++;
+            if ((t & 1) == 1 && n < 2)
+            {
+                goto top;
+            }
+        }
+
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopAtKernelEndKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        result[t + n * 32] = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            result[t + 64] = Warp.ActiveMask();
+            goto top;
+        }
+    }
+
+    [GpuKernel]
+    public static void NestedGotoLoopsKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int outer = 0;
+        uint innerMask = 0u;
+        uint afterInner = 0u;
+    outerTop:
+        int inner = 0;
+    innerTop:
+        innerMask = Warp.ActiveMask();
+        inner++;
+        if ((t & 1) == 1 && inner < 2)
+        {
+            goto innerTop;
+        }
+
+        afterInner = Warp.ActiveMask();
+        outer++;
+        if (outer < 2)
+        {
+            goto outerTop;
+        }
+
+        result[t] = innerMask;
+        result[t + 32] = afterInner;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoBackToRangeStartWithoutSplitKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    X:
+        if ((t & 1) == 1)
+        {
+            goto M;
+        }
+
+        if (n++ < 16)
+        {
+            goto X;
+        }
+
+        m = Warp.ActiveMask();
+    M:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopOverNestedBlockKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    top:
+        {
+            result[t + 64] = 1u;
+            result[t + 64] = 2u;
+            result[t + 64] = 3u;
+            result[t + 64] = 4u;
+            result[t + 64] = 5u;
+            m = Warp.ActiveMask();
+        }
+
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto top;
+        }
+
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void StackedLabelsOnSplitTwoBackwardGotosKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    first:
+    second:
+        m = Warp.ActiveMask();
+        n++;
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto first;
+        }
+
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto second;
+        }
+
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void StackedLabelsOnSplitForwardToSecondBackwardToFirstKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        if ((t & 1) == 1)
+        {
+            goto second;
+        }
+
+        result[t + 64] = 1u;
+    first:
+    second:
+        m = Warp.ActiveMask();
+        n++;
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto first;
+        }
+
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void ForUnrollBackwardGotoKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        Gpu.ForUnroll(0, 2, i =>
+        {
+            int n = 0;
+            uint m = 0u;
+        top:
+            m = Warp.ActiveMask();
+            n++;
+            if ((t & 1) == 1 && n < 2)
+            {
+                goto top;
+            }
+
+            result[t + i * 64] = m;
+            result[t + i * 64 + 32] = Warp.ActiveMask();
+        });
+    }
+
+    [GpuKernel(Cooperative = true)]
+    public static void SyncGridBackwardGotoKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        Gpu.SyncGrid(() =>
+        {
+            {
+                int n = 0;
+                uint m = 0u;
+            top:
+                m = Warp.ActiveMask();
+                n++;
+                if ((t & 1) == 1 && n < 2)
+                {
+                    goto top;
+                }
+
+                result[t] = m;
+                result[t + 32] = Warp.ActiveMask();
+            }
+        });
+    }
 }
