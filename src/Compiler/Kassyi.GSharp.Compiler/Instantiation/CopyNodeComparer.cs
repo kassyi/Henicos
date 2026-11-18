@@ -80,7 +80,9 @@ internal static class CopyNodeComparer
         }
         else if (CopyPromotion.IsMissingNarrowing(context, original))
         {
-            return "the copy does not narrow the operator";
+            return original.IsKind(SyntaxKind.DivideAssignmentExpression)
+                ? "the copy does not narrow the operator"
+                : "the copy does not narrow the shift";
         }
 
         return CopyBindings.CompareSymbols(context, original, copied) ??

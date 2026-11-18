@@ -99,7 +99,7 @@ internal sealed class CopySymbolComparer(InstanceSymbolMap map, IReadOnlyDiction
     }
 
     private static bool IsOperatorKind(MethodKind kind) =>
-        kind is MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator or MethodKind.Conversion;
+        kind is MethodKind.BuiltinOperator or MethodKind.UserDefinedOperator;
 
     private static string UncheckedOperatorName(string name) =>
         name.StartsWith("op_Checked", StringComparison.Ordinal) ? "op_" + name["op_Checked".Length..] : name;

@@ -114,8 +114,20 @@ public class GenericCopyCheckerTests
 
         Assert.False(copy.IsFaithful);
         Assert.DoesNotContain(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
-        Assert.Contains(copy.Findings, f => f.Reason.Contains("narrow", StringComparison.Ordinal));
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not narrow the operator", StringComparison.Ordinal));
         Assert.Contains(copy.Findings, f => f.Reason.Contains("converts to", StringComparison.Ordinal));
+    }
+
+    // C# masks the count of a shift on a byte to 5 bits, the generic operator to 3: the message names a shift
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_CompoundShiftWithoutItsNarrowing_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.NarrowedCompoundShift>("ShiftAssign", "System.Byte");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not narrow the shift", StringComparison.Ordinal));
+        Assert.DoesNotContain(copy.Findings, f => f.Reason.Contains("narrow the operator", StringComparison.Ordinal));
     }
 
     [Fact]

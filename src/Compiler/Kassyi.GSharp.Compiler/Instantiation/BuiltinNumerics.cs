@@ -45,7 +45,8 @@ internal static class BuiltinNumerics
             SpecialType.System_UInt16 or SpecialType.System_Char;
 
     // [WHY] C# 12.4.7 numeric promotions convert sbyte, byte, short, ushort and char to int before unary/binary
-    // arithmetic, bitwise, shift, relational and compound assignment operators.
+    // arithmetic, bitwise, shift, relational and compound assignment operators. This is the whole table: the unary
+    // minus on uint (to long) is a separate rule, NegationLeavesType.
     /// <summary>
     /// The <see cref="SpecialType"/> that C# numeric promotion converts <paramref name="type"/> to, or
     /// <see cref="SpecialType.None"/> when C# does not promote <paramref name="type"/>.
