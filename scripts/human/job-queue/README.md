@@ -78,8 +78,9 @@ When `chat-status.js` cannot be loaded or its directory read, the view has no pa
 ## Layout
 
 `scripts/human/job-queue.js` is a plain JavaScript entry: it checks the Node version (22.18 / 23.6 or later, which
-run TypeScript by stripping the types) and imports `cli.ts`. The modules use erasable syntax only (no `enum`,
-`namespace` or parameter properties) and Node built-in modules only
+run TypeScript by stripping the types) and imports `cli.ts`. Configuration lives in `job-queue.config.json` at the
+repository root (discovered via `JOB_QUEUE_CONFIG` or upward from the entry script). The modules use erasable syntax
+only (no `enum`, `namespace` or parameter properties) and Node built-in modules only
 ([agent-scripts.md §1](../../../.agents/rules/agent-scripts.md#1-language)).
 
 | Module | Responsibility |
@@ -117,6 +118,16 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
+| `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
+| `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, context/result/panel types) and re-exported pure helper types |
+| `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, and return validation |
+| `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
+| `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
+| `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
+| `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
+| `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js`, `process-liveness.js`, and `target-dialect.js`) |
+| `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, and the hardening of plugin names, command environments and `--config` forwarding |
+| `scheduler-intake-checks.ts` | Checks of the scheduler side of the optional `memoryMb`/`keys` fields: the job record, history key lookup/preservation, state-file `keys` persistence, and version skew |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
 | `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 

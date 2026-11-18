@@ -36,6 +36,9 @@ public class ReconvergenceInserterTests
     [InlineData("ContinueKernel", "Next(k)")]
     [InlineData("NestedKernel", "Mark(5)", "Mark(6)")]
     [InlineData("UniformSwitchBreakKernel", "Mark(9)")]
+    [InlineData("ForwardGotoKernel", "Mark(11)")]
+    [InlineData("GotoOutOfUniformIfKernel", "Mark(12)")]
+    [InlineData("ForwardGotoOverNestedBlockKernel", "Mark(16)")]
     public void Insert_ThreadDependentBranch_ReconvergesAtItsImmediatePostDominator(string kernel,
         params string[] expected)
     {
@@ -45,12 +48,22 @@ public class ReconvergenceInserterTests
         Assert.Equal(expected, joins);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Insert_CrossingGotos_ReconvergesAtBothLabels()
+    {
+        var (lowered, joins) = LowerAndAnalyze("CrossingGotosKernel");
+        Assert.Equal(new[] { "Mark(13)", "Mark(14)" }, lowered);
+        Assert.Equal(new[] { "Mark(14)" }, joins);
+    }
+
     // A uniform branch, a branch without a split point, and a branch that ends the kernel get no reconvergence point
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("UniformAndPlainKernel")]
     [InlineData("LastStatementKernel")]
     [InlineData("UniformSwitchDirectBreakKernel")]
+    [InlineData("ForwardGotoNoSplitKernel")]
     public void Insert_UniformBranchOrKernelEnd_AddsNoReconvergencePoint(string kernel)
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));

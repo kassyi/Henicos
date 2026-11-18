@@ -245,8 +245,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // The class models come from the kernels of one compilation (#383); each class and the warmup list compare on
         // their own, so an edit reruns only the outputs whose model changed
+        // The imported text is resolved once for all outputs; an edit that reaches the same records leaves it equal
+        var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
+            .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
+                GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
         var kernelModule = allKernels.Combine(configProvider.Select(static (config, _) => config.EmitSource))
-            .Select(static (input, _) => KernelModuleModel.Create(input.Left, input.Right));
+            .Combine(allDevices).Combine(importedCode)
+            .Select(static (input, _) => KernelModuleModel.Create(input.Left.Left.Left, input.Left.Left.Right,
+                CollectThrowSites(input.Left.Right, input.Right)));
         var kernelClasses = kernelModule
             .SelectMany(static (module, _) => module.Classes.AsImmutableArray())
             .WithTrackingName(KernelClassTrackingName);
@@ -257,11 +263,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .Select(static (compilation, _) => ReferencesAssembly(compilation, WrapperEmitter.StackLinqAssemblyName));
         var stateMachines = allDevices
             .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
-
-        // The imported text is resolved once for both outputs; an edit that reaches the same records leaves it equal
-        var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
-            .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
-                GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
 
         context.RegisterSourceOutput(
             allDevices.Combine(importedCode).Combine(configProvider).Combine(hasKernels)
@@ -491,10 +492,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var cudaStructs = new StructSourceCollector();
             var cppStructs = new StructSourceCollector();
+            // The sites of the throws of this function: they go with it to every module that places it
+            var throwSites = new ErrorSiteTable();
             var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda, cudaStructs);
+                out var requiredIncludesCuda, cudaStructs, throwSites: throwSites);
             var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp, cppStructs);
+                out var requiredIncludesCpp, cppStructs, throwSites: throwSites);
+            var functionSites = throwSites.Entries.AsEquatableArray();
             var cudaBody = cudaFailures.Apply(cudaSource);
             var cppBody = cppFailures.Apply(cppSource);
 
@@ -526,13 +530,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
             var compilation = context.SemanticModel.Compilation;
-            // A private frame (one that holds a private type of the class) is run from other classes and assemblies
-            // through its entries, which have the accessibility of the function (#1884, #1991)
+            // A frame narrower than external callers is run from other assemblies through its entries, which have the
+            // accessibility of the function (#1884, #1991, #1845)
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
                                          managedCSharpSource.Length > 0;
             var privateManagedFrame = hasManagedStateMachine &&
-                                      ManagedStateMachineAvailability.GetFrameAccessibility(methodSymbol,
-                                          compilation) == Accessibility.Private;
+                                      ManagedStateMachineAvailability.HasEntries(
+                                          methodSymbol,
+                                          ManagedStateMachineAvailability.GetFrameAccessibility(
+                                              methodSymbol, compilation));
             var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
                                     managedCSharpSource.Length > 0;
             var managedForms = new ExportedManagedForms(
@@ -554,7 +560,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                             ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
                         ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
                             ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
-                        frameName, frames, managedForms);
+                        frameName, frames, managedForms, functionSites);
                 structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -580,7 +586,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource,
                 export,
                 structExports,
-                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel));
+                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel),
+                functionSites);
         }
         catch (InsufficientExecutionStackException)
         {
@@ -677,7 +684,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static DeviceExportRecord CreateFunctionRecord(IMethodSymbol method, Compilation compilation,
         ExportedFunctionText cuda, ExportedFunctionText cpp, string frameName, EquatableArray<string> frameDependencies,
-        ExportedManagedForms managedForms)
+        ExportedManagedForms managedForms, EquatableArray<ErrorSiteEntry> errorSites)
     {
         var cppName = GlobalCppNames.GetFunctionName(method);
         var sites = DynamicSharedMemoryAnalysis.GetReachableSites(method, compilation);
@@ -725,7 +732,25 @@ public class GpuKernelGenerator : IIncrementalGenerator
             Cuda: BuildFunctionDialectText(cppName, cuda),
             Cpp: BuildFunctionDialectText(cppName, cpp),
             traits,
-            InternalError: "");
+            InternalError: "",
+            ErrorSites: EncodeErrorSites(errorSites));
+    }
+
+    // The error sites as the record stores them (ErrorSiteCodec)
+    private static EquatableArray<string> EncodeErrorSites(EquatableArray<ErrorSiteEntry> sites)
+    {
+        if (sites.IsDefaultOrEmpty)
+        {
+            return default;
+        }
+
+        var encoded = ImmutableArray.CreateBuilder<string>(sites.Length);
+        foreach (var site in sites)
+        {
+            encoded.Add(ErrorSiteCodec.Encode(site));
+        }
+
+        return encoded.MoveToImmutable().AsEquatableArray();
     }
 
     // A struct that other assemblies can name, rendered for both dialects (StructTranspiler.IsExportedOnItsOwn), with
@@ -928,6 +953,27 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         return false;
+    }
+
+    // The sites of the throws of the device functions of the module and of the functions it imports
+    private static EquatableArray<ErrorSiteEntry> CollectThrowSites(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, ImportedDeviceCode imports)
+    {
+        var sites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
+        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
+        {
+            if (!method.ErrorSites.IsDefaultOrEmpty)
+            {
+                sites.AddRange(method.ErrorSites);
+            }
+        }
+
+        if (!imports.ErrorSites.IsDefaultOrEmpty)
+        {
+            sites.AddRange(imports.ErrorSites);
+        }
+
+        return sites.ToImmutable().AsEquatableArray();
     }
 
     // Keyed by the hint name, which identifies the class (#472)

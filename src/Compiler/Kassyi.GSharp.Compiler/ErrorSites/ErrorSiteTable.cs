@@ -38,6 +38,19 @@ internal sealed class ErrorSiteTable
     }
 
     /// <summary>
+    /// Registers the error site of a <c>throw</c> at <paramref name="node"/>: the place, the message and the exception
+    /// type that the host builds the exception from.
+    /// </summary>
+    public uint RegisterThrow(SyntaxNode node, SemanticModel? semanticModel, string memberName, in ThrownException thrown)
+    {
+        var entry = CreateSite(node, semanticModel, memberName, thrown.Message, ThrownException.TrapKind) with
+        {
+            ExceptionType = thrown.ExceptionType
+        };
+        return RegisterEntry(entry);
+    }
+
+    /// <summary>
     /// Registers an error site for <paramref name="location"/> and returns its deterministic 31-bit site ID.
     /// </summary>
     public uint Register(Location location, string memberName, string defaultMessage, string trapKind = "")

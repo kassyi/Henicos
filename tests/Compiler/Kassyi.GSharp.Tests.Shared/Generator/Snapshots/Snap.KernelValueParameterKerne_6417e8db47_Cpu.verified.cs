@@ -4362,16 +4362,16 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_value=__gsharp_in___gsharp_id_0_value;
 __gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
 }
+auto __gsharp_id_3_Add = [&](int __gsharp_id_4_d) {
+__gsharp_ctx->__gsharp_id_0_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_value,__gsharp_id_4_d);
+}
+;
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-auto __gsharp_id_3_Add = [&](int __gsharp_id_4_d) {
-__gsharp_ctx->__gsharp_id_0_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_value,__gsharp_id_4_d);
-}
-;
 __gsharp_id_3_Add(__gsharp_ctx->__gsharp_id_2_tid);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -4485,16 +4485,16 @@ __gsharp_ctx.value = __gsharp_in_value;
 __gsharp_ctx.output = __gsharp_in_output;
 }
 {
-switch (__gsharp_ctx.__gsharp_state)
-{
-case 0:
-{
-__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 void Add(int d)
 {
 __gsharp_ctx.value += d;
 }
 
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 Add(__gsharp_ctx.tid);
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;

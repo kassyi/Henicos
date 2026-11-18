@@ -60,4 +60,100 @@ public class Host
     protected static class ProtectedNested
     {
     }
+
+    protected struct ProtectedStructNested
+    {
+    }
+}
+
+// The shapes of a C# oracle (a small project that put each keyword on a member of the container and named the type):
+// which keywords the compiler accepts depends on the domain of the type and of the container, protected domains
+// included, which also reach the types derived from the type that declares them
+
+// A static class that is protected in its outer class names a protected type of that outer class: public is accepted
+public class ProtectedContainer
+{
+    protected struct S
+    {
+    }
+
+    protected static class StaticK
+    {
+    }
+
+    public static class PublicStaticK
+    {
+    }
+
+    public class InstanceK
+    {
+        protected struct Own
+        {
+        }
+    }
+}
+
+// A derived class names a protected type of its base
+public class ProtectedBase
+{
+    protected struct S
+    {
+    }
+
+    protected internal struct SInternal
+    {
+    }
+
+    private protected struct SPrivateProtected
+    {
+    }
+}
+
+public class ProtectedDerived : ProtectedBase
+{
+}
+
+public static class StaticDerivedHost
+{
+}
+
+public sealed class SealedDerived : ProtectedBase
+{
+}
+
+public class FamilyOrAssemblyHost
+{
+    protected internal struct S
+    {
+    }
+
+    public class InstanceK
+    {
+    }
+}
+
+public class FamilyAndAssemblyHost
+{
+    private protected struct S
+    {
+    }
+
+    public class InstanceK
+    {
+    }
+}
+
+public interface IProtectedBase
+{
+    protected struct S
+    {
+    }
+}
+
+public struct StructDerivedFromInterface : IProtectedBase
+{
+}
+
+public class ProtectedDerivedFromInterface : IProtectedBase
+{
 }

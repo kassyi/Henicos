@@ -467,6 +467,26 @@ public class DeviceImportTests
         Generate(dialect, s_structsConsumer, s_structsLibrary.Value, "StructImportKernels.g.cs");
 
     // The shared device code (with the imports) and the kernels' sources, from the GSharpEmitSource constants
+    // The throw of a library function: its site (place, message, exception type) is in the library's record, and the
+    // consumer registers it with its kernel, so the launch can raise the library's exception type at the library's place
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public void DeviceImport_ThrowInALibraryFunction_RegistersItsSiteWithTheConsumersKernel(string dialect)
+    {
+        var library = DeviceLibraryBuilder.Build("DeviceThrowLibrary", null,
+            RoslynTestUtility.ReadTestCase("Generators/DeviceThrowLibrary.cs"));
+
+        var (device, kernels) = Generate(dialect, RoslynTestUtility.ReadTestCase("Generators/DeviceThrowConsumer.cs"),
+            library, "ThrowImportKernels.g.cs");
+
+        Assert.Contains("GSharpErrorCode::Throw, ", device, StringComparison.Ordinal);
+        Assert.Contains("\"from the library\"", kernels, StringComparison.Ordinal);
+        Assert.Contains("DeviceThrowCase.LibraryThrowException, DeviceThrowLibrary", kernels, StringComparison.Ordinal);
+        Assert.Contains("\"Check\"", kernels, StringComparison.Ordinal);
+    }
+
     private static (string Device, string Kernels) Generate(string dialect) =>
         Generate(dialect, s_consumer, s_library.Value, "ImportKernels.g.cs");
 

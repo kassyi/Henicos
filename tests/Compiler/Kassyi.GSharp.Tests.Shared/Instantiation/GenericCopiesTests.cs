@@ -3,6 +3,7 @@
 using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Lowering;
 using Microsoft.CodeAnalysis.Text;
+using static Kassyi.GSharp.Tests.Shared.Instantiation.GenericCopyTestSupport;
 
 namespace Kassyi.GSharp.Tests.Shared.Instantiation;
 
@@ -13,8 +14,6 @@ namespace Kassyi.GSharp.Tests.Shared.Instantiation;
 [Category(TestCategory.Compiler)]
 public class GenericCopiesTests
 {
-    private static readonly string s_source = RoslynTestUtility.ReadTestCase("Instantiation/GenericCopySource.cs");
-
     // The smallest set of values of a type (nuint) that a method is run with
     private const int MinimumInputs = 9;
 
@@ -75,6 +74,10 @@ public class GenericCopiesTests
     [InlineData("CheckedCompoundDivide", "System.Int16")]
     [InlineData("CompoundDivideAt", "System.SByte")]
     [InlineData("CheckedCompoundAdd", "System.Byte")]
+    [InlineData("CheckedCompoundAdd", "System.Char")]
+    [InlineData("CheckedCompoundAdd", "System.Int16")]
+    [InlineData("Less", "System.Byte")]
+    [InlineData("Less", "System.Char")]
     [InlineData("Increment", "System.Byte")]
     [InlineData("CheckedIncrement", "System.SByte")]
     [InlineData("MinValue", "System.Int32")]
@@ -86,10 +89,20 @@ public class GenericCopiesTests
     [InlineData("Identities", "System.Decimal")]
     [InlineData("Abs", "System.UInt32")]
     [InlineData("Abs", "System.Int16")]
+    [InlineData("AbsPlusB", "System.Byte")]
+    [InlineData("AbsPlusB", "System.Char")]
+    [InlineData("AbsLessB", "System.Byte")]
+    [InlineData("AbsLessB", "System.Char")]
+    [InlineData("CompoundAddAbs", "System.Byte")]
+    [InlineData("CompoundAddAbs", "System.Char")]
+    [InlineData("SignOfAbs", "System.Char")]
+    [InlineData("MaxOfAbs", "System.Char")]
     [InlineData("MaxMagnitude", "System.UInt64")]
     [InlineData("MaxMagnitude", "System.Char")]
+    [InlineData("MinMagnitude", "System.Char")]
     [InlineData("IsNaN", "System.Int32")]
     [InlineData("IsNaN", "System.Double")]
+    [InlineData("IsNaN", "System.Decimal")]
     [InlineData("Sign", "System.Char")]
     [InlineData("Max", "System.Char")]
     [InlineData("Min", "System.Char")]
@@ -183,6 +196,23 @@ public class GenericCopiesTests
         Assert.Equal("3", Run(loaded.Closed, [CreateArray(loaded.Type)]));
     }
 
+    // A sibling member of a generic type is not pinned to the closed type yet: the check stops the copy
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Create_SiblingOfGenericType_IsRejectedNotEmitted()
+    {
+        var compilation = CreateCompilation();
+        var outer = compilation.GetTypeByMetadataName("App.Outer`1") ??
+                    throw new InvalidOperationException("No Outer.");
+        var run = outer.Construct(compilation.GetSpecialType(SpecialType.System_Int32)).GetTypeMembers("Kernels")[0]
+            .GetMembers("Run").OfType<IMethodSymbol>().Single();
+
+        var copy = GenericCopies.Create(compilation, [GenericInstance.Of(run)]).Copies.Single();
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("does not compile", StringComparison.Ordinal));
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Create_NameOfTypeParameter_KeepsTheName()
@@ -253,6 +283,10 @@ public class GenericCopiesTests
         { "CheckedCompoundDivide", "System.Byte" },
         { "CheckedCompoundAdd", "System.SByte" },
         { "CheckedCompoundAdd", "System.UInt16" },
+        { "CheckedCompoundAdd", "System.Char" },
+        { "CheckedCompoundAdd", "System.Int16" },
+        { "Less", "System.Byte" },
+        { "Less", "System.Char" },
         { "ShiftAssign", "System.Byte" },
         { "ShiftAssign", "System.SByte" },
         { "ShiftAssign", "System.Int16" },
@@ -271,9 +305,18 @@ public class GenericCopiesTests
         { "Abs", "System.Byte" },
         { "Abs", "System.Char" },
         { "Abs", "System.Int16" },
+        { "AbsPlusB", "System.Byte" },
+        { "AbsPlusB", "System.Char" },
+        { "AbsLessB", "System.Byte" },
+        { "AbsLessB", "System.Char" },
+        { "CompoundAddAbs", "System.Byte" },
+        { "CompoundAddAbs", "System.Char" },
+        { "SignOfAbs", "System.Char" },
+        { "MaxOfAbs", "System.Char" },
         { "MaxMagnitude", "System.UInt16" },
         { "MaxMagnitude", "System.Char" },
         { "MaxMagnitude", "System.SByte" },
+        { "MinMagnitude", "System.Char" },
         { "IsNaN", "System.Byte" },
         { "IsNaN", "System.Char" },
         { "Sign", "System.Char" },
@@ -325,6 +368,7 @@ public class GenericCopiesTests
         { "Pi", "System.Single" },
         { "Pi", "System.Double" },
         { "IsNaN", "System.Single" },
+        { "IsNaN", "System.Decimal" },
         { "Max", "System.Double" },
         { "Min", "System.Single" },
         { "OneOverZero", "System.Decimal" },
@@ -526,31 +570,6 @@ public class GenericCopiesTests
         throw new InvalidOperationException($"No inputs for {type}.");
     }
 
-    private static (GenericCopy Copy, GenericCopySet Set) CreateCopy(string method, string typeArgument)
-    {
-        var compilation = CreateCompilation();
-        var type = compilation.GetTypeByMetadataName(typeArgument) ??
-                   throw new InvalidOperationException($"No type '{typeArgument}'.");
-        return CreateCopy(compilation, method, type);
-    }
-
-    private static (GenericCopy Copy, GenericCopySet Set) CreateCopy(
-        Compilation compilation,
-        string method,
-        ITypeSymbol type)
-    {
-        var set = GenericCopies.Create(compilation, [Instance(compilation, method, type)]);
-        return (set.Copies.Single(), set);
-    }
-
-    private static GenericInstance Instance(Compilation compilation, string method, ITypeSymbol type)
-    {
-        var kernels = compilation.GetTypeByMetadataName("App.Kernels") ??
-                      throw new InvalidOperationException("No Kernels.");
-        var definition = kernels.GetMembers(method).OfType<IMethodSymbol>().Single(m => m.IsGenericMethod);
-        return GenericInstance.Of(definition.Construct(type));
-    }
-
     private static TNode Single<TNode>(GenericCopy copy) where TNode : SyntaxNode =>
         Assert.Single(Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration)
             .DescendantNodes()
@@ -566,24 +585,10 @@ public class GenericCopiesTests
     private static SemanticModel ModelOf(GenericCopySet set, SyntaxNode node) =>
         set.Compilation.GetSemanticModel(node.SyntaxTree);
 
-    private static int LineOf(string marker)
-    {
-        var text = SourceText.From(s_source);
-        return text.Lines.First(line => text.ToString(line.Span).Contains(marker, StringComparison.Ordinal)).LineNumber;
-    }
-
     private static TextSpan DeclarationSpan(string method)
     {
         var tree = CreateCompilation().SyntaxTrees.Single();
         return tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == method).Span;
     }
-
-    private static string Describe(GenericCopy copy) =>
-        string.Join("; ", copy.Findings.Select(f => $"{f.Location.GetLineSpan().StartLinePosition}: {f.Reason}"));
-
-    private static CSharpCompilation CreateCompilation() =>
-        RoslynTestUtility.CreateCompilation(s_source)
-            .WithAssemblyName("GenericCopiesTests")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 }

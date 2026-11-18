@@ -59,8 +59,8 @@ export class FallbackIndex {
     this._groups = null;
   }
 
-  lookup(command: string, context: KeyContext): (Estimate & { from: EstimateLevel }) | null {
-    const wanted = commandKeys(command, context);
+  lookup(command: string, context: KeyContext, keys?: CommandKeys): (Estimate & { from: EstimateLevel }) | null {
+    const wanted = keys ?? commandKeys(command, context);
     const groups = (this._groups ??= Levels.map(([, keyOf]) => {
       const map = new Map<string, string[]>();
       for (const [key, entry] of Object.entries(this._commands)) {

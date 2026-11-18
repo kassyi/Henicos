@@ -1,6 +1,7 @@
 #nullable enable
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -45,5 +46,40 @@ public class IrPrinterTests
 
         Assert.Equal($"implicit<long>(x[{start}..{end}])[~{start}..{end}]",
             IrPrinter.Print(conversion, IrPrintOptions.Sources));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RuntimeCall_RefOutInArguments_PrintsEachModifierOnce()
+    {
+        var call = (IrCall)IrTestCases.CaseResult("RefArgument");
+        var source = call.Source.AsSynthesized();
+        var variable = IrVariable.CreateTemporary(call.Type, RefKind.None, "pred", source);
+        var location = new IrVariableReference(variable, false, IrCategory.Location, default, source);
+        var readOnlyLocation = new IrVariableReference(variable, false, IrCategory.ReadOnlyLocation, default, source);
+        var value = new IrVariableReference(variable, false, IrCategory.Value, default, source);
+        var runtimeCall = new IrRuntimeCall(
+            IrRuntimeFunction.WarpRead,
+            WarpShuffleKind.MatchAll,
+            0,
+            [
+                new IrRuntimeArgument(location, RefKind.Ref),
+                new IrRuntimeArgument(location, RefKind.Out),
+                new IrRuntimeArgument(readOnlyLocation, RefKind.In),
+                new IrRuntimeArgument(value, RefKind.None)
+            ],
+            "test.cs:1",
+            call.Type,
+            source);
+
+        Assert.Equal("WarpRead[MatchAll]#0(ref $pred0, out $pred0, in $pred0, $pred0)",
+            IrPrinter.Print(runtimeCall));
+
+        var start = source.Start;
+        var end = start + source.Length;
+        Assert.Equal(
+            $"WarpRead[MatchAll]#0(ref $pred0[~{start}..{end}], out $pred0[~{start}..{end}], " +
+            $"in $pred0[~{start}..{end}], $pred0[~{start}..{end}])[~{start}..{end}]",
+            IrPrinter.Print(runtimeCall, IrPrintOptions.Sources));
     }
 }

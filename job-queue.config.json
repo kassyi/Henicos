@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "entry": "scripts/human/job-queue.js",
+  "stateDir": "tmp/job-queue",
+  "sharedRoot": "git-main-checkout",
+  "plugins": [],
+  "pools": {
+    "coresPerSlot": 3,
+    "minimumSlots": 2,
+    "memoryShare": 0.5,
+    "defaultTestMemoryMb": 0
+  },
+  "resources": {
+    "gpu": {
+      "slots": 1,
+      "lock": {
+        "seats": ["tmp/gpu-test-lock"]
+      }
+    }
+  }
+}

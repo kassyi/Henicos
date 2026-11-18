@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -431,5 +432,305 @@ public static partial class WarpActiveMaskDifferentialKernels
         }
 
         output[t] = Warp.ShuffleXorSync(Warp.ActiveMask(), v, 1);
+    }
+
+    [GpuKernel]
+    public static void ForwardGotoKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = Warp.ActiveMask();
+        uint m2 = 0u;
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        m2 = Warp.ActiveMask();
+    after:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoOutOfUniformIfKernel(uint[] result, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = Warp.ActiveMask();
+        uint m2 = 0u;
+        if (uniformCond == 0)
+        {
+            if ((t & 1) == 1)
+            {
+                goto after;
+            }
+
+            m2 = Warp.ActiveMask();
+        }
+
+    after:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoFromBranchWithSplitKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        if ((t & 1) == 1)
+        {
+            m1 = Warp.ActiveMask();
+            goto after;
+        }
+
+        m2 = Warp.ActiveMask();
+    after:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void TwoGotosOneLabelKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        if ((t & 3) == 1)
+        {
+            goto done;
+        }
+
+        m1 = Warp.ActiveMask();
+        if ((t & 3) == 2)
+        {
+            goto done;
+        }
+
+        m2 = Warp.ActiveMask();
+    done:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void CrossingGotosKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint x = 0u;
+        uint y = 0u;
+        uint z = 0u;
+        if ((t & 1) == 1)
+        {
+            goto fail;
+        }
+
+        x = Warp.ActiveMask();
+        if ((t & 2) == 2)
+        {
+            goto done;
+        }
+
+        y = Warp.ActiveMask();
+    fail:
+        z = Warp.ActiveMask();
+    done:
+        result[t] = x;
+        result[t + 32] = y;
+        result[t + 64] = z;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoOutOfLoopInRangeKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = Warp.ActiveMask();
+        uint m2 = 0u;
+        for (int i = 0; i < 2; i++)
+        {
+            if ((t & 1) == 1)
+            {
+                goto after;
+            }
+
+            m2 = Warp.ActiveMask();
+        }
+
+    after:
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoToOtherSectionKernel(uint[] result, int uniformCond)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        uint m3 = 0u;
+        uint m4 = 0u;
+        if ((t & 4) == uniformCond)
+        {
+            switch (t & 1)
+            {
+                case 0:
+                    m1 = Warp.ActiveMask();
+                    goto shared;
+                case 1:
+                    m2 = Warp.ActiveMask();
+                shared:
+                    m3 = Warp.ActiveMask();
+                    break;
+            }
+
+            m4 = Warp.ActiveMask();
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = m3;
+        result[t + 96] = m4;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void ForwardGotoShuffleKernel(int[] output)
+    {
+        int t = ThreadIndex.X;
+        int v = t;
+        uint m1 = Warp.ActiveMask();
+        if ((t & 1) == 1)
+        {
+            v += (int)(m1 & 0u);
+            goto after;
+        }
+
+        uint m2 = Warp.ActiveMask();
+        v += (int)(m2 & 0u);
+    after:
+        output[t] = Warp.ShuffleXorSync(Warp.ActiveMask(), v, 1);
+    }
+
+    [GpuKernel]
+    public static void GotoBackToRangeStartKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+    start:
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        m = Warp.ActiveMask();
+        if (n++ < 1)
+        {
+            goto start;
+        }
+
+    after:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    // The jumped-over block has more statements than the index of the label in the outer list: the join stays in the
+    // outer list, so the lanes that jump skip the whole block
+    [GpuKernel]
+    public static void ForwardGotoOverNestedBlockKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        {
+            result[t + 64] = 1u;
+            result[t + 64] = 2u;
+            result[t + 64] = 3u;
+            result[t + 64] = 4u;
+            m = Warp.ActiveMask();
+        }
+
+    after:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    // The range starts with a block that holds a label and a backward goto to it: the goto stays inside the range
+    [GpuKernel]
+    public static void GotoInsideFirstStatementOfRangeKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        {
+        again:
+            if ((t & 1) == 1)
+            {
+                goto after;
+            }
+
+            m |= Warp.ActiveMask();
+            if (n++ < 1)
+            {
+                goto again;
+            }
+        }
+
+    after:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    // The statement that opens the range carries two labels; both stay in front of the region enter
+    [GpuKernel]
+    public static void ForwardGotoFromDoublyLabeledStatementKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+    first:
+    second:
+        if ((t & 1) == 1)
+        {
+            goto after;
+        }
+
+        m = Warp.ActiveMask();
+    after:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
+    }
+
+    // A forward goto from before a range to a label in its middle: its own range holds no split point, but the lanes
+    // that take it must still enter the outer range before they land inside it
+    [GpuKernel]
+    public static void ForwardGotoIntoRangeMiddleKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        if ((t & 2) != 0)
+        {
+            goto middle;
+        }
+
+        if ((t & 1) != 0)
+        {
+            goto after;
+        }
+
+    middle:
+        m = Warp.ActiveMask();
+    after:
+        result[t] = m;
+        result[t + 32] = Warp.ActiveMask();
     }
 }

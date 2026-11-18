@@ -144,6 +144,13 @@ public sealed class GpuDeviceExportAttribute : Attribute
     public string InternalError { get; set; } = "";
 
     /// <summary>
+    /// Gets or sets the error sites of the <c>throw</c> statements of the device function, one text per site (id, file,
+    /// line, column, member, message, exception type, separated by U+001F); the assembly that places the function
+    /// registers them, so a throw reports its place and its exception type.
+    /// </summary>
+    public string[] ErrorSites { get; set; } = [];
+
+    /// <summary>
     /// Gets or sets whether the assembly holds the managed state machine of a suspending function (the frame struct,
     /// or a <c>private</c> frame struct with <c>__gsharp_enter_</c> and <c>__gsharp_number_frame_</c> entries when
     /// <see cref="PrivateManagedFrame"/> is set).

@@ -33,7 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { spawnSync } = require('child_process');
+const { isGone, queryWindowsProcessesSync, commandProcesses } = require('../job-queue/lib/process-liveness.js');
 
 function readOwner(lockPath) {
   try {
@@ -62,74 +62,13 @@ function readOwnerRecord(dir) {
   return null;
 }
 
-/** True only when kill(target, 0) reports that no such process (or process group) exists; EPERM means alive. */
-function isGone(target) {
-  try {
-    process.kill(target, 0);
-    return false;
-  } catch (error) {
-    return error.code === 'ESRCH';
-  }
-}
-
-/** Slack for comparing a process creation time with the recorded spawn time (clock granularity, slow process start). */
-const SpawnToleranceMs = 5000;
-
-/**
- * Reads every process as "pid ppid creationMs" through PowerShell. Returns null when the query fails or looks
- * incomplete (it must list this process), so that the caller treats the command as alive.
- */
-function queryWindowsProcesses() {
-  const script =
-    'Get-CimInstance Win32_Process | ForEach-Object { $c = -1; ' +
-    'if ($_.CreationDate) { $c = ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() }; ' +
-    '"$($_.ProcessId) $($_.ParentProcessId) $c" }';
-  const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
-    encoding: 'utf8',
-    windowsHide: true,
-    timeout: 60000,
-  });
-  if (result.error || result.status !== 0) {
-    return null;
-  }
-  const processes = new Map();
-  for (const line of result.stdout.split(/\r?\n/)) {
-    const fields = line.trim().split(' ');
-    if (fields.length === 3) {
-      const [pid, ppid, created] = fields.map(Number);
-      if (Number.isInteger(pid) && Number.isInteger(ppid) && Number.isFinite(created)) {
-        processes.set(pid, { ppid, created });
-      }
-    }
-  }
-  return processes.has(process.pid) ? processes : null;
-}
-
 /** True when the shell recorded in `command` or a live child of it may still run. Anything uncertain is "alive". */
 function isWindowsCommandAlive(command) {
-  const processes = queryWindowsProcesses();
+  const processes = queryWindowsProcessesSync();
   if (processes === null) {
     return true;
   }
-  const earliest = command.spawnedAt - SpawnToleranceMs;
-  const latest = command.spawnedAt + SpawnToleranceMs;
-  // A process created after the shell died may have been given the shell's pid; its children are not ours.
-  let reusedFrom = Infinity;
-  const shell = processes.get(command.pid);
-  if (shell !== undefined) {
-    if (shell.created < 0 || shell.created <= latest) {
-      return true; // the shell itself, or a process whose creation time is unknown
-    }
-    reusedFrom = shell.created;
-  }
-  for (const [pid, info] of processes) {
-    if (pid !== command.pid && info.ppid === command.pid) {
-      if (info.created < 0 || (info.created >= earliest && info.created < reusedFrom)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return commandProcesses(processes, command.pid, command.spawnedAt).length > 0;
 }
 
 /** True when the command that the owner started (recorded in owner.json) is known to have ended. */

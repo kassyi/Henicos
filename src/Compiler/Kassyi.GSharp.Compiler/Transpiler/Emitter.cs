@@ -88,6 +88,13 @@ public struct Emitter(
     internal ErrorSiteTable? ErrorSites;
 
     /// <summary>
+    /// The error sites of the <c>throw</c> statements of a device function, which has no <see cref="ErrorSites"/>: the
+    /// other failed checks of a device function carry their text instead of a site. Null in a kernel, whose table takes
+    /// the throws too.
+    /// </summary>
+    internal ErrorSiteTable? ThrowSites;
+
+    /// <summary>
     /// The current member or kernel method name being transpiled.
     /// </summary>
     internal string? CurrentMemberName;

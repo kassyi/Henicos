@@ -12,7 +12,8 @@ internal readonly record struct DeviceExportRecord(
     DeviceExportRecord.DialectText Cuda,
     DeviceExportRecord.DialectText Cpp,
     DeviceExportRecord.FunctionTraits Traits,
-    string InternalError)
+    string InternalError,
+    EquatableArray<string> ErrorSites = default)
 {
     /// <summary>The names the record defines and refers to.</summary>
     public readonly record struct ExportNames(
@@ -94,7 +95,7 @@ internal readonly record struct DeviceExportRecord(
     /// finds the records by those names. A change of <c>InternalNames.yml</c> or of a prelude changes
     /// <see cref="CurrentPreludeHash"/> by itself.
     /// </remarks>
-    public const int CurrentFormatVersion = 4;
+    public const int CurrentFormatVersion = 5;
 
     /// <summary>
     /// The hash that this G# writes into its records and requires of the records it imports

@@ -27,6 +27,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// The ref locals that the CPU state machine of a function that may suspend would keep in its frame and GSH0039 does
 /// not report; the generator reports GSH0003 at each on a CPU dialect build (#1640).
 /// </param>
+/// <param name="ErrorSites">
+/// The error sites of the <c>throw</c> statements of the function; the module that places the function registers them
+/// with its kernels, so a throw reports its place, its message and its exception type on CUDA and on the native CPU path.
+/// </param>
 internal readonly record struct TranspiledDeviceMethodResult(
     HostClassHeader Class,
     string MethodName,
@@ -42,7 +46,8 @@ internal readonly record struct TranspiledDeviceMethodResult(
     string ManagedCSharpSource = "",
     DeviceExportRecord Export = default,
     EquatableArray<DeviceExportRecord> StructExports = default,
-    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default)
+    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
+    EquatableArray<ErrorSiteEntry> ErrorSites = default)
 {
     public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
 

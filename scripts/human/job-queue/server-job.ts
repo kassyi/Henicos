@@ -1,7 +1,7 @@
 // A job as the scheduler process keeps it (the scheduler's view plus the connection and the command), and how status
 // and the state file show it.
 
-import type { PathPlace } from "./estimate-key.ts";
+import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import type { JobView, Outcome } from "./protocol.ts";
 import type { SchedulerJob } from "./scheduler.ts";
 import type { Connection } from "./server-connection.ts";
@@ -31,6 +31,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   worktree: string;
   /** Where its project and script arguments lie (JobRequest.places), for the estimate keys; absent when none came. */
   places?: Record<string, PathPlace>;
+  /** Estimate fallback keys sent by the client (JobRequest.keys); absent when none came. */
+  keys?: CommandKeys;
   /** The agent chat that queued it (JobRequest.session), kept for the chat panel; absent when none was sent. */
   session?: string;
   command: string;

@@ -143,6 +143,8 @@ Lowering:
     SyncGridNextLabelPrefix: __gsharp_sg_next_
     # The end of a loop body where the lanes that continue wait for the others (__gsharp_ReconvergeContinue_<n>, #844)
     ReconvergeContinueLabelPrefix: __gsharp_ReconvergeContinue_
+    # The rendezvous point at a forward goto target (__gsharp_ReconvergeJoin_<site>)
+    ReconvergeJoinLabelPrefix: __gsharp_ReconvergeJoin_
     # The continue and break targets that the emitter writes for a labeled loop or switch that a labeled break or
     # continue jumps to (__gsharp_LabeledContinue_<id>_<name>, __gsharp_LabeledBreak_<id>_<name>, #1990)
     LabeledBreakLabelPrefix: __gsharp_LabeledBreak_
@@ -162,6 +164,10 @@ Lowering:
     # (__gsharp_label_<ordinal>_<name>); lowering can flatten sibling scopes into one block, and C# forbids two labels of
     # one name there (CS0140, CS0158). The C++ output names labels by symbol instead
     ManagedLabelPrefix: __gsharp_label_
+    # A local function of a split body whose name another declaration of the body also has, in the managed output
+    # (__gsharp_localfn_<ordinal>_<name>); the state machine writes the local functions of the body in front of its
+    # switch, where sibling scopes of the source meet. The C++ output names local functions by symbol instead
+    ManagedLocalFunctionPrefix: __gsharp_localfn_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).

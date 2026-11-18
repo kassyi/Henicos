@@ -72,7 +72,7 @@ internal readonly record struct KernelClassModel(
     /// derived from these models only.
     /// </summary>
     public static KernelClassModel Create(HostClassHeader header, IReadOnlyList<TranspiledKernelResult> kernels,
-        bool emitsSource)
+        bool emitsSource, EquatableArray<ErrorSiteEntry> deviceSites = default)
     {
         var hosts = ImmutableArray.CreateBuilder<KernelHostModel>(kernels.Count);
         kernels
@@ -99,6 +99,10 @@ internal readonly record struct KernelClassModel(
                 }
             }
 
+            // [WHY] A kernel that calls a device function registers the sites of the function's throws as well; any
+            // kernel may call one, so each takes them all (equal sites are one entry of the class table)
+            var kernelSites = WithDeviceSites(kernel.ErrorSites, deviceSites);
+
             var isOverloaded = IsOverloaded(hosts, i);
             emissions.Add(new KernelEmission(
                 kernel.Host,
@@ -109,7 +113,7 @@ internal readonly record struct KernelClassModel(
                 kernel.CppSource,
                 kernel.ManagedCSharpSource,
                 kernel.InternalError,
-                kernel.ErrorSites));
+                kernelSites));
 
             foreach (var s in kernel.Host.Structs)
             {
@@ -126,6 +130,14 @@ internal readonly record struct KernelClassModel(
             }
         }
 
+        if (!deviceSites.IsDefaultOrEmpty)
+        {
+            foreach (var site in deviceSites)
+            {
+                rawClassSites.Add(site);
+            }
+        }
+
         ErrorSiteTable.TryBuildModuleSites(rawClassSites, out var classErrorSites, out _, out _);
         var kernelEmissions = emissions.MoveToImmutable();
         return new KernelClassModel(
@@ -135,6 +147,32 @@ internal readonly record struct KernelClassModel(
             classErrorSites.AsEquatableArray(),
             WarmupRelayPlan.Create(header, kernelEmissions),
             omitsClassMembers);
+    }
+
+    // The sites of the kernel and of the device functions of the module
+    private static EquatableArray<ErrorSiteEntry> WithDeviceSites(EquatableArray<ErrorSiteEntry> own,
+        EquatableArray<ErrorSiteEntry> deviceSites)
+    {
+        if (deviceSites.IsDefaultOrEmpty)
+        {
+            return own;
+        }
+
+        var all = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
+        if (!own.IsDefaultOrEmpty)
+        {
+            foreach (var site in own)
+            {
+                all.Add(site);
+            }
+        }
+
+        foreach (var site in deviceSites)
+        {
+            all.Add(site);
+        }
+
+        return all.ToImmutable().AsEquatableArray();
     }
 
     /// <summary>

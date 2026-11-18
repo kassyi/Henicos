@@ -478,6 +478,7 @@ internal static class DeviceExportEmitter
             AppendBoolProperty(writer, AttributeNames.Traits.PrivateManagedFrame, traits.PrivateManagedFrame);
             AppendBoolProperty(writer, AttributeNames.Traits.ManagedVersion, traits.ManagedVersion);
             AppendStringProperty(writer, AttributeNames.InternalError, record.InternalError);
+            AppendArrayProperty(writer, AttributeNames.ErrorSites, record.ErrorSites);
             AppendIntProperty(writer, AttributeNames.Traits.DivergentConditionParameters,
                 traits.DivergentConditionParameters);
             AppendIntProperty(writer, AttributeNames.Traits.DivergentExitOnlyParameters,
