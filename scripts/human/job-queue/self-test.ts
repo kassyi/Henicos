@@ -77,10 +77,21 @@ export async function selfTest(): Promise<void> {
     if (typeof value === "function") {
       const original = value as (...args: unknown[]) => unknown;
       originalAssert.set(key, original);
-      cjsAssert[key] = function (this: unknown, ...args: unknown[]): unknown {
+      const restoreIdentity = key === "match" || key === "doesNotMatch";
+      const wrapped = function (this: unknown, ...args: unknown[]): unknown {
         unitAssertions++;
-        return original.apply(this, args);
+        if (!restoreIdentity) {
+          return Reflect.apply(original, this, args);
+        }
+        // Node 22's internalMatch distinguishes match vs doesNotMatch via `fn === assert.match`.
+        cjsAssert[key] = original;
+        try {
+          return Reflect.apply(original, this, args);
+        } finally {
+          cjsAssert[key] = wrapped;
+        }
       };
+      cjsAssert[key] = wrapped;
     }
   }
   syncBuiltinESMExports();
