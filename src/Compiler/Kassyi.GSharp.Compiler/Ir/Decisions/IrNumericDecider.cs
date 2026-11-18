@@ -29,17 +29,8 @@ internal static class IrNumericDecider
         if (IntegerSemantics.GetConstant(in facts, binary.ConstantValue) is var (constType, constValue))
         {
             var typeAtUse = ConstantAtUse.GetTypeAtUse(constType, conversionTarget, isNumericOrConstant);
-            return new IrBinaryDecision(
-                new IrFoldedConstant(typeAtUse, constValue),
-                null,
-                null,
-                null,
-                0,
-                null,
-                null,
-                false,
-                false,
-                managedDivision);
+            return new IrBinaryDecision(new IrFoldedConstant(typeAtUse, constValue), null, null, null, 0, null, null,
+                false, false, managedDivision);
         }
 
         if (FloatingPointRemainder.GetHelper(binary.Operator.Kind, facts.IsBuiltIn, binary.Type) is { } remainder)
@@ -81,16 +72,7 @@ internal static class IrNumericDecider
         var convertsLeft = promotedType is not null && ArithmeticConversions.IsConverted(leftSource, promotedType);
         var convertsRight = promotedType is not null && ArithmeticConversions.IsConverted(rightSource, promotedType);
 
-        return new IrBinaryDecision(
-            null,
-            null,
-            null,
-            null,
-            0,
-            null,
-            promotedType,
-            convertsLeft,
-            convertsRight,
+        return new IrBinaryDecision(null, null, null, null, 0, null, promotedType, convertsLeft, convertsRight,
             managedDivision);
     }
 
