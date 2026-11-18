@@ -17,26 +17,18 @@
 //     lock (--lock-path, for its own tests).
 // A segment that runs job-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
 //
-// Usage: require('./command-rules.js').check(command, dialect) returns the reason texts (empty when allowed), and
-// checkDetailed(command, dialect) returns structured { tool, verb, text } reasons.
+// Usage: require('./command-rules.js').createRules(project) returns { check, checkDetailed, isQueueScript,
+// resolveProgram }; check(command, dialect) returns the reason texts (empty when allowed), and checkDetailed(...)
+// returns structured { tool, verb, text } reasons.
 
 const { createReader, programName, unquote } = require('./shell-reader.js');
 const { wrapperRules } = require('./rules/wrappers.js');
-const { dotnet, stryker, msbuild } = require('./rules/dotnet.js');
-const justRules = require('./rules/just.js');
-const nodeScriptRules = require('./rules/node-scripts.js');
-
-/** The first structured reason of a nested command, or null. */
-function nestedReason(command, reader) {
-  if (command === '') {
-    return null;
-  }
-  const reasons = checkDetailedWithReader(command, reader);
-  return reasons.length > 0 ? reasons[0] : null;
-}
+const { dotnetRules } = require('./rules/dotnet.js');
+const { justRules } = require('./rules/just.js');
+const { nodeScriptRules } = require('./rules/node-scripts.js');
 
 /** Parses a segment into its target program ({ name, list, args, inner }), an inner brace reason, or null. */
-function resolveProgram(reader, segment) {
+function resolveProgram(reader, segment, nestedReason) {
   const raw = reader.words(segment.trim().replace(/^[({]+\s*/, ''));
   // The closer of a group or subshell may stick to a word: (just test), (msbuild)
   const list = reader.dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
@@ -75,87 +67,107 @@ function resolveProgram(reader, segment) {
   return { name, list, args, inner: null };
 }
 
-const { shellWrappers, runners } = wrapperRules({ nestedReason, segmentReason });
-const ProgramRules = [
-  ...shellWrappers,
-  dotnet,
-  stryker,
-  ...runners,
-  msbuild,
-  ...justRules,
-  ...nodeScriptRules,
-];
+/** Creates the command rule evaluator bound to the given repository config `project`. */
+function createRules(project = {}) {
+  const exemptPrograms = Array.isArray(project.exemptPrograms) ? project.exemptPrograms : [];
+  const queueScriptPattern = project.queueScriptPattern || null;
 
-/** The reason a segment needs the queue, or null. */
-function segmentReason(segment, reader) {
-  const program = resolveProgram(reader, segment);
-  if (program === null) {
-    return null;
-  }
-  if (program.inner !== null) {
-    return program.inner;
-  }
-  const rule = ProgramRules.find((entry) => entry.matches(program, reader));
-  return rule === undefined ? null : rule.reason(reader, program);
-}
-
-/** True when a command word list runs job-queue.js or build-queue.js via node. */
-function isQueueScript(list) {
-  return (
-    list.length > 1 &&
-    programName(list[0] || '') === 'node' &&
-    /(^|[\\/])(job|build)-queue\.js$/.test(unquote(list[1] || ''))
-  );
-}
-
-/**
- * True when the segment runs job-queue.js (which queues the command quoted in it; build-queue.js is its name in older
- * checkouts) or is a git / gh command.
- */
-function isExempt(segment, reader) {
-  const list = reader.dropPrefixes(reader.words(segment.trim()));
-  if (list.length === 0) {
-    return true;
-  }
-  const name = programName(list[0]);
-  if (name === 'git' || name === 'gh') {
-    return true;
-  }
-  return isQueueScript(list);
-}
-
-/** The structured reasons for one command using an explicit shell reader. */
-function checkDetailedWithReader(command, reader) {
-  const reasons = [];
-  const seen = new Set();
-  const add = (reason) => {
-    if (reason !== null && !seen.has(reason.text)) {
-      seen.add(reason.text);
-      reasons.push(reason);
+  /** The first structured reason of a nested command, or null. */
+  function nestedReason(command, reader) {
+    if (command === '') {
+      return null;
     }
+    const reasons = checkDetailedWithReader(command, reader);
+    return reasons.length > 0 ? reasons[0] : null;
+  }
+
+  const { dotnet, stryker, msbuild } = dotnetRules(project);
+  const { shellWrappers, runners } = wrapperRules({ nestedReason, segmentReason }, project);
+  const ProgramRules = [
+    ...shellWrappers,
+    dotnet,
+    stryker,
+    ...runners,
+    msbuild,
+    ...justRules(project),
+    ...nodeScriptRules(project),
+  ];
+
+  /** The reason a segment needs the queue, or null. */
+  function segmentReason(segment, reader) {
+    const program = resolveProgram(reader, segment, nestedReason);
+    if (program === null) {
+      return null;
+    }
+    if (program.inner !== null) {
+      return program.inner;
+    }
+    const rule = ProgramRules.find((entry) => entry.matches(program, reader));
+    return rule === undefined ? null : rule.reason(reader, program);
+  }
+
+  /** True when a command word list runs the project's queue script via node. */
+  function isQueueScript(list) {
+    return (
+      queueScriptPattern !== null &&
+      list.length > 1 &&
+      programName(list[0] || '') === 'node' &&
+      queueScriptPattern.test(unquote(list[1] || ''))
+    );
+  }
+
+  /** True when the segment runs the queue script or an exempt program (such as git / gh). */
+  function isExempt(segment, reader) {
+    const list = reader.dropPrefixes(reader.words(segment.trim()));
+    if (list.length === 0) {
+      return true;
+    }
+    if (exemptPrograms.includes(programName(list[0]))) {
+      return true;
+    }
+    return isQueueScript(list);
+  }
+
+  /** The structured reasons for one command using an explicit shell reader. */
+  function checkDetailedWithReader(command, reader) {
+    const reasons = [];
+    const seen = new Set();
+    const add = (reason) => {
+      if (reason !== null && !seen.has(reason.text)) {
+        seen.add(reason.text);
+        reasons.push(reason);
+      }
+    };
+    for (const segment of reader.splitSegments(command)) {
+      // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
+      reader.substitutions(segment).forEach((body) => checkDetailedWithReader(body, reader).forEach(add));
+      if (!isExempt(segment, reader)) {
+        add(segmentReason(segment, reader));
+      }
+    }
+    return reasons;
+  }
+
+  /**
+   * The structured reasons (`{ tool, verb, text }`) the command needs the queue (empty when it may run as it is).
+   * `kind` is the shell dialect ('bash', 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a
+   * shell wrapper names another.
+   */
+  function checkDetailed(command, kind = 'bash') {
+    return checkDetailedWithReader(command, createReader(kind));
+  }
+
+  /** The reason texts the command needs the queue (empty when it may run as it is). */
+  function check(command, kind = 'bash') {
+    return checkDetailed(command, kind).map((reason) => reason.text);
+  }
+
+  return {
+    check,
+    checkDetailed,
+    isQueueScript,
+    resolveProgram: (reader, segment) => resolveProgram(reader, segment, nestedReason),
   };
-  for (const segment of reader.splitSegments(command)) {
-    // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
-    reader.substitutions(segment).forEach((body) => checkDetailedWithReader(body, reader).forEach(add));
-    if (!isExempt(segment, reader)) {
-      add(segmentReason(segment, reader));
-    }
-  }
-  return reasons;
 }
 
-/**
- * The structured reasons (`{ tool, verb, text }`) the command needs the queue (empty when it may run as it is).
- * `kind` is the shell dialect ('bash', 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a
- * shell wrapper names another.
- */
-function checkDetailed(command, kind = 'bash') {
-  return checkDetailedWithReader(command, createReader(kind));
-}
-
-/** The reason texts the command needs the queue (empty when it may run as it is). */
-function check(command, kind = 'bash') {
-  return checkDetailed(command, kind).map((reason) => reason.text);
-}
-
-module.exports = { check, checkDetailed, isQueueScript, resolveProgram };
+module.exports = { createRules, resolveProgram };

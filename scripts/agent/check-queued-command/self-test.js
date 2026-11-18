@@ -3,7 +3,13 @@
 // The self-test of check-queued-command.js (--self-test): commands that must be denied and commands that must pass,
 // per dialect, written out and generated from templates.
 
-const { check, checkDetailed } = require('./command-rules.js');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const projectHenicos = require('./project-henicos.js');
+const { createRules } = require('./command-rules.js');
+const { createHook } = require('./hook.js');
+const { check, checkDetailed } = createRules(projectHenicos);
 const shellReader = require('./shell-reader.js');
 
 function selfTest() {
@@ -239,6 +245,8 @@ function selfTest() {
   require('./self-test-rewrite.js').checkRewrites(assert);
   checkDetailedReasons(assert);
   checkReaderIsolation(assert);
+  checkCustomProjectIsolation(assert);
+  checkNoProjectImportInEngine(assert);
   process.stdout.write('check-queued-command self-test passed\n');
 }
 
@@ -414,6 +422,163 @@ function checkReaderIsolation(assert) {
   assert.strictEqual(bash.dialect, 'bash');
   assert.strictEqual(pwsh.dialect, 'pwsh');
   assert.strictEqual(cmd.dialect, 'cmd');
+}
+
+/** Custom and empty `project` configs work in isolation with zero Henicos rule or wording leakage. */
+function checkCustomProjectIsolation(assert) {
+  const emptyRules = createRules({});
+  const emptyHook = createHook({}, emptyRules);
+  for (const cmd of [
+    'just test',
+    'node scripts/human/long-checks.js',
+    'dotnet test',
+    'valgrind dotnet test',
+    'node foo.js',
+    'node .js',
+    './.js',
+    'node', 'node --version', 'node -v', 'node ""', 'node --', '""',
+    'node scripts/human/job-queue.js run -- "dotnet test"',
+  ]) {
+    assert.deepStrictEqual(emptyRules.check(cmd), [], `empty project allows: ${cmd}`);
+  }
+  assert.deepStrictEqual(createRules({ nodeScripts: { names: [''] } }).check('node .js'), []);
+  const dotRules = createRules({ nodeScripts: { names: ['my.tool'] } });
+  assert.deepStrictEqual(dotRules.check('node tools/myXtool.js'), []);
+  assert.deepStrictEqual(dotRules.check('node tools/my.tool.js'), ['my.tool.js']);
+  assert.strictEqual(
+    emptyHook.hookAnswer({ tool_name: 'Bash', tool_input: { command: 'dotnet test' }, cwd: process.cwd() }),
+    null,
+    'empty project allows dotnet test in hook',
+  );
+  const emptyDeny = emptyHook.hookAnswer({
+    tool_name: 'Bash',
+    tool_input: { command: 'msbuild Foo.slnx' },
+    cwd: process.cwd(),
+  }).hookSpecificOutput;
+  assert.strictEqual(emptyDeny.permissionDecision, 'deny');
+  assert.ok(!/job-queue\.js|gpu-lock\.js/.test(emptyDeny.permissionDecisionReason), 'no Henicos wording in empty');
+
+  const customProject = {
+    justRecipes: /^(custom-task)$/,
+    justDryRunRecipes: /^(custom-task)$/,
+    nodeScripts: {
+      names: ['custom-script'],
+      noHelpExemption: /custom-script\.js$/,
+      exemptOptions: [],
+    },
+    dotnet: {
+      verbs: /^(customverb)$/,
+      cpuVerbs: ['customverb'],
+      testVerbs: [],
+    },
+    runners: ['custom-runner'],
+    runnerTargets: ['dotnet', 'just', 'node'],
+    exemptPrograms: ['svn'],
+    queueScript: 'tools/custom-queue.js',
+    queueScriptPattern: /(^|[\\/])custom-queue\.js$/,
+    justfile: {
+      fileName: 'justfile',
+      queueLinePattern: /^queue := "node tools\/custom-queue\.js run"\s*$/m,
+      optionsPattern: /^(--gpu( |$))*$/,
+    },
+    messages: {
+      denialText: (reasons) => `CUSTOM DENY: ${reasons.join('; ')}`,
+      additionalContext: (plan) => `CUSTOM QUEUED: ${plan.command}`,
+      undecidedNote: (undecided) => `CUSTOM UNDECIDED: ${undecided.join('; ')}`,
+    },
+  };
+  const customRules = createRules(customProject);
+  const customHook = createHook(customProject, customRules);
+  assert.deepStrictEqual(customRules.check('just custom-task'), ['just custom-task']);
+  assert.deepStrictEqual(customRules.check('just custom-task --dry-run'), []);
+  assert.deepStrictEqual(customRules.check('node tools/custom-script.js --help'), ['custom-script.js']);
+  assert.deepStrictEqual(customRules.check('dotnet customverb'), ['dotnet customverb']);
+  assert.deepStrictEqual(customRules.check('custom-runner just custom-task'), ['just custom-task']);
+  assert.deepStrictEqual(customRules.check('node tools/custom-queue.js run -- dotnet customverb'), []);
+  assert.deepStrictEqual(customRules.check('svn commit -m "just custom-task"'), []);
+  for (const henicosCmd of [
+    'just test',
+    'node scripts/human/long-checks.js',
+    'dotnet test',
+    'valgrind dotnet customverb',
+    'valgrind just test',
+  ]) {
+    assert.deepStrictEqual(customRules.check(henicosCmd), [], `custom project ignores Henicos: ${henicosCmd}`);
+  }
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hook-custom-'));
+  try {
+    fs.mkdirSync(path.join(tmpDir, 'tools'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'tools', 'custom-queue.js'), '// stub\n');
+    fs.writeFileSync(
+      path.join(tmpDir, 'justfile'),
+      'queue := "node tools/custom-queue.js run"\ncustom-task:\n  {{queue}} --gpu -- echo ok\n',
+    );
+    const rewritten = customHook.hookAnswer({
+      tool_name: 'Bash',
+      tool_input: { command: 'dotnet customverb' },
+      cwd: tmpDir,
+    }).hookSpecificOutput;
+    assert.strictEqual(
+      rewritten.updatedInput.command,
+      "node tools/custom-queue.js run --shell bash -- 'dotnet customverb'",
+    );
+    assert.strictEqual(rewritten.additionalContext, `CUSTOM QUEUED: ${rewritten.updatedInput.command}`);
+    const gpuRewritten = customHook.hookAnswer({
+      tool_name: 'Bash',
+      tool_input: { command: 'just custom-task' },
+      cwd: tmpDir,
+    }).hookSpecificOutput;
+    assert.strictEqual(
+      gpuRewritten.updatedInput.command,
+      "node tools/custom-queue.js run --gpu --shell bash -- 'just custom-task'",
+    );
+    const agDeny = customHook.hookAnswer({
+      toolCall: { name: 'run_command', args: { CommandLine: 'dotnet customverb' } },
+    });
+    assert.deepStrictEqual(agDeny, { decision: 'deny', reason: 'CUSTOM DENY: dotnet customverb' });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
+/** Engine modules never reference or load `project-henicos.js` or `target-dialect.js`. */
+function checkNoProjectImportInEngine(assert) {
+  const engineFiles = [
+    'hook.js',
+    'queue-rewrite.js',
+    'command-rules.js',
+    'shell-reader.js',
+    'rules/wrappers.js',
+    'rules/dotnet.js',
+    'rules/just.js',
+    'rules/node-scripts.js',
+  ];
+  for (const rel of engineFiles) {
+    const filePath = path.join(__dirname, rel);
+    const content = fs.readFileSync(filePath, 'utf8');
+    assert.ok(
+      !/project-henicos|job-queue-henicos|target-dialect/.test(content),
+      `engine module must not reference project data: ${rel}`,
+    );
+    const resolved = require.resolve(filePath);
+    require(resolved);
+    const visited = new Set();
+    const stack = [require.cache[resolved]];
+    while (stack.length > 0) {
+      const mod = stack.pop();
+      if (!mod || visited.has(mod.filename)) {
+        continue;
+      }
+      visited.add(mod.filename);
+      assert.ok(
+        !/project-henicos\.js$|target-dialect\.js$/.test(mod.filename),
+        `${rel} loaded forbidden dependency: ${mod.filename}`,
+      );
+      for (const child of mod.children || []) {
+        stack.push(child);
+      }
+    }
+  }
 }
 
 module.exports = { selfTest };

@@ -15,9 +15,11 @@
 //   shell-reader.js       reads the command in the tool's dialect (bash, PowerShell, cmd): quotes, segments at &&,
 //                         ||, ;, |, & and line breaks, $( ) / @( ) substitutions, heredocs and here-strings,
 //                         assignments, launch prefixes and shell wrappers
-//   command-rules.js      what is denied and allowed
+//   command-rules.js      what is denied and allowed (dispatches to rules/ handlers)
+//   rules/                per-program rule handlers (wrappers.js, dotnet.js, just.js, node-scripts.js)
 //   queue-rewrite.js      which denied commands are queued instead, with which queue options
 //   hook.js               the denial message, the hook input and output
+//   project-henicos.js    Henicos-specific recipes, scripts, verbs, runners, queue path, test lookup, and wording
 //   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.
@@ -28,9 +30,15 @@
 //                                                       prints the decision (exit 1 when denied; default dialect bash)
 //   node scripts/agent/check-queued-command.js --self-test
 //   require('./check-queued-command.js').check(command, dialect) returns the reasons (empty when allowed)
+//   require('./check-queued-command.js').hookAnswer(payload) returns the hook JSON response (or null when allowed)
 
-const { check } = require('./check-queued-command/command-rules.js');
-const { denialText, hookAnswer, runHook } = require('./check-queued-command/hook.js');
+const projectHenicos = require('./check-queued-command/project-henicos.js');
+const rules = require('./check-queued-command/command-rules.js').createRules(projectHenicos);
+const { check } = rules;
+const { denialText, hookAnswer, runHook } = require('./check-queued-command/hook.js').createHook(
+  projectHenicos,
+  rules,
+);
 
 const usage = 'Usage: check-queued-command.js (--hook | --text <command> [--dialect bash|pwsh|cmd] | --self-test)';
 

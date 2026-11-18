@@ -6,8 +6,11 @@
 
 const os = require('os');
 const path = require('path');
-const { check } = require('./command-rules.js');
-const { hookAnswer } = require('./hook.js');
+const projectHenicos = require('./project-henicos.js');
+const rules = require('./command-rules.js').createRules(projectHenicos);
+const { check } = rules;
+const { createHook } = require('./hook.js');
+const { hookAnswer } = createHook(projectHenicos, rules);
 const { queuedText } = require('./queue-rewrite.js');
 
 const Root = path.resolve(__dirname, '..', '..', '..');
@@ -130,6 +133,47 @@ function checkRewrites(assert) {
     const denial = answer('Bash', command).hookSpecificOutput;
     assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
     assert.ok(/--gpu when it does/.test(denial.permissionDecisionReason), `should mention --gpu: ${command}`);
+  }
+  checkTestProjectGuards(assert);
+}
+
+/** Guard fallbacks when `project.testProjects` is missing, throws, or returns invalid shapes. */
+function checkTestProjectGuards(assert) {
+  const min = {
+    dotnet: { verbs: /^(test)$/, cpuVerbs: [], testVerbs: ['test'] },
+    queueScript: 'scripts/human/job-queue.js',
+  };
+  const gList = () => [{ name: 'G' }];
+  const failList = () => {
+    throw new Error('boom');
+  };
+  const cases = [
+    [undefined, 'dotnet test G', 'test projects are not configured'],
+    [{}, 'dotnet test G', 'test projects are not configured'],
+    [{ list: () => null, usesGpu: () => ({ gpu: true }) }, 'dotnet test G', 'it names no test project'],
+    [{ list: failList, usesGpu: () => ({ gpu: true }) }, 'dotnet test G', 'could not read tests: boom'],
+    [
+      { list: failList, readErrorMessage: () => '', usesGpu: () => ({ gpu: true }) },
+      'dotnet test G',
+      'could not read tests: boom',
+    ],
+    [{ list: gList, usesGpu: () => ({ gpu: true }) }, 'dotnet test', 'it names no test project'],
+    [{ list: gList }, 'dotnet test G', 'test project GPU check is not configured'],
+    [{ list: gList, usesGpu: () => null }, 'dotnet test G', 'GPU use is unknown'],
+    [{ list: gList, usesGpu: () => ({}) }, 'dotnet test G', 'GPU use is unknown'],
+    [{ list: gList, usesGpu: () => ({ undecided: 'ambiguous', gpu: true }) }, 'dotnet test G', 'ambiguous'],
+  ];
+  for (const [tp, cmd, expectedReason] of cases) {
+    const out = createHook({ ...min, testProjects: tp }).hookAnswer({
+      tool_name: 'Bash',
+      tool_input: { command: cmd },
+      cwd: Root,
+    }).hookSpecificOutput;
+    assert.strictEqual(out.permissionDecision, 'deny', `must deny: ${cmd}`);
+    assert.ok(
+      out.permissionDecisionReason.includes(expectedReason),
+      `expected "${expectedReason}" in: ${out.permissionDecisionReason}`,
+    );
   }
 }
 
