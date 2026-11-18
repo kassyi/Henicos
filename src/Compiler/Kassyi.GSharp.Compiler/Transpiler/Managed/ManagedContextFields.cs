@@ -257,7 +257,7 @@ internal static class ManagedContextFields
     }
 
     // The identifier a node declares in the body, or null for a node that declares none
-    private static SyntaxToken? GetDeclaredIdentifier(SyntaxNode node) =>
+    internal static SyntaxToken? GetDeclaredIdentifier(SyntaxNode node) =>
         node switch
         {
             VariableDeclaratorSyntax declarator => declarator.Identifier,

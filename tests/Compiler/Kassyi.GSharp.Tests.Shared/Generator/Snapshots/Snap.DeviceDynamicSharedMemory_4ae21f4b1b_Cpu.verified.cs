@@ -5165,6 +5165,10 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
 __gsharp_ctx->__gsharp_id_1_n=__gsharp_in___gsharp_id_1_n;
 }
+auto __gsharp_id_4_CallPlainHelper = [&](int __gsharp_id_5_val) {
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_ctx->__gsharp_id_1_n,__gsharp_id_5_val);
+}
+;
 switch(__gsharp_state)
 {
 case 0:
@@ -5180,10 +5184,6 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_id_4_CallPlainHelper = [&](int __gsharp_id_5_val) {
-return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_ctx->__gsharp_id_1_n,__gsharp_id_5_val);
-}
-;
 __gsharp_ctx->__gsharp_id_6_callNoParameterHelper=[&]() {
 return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper();
 }
@@ -5306,6 +5306,7 @@ __gsharp_ctx.output = __gsharp_in_output;
 __gsharp_ctx.n = __gsharp_in_n;
 }
 {
+int CallPlainHelper(int val) => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.PlainHelper(__gsharp_ctx.n, val);
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -5320,7 +5321,6 @@ return;
 
 case 1:
 {
-int CallPlainHelper(int val) => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.PlainHelper(__gsharp_ctx.n, val);
 __gsharp_ctx.callNoParameterHelper = () => global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.NoParameterHelper();
 __gsharp_ctx.plain = CallPlainHelper(__gsharp_ctx.tid);
 __gsharp_ctx.noParameter = __gsharp_ctx.callNoParameterHelper();

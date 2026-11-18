@@ -2,6 +2,11 @@
 {
     public void LoweredMethod()
 {
+    void Step()
+    {
+        return;
+    }
+
     switch (__gsharp_state)
     {
         case 0:
@@ -28,11 +33,6 @@
 
         case 2:
         {
-            void Step()
-            {
-                return;
-            }
-
             Step();
             __gsharp_state = -1;
             return;

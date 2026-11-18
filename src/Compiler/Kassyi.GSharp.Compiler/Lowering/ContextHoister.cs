@@ -43,6 +43,18 @@ public class ContextHoister(
         _refLocalsNotLiveAcrossSplit = refLocalsNotLiveAcrossSplit;
     }
 
+    /// <summary>
+    /// The locals that the local functions written in front of the switch capture; they are hoisted as if a barrier
+    /// crossed them (<see cref="StateMachineLocalFunctions.Plan"/>).
+    /// </summary>
+    internal HashSet<DeclarationKey>? CapturedByMovedFunctions
+    {
+        init => _capturedByMovedFunctions = value;
+    }
+
+    // The keys that the local functions written in front of the switch reference (StateMachineLocalFunctions.Plan)
+    private HashSet<DeclarationKey>? _capturedByMovedFunctions;
+
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
 
@@ -63,8 +75,8 @@ public class ContextHoister(
         _copiedParameters.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
-        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _hoistedVariables, hoistedDecls,
-            _refLocalsNotLiveAcrossSplit);
+        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _capturedByMovedFunctions,
+            _hoistedVariables, hoistedDecls, _refLocalsNotLiveAcrossSplit);
         if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
