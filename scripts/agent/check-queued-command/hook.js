@@ -5,8 +5,8 @@
 //
 // Usage: require('./hook.js').createHook(project, rules) returns { denialText, hookAnswer, runHook };
 // hookAnswer(payload) returns the answer to one parsed hook input (null when allowed; a Claude Code command that
-// queue-rewrite.js can queue comes back as updatedInput); denialText(reasons) formats the denial message; runHook()
-// answers on stdin.
+// queue-rewrite.js can queue comes back as updatedInput); denialText(reasons) formats the denial message;
+// runHook(onError) answers on stdin and hands an exception while judging to onError.
 
 const { createRules } = require('./command-rules.js');
 const { createRewriter } = require('./queue-rewrite.js');
@@ -61,7 +61,11 @@ function createHook(project, rules = createRules(project)) {
     };
   }
 
-  function runHook() {
+  /**
+   * Answers the hook input on stdin. An exception while judging goes to `onError` and the command is allowed (no
+   * output, exit code 0): Antigravity stops the command of a hook that throws.
+   */
+  function runHook(onError) {
     let input = '';
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', (chunk) => (input += chunk));
@@ -73,7 +77,13 @@ function createHook(project, rules = createRules(project)) {
         process.stderr.write(`check-queued-command --hook: invalid hook input: ${error.message}\n`);
         process.exit(1);
       }
-      const answer = hookAnswer(payload);
+      let answer;
+      try {
+        answer = hookAnswer(payload);
+      } catch (error) {
+        onError(error);
+        process.exit(0);
+      }
       if (answer !== null) {
         process.stdout.write(JSON.stringify(answer));
       }
