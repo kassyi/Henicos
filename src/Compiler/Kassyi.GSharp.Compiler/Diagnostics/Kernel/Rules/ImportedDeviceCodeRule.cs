@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
@@ -18,7 +19,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationExpressionSyntax>,
     ISyntaxValidationRule<BaseObjectCreationExpressionSyntax>, ISyntaxValidationRule<MemberAccessExpressionSyntax>,
     ISyntaxValidationRule<ParameterSyntax>, ISyntaxValidationRule<LocalDeclarationStatementSyntax>,
-    ISyntaxValidationRule<VariableDeclarationSyntax>
+    ISyntaxValidationRule<VariableDeclarationSyntax>, ISyntaxValidationRule<MethodDeclarationSyntax>
 {
     public static readonly ImportedDeviceCodeRule Instance = new();
 
@@ -76,6 +77,26 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
             IsImportedStruct(type, context.SemanticModel.Compilation))
         {
             Check(type, type, node.Name.GetLocation(), ref context);
+        }
+    }
+
+    // A user-defined conversion operator (implicit or explicit) of an imported struct comes with the struct's record
+    public void Analyze(MethodDeclarationSyntax node, ref ValidationContext context)
+    {
+        if (context.SemanticModel.GetOperation(node) is not { } rootOperation)
+        {
+            return;
+        }
+
+        foreach (var operation in rootOperation.Descendants())
+        {
+            if (operation is IConversionOperation { Conversion.IsUserDefined: true } conversion &&
+                (conversion.Conversion.MethodSymbol ?? conversion.OperatorMethod) is
+                    { MethodKind: MethodKind.Conversion, ContainingType: { } type } method &&
+                IsImportedStruct(type, context.SemanticModel.Compilation))
+            {
+                Check(method, method, conversion.Syntax.GetLocation(), ref context);
+            }
         }
     }
 

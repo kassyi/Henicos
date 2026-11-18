@@ -44,4 +44,19 @@ public class MixedHoistDeclarationManagedTests : IDisposable
     [Scenario(TestScenario.Boundary)]
     public void HoistDeclaration_ManagedLabeledHoistedBeforeLocal_LaterDeclaratorReadsHoistedValue() =>
         MixedHoistDeclarationTests.AssertLabeledHoistedBeforeLocal();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_ManagedLabeledDeclarationWithoutInitializer_RunsAcrossBarrier() =>
+        MixedHoistDeclarationTests.AssertLabeledDeclaration();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_ManagedLabeledMultipleDeclarationsWithoutInitializer_RunsAcrossBarrier() =>
+        MixedHoistDeclarationTests.AssertLabeledDeclarations();
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_ManagedNestedLabeledDeclarationWithoutInitializer_RunsAcrossBarrier() =>
+        MixedHoistDeclarationTests.AssertNestedLabeledDeclaration();
 }

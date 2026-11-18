@@ -258,4 +258,62 @@ public static partial class ResumeLocalKernels
         Gpu.SyncThreads();
         result[tid] += 100;
     }
+
+    // A read-only span initialized with a collection expression of constants before a barrier: a = {7, 3}
+    [GpuKernel]
+    public static void ReadOnlyCollectionSpanKernel(int[] a)
+    {
+        ReadOnlySpan<int> r = [5, 6, 7];
+        a[0] = r[2];
+        Gpu.SyncThreads();
+        a[1] = 3;
+    }
+
+    // An empty collection-initialized span before a barrier: a = {0, 9}
+    [GpuKernel]
+    public static void EmptyCollectionSpanKernel(int[] a)
+    {
+        Span<int> s = [];
+        a[0] = s.Length;
+        Gpu.SyncThreads();
+        a[1] = 9;
+    }
+
+    // A collection-initialized span used only before a barrier: a = {4, 2}
+    [GpuKernel]
+    public static void CollectionSpanBeforeBarrierKernel(int[] a)
+    {
+        Span<int> s = [1, 2, 3, 4];
+        a[0] = s[3];
+        Gpu.SyncThreads();
+        a[1] = 2;
+    }
+
+    // A collection-initialized span inside a loop with a barrier reinitializes every iteration: sums = {3, 3, 3}
+    [GpuKernel]
+    public static void CollectionSpanInLoopKernel(int[] sums)
+    {
+        for (int k = 0; k < 3; k++)
+        {
+            Span<int> s = [1, 2];
+            sums[k] = s[0] + s[1];
+            s[0] = 5;
+            s[1] = 7;
+            if (k == 1)
+            {
+                Gpu.SyncThreads();
+            }
+        }
+    }
+
+    // A collection-initialized span with a variable element before a barrier: with blockDimX = 4, a = {12, 13, 14, 15}
+    [GpuKernel]
+    public static void VariableCollectionSpanKernel(int[] a)
+    {
+        int tid = ThreadIndex.X;
+        Span<int> s = [tid, 2];
+        a[tid] = s[0] + s[1];
+        Gpu.SyncThreads();
+        a[tid] += 10;
+    }
 }
