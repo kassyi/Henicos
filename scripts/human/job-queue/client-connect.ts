@@ -17,6 +17,8 @@ export interface Endpoint {
   /** The memory pool for test runs, in MB. */
   memoryMb: number;
   policy: Policy;
+  /** Path to job-queue.config.json forwarded to a launched scheduler via --config. */
+  configPath?: string;
 }
 
 export const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -195,6 +197,11 @@ export class SchedulerLauncher {
       endpoint.policy,
     ];
     args.push("--state-dir", stateDirectory);
+    const rawConfigPath = endpoint.configPath || process.env.JOB_QUEUE_CONFIG;
+    const configPath = rawConfigPath ? path.resolve(rawConfigPath) : "";
+    if (configPath) {
+      args.push("--config", configPath);
+    }
     if (process.platform === "win32" && SchedulerLauncher.startThroughWmi(args, stateDirectory, logPath)) {
       return;
     }

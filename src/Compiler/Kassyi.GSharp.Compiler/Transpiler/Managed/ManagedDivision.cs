@@ -28,6 +28,27 @@ internal static class ManagedDivision
         _ => null
     };
 
+    /// <summary>
+    /// The form of a binary division or remainder (<paramref name="kind"/>) on the managed path, from its operator
+    /// properties and operand ranges; null when it keeps the C# operator. Shared by the managed rewriter and the IR
+    /// decision pass.
+    /// </summary>
+    public static ManagedDivisionPlan? PlanBinary(BinaryOperatorKind kind, bool isBuiltIn, bool isChecked,
+        bool hasConstantValue, ITypeSymbol? operatorType, IntegerRange? dividend, IntegerRange? divisor)
+    {
+        if (kind is not (BinaryOperatorKind.Divide or BinaryOperatorKind.Remainder) ||
+            !isBuiltIn || isChecked || hasConstantValue ||
+            operatorType is not { } opType ||
+            IntegerSemantics.Canonical(opType.SpecialType) is not
+                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
+            !MayNeedHelper(type, dividend, divisor))
+        {
+            return null;
+        }
+
+        return DecideBinary(kind == BinaryOperatorKind.Divide, type);
+    }
+
     private static ManagedDivisionPlan? PlanBinary(BinaryExpressionSyntax node, SemanticModel model)
     {
         if (model.GetSafeOperation(node) is not IBinaryOperation operation ||
@@ -36,14 +57,19 @@ internal static class ManagedDivision
             operation.ConstantValue.HasValue ||
             operation.Type is not { } operationType ||
             IntegerSemantics.Canonical(operationType.SpecialType) is not
-                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)) ||
-            !MayNeedHelper(type, OperationRanges.Of(operation.LeftOperand),
-                OperationRanges.Of(operation.RightOperand)))
+                (var type and (SpecialType.System_Int32 or SpecialType.System_Int64)))
         {
             return null;
         }
 
-        return DecideBinary(operation.OperatorKind == BinaryOperatorKind.Divide, type);
+        return PlanBinary(
+            operation.OperatorKind,
+            isBuiltIn: true,
+            isChecked: false,
+            hasConstantValue: false,
+            operationType,
+            OperationRanges.Of(operation.LeftOperand),
+            OperationRanges.Of(operation.RightOperand));
     }
 
     // The operator type of x /= y is the promotion of the target and the value; only an int or long target can hold

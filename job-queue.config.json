@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "entry": "scripts/human/job-queue.js",
+  "stateDir": "tmp/job-queue",
+  "sharedRoot": "git-main-checkout",
+  "plugins": [
+    { "name": "./scripts/human/job-queue-henicos" },
+    { "name": "dotnet" },
+    { "name": "just" }
+  ],
+  "pools": {
+    "coresPerSlot": 3,
+    "minimumSlots": 2,
+    "memoryShare": 0.5,
+    "defaultTestMemoryMb": 0
+  },
+  "resources": {
+    "gpu": {
+      "slots": 1,
+      "lock": {
+        "seats": ["tmp/gpu-test-lock"]
+      }
+    }
+  },
+  "legacyClients": {
+    "testPattern": "\\bdotnet(\\.exe)?\"?\\s+(test|vstest)\\b|\\bjust\\b[^;&|\\n]*?\\s(test[\\w-]*|coverage-diff|mutate|long-checks)(\\s|$)",
+    "testMemoryMb": 2880
+  }
+}

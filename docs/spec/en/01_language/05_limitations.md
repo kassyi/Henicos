@@ -27,7 +27,8 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **LINQ (`System.Linq`)** | **Device Only** | Relies heavily on delegates, iterators, and dynamic allocations. (Enforced by **GSH0008**) |
 | **`foreach` Loops** | **Device Only** | Implicitly allocates `IEnumerator` instances on the managed heap, which is generally incompatible with GPU memory execution. However, iterating over `Span<T>`, `ReadOnlySpan<T>`, `InlineArray`, fixed arrays, or a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`, lowered by inlining the iterator body at each `foreach`) does NOT allocate and is explicitly supported. (Enforced by **GSH0007**, **GSH0070**–**GSH0073**) |
 | **Virtual Methods / Interfaces** | **Device Only** | Dynamic dispatch (v-tables) is unsupported in the current AOT transpiler. |
-| **Exceptions (`throw`, `try-catch`)** | **Device Only** | Exception unwinding is not supported in CUDA device code. |
+| **`throw`** | **Supported** | A `throw new X(...)` statement or expression ends the thread; the launch then throws an exception of type `X` with the place of the throw, and the other threads keep running. Only the type, the place, a constant message (a literal, `const`, `nameof` or constant interpolation) and the parameter name of `ArgumentException`, `ArgumentNullException` and `ArgumentOutOfRangeException` are carried; the arguments are evaluated and then dropped, so constructor bodies, properties, the inner exception and non-constant messages are not carried. `throw ex;`, `throw;`, a non-constant message and an exception type the host cannot build (abstract, or without a public `(string, Exception)`, `(string)` or `()` constructor) are GSH0003. A throw in a device function reports its place, message, parameter name and exception type (also a user-defined one) as a throw in a kernel does: the sites of its throws travel with the function to every kernel that calls it, also across assemblies. The other failed checks of a device function (a switch expression, a StackLinq call, a null check) still carry their text only. Inside a `using` the resources are disposed on CUDA only where the throw is in the same function. |
+| **`try-catch`** | **Device Only** | Exception unwinding is not supported in CUDA device code (GSH0038). |
 | **Recursion** | **Device Only** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
 | **Reflection** | **Device Only** | The .NET reflection metadata is entirely absent on the GPU. |
 | **Generics** | **Device Only (Partial)** | True runtime generics are unsupported. However, **C++ Template generation is fully supported** for C# generic structs and methods, allowing the AOT transpiler to map C# generics directly to highly optimized C++ templates (`template <typename T>`). |
@@ -71,6 +72,8 @@ that a project built only for CUDA accepts a warp shuffle in the places that GSH
 * [GSH0062](../03_bcl_api/diagnostics/GSH0062.md): a warp shuffle, vote or reduction, `Gpu.SyncWarp`,
   `Warp.ActiveMask()`, or a device function that reaches a barrier, called from a lambda, a local function, a switch
   expression arm, a `when` clause, after `?.` or as the right operand of `??`.
+* [GSH0120](../03_bcl_api/diagnostics/GSH0120.md): in a method that reaches `Warp.ActiveMask()`, a `goto` that jumps
+  from outside into the middle of a forward-goto range or a goto loop holding a warp collective or barrier.
 
 Other differences of the CPU paths:
 
@@ -207,6 +210,7 @@ examples:
 | [**GSH0116**](../03_bcl_api/diagnostics/GSH0116.md) | Warning | No GPU of GSharpTargetArchitectures has an oversized shared memory configuration | Triggered when a kernel enables `[GpuKernel(AllowOversizedSharedMemory = true)]` but no target GPU of `GSharpTargetArchitectures` has an oversized shared memory configuration. |
 | [**GSH0117**](../03_bcl_api/diagnostics/GSH0117.md) | Error | SharedMemory<T> count must not be negative | Triggered when a `SharedMemory<T>` is created with a negative constant count. A count of 0 declares empty shared memory. |
 | [**GSH0119**](../03_bcl_api/diagnostics/GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates | Triggered on the CPU dialect when a body that the managed path must copy into a generated file (it suspends or holds a construct only the managed path rewrites, such as an integer division) names a file-local type; the managed launch of the kernel that needs the copy throws. |
+| [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop that holds a warp collective or barrier. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 

@@ -236,4 +236,49 @@ internal static class ResumeLocalScenarios
 
         Assert.Equal(new[] { 1, 2, 3, 4 }, result);
     }
+
+    public static void ReadOnlyCollectionSpan(Action<Action> run)
+    {
+        var a = new int[2];
+
+        run(() => ResumeLocalKernels.LaunchReadOnlyCollectionSpanKernel(a, blockDimX: 1));
+
+        Assert.Equal(new[] { 7, 3 }, a);
+    }
+
+    public static void EmptyCollectionSpan(Action<Action> run)
+    {
+        var a = new int[2];
+
+        run(() => ResumeLocalKernels.LaunchEmptyCollectionSpanKernel(a, blockDimX: 1));
+
+        Assert.Equal(new[] { 0, 9 }, a);
+    }
+
+    public static void CollectionSpanBeforeBarrier(Action<Action> run)
+    {
+        var a = new int[2];
+
+        run(() => ResumeLocalKernels.LaunchCollectionSpanBeforeBarrierKernel(a, blockDimX: 1));
+
+        Assert.Equal(new[] { 4, 2 }, a);
+    }
+
+    public static void CollectionSpanInLoop(Action<Action> run)
+    {
+        int[] sums = [-1, -1, -1];
+
+        run(() => ResumeLocalKernels.LaunchCollectionSpanInLoopKernel(sums, blockDimX: 1));
+
+        Assert.Equal(new[] { 3, 3, 3 }, sums);
+    }
+
+    public static void VariableCollectionSpan(Action<Action> run)
+    {
+        var a = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchVariableCollectionSpanKernel(a, blockDimX: 4));
+
+        Assert.Equal(new[] { 12, 13, 14, 15 }, a);
+    }
 }

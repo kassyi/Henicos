@@ -43,6 +43,18 @@ public class ContextHoister(
         _refLocalsNotLiveAcrossSplit = refLocalsNotLiveAcrossSplit;
     }
 
+    /// <summary>
+    /// The locals that the local functions written in front of the switch capture; they are hoisted as if a barrier
+    /// crossed them (<see cref="StateMachineLocalFunctions.Plan"/>).
+    /// </summary>
+    internal HashSet<DeclarationKey>? CapturedByMovedFunctions
+    {
+        init => _capturedByMovedFunctions = value;
+    }
+
+    // The keys that the local functions written in front of the switch reference (StateMachineLocalFunctions.Plan)
+    private HashSet<DeclarationKey>? _capturedByMovedFunctions;
+
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
     private readonly HashSet<string> _copiedParameters = [];
 
@@ -63,8 +75,8 @@ public class ContextHoister(
         _copiedParameters.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
-        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _hoistedVariables, hoistedDecls,
-            _refLocalsNotLiveAcrossSplit);
+        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _capturedByMovedFunctions,
+            _hoistedVariables, hoistedDecls, _refLocalsNotLiveAcrossSplit);
         if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
@@ -116,12 +128,13 @@ public class ContextHoister(
     }
 
     // [WHY] C# allows a label on a declaration (`L: int a = x, b = a + 1;`). The label moves to the first piece of a
-    // split declaration, so that the enclosing statement list splices the pieces like those of an unlabeled one.
+    // split declaration, so that the enclosing statement list splices the pieces like those of an unlabeled one. A
+    // hoisted declaration without an initializer leaves nothing, so the label stays on an empty statement (`L: ;`).
     // <label>: <first piece> <other pieces>
     public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
     {
-        var visited = (LabeledStatementSyntax?)base.VisitLabeledStatement(node)
-                      ?? throw new InvalidOperationException("Hoisting removed a labeled statement.");
+        var statement = (StatementSyntax?)Visit(node.Statement) ?? SyntaxFactory.EmptyStatement();
+        var visited = node.WithStatement(statement);
         if (visited.Statement is not BlockSyntax block || !block.HasAnnotation(s_spliceAnnotation))
         {
             return visited;

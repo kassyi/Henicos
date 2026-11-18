@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -36,6 +37,12 @@ internal static class IrNodeChildren
         IrStructCreation creation => [.. WithArguments(null, creation.Arguments), .. creation.Initializers],
         IrArrayCreation array => [array.Length, .. array.Elements],
         IrSequence sequence => [.. sequence.SideEffects, sequence.Value],
+        IrConditionalGoto conditionalGoto => [conditionalGoto.Condition],
+        IrResumeCall resume => resume.ResultTarget is { } target ? [resume.Call, target] : [resume.Call],
+        IrRuntimeCall runtime => WithRuntimeArguments(runtime.Arguments),
+        IrStateJump jump => Optional(jump.Condition),
+        IrState state => [.. state.Statements],
+        IrStateMachine machine => [.. machine.States],
         _ => []
     };
 
@@ -70,6 +77,7 @@ internal static class IrNodeChildren
         IrAssignment assignment => assignment.Target == child,
         IrCompoundAssignment compound => compound.Target == child,
         IrIncrement increment => increment.Target == child,
+        IrResumeCall resume => resume.ResultTarget == child,
         _ => false
     };
 
@@ -80,6 +88,7 @@ internal static class IrNodeChildren
         IrCall call => IsOutArgument(call.Arguments, child),
         IrPropertyReference property => IsOutArgument(property.Arguments, child),
         IrStructCreation creation => IsOutArgument(creation.Arguments, child),
+        IrRuntimeCall runtime => IsOutArgument(runtime.Arguments, child),
         _ => false
     };
 
@@ -89,7 +98,24 @@ internal static class IrNodeChildren
             .Any(child, static (argument, value) =>
                 argument.Value == value && argument.Parameter.RefKind == RefKind.Out);
 
+    private static bool IsOutArgument(ImmutableArray<IrRuntimeArgument> arguments, IrNode child) =>
+        arguments
+            .AsStackEnumerable()
+            .Any(child, static (argument, value) =>
+                argument.Value == value && argument.RefKind == RefKind.Out);
+
     private static IrNode[] Optional(IrNode? node) => node is null ? [] : [node];
+
+    private static IrNode[] WithRuntimeArguments(ImmutableArray<IrRuntimeArgument> arguments)
+    {
+        var children = new IrNode[arguments.Length];
+        for (var index = 0; index < arguments.Length; index++)
+        {
+            children[index] = arguments[index].Value;
+        }
+
+        return children;
+    }
 
     private static IrNode[] WithArguments(IrExpression? receiver, ImmutableArray<IrArgument> arguments)
     {

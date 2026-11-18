@@ -345,6 +345,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitUsingStatement(UsingStatementSyntax node)
         => UsingTranspiler.TranspileUsingStatement(node, ref Context);
 
+    public override void VisitThrowStatement(ThrowStatementSyntax node)
+        => ThrowTranspiler.TranspileStatement(node, ref Context);
+
+    public override void VisitThrowExpression(ThrowExpressionSyntax node)
+        => ThrowTranspiler.TranspileExpression(node, ref Context);
+
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
         Visit(node.Declaration);

@@ -129,7 +129,30 @@ internal static class DeviceImportAssembler
         AppendFunctionBodies(source, functions, isCuda);
 
         return new ImportedDeviceCode(source.ToString(), CollectIncludes(structs, functions, isCuda),
-            CollectFullNames(structs, functions));
+            CollectFullNames(structs, functions), CollectErrorSites(functions));
+    }
+
+    // The sites of the throws of the placed functions, in the order of the functions
+    private static EquatableArray<ErrorSiteEntry> CollectErrorSites(ImmutableArray<DeviceExportRecord>.Builder functions)
+    {
+        var sites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
+        foreach (var record in functions)
+        {
+            if (record.ErrorSites.IsDefaultOrEmpty)
+            {
+                continue;
+            }
+
+            foreach (var encoded in record.ErrorSites)
+            {
+                if (ErrorSiteCodec.TryDecode(encoded, out var site))
+                {
+                    sites.Add(site);
+                }
+            }
+        }
+
+        return sites.ToImmutable().AsEquatableArray();
     }
 
     private static void Add(Dictionary<string, ImmutableArray<int>.Builder> byName, string name, int index)

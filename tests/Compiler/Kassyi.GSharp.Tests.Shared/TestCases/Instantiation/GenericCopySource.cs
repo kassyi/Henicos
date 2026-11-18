@@ -47,6 +47,38 @@ namespace App
     {
     }
 
+    public interface IStaticGen
+    {
+        static abstract int Create<U>(U value);
+    }
+
+    public struct StaticGenExplicit : IStaticGen
+    {
+        static int IStaticGen.Create<U>(U value) => 1;
+    }
+
+    public interface IInstGen
+    {
+        int Pick<U>(U value);
+    }
+
+    public struct InstGenExplicit : IInstGen
+    {
+        int IInstGen.Pick<U>(U value) => 1;
+    }
+
+    public interface IOverloaded
+    {
+        int Pick(object value);
+    }
+
+    public struct OverloadedTarget : IOverloaded
+    {
+        public int Pick(object value) => 1;
+
+        public int Pick(int value) => 2;
+    }
+
     public interface ICounter
     {
         int Next();
@@ -87,6 +119,15 @@ namespace App
         public static int CallsHelper<T>(T s) => Helper(s);
 
         public static int CallsExt<T>(T[] d) => d[0].Ext();
+
+        public static int Over(object value) => 1;
+        public static int Over(int value) => 2;
+
+        // The generic method binds Over(object); the copy for int would bind Over(int)
+        public static int CallsOver<T>(T value) => Over(value);
+
+        // The generic method has no member of T to call; the copy for a value type has no ?. to write
+        public static string? NullConditional<T>(T value) => value?.ToString();
 
         public static T Sum<T>(T a, T b) where T : IAdditionOperators<T, T, T> => a + b;
 
@@ -248,6 +289,32 @@ namespace App
         }
 
         public static int Recurse<T>(int n) where T : unmanaged => n <= 0 ? 0 : Recurse<T>(n - 1);
+
+        public static int CallOverloaded<T>(T x) where T : IOverloaded => x.Pick(1);
+
+        public static string ConcatWith<T>(string left, T right) => left + right;
+
+        public static bool Less<T>(T a, T b) where T : IComparisonOperators<T, T, bool> => a < b;
+
+        public static T MinMagnitude<T>(T a, T b) where T : INumberBase<T> => T.MinMagnitude(a, b);
+
+        public static T AbsPlusB<T>(T a, T b) where T : INumber<T> => T.Abs(a) + b;
+
+        public static bool AbsLessB<T>(T a, T b) where T : INumber<T> => T.Abs(a) < b;
+
+        public static T CompoundAddAbs<T>(T a, T b) where T : INumber<T>
+        {
+            a += T.Abs(b);
+            return a;
+        }
+
+        public static int SignOfAbs<T>(T a) where T : INumber<T> => T.Sign(T.Abs(a));
+
+        public static T MaxOfAbs<T>(T a, T b) where T : INumber<T> => T.Max(T.Abs(a), b);
+
+        public static int CallStaticGen<T>(double d) where T : IStaticGen => T.Create(d);
+
+        public static int CallInstGen<T>(T x, double d) where T : IInstGen => x.Pick(d);
     }
 
     public static partial class Outer<T> where T : unmanaged

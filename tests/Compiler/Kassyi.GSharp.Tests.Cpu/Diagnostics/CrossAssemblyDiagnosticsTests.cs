@@ -18,6 +18,11 @@ public class CrossAssemblyDiagnosticsTests
     private static readonly string s_library = RoslynTestUtility.ReadTestCase(Folder + "Library.cs");
     private static readonly string s_consumer = RoslynTestUtility.ReadTestCase(Folder + "Consumer.cs");
 
+    private static readonly string s_conversionLibrary =
+        RoslynTestUtility.ReadTestCase(Folder + "ConversionLibrary.cs");
+    private static readonly string s_conversionConsumer =
+        RoslynTestUtility.ReadTestCase(Folder + "ConversionConsumer.cs");
+
     private static readonly Dictionary<string, string> s_noExport =
         new() { ["build_property.GSharpExportDeviceCode"] = "false" };
 
@@ -418,8 +423,10 @@ public class CrossAssemblyDiagnosticsTests
     [Theory]
     [InlineData("Cpu", 3, "", 1)]
     [InlineData("Cuda", 3, "", 1)]
-    [InlineData("Cpu", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
-    [InlineData("Cuda", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cpu", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cuda", 4, ", ManagedStateMachine = true, PrivateManagedFrame = true", 1)]
+    [InlineData("Cpu", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
+    [InlineData("Cuda", 5, ", ManagedStateMachine = true, PrivateManagedFrame = true", 0)]
     [Scenario(TestScenario.SadPath)]
     public async Task ImportedSuspendingFunction_RecordOfThePreviousFormat_ReportsGsh0089(
         string dialect,
@@ -492,6 +499,74 @@ public class CrossAssemblyDiagnosticsTests
             direct.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "constructor 'XasmLib.Counter()' without a device equivalent"));
         Assert.Equal([(Analyzer, 9, 26, 9, 33)],
             generic.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "constructor 'XasmLib.Counter()' without a device equivalent"));
+    }
+
+    // #1278: explicit and implicit conversion operators, generic struct casts, and nullable lifted casts
+    // of an imported struct without exported device records report GSH0088 at the conversion expression.
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LibraryWithoutRecords_ConversionOperator_ReportsGsh0088AtEachConversion(string dialect)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport, s_conversionLibrary);
+
+        var diagnostics = await RunAsync(dialect, s_conversionConsumer, library);
+
+        Assert.Equal([
+            (Analyzer, 11, 22, 11, 49),
+            (Analyzer, 12, 35, 12, 45),
+            (Analyzer, 14, 24, 14, 34),
+            (Analyzer, 15, 29, 15, 39),
+            (Analyzer, 16, 24, 16, 25),
+            (Analyzer, 19, 23, 19, 43),
+            (Analyzer, 23, 22, 23, 45)
+        ], diagnostics.Ranges(GSharpDiagnostics.DeviceFunctionNotExported.Id));
+        Assert.Contains(diagnostics, static d =>
+            d.Id == GSharpDiagnostics.DeviceFunctionNotExported.Id &&
+            d.Message.Contains("'Meters.op_Explicit' is declared in 'XasmLib'", StringComparison.Ordinal));
+        Assert.Contains(diagnostics, static d =>
+            d.Id == GSharpDiagnostics.DeviceFunctionNotExported.Id &&
+            d.Message.Contains("'Meters.op_Implicit' is declared in 'XasmLib'", StringComparison.Ordinal));
+        Assert.Contains(diagnostics, static d =>
+            d.Id == GSharpDiagnostics.DeviceFunctionNotExported.Id &&
+            d.Message.Contains("'Box.op_Explicit' is declared in 'XasmLib'", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task LibraryWithRecords_ConversionOperator_ReportsNothing(string dialect)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", null, s_conversionLibrary);
+
+        var diagnostics = await RunAsync(dialect, s_conversionConsumer, library);
+
+        Assert.Empty(diagnostics.Where(static d =>
+            d.Id is "GSH0088" or "GSH0089" or "GSH0090" &&
+            d.Message.Contains("Meters", StringComparison.Ordinal)));
+    }
+
+    // #1278: a struct whose record failed for C++ (hand-written, CUDA text present): the CPU consumer reports GSH0089
+    // at each conversion expression (line 11: intData[0], line 12: a), the CUDA consumer reports nothing
+    [Theory]
+    [InlineData("Cpu", 2)]
+    [InlineData("Cuda", 0)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task LibraryWithUnusableRecord_ConversionOperator_ReportsGsh0089AtEachConversion(
+        string dialect,
+        int expected)
+    {
+        var library = DeviceLibraryBuilder.Build("XasmLib", s_noExport,
+            HandWrittenExportRecords.Read(Folder + "HandWrittenConversionRecord.cs"));
+
+        var diagnostics = await RunAsync(dialect, RoslynTestUtility.ReadTestCase(Folder + "ConversionUnusableConsumer.cs"),
+            library);
+
+        var ranges = diagnostics.Ranges(GSharpDiagnostics.DeviceExportUnusable.Id, "could not transpile it");
+        Assert.Equal(expected == 0 ? [] : [(Analyzer, 11, 24, 11, 34), (Analyzer, 12, 24, 12, 25)], ranges);
+        Assert.Empty(diagnostics.Where(static d => d.Id is "GSH0088" or "GSH0090"));
     }
 
     // The diagnostics of a run and the text of the sources the generator added

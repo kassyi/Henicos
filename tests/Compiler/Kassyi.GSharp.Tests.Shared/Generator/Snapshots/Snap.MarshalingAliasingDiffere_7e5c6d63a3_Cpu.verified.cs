@@ -9033,6 +9033,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8602
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_NullableTopLevelArrayKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy optPrim, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy optDeep, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
@@ -9878,6 +9879,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8602
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_StructFieldNullDereferenceKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Tests.Shared.Differential.MarshalingAliasingDifferentialKernels.AotContexts.DiffNullableDeepBag* bag, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);

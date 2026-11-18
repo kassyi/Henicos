@@ -323,7 +323,8 @@ internal sealed class DeviceExportTable
             ReadDialectText(named, AttributeNames.Cuda),
             ReadDialectText(named, AttributeNames.Cpp),
             traits,
-            GetString(named, AttributeNames.InternalError));
+            GetString(named, AttributeNames.InternalError),
+            GetArray(named, AttributeNames.ErrorSites));
 
         imported = new ImportedDeviceRecord(record, assemblyName, formatVersion, preludeHash);
         return record.Names.CppName.Length > 0;

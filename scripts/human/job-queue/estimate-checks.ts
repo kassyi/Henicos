@@ -14,8 +14,8 @@ import { RunHistory } from "./history.ts";
 
 type AssertModule = typeof Assert;
 
-const Cpu = "tests/Compiler/App.Cpu";
-const Cuda = "tests/Compiler/App.Cuda";
+const ScriptA = "scripts/human/app.js";
+const ScriptB = "scripts/human/other.ts";
 /** A job in a worktree of a made-up Windows checkout (the scheduler keeps the worktree in lower case there). */
 const Windows: KeyContext = { cwd: "C:\\work\\repo\\wt\\feat-a", worktree: "c:\\work\\repo\\wt\\feat-a" };
 /** The same on a Unix machine. */
@@ -59,96 +59,81 @@ export function checkCommandReader(assert: AssertModule): void {
 
 /** The normalized key is the work: the same for the forms that differ only in what does not change it. */
 export function checkEstimateNormalize(assert: AssertModule): void {
-  const plain = keysOf(`dotnet build ${Cpu}`).normalized;
-  assert.strictEqual(plain, `dotnet build ${Cpu}`);
+  const plain = keysOf(`node ${ScriptA}`).normalized;
+  assert.strictEqual(plain, `node ${ScriptA}`);
   const same = (text: string, why: string, context: KeyContext = Windows): void =>
     assert.strictEqual(keysOf(text, context).normalized, plain, why);
-  same(`dotnet build ${Cpu} -nodeReuse:false > tmp/a.log 2>&1`, "redirections and their files");
-  same(
-    `dotnet build ${Cpu} -m:6 -nodeReuse:false -v:q -nologo --logger trx -l console &> tmp/a.log`,
-    "dropped options",
-  );
-  same(`CI=true DiffEngine_Disabled=true dotnet build ${Cpu}`, "assignments of bash");
-  same(`export CI=true; dotnet build ${Cpu}`, "export of bash");
-  same(`$env:CI='true'; dotnet build ${Cpu} *> tmp/a.log`, "assignment and *> of PowerShell");
-  same(`dotnet build "${Cpu}" 2>&1 | grep -E 'error' | tail -5`, "quotes and a pipe into a filter");
-  same(`dotnet build ${Cpu} # intent: a reason`, "the intent comment");
-  same(`dotnet build ./${Cpu}`, "a leading ./");
-  same(`dotnet build C:/work/repo/wt/feat-a/${Cpu}`, "an absolute path inside the worktree");
-  same("dotnet build C:\\work\\repo\\wt\\feat-a\\tests\\Compiler\\App.Cpu", "backslashes");
-  same(`dotnet build /c/work/repo/wt/feat-a/${Cpu}`, "Git Bash spelling");
-  same(`dotnet build /mnt/c/work/repo/wt/feat-a/${Cpu}`, "WSL spelling");
-  same("cd tests && dotnet build Compiler/App.Cpu", "a cd before the build");
-  same("dotnet build Compiler/App.Cpu", "the job runs in a subdirectory", {
-    cwd: "C:\\work\\repo\\wt\\feat-a\\tests",
+  same(`node ${ScriptA} > tmp/a.log 2>&1`, "redirections and their files");
+  same(`CI=true node ${ScriptA}`, "assignments of bash");
+  same(`export CI=true; node ${ScriptA}`, "export of bash");
+  same(`$env:CI='true'; node ${ScriptA} *> tmp/a.log`, "assignment and *> of PowerShell");
+  same(`node "${ScriptA}" 2>&1 | grep -E 'error' | tail -5`, "quotes and a pipe into a filter");
+  same(`node ${ScriptA} # intent: a reason`, "the intent comment");
+  same(`node ./${ScriptA}`, "a leading ./");
+  same(`node C:/work/repo/wt/feat-a/${ScriptA}`, "an absolute path inside the worktree");
+  same("node C:\\work\\repo\\wt\\feat-a\\scripts\\human\\app.js", "backslashes");
+  same(`node /c/work/repo/wt/feat-a/${ScriptA}`, "Git Bash spelling");
+  same(`node /mnt/c/work/repo/wt/feat-a/${ScriptA}`, "WSL spelling");
+  same("cd scripts && node human/app.js", "a cd before the script");
+  same("node human/app.js", "the job runs in a subdirectory", {
+    cwd: "C:\\work\\repo\\wt\\feat-a\\scripts",
     worktree: Windows.worktree,
   });
-  same(`dotnet build /home/dev/wt/feat-a/${Cpu}`, "Unix: an absolute path inside the worktree", Unix);
+  same(`node /home/dev/wt/feat-a/${ScriptA}`, "Unix: an absolute path inside the worktree", Unix);
   assert.strictEqual(
-    keysOf(`dotnet build C:/work/repo/wt/feat-b/${Cpu}`).normalized,
-    `dotnet build C:/work/repo/wt/feat-b/${Cpu}`,
+    keysOf(`node C:/work/repo/wt/feat-b/${ScriptA}`).normalized,
+    `node C:/work/repo/wt/feat-b/${ScriptA}`,
     "a path of another worktree stays as written",
   );
+  assert.notStrictEqual(keysOf(`node ${ScriptB}`).normalized, plain, "another script");
+  assert.notStrictEqual(keysOf(`node ${ScriptA} --flag`).normalized, plain, "script arguments are work");
   assert.strictEqual(
-    keysOf(`dotnet test ${Cpu} --no-build -c Release`).normalized,
-    keysOf(`dotnet test -c Release --no-build ${Cpu}`).normalized,
-    "the order of the options",
-  );
-  assert.notStrictEqual(keysOf(`dotnet build ${Cuda}`).normalized, plain, "another project");
-  assert.notStrictEqual(keysOf(`dotnet build ${Cpu} -c Release`).normalized, plain, "the configuration is work");
-  assert.notStrictEqual(keysOf(`dotnet test ${Cpu} --no-build`).normalized, keysOf(`dotnet test ${Cpu}`).normalized);
-  assert.strictEqual(
-    keysOf(`dotnet build ${Cpu}; dotnet test ${Cpu} --no-build`).normalized,
-    keysOf(`dotnet build ${Cpu} && dotnet test ${Cpu} --no-build`).normalized,
+    keysOf(`node ${ScriptA}; node ${ScriptB}`).normalized,
+    keysOf(`node ${ScriptA} && node ${ScriptB}`).normalized,
     "PowerShell and bash separators",
-  );
-  assert.notStrictEqual(
-    keysOf(`dotnet test ${Cpu} --filter "A|B"`).normalized,
-    keysOf(`dotnet test ${Cpu} --filter "A|C"`).normalized,
-    "the filter value is part of the work",
-  );
-  assert.strictEqual(
-    keysOf(`dotnet test ${Cpu} --filter "A|B"`).shape,
-    keysOf(`dotnet test ${Cpu} --filter "A|C"`).shape,
-    "but not of the shape",
   );
 }
 
 /** The shape names the steps and what changes their time; the kind only the steps. */
 export function checkEstimateShape(assert: AssertModule): void {
-  assert.strictEqual(keysOf(`dotnet build ${Cpu} -c Release`).shape, "build:App.Cpu", "-c takes a value");
-  assert.strictEqual(keysOf(`CI=true dotnet test ${Cpu} --no-build --filter 'A|B' > x.log`).shape, "test:App.Cpu:nb:f");
-  assert.strictEqual(keysOf(`dotnet test ${Cpu}`).shape, "test:App.Cpu", "unfiltered, with build");
+  assert.strictEqual(keysOf("just test-category Runtime").shape, "just", "without plugins, just falls back to generic");
+  assert.strictEqual(keysOf("node tools/x/fuzz.js --minutes 5").shape, "node:fuzz");
   assert.strictEqual(
-    keysOf(`cd tests && dotnet build ${Cpu}; grep error a.log; dotnet test ${Cpu} --no-build`).shape,
-    "build:App.Cpu&test:App.Cpu:nb",
+    keysOf(`cd scripts && node ${ScriptA}; grep error a.log; node -p 1`).shape,
+    "node:app&node:eval",
     "steps of no weight (cd, grep) do not count",
   );
-  assert.strictEqual(keysOf("dotnet build a.csproj || dotnet build b.csproj").shape, "build:a&build:b", "||");
-  assert.strictEqual(keysOf("just test-category Runtime").shape, "just:test-category");
-  assert.strictEqual(keysOf("node tools/x/fuzz.js --minutes 5").shape, "node:fuzz");
-  assert.strictEqual(keysOf("dotnet run --project tools/x").shape, "dotnet:run");
-  assert.strictEqual(keysOf(`dotnet build ${Cuda} && dotnet test ${Cuda} --no-build`).kind, "build&test");
+  assert.strictEqual(keysOf("node a.js || node b.ts").shape, "node:a&node:b", "||");
   assert.deepStrictEqual(keysOf("echo hi"), { normalized: "", shape: "", kind: "" }, "trivial steps only");
-  // A project or script outside the worktree (a scratch project) is not the repository's work: a kind of its own
-  assert.strictEqual(keysOf("dotnet msbuild C:\\scratch\\probe\\test.proj -target:Run").kind, "dotnet:outside");
-  assert.strictEqual(keysOf("dotnet build ../other/App.csproj").kind, "build:outside", "relative, still outside");
-  assert.strictEqual(keysOf(`dotnet build ${Cpu}`).kind, "build", "inside stays as it was");
+  // A script outside the worktree (a scratch script) is not the repository's work: a kind of its own
   assert.strictEqual(keysOf("node C:\\scratch\\probe.mjs 1").kind, "node:outside");
+  assert.strictEqual(keysOf("node ../other/probe.js").kind, "node:outside", "relative, still outside");
   assert.strictEqual(keysOf("node scripts/x.js").kind, "node");
-  assert.strictEqual(
-    keysOf("dotnet build C:\\scratch\\a.csproj", { cwd: "", worktree: "" }).kind,
-    "build",
-    "no context",
-  );
+  assert.strictEqual(keysOf("node C:\\scratch\\a.js", { cwd: "", worktree: "" }).kind, "node", "no context");
   // Inline code (a probe, a sleep) is its own kind too
-  assert.deepStrictEqual(keysOf('node -e "setTimeout(()=>0,5000)"').kind, "node:eval");
+  assert.strictEqual(keysOf('node -e "setTimeout(()=>0,5000)"').kind, "node:eval");
   assert.strictEqual(keysOf("node -p 1").kind, "node:eval");
+  // Without a plugin, commands for unknown programs fall back to the core generic key
+  assert.deepStrictEqual(keysOf("dotnet build tests/Compiler/App.Cpu"), {
+    normalized: "dotnet build tests/Compiler/App.Cpu",
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(keysOf("dotnet test tests/Compiler/App.Cpu -c Release"), {
+    normalized: "dotnet test tests/Compiler/App.Cpu -c Release",
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(keysOf("dotnet run --project tools/x"), {
+    normalized: "dotnet run --project tools/x",
+    shape: "dotnet",
+    kind: "dotnet",
+  });
   // A command that cannot be read has the kind of its first program and nothing else
-  assert.deepStrictEqual(keysOf("dotnet build $(pwd)/X"), { normalized: "", shape: "", kind: "dotnet" });
-  assert.deepStrictEqual(keysOf("dotnet build 'x"), { normalized: "", shape: "", kind: "dotnet" });
+  assert.deepStrictEqual(keysOf("node $(pwd)/x.js"), { normalized: "", shape: "", kind: "node" });
+  assert.deepStrictEqual(keysOf("node 'x"), { normalized: "", shape: "", kind: "node" });
   // An entry of an old history has no directory: paths stay as written
-  assert.strictEqual(commandKeys(`dotnet build ${Cpu}`, { cwd: "", worktree: "" }).normalized, `dotnet build ${Cpu}`);
+  assert.strictEqual(commandKeys(`node ${ScriptA}`, { cwd: "", worktree: "" }).normalized, `node ${ScriptA}`);
 }
 
 function withHistory(run: (file: string, history: RunHistory) => void): void {
@@ -166,36 +151,28 @@ export function checkEstimateFallback(assert: AssertModule): void {
   withHistory((file, history) => {
     const sec = (n: number): number => n * 1000;
     const rec = (command: string, ms: number): void => history.record(command, ms, undefined, 1, Windows);
-    rec(`dotnet build ${Cpu} > a.log 2>&1`, sec(200));
-    rec(`dotnet build ${Cpu} -m:4 > b.log`, sec(300));
-    rec(`dotnet build ${Cuda} > c.log`, sec(90));
-    rec(`dotnet test ${Cpu} --no-build --filter A`, sec(10));
+    rec(`node ${ScriptA} > a.log 2>&1`, sec(200));
+    rec(`node ${ScriptA} &> b.log`, sec(300));
+    rec(`node ${ScriptB} > c.log`, sec(90));
+    rec(`node ${ScriptA} --case A > d.log`, sec(10));
     const from = (command: string): string | undefined => history.estimateWithFallback(command, Windows)?.from;
-    assert.strictEqual(from(`dotnet build ${Cpu} > a.log 2>&1`), "exact");
-    assert.deepStrictEqual(
-      history.estimateWithFallback(`dotnet build ${Cpu} > a.log 2>&1`, Windows)?.typicalMs,
-      sec(200),
-    );
+    assert.strictEqual(from(`node ${ScriptA} > a.log 2>&1`), "exact");
+    assert.deepStrictEqual(history.estimateWithFallback(`node ${ScriptA} > a.log 2>&1`, Windows)?.typicalMs, sec(200));
 
-    // normalized: the same text but for a log file name and an option; the median of the two commands' times
-    const normalized = history.estimateWithFallback(`dotnet build ${Cpu} -nodeReuse:false > other.log`, Windows);
+    // normalized: the same text but for a log file name; the median of the two commands' times
+    const normalized = history.estimateWithFallback(`node ${ScriptA} > other.log`, Windows);
     assert.strictEqual(normalized?.from, "normalized");
     assert.strictEqual(normalized?.typicalMs, sec(250), "median of the matched commands' typical times");
     assert.strictEqual(normalized?.longestMs, sec(250), "median of their longest times");
-    // shape: another project of the same kind is not the same shape; a filter value is not part of it
-    assert.strictEqual(from(`dotnet test ${Cpu} --no-build --filter B`), "shape");
-    assert.strictEqual(
-      history.estimateWithFallback(`dotnet test ${Cpu} --no-build --filter B`, Windows)?.typicalMs,
-      sec(10),
-    );
-    // kind: a project nobody built, the same steps
-    const kind = history.estimateWithFallback(`dotnet build tests/Compiler/App.Integration`, Windows);
+    // shape: another argument of the same script is not the same normalized key, same shape
+    assert.strictEqual(from(`node ${ScriptA} --case B`), "shape");
+    assert.strictEqual(history.estimateWithFallback(`node ${ScriptA} --case B`, Windows)?.typicalMs, sec(200));
+    // kind: a script nobody ran, the same kind of step
+    const kind = history.estimateWithFallback("node scripts/human/other2.js", Windows);
     assert.strictEqual(kind?.from, "kind");
-    assert.strictEqual(kind?.typicalMs, sec(200), "median of the three builds: 200 s, 300 s, 90 s");
-    // A scratch project outside the worktree never takes the repository's build times, and inline node code
-    // never takes those of the repository's scripts
-    assert.strictEqual(history.estimateWithFallback("dotnet build C:\\scratch\\probe.csproj", Windows), null);
-    rec("node scripts/human/x.js", sec(600));
+    assert.strictEqual(kind?.typicalMs, sec(145), "median of the four node runs: 10 s, 90 s, 200 s, 300 s");
+    // A scratch script outside the worktree and inline node code never take the repository's script times
+    assert.strictEqual(history.estimateWithFallback("node C:\\scratch\\probe.mjs", Windows), null);
     assert.strictEqual(history.estimateWithFallback('node -e "setTimeout(()=>0,5000)"', Windows), null);
     // nothing alike
     assert.strictEqual(history.estimateWithFallback("python make-art.py", Windows), null);
@@ -206,34 +183,26 @@ export function checkEstimateFallback(assert: AssertModule): void {
     );
 
     // The keys are made in the job's directory and kept with the entry: a path written absolute matches a relative one
-    rec("dotnet build C:/work/repo/wt/feat-a/tests/Compiler/App.Other", sec(70));
-    const relative = history.estimateWithFallback("dotnet build tests/Compiler/App.Other -m:2", Windows);
+    rec("node C:/work/repo/wt/feat-a/scripts/human/new.js", sec(70));
+    const relative = history.estimateWithFallback("node scripts/human/new.js > l.log", Windows);
     assert.strictEqual(relative?.from, "normalized");
     assert.strictEqual(relative?.typicalMs, sec(70));
     assert.strictEqual(
-      new RunHistory(file, () => {}).estimateWithFallback("dotnet build ./tests/Compiler/App.Other", Windows)?.from,
+      new RunHistory(file, () => {}).estimateWithFallback("node ./scripts/human/new.js", Windows)?.from,
       "normalized",
       "also after a reload",
-    );
-
-    // The groups follow the history: a record made after a lookup counts
-    rec(`dotnet test ${Cuda} --no-build --filter A`, sec(40));
-    assert.strictEqual(from(`dotnet test ${Cuda} --no-build --filter Z`), "shape");
-    assert.strictEqual(
-      history.estimateWithFallback(`dotnet test ${Cuda} --no-build --filter Z`, Windows)?.typicalMs,
-      sec(40),
     );
 
     // A history written by the version before this one (no accuracy file, plain commands) loads and falls back
     fs.writeFileSync(
       file,
-      JSON.stringify({ nextId: 5, commands: { "dotnet build x/A": { runs: [100, 300], lastUsed: 1 } } }),
+      JSON.stringify({ nextId: 5, commands: { "node x/a.js": { runs: [100, 300], lastUsed: 1 } } }),
     );
     fs.rmSync(path.join(path.dirname(file), "accuracy.json"), { force: true });
     const old = new RunHistory(file, () => {});
     assert.strictEqual(old.nextId, 5);
-    assert.strictEqual(old.estimateWithFallback("dotnet build x/A > l.log", Windows)?.from, "normalized");
-    assert.strictEqual(old.estimateWithFallback("dotnet build x/A -c Release", Windows)?.from, "shape");
+    assert.strictEqual(old.estimateWithFallback("node x/a.js > l.log", Windows)?.from, "normalized");
+    assert.strictEqual(old.estimateWithFallback("node x/a.js --flag", Windows)?.from, "shape");
     assert.deepStrictEqual(old.accuracy.entries, [], "no accuracy file: an empty log");
   });
 }

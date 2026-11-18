@@ -3,8 +3,19 @@
 
 import * as path from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { createRequire } from "node:module";
 import { StateDirectoryVariable } from "./constants.ts";
 import { errorCode, errorMessage } from "./history.ts";
+import type { MainCheckoutModule, ProcessEntry, ProcessLivenessModule } from "./lib/types.ts";
+
+const require = createRequire(import.meta.url);
+const { mainCheckout } = require("./lib/main-checkout.js") as MainCheckoutModule;
+const {
+  WindowsProcessQuery,
+  isGone,
+  parseProcessTable,
+  commandProcesses: commandProcessesHelper,
+} = require("./lib/process-liveness.js") as ProcessLivenessModule;
 
 /** Writes a line to stderr, marked as the queue's own output among the command's. */
 export function prefix(text: string): void {
@@ -20,18 +31,8 @@ export function resolveStateDirectory(): string {
   if (configured) {
     return path.resolve(configured);
   }
-  let base = path.resolve(import.meta.dirname, "..", "..", "..");
-  const git = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
-    cwd: import.meta.dirname,
-    encoding: "utf8",
-    windowsHide: true,
-  });
-  if (!git.error && git.status === 0) {
-    const commonDir = git.stdout.trim();
-    if (commonDir !== "" && path.isAbsolute(commonDir)) {
-      base = path.dirname(path.resolve(commonDir));
-    }
-  }
+  const fallbackRoot = path.resolve(import.meta.dirname, "..", "..", "..");
+  const base = mainCheckout(import.meta.dirname, fallbackRoot);
   return path.join(base, "tmp", "job-queue");
 }
 
@@ -58,14 +59,7 @@ export function resolveWorktree(directory: string): string {
   return worktreeKey(top !== "" ? top : directory);
 }
 
-/** Slack for comparing a process creation time with the recorded spawn time (as in gpu-lock.js). */
-const SpawnToleranceMs = 5000;
-
-export interface ProcessInfo {
-  ppid: number;
-  /** Creation time in ms since the epoch, or -1 when Windows did not report it. */
-  created: number;
-}
+export type ProcessInfo = ProcessEntry;
 
 /** The processes of the machine: a snapshot read on Windows, and the liveness and stopping of processes anywhere. */
 export class ProcessTable {
@@ -81,13 +75,9 @@ export class ProcessTable {
    * Resolves to null when the query fails or looks incomplete; callers then treat commands as alive.
    */
   static query(): Promise<ProcessTable | null> {
-    const script =
-      "Get-CimInstance Win32_Process | ForEach-Object { $c = -1; " +
-      "if ($_.CreationDate) { $c = ([DateTimeOffset]$_.CreationDate).ToUnixTimeMilliseconds() }; " +
-      '"$($_.ProcessId) $($_.ParentProcessId) $c" }';
     return new Promise((resolve) => {
       let output = "";
-      const query = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+      const query = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", WindowsProcessQuery], {
         windowsHide: true,
       });
       const timer = setTimeout(() => query.kill(), 60000);
@@ -100,13 +90,7 @@ export class ProcessTable {
           resolve(null);
           return;
         }
-        const processes = new Map<number, ProcessInfo>();
-        for (const line of output.split(/\r?\n/)) {
-          const [pid, ppid, created] = line.trim().split(" ").map(Number);
-          if (Number.isInteger(pid) && Number.isInteger(ppid) && Number.isFinite(created)) {
-            processes.set(pid as number, { ppid: ppid as number, created: created as number });
-          }
-        }
+        const processes = parseProcessTable(output);
         resolve(processes.has(process.pid) ? new ProcessTable(processes) : null);
       });
     });
@@ -123,28 +107,7 @@ export class ProcessTable {
    * but not what it started). Creation times exclude processes that only reuse the pid.
    */
   commandProcesses(pid: number, spawnedAt: number): number[] {
-    const earliest = spawnedAt - SpawnToleranceMs;
-    const latest = spawnedAt + SpawnToleranceMs;
-    const found: number[] = [];
-    let reusedFrom = Infinity;
-    const shell = this.processes.get(pid);
-    if (shell !== undefined) {
-      if (shell.created < 0 || shell.created <= latest) {
-        found.push(pid);
-      } else {
-        reusedFrom = shell.created;
-      }
-    }
-    for (const [child, info] of this.processes) {
-      if (
-        child !== pid &&
-        info.ppid === pid &&
-        (info.created < 0 || (info.created >= earliest && info.created < reusedFrom))
-      ) {
-        found.push(child);
-      }
-    }
-    return found;
+    return commandProcessesHelper(this.processes, pid, spawnedAt);
   }
 
   /** True unless the process is known to be gone. EPERM means alive. */
@@ -161,12 +124,7 @@ export class ProcessTable {
     if (!Number.isInteger(target) || target === 0) {
       return false;
     }
-    try {
-      process.kill(target, 0);
-      return true;
-    } catch (error) {
-      return errorCode(error) === "EPERM";
-    }
+    return !isGone(target);
   }
 
   /** Stops a process and everything it started (Unix: its process group, which the command leads). */

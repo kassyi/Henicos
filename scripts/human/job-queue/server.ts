@@ -16,10 +16,13 @@ import {
   UnknownTypicalMs,
   type Policy,
 } from "./constants.ts";
+import { loadConfig, type QueueConfig } from "./config.ts";
 import type { EstimateLevel } from "./estimate-fallback.ts";
 import { RunHistory } from "./history.ts";
 import {
   idField,
+  keysField,
+  memoryMbField,
   numberField,
   optionalNumberField,
   placesField,
@@ -46,6 +49,8 @@ export interface ServeOptions {
   port: number;
   /** '' for the default (resolveStateDirectory); a scheduler started through WMI gets it on its command line. */
   stateDir: string;
+  /** Optional explicit path to job-queue.config.json (--config). */
+  configPath?: string;
   /** Where the log lines go; stdout (server.log) by default. The self-test's in-process schedulers drop them. */
   log?: (text: string) => void;
 }
@@ -57,11 +62,11 @@ export function serve(options: ServeOptions): void {
 /** The scheduler process: the job table, the outcomes, the settle step, the timers and the TCP server. */
 export class JobServer {
   readonly options: ServeOptions;
+  readonly config: QueueConfig;
   readonly scheduler: Scheduler<ServerJob>;
-  /** The machine the scheduler runs on: the budgets of its checkout give the memory each test run takes. */
-  readonly machine: MachineProfile;
   readonly history: RunHistory;
   readonly store: JobStore;
+  private readonly legacyTestPattern: RegExp | null;
   nextId: number;
   idleSince = Date.now();
   /**
@@ -90,10 +95,23 @@ export class JobServer {
     this.log =
       options.log ??
       ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
+    // Scheduler reads only configuration data (never loads plugin code).
+    this.config = loadConfig({
+      mode: "serve",
+      configPath: options.configPath || undefined,
+      warn: (text) => this.log(text),
+    }).config;
+    this.legacyTestPattern = this.config.legacyClients?.testPattern
+      ? new RegExp(this.config.legacyClients.testPattern)
+      : null;
+    const machine =
+      options.slots === 0 || options.memoryMb === 0
+        ? new MachineProfile(undefined, undefined, this.config.pools)
+        : null;
+    const slots = options.slots > 0 ? options.slots : (machine as MachineProfile).slots;
+    const memoryMb = options.memoryMb > 0 ? options.memoryMb : (machine as MachineProfile).memoryPoolMb;
     // nothing is granted before listening (see listen)
-    this.scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
-    this.machine = new MachineProfile();
-    void this.machine.budgets; // read now, as the scheduler starts
+    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb);
     const stateDirectory = options.stateDir || resolveStateDirectory();
     this.history = new RunHistory(path.join(stateDirectory, "history.json"), this.log);
     this.nextId = this.history.nextId;
@@ -227,12 +245,22 @@ export class JobServer {
     return this.nextId++;
   }
 
+  private legacyMemoryMb(command: string): number {
+    if (this.legacyTestPattern === null || this.config.legacyClients?.testMemoryMb === undefined) {
+      return 0;
+    }
+    return this.legacyTestPattern.test(command) ? this.config.legacyClients.testMemoryMb : 0;
+  }
+
   /** A record from a registration or a saved record, not bound to a connection yet (bind attaches it). */
   createJob(message: Incoming, id: number, phase: Phase): ServerJob {
     const command = String(message.command ?? "");
     const cwd = String(message.cwd ?? "");
     const worktree = worktreeKey(String(message.worktree ?? "") || cwd);
     const places = placesField(message);
+    const keys = keysField(message);
+    const memoryMb = memoryMbField(message);
+    const gpuTurn = message.gpuTurn === true;
     return {
       id,
       phase,
@@ -253,17 +281,18 @@ export class JobServer {
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
       ...(places !== undefined ? { places } : {}),
+      ...(keys !== undefined ? { keys } : {}),
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
-      estimate: this.history.estimateWithFallback(command, { cwd, worktree, places }),
+      estimate: this.history.estimateWithFallback(command, { cwd, worktree, places }, keys),
       pin: optionalNumberField(message, "pin"),
       before: idField(message, "before"),
       after: idField(message, "after"),
       keepIfFailed: message.keepIfFailed === true,
-      gpuTurn: message.gpuTurn === true,
-      memoryMb: this.machine.testMemoryMb(command),
+      gpuTurn,
+      memoryMb: gpuTurn ? 0 : (memoryMb ?? this.legacyMemoryMb(command)),
       lastPosition: -1,
       lastStartAt: null,
       done: false,
@@ -324,7 +353,7 @@ export class JobServer {
         actualMs,
       );
       const context = { cwd: job.cwd, worktree: job.worktree, places: job.places };
-      this.history.record(job.command, actualMs, this.nextId, Date.now(), context);
+      this.history.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
     }
     this.scheduler.detach(job);
     this.recordOutcome(job.id, outcome);
@@ -460,8 +489,8 @@ export class JobServer {
     this.server.listen(options.port, "127.0.0.1", () => {
       this.log(
         `scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ` +
-          `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs ` +
-          `(${this.machine.budgets.size} budgets), policy ${scheduler.policy}`,
+          `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs, ` +
+          `policy ${scheduler.policy}`,
       );
       // Only the scheduler that owns the port restores. A current state file holds every job: the slots of the running
       // ones count from the first event, so nothing needs to wait.

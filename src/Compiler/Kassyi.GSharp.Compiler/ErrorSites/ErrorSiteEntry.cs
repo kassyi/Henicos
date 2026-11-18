@@ -9,4 +9,5 @@ internal readonly record struct ErrorSiteEntry(
     int Line,
     int Column,
     string MemberName,
-    string DefaultMessage);
+    string DefaultMessage,
+    string ExceptionType = "");

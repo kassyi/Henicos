@@ -23,13 +23,21 @@ public static partial class CudaDriverApi
 
     public enum CuDeviceAttribute
     {
+        /// <summary>Maximum number of threads per block.</summary>
+        MaxThreadsPerBlock = 1,
         /// <summary>The shared memory per block in bytes that every launch may use without an opt-in (48 KB).</summary>
         MaxSharedMemoryPerBlock = 8,
+        /// <summary>Maximum number of 32-bit registers available per block.</summary>
+        MaxRegistersPerBlock = 12,
         MultiprocessorCount = 16,
+        /// <summary>Maximum resident threads per multiprocessor.</summary>
+        MaxThreadsPerMultiprocessor = 39,
         ComputeCapabilityMajor = 75,
         ComputeCapabilityMinor = 76,
         /// <summary>The shared memory per multiprocessor in bytes.</summary>
         MaxSharedMemoryPerMultiprocessor = 81,
+        /// <summary>Maximum number of 32-bit registers available per multiprocessor.</summary>
+        MaxRegistersPerMultiprocessor = 82,
         /// <summary>The shared memory per block in bytes that a function may use after it opts in (static plus dynamic).</summary>
         MaxSharedMemoryPerBlockOptin = 97,
         /// <summary>The shared memory in bytes that the system reserves for each block on top of the user's.</summary>

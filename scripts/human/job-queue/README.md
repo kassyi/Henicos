@@ -78,8 +78,9 @@ When `chat-status.js` cannot be loaded or its directory read, the view has no pa
 ## Layout
 
 `scripts/human/job-queue.js` is a plain JavaScript entry: it checks the Node version (22.18 / 23.6 or later, which
-run TypeScript by stripping the types) and imports `cli.ts`. The modules use erasable syntax only (no `enum`,
-`namespace` or parameter properties) and Node built-in modules only
+run TypeScript by stripping the types) and imports `cli.ts`. Configuration lives in `job-queue.config.json` at the
+repository root (discovered via `JOB_QUEUE_CONFIG` or upward from the entry script). The modules use erasable syntax
+only (no `enum`, `namespace` or parameter properties) and Node built-in modules only
 ([agent-scripts.md §1](../../../.agents/rules/agent-scripts.md#1-language)).
 
 | Module | Responsibility |
@@ -111,12 +112,25 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
-| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
-| `estimate-checks.ts` | Self-test checks of the keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
-| `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
-| `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
-| `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
+| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
+| `estimate-checks.ts` | Self-test checks of the core keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
+| `machine.ts` | `MachineProfile`, hardware defaults for CPU slots and the memory pool parameterized by `config.pools` |
+| `shell.ts` | `CommandShell`, the shell a command runs in and quoting of pre-split words |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
+| `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
+| `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, context/result/panel types) and re-exported pure helpers |
+| `short-name.ts` | `dropShortWords`, the word walk the `shortName` hooks of plugins share (re-exported by `plugin-api.ts`) |
+| `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, and return validation |
+| `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits and `GSHARP_JOB_QUEUE_MSBUILD_ARGS`, `classify`, `shortName`, and `api` (`isDotnetTest`, `selectsCategory`) |
+| `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`): `just` recipe estimate keys (`stepKeys`) and short command labels (`shortName`) |
+| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `target-dialect.js`, `checks.ts`): test classification, `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming |
+| `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
+| `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
+| `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
+| `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
+| `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js`, `process-liveness.js`, and `target-dialect.js`) |
+| `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, and the hardening of plugin names, command environments and `--config` forwarding |
+| `scheduler-intake-checks.ts` | Checks of the scheduler side of the optional `memoryMb`/`keys` fields: the job record, history key lookup/preservation, state-file `keys` persistence, and version skew |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
 | `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 
@@ -165,9 +179,9 @@ sequenceDiagram
 ## The build step of `--gpu`
 
 A `--gpu` job holds the GPU turn for its whole command, so a build inside it holds the GPU idle for minutes. Before it
-asks for the turn, `run --gpu` (`client.ts`) asks `planBuildStep` (`build-split.ts`) for the builds of its command: the
-`dotnet build` segments before the first test, and a `dotnet build` of each project that a `dotnet test` without
-`--no-build` names, with the options the build reads too. `runBuildStep` (`client-build-step.ts`) runs them as a job of
+asks for the turn, `run --gpu` (`client.ts`) asks `splitBeforeTurn` (`plugins/dotnet/build-split.ts`) for the builds
+of its command: the `dotnet build` segments before the first test, and a `dotnet build` of each project that a
+`dotnet test` without `--no-build` names, with the options the build reads too. `runBuildStep` (`client-build-step.ts`) runs them as a job of
 their own, an ordinary `QueuedRun` on CPU slots with its own id, MSBuild node limit and run time in `history.json`,
 and the run then queues the tests, with `--no-build` added, for the turn. Two jobs instead of one job with two phases:
 no change to the protocol or the scheduler, a scheduler of an older checkout serves both, and each part is recorded
@@ -261,4 +275,5 @@ their old meaning.
    [job-queue-reference.md](../../../.agents/rules/job-queue-reference.md) with a change of behavior.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
-`scripts/agent/check-queued-command.js`; the GPU lock is `scripts/human/gpu-lock.js`.
+`scripts/agent/check-queued-command.js` (engine modules `hook.js`, `queue-rewrite.js`, `command-rules.js`, `rules/`,
+`shell-reader.js`, and repository data `project-henicos.js`); the GPU lock is `scripts/human/gpu-lock.js`.

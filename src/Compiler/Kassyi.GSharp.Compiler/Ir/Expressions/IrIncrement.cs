@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>An increment or decrement, prefix or postfix; the target is evaluated once.</summary>
@@ -33,4 +35,10 @@ internal sealed class IrIncrement(IrExpression target, bool isPrefix, bool isDec
             ? this
             : KeepSpelling(new IrIncrement(target, IsPrefix, IsDecrement, OperatorMethod, IsChecked, Category,
                 Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrStepDecision Decided => GetDecision<IrStepDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrIncrement WithDecision(IrStepDecision decision) => IrExpression.WithDecision<IrIncrement>(this, decision);
 }

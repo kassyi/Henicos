@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>A conditional expression <c>c ? a : b</c>, or <c>c ? ref a : ref b</c>.</summary>
@@ -47,4 +49,11 @@ internal sealed class IrConditional(IrExpression condition, IrExpression whenTru
             ? this
             : KeepSpelling(new IrConditional(Condition, WhenTrue, WhenFalse, IsRef, Category, ConstantValue, Source,
                 uniformity));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrConditionalDecision Decided => GetDecision<IrConditionalDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrConditional WithDecision(IrConditionalDecision decision) =>
+        IrExpression.WithDecision<IrConditional>(this, decision);
 }

@@ -14,7 +14,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </para>
 /// <para>
 /// A labeled statement may be the target of a jump, so the removal stops at it; a local declaration may be used after
-/// such a label, so it stops there too. Only what C# itself calls unreachable is removed, so the behavior is the same.
+/// such a label, so it stops there too, and so does a local function declaration (C# does not report it as unreachable,
+/// and a call before it may use it). Only what C# itself calls unreachable is removed, so the behavior is the same.
 /// </para>
 /// </remarks>
 internal sealed class UnreachableStatementRemover : CSharpSyntaxRewriter
@@ -50,7 +51,8 @@ internal sealed class UnreachableStatementRemover : CSharpSyntaxRewriter
         {
             var statement = statements[i];
             reach.Add(new StatementReach(EndsUnconditionally(statement),
-                statement is LabeledStatementSyntax or LocalDeclarationStatementSyntax));
+                statement is LabeledStatementSyntax or LocalDeclarationStatementSyntax
+                    or LocalFunctionStatementSyntax));
         }
 
         var keptIndices = UnreachableStatements.FindKept(reach.MoveToImmutable());

@@ -1,4 +1,6 @@
 using Kassyi.GSharp.Compiler.Ir.Expressions;
+using Kassyi.GSharp.Compiler.Ir.Linear;
+using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 
 namespace Kassyi.GSharp.Compiler.Ir;
@@ -68,10 +70,151 @@ internal sealed class IrInvariants
     public static bool ContainsOpaque(IrNode node) =>
         IrNodeChildren.Exists(node, static child => child is IrOpaqueExpression or IrOpaqueStatement);
 
+    /// <summary>
+    /// The violations of the invariants of the linear form in <paramref name="statements"/>; empty when it keeps them
+    /// all.
+    /// </summary>
+    public static ImmutableArray<string> VerifyLinear(ImmutableArray<IrStatement> statements, Compilation compilation)
+    {
+        var trees = SemanticModelExtensions.GetSyntaxTrees(compilation);
+        var violations = ImmutableArray.CreateBuilder<string>();
+        var labelCounts = new Dictionary<IrLabelSymbol, int>();
+        var labelKeys = new HashSet<(IrLabelKind Kind, int Ordinal)>();
+
+        foreach (var statement in statements)
+        {
+            if (statement is IrBlock or IrIf or IrWhile && IrSplitLowering.HoldsSplit(statement, compilation))
+            {
+                AddLinearViolation(violations, "L1", statement.Source,
+                    $"a {statement.GetType().Name} that holds a split was not flattened");
+            }
+
+            CheckLinearTopLevelCalls(statement, trees, violations);
+
+            foreach (var node in IrNodeChildren.DescendantsAndSelf(statement))
+            {
+                if (node is IrOpaqueStatement)
+                {
+                    AddLinearViolation(violations, "L3", node.Source,
+                        "an opaque statement remains in the linear form");
+                }
+            }
+
+            if (statement is IrLabel label)
+            {
+                if (!labelKeys.Add((label.Label.Kind, label.Label.Ordinal)))
+                {
+                    AddLinearViolation(violations, "L4", label.Source,
+                        $"duplicate label ({label.Label.Kind}, {label.Label.Ordinal})");
+                }
+
+                labelCounts[label.Label] = labelCounts.TryGetValue(label.Label, out var count) ? count + 1 : 1;
+                CheckAllowedLinearLabelKind(label.Label, label.Source, violations);
+            }
+        }
+
+        foreach (var statement in statements)
+        {
+            var target = statement switch
+            {
+                IrGoto @goto => @goto.Target,
+                IrConditionalGoto conditionalGoto => conditionalGoto.Target,
+                _ => null
+            };
+            if (target is null)
+            {
+                continue;
+            }
+
+            if (!labelCounts.TryGetValue(target, out var count) || count != 1)
+            {
+                AddLinearViolation(violations, "L4", statement.Source,
+                    $"jump target ({target.Kind}, {target.Ordinal}) is not defined by a single label");
+            }
+
+            CheckAllowedLinearLabelKind(target, statement.Source, violations);
+        }
+
+        return violations.ToImmutable();
+    }
+
+    private static void CheckLinearTopLevelCalls(IrStatement statement, SyntaxTree[] trees,
+        ImmutableArray<string>.Builder violations)
+    {
+        switch (statement)
+        {
+            case IrExpressionStatement { Expression: IrCall topCall }:
+                if (!RemovedCalls.IsRemoved(topCall.Method, trees[topCall.Source.TreeOrdinal]))
+                {
+                    CheckChildrenHaveNoSplitCall(topCall, trees, violations);
+                }
+
+                return;
+            case IrLocalDeclaration { Initializer: IrCall topCall }:
+                if (!RemovedCalls.IsRemoved(topCall.Method, trees[topCall.Source.TreeOrdinal]))
+                {
+                    CheckChildrenHaveNoSplitCall(topCall, trees, violations);
+                }
+
+                return;
+            default:
+                CheckNoSplitCall(statement, trees, violations);
+                return;
+        }
+    }
+
+    private static void CheckChildrenHaveNoSplitCall(IrNode node, SyntaxTree[] trees,
+        ImmutableArray<string>.Builder violations)
+    {
+        foreach (var child in IrNodeChildren.Of(node))
+        {
+            CheckNoSplitCall(child, trees, violations);
+        }
+    }
+
+    private static void CheckNoSplitCall(IrNode node, SyntaxTree[] trees, ImmutableArray<string>.Builder violations)
+    {
+        if (node is IrCall call)
+        {
+            if (RemovedCalls.IsRemoved(call.Method, trees[call.Source.TreeOrdinal]))
+            {
+                return;
+            }
+
+            if (call.Classification.Split.IsSplit)
+            {
+                AddLinearViolation(violations, "L2", call.Source,
+                    "a call that splits is not at the top of a linear statement");
+            }
+        }
+
+        CheckChildrenHaveNoSplitCall(node, trees, violations);
+    }
+
+    private static void CheckAllowedLinearLabelKind(IrLabelSymbol symbol, IrSource source,
+        ImmutableArray<string>.Builder violations)
+    {
+        if (symbol.Kind is IrLabelKind.ReconvergeContinue or IrLabelKind.User)
+        {
+            AddLinearViolation(violations, "L5", source,
+                $"label kind {symbol.Kind.ToString()} is not allowed before reconvergence/user-label passes");
+        }
+    }
+
+    private static void AddLinearViolation(ImmutableArray<string>.Builder violations, string code, IrSource source,
+        string text) =>
+        violations.Add($"{code} at {source.Start}..{source.Start + source.Length}: {text}");
+
     // <scopes>: the locals of the blocks and sequences that enclose <node>, the innermost on top
     private void Node(IrNode node, IrNode? parent, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         CheckSource(node.Source, parent?.Source ?? _method.Source);
+        if (IsLinearNode(node))
+        {
+            Report(node, "I27: a linear statement outside the split pass");
+            return;
+        }
+
         if (node is IrExpression expression)
         {
             CheckExpression(expression, parent, scopes);
@@ -93,6 +236,10 @@ internal sealed class IrInvariants
             Node(child, node, inner);
         }
     }
+
+    private static bool IsLinearNode(IrNode node) => node is
+        IrLabel or IrGoto or IrConditionalGoto or IrSuspend or IrResumeCall or
+        IrStateJump or IrStateMachineExit or IrRuntimeCall or IrState or IrStateMachine;
 
     private void Report(IrNode node, string? violation)
     {

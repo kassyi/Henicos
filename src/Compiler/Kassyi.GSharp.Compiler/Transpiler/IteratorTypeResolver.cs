@@ -376,10 +376,13 @@ internal static class IteratorTypeResolver
         if (unwrapped is IdentifierNameSyntax identifier &&
             semanticModel.GetSymbol(identifier) is ILocalSymbol local &&
             local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
-            declarator.Initializer?.Value is { } initializerValue &&
-            TryResolveIteratorInvocation(initializerValue, semanticModel, out invocation, out iteratorMethod))
+            declarator.Initializer?.Value is { } initializerValue)
         {
-            return true;
+            var initModel = SemanticModelExtensions.GetSemanticModelForTree(semanticModel, declarator.SyntaxTree);
+            if (TryResolveIteratorInvocation(initializerValue, initModel, out invocation, out iteratorMethod))
+            {
+                return true;
+            }
         }
 
         invocation = null;

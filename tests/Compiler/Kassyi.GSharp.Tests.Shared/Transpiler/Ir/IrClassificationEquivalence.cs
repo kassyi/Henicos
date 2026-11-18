@@ -299,8 +299,8 @@ internal sealed class IrClassificationEquivalence
                IrEffectDifferences.IsWithin(outer.Old, outer.Ir.Union(oldInner));
     }
 
-    // The outermost expression whose span is span
-    private static ExpressionSyntax? FindExpression(SyntaxNode root, TextSpan span)
+    /// <summary>The outermost expression whose span is <paramref name="span"/>.</summary>
+    internal static ExpressionSyntax? FindExpression(SyntaxNode root, TextSpan span)
     {
         var node = root.FindNode(span, getInnermostNodeForTie: true);
         if (node.Span != span || node is not ExpressionSyntax expression)

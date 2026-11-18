@@ -10,15 +10,9 @@
 // commands. The words of a segment are read with their quotes; launch prefixes, assignments, Start-Process and shell
 // wrappers are taken apart here, and command-rules.js decides what the program found that way may do.
 //
-// Usage: require('./shell-reader.js'); withDialect(kind, body) runs `body` with `kind` as the current dialect.
+// Usage: require('./shell-reader.js').createReader(dialect) returns a reader bound to 'bash', 'pwsh' or 'cmd'.
 
-/**
- * The shell dialect the command is written in: 'bash' (Claude Code Bash tool), 'pwsh' (Claude Code PowerShell tool,
- * Antigravity) or 'cmd'. It decides the escape character in double quotes and how quoted words end.
- */
-let dialect = 'bash';
-
-function escapeCharacter() {
+function escapeCharacter(dialect) {
   return dialect === 'bash' ? '\\' : dialect === 'pwsh' ? '`' : '';
 }
 
@@ -45,7 +39,7 @@ function skipHeredocBody(command, index, word, stripTabs) {
  * { kind, index }: kind is the separator ('&&', '||', ';', '|', '&') or 'newline', 'continuation', 'comment',
  * 'heredoc' or 'here-string', and index its position in the command.
  */
-function splitSegments(command, found = null) {
+function splitSegments(dialect, command, found = null) {
   const segments = [];
   const heredocs = [];
   let current = '';
@@ -66,7 +60,7 @@ function splitSegments(command, found = null) {
     if (quote !== '') {
       current += ch;
       // Inside double quotes bash escapes with \ and PowerShell with `; cmd has no escape ("C:\dir\" ends there)
-      if (quote === '"' && ch === escapeCharacter() && next !== undefined) {
+      if (quote === '"' && ch === escapeCharacter(dialect) && next !== undefined) {
         current += next;
         i += 2;
         continue;
@@ -151,7 +145,7 @@ function splitSegments(command, found = null) {
 }
 
 /** The words of a segment, quotes kept. */
-function words(segment) {
+function words(dialect, segment) {
   // A word is a run of quoted parts and other non-blank characters, so that a quote may start inside it:
   // msg="a b", -p:Foo="a b", $x="dotnet test"; in bash a substitution belongs to its word too:
   // LD_PRELOAD=$(g++ -print-file-name=libasan.so) (its body is checked on its own, see substitutions)
@@ -174,10 +168,10 @@ function unquote(word) {
 }
 
 /**
- * The text a quoted argument passes on, escapes undone in the current dialect: the command string of a shell wrapper,
+ * The text a quoted argument passes on, escapes undone in `dialect`: the command string of a shell wrapper,
  * as in pwsh -Command "& `"C:\x\dotnet.exe`" test" or bash -c "dotnet build \"x y\"".
  */
-function argumentText(word) {
+function argumentText(dialect, word) {
   // A word may join quoted and bare parts ("cd x --filter "A|B), and a cut command may leave a quote open: join the
   // parts as the shell does, quotes removed and escapes undone
   let out = '';
@@ -251,7 +245,6 @@ const LaunchPrefixes = [
   'if',
   'while',
   'until',
-  '{',
 ];
 
 /** Drops launch prefixes (VAR=x, time, env, nohup, timeout, ...) from the front of a word list. */
@@ -342,12 +335,12 @@ function shellCommandIndex(name, list) {
  * The bodies of the command substitutions of one segment (comments, heredocs and here-strings already removed):
  * $( ... ) outside single quotes, also inside double quotes, and PowerShell's @( ... ) outside quotes.
  */
-function substitutions(segment) {
+function substitutions(dialect, segment) {
   const bodies = [];
   let quote = '';
   for (let i = 0; i < segment.length; i++) {
     const ch = segment[i];
-    if (quote === '"' && ch === escapeCharacter()) {
+    if (quote === '"' && ch === escapeCharacter(dialect)) {
       i++;
     } else if (ch === "'" && quote !== '"') {
       quote = quote === "'" ? '' : "'";
@@ -358,50 +351,44 @@ function substitutions(segment) {
       segment[i + 1] === '(' &&
       (ch === '$' || (ch === '@' && quote === '' && dialect === 'pwsh'))
     ) {
-      const command = segment;
       let depth = 1;
       let j = i + 2;
-      while (j < command.length && depth > 0) {
-        if (command[j] === '(') {
+      while (j < segment.length && depth > 0) {
+        if (segment[j] === '(') {
           depth++;
-        } else if (command[j] === ')') {
+        } else if (segment[j] === ')') {
           depth--;
         }
         j++;
       }
-      bodies.push(command.slice(i + 2, depth === 0 ? j - 1 : j));
+      bodies.push(segment.slice(i + 2, depth === 0 ? j - 1 : j));
       i = j - 1;
     }
   }
   return bodies;
 }
 
-/** The dialect the reader currently uses. */
-function currentDialect() {
-  return dialect;
-}
-
-/** Runs `body` with `kind` as the dialect and restores the previous one afterwards. */
-function withDialect(kind, body) {
-  const saved = dialect;
-  dialect = kind;
-  try {
-    return body();
-  } finally {
-    dialect = saved;
-  }
+/**
+ * Creates a shell reader bound to `dialect` ('bash', 'pwsh' or 'cmd'); each call uses its own dialect with no shared
+ * mutable state.
+ */
+function createReader(dialect = 'bash') {
+  return {
+    dialect,
+    splitSegments: (command, found = null) => splitSegments(dialect, command, found),
+    words: (segment) => words(dialect, segment),
+    argumentText: (word) => argumentText(dialect, word),
+    substitutions: (segment) => substitutions(dialect, segment),
+    dropPrefixes,
+    startProcessCommand,
+    shellCommandIndex,
+    unquote,
+    programName,
+  };
 }
 
 module.exports = {
-  currentDialect,
-  withDialect,
-  splitSegments,
-  words,
+  createReader,
   unquote,
-  argumentText,
   programName,
-  dropPrefixes,
-  startProcessCommand,
-  shellCommandIndex,
-  substitutions,
 };

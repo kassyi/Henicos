@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 
 using K = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels;
-using R = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentReads;
+using R = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentRead;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -17,14 +17,14 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         foreach (var (valueName, create) in s_arrayValues)
         {
             int[]? Array() => create();
-            foreach (int read in (int[])[R.IsNull, R.Length, R.ForEach])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.ForEach])
             {
                 yield return Create(nameof(K.SpanKernel), valueName, read,
                     (o, s) => K.LaunchSpanKernel(
                         new Span<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.IsEmpty])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.IsEmpty])
             {
                 yield return Create(nameof(K.MemoryKernel), valueName, read,
                     (o, s) => K.LaunchMemoryKernel(
@@ -37,7 +37,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 }
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.Element, R.ForEach, R.IsEmpty, R.IsDefault,
+            foreach (var read in (R[])[R.IsNull, R.Length, R.Element, R.ForEach, R.IsEmpty, R.IsDefault,
                          R.IsDefaultOrEmpty, R.DefaultLiteral])
             {
                 yield return Create(nameof(K.ImmutableKernel), valueName, read,
@@ -45,14 +45,14 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         Immutable(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.ForEach, R.InNullableFunction])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.ForEach, R.InNullableFunction])
             {
                 yield return Create(nameof(K.ReadOnlySpanKernel), valueName, read,
                     (o, s) => K.LaunchReadOnlySpanKernel(
                         new ReadOnlySpan<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.IsEmpty])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.IsEmpty])
             {
                 yield return Create(nameof(K.ReadOnlyMemoryKernel), valueName, read,
                     (o, s) => K.LaunchReadOnlyMemoryKernel(
@@ -68,7 +68,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                      ("One", static () => new Memory<int>([7])),
                  ])
         {
-            foreach (int read in (int[])[R.IsNull, R.Length])
+            foreach (var read in (R[])[R.IsNull, R.Length])
             {
                 yield return Create(nameof(K.NullableMemoryKernel), valueName, read,
                     (o, s) => K.LaunchNullableMemoryKernel(

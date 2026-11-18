@@ -4985,6 +4985,14 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 __gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
 }
+auto __gsharp_id_4_Add = [&, __gsharp_ctx]() {
+if(__gsharp_ctx->__gsharp_id_2_tid>1000)
+{
+return;
+}
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_2_tid, 1498343972u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_2_tid, 1498343972u),10);
+}
+;
 switch(__gsharp_state)
 {
 case 0:
@@ -5018,14 +5026,6 @@ if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_2_tid, 1155833972u)=7;
 }
-auto __gsharp_id_4_Add = [&, __gsharp_ctx]() {
-if(__gsharp_ctx->__gsharp_id_2_tid>1000)
-{
-return;
-}
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_2_tid, 1498343972u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_2_tid, 1498343972u),10);
-}
-;
 __gsharp_id_4_Add();
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=3;
@@ -5178,6 +5178,13 @@ __gsharp_ctx.a = __gsharp_in_a;
 __gsharp_ctx.b = __gsharp_in_b;
 }
 {
+void Add()
+{
+if (__gsharp_ctx.tid > 1000)
+return;
+__gsharp_ctx.a[__gsharp_ctx.tid] += 10;
+}
+
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -5211,13 +5218,6 @@ case 2:
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
 __gsharp_ctx.b[__gsharp_ctx.tid] = 7;
-}
-
-void Add()
-{
-if (__gsharp_ctx.tid > 1000)
-return;
-__gsharp_ctx.a[__gsharp_ctx.tid] += 10;
 }
 
 Add();

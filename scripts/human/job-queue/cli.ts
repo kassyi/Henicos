@@ -1,6 +1,7 @@
 // The command line of the job queue: parses the arguments and runs the mode. The entry script
 // (scripts/human/job-queue.js) checks the Node version and loads this module.
 
+import * as path from "node:path";
 import {
   DefaultPolicy,
   DefaultPort,
@@ -18,7 +19,10 @@ import {
 } from "./constants.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
 import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
+import { loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
+import { PluginHost } from "./plugin-host.ts";
+import { prefix } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
@@ -37,6 +41,7 @@ const Usage = [
   "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
+  "                                        [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
   "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
@@ -74,8 +79,9 @@ const Usage = [
   "resume      Lifts the pause; the waiting jobs are granted as usual.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
-  "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
-  "            to (tests/memory-budgets.yml; default half the physical memory).",
+  "            slot per 3 cores, at least 2, or config pools); --memory-mb: the memory pool for test runs (default",
+  "            half the physical memory, or config pools); --config: the configuration file (default:",
+  "            JOB_QUEUE_CONFIG, else job-queue.config.json upward from the entry script).",
   "--screenshots",
   "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
   "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
@@ -106,6 +112,7 @@ type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
 interface Options extends RunOptions {
   mode: Mode | "";
   stateDir: string;
+  configPath: string;
   commandFromEnv: boolean;
   json: boolean;
   watch: boolean;
@@ -143,13 +150,14 @@ export function parseArgs(argv: string[]): Options {
     weight: 0,
     gpu: false,
     timeoutMinutes: 0,
-    slots: Number(process.env[SlotsVariable]) || new MachineProfile().slots,
-    memoryMb: Number(process.env[MemoryVariable]) || new MachineProfile().memoryPoolMb,
+    slots: Number(process.env[SlotsVariable]) || 0,
+    memoryMb: Number(process.env[MemoryVariable]) || 0,
     policy: isPolicy(policy) ? policy : DefaultPolicy,
     port: Number(process.env[PortVariable]) || DefaultPort,
     commandFromEnv: false,
     shell: "",
     stateDir: "",
+    configPath: "",
     json: false,
     watch: false,
     accuracy: false,
@@ -258,6 +266,12 @@ export function parseArgs(argv: string[]): Options {
       case "--state-dir": // serve: a scheduler started through WMI does not inherit GSHARP_JOB_QUEUE_STATE_DIR
         options.stateDir = own[++i] ?? "";
         break;
+      case "--config":
+        options.configPath = own[++i] ?? "";
+        if (options.configPath === "") {
+          usageError("--config needs a path.");
+        }
+        break;
       case "--command-from-env": // set by the GPU wrapper, which cannot quote the command for the shell
         options.commandFromEnv = true;
         break;
@@ -305,16 +319,43 @@ export function parseArgs(argv: string[]): Options {
 
 export async function main(argv: string[]): Promise<void> {
   const options = parseArgs(argv);
+  let plugins: PluginHost | undefined;
+  if (options.mode !== "" && options.mode !== "serve" && options.mode !== "self-test") {
+    const loaded = loadConfig({
+      mode: options.mode,
+      configPath: options.configPath || undefined,
+      warn: prefix,
+    });
+    if (loaded.path !== null) {
+      options.configPath = loaded.path;
+    } else if (options.configPath !== "") {
+      options.configPath = path.resolve(options.configPath);
+    }
+    const machine = new MachineProfile(undefined, undefined, loaded.config.pools);
+    if (options.slots === 0) {
+      options.slots = machine.slots;
+    }
+    if (options.memoryMb === 0) {
+      options.memoryMb = machine.memoryPoolMb;
+    }
+    options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
+    if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
+      plugins = await PluginHost.load(loaded.config, loaded.configRoot);
+    }
+  }
   try {
     switch (options.mode) {
       case "run":
-        await run(options);
+        if (plugins === undefined) {
+          throw new Error("run: the plugins were not loaded");
+        }
+        await run(options, plugins);
         break;
       case "status":
         await (options.accuracy
           ? accuracy(options.json)
           : options.watch
-            ? watch(options.port)
+            ? watch(options.port, plugins)
             : status(options.port, options.jobId, options.json));
         break;
       case "wait":
@@ -361,7 +402,7 @@ export async function main(argv: string[]): Promise<void> {
       }
       case "screenshots": {
         const { writeScreenshots } = await import("./screenshot.ts");
-        for (const file of writeScreenshots(options.screenshotDir)) {
+        for (const file of writeScreenshots(options.screenshotDir, plugins)) {
           process.stdout.write(`${file}
 `);
         }

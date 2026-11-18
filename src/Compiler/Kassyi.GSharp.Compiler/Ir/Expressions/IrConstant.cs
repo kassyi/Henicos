@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>
@@ -12,7 +14,8 @@ namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 /// <param name="source">Where the node comes from.</param>
 /// <param name="literalText">
 /// The literal as written (<c>0x10</c>, <c>1_000</c>, <c>2f</c>, <c>'a'</c>, <c>"s"</c>, <c>null</c>, <c>true</c>)
-/// when the constant is a literal of the source; null otherwise. Spelling only.
+/// when the constant is a literal of the source, or the text a pass chose for a constant it made; null otherwise.
+/// Spelling only.
 /// </param>
 internal sealed class IrConstant(object? value, ISymbol? origin, ITypeSymbol type, IrSource source,
     string? literalText = null)
@@ -27,7 +30,15 @@ internal sealed class IrConstant(object? value, ISymbol? origin, ITypeSymbol typ
 
     /// <summary>
     /// The literal as written (<c>0x10</c>, <c>1_000</c>, <c>2f</c>, <c>'a'</c>, <c>"s"</c>, <c>null</c>, <c>true</c>)
-    /// when the constant is a literal of the source; null otherwise. Spelling only.
+    /// when the constant is a literal of the source, or the text a pass chose for a constant it made; null otherwise.
+    /// Spelling only.
     /// </summary>
     public string? LiteralText { get; } = literalText;
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrConstantDecision Decided => GetDecision<IrConstantDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrConstant WithDecision(IrConstantDecision decision) =>
+        IrExpression.WithDecision<IrConstant>(this, decision);
 }

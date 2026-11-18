@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Analysis.Checks;
+using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 
 namespace Kassyi.GSharp.Compiler.Ir.Classifying;
@@ -10,8 +11,15 @@ namespace Kassyi.GSharp.Compiler.Ir.Classifying;
 internal static class IrRanges
 {
     /// <summary>The values <paramref name="operand"/> can take; null for an operand that is not an integer.</summary>
-    public static IntegerRange? Of(IrExpression operand)
+    public static IntegerRange? Of(IrExpression operand) => Of(operand, null);
+
+    /// <summary>
+    /// The values <paramref name="operand"/> can take, resolving temporary variable references through
+    /// <paramref name="temporaries"/> when provided; null for an operand that is not an integer.
+    /// </summary>
+    public static IntegerRange? Of(IrExpression operand, IrTemporaryInitializers? temporaries)
     {
+        operand = temporaries?.Resolve(operand) ?? operand;
         if (operand.ConstantValue is { HasValue: true, Value: { } value } &&
             IntegerSemantics.TryGetInteger(value, out var constant))
         {
@@ -24,7 +32,7 @@ internal static class IrRanges
         }
 
         if (operand is IrConversion { Conversion.Method: null } conversion &&
-            Of(conversion.Operand) is { } inner && inner.Min >= range.Min && inner.Max <= range.Max)
+            Of(conversion.Operand, temporaries) is { } inner && inner.Min >= range.Min && inner.Max <= range.Max)
         {
             return inner;
         }

@@ -54,6 +54,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     private string _nvccOptions = "";
     private string _nvccVersion = "";
+    private string _nvccVersionOutput = "";
     private bool _skipCompilation;
 
     /// <inheritdoc />
@@ -254,6 +255,11 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
+        if (!NvccVersion.ReportTooOld(Log, NvccPath, _nvccVersionOutput))
+        {
+            return false;
+        }
+
         _nvccOptions = NvccInvoker.BuildOptions(architectures.Gencodes, Toolchain.IsWindows);
         if (!Toolchain.IsWindows)
         {
@@ -288,6 +294,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
             // The last line names the build ("Build cuda_13.4.r13.4/compiler.xxx"); it goes into the command record.
             _nvccVersion = GetLastLine(result.StandardOutput);
+            _nvccVersionOutput = result.StandardOutput;
             return true;
         }
         catch (OperationCanceledException)
