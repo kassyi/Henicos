@@ -59,6 +59,8 @@ export class QueuedRun {
   private places: Record<string, PathPlace> | null = null;
   /** Precomputed estimate keys when plugins are active; resolved once at the first registration. */
   private keys: CommandKeys | null = null;
+  /** Precomputed memory budget when plugins are active and !gpuTurn; resolved once at the first registration. */
+  private memoryMb: number | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -439,10 +441,26 @@ export class QueuedRun {
     const cwd = process.cwd();
     const worktree = (this.worktree ??= resolveWorktree(cwd));
     const places = (this.places ??= resolvePlaces(options.command, { cwd, worktree }, this.plugins));
-    const keys =
-      this.plugins !== undefined && this.plugins.plugins.length > 0
-        ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
-        : undefined;
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    const keys = hasPlugins
+      ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
+      : undefined;
+    let memoryMb: number | undefined;
+    if (hasPlugins && !this.gpuTurn) {
+      if (this.memoryMb === null) {
+        const classified = (this.plugins as PluginHost).classify(options.command, null, {
+          cwd,
+          worktree,
+          configRoot: (this.plugins as PluginHost).configRoot,
+          shell: CommandShell.resolve(options.shell).name,
+          env: process.env,
+          log: prefix,
+        });
+        const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
+        this.memoryMb = classified.memoryMb ?? fallback;
+      }
+      memoryMb = this.memoryMb;
+    }
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -454,6 +472,7 @@ export class QueuedRun {
       worktree,
       ...(Object.keys(places).length > 0 ? { places } : {}),
       ...(keys !== undefined ? { keys } : {}),
+      ...(memoryMb !== undefined ? { memoryMb } : {}),
       // The chat that queued it, so that the live view can show its jobs on its row
       session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,

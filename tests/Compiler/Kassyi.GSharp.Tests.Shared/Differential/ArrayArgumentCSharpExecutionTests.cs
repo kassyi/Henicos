@@ -23,7 +23,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
 
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
-            ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayKernel([], ArrayArgumentReads.IsNull, o);
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableArrayKernel([], ArrayArgumentRead.IsNull, o);
         }
 
         Assert.Equal([0], o);
@@ -37,7 +37,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
 
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
-            ArrayArgumentNullEmptyDifferentialKernels.LaunchNonNullableArrayKernel(null!, ArrayArgumentReads.IsNull, o);
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchNonNullableArrayKernel(null!, ArrayArgumentRead.IsNull, o);
         }
 
         Assert.Equal([3], o);
@@ -51,7 +51,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
 
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
-            ArrayArgumentNullEmptyDifferentialKernels.LaunchNonNullableArrayKernel([], ArrayArgumentReads.Length, o);
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchNonNullableArrayKernel([], ArrayArgumentRead.Length, o);
         }
 
         Assert.Equal([0], o);
@@ -65,7 +65,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
 
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
-            ArrayArgumentNullEmptyDifferentialKernels.LaunchSpanKernel(default, ArrayArgumentReads.IsNull, o);
+            ArrayArgumentNullEmptyDifferentialKernels.LaunchSpanKernel(default, ArrayArgumentRead.IsNull, o);
         }
 
         Assert.Equal([1], o);
@@ -80,7 +80,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
             ArrayArgumentNullEmptyDifferentialKernels.LaunchImmutableKernel(
-                ImmutableArray<int>.Empty, ArrayArgumentReads.Length, o);
+                ImmutableArray<int>.Empty, ArrayArgumentRead.Length, o);
         }
 
         Assert.Equal([0], o);
@@ -96,7 +96,7 @@ public sealed class ArrayArgumentCSharpExecutionTests
         using (GpuExecution.Use(KernelExecution.CSharp))
         {
             ArrayArgumentNullEmptyDifferentialKernels.LaunchNullableMemoryKernel(
-                new Memory<int>([]), ArrayArgumentReads.IsNull, o);
+                new Memory<int>([]), ArrayArgumentRead.IsNull, o);
         }
 
         Assert.Equal([1], o);

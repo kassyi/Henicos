@@ -6,8 +6,9 @@
 // runs as they are (type stripping, Node 22.18 / 23.6 and later); `node scripts/human/check-types.js` type-checks them.
 //
 // A scheduler listens on 127.0.0.1 (port 47117, GSHARP_JOB_QUEUE_PORT) and grants slots of a CPU pool (one per 3
-// cores, at least 2; GSHARP_JOB_QUEUE_SLOTS) and, to test runs, their budget of a memory pool (half the physical
-// memory, GSHARP_JOB_QUEUE_MEMORY_MB; budgets from tests/memory-budgets.yml). `run` asks for a slot, waits, runs
+// cores, at least 2, or config.pools; GSHARP_JOB_QUEUE_SLOTS) and, to test runs, their budget of a memory pool (half
+// the physical memory, GSHARP_JOB_QUEUE_MEMORY_MB; computed by plugins from tests/memory-budgets.yml and sent by the
+// client, with legacyClients fallback on the server). `run` asks for a slot, waits, runs
 // the command itself in the caller's directory (incremental builds keep working), and gives the slot back when the
 // command ends. The scheduler starts on the first
 // `run`, in <main checkout>/tmp/job-queue (so that it never holds a worktree open), and exits after 30 minutes

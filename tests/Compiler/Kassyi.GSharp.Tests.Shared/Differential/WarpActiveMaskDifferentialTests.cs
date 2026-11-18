@@ -799,4 +799,148 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(Enumerable.Range(0, 32).Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu))
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .ToArray());
+
+    private static uint[] ExpectedReenteredBranchMasks()
+    {
+        var expected = new uint[64];
+        for (int t = 0; t < 32; t++)
+        {
+            expected[t * 2] = t == 2 ? 0x00000004u : 0u;
+            expected[t * 2 + 1] = (t & 3) switch
+            {
+                1 => 0xAAAAAAAAu,
+                2 or 3 => 0xCCCCCCCCu,
+                _ => 0u
+            };
+        }
+
+        return expected;
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredBranchInLoop_ReconvergesAllLanesOfIteration() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredBranchInLoopKernel(
+                output, blockDimX: 32),
+            ExpectedReenteredBranchMasks());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredDeviceFunctionInLoop_ReconvergesAllLanesOfIteration() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredDeviceFunctionInLoopKernel(
+                output, blockDimX: 32),
+            ExpectedReenteredBranchMasks());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredSwitchInLoop_ReconvergesAllLanesOfIteration() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredSwitchInLoopKernel(
+                output, blockDimX: 32),
+            ExpectedReenteredBranchMasks());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredInnerLoopInLoop_ReconvergesAllLanesOfIteration() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredInnerLoopInLoopKernel(
+                output, blockDimX: 32),
+            ExpectedReenteredBranchMasks());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredBranchWithEarlyReturn_ExcludesExitedLane()
+    {
+        var expected = new uint[64];
+        for (int t = 0; t < 32; t++)
+        {
+            expected[t * 2] = t == 2 ? 0x00000004u : 0u;
+            expected[t * 2 + 1] = t == 6
+                ? 0x0000DEADu
+                : (t & 3) switch
+                {
+                    1 => 0xAAAAAAAAu,
+                    2 or 3 => 0xCCCCCC8Cu,
+                    _ => 0u
+                };
+        }
+
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredBranchWithEarlyReturnKernel(
+                output, blockDimX: 32),
+            expected);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ReenteredBranchWithForwardGoto_ReconvergesAtLabel() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchReenteredBranchWithForwardGotoKernel(
+                output, blockDimX: 32),
+            ExpectedReenteredBranchMasks());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_RangeRestartWithSplitAfterLabel_ReconvergesAfterLoop() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchRangeRestartWithSplitAfterLabelKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopReenteredFromBranch_ReconvergesAfterInnerBranch()
+    {
+        var expected = PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu)
+            .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+            .ToArray();
+        RunWithinClassicBounds(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopReenteredFromBranchKernel(
+                output, blockDimX: 32),
+            expected, static i => i & 31);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ThreeLevelReenteredBranch_ReconvergesAtEachLevel()
+    {
+        var expected = new uint[64];
+        for (int t = 0; t < 32; t++)
+        {
+            expected[t * 2] = t == 14 ? 0x00004000u : 0u;
+            for (int i = 0; i < 2; i++)
+            {
+                if (((t >> i) & 1) != 1)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < 2; j++)
+                {
+                    if (((t >> (2 + j)) & 1) == 1)
+                    {
+                        uint mask = 0u;
+                        for (int s = 0; s < 32; s++)
+                        {
+                            if (((s >> i) & 1) == 1 && ((s >> (2 + j)) & 1) == 1)
+                            {
+                                mask |= 1u << s;
+                            }
+                        }
+
+                        expected[t * 2 + 1] = mask;
+                    }
+                }
+            }
+        }
+
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchThreeLevelReenteredBranchKernel(
+                output, blockDimX: 32),
+            expected);
+    }
 }

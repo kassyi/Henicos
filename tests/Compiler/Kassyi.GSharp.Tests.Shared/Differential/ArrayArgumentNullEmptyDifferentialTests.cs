@@ -6,14 +6,14 @@ using System.Linq;
 using Xunit;
 
 using K = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentNullEmptyDifferentialKernels;
-using R = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentReads;
+using R = Kassyi.GSharp.Tests.Shared.Differential.ArrayArgumentRead;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// An array-like kernel argument means what it means in a C# call: a null array is null and an empty one is empty, a
 /// default span-like value has no array and one over an empty array has one, and <c>Memory&lt;T&gt;?</c> has a value
-/// whenever C# gives it one. Each case passes one value and makes one read (<see cref="ArrayArgumentReads"/>); the
+/// whenever C# gives it one. Each case passes one value and makes one read (<see cref="ArrayArgumentRead"/>); the
 /// oracle is the kernel's own C# body, so a read that throws in C# must throw the same exception on every path.
 /// </summary>
 [Category(TestCategory.Differential)]
@@ -24,7 +24,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
 {
     private const string Kernels = nameof(ArrayArgumentNullEmptyDifferentialKernels);
 
-    private static readonly int[] s_arrayReads =
+    private static readonly R[] s_arrayReads =
     [
         R.IsNull, R.Length, R.Element, R.ForEach,
         R.AsSpanLength, R.SpanLength,
@@ -60,7 +60,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
     {
         foreach (var (valueName, create) in s_arrayValues)
         {
-            foreach (int read in (int[])
+            foreach (var read in (R[])
                      [
                          R.StackLinqSum, R.StackLinqStoredSum, R.StackLinqIndexedSum, R.StackLinqInDeviceFunction,
                          R.StackLinqStaticSum,
@@ -71,7 +71,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in s_arrayReads)
+            foreach (var read in s_arrayReads)
             {
                 yield return Create(nameof(K.NullableArrayKernel), valueName, read,
                     (o, s) => K.LaunchNullableArrayKernel(
@@ -85,7 +85,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         create()!, read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
             }
 
-            foreach (int read in (int[])[R.IsNull, R.Length, R.InNullableFunction])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.InNullableFunction])
             {
                 yield return Create(nameof(K.NullableArrayAfterBarrierKernel), valueName, read,
                     (o, s) => K.LaunchNullableArrayAfterBarrierKernel(
@@ -101,7 +101,7 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                      ("One", static () => [new DiffDeepBag { Data = [1], Tag = 7 }]),
                  ])
         {
-            foreach (int read in (int[])[R.IsNull, R.Length, R.ForEach, R.AsSpanLength])
+            foreach (var read in (R[])[R.IsNull, R.Length, R.ForEach, R.AsSpanLength])
             {
                 yield return Create(nameof(K.ConvertedArrayKernel), valueName, read,
                     (o, s) => K.LaunchConvertedArrayKernel(
@@ -112,16 +112,16 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
 
     // The read of NullableArrayAfterBarrierKernel for its one thread: the C# execution does not run a barrier, so this
     // model is its oracle, and it throws where the kernel's C# throws
-    private static void AfterBarrierModel(int[]? a, int read, int[] o) => o[0] = read switch
+    private static void AfterBarrierModel(int[]? a, R read, int[] o) => o[0] = read switch
     {
         R.IsNull => a is null ? 1 : 0,
         _ => a!.Length, // Deliberately unchecked: Length and InNullableFunction read a.Length, null throws as in C#
     };
 
     // The launch is the oracle unless the case gives a model of the kernel's C#
-    private static DifferentialCase Create(string kernel, string value, int read, Action<int[], LaunchShape> launch,
+    private static DifferentialCase Create(string kernel, string value, R read, Action<int[], LaunchShape> launch,
         Action<int[]>? model = null) =>
-        new(DiffKernelNames.Of(typeof(ArrayArgumentNullEmptyDifferentialKernels), kernel, $"{value}.{ReadName(read)}"))
+        new(DiffKernelNames.Of(typeof(ArrayArgumentNullEmptyDifferentialKernels), kernel, $"{value}.{read}"))
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = [0],
@@ -131,25 +131,4 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             OracleIsLaunch = model is null,
             Oracle = model is null ? null : (b, _) => model(b.Get<int>("o")),
         };
-
-    private static string ReadName(int read) => read switch
-    {
-        R.IsNull => "IsNull",
-        R.Length => "Length",
-        R.Element => "Element",
-        R.ForEach => "ForEach",
-        R.AsSpanLength => "AsSpanLength",
-        R.SpanLength => "SpanLength",
-        R.ToNonNullable => "ToNonNullable",
-        R.IsEmpty => "IsEmpty",
-        R.IsDefault => "IsDefault",
-        R.IsDefaultOrEmpty => "IsDefaultOrEmpty",
-        R.DefaultLiteral => "DefaultLiteral",
-        R.StackLinqSum => "StackLinqSum",
-        R.StackLinqStoredSum => "StackLinqStoredSum",
-        R.StackLinqIndexedSum => "StackLinqIndexedSum",
-        R.StackLinqInDeviceFunction => "StackLinqInDeviceFunction",
-        R.StackLinqStaticSum => "StackLinqStaticSum",
-        _ => "InNullableFunction",
-    };
 }
