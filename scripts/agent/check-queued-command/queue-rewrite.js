@@ -34,7 +34,7 @@
 const fs = require('fs');
 const path = require('path');
 const { testProjectFiles, dialectOf } = require('../../human/job-queue-henicos/target-dialect.js');
-const { check, isQueueScript } = require('./command-rules.js');
+const { checkDetailed, isQueueScript } = require('./command-rules.js');
 const {
   withDialect,
   splitSegments,
@@ -181,17 +181,20 @@ function deniedSegment(segment, list, reason, root, changedDirectory) {
   if (!/^(dotnet|just|msbuild)(\.exe)?$/i.test(list[0])) {
     return null; // a quoted path, a wrapper, a launch prefix, a script run directly
   }
-  if (/^(dotnet (build|publish|pack|msbuild)|msbuild)$/.test(reason)) {
+  if (
+    reason.tool === 'msbuild' ||
+    (reason.tool === 'dotnet' && ['build', 'publish', 'pack', 'msbuild'].includes(reason.verb))
+  ) {
     return runsTestTarget(list)
       ? { undecided: 'it runs an MSBuild target named like a test target' }
       : { gpu: false, options: [] };
   }
-  if (/^dotnet (test|vstest)$/.test(reason)) {
+  if (reason.tool === 'dotnet' && (reason.verb === 'test' || reason.verb === 'vstest')) {
     const result = testGpu(segment, root);
     return result.undecided === undefined ? { gpu: result.gpu, options: [] } : result;
   }
-  if (/^just /.test(reason) && !changedDirectory) {
-    return recipeQueue(reason.slice('just '.length), root);
+  if (reason.tool === 'just' && !changedDirectory) {
+    return recipeQueue(reason.verb, root);
   }
   return null; // dotnet watch, Stryker, just after cd
 }
@@ -236,7 +239,7 @@ function planRewrite(command, kind, cwd) {
     // FOO=1 dotnet test: the assignment travels with the command
     const list = stripBashAssignments(withDialect(kind, () => words(segment)), kind);
     const name = programName(list[0] || '');
-    const reasons = check(segment, kind);
+    const reasons = checkDetailed(segment, kind);
     if (reasons.length === 0) {
       if (isQueueScript(list)) {
         return null; // already queued: nesting would run it at once in this job
@@ -252,7 +255,7 @@ function planRewrite(command, kind, cwd) {
       return null;
     }
     if (result.undecided !== undefined) {
-      undecided.push(`${reasons[0]}: ${result.undecided}`);
+      undecided.push(`${reasons[0].text}: ${result.undecided}`);
       continue;
     }
     gpu = gpu || result.gpu;

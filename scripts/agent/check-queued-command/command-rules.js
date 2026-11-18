@@ -17,7 +17,8 @@
 //     lock (--lock-path, for its own tests).
 // A segment that runs job-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
 //
-// Usage: require('./command-rules.js').check(command, dialect) returns the reasons (empty when allowed).
+// Usage: require('./command-rules.js').check(command, dialect) returns the reason texts (empty when allowed), and
+// checkDetailed(command, dialect) returns structured { tool, verb, text } reasons.
 
 const {
   currentDialect,
@@ -82,12 +83,12 @@ function justRecipe(list) {
   return '';
 }
 
-/** The first reason of a nested command, or null. */
+/** The first structured reason of a nested command, or null. */
 function nestedReason(command, kind = currentDialect()) {
   if (command === '') {
     return null;
   }
-  const reasons = check(command, kind);
+  const reasons = checkDetailed(command, kind);
   return reasons.length > 0 ? reasons[0] : null;
 }
 
@@ -182,18 +183,18 @@ function segmentReason(segment) {
     // dotnet tool run / exec, dotnet dnx, dotnet dotnet-stryker: Stryker anywhere among the words, with any version
     // (dotnet-stryker@4.0.0) and options before it (--tool-manifest m.json)
     if (/^(tool|dnx|dotnet-stryker(@.*)?)$/i.test(verb) && args.some(isStryker)) {
-      return 'dotnet-stryker';
+      return { tool: 'stryker', verb: '', text: 'dotnet-stryker' };
     }
     if (rest.some((arg) => ['--help', '-h', '-?', '/?'].includes(arg))) {
       return null; // dotnet test --help builds nothing
     }
     if (DotnetVerbs.test(verb)) {
-      return `dotnet ${verb}`;
+      return { tool: 'dotnet', verb, text: `dotnet ${verb}` };
     }
     return null;
   }
   if (isStryker(name) || (name === 'dnx' && args.some(isStryker))) {
-    return 'dotnet-stryker';
+    return { tool: 'stryker', verb: '', text: 'dotnet-stryker' };
   }
   // A program that runs the command given in its arguments (a sanitizer, tracer or profiler, or a program held in a
   // variable): compute-sanitizer --tool memcheck dotnet test, "$CS" --log-file x dotnet test
@@ -209,7 +210,7 @@ function segmentReason(segment) {
     return null;
   }
   if (name === 'msbuild') {
-    return 'msbuild';
+    return { tool: 'msbuild', verb: '', text: 'msbuild' };
   }
   if (name === 'just') {
     const recipe = justRecipe(list);
@@ -224,10 +225,11 @@ function segmentReason(segment) {
       ['-n', '--dry-run', '-s', '--show', '-l', '--list', '--summary', '--evaluate'].includes(arg),
     );
     const scriptDryRun = /^(mutate|long-checks)$/.test(recipe) && after.includes('--dry-run');
-    return printsOnly || scriptDryRun ? null : `just ${recipe}`;
+    return printsOnly || scriptDryRun ? null : { tool: 'just', verb: recipe, text: `just ${recipe}` };
   }
   if (NodeScripts.test(unquote(list[0]))) {
-    return unquote(list[0]).replace(/^.*[\\/]/, ''); // ./scripts/human/long-checks.js run directly
+    const file = unquote(list[0]).replace(/^.*[\\/]/, ''); // ./scripts/human/long-checks.js run directly
+    return { tool: 'node-script', verb: file, text: file };
   }
   if (name === 'node') {
     const scriptIndex = args.findIndex((arg) => !arg.startsWith('-'));
@@ -246,7 +248,8 @@ function segmentReason(segment) {
       // gpu-lock.js --lock-path <dir> takes a private lock, for tests of the script itself
       (/gpu-lock\.js$/.test(script) && ownArgs.includes('--lock-path'));
     if (NodeScripts.test(script) && !helper) {
-      return script.replace(/^.*[\\/]/, '');
+      const file = script.replace(/^.*[\\/]/, '');
+      return { tool: 'node-script', verb: file, text: file };
     }
   }
   return null;
@@ -278,20 +281,23 @@ function isExempt(segment) {
 }
 
 /**
- * The reasons the command needs the queue (empty when it may run as it is). `kind` is the shell dialect ('bash',
- * 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a shell wrapper names another.
+ * The structured reasons (`{ tool, verb, text }`) the command needs the queue (empty when it may run as it is).
+ * `kind` is the shell dialect ('bash', 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a
+ * shell wrapper names another.
  */
-function check(command, kind = currentDialect()) {
+function checkDetailed(command, kind = currentDialect()) {
   return withDialect(kind, () => {
     const reasons = [];
+    const seen = new Set();
     const add = (reason) => {
-      if (reason !== null && !reasons.includes(reason)) {
+      if (reason !== null && !seen.has(reason.text)) {
+        seen.add(reason.text);
         reasons.push(reason);
       }
     };
     for (const segment of splitSegments(command)) {
       // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
-      substitutions(segment).forEach((body) => check(body).forEach(add));
+      substitutions(segment).forEach((body) => checkDetailed(body).forEach(add));
       if (!isExempt(segment)) {
         add(segmentReason(segment));
       }
@@ -300,4 +306,9 @@ function check(command, kind = currentDialect()) {
   });
 }
 
-module.exports = { check, isQueueScript };
+/** The reason texts the command needs the queue (empty when it may run as it is). */
+function check(command, kind = currentDialect()) {
+  return checkDetailed(command, kind).map((reason) => reason.text);
+}
+
+module.exports = { check, checkDetailed, isQueueScript };

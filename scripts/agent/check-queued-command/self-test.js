@@ -3,7 +3,7 @@
 // The self-test of check-queued-command.js (--self-test): commands that must be denied and commands that must pass,
 // per dialect, written out and generated from templates.
 
-const { check } = require('./command-rules.js');
+const { check, checkDetailed } = require('./command-rules.js');
 
 function selfTest() {
   const assert = require('assert');
@@ -236,6 +236,7 @@ function selfTest() {
   assert.notDeepStrictEqual(check('just profile=cpu fuzz-diff'), [], 'just variable before the recipe');
   checkGeneratedForms(assert);
   require('./self-test-rewrite.js').checkRewrites(assert);
+  checkDetailedReasons(assert);
   process.stdout.write('check-queued-command self-test passed\n');
 }
 
@@ -339,6 +340,49 @@ function checkGeneratedForms(assert) {
         assert.deepStrictEqual(check(command, kind), [], `should allow in ${kind}: ${command}`);
       }
     }
+  }
+}
+
+/** Structured reason shapes (`{ tool, verb, text }`) and deduplication from `checkDetailed`. */
+function checkDetailedReasons(assert) {
+  const cases = [
+    ['dotnet test tests/X.csproj', 'bash', [{ tool: 'dotnet', verb: 'test', text: 'dotnet test' }]],
+    ['dotnet stryker', 'bash', [{ tool: 'dotnet', verb: 'stryker', text: 'dotnet stryker' }]],
+    ['just test-category Runtime', 'bash', [{ tool: 'just', verb: 'test-category', text: 'just test-category' }]],
+    [
+      'node scripts/human/long-checks.js',
+      'bash',
+      [{ tool: 'node-script', verb: 'long-checks.js', text: 'long-checks.js' }],
+    ],
+    [
+      './scripts/human/long-checks.js',
+      'bash',
+      [{ tool: 'node-script', verb: 'long-checks.js', text: 'long-checks.js' }],
+    ],
+    ['dotnet-stryker --since main', 'bash', [{ tool: 'stryker', verb: '', text: 'dotnet-stryker' }]],
+    ['dotnet tool run dotnet-stryker', 'bash', [{ tool: 'stryker', verb: '', text: 'dotnet-stryker' }]],
+    ['msbuild Henicos.slnx', 'bash', [{ tool: 'msbuild', verb: '', text: 'msbuild' }]],
+    [
+      'dotnet test A && echo $(dotnet test B) && dotnet build',
+      'bash',
+      [
+        { tool: 'dotnet', verb: 'test', text: 'dotnet test' },
+        { tool: 'dotnet', verb: 'build', text: 'dotnet build' },
+      ],
+    ],
+    ['if ($x) { dotnet test }', 'pwsh', [{ tool: 'dotnet', verb: 'test', text: 'dotnet test' }]],
+    ['wsl -- dotnet test', 'bash', [{ tool: 'dotnet', verb: 'test', text: 'dotnet test' }]],
+    ['valgrind just test', 'bash', [{ tool: 'just', verb: 'test', text: 'just test' }]],
+    ['echo ok', 'bash', []],
+  ];
+  for (const [command, kind, expected] of cases) {
+    const detailed = checkDetailed(command, kind);
+    assert.deepStrictEqual(detailed, expected, `checkDetailed(${kind}): ${command}`);
+    assert.deepStrictEqual(
+      detailed.map((reason) => reason.text),
+      check(command, kind),
+      `checkDetailed text parity(${kind}): ${command}`,
+    );
   }
 }
 
