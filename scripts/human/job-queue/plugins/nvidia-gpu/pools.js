@@ -22,7 +22,7 @@ const path = require('path');
 /** The kernel pool reader, or null when it cannot be loaded; the lock works without it. */
 const faultWatch = (() => {
   try {
-    return require(path.join(__dirname, '..', 'gpu-fault-watch.js'));
+    return require(path.join(__dirname, 'fault-watch.js'));
   } catch (error) {
     process.stderr.write(`[gpu-lock] kernel pool watch unavailable: ${error.message}\n`);
     return null;

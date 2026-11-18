@@ -83,8 +83,8 @@ public class UnimplementedIntrinsicDiagnosticsTests
         // A call whose value is used gives the zero value of its type through the alias template, which a pointer
         // type such as the IntPtr of ConvertToSharedMemory needs (void*{} is not an expression)
         Assert.Contains(
-            "(__gsharp_unsupported(\"\"Gpu.ConvertToSharedMemory is not implemented by the StandardCppDialect " +
-            "dialect\"\"), __gsharp_type<",
+            ",__gsharp_unsupported(\"\"Gpu.ConvertToSharedMemory is not implemented by the StandardCppDialect " +
+            "dialect\"\"),__gsharp_type<",
             cpuOnly);
         Assert.DoesNotContain("__gsharp_mbarrier_", cpuOnly);
         Assert.DoesNotContain("__gsharp_wmma_fill", cpuOnly);

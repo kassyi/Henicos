@@ -289,7 +289,7 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
-auto __gsharp_id_3_Cap = [&]() {
+auto __gsharp_id_3_Cap = [&, __gsharp_ctx]() {
 return __gsharp_ctx->__gsharp_id_2_z;
 }
 ;
@@ -953,7 +953,7 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
-auto __gsharp_id_3_Cap = [&]() {
+auto __gsharp_id_3_Cap = [&, __gsharp_ctx]() {
 return __gsharp_ctx->__gsharp_id_2_z;
 }
 ;
@@ -1298,7 +1298,7 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
-auto __gsharp_id_3_Get = [&]() {
+auto __gsharp_id_3_Get = [&, __gsharp_ctx]() {
 return __gsharp_ctx->__gsharp_id_2_w;
 }
 ;
@@ -1632,11 +1632,11 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
-auto __gsharp_id_3_Sq = [&](int __gsharp_id_4_v) {
+auto __gsharp_id_3_Sq = [&, __gsharp_ctx](int __gsharp_id_4_v) {
 return __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_4_v,__gsharp_id_4_v),__gsharp_ctx->__gsharp_id_2_k);
 }
 ;
-auto __gsharp_id_6_Sq = [&](int __gsharp_id_7_v) {
+auto __gsharp_id_6_Sq = [&, __gsharp_ctx](int __gsharp_id_7_v) {
 return __gsharp_add_i32(__gsharp_id_7_v,__gsharp_mul_i32(10,__gsharp_ctx->__gsharp_id_5_k));
 }
 ;
@@ -2426,7 +2426,7 @@ __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
 auto __gsharp_lf_impl___gsharp_id_2_Fact = [&](auto& __gsharp_lf_self___gsharp_id_2_Fact, int __gsharp_id_3_v) -> int
 {
-auto __gsharp_id_2_Fact = [&](int __gsharp_id_3_v) -> int
+auto __gsharp_id_2_Fact = [=](int __gsharp_id_3_v) -> int
 {
 return __gsharp_lf_self___gsharp_id_2_Fact(__gsharp_lf_self___gsharp_id_2_Fact, __gsharp_id_3_v);
 }
@@ -2436,7 +2436,7 @@ return (__gsharp_id_3_v<=1?1:__gsharp_mul_i32(__gsharp_id_3_v,__gsharp_id_2_Fact
 }
 }
 ;
-auto __gsharp_id_2_Fact = [&](int __gsharp_id_3_v) -> int
+auto __gsharp_id_2_Fact = [=](int __gsharp_id_3_v) -> int
 {
 return __gsharp_lf_impl___gsharp_id_2_Fact(__gsharp_lf_impl___gsharp_id_2_Fact, __gsharp_id_3_v);
 }
@@ -2766,7 +2766,7 @@ auto* __gsharp_root = __gsharp_ctx;
 if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_data=__gsharp_in___gsharp_id_0_data;
 }
-auto __gsharp_id_2_Add = [&]() {
+auto __gsharp_id_2_Add = [&, __gsharp_ctx]() {
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_1_tid, 289335019u)=__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_1_tid, 289335019u),1);
 }
 ;

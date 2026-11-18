@@ -268,7 +268,7 @@ export async function checkBuildStep(assert: AssertModule): Promise<void> {
     const host = new FakeHost();
     const gpuOptions = { ...options, gpu: true, after: 7 };
     const placement = { weight: 2, pin: null, before: null };
-    const failed = runBuildStep(gpuOptions, placement, "dotnet build P", host);
+    const failed = runBuildStep(gpuOptions, placement, "node build.js P", host);
     await until("the step connects", () => host.connects.length === 1);
     host.connects[0]?.resolve(await scheduler.connect());
     await until("the fake scheduler accepts", () => scheduler.accepted.length === 1);
@@ -277,7 +277,7 @@ export async function checkBuildStep(assert: AssertModule): Promise<void> {
     const request = first.messages.find((m) => m.type === "request");
     assert.deepStrictEqual(
       [request?.command, request?.gpuTurn, request?.gpu, request?.weight, request?.after],
-      ["dotnet build P", false, false, 2, 7],
+      ["node build.js P", false, false, 2, 7],
       "the builds queue on CPU slots, after the run's predecessor",
     );
     const notices: string[] = [];
@@ -302,7 +302,7 @@ export async function checkBuildStep(assert: AssertModule): Promise<void> {
     assert.strictEqual(await failed, 2, "the step resolves to the build's exit code");
     assert.deepStrictEqual(host.exits, [], "the step never ends the process");
 
-    const cancelled = runBuildStep(gpuOptions, placement, "dotnet build P", host);
+    const cancelled = runBuildStep(gpuOptions, placement, "node build.js P", host);
     await until("the second step connects", () => host.connects.length === 2);
     host.connects[1]?.resolve(await scheduler.connect());
     await until("the fake scheduler accepts again", () => scheduler.accepted.length === 2);

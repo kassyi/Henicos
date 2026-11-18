@@ -309,6 +309,95 @@ public partial class DeviceErrorChannelTests
         Assert.Equal(100u, first.SiteId);
         Assert.Equal("Kernel1", first.MemberName);
         Assert.Equal("KernelOther", second.MemberName);
+
+        // 3. Collision detection when coordinates and MemberName match and only DefaultMessage differs
+        var entrySameMemberDiffMessage = new ErrorSiteEntry(
+            100u, "Test.cs", 10, 5, "Kernel1", "Different message");
+        var sameMemberCollision = !ErrorSiteTable.TryBuildModuleSites(
+            [entry1, entrySameMemberDiffMessage],
+            out _,
+            out var sameFirst,
+            out var sameSecond);
+
+        Assert.True(sameMemberCollision);
+        Assert.Equal("Kernel1", sameFirst.MemberName);
+        Assert.Equal("Kernel1", sameSecond.MemberName);
+        Assert.NotEqual(sameFirst.DefaultMessage, sameSecond.DefaultMessage);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ErrorSiteTable_CreateSiteInStructMember_UsesEnclosingSourceMemberName()
+    {
+        const string source = """
+            using System;
+            namespace Sample;
+            public struct Resource : IDisposable
+            {
+                public int Mode;
+                public void Dispose()
+                {
+            #pragma warning disable CS8509
+                    var x = Mode switch { 0 => 1 };
+            #pragma warning restore CS8509
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilationAt("Sample.cs", source)
+            .WithAssemblyName("SharedMemberUnitTest");
+        var tree = compilation.SyntaxTrees.Single();
+        var model = compilation.GetSemanticModel(tree);
+        var switchNode = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.SwitchExpressionSyntax>()
+            .Single();
+
+        var fromKernelA = ErrorSiteTable.CreateSite(
+            switchNode, model, "KernelA", "Non-exhaustive switch", "SwitchExpression");
+        var fromKernelB = ErrorSiteTable.CreateSite(
+            switchNode, model, "KernelB", "Non-exhaustive switch", "SwitchExpression");
+
+        Assert.Equal("Dispose", fromKernelA.MemberName);
+        Assert.Equal(fromKernelA, fromKernelB);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void ErrorSiteTable_CreateSiteWithoutCompilationTree_KeepsCallerMemberNameFallback()
+    {
+        const string sourceA = """
+            namespace SampleA;
+            public struct ResourceA
+            {
+                public int Read(int m) => m switch { 0 => 1, _ => 2 };
+            }
+            """;
+        const string sourceB = """
+            namespace SampleB;
+            public struct ResourceB { }
+            """;
+
+        var compilationA = RoslynTestUtility.CreateCompilationAt("SampleA.cs", sourceA)
+            .WithAssemblyName("ExternalTreeSource");
+        var compilationB = RoslynTestUtility.CreateCompilationAt("SampleB.cs", sourceB)
+            .WithAssemblyName("OtherCompilation");
+        var switchNode = compilationA.SyntaxTrees.Single().GetRoot()
+            .DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.SwitchExpressionSyntax>()
+            .Single();
+        var otherModel = compilationB.GetSemanticModel(compilationB.SyntaxTrees.Single());
+
+        var siteA = ErrorSiteTable.CreateSite(
+            switchNode, otherModel, "KernelA", "Non-exhaustive switch", "SwitchExpression");
+        var siteB = ErrorSiteTable.CreateSite(
+            switchNode, otherModel, "KernelB", "Non-exhaustive switch", "SwitchExpression");
+
+        Assert.Equal("KernelA", siteA.MemberName);
+        Assert.Equal("KernelB", siteB.MemberName);
+        Assert.NotEqual(siteA.SiteId, siteB.SiteId);
     }
 
     [Fact]

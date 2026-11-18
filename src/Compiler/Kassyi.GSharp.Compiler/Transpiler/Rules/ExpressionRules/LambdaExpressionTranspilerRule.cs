@@ -48,7 +48,8 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         ExpressionSyntax? expressionBody,
         ref TranspileContext context)
     {
-        context.Emitter.Writer.Append("[&]");
+        var plan = LambdaCapture.Create(block, expressionBody);
+        LambdaCapture.Append(context.Emitter.Writer, plan);
 
         if (parameterOrList != null)
         {
