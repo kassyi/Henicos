@@ -179,7 +179,9 @@ public static class FuzzBatchWorkspaceWriter
         }
         """;
 
-    private static string BuildProjectXml(string dialect, string relGen, string relRepo, string? cudaArch)
+    // The shared harness declares partial members whose bodies differ per dialect; each test assembly implements
+    // them in its own Differential/Harness folder, which the batch project takes as Tests.Cpu or Tests.Cuda would.
+    internal static string BuildProjectXml(string dialect, string relGen, string relRepo, string? cudaArch)
     {
         bool isCuda = string.Equals(dialect, "Cuda", StringComparison.OrdinalIgnoreCase);
         string defineConstant = isCuda ? "GSHARP_CUDA" : "GSHARP_CPU";
@@ -216,7 +218,8 @@ public static class FuzzBatchWorkspaceWriter
                 <Compile Include="{{relGen}}/FuzzBatchKernels.cu.cs" />
                 <Compile Include="{{relGen}}/FuzzBatchCases.cs" />
                 <Compile Include="{{relGen}}/FuzzBatchHarnessStubs.cs" />
-                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/*.cs" Exclude="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/KnownDivergences.cs" />{{cpuCompileItems}}
+                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/*.cs" Exclude="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/KnownDivergences.cs" />
+                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.{{dialect}}/Differential/Harness/*.cs" />{{cpuCompileItems}}
               </ItemGroup>
 
               <ItemGroup>
