@@ -119,6 +119,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0117](GSH0117.md) | Error | SharedMemory<T> count must not be negative |
 | [GSH0119](GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates |
 | [GSH0118](GSH0118.md) | Error | A [GpuReadOnly] array is written |
+| [GSH0120](GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region |
 | [SLQ0001](SLQ0001.md) | Error | StackLinq method chain is too deep |
 | [RS0030](RS0030.md) | Error | Banned API used (G# repository builds only) |
 
