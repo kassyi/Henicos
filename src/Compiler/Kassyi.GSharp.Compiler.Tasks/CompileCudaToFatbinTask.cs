@@ -52,6 +52,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     /// </summary>
     public const string CommandFileExtension = ".nvcc";
 
+    private const string CommandRecordDescription = "nvcc command";
+
     private string _nvccOptions = "";
     private string _nvccVersion = "";
     private bool _skipCompilation;
@@ -115,7 +117,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, sourcePaths);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
         if (IsNewerThanSources(outputFatbinPath, sourcePaths) &&
-            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
+            CommandRecordFile.IsCurrent(Log, commandFilePath, commandRecord, CommandRecordDescription))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation because '{outputFatbinPath}' is up-to-date.");
@@ -153,14 +155,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
-        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+        if (!CommandRecordFile.TryDelete(Log, commandFilePath, CommandRecordDescription) ||
             !TryCompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, bundledPaths))
         {
             return false;
         }
 
         return ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) &&
-            NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord);
+            CommandRecordFile.TryWrite(Log, commandFilePath, commandRecord, CommandRecordDescription);
     }
 
     // One #include per source, except an earlier bundle of the same name. The included paths are added to bundledPaths.
@@ -321,21 +323,21 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, [sourcePath]);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
         if (File.Exists(sourcePath) && IsNewerThanSources(outputFatbinPath, [sourcePath]) &&
-            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
+            CommandRecordFile.IsCurrent(Log, commandFilePath, commandRecord, CommandRecordDescription))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
             return [CreateOutputItem(outputFatbinPath, commandFilePath)];
         }
 
-        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+        if (!CommandRecordFile.TryDelete(Log, commandFilePath, CommandRecordDescription) ||
             !TryCompileWithNvcc(sourcePath, outputFatbinPath))
         {
             return null;
         }
 
         if (!ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) ||
-            !NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord))
+            !CommandRecordFile.TryWrite(Log, commandFilePath, commandRecord, CommandRecordDescription))
         {
             return null;
         }

@@ -10,7 +10,9 @@ public sealed class GccClangToolchain : INativeToolchain
     private readonly IProcessRunner _processRunner;
     private readonly string[] _compilerCandidates;
     private readonly string _hostArchitecture;
+    private readonly object _compilerResolutionLock = new();
     private string? _resolvedCompiler;
+    private string? _resolvedVersion;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GccClangToolchain"/> class.
@@ -67,9 +69,10 @@ public sealed class GccClangToolchain : INativeToolchain
 
         foreach (var candidate in _compilerCandidates)
         {
-            if (IsCompilerAvailable(candidate, cancellationToken))
+            if (TryProbeCompiler(candidate, cancellationToken, out var version))
             {
                 _resolvedCompiler = candidate;
+                _resolvedVersion = version;
                 return ToolchainPreparationResult.Ready;
             }
         }
@@ -84,28 +87,93 @@ public sealed class GccClangToolchain : INativeToolchain
     public Dictionary<string, string>? GetEnvironmentVariables(string architecture) => null;
 
     /// <inheritdoc />
-    public bool TryCompileCppToSharedLibrary(
+    public CompilerIdentity GetCompilerIdentity(
+        string architecture,
+        CancellationToken cancellationToken = default)
+    {
+        var (compiler, version) = ResolveCompilerAndVersion(cancellationToken);
+        var resolvedPath = NativeToolchainHelper.FindExecutableInPath(compiler, env: null);
+        return new CompilerIdentity(resolvedPath, version);
+    }
+
+    /// <inheritdoc />
+    public string BuildCompileObjectArguments(
         string sourcePath,
+        string objPath,
+        string architecture,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null) =>
+        $"-c -O2 -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
+        $"\"{sourcePath}\" -o \"{objPath}\"";
+
+    /// <inheritdoc />
+    public bool TryCompileToObject(
+        string sourcePath,
+        string objPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null)
+    {
+        var (compiler, _) = ResolveCompilerAndVersion(cancellationToken);
+        NativeToolchainHelper.EnsureParentDirectory(objPath);
+        var args = BuildCompileObjectArguments(sourcePath, objPath, architecture, sanitizers, pdbPath);
+
+        log.LogMessage(
+            MessageImportance.Normal,
+            $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
+
+        return TryRunCompiler(compiler, args, sourcePath, objPath, log, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public bool TryLinkSharedLibrary(
+        IReadOnlyList<string> objPaths,
         string outputPath,
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
         NativeSanitizers sanitizers = NativeSanitizers.None)
     {
-        var compiler = _resolvedCompiler ?? _compilerCandidates[0];
+        if (objPaths.Count == 0)
+        {
+            log.LogError("Cannot link native shared library with zero object files.");
+            return false;
+        }
 
-        // -O2 = Optimize for speed
-        // -shared -fPIC = Build position-independent shared library
-        // -std=c++17 = C++17 standard
-        // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
-        // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
-        var args =
-            $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
-            $"\"{sourcePath}\" -o \"{outputPath}\"";
+        var (compiler, _) = ResolveCompilerAndVersion(cancellationToken);
+        NativeToolchainHelper.EnsureParentDirectory(outputPath);
 
-        log.LogMessage(MessageImportance.Normal,
-            $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
+        var joinedObjs = NativeToolchainHelper.JoinQuotedPaths(objPaths);
+        var args = $"-shared -fopenmp{BuildSanitizerFlags(sanitizers)} {joinedObjs} -o \"{outputPath}\"";
 
+        log.LogMessage(
+            MessageImportance.Normal,
+            $"Linking {objPaths.Count} C++ object(s) for {architecture} with {compiler}: {outputPath}");
+
+        return TryRunCompiler(compiler, args, outputPath, outputPath, log, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public bool TryCompileCppToSharedLibrary(
+        string sourcePath,
+        string outputPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None) =>
+        NativeToolchainHelper.TryCompileSingleSourceToSharedLibrary(
+            this, sourcePath, outputPath, architecture, log, cancellationToken, sanitizers);
+
+    private bool TryRunCompiler(
+        string compiler,
+        string args,
+        string warningContextFile,
+        string expectedOutputPath,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken)
+    {
         var startInfo = new ProcessStartInfo
         {
             FileName = compiler,
@@ -116,10 +184,17 @@ public sealed class GccClangToolchain : INativeToolchain
         {
             var result = _processRunner.Run(startInfo, cancellationToken);
 
-            if (result.ExitCode == 0 && File.Exists(outputPath))
+            if (result.ExitCode == 0 && NativeToolchainHelper.HasNonEmptyFile(expectedOutputPath))
             {
-                NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
+                NvccOutputParser.LogCompilerWarnings(
+                    log, warningContextFile, result.StandardOutput, result.StandardError);
                 return true;
+            }
+
+            if (result.ExitCode == 0)
+            {
+                log.LogError(
+                    $"{compiler} exited with code 0 without producing a non-empty output '{expectedOutputPath}'.");
             }
 
             log.LogError($"{compiler} compilation failed with exit code {result.ExitCode}.");
@@ -147,33 +222,54 @@ public sealed class GccClangToolchain : INativeToolchain
         }
     }
 
-    // " -fsanitize=<names> [-fno-sanitize-recover=undefined] -fno-omit-frame-pointer -g", or "" when none is enabled.
+    // " -fsanitize=<names> [-fno-sanitize-recover=undefined] -fno-omit-frame-pointer -g", or "" when disabled.
     // -fno-sanitize-recover=undefined stops at the first UBSan report; -fno-omit-frame-pointer and -g give readable stacks.
     private static string BuildSanitizerFlags(NativeSanitizers sanitizers)
     {
-        if (sanitizers == NativeSanitizers.None)
+        var hasAddress = (sanitizers & NativeSanitizers.Address) != 0;
+        var hasUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
+        if (!hasAddress && !hasUndefined)
         {
             return "";
         }
 
-        var names = new List<string>(2);
-        if ((sanitizers & NativeSanitizers.Address) != 0)
+        var names = (hasAddress, hasUndefined) switch
         {
-            names.Add("address");
-        }
-
-        var enableUndefined = (sanitizers & NativeSanitizers.Undefined) != 0;
-        if (enableUndefined)
-        {
-            names.Add("undefined");
-        }
-
-        var recover = enableUndefined ? " -fno-sanitize-recover=undefined" : "";
-        return $" -fsanitize={string.Join(",", names)}{recover} -fno-omit-frame-pointer -g";
+            (true, true) => "address,undefined",
+            (true, false) => "address",
+            (false, true) => "undefined",
+            _ => ""
+        };
+        var recover = hasUndefined ? " -fno-sanitize-recover=undefined" : "";
+        return $" -fsanitize={names}{recover} -fno-omit-frame-pointer -g";
     }
 
-    private bool IsCompilerAvailable(string executable, CancellationToken cancellationToken)
+    private (string Compiler, string Version) ResolveCompilerAndVersion(CancellationToken cancellationToken)
     {
+        lock (_compilerResolutionLock)
+        {
+            if (_resolvedCompiler is not null)
+            {
+                return (_resolvedCompiler, _resolvedVersion ?? "unknown");
+            }
+
+            foreach (var candidate in _compilerCandidates)
+            {
+                if (TryProbeCompiler(candidate, cancellationToken, out var version))
+                {
+                    _resolvedCompiler = candidate;
+                    _resolvedVersion = version;
+                    return (candidate, version);
+                }
+            }
+
+            return (_compilerCandidates[0], "unknown");
+        }
+    }
+
+    private bool TryProbeCompiler(string executable, CancellationToken cancellationToken, out string version)
+    {
+        version = "unknown";
         try
         {
             var checkInfo = new ProcessStartInfo
@@ -182,7 +278,13 @@ public sealed class GccClangToolchain : INativeToolchain
                 Arguments = "--version"
             };
             var result = _processRunner.Run(checkInfo, cancellationToken);
-            return result.ExitCode == 0;
+            if (result.ExitCode != 0)
+            {
+                return false;
+            }
+
+            version = ExtractFirstNonEmptyLine(result.StandardOutput);
+            return true;
         }
         catch (OperationCanceledException)
         {
@@ -192,5 +294,25 @@ public sealed class GccClangToolchain : INativeToolchain
         {
             return false;
         }
+    }
+
+    private static string ExtractFirstNonEmptyLine(string output)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            return "unknown";
+        }
+
+        using var reader = new StringReader(output);
+        while (reader.ReadLine() is { } line)
+        {
+            var trimmed = line.AsSpan().Trim();
+            if (trimmed.Length > 0)
+            {
+                return trimmed.ToString();
+            }
+        }
+
+        return "unknown";
     }
 }

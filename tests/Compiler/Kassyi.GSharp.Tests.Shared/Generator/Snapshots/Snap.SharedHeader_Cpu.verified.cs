@@ -56,6 +56,13 @@ public const string Source = @"#include <cmath>
 #else
 #define __GSHARP_COLD
 #endif
+#if defined(_MSC_VER)
+#define GSHARP_EXPORT_INLINE inline
+#elif defined(__GNUC__) || defined(__clang__)
+#define GSHARP_EXPORT_INLINE inline __attribute__((used))
+#else
+#define GSHARP_EXPORT_INLINE inline
+#endif
 #define __shared__
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
@@ -893,7 +900,7 @@ message = text;
 inline thread_local GSharpErrorSlot __gsharp_host_last_error;
 inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
 
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error(const char** outMessage) {
 int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
 if (c != 0) {
 if (outMessage != nullptr) {
@@ -904,7 +911,7 @@ __gsharp_host_last_error.Reset();
 return c;
 }
 
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error_details(
 const char** outMessage,
 uint32_t* outSiteId,
 uint32_t* outThreadLinear,
@@ -1243,7 +1250,7 @@ return static_cast<signed char>(a < 0 ? -a : a);
 #undef __GSHARP_DIVISOR_CHECK
 
 // --- Thread & Block State ---
-extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
 threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
 blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
 blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;

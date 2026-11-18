@@ -271,6 +271,12 @@ internal static class GSharpNameEncoding
         var result = new Dictionary<uint, SymbolErrorSiteRecord>();
         if (string.IsNullOrEmpty(gsymContent))
         {
+            if (expectedHash is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Symbol file is empty while companion source expects hash '{expectedHash}'.");
+            }
+
             return result;
         }
 
@@ -298,6 +304,11 @@ internal static class GSharpNameEncoding
                 continue;
             }
 
+            if (gsymContent[lineStart] != '{' || gsymContent[lineEnd - 1] != '}')
+            {
+                throw new InvalidOperationException("Symbol file contains a malformed JSON line.");
+            }
+
             if (headerHash is null && TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "gsharp_symbols", out var fileHash))
             {
                 headerHash = fileHash;
@@ -323,6 +334,12 @@ internal static class GSharpNameEncoding
             }
         }
 
+        if (expectedHash is not null && headerHash is null)
+        {
+            throw new InvalidOperationException(
+                $"Symbol file is missing a matching 'gsharp_symbols' hash header (expected '{expectedHash}').");
+        }
+
         return result;
     }
 
@@ -334,10 +351,17 @@ internal static class GSharpNameEncoding
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         if (string.IsNullOrEmpty(gsymContent))
         {
+            if (expectedHash is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Symbol file is empty while companion source expects hash '{expectedHash}'.");
+            }
+
             return result;
         }
 
         string? headerHash = null;
+        var verifiedHash = false;
         var pos = 0;
         while (pos < gsymContent.Length)
         {
@@ -361,6 +385,11 @@ internal static class GSharpNameEncoding
                 continue;
             }
 
+            if (gsymContent[lineStart] != '{' || gsymContent[lineEnd - 1] != '}')
+            {
+                throw new InvalidOperationException("Symbol file contains a malformed JSON line.");
+            }
+
             if (headerHash is null && TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "gsharp_symbols", out var fileHash))
             {
                 headerHash = fileHash;
@@ -369,6 +398,7 @@ internal static class GSharpNameEncoding
                     throw new InvalidOperationException($"Symbol file hash '{headerHash}' does not match source hash '{expectedHash}'.");
                 }
 
+                verifiedHash = true;
                 continue;
             }
 
@@ -378,6 +408,8 @@ internal static class GSharpNameEncoding
                 {
                     throw new InvalidOperationException($"Symbol file hash '{itemHash}' does not match source hash '{expectedHash}'.");
                 }
+
+                verifiedHash = true;
             }
 
             if (TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "cpp", out var cpp) &&
@@ -385,6 +417,12 @@ internal static class GSharpNameEncoding
             {
                 result[cpp] = cs;
             }
+        }
+
+        if (expectedHash is not null && !verifiedHash)
+        {
+            throw new InvalidOperationException(
+                $"Symbol file is missing a matching 'gsharp_symbols' hash header (expected '{expectedHash}').");
         }
 
         return result;

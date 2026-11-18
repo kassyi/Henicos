@@ -130,12 +130,57 @@ internal static class NativeModuleAssembler
         string kernelsSource)
     {
         using var body = new SourceWriter();
-        foreach (var inc in requiredIncludes)
+        AppendModulePreamble(in body, requiredIncludes, preludeSource, deviceSource);
+        body.Append(kernelsSource);
+        return body.ToString();
+    }
+
+    /// <summary>The native module body assembled directly from per-kernel sources in module order.</summary>
+    public static string AssembleBody(HashSet<string> requiredIncludes, string preludeSource, string deviceSource,
+        IReadOnlyList<string> kernelSources)
+    {
+        using var body = new SourceWriter();
+        AppendModulePreamble(in body, requiredIncludes, preludeSource, deviceSource);
+        foreach (var kernelSource in kernelSources)
         {
-            body.AppendLine($"#include {inc}");
+            body.AppendLine(kernelSource);
         }
 
-        body.Append(preludeSource).Append(deviceSource).Append(kernelsSource);
         return body.ToString();
+    }
+
+    /// <summary>The shared header of a split CPU module: includes, prelude, and shared device code.</summary>
+    public static string AssembleHeader(HashSet<string> requiredIncludes, string preludeSource, string deviceSource)
+    {
+        using var header = new SourceWriter();
+        AppendModulePreamble(in header, requiredIncludes, preludeSource, deviceSource);
+        return header.ToString();
+    }
+
+    /// <summary>
+    /// One translation unit of a split CPU module: the shared header include followed by its kernels.
+    /// </summary>
+    public static string AssembleUnit(string headerFileName, IReadOnlyList<string> kernelSources,
+        ImmutableArray<int> kernelIndices)
+    {
+        using var unit = new SourceWriter();
+        unit.AppendLine($"#include \"{headerFileName}\"");
+        foreach (var index in kernelIndices)
+        {
+            unit.AppendLine(kernelSources[index]);
+        }
+
+        return unit.ToString();
+    }
+
+    private static void AppendModulePreamble(in SourceWriter writer, HashSet<string> requiredIncludes,
+        string preludeSource, string deviceSource)
+    {
+        foreach (var inc in requiredIncludes)
+        {
+            writer.AppendLine($"#include {inc}");
+        }
+
+        writer.Append(preludeSource).Append(deviceSource);
     }
 }

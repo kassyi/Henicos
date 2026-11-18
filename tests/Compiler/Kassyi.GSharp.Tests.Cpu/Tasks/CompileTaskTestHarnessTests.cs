@@ -66,4 +66,44 @@ public class CompileTaskTestHarnessTests
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("Not found", result.StandardError);
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void MockBuildEngine_RequestAndReleaseCores_TracksHeldCores()
+    {
+        var engine = new MockBuildEngine { AvailableCores = 4 };
+        var granted = engine.RequestCores(8);
+        Assert.Equal(4, granted);
+        Assert.Equal(4, engine.HeldCores);
+
+        engine.ReleaseCores(granted);
+        Assert.Equal(0, engine.HeldCores);
+        Assert.Equal(4, engine.ReleasedCores);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void MockProcessRunner_ObjectCompileFlags_CreatesObjAndDotOFiles()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var runner = new MockProcessRunner(tempDir);
+            var objPath = Path.Combine(tempDir, "with space", "unit.obj");
+            var dotOPath = Path.Combine(tempDir, "with space", "unit.o");
+            var pdbPath = Path.Combine(tempDir, "with space", "unit.vc.pdb");
+
+            var clArgs = $"/c /Fo:\"{objPath}\" /Fd:\"{pdbPath}\"";
+            Assert.Equal(0, runner.Run(new ProcessStartInfo("cl.exe", clArgs)).ExitCode);
+            Assert.Equal(0, runner.Run(new ProcessStartInfo("g++", $"-c unit.cpp -o \"{dotOPath}\"")).ExitCode);
+            Assert.True(File.Exists(objPath));
+            Assert.True(File.Exists(dotOPath));
+            Assert.True(File.Exists(pdbPath));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
 }

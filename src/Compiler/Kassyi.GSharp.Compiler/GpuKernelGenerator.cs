@@ -1018,13 +1018,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        using var allKernelsSource = new SourceWriter();
+        var kernelSources = new string[kernelMethods.Length];
         var kernelItems = new KernelPartitionItem[kernelMethods.Length];
         for (var i = 0; i < kernelMethods.Length; i++)
         {
             var method = kernelMethods[i];
             var source = method.GetSource(isCuda);
-            allKernelsSource.AppendLine(source);
+            kernelSources[i] = source;
             var byteCount = Encoding.UTF8.GetByteCount(source);
             kernelItems[i] = new KernelPartitionItem(method.Class.FullyQualifiedName, byteCount);
         }
@@ -1038,9 +1038,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         imports.Includes
             .AsStackEnumerable()
             .AddTo(requiredIncludes);
-        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
-            allKernelsSource.ToString());
-        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName,
+        var moduleStem = AotModuleNames.GetArtifactFileStem(target.ModuleName);
+        var splitPlan = NativeModuleSplitter.Plan(moduleStem, isCuda, partitionPlan);
+        var moduleFiles = NativeModuleSplitter.Emit(
+            splitPlan, requiredIncludes, preludeSource, commonDeviceSource, kernelSources);
+        AotArtifactWriter.Write(target, config, moduleFiles, context, imports.FindFullName,
             symbolSites.ToImmutable(), partitionJson);
     }
 
