@@ -338,6 +338,12 @@ error GS0005: G# needs the .NET SDK 10.0.400 or later (Roslyn 5.9) because its s
 
 The `GSharpCheckMinimumSdkVersion` target in `Kassyi.GSharp.Compiler.targets` checks `$(NETCoreSdkVersion)` before `CoreCompile` using `[MSBuild]::VersionLessThan`.
 
+### 1.5.4 Minimum CUDA Toolkit Version Check (GS0006)
+
+The CUDA build needs the CUDA Toolkit 13.0 or later. `CompileCudaToFatbinTask` runs `nvcc --version` before it compiles, reads the release from the line `Cuda compilation tools, release <major>.<minor>, ...`, and stops the build with error `GS0006` when the major release is below 13. For nvcc 12.0 found as `nvcc` on `PATH`, the message is `G# needs the CUDA Toolkit 13.0 or later; the nvcc run as 'nvcc' is CUDA 12.0. Put a newer nvcc first on PATH, or set GSHARP_TEST_NO_CUDA=1 to build without CUDA.`
+
+An older nvcc is not only unsupported: the `cicc` of CUDA 12.0 does not finish optimizing some kernels of `Kassyi.GSharp.Stdlib.GpuMath`, so without the check the build hangs instead of failing. An output without a readable release line passes the check. The Ubuntu package `nvidia-cuda-toolkit` installs CUDA 12.0 (Ubuntu 24.04) at `/usr/bin/nvcc`; see the prerequisites for the NVIDIA repository.
+
 ## 1.6 Expression Lowering (IIFE)
 
 To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.
