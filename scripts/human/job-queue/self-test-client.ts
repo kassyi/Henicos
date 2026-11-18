@@ -24,7 +24,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 }
 
 /** Polls until `ready` holds (an event of the client or the fake scheduler has arrived). */
-async function until(what: string, ready: () => boolean): Promise<void> {
+export async function until(what: string, ready: () => boolean): Promise<void> {
   for (let i = 0; i < 400 && !ready(); i++) {
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
@@ -41,7 +41,7 @@ interface Accepted {
 }
 
 /** The fake scheduler: accepts connections and records them; the check answers on them. */
-class FakeScheduler {
+export class FakeScheduler {
   readonly server = net.createServer((socket) => {
     const accepted: Accepted = { socket, messages: [], closed: false };
     socket.on("error", () => socket.destroy());
@@ -85,9 +85,14 @@ function fakeChild(): ChildProcess {
 }
 
 /** A RunHost whose connections and command end come when the check releases them, and that records every effect. */
-class FakeHost implements RunHost {
+export class FakeHost implements RunHost {
   readonly connects: { promise: Promise<net.Socket>; resolve: (socket: net.Socket) => void }[] = [];
-  readonly commands: { child: ChildProcess; end: (result: ShellResult) => void }[] = [];
+  readonly commands: {
+    command: string;
+    env: NodeJS.ProcessEnv;
+    child: ChildProcess;
+    end: (result: ShellResult) => void;
+  }[] = [];
   readonly reports: unknown[][] = [];
   readonly stops: (ChildProcess | null)[] = [];
   readonly exits: number[] = [];
@@ -103,7 +108,7 @@ class FakeHost implements RunHost {
     return Promise.resolve();
   }
 
-  runCommand(_command: string, _env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
+  runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
     const child = fakeChild();
     const ended = deferred<ShellResult>();
     onChild(child);
@@ -113,7 +118,7 @@ class FakeHost implements RunHost {
       child.emit("close", result.code, null);
       ended.resolve(result);
     };
-    this.commands.push({ child, end });
+    this.commands.push({ command, env, child, end });
     return ended.promise;
   }
 
@@ -148,7 +153,7 @@ const options: RunOptions = {
 };
 
 /** Runs `body` with the client's notices (stderr) held back, so that they do not read as the self-test's output. */
-async function quietly(body: () => Promise<void>): Promise<void> {
+export async function quietly(body: () => Promise<void>): Promise<void> {
   const write = process.stderr.write;
   process.stderr.write = (() => true) as typeof process.stderr.write;
   try {

@@ -12,67 +12,65 @@ import { resolvePlaces } from "./path-places.ts";
 
 type AssertModule = typeof Assert;
 
-const Cpu = "tests/Compiler/App.Cpu";
+const Script = "scripts/human/app.js";
 /** A job in the main checkout of a made-up Windows repository whose worktrees sit in its ignored tmp folder. */
 const Main: KeyContext = { cwd: "C:\\work\\repo", worktree: "c:\\work\\repo" };
 
 /** A PowerShell agent wraps its steps in Push-Location / Pop-Location: they move the directory and take no time. */
 export function checkEstimateDirectoryMoves(assert: AssertModule): void {
   const keys = (command: string): ReturnType<typeof commandKeys> => commandKeys(command, Main);
-  const plain = keys(`dotnet build ${Cpu}`);
+  const plain = keys(`node ${Script}`);
   for (const wrapped of [
-    `Push-Location C:\\work\\repo; dotnet build ${Cpu}; Pop-Location`,
-    `Set-Location -Path C:\\work\\repo; dotnet build ${Cpu}`,
-    `pushd tests && dotnet build Compiler/App.Cpu && popd`,
-    `Push-Location tests; $env:CI='true'; dotnet build Compiler/App.Cpu; Pop-Location`,
+    `Push-Location C:\\work\\repo; node ${Script}; Pop-Location`,
+    `Set-Location -Path C:\\work\\repo; node ${Script}`,
+    `pushd scripts && node human/app.js && popd`,
+    `Push-Location scripts; $env:CI='true'; node human/app.js; Pop-Location`,
   ]) {
     assert.deepStrictEqual(keys(wrapped), plain, wrapped);
   }
   // Pop-Location goes back: the step after it runs in the directory before the push
   assert.strictEqual(
-    keys(`Push-Location tests; Pop-Location; dotnet build ${Cpu}`).normalized,
+    keys(`Push-Location scripts; Pop-Location; node ${Script}`).normalized,
     plain.normalized,
     "the directory before the push",
   );
   assert.strictEqual(
-    keys("cd /c/work/repo/tests && dotnet build Compiler/App.Cpu").normalized,
+    keys("cd /c/work/repo/scripts && node human/app.js").normalized,
     plain.normalized,
     "a cd in Git Bash spelling",
   );
   // The paths a client looks up, resolved through the moves
-  assert.deepStrictEqual(pathArguments("Push-Location tests; dotnet build Compiler/App.Cpu; node x.js", Main), [
-    "C:\\work\\repo\\tests\\Compiler\\App.Cpu",
-    "C:\\work\\repo\\tests\\x.js",
+  assert.deepStrictEqual(pathArguments("Push-Location scripts; node human/app.js; node x.js", Main), [
+    "C:\\work\\repo\\scripts\\human\\app.js",
+    "C:\\work\\repo\\scripts\\x.js",
   ]);
-  assert.deepStrictEqual(pathArguments("dotnet build $(pwd)/X", Main), [], "an unreadable command names none");
+  assert.deepStrictEqual(pathArguments("node $(pwd)/x.js", Main), [], "an unreadable command names none");
 }
 
 /** With the places the client sent, a path is keyed from the worktree that holds it and marked where it lies. */
 export function checkEstimatePlaces(assert: AssertModule): void {
   const other = "C:\\work\\repo\\tmp\\worktree\\feat-b";
-  const probe = "C:\\work\\repo\\tmp\\probe\\Probe.csproj";
-  const scratch = "C:\\Temp\\scratch\\Probe.csproj";
+  const probe = "C:\\work\\repo\\tmp\\probe\\run.js";
+  const scratch = "C:\\Temp\\scratch\\probe.js";
   const context: KeyContext = {
     ...Main,
     places: {
-      [`${other}\\tests\\Compiler\\App.Cpu`]: { root: other, ignored: false },
+      [`${other}\\scripts\\human\\app.js`]: { root: other, ignored: false },
       [probe]: { root: "C:\\work\\repo", ignored: true },
       [scratch]: { root: "", ignored: false },
-      "C:\\work\\repo\\tmp\\probe\\run.js": { root: "C:\\work\\repo", ignored: true },
     },
   };
   const keys = (command: string): ReturnType<typeof commandKeys> => commandKeys(command, context);
-  // A project of another worktree, named from the main checkout: the same key as in its own worktree
-  assert.deepStrictEqual(keys(`dotnet build tmp/worktree/feat-b/${Cpu}`), commandKeys(`dotnet build ${Cpu}`, Main));
-  assert.strictEqual(keys(`dotnet build ${other}\\tests\\Compiler\\App.Cpu`).normalized, `dotnet build ${Cpu}`);
-  // A project the worktree ignores, and one no worktree holds: kinds of their own
-  assert.strictEqual(keys("dotnet build tmp/probe/Probe.csproj").kind, "build:ignored");
-  assert.strictEqual(keys("dotnet build tmp/probe/Probe.csproj").normalized, "dotnet build tmp/probe/Probe.csproj");
-  assert.strictEqual(keys(`dotnet build ${scratch}`).kind, "build:outside");
+  // A script of another worktree, named from the main checkout: the same key as in its own worktree
+  assert.deepStrictEqual(keys(`node tmp/worktree/feat-b/${Script}`), commandKeys(`node ${Script}`, Main));
+  assert.strictEqual(keys(`node ${other}\\${Script}`).normalized, `node ${Script}`);
+  // A script the worktree ignores, and one no worktree holds: kinds of their own
   assert.strictEqual(keys("node tmp/probe/run.js").kind, "node:ignored");
+  assert.strictEqual(keys("node tmp/probe/run.js").normalized, "node tmp/probe/run.js");
+  assert.strictEqual(keys(`node ${scratch}`).kind, "node:outside");
   // A path the client sent no place for is judged against the job's worktree, as before
-  assert.strictEqual(keys(`dotnet build ${Cpu}`).kind, "build");
-  assert.strictEqual(keys("dotnet build D:\\elsewhere\\x.csproj").kind, "build:outside");
+  assert.strictEqual(keys(`node ${Script}`).kind, "node");
+  assert.strictEqual(keys("node D:\\elsewhere\\x.js").kind, "node:outside");
 }
 
 /** git: a temporary repository with an ignored folder, a worktree-like repository inside it and a folder outside. */
@@ -87,7 +85,7 @@ export function checkPathPlaces(assert: AssertModule): void {
     const repo = path.join(top, "repo");
     const nested = path.join(repo, "tmp", "wt");
     const outside = path.join(top, "plain");
-    for (const directory of [path.join(repo, "src", "App"), path.join(nested, "src", "App"), outside]) {
+    for (const directory of [path.join(repo, "src", "app"), path.join(nested, "src", "app"), outside]) {
       fs.mkdirSync(directory, { recursive: true });
     }
     git(repo, "init", "-q");
@@ -95,18 +93,17 @@ export function checkPathPlaces(assert: AssertModule): void {
     git(nested, "init", "-q");
     const context: KeyContext = { cwd: repo, worktree: repo };
     const command =
-      `dotnet build src/App && dotnet build tmp/probe/Probe.csproj && dotnet build ${outside}/Probe.csproj` +
-      " && dotnet build tmp/wt/src/App";
+      `node src/app/run.js && node tmp/probe/probe.js && node ${outside}/probe.js` + " && node tmp/wt/src/app/run.js";
     const places = resolvePlaces(command, context);
     const at = (relative: string): string => path.resolve(repo, relative);
-    assert.deepStrictEqual(places[at("src/App")], { root: repo, ignored: false }, "tracked folder");
-    assert.deepStrictEqual(places[at("tmp/probe/Probe.csproj")], { root: repo, ignored: true }, "ignored, not there");
-    assert.deepStrictEqual(places[at(`${outside}/Probe.csproj`)], { root: "", ignored: false }, "no worktree");
-    assert.deepStrictEqual(places[at("tmp/wt/src/App")], { root: nested, ignored: false }, "its own worktree");
-    const named = resolvePlaces("dotnet build tmp/試験/P.csproj", context);
-    assert.deepStrictEqual(named[at("tmp/試験/P.csproj")], { root: repo, ignored: true }, "a name git would quote");
+    assert.deepStrictEqual(places[at("src/app/run.js")], { root: repo, ignored: false }, "tracked folder");
+    assert.deepStrictEqual(places[at("tmp/probe/probe.js")], { root: repo, ignored: true }, "ignored, not there");
+    assert.deepStrictEqual(places[at(`${outside}/probe.js`)], { root: "", ignored: false }, "no worktree");
+    assert.deepStrictEqual(places[at("tmp/wt/src/app/run.js")], { root: nested, ignored: false }, "its own worktree");
+    const named = resolvePlaces("node tmp/試験/p.js", context);
+    assert.deepStrictEqual(named[at("tmp/試験/p.js")], { root: repo, ignored: true }, "a name git would quote");
     const kinds = commandKeys(command, { ...context, places }).kind;
-    assert.strictEqual(kinds, "build&build:ignored&build:outside&build");
+    assert.strictEqual(kinds, "node&node:ignored&node:outside&node");
   } finally {
     fs.rmSync(top, { recursive: true, force: true });
   }

@@ -112,15 +112,15 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
-| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
-| `estimate-checks.ts` | Self-test checks of the keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
+| `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
+| `estimate-checks.ts` | Self-test checks of the core keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
 | `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
-| `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
-| `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
+| `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
-| `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, context/result/panel types) and re-exported pure helper types |
+| `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, context/result/panel types) and re-exported pure helpers |
 | `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, and return validation |
+| `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits and `GSHARP_JOB_QUEUE_MSBUILD_ARGS`, `classify`, `shortName`, and `api` (`isDotnetTest`, `selectsCategory`) |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
@@ -176,9 +176,9 @@ sequenceDiagram
 ## The build step of `--gpu`
 
 A `--gpu` job holds the GPU turn for its whole command, so a build inside it holds the GPU idle for minutes. Before it
-asks for the turn, `run --gpu` (`client.ts`) asks `planBuildStep` (`build-split.ts`) for the builds of its command: the
-`dotnet build` segments before the first test, and a `dotnet build` of each project that a `dotnet test` without
-`--no-build` names, with the options the build reads too. `runBuildStep` (`client-build-step.ts`) runs them as a job of
+asks for the turn, `run --gpu` (`client.ts`) asks `splitBeforeTurn` (`plugins/dotnet/build-split.ts`) for the builds
+of its command: the `dotnet build` segments before the first test, and a `dotnet build` of each project that a
+`dotnet test` without `--no-build` names, with the options the build reads too. `runBuildStep` (`client-build-step.ts`) runs them as a job of
 their own, an ordinary `QueuedRun` on CPU slots with its own id, MSBuild node limit and run time in `history.json`,
 and the run then queues the tests, with `--no-build` added, for the turn. Two jobs instead of one job with two phases:
 no change to the protocol or the scheduler, a scheduler of an older checkout serves both, and each part is recorded

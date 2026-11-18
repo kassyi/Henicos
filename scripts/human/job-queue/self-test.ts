@@ -15,8 +15,7 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
-import { checkBuildSplit } from "./self-test-build-split.ts";
-import { CommandShell, gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
+import { gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
 import { delay, firstTestPort, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
@@ -27,35 +26,14 @@ import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
 import { checkLib } from "./lib-checks.ts";
 import { checkPlugins } from "./plugin-checks.ts";
+import { checkDotnetPlugin } from "./plugins/dotnet/checks.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
 const OrphanReleaseMs = 30000;
 
-/** Checks of the pure helpers: the node limit, quoting, which commands run tests. */
+/** Checks of the pure helpers: quoting, which commands run tests, machine defaults. */
 function checkShellHelpers(): void {
-  assert.strictEqual(
-    CommandShell.limitMsbuildNodes("dotnet test X.csproj && dotnet build", 6),
-    "dotnet test -m:6 X.csproj && dotnet build -m:6",
-  );
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet build-server shutdown", 6), "dotnet build-server shutdown");
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet test -m:2", 6), "dotnet test -m:2");
-  assert.strictEqual(
-    CommandShell.limitMsbuildNodes("dotnet build -m:2 && dotnet test", 6),
-    "dotnet build -m:2 && dotnet test -m:6",
-  );
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet build --maxcpucount 4", 6), "dotnet build --maxcpucount 4");
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet.exe build", 6), "dotnet.exe build -m:6");
-  assert.strictEqual(
-    CommandShell.limitMsbuildNodes('"C:\\Program Files\\dotnet\\dotnet.exe" test x', 6),
-    '"C:\\Program Files\\dotnet\\dotnet.exe" test -m:6 x',
-  );
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet run --project x", 6), "dotnet run --project x");
-  assert.strictEqual(
-    CommandShell.limitMsbuildNodes('dotnet test --filter "A|B" -m:2', 6),
-    'dotnet test --filter "A|B" -m:2',
-  );
-  assert.strictEqual(CommandShell.limitMsbuildNodes("dotnet test bin/x.Tests.dll", 6), "dotnet test bin/x.Tests.dll");
   assert.strictEqual(quoteArgument("pwsh", "@x.rsp"), "'@x.rsp'", "PowerShell would splat @x");
   assert.strictEqual(quoteArgument("pwsh", "-Dfoo.bar=1"), "'-Dfoo.bar=1'", "PowerShell splits -a.b at the dot");
   assert.strictEqual(quoteArgument("bash", "C:\\dir\\f.txt"), "'C:\\dir\\f.txt'", "bash reads \\ as an escape");
@@ -66,7 +44,6 @@ function checkShellHelpers(): void {
   assert.strictEqual(isTestCommand("just test --filter X"), true);
   assert.strictEqual(isTestCommand("dotnet build Henicos.slnx"), false);
   checkMachineDefaults();
-  checkBuildSplit(assert);
 }
 
 /** The defaults that follow the machine, and the memory a test run needs. */
@@ -144,6 +121,7 @@ export async function selfTest(): Promise<void> {
   await named("checkView", checkView);
   await named("checkLib", checkLib);
   await named("checkPlugins", () => checkPlugins(assert));
+  await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;

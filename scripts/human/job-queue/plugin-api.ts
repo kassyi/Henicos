@@ -5,6 +5,7 @@ import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import type { ShellName } from "./constants.ts";
 import type { ScreenLine } from "./screen-line.ts";
 
+export { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./command-reader.ts";
 export type { CommandKeys, PathPlace, ReadStep, ScreenLine, ShellName };
 
 /** Plugin API version; the core accepts only plugins matching this version. */

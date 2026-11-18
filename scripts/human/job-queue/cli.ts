@@ -21,6 +21,7 @@ import { run, usageError, type RunOptions } from "./client.ts";
 import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
 import { loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
+import { PluginHost } from "./plugin-host.ts";
 import { prefix } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
@@ -318,6 +319,7 @@ export function parseArgs(argv: string[]): Options {
 
 export async function main(argv: string[]): Promise<void> {
   const options = parseArgs(argv);
+  let plugins: PluginHost | undefined;
   if (
     options.mode !== "" &&
     options.mode !== "serve" &&
@@ -334,11 +336,17 @@ export async function main(argv: string[]): Promise<void> {
     } else if (options.configPath !== "") {
       options.configPath = path.resolve(options.configPath);
     }
+    if (options.mode === "run") {
+      plugins = await PluginHost.load(loaded.config, loaded.configRoot);
+    }
   }
   try {
     switch (options.mode) {
       case "run":
-        await run(options);
+        if (plugins === undefined) {
+          throw new Error("run: the plugins were not loaded");
+        }
+        await run(options, plugins);
         break;
       case "status":
         await (options.accuracy
