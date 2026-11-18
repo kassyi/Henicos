@@ -23,10 +23,41 @@ public static partial class GpuBigIntDivRem
         scoped GpuBigUIntView resultBuffer,
         int marginWords = 0
     ) =>
-        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords);
+        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
+            correctsToFloor: true);
 
-    // InverseSqrt on the owned type; the internal method above takes views and borrows them
-    private static void InverseSqrtCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords = 0)
+    /// <summary>
+    /// The largest distance <c>floor(2^B / sqrt(a)) - x</c> of an <see cref="ApproximateInverseSqrt"/> result
+    /// <c>x</c> below the floor.
+    /// </summary>
+    internal const int ApproximateInverseSqrtMaxError = 16;
+
+    /// <summary>
+    /// Computes the inverse square root of <see cref="InverseSqrt"/> without its final correction: the result is never
+    /// above <c>floor(2^B / sqrt(a))</c> and at most <see cref="ApproximateInverseSqrtMaxError"/> below it.
+    /// </summary>
+    /// <param name="targetOperand">The operand <c>a</c>, normalized as for <see cref="InverseSqrt"/>.</param>
+    /// <param name="resultBuffer">Receives the estimate; it must hold <c>n + marginWords</c> words.</param>
+    /// <param name="marginWords">The extra words of precision above the operand size.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="resultBuffer"/> does not hold <c>n + marginWords</c> words.</exception>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="targetOperand"/> is zero.</exception>
+    /// <remarks>
+    /// Only for a caller that corrects its own result exactly, such as <see cref="SqrtFloor"/>: it saves the three
+    /// products and the step loop of the correction. The result stays below the root because every iteration computes
+    /// its products exactly and only rounds down, and one exact Newton step <c>x(3 - a x^2) / 2</c> never passes
+    /// <c>2^B / sqrt(a)</c>.
+    /// </remarks>
+    internal static void ApproximateInverseSqrt(
+        scoped GpuBigUIntView targetOperand,
+        scoped GpuBigUIntView resultBuffer,
+        int marginWords
+    ) =>
+        InverseSqrtCore(targetOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt(), marginWords,
+            correctsToFloor: false);
+
+    // InverseSqrt on the owned type; the internal methods above take views and borrow them
+    private static void InverseSqrtCore(GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
+        bool correctsToFloor)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
@@ -47,8 +78,17 @@ public static partial class GpuBigIntDivRem
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        targetOperand.Workspace.Provider.InverseSqrtMega(
-            targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+        IGpuAdvancedMathProvider provider = targetOperand.Workspace.Provider;
+        if (correctsToFloor)
+        {
+            provider.InverseSqrtMega(
+                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+        }
+        else
+        {
+            provider.ApproximateInverseSqrtMega(
+                targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+        }
     }
 
     /// <summary>
@@ -64,11 +104,12 @@ public static partial class GpuBigIntDivRem
     /// <remarks>
     /// <para>
     /// The top <c>n + 1</c> words <c>A_top = floor(a / 2^j)</c>, <c>j = 32(n - 1)</c>, have the bit length that
-    /// <see cref="InverseSqrt"/> needs. With <c>m = ceil(n / 2)</c> margin words it gives
-    /// <c>x = floor(2^B / sqrt(A_top))</c>, <c>B = 32(n + 1 + m)</c>, and
-    /// <c>r' = floor(A_top·x / 2^(16n + 32m + 48))</c> lies within <c>2^-16 + 2^-32</c> below <c>sqrt(a)</c>, so it is
-    /// <c>floor(sqrt(a))</c> or one less (the floor of <c>x</c> loses less than <c>2^(16(n - 1) - 32m)</c>, the low words
-    /// of <c>a</c> less than <c>2^-32</c>).
+    /// <see cref="ApproximateInverseSqrt"/> needs. With <c>m = ceil(n / 2)</c> margin words it gives
+    /// <c>x</c> at most <c>E = </c><see cref="ApproximateInverseSqrtMaxError"/> below <c>2^B / sqrt(A_top)</c>,
+    /// <c>B = 32(n + 1 + m)</c>, and <c>r' = floor(A_top·x / 2^(16n + 32m + 48))</c> lies within
+    /// <c>(E + 1)·2^-16 + 2^-32</c> below <c>sqrt(a)</c>, so it is <c>floor(sqrt(a))</c> or one less (each unit of
+    /// <c>x</c> moves the estimate by less than <c>2^(16(n - 1) - 32m)</c>, the low words of <c>a</c> by less than
+    /// <c>2^-32</c>).
     /// </para>
     /// <para>
     /// <see cref="IGpuAdvancedMathProvider.SqrtFloorCorrection"/> then moves <c>r'</c> to the floor on the device, from
@@ -90,7 +131,7 @@ public static partial class GpuBigIntDivRem
         // A_top: the top n + 1 words of a, borrowed without a copy.
         var top = operand.Handle.Slice(n - 1, n + 1).AsView(workspace);
         using var inverse = workspace.RentTemp(n + 1 + marginWords);
-        InverseSqrt(top, inverse, marginWords);
+        ApproximateInverseSqrt(top, inverse, marginWords);
 
         using var product = workspace.RentTemp(2 * (n + 1) + marginWords);
         GpuBigIntMath.Mul(top, inverse, product);

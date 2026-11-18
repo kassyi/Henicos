@@ -16,7 +16,6 @@ import { runBuildStep } from "./client-build-step.ts";
 import { type Endpoint } from "./client-connect.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost } from "./client-run-host.ts";
-import { MachineProfile } from "./machine.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
 import { CommandShell } from "./shell.ts";
@@ -36,6 +35,8 @@ export interface RunOptions extends Endpoint {
   keepIfFailed: boolean;
   /** What the job is, in its queued line, when one run queues several jobs (run --gpu: "build, no GPU"). */
   role?: string;
+  /** Memory budget (MB) from config.pools.defaultTestMemoryMb for classified tests without an explicit memoryMb. */
+  defaultTestMemoryMb?: number;
 }
 
 /** Ends the process with a usage error. */
@@ -102,23 +103,26 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
     const result = await CommandShell.resolve(options.shell).run(command, env, (c) => (child = c));
     process.exit(result.code);
   }
+  const hasPlugins = plugins.plugins.length > 0;
+  const context = hasPlugins
+    ? clientContext(options.shell, plugins.configRoot, resolveWorktree(process.cwd()))
+    : undefined;
+  if (context !== undefined) {
+    const resource = options.gpu && !inGpuLock ? { name: "gpu", forcedExclusive: false } : null;
+    const checked = plugins.check(options.command, resource, context);
+    for (const hint of checked.hints ?? []) {
+      prefix(hint);
+    }
+    if (checked.refuse !== undefined) {
+      usageError(checked.refuse);
+    }
+  }
   if (options.gpu && !inGpuLock) {
-    if (/fuzz-diff|fuzz-differential|long-checks/.test(options.command)) {
-      // They take the GPU lock themselves for their GPU steps; holding it here would make them wait for ever
-      usageError("fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.");
-    }
-    const cpuOnly = new MachineProfile().cpuOnlyTestProjects(options.command);
-    if (cpuOnly.length > 0) {
-      // A hint, not a refusal: the command may use the GPU in a way the project file does not show
-      prefix(
-        `--gpu, but ${cpuOnly.join(", ")} ${cpuOnly.length === 1 ? "runs" : "run"} on the CPU only ` +
-          "(GSharpTargetDialect Cpu): " +
-          "this job waits for the GPU and keeps the GPU jobs behind it waiting; queue it without --gpu",
-      );
-    }
     const host = new ProcessRunHost(options);
-    const context = clientContext(options.shell, plugins.configRoot, resolveWorktree(process.cwd()));
-    const step = plugins.splitBeforeTurn(options.command, { name: "gpu", forcedExclusive: false }, context);
+    const step =
+      context !== undefined
+        ? plugins.splitBeforeTurn(options.command, { name: "gpu", forcedExclusive: false }, context)
+        : undefined;
     if (step !== undefined) {
       // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
       prefix(`building outside the GPU turn first, as a job of its own: ${step.before}`);

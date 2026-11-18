@@ -79,9 +79,9 @@ const Usage = [
   "resume      Lifts the pause; the waiting jobs are granted as usual.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
-  "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
-  "            to (tests/memory-budgets.yml; default half the physical memory); --config: the configuration file",
-  "            (default: JOB_QUEUE_CONFIG, else job-queue.config.json upward from the entry script).",
+  "            slot per 3 cores, at least 2, or config pools); --memory-mb: the memory pool for test runs (default",
+  "            half the physical memory, or config pools); --config: the configuration file (default:",
+  "            JOB_QUEUE_CONFIG, else job-queue.config.json upward from the entry script).",
   "--screenshots",
   "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
   "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
@@ -150,8 +150,8 @@ export function parseArgs(argv: string[]): Options {
     weight: 0,
     gpu: false,
     timeoutMinutes: 0,
-    slots: Number(process.env[SlotsVariable]) || new MachineProfile().slots,
-    memoryMb: Number(process.env[MemoryVariable]) || new MachineProfile().memoryPoolMb,
+    slots: Number(process.env[SlotsVariable]) || 0,
+    memoryMb: Number(process.env[MemoryVariable]) || 0,
     policy: isPolicy(policy) ? policy : DefaultPolicy,
     port: Number(process.env[PortVariable]) || DefaultPort,
     commandFromEnv: false,
@@ -320,12 +320,7 @@ export function parseArgs(argv: string[]): Options {
 export async function main(argv: string[]): Promise<void> {
   const options = parseArgs(argv);
   let plugins: PluginHost | undefined;
-  if (
-    options.mode !== "" &&
-    options.mode !== "serve" &&
-    options.mode !== "self-test" &&
-    options.mode !== "screenshots"
-  ) {
+  if (options.mode !== "" && options.mode !== "serve" && options.mode !== "self-test") {
     const loaded = loadConfig({
       mode: options.mode,
       configPath: options.configPath || undefined,
@@ -336,7 +331,15 @@ export async function main(argv: string[]): Promise<void> {
     } else if (options.configPath !== "") {
       options.configPath = path.resolve(options.configPath);
     }
-    if (options.mode === "run") {
+    const machine = new MachineProfile(undefined, undefined, loaded.config.pools);
+    if (options.slots === 0) {
+      options.slots = machine.slots;
+    }
+    if (options.memoryMb === 0) {
+      options.memoryMb = machine.memoryPoolMb;
+    }
+    options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
+    if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
       plugins = await PluginHost.load(loaded.config, loaded.configRoot);
     }
   }
@@ -352,7 +355,7 @@ export async function main(argv: string[]): Promise<void> {
         await (options.accuracy
           ? accuracy(options.json)
           : options.watch
-            ? watch(options.port)
+            ? watch(options.port, plugins)
             : status(options.port, options.jobId, options.json));
         break;
       case "wait":
@@ -399,7 +402,7 @@ export async function main(argv: string[]): Promise<void> {
       }
       case "screenshots": {
         const { writeScreenshots } = await import("./screenshot.ts");
-        for (const file of writeScreenshots(options.screenshotDir)) {
+        for (const file of writeScreenshots(options.screenshotDir, plugins)) {
           process.stdout.write(`${file}
 `);
         }

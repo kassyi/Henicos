@@ -160,10 +160,43 @@ public class InterproceduralUniformityAnalyzerTests : TranspilerTestBase
             .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>()
             .Any(m => m.Identifier.ValueText == method && m.Span.Contains(diagnostic.Location.SourceSpan)) == true;
 
-    private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
-        string relativeTestCasePath)
+    // The line of the barrier GSH0083 is reported at in each kernel of LambdaOperandKernels, 0 when nothing is reported
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("LaneInLambdaKernel", 18)]
+    [InlineData("CapturedLaneKernel", 33)]
+    [InlineData("DeviceFunctionLambdaKernel", 52)]
+    [InlineData("UniformLambdaKernel", 0)]
+    [InlineData("DirectLaneKernel", 81)]
+    [InlineData("NestedLambdaUniformKernel", 0)]
+    [InlineData("NestedLambdaLaneKernel", 115)]
+    [InlineData("BlockBodyUniformKernel", 0)]
+    [InlineData("BlockBodyLaneKernel", 154)]
+    public async Task LambdaOperands_CapturedOrReadLanes_ReachTheCallResult(string kernel, int barrierLine)
     {
-        var diagnostics = await GeneratorTestRunner.TestAnalyzer(relativeTestCasePath, s_analyzer).GetDiagnosticsAsync();
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer("Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", s_analyzer)
+            .GetDiagnosticsAsync();
+
+        var actual = diagnostics
+            .Where(d => IsInMethod(d, kernel))
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .Where(static d => d.Id == GSharpDiagnostics.LaunchDependentDivergentBarrier.Id)
+            .Select(static d => (d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn))
+            .ToList();
+
+        (string, int, int, int, int)[] expected = barrierLine == 0
+            ? []
+            : [(GSharpDiagnostics.LaunchDependentDivergentBarrier.Id, barrierLine, 13, barrierLine, 30)];
+        Assert.Equal(expected, actual);
+    }
+
+    private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>>
+        RunAsync(string relativeTestCasePath)
+    {
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer(relativeTestCasePath, s_analyzer)
+            .GetDiagnosticsAsync();
 
         return diagnostics
             .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))

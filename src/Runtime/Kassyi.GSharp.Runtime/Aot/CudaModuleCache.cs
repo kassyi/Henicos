@@ -165,6 +165,7 @@ internal static class CudaModuleCache
 
         // That cache is keyed by function handle, which a function of a later context may reuse
         DynamicSharedMemoryOptIn.Clear();
+        CooperativeLaunchOccupancy.Clear();
     }
 
     /// <summary>

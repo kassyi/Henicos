@@ -1,26 +1,11 @@
-// How a queued command runs (CommandShell): the shell that runs it, the quoting of words already split by the caller's
-// shell; and which commands run tests.
+// How a queued command runs (CommandShell): the shell that runs it and the quoting of words already split by the
+// caller's shell.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { ShellVariable, isShellName, type ShellName } from "./constants.ts";
 import { prefix } from "./system.ts";
-
-// just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
-const TestCommandPattern = new RegExp(
-  [
-    String.raw`\bdotnet(\.exe)?"?\s+(test|vstest|stryker)\b`,
-    String.raw`\bdotnet-stryker\b`,
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|long-checks|mutate|coverage-diff)\.js\b`,
-  ].join("|"),
-);
-
-/** A test run (dotnet test, just test*, the long test scripts): it takes its memory budget from the pool. */
-export function isTestCommand(command: string): boolean {
-  return TestCommandPattern.test(command);
-}
 
 /**
  * Windows: the bash.exe of Git for Windows. A bare `bash` on the PATH may be the WSL launcher (System32\bash.exe),

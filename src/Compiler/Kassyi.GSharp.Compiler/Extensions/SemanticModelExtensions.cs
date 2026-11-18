@@ -19,7 +19,11 @@ internal static class SemanticModelExtensions
         return Array.IndexOf(GetSyntaxTrees(compilation), tree);
     }
 
-    private static SemanticModel GetSemanticModelForTree(SemanticModel defaultModel, SyntaxTree targetTree) =>
+    /// <summary>
+    /// Returns <paramref name="defaultModel"/> if its syntax tree is <paramref name="targetTree"/>, or the cached
+    /// semantic model for <paramref name="targetTree"/> in the same compilation.
+    /// </summary>
+    internal static SemanticModel GetSemanticModelForTree(SemanticModel defaultModel, SyntaxTree targetTree) =>
         defaultModel.SyntaxTree == targetTree
             ? defaultModel
             : defaultModel.Compilation.GetCachedSemanticModel(targetTree);

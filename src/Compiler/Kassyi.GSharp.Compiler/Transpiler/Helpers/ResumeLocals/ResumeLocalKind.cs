@@ -9,8 +9,9 @@ internal enum ResumeLocalKind
     Bound,
 
     /// <summary>
-    /// Initialized with a stackalloc of a constant size: the memory is declared before the state switch, and where the
-    /// local is declared the memory is zeroed again (or receives the elements of the initializer list).
+    /// Initialized with a stackalloc of a constant size or a collection expression of constants or expressions (without
+    /// a spread): the memory is declared before the state switch, and where the local is declared the memory is zeroed
+    /// again (or receives the elements of the initializer list or collection expression).
     /// </summary>
     StackAlloc,
 
