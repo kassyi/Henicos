@@ -247,7 +247,58 @@ function selfTest() {
   checkReaderIsolation(assert);
   checkCustomProjectIsolation(assert);
   checkNoProjectImportInEngine(assert);
+  checkHookFailsOpen(assert);
   process.stdout.write('check-queued-command self-test passed\n');
+}
+
+/**
+ * Antigravity stops the command of a hook that exits with a non-zero code, so --hook must allow (no output, exit code
+ * 0) and log when a module fails to load or the judgement throws; --text must still fail. Runs copies of the entry in
+ * a temporary checkout whose modules are broken on purpose.
+ */
+function checkHookFailsOpen(assert) {
+  const { spawnSync } = require('child_process');
+  const real = (name) => JSON.stringify(path.join(__dirname, name));
+  const cases = [
+    {
+      name: 'a module that fails to load',
+      modules: { 'project-henicos.js': "throw new Error('broken project');" },
+      logged: 'broken project',
+    },
+    {
+      name: 'a judgement that throws',
+      modules: {
+        'project-henicos.js': `module.exports = require(${real('project-henicos.js')});`,
+        'hook.js': `module.exports = require(${real('hook.js')});`,
+        'command-rules.js':
+          `const real = require(${real('command-rules.js')});\n` +
+          'module.exports = { createRules: (project) => ({ ...real.createRules(project), check: () => {\n' +
+          "  throw new Error('broken rule');\n} }) };",
+      },
+      logged: 'broken rule',
+    },
+  ];
+  const payload = JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'dotnet test X' } } });
+  for (const testCase of cases) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cqc-fail-open-'));
+    try {
+      const entry = path.join(root, 'scripts', 'agent', 'check-queued-command.js');
+      fs.mkdirSync(path.join(root, 'scripts', 'agent', 'check-queued-command'), { recursive: true });
+      fs.copyFileSync(path.join(__dirname, '..', 'check-queued-command.js'), entry);
+      for (const [file, text] of Object.entries(testCase.modules)) {
+        fs.writeFileSync(path.join(root, 'scripts', 'agent', 'check-queued-command', file), `'use strict';\n${text}\n`);
+      }
+      const hook = spawnSync(process.execPath, [entry, '--hook'], { input: payload, encoding: 'utf8' });
+      assert.strictEqual(hook.status, 0, `--hook with ${testCase.name} exits 0: ${hook.stderr}`);
+      assert.strictEqual(hook.stdout, '', `--hook with ${testCase.name} prints nothing`);
+      const log = fs.readFileSync(path.join(root, 'tmp', 'hook-errors.log'), 'utf8');
+      assert.ok(log.includes(testCase.logged), `--hook with ${testCase.name} logs it: ${log}`);
+      const text = spawnSync(process.execPath, [entry, '--text', 'dotnet test X'], { encoding: 'utf8' });
+      assert.ok(text.status !== 0 && text.stderr.includes(testCase.logged), `--text with ${testCase.name} fails`);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  }
 }
 
 /**

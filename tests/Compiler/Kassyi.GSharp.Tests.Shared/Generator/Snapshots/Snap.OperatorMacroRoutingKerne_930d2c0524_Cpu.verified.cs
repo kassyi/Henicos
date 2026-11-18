@@ -356,6 +356,7 @@ global::Kassyi.GSharp.Tests.Shared.Syntax.RouteValue z = new global::Kassyi.GSha
 global::Kassyi.GSharp.Tests.Shared.Syntax.RouteOps.Add(ref ctx, ref z, x, y);
 return z.Value;
 }
+#pragma warning restore CS0219
 
 }
 }

@@ -114,13 +114,16 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
 | `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
 | `estimate-checks.ts` | Self-test checks of the core keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
-| `machine.ts` | `MachineProfile`, the defaults that follow the machine: slots from the cores, the memory pool, test budgets; the CPU-only test projects (`GSharpTargetDialect` Cpu) for the hint of `run --gpu` |
-| `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words; which commands run tests |
+| `machine.ts` | `MachineProfile`, hardware defaults for CPU slots and the memory pool parameterized by `config.pools` |
+| `shell.ts` | `CommandShell`, the shell a command runs in and quoting of pre-split words |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
 | `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
 | `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, context/result/panel types) and re-exported pure helpers |
+| `short-name.ts` | `dropShortWords`, the word walk the `shortName` hooks of plugins share (re-exported by `plugin-api.ts`) |
 | `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, and return validation |
 | `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits and `GSHARP_JOB_QUEUE_MSBUILD_ARGS`, `classify`, `shortName`, and `api` (`isDotnetTest`, `selectsCategory`) |
+| `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`): `just` recipe estimate keys (`stepKeys`) and short command labels (`shortName`) |
+| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `target-dialect.js`, `checks.ts`): test classification, `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |

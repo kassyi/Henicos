@@ -159,10 +159,6 @@ function stepKeys(step: ReadStep, context: WalkContext, plugins?: StepKeyProvide
     return provided;
   }
   const program = programOf(words[0] as string);
-  if (program === "just") {
-    const recipe = words.slice(1).find((word) => !word.startsWith("-")) ?? "";
-    return { normalized: words.join(" "), shape: `just:${recipe}`, kind: "just" };
-  }
   if (program === "node") {
     // Code given inline (-e, -p) is no script of the repository: a probe or a sleep, its own kind
     if (words.some((word, i) => i > 0 && /^(?:-e|-p|--eval|--print)$/.test(word))) {

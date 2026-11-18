@@ -96,7 +96,7 @@ export function checkEstimateNormalize(assert: AssertModule): void {
 
 /** The shape names the steps and what changes their time; the kind only the steps. */
 export function checkEstimateShape(assert: AssertModule): void {
-  assert.strictEqual(keysOf("just test-category Runtime").shape, "just:test-category");
+  assert.strictEqual(keysOf("just test-category Runtime").shape, "just", "without plugins, just falls back to generic");
   assert.strictEqual(keysOf("node tools/x/fuzz.js --minutes 5").shape, "node:fuzz");
   assert.strictEqual(
     keysOf(`cd scripts && node ${ScriptA}; grep error a.log; node -p 1`).shape,
