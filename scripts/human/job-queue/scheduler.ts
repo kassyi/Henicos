@@ -45,7 +45,7 @@ export interface SchedulerJob {
   after: number | null;
   /**
    * run --gpu: the job waits for its turn at the GPU, not for CPU slots (it weighs nothing; the command it then starts
-   * under the GPU lock registers its own slots as a GPU holder). One turn is given at a time, while no GPU holder runs.
+   * under the GPU lock registers its own slots as a GPU holder). How many turns run at once is the rule of turnVerdict.
    */
   gpuTurn?: boolean;
   /** The turn resource of a GPU turn or holder (resourceOf in resources.ts); absent means "gpu". */

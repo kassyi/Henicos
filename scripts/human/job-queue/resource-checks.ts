@@ -226,6 +226,26 @@ export function checkRotationPerResource(assert: AssertModule): void {
   assert.deepStrictEqual(s.remove(xc, 50), [xd]);
 }
 
+/** The forecast replays on copies: the rotation of each resource and the resource states stay as they were. */
+export function checkForecastLeavesState(assert: AssertModule): void {
+  const s = scheduler([spec("gpu", 2, true)], "hrrn");
+  const served = turn(1, undefined, { worktree: "A", estimate: times(60, 60) });
+  assert.deepStrictEqual(s.enqueue(served, 0), [served]);
+  s.remove(served, 10);
+  const waiting = [turn(2, "shared", { worktree: "B" }), turn(3, "shared", { worktree: "A" })];
+  waiting.forEach((j) => s.add(j));
+  const snapshot = (): string =>
+    JSON.stringify({
+      turns: [...s.rotation.turns].map(([name, byWorktree]) => [name, [...byWorktree]]),
+      slots: [...s.rotation.slots],
+      grants: s.rotation.grants,
+      gpu: s.stateOf("gpu"),
+    });
+  const before = snapshot();
+  s.forecast(20);
+  assert.strictEqual(snapshot(), before, "forecast changes neither the rotation nor the resource state");
+}
+
 /** A turn of a resource the configuration does not name gets one slot and no probe; no exception. */
 export function checkUnknownResource(assert: AssertModule): void {
   const s = scheduler([spec("gpu", 2, false)]);
@@ -268,6 +288,7 @@ export const ResourceChecks: Record<string, (assert: AssertModule) => void> = {
   checkProbeWanted,
   checkPauseAndForecast,
   checkRotationPerResource,
+  checkForecastLeavesState,
   checkUnknownResource,
   checkResourceName,
 };
