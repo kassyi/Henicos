@@ -64,7 +64,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
                 // Active CandidateBlockSizesOverride must govern the block size chosen by ResolveCooperativeBlockDim.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:233
+                //         CooperativeMegaKernelLauncher.cs:217
                 //         `var overrideState = s_candidateBlockSizesOverride.Value;` -> `null`
                 // input: (16, 4) with blockSize = 512
                 Assert.True(CooperativeMegaKernelLauncher.TryGetCachedOverrideBlockSize(
@@ -77,7 +77,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
                 // Kernel carry chunking follows BlockDimension.X, so every candidate block size must agree bit-for-bit
                 // with the CPU oracle across single-block and multi-block (>1024 words) inputs.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:448 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
+                //         CooperativeMegaKernelLauncher.cs:437 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
                 // input: (1024, 16) with blockSize = 768
                 Assert.Equal(cpuWords, gpuWords);
             }
@@ -133,7 +133,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
                 // ComputeInitialSqrtGuess launches InverseSqrtMega with marginWords = 16, so the active override must
                 // match blockSize for that kernel invocation.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:233
+                //         CooperativeMegaKernelLauncher.cs:217
                 //         `var overrideState = s_candidateBlockSizesOverride.Value;` -> `null`
                 // input: 4 with blockSize = 512
                 Assert.True(CooperativeMegaKernelLauncher.TryGetCachedOverrideBlockSize(
@@ -145,7 +145,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
                 // Integer sqrt must stay bit-for-bit invariant across candidate block sizes and match CPU oracle.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:448 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
+                //         CooperativeMegaKernelLauncher.cs:437 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
                 // input: 512 with blockSize = 768
                 Assert.Equal(cpuWords, gpuWords);
             }
@@ -201,7 +201,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
                 // Active CandidateBlockSizesOverride must govern the block size chosen for ReciprocalMega.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:233
+                //         CooperativeMegaKernelLauncher.cs:217
                 //         `var overrideState = s_candidateBlockSizesOverride.Value;` -> `null`
                 // input: (16, 1024) with blockSize = 512
                 Assert.True(CooperativeMegaKernelLauncher.TryGetCachedOverrideBlockSize(
@@ -213,7 +213,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
                 // Kernel carry chunking follows BlockDimension.X, so ReciprocalMega must match CPU bit-for-bit.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-                //         CooperativeMegaKernelLauncher.cs:448 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
+                //         CooperativeMegaKernelLauncher.cs:437 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
                 // input: (1024, 66048) with blockSize = 768
                 Assert.Equal(cpuWords, gpuWords);
             }
@@ -322,7 +322,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
             // Each async flow must keep its own override cache so Flow B ([768]) cannot poison Flow A ([512]), and
             // Flow A cannot clear or overwrite Flow B's cached choice.
             // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
-            //         CooperativeMegaKernelLauncher.cs:23 `new OverrideState(value)` -> shared static dictionary
+            //         CooperativeMegaKernelLauncher.cs:25 `new OverrideState(value)` -> shared static dictionary
             // input: Flow A [512] overlapping Flow B [768]
             Assert.Equal(768u, resolvedBFirst);
             Assert.True(hasCachedB);

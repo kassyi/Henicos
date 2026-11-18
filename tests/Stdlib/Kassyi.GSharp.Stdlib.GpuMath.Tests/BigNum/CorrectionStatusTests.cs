@@ -162,7 +162,7 @@ public class CorrectionStatusTests : IDisposable
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:418 `owner.EndRead();` (asynchronous
         //         reads) -> removed
         // input: SynchronizeStreamAsync, CopyDeviceToHostAsync
-        // mutant: CooperativeMegaKernelLauncher.cs:151
+        // mutant: CooperativeMegaKernelLauncher.cs:121
         //         `workspace.CorrectionStatus?.MarkPending();` (ReciprocalMega) -> removed
         // input: every read kind
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -245,7 +245,7 @@ public class CorrectionStatusTests : IDisposable
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:290
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: both offsets
-        // mutant: CooperativeMegaKernelLauncher.cs:89
+        // mutant: CooperativeMegaKernelLauncher.cs:74
         //         `workspace.CorrectionStatus?.MarkPending();` (InverseSqrtMega) -> removed
         // input: both offsets
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());

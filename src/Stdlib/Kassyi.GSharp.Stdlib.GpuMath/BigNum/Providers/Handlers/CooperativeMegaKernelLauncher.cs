@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using OverrideCacheKey =
+    (System.IntPtr Function, long ContextId, int Device, uint DynamicSharedMemBytes, long Generation);
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
@@ -35,36 +37,19 @@ internal static class CooperativeMegaKernelLauncher
         var n = targetOperand.NumWords;
         var marginBits = marginWords * 32;
         var maxOutWords = 4 * n + 3 * marginWords;
-        var requiredLen = maxOutWords;
 
         PrepareLaunchShape(
             workspace,
-            requiredLen,
+            maxOutWords,
             static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
             InverseSqrtKernelName,
             out var blockDim,
             out var gridDim,
             out var sharedMemBytes);
 
-        var constant3Words = 3 * n + 2 * marginWords;
-        using var constant3 = new GpuBigUInt(workspace, constant3Words);
-        var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
-        try
-        {
-            Array.Clear(hostConstant3, 0, constant3Words);
-            var bit2B = 2 * n * 32 + 2 * marginBits;
-            hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
-            hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
-            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the
-            // pooled host buffer may be returned immediately, and the kernels using the constant are ordered on the
-            // same stream.
-            workspace.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words,
-                workspace.Stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostConstant3);
-        }
+        // 3 * 2^(2B): bits 2B and 2B + 1.
+        using var constant3 = CreateBitRunConstant(workspace, 3 * n + 2 * marginWords,
+            lowestBit: 2 * n * 32 + 2 * marginBits, bitCount: 2);
 
         using var xSquared = new GpuBigUInt(workspace, 2 * n + 2 * marginWords);
         using var axSquared = new GpuBigUInt(workspace, 3 * n + 2 * marginWords);
@@ -73,7 +58,7 @@ internal static class CooperativeMegaKernelLauncher
         using var nextXShifted = new GpuBigUInt(workspace, 4 * n + 3 * marginWords);
 
         // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, (int)blockDim, handler);
+        using var buffers = new NttWorkspaceBuffers(workspace, maxOutWords, maxOutWords, (int)blockDim, handler);
         using var carryBuffer = workspace.RentTemp(2); // long array for carry
 
         KernelAdvancedMathHandler.ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords,
@@ -100,41 +85,26 @@ internal static class CooperativeMegaKernelLauncher
         var n = targetOperand.NumWords;
         var resultWords = (targetBits + 31) / 32;
         var maxOutWords = n + 2 * resultWords;
-        var requiredLen = maxOutWords;
 
         PrepareLaunchShape(
             workspace,
-            requiredLen,
+            maxOutWords,
             static () => GpuBigIntDivRemKernels.ResolveReciprocalNewtonRaphsonMegaKernel(),
             ReciprocalKernelName,
             out var blockDim,
             out var gridDim,
             out var sharedMemBytes);
 
-        var constantWords = n + 2 * resultWords; // Prevent OOB access during ExecuteSub
-        using var constant = new GpuBigUInt(workspace, constantWords);
-        var hostConstant = ArrayPool<uint>.Shared.Rent(constantWords);
-        try
-        {
-            Array.Clear(hostConstant, 0, constantWords);
-            var bitTarget = targetBits + 1;
-            hostConstant[bitTarget / 32] |= 1u << (bitTarget % 32);
-            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the
-            // pooled host buffer may be returned immediately, and the kernels using the constant are ordered on the
-            // same stream.
-            workspace.Provider.CopyHostToDevice(constant.DevicePointer, hostConstant, constantWords, workspace.Stream);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostConstant);
-        }
+        // 2^(targetBits + 1), as wide as the product so that ExecuteSub reads no word past the end.
+        using var constant = CreateBitRunConstant(workspace, n + 2 * resultWords, lowestBit: targetBits + 1,
+            bitCount: 1);
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
         using var diff = new GpuBigUInt(workspace, n + resultWords);
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
 
         // The kernel resolves carries in chunks of one launch block, so the block size also sizes the block carries.
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, (int)blockDim, handler);
+        using var buffers = new NttWorkspaceBuffers(workspace, maxOutWords, maxOutWords, (int)blockDim, handler);
         using var carryBuffer = workspace.RentTemp(2);
 
         KernelAdvancedMathHandler.ThrowIfBlockCarriesTooSmall(buffers.BlockCarries.NumWords, maxOutWords,
@@ -149,6 +119,40 @@ internal static class CooperativeMegaKernelLauncher
             gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
             hStream: workspace.Stream);
         workspace.CorrectionStatus?.MarkPending();
+    }
+
+    /// <summary>
+    /// Allocates a <paramref name="words"/>-word device number whose only set bits are the <paramref name="bitCount"/>
+    /// bits from <paramref name="lowestBit"/> upward.
+    /// </summary>
+    private static GpuBigUInt CreateBitRunConstant(GpuWorkspace workspace, int words, int lowestBit, int bitCount)
+    {
+        var constant = new GpuBigUInt(workspace, words);
+        var host = ArrayPool<uint>.Shared.Rent(words);
+        try
+        {
+            Array.Clear(host, 0, words);
+            for (var bit = lowestBit; bit < lowestBit + bitCount; bit++)
+            {
+                host[bit / 32] |= 1u << (bit % 32);
+            }
+
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the
+            // pooled host buffer may be returned immediately, and the kernels using the constant are ordered on the
+            // same stream.
+            workspace.Provider.CopyHostToDevice(constant.DevicePointer, host, words, workspace.Stream);
+        }
+        catch
+        {
+            constant.Dispose();
+            throw;
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(host);
+        }
+
+        return constant;
     }
 
     internal static uint ComputeMegaKernelSharedMemoryBytes(int transformLength)
@@ -180,26 +184,10 @@ internal static class CooperativeMegaKernelLauncher
         out int blockSize) =>
         CooperativeLaunchOccupancy.TryGetCachedBlockSize(hfunc, deviceOrdinal, sharedMemBytes, out blockSize);
 
-    internal static bool TryGetCachedOverrideBlockSize(
-        IntPtr hfunc,
-        long contextId,
-        int deviceOrdinal,
-        uint sharedMemBytes,
-        long generation,
-        out int blockSize)
-    {
-        var state = s_candidateBlockSizesOverride.Value;
-        if (state is null)
-        {
-            blockSize = 0;
-            return false;
-        }
-
-        return state.BlockSizes.TryGetValue(
-            (hfunc, contextId, deviceOrdinal, sharedMemBytes, generation),
-            out blockSize);
-    }
-
+    /// <summary>
+    /// Looks up the block size that <see cref="ResolveCooperativeBlockDim"/> chose for the mega-kernel of a product of
+    /// <paramref name="requiredLen"/> words under the current <see cref="CandidateBlockSizesOverride"/>.
+    /// </summary>
     internal static bool TryGetCachedOverrideBlockSize(
         GpuWorkspace workspace,
         Func<IntPtr> resolveFunction,
@@ -214,12 +202,8 @@ internal static class CooperativeMegaKernelLauncher
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope(workspace.IsolatedContext.Handle);
-        var hfunc = resolveFunction();
         var sharedMemBytes = ComputeMegaKernelSharedMemoryBytes(TransformLengthFor(requiredLen));
-        return state.BlockSizes.TryGetValue(
-            (hfunc, CudaModuleCache.CurrentContextId, workspace.DeviceOrdinal, sharedMemBytes,
-                CudaModuleCache.Generation),
-            out blockSize);
+        return state.BlockSizes.TryGetValue(OverrideKey(workspace, resolveFunction(), sharedMemBytes), out blockSize);
     }
 
     internal static uint ResolveCooperativeBlockDim(
@@ -240,8 +224,7 @@ internal static class CooperativeMegaKernelLauncher
                 kernelName);
         }
 
-        var key = (hfunc, CudaModuleCache.CurrentContextId, workspace.DeviceOrdinal, sharedMemBytes,
-            CudaModuleCache.Generation);
+        var key = OverrideKey(workspace, hfunc, sharedMemBytes);
         if (overrideState.BlockSizes.TryGetValue(key, out var cached))
         {
             return (uint)cached;
@@ -256,6 +239,12 @@ internal static class CooperativeMegaKernelLauncher
         overrideState.BlockSizes.TryAdd(key, chosen);
         return (uint)chosen;
     }
+
+    /// <summary>
+    /// The override cache key. Call it inside the workspace's context scope: it reads the current context.
+    /// </summary>
+    private static OverrideCacheKey OverrideKey(GpuWorkspace workspace, IntPtr hfunc, uint sharedMemBytes) =>
+        (hfunc, CudaModuleCache.CurrentContextId, workspace.DeviceOrdinal, sharedMemBytes, CudaModuleCache.Generation);
 
     /// <summary>
     /// The transform length for a product of <paramref name="requiredLen"/> words: the power of two that holds its
@@ -468,8 +457,6 @@ internal static class CooperativeMegaKernelLauncher
     {
         public int[] Candidates { get; } = candidates;
 
-        public ConcurrentDictionary<
-            (IntPtr Function, long ContextId, int Device, uint DynamicSharedMemBytes, long Generation), int>
-            BlockSizes { get; } = new();
+        public ConcurrentDictionary<OverrideCacheKey, int> BlockSizes { get; } = new();
     }
 }
