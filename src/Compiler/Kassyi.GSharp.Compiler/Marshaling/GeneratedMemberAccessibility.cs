@@ -1,20 +1,19 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
-/// The accessibility of a generated member: the widest of <c>public</c>, <c>internal</c> and <c>private</c> under
-/// which the member, declared in a given type, names only types at least as accessible as itself (CS0050 to CS0053).
+/// The accessibility of a generated member: the widest declared accessibility under which the member, declared in a
+/// given type, names only types at least as accessible as itself (CS0050 to CS0053).
 /// </summary>
 /// <remarks>
 /// <para>
-/// A member's accessibility domain is that of its declared accessibility within its type, intersected with the domain
-/// of the type and of each type around it. A named type's domain is the same intersection over the type, the types
-/// around it and its type arguments. A domain is represented as everywhere, the assembly, or the program text of one
-/// type.
+/// <see cref="NamedTypes"/> collects the types a generated member names and defers checking them until
+/// <see cref="NamedTypes.ChooseIn"/> receives the containing type. It tests the declared accessibilities in order from
+/// widest to narrowest (<c>public</c>, <c>protected internal</c>, <c>internal</c>, <c>protected</c>,
+/// <c>private protected</c>, <c>private</c>) using <see cref="AccessibilityConsistency"/>, skipping protected
+/// accessibilities on <c>struct</c>, <c>static</c>, and <c>sealed</c> containers (which would cause CS0666, CS1057,
+/// or CS0628).
 /// </para>
 /// <para>
-/// A protected domain also reaches derived types, which this representation cannot express. It is widened for the
-/// member (protected as everywhere, private protected as the assembly) and narrowed for a type the member names (to the
-/// type that declares it), so that the accessibility chosen always compiles, at worst narrower than C# would allow.
 /// Members that name only public types stay <c>public</c>, so output that compiled before does not change (#1284).
 /// </para>
 /// </remarks>
@@ -60,17 +59,23 @@ internal static class GeneratedMemberAccessibility
 
     /// <summary>
     /// Whether code anywhere in the assembly, and in the assemblies it gives its internals to, can name
-    /// <paramref name="type"/>: it is public or internal, as are the types around it and its type arguments.
+    /// <paramref name="type"/>: it is public, internal or protected internal, as are the types around it and its type
+    /// arguments.
     /// </summary>
     public static bool IsAtLeastInternal(ITypeSymbol type) =>
-        GetTypeDomain(type).Contains(AccessibilityDomain.Assembly);
-
-    /// <summary>The narrower of two accessibilities of members of the same type.</summary>
-    public static Accessibility Narrowest(Accessibility first, Accessibility second) =>
-        Rank(first) >= Rank(second) ? first : second;
+        AccessibilityConsistency.IsAtLeastInternal(type);
 
     /// <summary>
-    /// The keyword of <paramref name="accessibility"/>: <c>public</c>, <c>internal</c> or <c>private</c>.
+    /// The greatest lower bound (meet) of two accessibilities of members of the same type in the accessibility lattice
+    /// (<c>public</c> &gt; <c>protected internal</c> &gt; {<c>internal</c>, <c>protected</c>} &gt;
+    /// <c>private protected</c> &gt; <c>private</c>).
+    /// </summary>
+    public static Accessibility Narrowest(Accessibility first, Accessibility second) =>
+        MaskToAccessibility(ToMask(first) & ToMask(second));
+
+    /// <summary>
+    /// The C# keyword(s) of <paramref name="accessibility"/>: <c>public</c>, <c>protected internal</c>,
+    /// <c>internal</c>, <c>protected</c>, <c>private protected</c> or <c>private</c>.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown for an accessibility that <see cref="NamedTypes.ChooseIn"/> does not return.
@@ -78,193 +83,133 @@ internal static class GeneratedMemberAccessibility
     public static string ToKeyword(Accessibility accessibility) => accessibility switch
     {
         Accessibility.Public => "public",
+        Accessibility.ProtectedOrInternal => "protected internal",
         Accessibility.Internal => "internal",
+        Accessibility.Protected => "protected",
+        Accessibility.ProtectedAndInternal => "private protected",
         Accessibility.Private => "private",
         _ => throw new ArgumentOutOfRangeException(nameof(accessibility), accessibility,
-            "A generated member is public, internal or private.")
+            "A generated member has a declared accessibility.")
     };
 
-    private static int Rank(Accessibility accessibility) => accessibility switch
+    // 4-bit accessibility domain: World (8) | Assembly (4) | FamilyOutsideAssembly (2) | FamilyInAssembly (1)
+    private static int ToMask(Accessibility accessibility) => accessibility switch
     {
-        Accessibility.Public => 0,
-        Accessibility.Internal => 1,
-        _ => 2
+        Accessibility.Public => 0b1111,
+        Accessibility.ProtectedOrInternal => 0b0111,
+        Accessibility.Internal => 0b0101,
+        Accessibility.Protected => 0b0011,
+        Accessibility.ProtectedAndInternal => 0b0001,
+        _ => 0b0000
     };
 
-    // The domain of a member with the given accessibility declared in container, widened where protected
-    private static AccessibilityDomain GetMemberDomain(Accessibility accessibility, INamedTypeSymbol container)
+    private static Accessibility MaskToAccessibility(int mask) => mask switch
     {
-        var domain = accessibility switch
-        {
-            Accessibility.Public => AccessibilityDomain.Everywhere,
-            Accessibility.Internal => AccessibilityDomain.Assembly,
-            _ => AccessibilityDomain.Within(container)
-        };
-        for (INamedTypeSymbol? type = container; type != null; type = type.ContainingType)
-        {
-            domain = domain.Intersect(type.DeclaredAccessibility switch
-            {
-                Accessibility.Internal or Accessibility.ProtectedAndInternal => AccessibilityDomain.Assembly,
-                Accessibility.Private when type.ContainingType is { } outer => AccessibilityDomain.Within(outer),
-                _ => AccessibilityDomain.Everywhere
-            });
-        }
-
-        return domain;
-    }
-
-    // The domain of a type, narrowed where protected
-    private static AccessibilityDomain GetTypeDomain(ITypeSymbol type)
-    {
-        switch (type)
-        {
-            case IArrayTypeSymbol array:
-                return GetTypeDomain(array.ElementType);
-            case IPointerTypeSymbol pointer:
-                return GetTypeDomain(pointer.PointedAtType);
-            case IFunctionPointerTypeSymbol functionPointer:
-                return OfSignature(functionPointer.Signature).Domain;
-            case INamedTypeSymbol named:
-            {
-                var domain = AccessibilityDomain.Everywhere;
-                for (INamedTypeSymbol? current = named; current != null; current = current.ContainingType)
-                {
-                    domain = domain.Intersect(GetDeclaredTypeDomain(current));
-                    foreach (var argument in current.TypeArguments)
-                    {
-                        domain = domain.Intersect(GetTypeDomain(argument));
-                    }
-                }
-
-                return domain;
-            }
-            default:
-                return AccessibilityDomain.Everywhere;
-        }
-    }
-
-    // A type without a declared accessibility (an error type) narrows nothing
-    private static AccessibilityDomain GetDeclaredTypeDomain(INamedTypeSymbol type) => type.DeclaredAccessibility switch
-    {
-        Accessibility.Public or Accessibility.NotApplicable => AccessibilityDomain.Everywhere,
-        Accessibility.Internal or Accessibility.ProtectedOrInternal => AccessibilityDomain.Assembly,
-        _ when type.ContainingType is { } outer => AccessibilityDomain.Within(outer),
-        _ => AccessibilityDomain.Assembly
+        0b1111 => Accessibility.Public,
+        0b0111 => Accessibility.ProtectedOrInternal,
+        0b0101 => Accessibility.Internal,
+        0b0011 => Accessibility.Protected,
+        0b0001 => Accessibility.ProtectedAndInternal,
+        _ => Accessibility.Private
     };
 
     /// <summary>
-    /// The types a generated member names, kept as the part of the program from which all of them can be named;
+    /// An immutable collection of types and generated nested types that a generated member names;
     /// <see langword="default"/> names none.
     /// </summary>
     internal readonly struct NamedTypes
     {
-        private NamedTypes(AccessibilityDomain domain) => Domain = domain;
+        private readonly Node? _head;
 
-        internal AccessibilityDomain Domain { get; }
+        private NamedTypes(Node? head) => _head = head;
 
         /// <summary>These types and <paramref name="type"/>.</summary>
-        public NamedTypes With(ITypeSymbol type) => new(Domain.Intersect(GetTypeDomain(type)));
+        public NamedTypes With(ITypeSymbol type) =>
+            new(new Node(type, null, Accessibility.NotApplicable, false, _head));
 
         /// <summary>
         /// These types and <paramref name="type"/>, named by an <c>internal</c> member (a field of a frame): only a
         /// type that part of the assembly cannot name narrows them.
         /// </summary>
-        public NamedTypes WithInternalMember(ITypeSymbol type) => WithInternalMember(GetTypeDomain(type));
+        public NamedTypes WithInternalMember(ITypeSymbol type) =>
+            new(new Node(type, null, Accessibility.NotApplicable, true, _head));
 
         /// <summary>
         /// These types and a type that G# generates into <paramref name="container"/> with
-        /// <paramref name="accessibility"/> (<c>public</c>, <c>internal</c> or <c>private</c>), such as the frame of a
-        /// device function, named by an <c>internal</c> member (<see cref="WithInternalMember(ITypeSymbol)"/>).
+        /// <paramref name="accessibility"/>, such as the frame of a device function, named by an <c>internal</c> member
+        /// (<see cref="WithInternalMember"/>).
         /// </summary>
         public NamedTypes WithGenerated(INamedTypeSymbol container, Accessibility accessibility) =>
-            WithInternalMember(GetTypeDomain(container).Intersect(accessibility switch
-            {
-                Accessibility.Public => AccessibilityDomain.Everywhere,
-                Accessibility.Internal => AccessibilityDomain.Assembly,
-                _ => AccessibilityDomain.Within(container)
-            }));
+            new(new Node(null, container, accessibility, true, _head));
 
-        // An internal member's domain is at most the assembly, so a type the whole assembly can name never narrows it
-        private NamedTypes WithInternalMember(AccessibilityDomain domain) =>
-            domain.Contains(AccessibilityDomain.Assembly) ? this : new(Domain.Intersect(domain));
+        // Widest first; <see cref="Accessibility.Public"/> and <see cref="Accessibility.Private"/> are handled apart.
+        private static readonly Accessibility[] s_candidates =
+        [
+            Accessibility.ProtectedOrInternal,
+            Accessibility.Internal,
+            Accessibility.Protected,
+            Accessibility.ProtectedAndInternal,
+        ];
 
         /// <summary>
         /// The widest accessibility under which a member declared in <paramref name="container"/> can name these
-        /// types; <see cref="Accessibility.Private"/> when none can.
+        /// types; <see cref="Accessibility.Private"/> when no wider candidate is allowed.
         /// </summary>
         public Accessibility ChooseIn(INamedTypeSymbol container)
         {
-            if (Domain.Contains(GetMemberDomain(Accessibility.Public, container)))
+            if (_head is null || AllowsAll(Accessibility.Public, container))
             {
                 return Accessibility.Public;
             }
 
-            return Domain.Contains(GetMemberDomain(Accessibility.Internal, container))
-                ? Accessibility.Internal
-                : Accessibility.Private;
-        }
-    }
-
-    // Everywhere (the default), the assembly, the program text of one type, or nowhere (the intersection of two types
-    // that do not nest)
-    internal readonly struct AccessibilityDomain
-    {
-        private readonly DomainKind _kind;
-        private readonly INamedTypeSymbol? _type;
-
-        private AccessibilityDomain(DomainKind kind, INamedTypeSymbol? type)
-        {
-            _kind = kind;
-            _type = type;
-        }
-
-        public static AccessibilityDomain Everywhere => default;
-
-        public static AccessibilityDomain Assembly => new(DomainKind.Assembly, null);
-
-        public static AccessibilityDomain Within(INamedTypeSymbol type) =>
-            new(DomainKind.Within, type.OriginalDefinition);
-
-        private static AccessibilityDomain Nowhere => new(DomainKind.Nowhere, null);
-
-        // Whether every place in other is also in this domain
-        public bool Contains(AccessibilityDomain other)
-        {
-            switch (_kind)
+            var allowsProtected = !container.IsStatic && !container.IsSealed && container.TypeKind != TypeKind.Struct;
+            foreach (var candidate in s_candidates)
             {
-                case DomainKind.Everywhere:
-                    return true;
-                case DomainKind.Assembly:
-                    return other._kind != DomainKind.Everywhere;
-                case DomainKind.Within:
-                    if (other._kind == DomainKind.Nowhere)
-                    {
-                        return true;
-                    }
-
-                    for (var type = other._type; type != null; type = type.ContainingType)
-                    {
-                        if (SymbolEqualityComparer.Default.Equals(type, _type))
-                        {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                default:
-                    return other._kind == DomainKind.Nowhere;
+                var isProtected = candidate != Accessibility.Internal;
+                if ((!isProtected || allowsProtected) && AllowsAll(candidate, container))
+                {
+                    return candidate;
+                }
             }
+
+            return Accessibility.Private;
         }
 
-        public AccessibilityDomain Intersect(AccessibilityDomain other) =>
-            Contains(other) ? other : other.Contains(this) ? this : Nowhere;
-    }
+        private bool AllowsAll(Accessibility candidate, INamedTypeSymbol container)
+        {
+            for (var node = _head; node is not null; node = node.Next)
+            {
+                var allowed = node.Type is { } type
+                    ? AccessibilityConsistency.IsAtLeastAsVisibleAs(
+                        type, candidate, container, node.IsInternalMember)
+                    : node.GeneratedContainer is { } generatedContainer &&
+                      AccessibilityConsistency.IsGeneratedAtLeastAsVisibleAs(
+                          generatedContainer, node.GeneratedAccessibility, candidate, container, node.IsInternalMember);
+                if (!allowed)
+                {
+                    return false;
+                }
+            }
 
-    private enum DomainKind
-    {
-        Everywhere,
-        Assembly,
-        Within,
-        Nowhere
+            return true;
+        }
+
+        private sealed class Node(
+            ITypeSymbol? type,
+            INamedTypeSymbol? generatedContainer,
+            Accessibility generatedAccessibility,
+            bool isInternalMember,
+            Node? next)
+        {
+            public ITypeSymbol? Type { get; } = type;
+
+            public INamedTypeSymbol? GeneratedContainer { get; } = generatedContainer;
+
+            public Accessibility GeneratedAccessibility { get; } = generatedAccessibility;
+
+            public bool IsInternalMember { get; } = isInternalMember;
+
+            public Node? Next { get; } = next;
+        }
     }
 }
