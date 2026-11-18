@@ -19,11 +19,11 @@ const usage = 'Usage: chat-registry.js (--hook | set --session <id> --ref <ref> 
     + '--topic <topic> [--state <s>] | resolve <call> | show | --self-test)';
 
 const header = [
-    '# チャット台帳（担当と送信先）',
+    '# Chat registry (topics and send targets)',
     '',
-    '送信は必ず「名前 [ref]」で行う。呼び名は人間が「〜へ電話」と言うときの名前（非同期メッセージ）。会話記録ID は参考情報。',
+    'Always send to "<display name> [ref]". A call name is what a person says to reach a chat (an asynchronous message). The session ID is for reference only.',
     '',
-    '| 呼び名 | 参照 (ref) | 表示名 | 会話記録ID | 担当 | 状態 |',
+    '| Call name | Ref | Display name | Session ID | Topic | State |',
     '| :--- | :--- | :--- | :--- | :--- | :--- |',
 ];
 
@@ -31,6 +31,8 @@ const columns = ['call', 'ref', 'name', 'session', 'topic', 'state'];
 
 // The registry is shared by all worktrees: the directory of the main checkout (the parent of the common git directory).
 function registryPath() {
+    // CHAT_REGISTRY_FILE lets the self-test and manual checks use a scratch file instead of the real registry.
+    if (process.env.CHAT_REGISTRY_FILE) return process.env.CHAT_REGISTRY_FILE;
     try {
         const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
             cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
@@ -44,13 +46,14 @@ function registryPath() {
 // Splits the file into the text before the table, the table rows (cells), and the text after it.
 function parse(text) {
     const lines = text.split(/\r?\n/);
-    const first = lines.findIndex((l) => l.startsWith('| 呼び名'));
+    const first = lines.findIndex((l) => l.startsWith('| Call name'));
     if (first < 0) return { before: lines, rows: [], after: [] };
     let end = first;
     while (end < lines.length && lines[end].startsWith('|')) end++;
     const rows = [];
     for (const line of lines.slice(first + 2, end)) {
-        const cells = line.split('|').slice(1, -1).map((c) => c.trim());
+        // Cells are separated by unescaped pipes; a literal pipe inside a cell is written as \|.
+        const cells = line.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim().replace(/\\\|/g, '|'));
         if (cells.length === columns.length) rows.push(Object.fromEntries(columns.map((k, i) => [k, cells[i]])));
     }
     return { before: lines.slice(0, first), rows, after: lines.slice(end) };
@@ -58,9 +61,9 @@ function parse(text) {
 
 function render(model) {
     const table = [
-        '| 呼び名 | 参照 (ref) | 表示名 | 会話記録ID | 担当 | 状態 |',
+        '| Call name | Ref | Display name | Session ID | Topic | State |',
         '| :--- | :--- | :--- | :--- | :--- | :--- |',
-        ...model.rows.map((r) => `| ${columns.map((k) => r[k] || '-').join(' | ')} |`),
+        ...model.rows.map((r) => `| ${columns.map((k) => escapeCell(r[k] || '-')).join(' | ')} |`),
     ];
     const before = model.before.length ? model.before : header.slice(0, 4);
     return [...before, ...table, ...model.after].join('\n').replace(/\n*$/, '\n');
@@ -71,13 +74,45 @@ function load(file) {
     return parse(fs.readFileSync(file, 'utf8'));
 }
 
+// A cell holds one line of text; a pipe is escaped so that it does not split the row.
+function escapeCell(value) {
+    return String(value).replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
+}
+
+// Writes through a temporary file and a rename, so a reader never sees a half-written registry.
 function save(file, model) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, render(model), 'utf8');
+    const tmp = `${file}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, render(model), 'utf8');
+    fs.renameSync(tmp, file);
+}
+
+// Runs fn while holding a lock file, so two chats starting together do not overwrite each other's rows.
+// A lock left behind by a crash blocks for five seconds and then fails; delete <registry>.lock to clear it.
+function withLock(file, fn) {
+    const lock = `${file}.lock`;
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const deadline = Date.now() + 5000;
+    let fd;
+    for (;;) {
+        try {
+            fd = fs.openSync(lock, 'wx');
+            break;
+        } catch (err) {
+            if (err.code !== 'EEXIST' || Date.now() > deadline) throw err;
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+        }
+    }
+    try {
+        return fn();
+    } finally {
+        fs.closeSync(fd);
+        fs.rmSync(lock, { force: true });
+    }
 }
 
 function pendingRow(session) {
-    return { call: '（未設定）', ref: '-', name: '-', session, topic: '-', state: '登録待ち' };
+    return { call: '(not set)', ref: '-', name: '-', session, topic: '-', state: 'pending registration' };
 }
 
 function upsert(model, session, fields) {
@@ -89,11 +124,11 @@ function upsert(model, session, fields) {
 
 function registerContext(session) {
     return [
-        `【台帳登録】このチャットの会話記録ID は ${session} です。`,
-        '最初の応答で、このチャットの担当トピックを1〜2行で要約し、「担当トピック名はこんな感じでいいですか？」とユーザーに確認してください。',
-        'ユーザーが承認したら、ListAgents で自分の ref（`This session is … [ref]`）を確認し、次を実行して台帳に登録してください。',
-        `node scripts/agent/chat-registry.js set --session ${session} --ref <ref> --name "<表示名>" --call "<呼び名>" --topic "<担当>"`,
-        '「〜へ電話」と言われたら、台帳で呼び名を引いて `名前 [ref]` 宛てに SendMessage で送ってください（台帳を読んでから送る）。',
+        `[Chat registry] This chat's session ID is ${session}.`,
+        'In your first reply, summarize this chat\'s topic in one or two lines and ask the user to confirm the topic name.',
+        'After the user agrees, get your own ref from ListAgents (the first line says "This session is ... [ref]"), then run:',
+        `node scripts/agent/chat-registry.js set --session ${session} --ref <ref> --name "<display name>" --call "<call name>" --topic "<topic>"`,
+        'When asked to call another chat, resolve the call name in the registry and send with SendMessage to "<display name> [ref]" (read the registry before sending).',
     ].join('\n');
 }
 
@@ -118,12 +153,19 @@ function runHook() {
     let input = {};
     try { input = JSON.parse(readStdin() || '{}'); } catch (_) { return 0; }
     const session = input.session_id;
-    if (!session) return 0;
-    const file = registryPath();
-    const model = load(file);
-    if (!model.rows.some((r) => r.session === session)) {
-        model.rows.push(pendingRow(session));
-        save(file, model);
+    if (typeof session !== 'string' || !session) return 0;
+    try {
+        const file = registryPath();
+        withLock(file, () => {
+            const model = load(file);
+            if (!model.rows.some((r) => r.session === session)) {
+                model.rows.push(pendingRow(session));
+                save(file, model);
+            }
+        });
+    } catch (err) {
+        // A hook must not break a session start: report on stderr and still give the chat its instructions.
+        process.stderr.write(`chat-registry: could not update the registry: ${err.message}\n`);
     }
     process.stdout.write(JSON.stringify({
         hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: registerContext(session) },
@@ -136,17 +178,21 @@ function runSet(opts) {
         if (typeof opts[k] !== 'string' || !opts[k]) { console.error(`missing --${k}\n${usage}`); return 1; }
     }
     const file = registryPath();
-    const model = upsert(load(file), opts.session, {
-        ref: opts.ref, name: opts.name, call: opts.call, topic: opts.topic,
-        state: typeof opts.state === 'string' ? opts.state : '稼働中・確定',
+    withLock(file, () => {
+        const model = upsert(load(file), opts.session, {
+            ref: escapeCell(opts.ref).replace(/\\\|/g, '|'), name: opts.name, call: opts.call, topic: opts.topic,
+            state: typeof opts.state === 'string' ? opts.state : 'active, confirmed',
+        });
+        save(file, model);
     });
-    save(file, model);
     console.log(`registered: ${opts.call} -> ${opts.name} [${opts.ref}]`);
     return 0;
 }
 
 function runResolve(call) {
-    const hits = load(registryPath()).rows.filter((r) => r.call.toLowerCase() === String(call || '').toLowerCase());
+    // Rows still waiting for their call name or ref are not callable.
+    const hits = load(registryPath()).rows.filter((r) => r.ref !== '-' && r.call !== '(not set)'
+        && r.call.toLowerCase() === String(call || '').toLowerCase());
     if (hits.length === 0) { console.error(`no chat is registered as "${call}"`); return 1; }
     if (hits.length > 1) {
         console.error(`"${call}" is ambiguous:`);
@@ -160,12 +206,12 @@ function runResolve(call) {
 function selfTest() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chat-registry-'));
     const file = path.join(dir, 'registry.md');
-    save(file, upsert(load(file), 'aaaa-1111', { ref: '111111', name: 'henicos-x', call: 'テスト', topic: 'テスト担当' }));
+    save(file, upsert(load(file), 'aaaa-1111', { ref: '111111', name: 'henicos-x', call: 'alpha', topic: 'topic A' }));
     save(file, upsert(load(file), 'aaaa-1111', { ref: '222222' }));
-    save(file, upsert(load(file), 'bbbb-2222', { ref: '333333', name: 'henicos-y', call: 'ジョブ', topic: 'ジョブ担当' }));
+    save(file, upsert(load(file), 'bbbb-2222', { ref: '333333', name: 'henicos-y', call: 'beta', topic: 'topic B' }));
     const model = load(file);
-    const ok = model.rows.length === 2 && model.rows[0].ref === '222222' && model.rows[0].call === 'テスト'
-        && model.rows[1].call === 'ジョブ';
+    const ok = model.rows.length === 2 && model.rows[0].ref === '222222' && model.rows[0].call === 'alpha'
+        && model.rows[1].call === 'beta';
     fs.rmSync(dir, { recursive: true, force: true });
     console.log(ok ? 'self-test passed' : 'self-test FAILED');
     return ok ? 0 : 1;
@@ -188,4 +234,10 @@ function main(argv) {
     return 1;
 }
 
-process.exitCode = main(process.argv.slice(2));
+try {
+    process.exitCode = main(process.argv.slice(2));
+} catch (err) {
+    console.error(`chat-registry: ${err.message}`);
+    // The SessionStart hook must exit 0 even on an unexpected error.
+    process.exitCode = process.argv.includes('--hook') ? 0 : 1;
+}
