@@ -77,8 +77,11 @@ function createHook(project, rules = createRules(project)) {
    */
   function runHook(onError) {
     const allow = (error) => {
-      onError(error);
-      process.exit(0);
+      try {
+        onError(error);
+      } finally {
+        process.exit(0);
+      }
     };
     let input = '';
     process.stdin.setEncoding('utf8');
