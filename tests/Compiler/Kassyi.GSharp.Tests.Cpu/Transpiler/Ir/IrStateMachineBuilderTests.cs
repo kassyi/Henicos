@@ -9,7 +9,7 @@ using Kassyi.GSharp.Compiler.Ir.Statements;
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
 
 /// <summary>
-/// Verifies <see cref="IrStateMachineBuilder"/> and <see cref="IrInvariants.VerifyStateMachine"/>: two-pass state
+/// Verifies <see cref="IrStateMachineBuilder"/> and <see cref="IrStateMachineInvariants.Verify"/>: two-pass state
 /// numbering, empty-state preservation, barrier/shuffle/suspending-call splitting, omitted mask literal text, node
 /// separation between publish and read, and removed-call handling.
 /// </summary>
@@ -175,7 +175,7 @@ public class IrStateMachineBuilderTests
 
         var machine = IrStateMachineBuilder.Build(linear, isDeviceFunction: false, source, compilation);
 
-        Assert.Empty(IrInvariants.VerifyStateMachine(machine));
+        Assert.Empty(IrStateMachineInvariants.Verify(machine));
         Assert.Equal(["jump-if-true 1", "jump 1"], Events(machine.States[0]));
         var jump = Assert.IsType<IrStateJump>(machine.States[0].Statements[0]);
         Assert.True(jump.JumpIfTrue);
@@ -214,9 +214,9 @@ public class IrStateMachineBuilderTests
             callFrames: ImmutableArray<IMethodSymbol>.Empty,
             source);
 
-        Assert.Contains(IrInvariants.VerifyStateMachine(nestedSuspend),
+        Assert.Contains(IrStateMachineInvariants.Verify(nestedSuspend),
             static v => v.StartsWith("SM2 ", StringComparison.Ordinal));
-        Assert.Contains(IrInvariants.VerifyStateMachine(nestedExit),
+        Assert.Contains(IrStateMachineInvariants.Verify(nestedExit),
             static v => v.StartsWith("SM2 ", StringComparison.Ordinal));
     }
 
@@ -231,7 +231,7 @@ public class IrStateMachineBuilderTests
         Assert.Equal(IrSplitLoweringFailureKind.None, failure.Kind);
         var linear = IrLinearizer.Linearize(lowered, compilation);
         var machine = IrStateMachineBuilder.Build(linear, isDeviceFunction, built.Body.Source, compilation);
-        Assert.Empty(IrInvariants.VerifyStateMachine(machine));
+        Assert.Empty(IrStateMachineInvariants.Verify(machine));
         return machine;
     }
 

@@ -66,67 +66,14 @@ public class IrStateMachineEquivalenceTests(ITestOutputHelper output)
                     }
 
                     var where = IrCoverageInputs.Locate(tree, symbol);
-                    if (!declaration.HasBody())
+                    var status = CompareMethod(declaration, symbol, model, compilation, where, violations,
+                        unexplained);
+                    if (status == "Compared")
                     {
-                        counts.Add(where, ("status", "NoStateMachine"));
-                        continue;
+                        Interlocked.Increment(ref compared);
                     }
 
-                    var isKernel = symbol.HasAttribute(KnownAttributes.GpuKernel);
-                    if (!isKernel &&
-                        IteratorTypeResolver.IsDeviceIteratorMethod(symbol) &&
-                        !IteratorTypeResolver.IsRecursiveIterator(symbol, compilation))
-                    {
-                        counts.Add(where, ("status", "NoStateMachine"));
-                        continue;
-                    }
-
-                    if (!isKernel && !SuspensionAnalysis.RequiresStateMachine(symbol, compilation))
-                    {
-                        counts.Add(where, ("status", "NoStateMachine"));
-                        continue;
-                    }
-
-                    var legacy = AstLoweringPipeline.Lower(declaration, model, symbol,
-                        isDeviceFunction: !isKernel);
-
-                    if (HasReconvergence(legacy.LoweredBody))
-                    {
-                        counts.Add(where, ("status", "Reconvergence"));
-                        continue;
-                    }
-
-                    if (IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is not { } built)
-                    {
-                        counts.Add(where, ("status", "IrNotBuilt"));
-                        continue;
-                    }
-
-                    var classified = IrClassifier.Classify(built, compilation);
-                    if (IrSplitLowering.Apply(classified, compilation, out var failure) is not { } splitLowered)
-                    {
-                        var reason = failure.Kind switch
-                        {
-                            IrSplitLoweringFailureKind.Fallback => "Fallback:" + failure.Fallback,
-                            IrSplitLoweringFailureKind.OpaqueStatement => "OpaqueStatement",
-                            IrSplitLoweringFailureKind.Skip => "Skip:" + failure.Skip,
-                            _ => throw new InvalidOperationException($"Unexpected failure kind: {failure.Kind}")
-                        };
-                        counts.Add(where, ("status", reason));
-                        continue;
-                    }
-
-                    var linear = IrLinearizer.Linearize(splitLowered, compilation);
-                    var machine = IrStateMachineBuilder.Build(linear, isDeviceFunction: !isKernel, built.Body.Source,
-                        compilation);
-                    foreach (var violation in IrInvariants.VerifyStateMachine(machine))
-                    {
-                        violations.Add($"{where.File} {where.Method}: {violation}");
-                    }
-
-                    Interlocked.Increment(ref compared);
-                    counts.Add(where, ("status", "Compared"));
-                    Compare(where, legacy, machine, model, unexplained);
+                    counts.Add(where, ("status", status));
                 }
             }
         }, everyKernelFile: true);
@@ -144,6 +91,59 @@ public class IrStateMachineEquivalenceTests(ITestOutputHelper output)
         Assert.True(unexplained.IsEmpty,
             string.Join("\n", unexplained.OrderBy(static u => u, StringComparer.Ordinal).Take(50)));
         IrExpectedFiles.AssertMatches(ExpectedFile, counts.Render(s_header), output);
+    }
+
+    // The status of one GPU method; when both sides build a state machine, compares them and checks the invariants
+    private static string CompareMethod(MethodDeclarationSyntax declaration, IMethodSymbol symbol, SemanticModel model,
+        Compilation compilation, IrCorpusMethod where, ConcurrentBag<string> violations,
+        ConcurrentBag<string> unexplained)
+    {
+        if (!declaration.HasBody())
+        {
+            return "NoStateMachine";
+        }
+
+        var isKernel = symbol.HasAttribute(KnownAttributes.GpuKernel);
+        if (!isKernel &&
+            (IteratorTypeResolver.IsDeviceIteratorMethod(symbol) &&
+             !IteratorTypeResolver.IsRecursiveIterator(symbol, compilation) ||
+             !SuspensionAnalysis.RequiresStateMachine(symbol, compilation)))
+        {
+            return "NoStateMachine";
+        }
+
+        var legacy = AstLoweringPipeline.Lower(declaration, model, symbol, isDeviceFunction: !isKernel);
+        if (HasReconvergence(legacy.LoweredBody))
+        {
+            return "Reconvergence";
+        }
+
+        if (IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is not { } built)
+        {
+            return "IrNotBuilt";
+        }
+
+        var classified = IrClassifier.Classify(built, compilation);
+        if (IrSplitLowering.Apply(classified, compilation, out var failure) is not { } splitLowered)
+        {
+            return failure.Kind switch
+            {
+                IrSplitLoweringFailureKind.Fallback => "Fallback:" + failure.Fallback,
+                IrSplitLoweringFailureKind.OpaqueStatement => "OpaqueStatement",
+                IrSplitLoweringFailureKind.Skip => "Skip:" + failure.Skip,
+                _ => throw new InvalidOperationException($"Unexpected failure kind: {failure.Kind}")
+            };
+        }
+
+        var linear = IrLinearizer.Linearize(splitLowered, compilation);
+        var machine = IrStateMachineBuilder.Build(linear, isDeviceFunction: !isKernel, built.Body.Source, compilation);
+        foreach (var violation in IrStateMachineInvariants.Verify(machine))
+        {
+            violations.Add($"{where.File} {where.Method}: {violation}");
+        }
+
+        Compare(where, legacy, machine, model, unexplained);
+        return "Compared";
     }
 
     private static void Compare(IrCorpusMethod where, LoweredStateMachine legacy, IrStateMachine ir,
@@ -213,59 +213,65 @@ public class IrStateMachineEquivalenceTests(ITestOutputHelper output)
                 .OfType<BlockSyntax>()
                 .SelectMany(static block => block.Statements)
                 .ToList();
-            var events = new List<string>();
-            for (var i = 0; i < statements.Count; i++)
-            {
-                var statement = statements[i];
-                if (statement is GotoStatementSyntax gotoStmt &&
-                    gotoStmt.IsKind(SyntaxKind.GotoCaseStatement) &&
-                    TryReadIntLiteral(gotoStmt.Expression, out var jumpTarget))
-                {
-                    events.Add($"jump {jumpTarget}");
-                }
-                else if (statement is IfStatementSyntax ifStmt &&
-                         ifStmt.Else is null &&
-                         TryGetGotoCaseTarget(ifStmt.Statement, out var condTarget))
-                {
-                    var jumpIfTrue = !ifStmt.Condition.IsKind(SyntaxKind.LogicalNotExpression);
-                    events.Add(jumpIfTrue ? $"jump-if-true {condTarget}" : $"jump-if-false {condTarget}");
-                }
-                else if (statement is IfStatementSyntax resumeIf &&
-                         TryGetResumeFrame(resumeIf.Condition, out var frameIndex))
-                {
-                    events.Add($"resume {frameIndex}");
-                }
-                else if (TryGetFlagEvent(statement, out var flagEvent))
-                {
-                    events.Add(flagEvent);
-                }
-                else if (i + 1 < statements.Count &&
-                         TryGetStateAssignment(statement, out var nextState) &&
-                         statements[i + 1] is ReturnStatementSyntax nextRet &&
-                         nextRet.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
-                {
-                    events.Add(nextState == -1 ? "exit" : $"suspend {nextState}");
-                    i++;
-                }
-                else if (statement is ReturnStatementSyntax ret &&
-                         !ret.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
-                {
-                    events.Add("return");
-                }
-                else if (TryGetWarpPublishSite(statement, out var publishSite))
-                {
-                    events.Add($"publish {publishSite}");
-                }
-                else if (TryGetWarpReadSite(statement, out var readSite))
-                {
-                    events.Add($"read {readSite}");
-                }
-            }
-
-            states.Add((stateNumber, events));
+            states.Add((stateNumber, LegacyEvents(statements)));
         }
 
         return states;
+    }
+
+    // The events of one legacy state section, in order, in the words of ExtractIrEvents
+    private static List<string> LegacyEvents(List<StatementSyntax> statements)
+    {
+        var events = new List<string>();
+        for (var i = 0; i < statements.Count; i++)
+        {
+            var statement = statements[i];
+            if (statement is GotoStatementSyntax gotoStmt &&
+                gotoStmt.IsKind(SyntaxKind.GotoCaseStatement) &&
+                TryReadIntLiteral(gotoStmt.Expression, out var jumpTarget))
+            {
+                events.Add($"jump {jumpTarget}");
+            }
+            else if (statement is IfStatementSyntax ifStmt &&
+                     ifStmt.Else is null &&
+                     TryGetGotoCaseTarget(ifStmt.Statement, out var condTarget))
+            {
+                var jumpIfTrue = !ifStmt.Condition.IsKind(SyntaxKind.LogicalNotExpression);
+                events.Add(jumpIfTrue ? $"jump-if-true {condTarget}" : $"jump-if-false {condTarget}");
+            }
+            else if (statement is IfStatementSyntax resumeIf &&
+                     TryGetResumeFrame(resumeIf.Condition, out var frameIndex))
+            {
+                events.Add($"resume {frameIndex}");
+            }
+            else if (TryGetFlagEvent(statement, out var flagEvent))
+            {
+                events.Add(flagEvent);
+            }
+            else if (i + 1 < statements.Count &&
+                     TryGetStateAssignment(statement, out var nextState) &&
+                     statements[i + 1] is ReturnStatementSyntax nextRet &&
+                     nextRet.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
+            {
+                events.Add(nextState == -1 ? "exit" : $"suspend {nextState}");
+                i++;
+            }
+            else if (statement is ReturnStatementSyntax ret &&
+                     !ret.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
+            {
+                events.Add("return");
+            }
+            else if (TryGetWarpPublishSite(statement, out var publishSite))
+            {
+                events.Add($"publish {publishSite}");
+            }
+            else if (TryGetWarpReadSite(statement, out var readSite))
+            {
+                events.Add($"read {readSite}");
+            }
+        }
+
+        return events;
     }
 
     private static List<string> ExtractIrEvents(IrState state, bool isDeviceFunction)
