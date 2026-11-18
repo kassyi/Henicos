@@ -146,7 +146,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         }
 
         StructOrdering.RegisterUsedStructIfApplicable(local.Type, ref context);
-        context.Emitter.Dialect.AppendType(ref context, local.Type);
+        SharedMemoryStorageType.Append(ref context, local.Type);
         context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(declaration, identifier, ref context);
         context.Emitter.Writer.AppendLine(";");

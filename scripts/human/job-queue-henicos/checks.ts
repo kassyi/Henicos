@@ -452,9 +452,10 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
       { name: "./scripts/human/job-queue-henicos" },
       { name: "dotnet" },
       { name: "just" },
+      { name: "nvidia-gpu" },
     ]);
     assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
-    assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
+    assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);
     assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);
     assert.deepStrictEqual(repoConfig.config.legacyClients, {
       testPattern: [
@@ -499,10 +500,10 @@ export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
-  assert.strictEqual(
-    loaded.config.resources?.gpu?.lock?.seats[0],
-    "tmp/gpu-test-lock",
-    "seats[0] stays tmp/gpu-test-lock for older gpu-lock.js and fuzz-diff",
+  assert.deepStrictEqual(
+    loaded.config.resources?.gpu?.lock?.seats,
+    ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"],
+    "seats stay tmp/gpu-test-lock and tmp/gpu-test-lock-seat1 so older gpu-lock.js and checkouts agree on both",
   );
   const host = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
     ...process.env,
