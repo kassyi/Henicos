@@ -142,6 +142,15 @@ internal static class GeneratedMemberAccessibility
         public NamedTypes WithGenerated(INamedTypeSymbol container, Accessibility accessibility) =>
             new(new Node(null, container, accessibility, true, _head));
 
+        // Widest first; <see cref="Accessibility.Public"/> and <see cref="Accessibility.Private"/> are handled apart.
+        private static readonly Accessibility[] s_candidates =
+        [
+            Accessibility.ProtectedOrInternal,
+            Accessibility.Internal,
+            Accessibility.Protected,
+            Accessibility.ProtectedAndInternal,
+        ];
+
         /// <summary>
         /// The widest accessibility under which a member declared in <paramref name="container"/> can name these
         /// types; <see cref="Accessibility.Private"/> when no wider candidate is allowed.
@@ -154,24 +163,13 @@ internal static class GeneratedMemberAccessibility
             }
 
             var allowsProtected = !container.IsStatic && !container.IsSealed && container.TypeKind != TypeKind.Struct;
-            if (allowsProtected && AllowsAll(Accessibility.ProtectedOrInternal, container))
+            foreach (var candidate in s_candidates)
             {
-                return Accessibility.ProtectedOrInternal;
-            }
-
-            if (AllowsAll(Accessibility.Internal, container))
-            {
-                return Accessibility.Internal;
-            }
-
-            if (allowsProtected && AllowsAll(Accessibility.Protected, container))
-            {
-                return Accessibility.Protected;
-            }
-
-            if (allowsProtected && AllowsAll(Accessibility.ProtectedAndInternal, container))
-            {
-                return Accessibility.ProtectedAndInternal;
+                var isProtected = candidate != Accessibility.Internal;
+                if ((!isProtected || allowsProtected) && AllowsAll(candidate, container))
+                {
+                    return candidate;
+                }
             }
 
             return Accessibility.Private;

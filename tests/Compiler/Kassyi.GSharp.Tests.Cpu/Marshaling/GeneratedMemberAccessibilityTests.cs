@@ -55,12 +55,13 @@ public class GeneratedMemberAccessibilityTests
             Named(Resolve(type)).ChooseIn(GetType("Host")));
     }
 
-    // Protected domains also reach derived types: C# compares the domain of the member (its keyword, the class and the
-    // classes around it) with the domain of each type it names, so what is accepted follows from where the types and the
-    // class are declared. Each row is a shape of the C# oracle (a small project that tried every keyword)
+    // Protected domains also reach derived types: C# compares the domain of the member (its keyword, the class and
+    // the classes around it) with the domain of each type it names, so what is accepted follows from where the types
+    // and the class are declared. Each row is a shape of the C# oracle (a small project that tried every keyword)
     [Theory]
     [Scenario(TestScenario.Boundary)]
-    // A protected type of the class itself: protected and private protected reach exactly the class and its derived types
+    // A protected type of the class itself: protected and private protected reach exactly the class and its derived
+    // types
     [InlineData("Host", "Host+ProtectedS", Accessibility.Protected)]
     [InlineData("Host", "Host+PrivateProtectedS", Accessibility.ProtectedAndInternal)]
     [InlineData("Host", "Host+ProtectedInternalS", Accessibility.ProtectedOrInternal)]
@@ -71,7 +72,8 @@ public class GeneratedMemberAccessibilityTests
     [InlineData("Host+ProtectedNested", "Host+PrivateS", Accessibility.Private)]
     [InlineData("Host+ProtectedNested", "Host+InternalS", Accessibility.Internal)]
     [InlineData("Host+ProtectedNested", "Open", Accessibility.Public)]
-    // A public container of the outer class does not: derived types of the container need not derive from the outer class
+    // A public container of the outer class does not: derived types of the container need not derive from the outer
+    // class
     [InlineData("ProtectedContainer+PublicStaticK", "ProtectedContainer+S", Accessibility.Private)]
     [InlineData("ProtectedContainer+InstanceK", "ProtectedContainer+S", Accessibility.Private)]
     // The class that declares the protected type, or derives from it, may name it in a protected member

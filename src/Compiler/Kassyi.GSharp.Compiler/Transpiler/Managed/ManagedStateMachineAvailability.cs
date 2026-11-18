@@ -292,9 +292,10 @@ internal static class ManagedStateMachineAvailability
     }
 
     // How code in <within> holds the frame of <callee>, whose accessibility is <frame>: by its type when it can name
-    // it, else through the entries of a callee that has them. A private frame without entries belongs to a private
-    // function, which only code that C# rejects (CS0122) calls from outside its class; that code gets no frame and no
-    // diagnostic of its own, and the generator does not throw for it, since it also runs on code still being typed
+    // it, else through the entries of a callee that has them. A frame that <within> cannot name and that has no
+    // entries (a private or protected frame of a private function) belongs to a function that only code C# rejects
+    // (CS0122) calls from there; that code gets no frame and no diagnostic of its own, and the generator does not
+    // throw for it, since it also runs on code still being typed
     private static SuspendingCallForm ChooseCallForm(Accessibility frame, IMethodSymbol callee,
         INamedTypeSymbol within)
     {
