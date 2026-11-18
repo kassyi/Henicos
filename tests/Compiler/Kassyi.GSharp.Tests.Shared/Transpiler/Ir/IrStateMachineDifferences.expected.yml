@@ -2237,14 +2237,18 @@
 - {file: "Syntax/RefStructConversionKernels.cu.cs", method: "RefStructConversionKernels.ImplicitRefStructConversionKernel", status: "Compared", count: 1}
 - {file: "Syntax/RefStructConversionKernels.cu.cs", method: "RefStructConversionKernels.MixedRefStructConversionKernel", status: "Compared", count: 1}
 - {file: "Syntax/RefStructConversionKernels.cu.cs", method: "RefStructConversionKernels.RefStructToRefStructConversionKernel", status: "Compared", count: 1}
+- {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.CollectionSpanBeforeBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.CollectionSpanInLoopKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ConstSizeKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ConstSizeLengthKernel", status: "Compared", count: 1}
+- {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.EmptyCollectionSpanKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.LambdaBeforeBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.MovingPointerBeforeBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.MovingPointerKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.PointerBeforeBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.PointerElementsKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.PointerZeroedKernel", status: "Compared", count: 1}
+- {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ReadOnlyCollectionSpanKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ReadOnlyElementsKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.SameNameSpansKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.SiblingScopeSpanKernel", status: "Compared", count: 1}
@@ -2252,6 +2256,7 @@
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.SpanInOtherBranchKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.StackAllocInLoopKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.StackLinqBeforeBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.VariableCollectionSpanKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ViewAfterLocalKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ZeroLengthPointerBeforeBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/ResumeLocalKernels.cu.cs", method: "ResumeLocalKernels.ZeroLengthPointerKernel", status: "Compared", count: 1}
@@ -3486,6 +3491,7 @@
 - {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.SequenceEqualKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.SupportedAllMembersKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/SpanWrite/SpanWriteUnsupported.cs", method: "SpanWriteUnsupportedKernels.ToArrayKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/StackArrays/CollectionSpanSpreadWithBarrier.cu.cs", method: "CollectionSpanSpreadWithBarrierKernels.SpreadSpanBeforeBarrierKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/StackArrays/StackArrayEscapes.cu.cs", method: "StackArrayEscapeKernels.AliasKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/StackArrays/StackArrayEscapes.cu.cs", method: "StackArrayEscapeKernels.ArgumentStorageLocalFunctionKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/StackArrays/StackArrayEscapes.cu.cs", method: "StackArrayEscapeKernels.ArgumentStorageRefKernel", status: "OpaqueStatement", count: 1}

@@ -23,7 +23,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.ResumeLocals;
 /// Only the storage moves before the switch. The initializer stays where the local is declared, as an assignment, so it
 /// runs in the order C# runs it and reads the locals assigned before it. A stackalloc gives zeroed memory each time it
 /// runs (unless <c>[SkipLocalsInit]</c> applies), so the memory is zeroed again there, also in the next iteration of a
-/// loop within the same resume.
+/// loop within the same resume; a collection expression of constants or expressions (without a spread) writes its
+/// elements there in the same way.
 /// </para>
 /// </remarks>
 internal static class ResumeLocals
@@ -54,7 +55,21 @@ internal static class ResumeLocals
             INamedTypeSymbol { TypeArguments.Length: 1 } span when IsSpan(span) => span.TypeArguments[0],
             _ => null
         };
-        if (field.Initializer?.Value is not { } value || !ContainsStackAlloc(value))
+        if (field.Initializer?.Value is not { } value)
+        {
+            return new ResumeLocal(field, type, ResumeLocalKind.Bound, null, 0);
+        }
+
+        if (value is CollectionExpressionSyntax collection &&
+            elementType != null &&
+            collection.Elements
+                .AsStackEnumerable()
+                .All(static e => e is ExpressionElementSyntax))
+        {
+            return new ResumeLocal(field, type, ResumeLocalKind.StackAlloc, elementType, collection.Elements.Count);
+        }
+
+        if (!ContainsStackAlloc(value))
         {
             return new ResumeLocal(field, type, ResumeLocalKind.Bound, null, 0);
         }
@@ -152,7 +167,7 @@ internal static class ResumeLocals
         var memory = storage ?? name;
         if (GetElements(value) is { } elements)
         {
-            for (var i = 0; i < elements.Count; i++)
+            for (var i = 0; i < elements.Length; i++)
             {
                 statements.Add(Assign(ElementAt(memory, Literal(i)), elements[i]));
             }
@@ -174,12 +189,38 @@ internal static class ResumeLocals
         type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType && type.ContainingNamespace.IsSystemNamespace();
 #pragma warning restore HNT0003
 
-    private static SeparatedSyntaxList<ExpressionSyntax>? GetElements(ExpressionSyntax value) => value switch
+    private static ImmutableArray<ExpressionSyntax>? GetElements(ExpressionSyntax value)
     {
-        StackAllocArrayCreationExpressionSyntax { Initializer: { } initializer } => initializer.Expressions,
-        ImplicitStackAllocArrayCreationExpressionSyntax implicitCreation => implicitCreation.Initializer.Expressions,
-        _ => null
-    };
+        switch (value)
+        {
+            case StackAllocArrayCreationExpressionSyntax { Initializer: { } initializer }:
+                return CopyExpressions(initializer.Expressions);
+            case ImplicitStackAllocArrayCreationExpressionSyntax implicitCreation:
+                return CopyExpressions(implicitCreation.Initializer.Expressions);
+            case CollectionExpressionSyntax collection:
+            {
+                var elements = ImmutableArray.CreateBuilder<ExpressionSyntax>(collection.Elements.Count);
+                collection.Elements
+                    .AsStackEnumerable()
+                    .OfType<ExpressionElementSyntax>()
+                    .Select(static e => e.Expression)
+                    .AddTo(elements);
+                return elements.ToImmutable();
+            }
+            default:
+                return null;
+        }
+    }
+
+    private static ImmutableArray<ExpressionSyntax> CopyExpressions(
+        SeparatedSyntaxList<ExpressionSyntax> expressions)
+    {
+        var elements = ImmutableArray.CreateBuilder<ExpressionSyntax>(expressions.Count);
+        expressions
+            .AsStackEnumerable()
+            .AddTo(elements);
+        return elements.MoveToImmutable();
+    }
 
     // for (var __gsharp_resume_fill = 0; __gsharp_resume_fill < <length>; __gsharp_resume_fill++) <memory>[__gsharp_resume_fill] = default;
     private static ForStatementSyntax CreateZeroFill(SimpleNameSyntax memory, int length)

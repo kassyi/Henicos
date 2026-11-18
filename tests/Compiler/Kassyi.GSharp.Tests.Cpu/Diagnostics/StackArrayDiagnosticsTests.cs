@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers.StackArrays;
 using static Kassyi.GSharp.Tests.Shared.Helpers.DiagnosticOrigin;
 
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
@@ -16,6 +17,7 @@ public class StackArrayDiagnosticsTests
     private const string MultiArgumentIndexerCase = "Analyzers/MultiArgumentIndexer.cu.cs";
     private const string ArrayLikeMultidimensionalField = "Analyzers/ArrayLikeMultidimensionalField.cu.cs";
     private const string CyclicStructParameter = "Analyzers/CyclicStructParameter.cu.cs";
+    private const string CollectionSpanSpread = "Analyzers/StackArrays/CollectionSpanSpreadWithBarrier.cu.cs";
 
     [Theory]
     [InlineData("Cpu")]
@@ -245,5 +247,31 @@ public class StackArrayDiagnosticsTests
             [(Analyzer, 18, 21, 18, 31)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "indexer with more than one argument"));
         Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "multidimensional array"));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task CollectionSpanWithSpread_BeforeBarrier_ReportsGsh0003OnceAtSpread(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(CollectionSpanSpread, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 13, 24, 13, 31)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'SpreadElement'"));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, StackArrayClassifier.SpreadElement));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.CrossBarrierRefStructProhibited.Id));
+
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(CollectionSpanSpread));
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+        Assert.Equal([("(13,24): GSH0003", true)], KernelDiagnostics.FindStatedFailures(run));
+
+        var expectedSyntax = dialect == "Cuda" ? "'SpreadElement'" : $"'{StackArrayClassifier.SpreadElement}'";
+        var expectedMessage =
+            $"#error \"\"(13,24): GSH0003: The syntax {expectedSyntax} is not supported in GSharp GPU kernels\"\"";
+        Assert.Contains(
+            run.Output.SyntaxTrees,
+            tree => tree.ToString().Contains(expectedMessage, StringComparison.Ordinal));
     }
 }
