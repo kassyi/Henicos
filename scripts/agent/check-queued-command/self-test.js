@@ -253,32 +253,42 @@ function selfTest() {
 
 /**
  * Antigravity stops the command of a hook that exits with a non-zero code, so --hook must allow (no output, exit code
- * 0) and log when a module fails to load or the judgement throws; --text must still fail. Runs copies of the entry in
- * a temporary checkout whose modules are broken on purpose.
+ * 0) and log when a module fails to load, the judgement throws or the input is not JSON; --text must still fail. Runs
+ * copies of the entry in a temporary checkout whose modules are broken on purpose (the log lands in that checkout).
  */
 function checkHookFailsOpen(assert) {
   const { spawnSync } = require('child_process');
   const real = (name) => JSON.stringify(path.join(__dirname, name));
+  const working = {
+    'project-henicos.js': `module.exports = require(${real('project-henicos.js')});`,
+    'hook.js': `module.exports = require(${real('hook.js')});`,
+    'command-rules.js': `module.exports = require(${real('command-rules.js')});`,
+  };
+  const payload = JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'dotnet test X' } } });
   const cases = [
     {
       name: 'a module that fails to load',
       modules: { 'project-henicos.js': "throw new Error('broken project');" },
       logged: 'broken project',
+      textFails: true,
     },
     {
       name: 'a judgement that throws',
       modules: {
-        'project-henicos.js': `module.exports = require(${real('project-henicos.js')});`,
-        'hook.js': `module.exports = require(${real('hook.js')});`,
+        ...working,
         'command-rules.js':
           `const real = require(${real('command-rules.js')});\n` +
           'module.exports = { createRules: (project) => ({ ...real.createRules(project), check: () => {\n' +
           "  throw new Error('broken rule');\n} }) };",
       },
       logged: 'broken rule',
+      textFails: true,
     },
+    { name: 'input that is not JSON', modules: working, input: 'dotnet test X', logged: 'invalid hook input' },
+    { name: 'an empty input', modules: working, input: '', logged: 'invalid hook input' },
+    // The same copies answer a valid input as the hook does: the denial is printed in full and nothing is logged
+    { name: 'a valid input', modules: working, logged: null, printed: '{"decision":"deny"' },
   ];
-  const payload = JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine: 'dotnet test X' } } });
   for (const testCase of cases) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cqc-fail-open-'));
     try {
@@ -288,13 +298,22 @@ function checkHookFailsOpen(assert) {
       for (const [file, text] of Object.entries(testCase.modules)) {
         fs.writeFileSync(path.join(root, 'scripts', 'agent', 'check-queued-command', file), `'use strict';\n${text}\n`);
       }
-      const hook = spawnSync(process.execPath, [entry, '--hook'], { input: payload, encoding: 'utf8' });
+      const input = testCase.input === undefined ? payload : testCase.input;
+      const hook = spawnSync(process.execPath, [entry, '--hook'], { input, encoding: 'utf8' });
       assert.strictEqual(hook.status, 0, `--hook with ${testCase.name} exits 0: ${hook.stderr}`);
+      const logFile = path.join(root, 'tmp', 'hook-errors.log');
+      if (testCase.logged === null) {
+        assert.ok(hook.stdout.startsWith(testCase.printed) && hook.stdout.endsWith('}'), `--hook prints ${hook.stdout}`);
+        assert.ok(!fs.existsSync(logFile), `--hook with ${testCase.name} logs nothing`);
+        continue;
+      }
       assert.strictEqual(hook.stdout, '', `--hook with ${testCase.name} prints nothing`);
-      const log = fs.readFileSync(path.join(root, 'tmp', 'hook-errors.log'), 'utf8');
+      const log = fs.readFileSync(logFile, 'utf8');
       assert.ok(log.includes(testCase.logged), `--hook with ${testCase.name} logs it: ${log}`);
-      const text = spawnSync(process.execPath, [entry, '--text', 'dotnet test X'], { encoding: 'utf8' });
-      assert.ok(text.status !== 0 && text.stderr.includes(testCase.logged), `--text with ${testCase.name} fails`);
+      if (testCase.textFails) {
+        const text = spawnSync(process.execPath, [entry, '--text', 'dotnet test X'], { encoding: 'utf8' });
+        assert.ok(text.status !== 0 && text.stderr.includes(testCase.logged), `--text with ${testCase.name} fails`);
+      }
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

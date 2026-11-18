@@ -11,6 +11,15 @@
 const { createRules } = require('./command-rules.js');
 const { createRewriter } = require('./queue-rewrite.js');
 
+/** The parsed hook input; throws an error that says the input was not JSON. */
+function parseInput(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`invalid hook input: ${error.message}`);
+  }
+}
+
 /**
  * Creates the hook adapter bound to repository config `project` and rule evaluator `rules`; createRewriter checks the
  * shape of `project` (project-config.js) and throws first.
@@ -62,32 +71,33 @@ function createHook(project, rules = createRules(project)) {
   }
 
   /**
-   * Answers the hook input on stdin. An exception while judging goes to `onError` and the command is allowed (no
-   * output, exit code 0): Antigravity stops the command of a hook that throws.
+   * Answers the hook input on stdin. Input that is not JSON, an exception while judging and a stream error go to
+   * `onError` and the command is allowed (no output, exit code 0): Antigravity stops the command of a hook that exits
+   * with a non-zero code.
    */
   function runHook(onError) {
+    const allow = (error) => {
+      onError(error);
+      process.exit(0);
+    };
     let input = '';
     process.stdin.setEncoding('utf8');
+    process.stdin.on('error', allow);
+    process.stdout.on('error', allow);
     process.stdin.on('data', (chunk) => (input += chunk));
     process.stdin.on('end', () => {
-      let payload;
+      let output = '';
       try {
-        payload = JSON.parse(input);
+        const answer = hookAnswer(parseInput(input));
+        output = answer === null ? '' : JSON.stringify(answer);
       } catch (error) {
-        process.stderr.write(`check-queued-command --hook: invalid hook input: ${error.message}\n`);
-        process.exit(1);
+        allow(error);
       }
-      let answer;
-      try {
-        answer = hookAnswer(payload);
-      } catch (error) {
-        onError(error);
+      if (output !== '') {
+        process.stdout.write(output, () => process.exit(0));
+      } else {
         process.exit(0);
       }
-      if (answer !== null) {
-        process.stdout.write(JSON.stringify(answer));
-      }
-      process.exit(0);
     });
   }
 
