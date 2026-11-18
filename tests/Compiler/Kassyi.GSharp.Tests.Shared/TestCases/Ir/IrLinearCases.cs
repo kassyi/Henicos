@@ -103,6 +103,20 @@ public static class IrLinearCases
         for (int k = 0; k < n; k++) { Gpu.SyncThreads(); }
     }
 
+    public static int SyncWarpDefault(int v)
+    {
+        Gpu.SyncWarp();
+        return v;
+    }
+
+    public static int NotMask(int v) => Warp.ShuffleSync(~0u, v, 0);
+
+    public static void RemovedCallStatement(int v)
+    {
+        Trace(Warp.ShuffleSync(0xFFFFFFFFu, v, 0));
+        Gpu.SyncThreads();
+    }
+
     [Conditional("IR_LINEAR_CASES_NEVER_DEFINED")]
     private static void Trace(int v) { }
 }

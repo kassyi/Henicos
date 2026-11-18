@@ -94,9 +94,11 @@ internal static class ManagedStateMachineEmitter
     /// <param name="memberAccessibility">The accessibility of the fields other than the call frames.</param>
     /// <param name="isUnsafe">Whether the context is an unsafe struct rather than a class.</param>
     /// <remarks>
-    /// A call frame field is internal: the frame of a device function that is not public is an internal or private
-    /// class (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame private to a class that
-    /// does not contain this one is an <see cref="object"/>, which the callee's entries create on first use. Every
+    /// A call frame field is internal: the frame of a device function that is not public is an internal, protected,
+    /// private protected, protected internal or private class
+    /// (<see cref="ManagedStateMachineAvailability.GetFrameAccessibility"/>). A frame that this class cannot name
+    /// (a private frame of a class that does not contain it, or a protected one of a class it does not derive from)
+    /// is an <see cref="object"/>, which the callee's entries create on first use. Every
     /// context numbers its frames for the warp collectives (<c>__gsharp_number_warp_paths</c>), which is public because
     /// a frame of a public device function may belong to a caller in another assembly.
     /// </remarks>
