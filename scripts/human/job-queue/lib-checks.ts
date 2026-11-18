@@ -44,8 +44,8 @@ function checkMainCheckout(assert: typeof defaultAssert): void {
     const fallback = path.join(tempBase, "fallback");
     const resolvedFromWorktree = mainCheckout(worktreeRepo, fallback);
     assert.strictEqual(
-      path.resolve(resolvedFromWorktree).toLowerCase(),
-      path.resolve(mainRepo).toLowerCase(),
+      fs.realpathSync.native(resolvedFromWorktree),
+      fs.realpathSync.native(mainRepo),
       "mainCheckout from worktree should return the main repository directory",
     );
 
