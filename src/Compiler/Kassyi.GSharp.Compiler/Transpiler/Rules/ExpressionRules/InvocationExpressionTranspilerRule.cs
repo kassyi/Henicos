@@ -93,6 +93,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
+        // [WHY] Unsupported targets are all static, so there is no receiver expression.
         if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
             return;
