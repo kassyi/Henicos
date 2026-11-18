@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -78,6 +79,15 @@ internal static class NativeApiGeneratorTestHelpers
     internal static GeneratorDriver CreateDriver(params TestFile[] files) =>
         CreateDriver([new NativeApiGenerator().AsSourceGenerator()], new CSharpParseOptions(LanguageVersion.Latest),
             files);
+
+    internal static AnalyzerOptions CreateAnalyzerOptions(params TestFile[] files)
+    {
+        var additionalTexts = files
+            .Select(static f => (AdditionalText)new InMemoryAdditionalText(f.Path, f.Text))
+            .ToImmutableArray();
+        var apiPaths = files.Where(static f => f.IsGSharpApi).Select(static f => f.Path).ToHashSet();
+        return new AnalyzerOptions(additionalTexts, new PerFileOptionsProvider(apiPaths));
+    }
 
     /// <summary>
     /// A driver that runs the YAML bindings and the <c>[CudaImport]</c> launchers together on

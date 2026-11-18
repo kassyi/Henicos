@@ -6,6 +6,8 @@ internal sealed class ParameterDefinition
 
     public string Type { get; set; } = string.Empty;
 
+    public int TypeLine { get; set; }
+
     public string? Description { get; set; }
 
     public string? DefaultValue { get; set; }
