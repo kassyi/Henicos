@@ -228,13 +228,12 @@ try {
 // The text a word passes on, or null when the shell computes it ($VAR, $(...), a here-string): such a message cannot be
 // checked before it exists, and CI checks the commit. The one computed form read here is the body of
 // "$(cat <<'EOF' ... EOF)", the usual way to pass a multi-line message.
-function literalArgument(raw, kind) {
-    const r = shellReader;
+function literalArgument(raw, r) {
     if (raw === '@here-string') {
         return null;
     }
     // PowerShell turns `n, `r and `t into control characters in double quotes; the reader keeps only the letter
-    const word = kind === 'pwsh' ? raw.replace(/`n/g, '\n').replace(/`r/g, '\r').replace(/`t/g, '\t') : raw;
+    const word = r.dialect === 'pwsh' ? raw.replace(/`n/g, '\n').replace(/`r/g, '\r').replace(/`t/g, '\t') : raw;
     const text = r.argumentText(word);
     const heredoc = /^\$\(cat <<-?[ \t]*['"]?([A-Za-z_]\w*)['"]?\r?\n([\s\S]*?)\r?\n[ \t]*\1[ \t]*\r?\n?\)$/.exec(text);
     if (heredoc !== null) {
@@ -245,8 +244,7 @@ function literalArgument(raw, kind) {
 
 // The message of one `git [global options] commit ...` word list, or null when it is not a commit, the message comes
 // from an editor, another commit or stdin, or the shell computes it.
-function gitCommitTarget(list, cwd, kind) {
-    const r = shellReader;
+function gitCommitTarget(list, cwd, r) {
     let i = 1;
     for (; i < list.length; i++) {
         const option = r.argumentText(list[i]);
@@ -303,13 +301,13 @@ function gitCommitTarget(list, cwd, kind) {
 
     let text = null;
     if (messages.length > 0) {
-        const parts = messages.map((raw) => (raw === null ? null : literalArgument(raw, kind)));
+        const parts = messages.map((raw) => (raw === null ? null : literalArgument(raw, r)));
         if (parts.includes(null)) {
             return null;
         }
         text = parts.join('\n\n');
     } else if (file !== null) {
-        const name = literalArgument(file, kind);
+        const name = literalArgument(file, r);
         if (name === null || name === '-') {
             return null;
         }
@@ -324,8 +322,7 @@ function gitCommitTarget(list, cwd, kind) {
 }
 
 // The title of one `gh pr create|edit ... --title <t>` word list, or null.
-function ghPrTitle(list, kind) {
-    const r = shellReader;
+function ghPrTitle(list, r) {
     if (r.argumentText(list[1] || '') !== 'pr' || !['create', 'edit'].includes(r.argumentText(list[2] || ''))) {
         return null;
     }
@@ -338,7 +335,7 @@ function ghPrTitle(list, kind) {
                   ? list[j].slice(list[j].indexOf('=') + 1)
                   : undefined;
         if (raw !== undefined) {
-            const text = raw === null ? null : literalArgument(raw, kind);
+            const text = raw === null ? null : literalArgument(raw, r);
             return text === null ? null : { kind: 'title', text };
         }
     }
@@ -348,35 +345,33 @@ function ghPrTitle(list, kind) {
 // The commit messages and pull request titles a command would create, read in the tool's dialect ('bash' or 'pwsh'):
 // every git commit and gh pr create / edit of every segment, also inside $( ), bash -c and pwsh -Command.
 function hookTargets(command, kind, cwd) {
-    const r = shellReader;
-    if (r === null) {
+    if (shellReader === null) {
         return [];
     }
-    return r.withDialect(kind, () => {
-        const targets = [];
-        const pending = [command];
-        while (pending.length > 0) {
-            for (const segment of r.splitSegments(pending.shift())) {
-                pending.push(...r.substitutions(segment));
-                const list = r.dropPrefixes(r.words(segment));
-                if (list.length === 0) {
-                    continue;
-                }
-                const name = r.programName(list[0]);
-                const shellIndex = r.shellCommandIndex(name, list);
-                if (shellIndex > 0 && shellIndex < list.length) {
-                    pending.push(r.argumentText(list[shellIndex]));
-                    continue;
-                }
-                const target =
-                    name === 'git' ? gitCommitTarget(list, cwd, kind) : name === 'gh' ? ghPrTitle(list, kind) : null;
-                if (target !== null) {
-                    targets.push(target);
-                }
+    const r = shellReader.createReader(kind);
+    const targets = [];
+    const pending = [command];
+    while (pending.length > 0) {
+        for (const segment of r.splitSegments(pending.shift())) {
+            pending.push(...r.substitutions(segment));
+            const list = r.dropPrefixes(r.words(segment));
+            if (list.length === 0) {
+                continue;
+            }
+            const name = r.programName(list[0]);
+            const shellIndex = r.shellCommandIndex(name, list);
+            if (shellIndex > 0 && shellIndex < list.length) {
+                pending.push(r.argumentText(list[shellIndex]));
+                continue;
+            }
+            const target =
+                name === 'git' ? gitCommitTarget(list, cwd, r) : name === 'gh' ? ghPrTitle(list, r) : null;
+            if (target !== null) {
+                targets.push(target);
             }
         }
-        return targets;
-    });
+    }
+    return targets;
 }
 
 function isMergeCommitMessage(text) {

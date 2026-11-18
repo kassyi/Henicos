@@ -9,7 +9,6 @@ import {
   CpusVariable,
   ForecastNoticeMs,
   JobVariable,
-  MsbuildArgsVariable,
   NoticeIntervalMs,
   BaseProtocolVersion,
   TimedOutExitCode,
@@ -20,9 +19,10 @@ import { describeOutlook } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
-import type { PathPlace } from "./estimate-key.ts";
+import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
+import type { PluginHost } from "./plugin-host.ts";
 import {
   numberField,
   onMessages,
@@ -46,6 +46,7 @@ export class QueuedRun {
   private readonly inGpuLock: boolean;
   private readonly gpuTurn: boolean;
   private readonly host: RunHost;
+  private readonly plugins?: PluginHost;
   private readonly queuedAt = Date.now();
   private state: "waiting" | "running" | "done" = "waiting";
   private child: ChildProcess | null = null;
@@ -56,6 +57,10 @@ export class QueuedRun {
   private worktree: string | null = null;
   /** Where the command's projects and scripts lie (git), for the estimate keys; resolved at the first registration. */
   private places: Record<string, PathPlace> | null = null;
+  /** Precomputed estimate keys when plugins are active; resolved once at the first registration. */
+  private keys: CommandKeys | null = null;
+  /** Precomputed memory budget when plugins are active and !gpuTurn; resolved once at the first registration. */
+  private memoryMb: number | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -71,12 +76,20 @@ export class QueuedRun {
   /** The scheduler cancelled this job: the command is being stopped, and its end decides how it is reported. */
   private cancelRequested = false;
 
-  constructor(options: RunOptions, placement: Placement, inGpuLock: boolean, gpuTurn: boolean, host: RunHost) {
+  constructor(
+    options: RunOptions,
+    placement: Placement,
+    inGpuLock: boolean,
+    gpuTurn: boolean,
+    host: RunHost,
+    plugins?: PluginHost,
+  ) {
     this.options = options;
     this.placement = placement;
     this.inGpuLock = inGpuLock;
     this.gpuTurn = gpuTurn;
     this.host = host;
+    this.plugins = plugins;
   }
 
   async run(): Promise<void> {
@@ -207,14 +220,28 @@ export class QueuedRun {
       return;
     }
     const cpus = numberField(granted, "cpus", 1);
-    const command = CommandShell.limitMsbuildNodes(options.command, cpus);
+    const cwd = process.cwd();
+    const prepared = this.plugins?.prepareCommand(
+      options.command,
+      { jobId, cpus, nested: false },
+      {
+        cwd,
+        worktree: this.worktree ?? resolveWorktree(cwd),
+        configRoot: this.plugins.configRoot,
+        shell: CommandShell.resolve(options.shell).name,
+        env: process.env,
+        log: prefix,
+      },
+    );
+    const command = prepared?.command ?? options.command;
+    const note = prepared?.note ?? `${cpus} cpus`;
     const waited = Math.round((Date.now() - this.queuedAt) / 1000);
-    prefix(`granted #${jobId} after ${waited}s (weight ${placement.weight}, ${cpus} MSBuild nodes)`);
+    prefix(`granted #${jobId} after ${waited}s (weight ${placement.weight}, ${note})`);
     const env = {
       ...process.env,
+      ...prepared?.env,
       [JobVariable]: String(jobId),
       [CpusVariable]: String(cpus),
-      [MsbuildArgsVariable]: `-m:${cpus}`,
     };
     const result = await this.host.runCommand(command, env, (c) => this.started(c));
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
@@ -411,8 +438,29 @@ export class QueuedRun {
     const { options, placement } = this;
     const running = this.child;
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
-    const worktree = (this.worktree ??= resolveWorktree(process.cwd()));
-    const places = (this.places ??= resolvePlaces(options.command, { cwd: process.cwd(), worktree }));
+    const cwd = process.cwd();
+    const worktree = (this.worktree ??= resolveWorktree(cwd));
+    const places = (this.places ??= resolvePlaces(options.command, { cwd, worktree }, this.plugins));
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    const keys = hasPlugins
+      ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
+      : undefined;
+    let memoryMb: number | undefined;
+    if (hasPlugins && !this.gpuTurn) {
+      if (this.memoryMb === null) {
+        const classified = (this.plugins as PluginHost).classify(options.command, null, {
+          cwd,
+          worktree,
+          configRoot: (this.plugins as PluginHost).configRoot,
+          shell: CommandShell.resolve(options.shell).name,
+          env: process.env,
+          log: prefix,
+        });
+        const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
+        this.memoryMb = classified.memoryMb ?? fallback;
+      }
+      memoryMb = this.memoryMb;
+    }
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -420,9 +468,11 @@ export class QueuedRun {
       pid: process.pid,
       commandPid: running !== null && running.pid !== undefined ? running.pid : 0,
       spawnedAt: this.spawnedAt,
-      cwd: process.cwd(),
+      cwd,
       worktree,
       ...(Object.keys(places).length > 0 ? { places } : {}),
+      ...(keys !== undefined ? { keys } : {}),
+      ...(memoryMb !== undefined ? { memoryMb } : {}),
       // The chat that queued it, so that the live view can show its jobs on its row
       session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
       command: options.command,

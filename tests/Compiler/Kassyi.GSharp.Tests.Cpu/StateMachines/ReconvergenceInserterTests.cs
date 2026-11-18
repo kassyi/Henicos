@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
@@ -19,7 +20,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 /// <see cref="UniformityAnalysis"/> builds, which is where the GPU runs them together again.
 /// </summary>
 [Category(TestCategory.Compiler)]
-public class ReconvergenceInserterTests
+public class ReconvergenceInserterTests : StateMachineTestBase
 {
     private const string TestCase = "ReconvergenceCases.cs";
 
@@ -57,6 +58,38 @@ public class ReconvergenceInserterTests
         Assert.Equal(new[] { "Mark(14)" }, joins);
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Insert_BackwardGotoLoop_ReconvergesAfterTheLoop()
+    {
+        var (lowered, _) = LowerAndAnalyze("BackwardGotoKernel");
+        Assert.Equal(new[] { "Mark(17)" }, lowered);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_BackwardGotoLoop_EmitsRegionAroundLoop() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoop.cs");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopAtKernelEnd_EmitsRegionAroundTrailingBranch()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "GotoLoopAtKernelEndKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("GotoLoopAtKernelEndKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+
+        var arriveCount = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+        Assert.Equal(2, arriveCount);
+        Assert.Equal(4, lowered.WarpSiteCount);
+    }
+
     // A uniform branch, a branch without a split point, and a branch that ends the kernel get no reconvergence point
     [Theory]
     [Scenario(TestScenario.Boundary)]
@@ -64,6 +97,7 @@ public class ReconvergenceInserterTests
     [InlineData("LastStatementKernel")]
     [InlineData("UniformSwitchDirectBreakKernel")]
     [InlineData("ForwardGotoNoSplitKernel")]
+    [InlineData("BackwardGotoNoSplitKernel")]
     public void Insert_UniformBranchOrKernelEnd_AddsNoReconvergencePoint(string kernel)
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));

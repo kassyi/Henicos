@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
@@ -24,4 +25,10 @@ internal sealed class IrUnary(IrOperator<UnaryOperatorKind> @operator, IrExpress
         operand == Operand
             ? this
             : KeepSpelling(new IrUnary(Operator, operand, Type, Category, ConstantValue, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrUnaryDecision Decided => GetDecision<IrUnaryDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrUnary WithDecision(IrUnaryDecision decision) => IrExpression.WithDecision<IrUnary>(this, decision);
 }

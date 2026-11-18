@@ -44,14 +44,19 @@ internal readonly ref struct KernelBarrierValidator(
         // graph: every split point counts, also a grid sync or a warp shuffle that the barrier list leaves out
         CrossBarrierChecks.ValidateCrossBarrierLocals(_scan);
 
-        // 4. Barriers that only some of the threads reach (GSH0037), on the control flow graph
+        // 4. Jumps entering the middle of a reconvergence region (GSH0120) in methods reaching Warp.ActiveMask();
+        // must run before the barrier early return because Warp.ActiveMask() and warp shuffles are not in
+        // _scan.Barriers
+        ReconvergenceJumpChecks.Validate(_scan);
+
+        // 5. Barriers that only some of the threads reach (GSH0037), on the control flow graph
         BarrierDivergenceChecks.ValidateDivergentBarriers(_scan);
         if (_scan.Barriers.Count == 0)
         {
             return;
         }
 
-        // 5. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
+        // 6. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
         CrossBarrierChecks.ValidateRecursiveLocalFunctions(_scan);
         CrossBarrierChecks.ValidateCrossBarrierGotos(_scan);
     }

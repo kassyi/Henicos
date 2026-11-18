@@ -31,7 +31,7 @@ internal static class ConstantAtUse
     /// or constant conversion applied to it when that is a primitive value type, otherwise <paramref name="ownType"/> (no
     /// conversion, an enum or user-defined conversion, or a node whose binding cannot be found).
     /// </summary>
-    private static ITypeSymbol GetTypeAtUse(ExpressionSyntax expression, ITypeSymbol ownType, SemanticModel model)
+    internal static ITypeSymbol GetTypeAtUse(ExpressionSyntax expression, ITypeSymbol ownType, SemanticModel model)
     {
         // C# binds no operation for parentheses: the conversion of (ByteMax) is the parent of the field reference
         if (model.GetSafeOperation(expression)?.Parent is IConversionOperation
