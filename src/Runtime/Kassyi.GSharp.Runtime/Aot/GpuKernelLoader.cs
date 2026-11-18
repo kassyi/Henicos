@@ -348,6 +348,7 @@ public static unsafe class GpuKernelLoader
     public static void Shutdown()
     {
         DynamicSharedMemoryOptIn.Clear();
+        CooperativeLaunchOccupancy.Clear();
 
         if (!s_isGlobalInit || s_driverState == CudaDriverState.Unsupported)
         {

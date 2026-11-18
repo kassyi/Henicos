@@ -14,8 +14,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// stops (a reconvergence point, a split point) until no lane of its warp is still inside the same entry of it.
 /// </para>
 /// <para>
-/// A region is entered before the branch or loop (<c>__gsharp_warp_region_enter</c>, which counts the entries of the
-/// frame) and its end is the statement after it (<c>__gsharp_warp_reconverge_arrive</c>). A loop that some lanes
+/// A region is entered before the branch or loop (<c>__gsharp_warp_region_enter</c>) and its end is the statement
+/// after it (<c>__gsharp_warp_reconverge_arrive</c>). A loop that some lanes
 /// <c>continue</c> gets a second region around its body, which ends where the body ends, so that the lanes start each
 /// iteration together. A jump out of a region (<c>break</c>, <c>continue</c>, <c>goto</c>, a <c>return</c> of a device
 /// function) leaves it (<c>__gsharp_warp_region_leave</c>): the lanes that jump meet the others where the jump lands. A
@@ -59,7 +59,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         _isDeviceFunction = isDeviceFunction;
     }
 
-    /// <summary>The regions numbered so far: the first warp sites of the frame (their entry counts).</summary>
+    /// <summary>
+    /// The regions numbered so far: the first warp sites reserved on the frame (unused by regions, kept so collective
+    /// sites do not shift).
+    /// </summary>
     public int RegionCount { get; private set; }
 
     /// <summary>

@@ -14,6 +14,7 @@ import {
   renderScreen,
   screenJobs,
   selectedJob,
+  type ShortNameProvider,
   type Style,
   type ViewState,
 } from "./view.ts";
@@ -229,7 +230,7 @@ export function chatReader(): (() => ChatView | null) | null {
   };
 }
 
-export async function watch(port: number): Promise<void> {
+export async function watch(port: number, plugins?: ShortNameProvider): Promise<void> {
   const input = process.stdin;
   const output = process.stdout;
   if (!input.isTTY || !output.isTTY) {
@@ -250,7 +251,14 @@ export async function watch(port: number): Promise<void> {
       chats = readChats();
       chatsReadAt = now;
     }
-    const lines = renderScreen(reply, state, { columns: output.columns, rows: output.rows, now }, color, chats);
+    const lines = renderScreen(
+      reply,
+      state,
+      { columns: output.columns, rows: output.rows, now },
+      color,
+      chats,
+      plugins,
+    );
     output.write(`\x1b[H${lines.join("\x1b[K\r\n")}\x1b[K\x1b[J`);
   };
   const restore = (): void => {

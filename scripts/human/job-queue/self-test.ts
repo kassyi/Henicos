@@ -4,7 +4,6 @@
 
 import * as assert from "node:assert";
 import * as fs from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
@@ -15,8 +14,8 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
-import { gitBashPath, isTestCommand, quoteArgument } from "./shell.ts";
-import { MachineProfile, MinimumSlots, cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./machine.ts";
+import { gitBashPath, quoteArgument } from "./shell.ts";
+import { MachineProfile, MinimumSlots } from "./machine.ts";
 import { delay, firstTestPort, stopChild, QueueFixture, registration } from "./self-test-support.ts";
 import { checkPlacementAndDependencies } from "./self-test-dependencies.ts";
 import { checkGpuTurnsEndToEnd, checkRegrant, checkStart, checkWait } from "./self-test-parts.ts";
@@ -27,12 +26,14 @@ import { checkView } from "./self-test-view.ts";
 import { checkLib } from "./lib-checks.ts";
 import { checkPlugins } from "./plugin-checks.ts";
 import { checkDotnetPlugin } from "./plugins/dotnet/checks.ts";
+import { checkJustPlugin } from "./plugins/just/checks.ts";
+import { checkHenicosPlugin } from "../job-queue-henicos/checks.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
 const OrphanReleaseMs = 30000;
 
-/** Checks of the pure helpers: quoting, which commands run tests, machine defaults. */
+/** Checks of the pure helpers: quoting and machine hardware defaults. */
 function checkShellHelpers(): void {
   assert.strictEqual(quoteArgument("pwsh", "@x.rsp"), "'@x.rsp'", "PowerShell would splat @x");
   assert.strictEqual(quoteArgument("pwsh", "-Dfoo.bar=1"), "'-Dfoo.bar=1'", "PowerShell splits -a.b at the dot");
@@ -41,63 +42,18 @@ function checkShellHelpers(): void {
   assert.strictEqual(quoteArgument("pwsh", "x,"), "'x,'", "PowerShell reads a trailing comma as an array");
   assert.strictEqual(quoteArgument("bash", "-p:Foo.Bar=1"), "-p:Foo.Bar=1");
   assert.strictEqual(quoteArgument("bash", "it's"), "'it'\\''s'");
-  assert.strictEqual(isTestCommand("just test --filter X"), true);
-  assert.strictEqual(isTestCommand("dotnet build Henicos.slnx"), false);
   checkMachineDefaults();
 }
 
-/** The defaults that follow the machine, and the memory a test run needs. */
+/** The hardware defaults that follow the machine and configured pool ratios. */
 function checkMachineDefaults(): void {
   assert.strictEqual(new MachineProfile(24).slots, 8);
   assert.strictEqual(new MachineProfile(8).slots, 3);
   assert.strictEqual(new MachineProfile(4).slots, MinimumSlots, "a small machine still runs a build beside a test run");
   assert.strictEqual(new MachineProfile(undefined, 64 * 1024 ** 3).memoryPoolMb, 32 * 1024);
-  const budgets = parseBudgets(
-    ["# comment", "Kassyi.GSharp.Tests.Cpu: 2880, stress 6720", "Kassyi.GSharp.Tests.Integration: 128", ""].join("\n"),
-  );
-  assert.deepStrictEqual(budgets.get("Kassyi.GSharp.Tests.Cpu"), { normal: 2880, stress: 6720 });
-  assert.deepStrictEqual(budgets.get("Kassyi.GSharp.Tests.Integration"), { normal: 128, stress: 128 });
-  const memory = (command: string): number => testMemoryMb(command, isTestCommand(command), budgets);
-  assert.strictEqual(memory("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 2880);
-  assert.strictEqual(memory('just test-category Stress "--project" kassyi.gsharp.tests.cpu'), 6720);
-  assert.strictEqual(memory("just test"), 2880 + 128, "a whole-solution run counts every test host");
-  assert.strictEqual(
-    memory('dotnet test --filter "Category!=Stress&Category!=Benchmark"'),
-    2880 + 128,
-    "a filter that leaves the stress tests out counts the normal budgets",
-  );
-  assert.strictEqual(memory("dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu"), 0, "a build takes no memory");
-  assert.strictEqual(testMemoryMb("just test", true, new Map()), 0, "without budgets nothing is held back");
-  checkCpuOnlyProjects();
-}
-
-/** The hint of run --gpu: only when every named test project's csproj says it runs on the CPU. */
-function checkCpuOnlyProjects(): void {
-  const tests = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-tests-"));
-  try {
-    const project = (category: string, name: string, body: string): void => {
-      fs.mkdirSync(path.join(tests, category, name), { recursive: true });
-      fs.writeFileSync(
-        path.join(tests, category, name, `${name}.csproj`),
-        `<Project><PropertyGroup>${body}</PropertyGroup></Project>`,
-      );
-    };
-    project("Compiler", "Suite.Cpu", "<GSharpTargetDialect>Cpu</GSharpTargetDialect>");
-    project("Compiler", "Suite.Cuda", "<GSharpTargetDialect>Cuda</GSharpTargetDialect>");
-    project("Stdlib", "Suite.Math", "<CudaCapability>89</CudaCapability>");
-    const names = ["Suite.Cpu", "Suite.Cuda", "Suite.Math", "Suite.Missing"];
-    const cpuOnly = (command: string): string[] => cpuOnlyTestProjects(command, names, tests);
-    assert.deepStrictEqual(cpuOnly("dotnet test tests/Compiler/Suite.Cpu --no-build"), ["Suite.Cpu"]);
-    assert.deepStrictEqual(
-      cpuOnly("dotnet test tests/Compiler/Suite.Cpu && dotnet test tests/Compiler/Suite.Cuda"),
-      [],
-    );
-    assert.deepStrictEqual(cpuOnly("dotnet test tests/Stdlib/Suite.Math"), [], "no dialect in the csproj: no hint");
-    assert.deepStrictEqual(cpuOnly("dotnet test Suite.Missing"), [], "no csproj: no hint");
-    assert.deepStrictEqual(cpuOnly("just test"), [], "a command that names no project: no hint");
-  } finally {
-    fs.rmSync(tests, { recursive: true, force: true });
-  }
+  const custom = new MachineProfile(24, 64 * 1024 ** 3, { coresPerSlot: 6, minimumSlots: 5, memoryShare: 0.25 });
+  assert.strictEqual(custom.slots, 5, "pools.coresPerSlot and pools.minimumSlots govern slots");
+  assert.strictEqual(custom.memoryPoolMb, 16 * 1024, "pools.memoryShare governs memoryPoolMb");
 }
 
 /** Runs one check; a failure names it before the error, which alone does not say which check it came from. */
@@ -122,6 +78,8 @@ export async function selfTest(): Promise<void> {
   await named("checkLib", checkLib);
   await named("checkPlugins", () => checkPlugins(assert));
   await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
+  await named("checkJustPlugin", () => checkJustPlugin(assert));
+  await named("checkHenicosPlugin", () => checkHenicosPlugin(assert));
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
