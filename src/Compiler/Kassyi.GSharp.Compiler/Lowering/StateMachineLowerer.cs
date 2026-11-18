@@ -172,7 +172,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     private void LowerWarpShuffle(StatementSyntax stmt, InvocationExpressionSyntax shuffle, WarpShuffleKind shuffleKind,
         IReadOnlyDictionary<DeclarationKey, int> labelStates, SectionBuilder sections)
     {
-        var shape = ShuffleShape.ForKind(shuffleKind);
+        var shape = WarpShuffleShape.ForKind(shuffleKind);
         var site = WarpSiteCount++;
         var place = SourcePlace.Format(semanticModel, shuffle);
 
@@ -228,11 +228,11 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
     // __gsharp_warp_publish(__gsharp_root, __gsharp_ctx, <site>, <mask or 0>, <val or 0>, "<name>", "<place>");
     // Warp.ActiveMask() publishes the mask 0: it waits for no lane, and goes on in the next round
-    private static ExpressionStatementSyntax CreateWarpPublish(InvocationExpressionSyntax shuffle, ShuffleShape shape,
-        int site, string place)
+    private static ExpressionStatementSyntax CreateWarpPublish(InvocationExpressionSyntax shuffle,
+        WarpShuffleShape shape, int site, string place)
     {
         var value = shape.HasValue
-            ? GetShuffleArgument(shuffle, ShuffleValuePosition)
+            ? GetShuffleArgument(shuffle, WarpShuffleShape.ShuffleValuePosition)
             : SyntaxFactory.Argument(IntegerLiteral(0));
         var mask = shape.HasMask
             ? GetMaskArgument(shuffle)
@@ -261,7 +261,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
     // The mask of the call; Gpu.SyncWarp() without one names every lane, as its default value does
     private static ArgumentSyntax GetMaskArgument(InvocationExpressionSyntax shuffle) =>
-        TryGetShuffleArgument(shuffle, ShuffleMaskPosition, out var mask)
+        TryGetShuffleArgument(shuffle, WarpShuffleShape.ShuffleMaskPosition, out var mask)
             ? mask
             : SyntaxFactory.Argument(
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal("0xFFFFFFFFu", 0xFFFFFFFFu))
@@ -481,76 +481,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             )
         );
 
-    // How the read of a warp collective is called: the Prelude function, the C# name for the messages, whether it takes
-    // the value, the lane operand, the predicate target, the width and the mask
-    private readonly record struct ShuffleShape(
-        string ReadFunction,
-        string DisplayName,
-        bool HasValue,
-        bool HasLane,
-        string? PredicateArgument,
-        bool HasWidth,
-        bool HasMask = true)
-    {
-        private static readonly Dictionary<WarpShuffleKind, ShuffleShape> s_shapes = new()
-        {
-            [WarpShuffleKind.Sync] = Shuffle(GSharpInternalNames.Prelude.WarpShuffleReadSync, "Warp.ShuffleSync"),
-            [WarpShuffleKind.Down] = Shuffle(GSharpInternalNames.Prelude.WarpShuffleReadDownSync, "Warp.ShuffleDownSync"),
-            [WarpShuffleKind.Up] = Shuffle(GSharpInternalNames.Prelude.WarpShuffleReadUpSync, "Warp.ShuffleUpSync"),
-            [WarpShuffleKind.Xor] = Shuffle(GSharpInternalNames.Prelude.WarpShuffleReadXorSync, "Warp.ShuffleXorSync"),
-            [WarpShuffleKind.MatchAny] = Vote(GSharpInternalNames.Prelude.WarpMatchAnyRead, "Gpu.MatchAnySync"),
-            [WarpShuffleKind.MatchAll] = new(
-                GSharpInternalNames.Prelude.WarpMatchAllRead,
-                "Gpu.MatchAllSync",
-                HasValue: true,
-                HasLane: false,
-                PredicateArgument: "pred",
-                HasWidth: false),
-            // The votes and reductions read the mask and the published predicate or value of every lane (#845)
-            [WarpShuffleKind.Ballot] = Vote(GSharpInternalNames.Prelude.WarpBallotRead, "Warp.BallotSync"),
-            [WarpShuffleKind.All] = Vote(GSharpInternalNames.Prelude.WarpAllRead, "Warp.AllSync"),
-            [WarpShuffleKind.Any] = Vote(GSharpInternalNames.Prelude.WarpAnyRead, "Warp.AnySync"),
-            [WarpShuffleKind.ReduceAdd] = Vote(GSharpInternalNames.Prelude.WarpReduceAddRead, "Warp.ReduceAddSync"),
-            [WarpShuffleKind.ReduceMin] = Vote(GSharpInternalNames.Prelude.WarpReduceMinRead, "Warp.ReduceMinSync"),
-            [WarpShuffleKind.ReduceMax] = Vote(GSharpInternalNames.Prelude.WarpReduceMaxRead, "Warp.ReduceMaxSync"),
-            [WarpShuffleKind.ReduceAnd] = Vote(GSharpInternalNames.Prelude.WarpReduceAndRead, "Warp.ReduceAndSync"),
-            [WarpShuffleKind.ReduceOr] = Vote(GSharpInternalNames.Prelude.WarpReduceOrRead, "Warp.ReduceOrSync"),
-            [WarpShuffleKind.ReduceXor] = Vote(GSharpInternalNames.Prelude.WarpReduceXorRead, "Warp.ReduceXorSync"),
-            // The lanes of the mask meet without a value
-            [WarpShuffleKind.SyncWarp] = new(
-                GSharpInternalNames.Prelude.WarpSyncRead,
-                "Gpu.SyncWarp",
-                HasValue: false,
-                HasLane: false,
-                PredicateArgument: null,
-                HasWidth: false),
-            // The lanes that stopped at the same call in the same round: read(<root>, <frame>, <site>, "<place>")
-            [WarpShuffleKind.ActiveMask] = new(
-                GSharpInternalNames.Prelude.WarpActiveMaskRead,
-                "Warp.ActiveMask",
-                HasValue: false,
-                HasLane: false,
-                PredicateArgument: null,
-                HasWidth: false,
-                HasMask: false),
-        };
-
-        // A shuffle: read(<root>, <frame>, <site>, mask, val, <lane operand>, width, "<place>")
-        private static ShuffleShape Shuffle(string readFunction, string displayName) =>
-            new(readFunction, displayName, HasValue: true, HasLane: true, PredicateArgument: null, HasWidth: true);
-
-        // A vote, reduction or match: read(<root>, <frame>, <site>, mask, <predicate or value>, "<place>")
-        private static ShuffleShape Vote(string readFunction, string displayName) =>
-            new(readFunction, displayName, HasValue: true, HasLane: false, PredicateArgument: null, HasWidth: false);
-
-        public static ShuffleShape ForKind(WarpShuffleKind kind) =>
-            s_shapes.TryGetValue(kind, out var shape)
-                ? shape
-                : throw new ArgumentOutOfRangeException(nameof(kind), kind, $"No shuffle shape for kind {kind}");
-    }
-
     private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
-        ShuffleShape shape, int site, string place)
+        WarpShuffleShape shape, int site, string place)
     {
         // The root context owns the published values of the lane, also when the call is in a device function; the frame
         // gives the path and the visit count of this instance
@@ -565,20 +497,21 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
         if (shape.HasValue)
         {
-            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleValuePosition)); // pass val for type inference
+            // Pass val for type inference
+            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, WarpShuffleShape.ShuffleValuePosition));
         }
 
         if (shape.HasLane || shape.PredicateArgument is not null)
         {
             // For shuffles, this is srcLane/delta/mask; for MatchAll, this is pred (the out predicate argument)
-            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, ShuffleLanePosition));
+            newArgs = newArgs.Add(GetShuffleArgument(barrierInv, WarpShuffleShape.ShuffleLanePosition));
         }
 
         if (shape.HasWidth)
         {
             // The width is always passed, so that the place of the shuffle can follow it; 32 is the default of every shuffle
             newArgs = newArgs.Add(
-                TryGetShuffleArgument(barrierInv, ShuffleWidthPosition, out var width)
+                TryGetShuffleArgument(barrierInv, WarpShuffleShape.ShuffleWidthPosition, out var width)
                     ? width
                     : SyntaxFactory.Argument(IntegerLiteral(32))
             );
@@ -594,18 +527,6 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
 
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
-
-    // The parameters of every Warp shuffle, in order: mask, var, the lane operand (srcLane, delta or laneMask), width
-    private const int ShuffleMaskPosition = 0;
-    private const int ShuffleValuePosition = 1;
-    private const int ShuffleLanePosition = 2;
-    private const int ShuffleWidthPosition = 3;
-    private const string ShuffleMaskParameter = "mask";
-    private const string ShuffleValueParameter = "var";
-    private const string MatchValueParameter = "value";
-    private const string VotePredicateParameter = "predicate";
-    private const string ReduceValueParameter = "val";
-    private const string ShuffleWidthParameter = "width";
 
     // The argument of a shuffle for the parameter at position, which the call compiled with (so it is there)
     private static ArgumentSyntax GetShuffleArgument(InvocationExpressionSyntax shuffle, int position) =>
@@ -626,11 +547,12 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
             var target = arguments[i].NameColon?.Name.Identifier.ValueText switch
             {
                 null => i,
-                ShuffleMaskParameter => ShuffleMaskPosition,
-                ShuffleValueParameter or MatchValueParameter or VotePredicateParameter or ReduceValueParameter =>
-                    ShuffleValuePosition,
-                ShuffleWidthParameter => ShuffleWidthPosition,
-                _ => ShuffleLanePosition
+                WarpShuffleShape.ShuffleMaskParameter => WarpShuffleShape.ShuffleMaskPosition,
+                WarpShuffleShape.ShuffleValueParameter or WarpShuffleShape.MatchValueParameter or
+                    WarpShuffleShape.VotePredicateParameter or WarpShuffleShape.ReduceValueParameter =>
+                    WarpShuffleShape.ShuffleValuePosition,
+                WarpShuffleShape.ShuffleWidthParameter => WarpShuffleShape.ShuffleWidthPosition,
+                _ => WarpShuffleShape.ShuffleLanePosition
             };
             if (target == position)
             {
