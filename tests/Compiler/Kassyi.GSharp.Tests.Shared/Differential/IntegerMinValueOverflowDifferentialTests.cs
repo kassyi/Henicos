@@ -327,4 +327,106 @@ public class IntegerMinValueOverflowDifferentialTests
     [SkippableFact]
     public void IntegerOverflow_SByteMinValueDivide_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_sbyteMinValueDivide);
+
+    private static readonly string[] s_constColumns =
+    [
+        "div", "div_assign", "rem", "rem_assign", "div_call", "div_rt_divisor", "div_const_divisor", "rem_call",
+    ];
+
+    internal static readonly DifferentialCase s_int32ConstMinValue = new(
+        DiffKernelNames.Of(
+            typeof(IntegerMinValueConstantKernels),
+            nameof(IntegerMinValueConstantKernels.Int32ConstMinValueKernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var denoms = new int[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                denoms[k] = -1;
+            }
+
+            return new DiffBuffers()
+                .In("denoms", denoms, readOnly: true)
+                .Out<int>("dst", rows, s_constColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerMinValueConstantKernels.LaunchInt32ConstMinValueKernel(
+            b.Get<int>("denoms"),
+            b.Get<int>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, s) =>
+        {
+            var dst = b.Get<int>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                int o = t * 8;
+                dst[o] = int.MinValue;
+                dst[o + 1] = int.MinValue;
+                dst[o + 2] = 0;
+                dst[o + 3] = 0;
+                dst[o + 4] = int.MinValue;
+                dst[o + 5] = int.MinValue;
+                dst[o + 6] = int.MinValue;
+                dst[o + 7] = 0;
+            }
+        },
+    };
+
+    internal static readonly DifferentialCase s_int64ConstMinValue = new(
+        DiffKernelNames.Of(
+            typeof(IntegerMinValueConstantKernels),
+            nameof(IntegerMinValueConstantKernels.Int64ConstMinValueKernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Inputs = static (_, shape) =>
+        {
+            int rows = shape.Rows;
+            var denoms = new long[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                denoms[k] = -1L;
+            }
+
+            return new DiffBuffers()
+                .In("denoms", denoms, readOnly: true)
+                .Out<long>("dst", rows, s_constColumns, OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerMinValueConstantKernels.LaunchInt64ConstMinValueKernel(
+            b.Get<long>("denoms"),
+            b.Get<long>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        Reference = static (b, s) =>
+        {
+            var dst = b.Get<long>("dst");
+            for (int t = 0; t < s.Rows; t++)
+            {
+                long o = t * 8L;
+                dst[o] = long.MinValue;
+                dst[o + 1] = long.MinValue;
+                dst[o + 2] = 0L;
+                dst[o + 3] = 0L;
+                dst[o + 4] = long.MinValue;
+                dst[o + 5] = long.MinValue;
+                dst[o + 6] = long.MinValue;
+                dst[o + 7] = 0L;
+            }
+        },
+    };
+
+    // The rem columns keep MinValue % -1 away from C++ UB, though mutants removing the b == -1 check in
+    // __gsharp_rem_i32 / __gsharp_rem_i64 survive on current nvcc (13.4) because it happens to constant-fold
+    // MinValue % -1 UB to 0; these columns guard against future nvcc versions changing that folding.
+    [SkippableFact]
+    public void IntegerOverflow_Int32ConstMinValue_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int32ConstMinValue);
+
+    [SkippableFact]
+    public void IntegerOverflow_Int64ConstMinValue_MatchesTheReferenceOnEveryPath() =>
+        DifferentialRunner.Run(s_int64ConstMinValue);
 }
