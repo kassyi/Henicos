@@ -40,6 +40,7 @@ Only the rules marked *always loaded* are in your context from the start. Read e
 - [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): before changing the compiler under `src/Compiler`. Diagnostics, original spans, struct guards, ref/out, `var` suffix, design-time I/O, evaluation order. The symbol file (`*.gsym.json`) is described in the transpiler skill.
 - [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): before writing or changing a test. Tiers, snapshots (`.verified.cs`), attributes and names, the test analyzers.
 - [Test Execution (`just`)](.agents/rules/test-execution.md): before running tests, fuzzing or mutation testing, or acting on a pull request (CI, review labels, merging).
+- [Chat Registry and Calls](.agents/rules/chat-registry.md): when starting a Claude chat or calling another chat ("call <name>"). The registry in tmp/status, the topic confirmation, resolving a call name before SendMessage.
 - [Agent Scripts](.agents/rules/agent-scripts.md): before writing or changing a script or a `justfile` recipe. Node built-ins only (no `.sh` / `.ps1`), compiler-owned logic in a `Kassyi.GSharp.Compiler.Generators` mode, the script catalog.
 - [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): before filing or triaging an issue, choosing a milestone, or picking what to work on next.
 - [Label Colors](.agents/rules/issue-labels.md): before creating or recoloring a GitHub label.
