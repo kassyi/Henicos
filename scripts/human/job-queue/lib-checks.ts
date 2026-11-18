@@ -1,5 +1,5 @@
 // Checks of the shared library modules:
-// main-checkout.js, process-liveness.js, and target-dialect.js.
+// main-checkout.js and process-liveness.js.
 
 import * as defaultAssert from "node:assert";
 import * as fs from "node:fs";
@@ -7,12 +7,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import type { MainCheckoutModule, ProcessEntry, ProcessLivenessModule, TargetDialectModule } from "./lib/types.ts";
+import type { MainCheckoutModule, ProcessEntry, ProcessLivenessModule } from "./lib/types.ts";
 
 const require = createRequire(import.meta.url);
 const { mainCheckout } = require("./lib/main-checkout.js") as MainCheckoutModule;
 const { commandProcesses } = require("./lib/process-liveness.js") as ProcessLivenessModule;
-const { dialectOf } = require("../job-queue-henicos/target-dialect.js") as TargetDialectModule;
 
 /**
  * 1. Temporary git repo with worktree: mainCheckout returns main repo root. Non-git dir returns fallback.
@@ -94,37 +93,8 @@ function checkCommandProcessesUnknownCreation(assert: typeof defaultAssert): voi
   assert.deepStrictEqual(procs, [300, 301], "child with creation time -1 must be counted");
 }
 
-/**
- * 4. dialectOf: <GSharpTargetDialect> cpu </GSharpTargetDialect> (lowercase, whitespace) -> "cpu", missing -> null.
- */
-function checkDialectOf(assert: typeof defaultAssert): void {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-dialect-test-"));
-  try {
-    const cpuProj = path.join(tempDir, "cpu.csproj");
-    fs.writeFileSync(
-      cpuProj,
-      "<Project><PropertyGroup>\r\n  <GSharpTargetDialect> cpu </GSharpTargetDialect>\r\n</PropertyGroup></Project>",
-    );
-    assert.strictEqual(dialectOf(cpuProj), "cpu", "lowercase dialect with whitespace must return 'cpu'");
-
-    const noneProj = path.join(tempDir, "none.csproj");
-    fs.writeFileSync(
-      noneProj,
-      "<Project><PropertyGroup>\r\n  <TargetFramework>net9.0</TargetFramework>\r\n</PropertyGroup></Project>",
-    );
-    assert.strictEqual(dialectOf(noneProj), null, "project without GSharpTargetDialect must return null");
-  } finally {
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch {
-      // Cleanup tolerance
-    }
-  }
-}
-
 export async function checkLib(assert: typeof defaultAssert = defaultAssert): Promise<void> {
   checkMainCheckout(assert);
   checkCommandProcessesPidReuse(assert);
   checkCommandProcessesUnknownCreation(assert);
-  checkDialectOf(assert);
 }

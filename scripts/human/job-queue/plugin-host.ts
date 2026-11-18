@@ -5,10 +5,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { QueueConfig } from "./config.ts";
 import type { ReadStep } from "./command-reader.ts";
+import { loadConfig, type QueueConfig } from "./config.ts";
+import { EntryScript } from "./constants.ts";
 import {
   PluginApiVersion,
+  type AssertModule,
   type CheckResult,
   type Classification,
   type ClientContext,
@@ -28,6 +30,7 @@ export type BaseClientContext = Omit<ClientContext, "options">;
 
 const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
+export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -61,14 +64,13 @@ function isValidViewPanel(value: unknown): value is ViewPanel {
   );
 }
 
-function resolvePluginFolder(name: string, configRoot: string): string | null {
+function resolvePluginFolder(name: string, configRoot: string, pluginsRoot = DefaultPluginsRoot): string | null {
   if (name.startsWith("./") || name.startsWith(".\\")) {
     return path.resolve(configRoot, name);
   }
   if (name.includes("/") || name.includes("\\") || name.includes("..")) {
     return null;
   }
-  const pluginsRoot = path.resolve(import.meta.dirname, "plugins");
   const resolved = path.resolve(pluginsRoot, name);
   const relative = path.relative(pluginsRoot, resolved);
   if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
@@ -397,5 +399,100 @@ export class PluginHost {
       }
     }
     return undefined;
+  }
+}
+
+export interface PluginChecksOptions {
+  config?: QueueConfig;
+  configRoot?: string;
+  pluginsRoot?: string;
+  importTimeoutMs?: number;
+}
+
+function bundledPluginOrder(name: string): number {
+  return name === "dotnet" ? 0 : name === "just" ? 1 : 2;
+}
+
+/**
+ * Discovers and runs `checks(assert)` for all bundled `plugins/<name>/checks.ts` (dotnet, just, then sorted others)
+ * plus `config.plugins[]` entries, regardless of `JOB_QUEUE_PLUGINS=0`. Rejects if an enabled config plugin
+ * lacks `checks.ts` or if any `checks(assert)` throws.
+ */
+export async function runPluginChecks(assert: AssertModule, options: PluginChecksOptions = {}): Promise<void> {
+  const pluginsRoot = options.pluginsRoot ?? DefaultPluginsRoot;
+  const timeoutMs = options.importTimeoutMs ?? DefaultImportTimeoutMs;
+  let config = options.config;
+  let configRoot = options.configRoot;
+  if (config === undefined) {
+    const loaded =
+      configRoot !== undefined
+        ? loadConfig({
+            mode: "status",
+            configPath: path.join(configRoot, "job-queue.config.json"),
+            fromDirectory: configRoot,
+            warn: () => {},
+          })
+        : loadConfig({
+            mode: "status",
+            fromDirectory: path.dirname(EntryScript),
+          });
+    config = loaded.config;
+    configRoot = loaded.configRoot;
+  } else if (configRoot === undefined) {
+    configRoot = path.dirname(EntryScript);
+  }
+
+  const targets: { name: string; checksPath: string }[] = [];
+  const seen = new Set<string>();
+  const addTarget = (name: string, checksPath: string): void => {
+    const realPath = fs.realpathSync.native(checksPath);
+    if (seen.has(realPath)) {
+      return;
+    }
+    seen.add(realPath);
+    targets.push({ name, checksPath: realPath });
+  };
+
+  if (fs.existsSync(pluginsRoot)) {
+    const bundledNames = fs
+      .readdirSync(pluginsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort((a, b) => bundledPluginOrder(a) - bundledPluginOrder(b) || (a < b ? -1 : a > b ? 1 : 0));
+    for (const name of bundledNames) {
+      const folder = resolvePluginFolder(name, configRoot, pluginsRoot);
+      if (folder === null) {
+        continue;
+      }
+      const checksPath = path.join(folder, "checks.ts");
+      if (fs.existsSync(checksPath)) {
+        addTarget(name, checksPath);
+      }
+    }
+  }
+
+  for (const entry of config.plugins) {
+    const folder = resolvePluginFolder(entry.name, configRoot, pluginsRoot);
+    if (folder === null) {
+      throw new Error(`plugin ${entry.name} has an invalid bare name`);
+    }
+    const checksPath = path.join(folder, "checks.ts");
+    if (!fs.existsSync(checksPath)) {
+      throw new Error(`plugin ${entry.name} has no checks.ts (${checksPath})`);
+    }
+    addTarget(entry.name, checksPath);
+  }
+
+  for (const target of targets) {
+    try {
+      const moduleValue = await importWithTimeout(pathToFileURL(target.checksPath).href, timeoutMs);
+      const checks = isPlainObject(moduleValue) ? moduleValue.checks : undefined;
+      if (typeof checks !== "function") {
+        throw new Error("missing exported checks(assert) function");
+      }
+      await (checks as (assert: AssertModule) => void | Promise<void>)(assert);
+    } catch (error) {
+      throw new Error(`plugin ${target.name} checks failed: ${errorMessage(error)}`, { cause: error });
+    }
   }
 }

@@ -27,22 +27,22 @@ const keysOf = (command: string, context: KeyContext = Windows): ReturnType<type
 /** The command reader: steps, filters, comments, assignments, redirections, and what it cannot read. */
 export function checkCommandReader(assert: AssertModule): void {
   const words = (command: string): string[][] | undefined => readCommand(command)?.map((step) => step.words);
-  assert.deepStrictEqual(words("dotnet build 'a b' \"c\" > x.log 2>&1"), [["dotnet", "build", "a b", "c"]]);
-  assert.deepStrictEqual(words("A=1 B='x y' dotnet test &> l *> m >> n"), [["dotnet", "test"]]);
+  assert.deepStrictEqual(words("tool build 'a b' \"c\" > x.log 2>&1"), [["tool", "build", "a b", "c"]]);
+  assert.deepStrictEqual(words("A=1 B='x y' tool test &> l *> m >> n"), [["tool", "test"]]);
   assert.deepStrictEqual(words("a && b || c; d\ne"), [["a"], ["b"], ["c"], ["d"], ["e"]], "all the separators");
   assert.deepStrictEqual(
-    words("dotnet build X 2>&1 | grep -E 'a|b' | tail -3; echo done"),
+    words("tool build X 2>&1 | grep -E 'a|b' | tail -3; echo done"),
     [
-      ["dotnet", "build", "X"],
+      ["tool", "build", "X"],
       ["echo", "done"],
     ],
     "the stages after a pipe are filters, and a pipe in quotes is a word",
   );
-  assert.deepStrictEqual(words("dotnet build X # intent: a reason; with a separator"), [["dotnet", "build", "X"]]);
+  assert.deepStrictEqual(words("tool build X # intent: a reason; with a separator"), [["tool", "build", "X"]]);
   assert.deepStrictEqual(words("echo a#b"), [["echo", "a#b"]], "# inside a word is no comment");
-  assert.deepStrictEqual(words("$env:CI='true'; dotnet build X"), [["$env:CI=true"], ["dotnet", "build", "X"]]);
+  assert.deepStrictEqual(words("$env:CI='true'; tool build X"), [["$env:CI=true"], ["tool", "build", "X"]]);
   for (const unreadable of [
-    "dotnet build 'x",
+    "tool build 'x",
     "echo $(pwd)",
     "echo `pwd`",
     "cat <<END",
@@ -96,7 +96,6 @@ export function checkEstimateNormalize(assert: AssertModule): void {
 
 /** The shape names the steps and what changes their time; the kind only the steps. */
 export function checkEstimateShape(assert: AssertModule): void {
-  assert.strictEqual(keysOf("just test-category Runtime").shape, "just", "without plugins, just falls back to generic");
   assert.strictEqual(keysOf("node tools/x/fuzz.js --minutes 5").shape, "node:fuzz");
   assert.strictEqual(
     keysOf(`cd scripts && node ${ScriptA}; grep error a.log; node -p 1`).shape,
@@ -114,20 +113,10 @@ export function checkEstimateShape(assert: AssertModule): void {
   assert.strictEqual(keysOf('node -e "setTimeout(()=>0,5000)"').kind, "node:eval");
   assert.strictEqual(keysOf("node -p 1").kind, "node:eval");
   // Without a plugin, commands for unknown programs fall back to the core generic key
-  assert.deepStrictEqual(keysOf("dotnet build tests/Compiler/App.Cpu"), {
-    normalized: "dotnet build tests/Compiler/App.Cpu",
-    shape: "dotnet",
-    kind: "dotnet",
-  });
-  assert.deepStrictEqual(keysOf("dotnet test tests/Compiler/App.Cpu -c Release"), {
-    normalized: "dotnet test tests/Compiler/App.Cpu -c Release",
-    shape: "dotnet",
-    kind: "dotnet",
-  });
-  assert.deepStrictEqual(keysOf("dotnet run --project tools/x"), {
-    normalized: "dotnet run --project tools/x",
-    shape: "dotnet",
-    kind: "dotnet",
+  assert.deepStrictEqual(keysOf("make build X"), {
+    normalized: "make build X",
+    shape: "make",
+    kind: "make",
   });
   // A command that cannot be read has the kind of its first program and nothing else
   assert.deepStrictEqual(keysOf("node $(pwd)/x.js"), { normalized: "", shape: "", kind: "node" });

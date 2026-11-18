@@ -1,5 +1,6 @@
 // The plugin API contract (PluginApiVersion = 1): the single module that plugins import for types and pure helpers.
 
+import type * as Assert from "node:assert";
 import type { ReadStep } from "./command-reader.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import type { ShellName } from "./constants.ts";
@@ -9,6 +10,7 @@ export { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./comm
 export { errorCode, errorMessage } from "./history.ts";
 export { dropShortWords } from "./short-name.ts";
 export type { CommandKeys, PathPlace, ReadStep, ScreenLine, ShellName };
+export type AssertModule = typeof Assert;
 
 /** Plugin API version; the core accepts only plugins matching this version. */
 export const PluginApiVersion = 1;
