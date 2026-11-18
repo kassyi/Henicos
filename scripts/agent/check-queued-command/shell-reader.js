@@ -251,7 +251,6 @@ const LaunchPrefixes = [
   'if',
   'while',
   'until',
-  '{',
 ];
 
 /** Drops launch prefixes (VAR=x, time, env, nohup, timeout, ...) from the front of a word list. */
@@ -358,18 +357,17 @@ function substitutions(segment) {
       segment[i + 1] === '(' &&
       (ch === '$' || (ch === '@' && quote === '' && dialect === 'pwsh'))
     ) {
-      const command = segment;
       let depth = 1;
       let j = i + 2;
-      while (j < command.length && depth > 0) {
-        if (command[j] === '(') {
+      while (j < segment.length && depth > 0) {
+        if (segment[j] === '(') {
           depth++;
-        } else if (command[j] === ')') {
+        } else if (segment[j] === ')') {
           depth--;
         }
         j++;
       }
-      bodies.push(command.slice(i + 2, depth === 0 ? j - 1 : j));
+      bodies.push(segment.slice(i + 2, depth === 0 ? j - 1 : j));
       i = j - 1;
     }
   }

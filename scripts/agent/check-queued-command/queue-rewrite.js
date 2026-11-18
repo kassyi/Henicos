@@ -34,7 +34,7 @@
 const fs = require('fs');
 const path = require('path');
 const { testProjectFiles, dialectOf } = require('../../human/job-queue-henicos/target-dialect.js');
-const { check } = require('./command-rules.js');
+const { check, isQueueScript } = require('./command-rules.js');
 const {
   withDialect,
   splitSegments,
@@ -51,6 +51,15 @@ const DirectoryChanges = ['cd', 'pushd', 'popd', 'chdir', 'set-location', 'sl', 
 /** The text quoted as one single-quoted word of the dialect. */
 function quote(kind, text) {
   return kind === 'pwsh' ? `'${text.replace(/'/g, "''")}'` : `'${text.replace(/'/g, "'\\''")}'`;
+}
+
+/** Drops leading bash environment variable assignments (`FOO=1 cmd`) from a word list. */
+function stripBashAssignments(list, kind) {
+  let i = 0;
+  while (kind === 'bash' && list.length - i > 1 && /^[A-Za-z_]\w*=/.test(list[i])) {
+    i++;
+  }
+  return i === 0 ? list : list.slice(i);
 }
 
 /** The command that queues `command`: node scripts/human/job-queue.js run [options] --shell <s> -- '<command>'. */
@@ -224,14 +233,12 @@ function planRewrite(command, kind, cwd) {
     if (withDialect(kind, () => substitutions(segment)).length > 0) {
       return null;
     }
-    let list = withDialect(kind, () => words(segment));
-    while (kind === 'bash' && list.length > 1 && /^[A-Za-z_]\w*=/.test(list[0])) {
-      list = list.slice(1); // FOO=1 dotnet test: the assignment travels with the command
-    }
+    // FOO=1 dotnet test: the assignment travels with the command
+    const list = stripBashAssignments(withDialect(kind, () => words(segment)), kind);
     const name = programName(list[0] || '');
     const reasons = check(segment, kind);
     if (reasons.length === 0) {
-      if (name === 'node' && /(^|[\\/])(job|build)-queue\.js$/.test(unquote(list[1] || ''))) {
+      if (isQueueScript(list)) {
         return null; // already queued: nesting would run it at once in this job
       }
       changedDirectory = changedDirectory || DirectoryChanges.includes(name);
@@ -280,10 +287,7 @@ function splitBuilds(segments, kind) {
   const tests = [];
   for (const raw of segments) {
     const segment = raw.trim();
-    let list = withDialect(kind, () => words(segment)).map(unquote);
-    while (kind === 'bash' && list.length > 1 && /^[A-Za-z_]\w*=/.test(list[0])) {
-      list = list.slice(1);
-    }
+    const list = stripBashAssignments(withDialect(kind, () => words(segment)).map(unquote), kind);
     if (!/^dotnet(\.exe)?$/i.test(list[0] || '')) {
       return null;
     }

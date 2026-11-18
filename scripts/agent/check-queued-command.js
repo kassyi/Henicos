@@ -15,8 +15,9 @@
 //   shell-reader.js       reads the command in the tool's dialect (bash, PowerShell, cmd): quotes, segments at &&,
 //                         ||, ;, |, & and line breaks, $( ) / @( ) substitutions, heredocs and here-strings,
 //                         assignments, launch prefixes and shell wrappers
-//   command-rules.js      what is denied and allowed, the denial message, the hook input and output
+//   command-rules.js      what is denied and allowed
 //   queue-rewrite.js      which denied commands are queued instead, with which queue options
+//   hook.js               the denial message, the hook input and output
 //   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.
@@ -28,7 +29,8 @@
 //   node scripts/agent/check-queued-command.js --self-test
 //   require('./check-queued-command.js').check(command, dialect) returns the reasons (empty when allowed)
 
-const { check, denialText, runHook } = require('./check-queued-command/command-rules.js');
+const { check } = require('./check-queued-command/command-rules.js');
+const { denialText, hookAnswer, runHook } = require('./check-queued-command/hook.js');
 
 const usage = 'Usage: check-queued-command.js (--hook | --text <command> [--dialect bash|pwsh|cmd] | --self-test)';
 
@@ -56,7 +58,7 @@ function main() {
   }
 }
 
-module.exports = { check };
+module.exports = { check, hookAnswer };
 
 if (require.main === module) {
   main();

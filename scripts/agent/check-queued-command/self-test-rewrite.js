@@ -1,12 +1,13 @@
 'use strict';
 
-// The self-test of the rewrite (queue-rewrite.js, hookAnswer of command-rules.js), part of --self-test: commands that
+// The self-test of the rewrite (queue-rewrite.js, hookAnswer of hook.js), part of --self-test: commands that
 // Claude Code gets back queued, with or without --gpu, and commands that stay denied, against the test projects and the
 // justfile of this checkout.
 
 const os = require('os');
 const path = require('path');
-const { check, hookAnswer } = require('./command-rules.js');
+const { check } = require('./command-rules.js');
+const { hookAnswer } = require('./hook.js');
 const { queuedText } = require('./queue-rewrite.js');
 
 const Root = path.resolve(__dirname, '..', '..', '..');
