@@ -348,7 +348,7 @@ internal static class ArrayNullCheck
             return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(location)));
         }
 
-        var memberName = GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
+        var memberName = ErrorSiteTable.GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
 
@@ -366,7 +366,7 @@ internal static class ArrayNullCheck
         }
 
         var location = model.GetReportLocation(node);
-        var memberName = GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
+        var memberName = ErrorSiteTable.GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
 
@@ -374,26 +374,6 @@ internal static class ArrayNullCheck
     internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
         string? currentMemberName) =>
         PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
-
-    // The method that holds the receiver in the user's source, past lambdas and local functions.
-    // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
-    // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
-    // would give one site ID two entries (GSH0103)
-    private static string? GetSourceMemberName(Location location, Compilation compilation)
-    {
-        if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
-        {
-            return null;
-        }
-
-        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
-        return symbol is IMethodSymbol method ? method.Name : null;
-    }
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
     internal static void AppendSite(SourceWriter writer, NullCheckSite site)
