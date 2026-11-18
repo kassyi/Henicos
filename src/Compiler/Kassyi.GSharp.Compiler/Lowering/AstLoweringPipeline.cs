@@ -92,10 +92,14 @@ public static class AstLoweringPipeline
             stateMachineBody = stateMachineBody.WithAdditionalAnnotations(LoweringAnnotations.SplitStateMachineAnnotation);
         }
 
-        return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters,
+        var lowered = new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters,
             WarpSiteCount: lowerer.WarpSiteCount)
         {
             HeldRefLocals = FindHeldRefLocals(contextFields, bodyModel, refLocals)
+        };
+        return lowered with
+        {
+            SpansAcrossStates = SpanAcrossStates.Find(lowered, bodyModel, body.Parent as MethodDeclarationSyntax)
         };
     }
 
