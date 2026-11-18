@@ -11,19 +11,14 @@
 const { createRules } = require('./command-rules.js');
 const { createRewriter } = require('./queue-rewrite.js');
 
-/** Creates the hook adapter bound to repository config `project` and rule evaluator `rules`. */
-function createHook(project = {}, rules = createRules(project)) {
+/**
+ * Creates the hook adapter bound to repository config `project` and rule evaluator `rules`; createRewriter checks the
+ * shape of `project` (project-config.js) and throws first.
+ */
+function createHook(project, rules = createRules(project)) {
   const { check } = rules;
   const { planRewrite } = createRewriter(project, rules);
-  const messages = project.messages || {};
-  const denialText =
-    typeof messages.denialText === 'function'
-      ? messages.denialText
-      : (reasons) => `${reasons.join(', ')} must run through the job queue.`;
-  const additionalContext =
-    typeof messages.additionalContext === 'function'
-      ? messages.additionalContext
-      : (plan) => `Queued as: ${plan.command}`;
+  const { denialText, additionalContext } = project.messages;
 
   /**
    * The answer to one parsed hook input, or null when the command may run as it is.

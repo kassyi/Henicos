@@ -9,9 +9,8 @@
 const { createReader, programName } = require('../shell-reader.js');
 
 /** Builds the shell wrapper and runner rule handlers with injected callbacks and repository config. */
-function wrapperRules({ nestedReason, segmentReason }, project = {}) {
-  const runners = Array.isArray(project.runners) ? project.runners : [];
-  const runnerTargets = Array.isArray(project.runnerTargets) ? project.runnerTargets : [];
+function wrapperRules({ nestedReason, segmentReason }, project) {
+  const { runners, runnerTargets } = project;
   const startProcess = {
     matches: ({ name }) => name === 'start-process' || name === 'saps',
     reason: (reader, { list }) => nestedReason(reader.startProcessCommand(list), reader),

@@ -2,22 +2,16 @@
 
 // Node test-script and gpu-lock.js command rules for check-queued-command.js.
 //
-// Usage: require('./rules/node-scripts.js').nodeScriptRules(project) returns [directNodeScript, nodeScript] (or [] when
-// no script names are configured), where each entry implements { matches(program), reason(reader, program) }.
+// Usage: require('./rules/node-scripts.js').nodeScriptRules(project) returns [directNodeScript, nodeScript], where each
+// entry implements { matches(program), reason(reader, program) }.
 
 const { unquote } = require('../shell-reader.js');
 
 /** Builds node script command rules for the given repository config. */
-function nodeScriptRules(project = {}) {
-  const config = project.nodeScripts || {};
-  const names = Array.isArray(config.names) ? config.names.filter((name) => name !== '') : [];
-  if (names.length === 0) {
-    return [];
-  }
+function nodeScriptRules(project) {
+  const { names, noHelpExemption, exemptOptions } = project.nodeScripts;
   const escaped = names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const scriptsPattern = new RegExp(`(^|[\\\\/])(${escaped.join('|')})\\.js$`);
-  const noHelpExemption = config.noHelpExemption || null;
-  const exemptOptions = Array.isArray(config.exemptOptions) ? config.exemptOptions : [];
 
   const directNodeScript = {
     matches: ({ list }) => scriptsPattern.test(unquote(list[0])),
@@ -38,7 +32,7 @@ function nodeScriptRules(project = {}) {
       const ownArgs = args.slice(scriptIndex + 1);
       const passOn = ownArgs.indexOf('--');
       const helpExempt =
-        (!noHelpExemption || !noHelpExemption.test(script)) &&
+        !noHelpExemption.test(script) &&
         (passOn < 0 ? ownArgs : ownArgs.slice(0, passOn)).some((arg) =>
           ['--help', '-h', '--self-test', '--dry-run'].includes(arg),
         );

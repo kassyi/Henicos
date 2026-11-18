@@ -20,6 +20,7 @@
 //   queue-rewrite.js      which denied commands are queued instead, with which queue options
 //   hook.js               the denial message, the hook input and output
 //   project-henicos.js    Henicos-specific recipes, scripts, verbs, runners, queue path, test lookup, and wording
+//   project-config.js     the shape of that config, checked when the engine is created (a missing key throws)
 //   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.

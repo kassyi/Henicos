@@ -11,8 +11,8 @@ function isStryker(word) {
 }
 
 /** Builds .NET, Stryker.NET, and MSBuild command rules for the given repository config. */
-function dotnetRules(project = {}) {
-  const verbs = project.dotnet && project.dotnet.verbs ? project.dotnet.verbs : null;
+function dotnetRules(project) {
+  const { verbs } = project.dotnet;
 
   const dotnet = {
     matches: ({ name }) => name === 'dotnet',
@@ -28,7 +28,7 @@ function dotnetRules(project = {}) {
       if (rest.some((arg) => ['--help', '-h', '-?', '/?'].includes(arg))) {
         return null; // dotnet test --help builds nothing
       }
-      if (verbs && verbs.test(verb)) {
+      if (verbs.test(verb)) {
         return { tool: 'dotnet', verb, text: `dotnet ${verb}` };
       }
       return null;

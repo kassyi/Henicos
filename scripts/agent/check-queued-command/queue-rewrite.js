@@ -17,23 +17,25 @@
 //
 // --gpu, from data that already exists in the repository:
 //   - dotnet build / publish / pack / msbuild: no GPU, unless an MSBuild target named like a test target runs.
-//   - dotnet test / vstest: the test projects the command names (tests/<category>/<name>/<name>.csproj, matched by
-//     name); every one sets <GSharpTargetDialect>Cpu: no --gpu; any sets Cuda: --gpu; a project that says nothing of
-//     its dialect, or no project named at all: undecided (the same rule as cpuOnlyTestProjects of
-//     scripts/human/job-queue/machine.ts, which this CommonJS script cannot import).
+//   - dotnet test / vstest: the test projects the command names, matched by name; none uses the GPU: no --gpu; any
+//     does: --gpu; one whose GPU use is unknown, or no project named at all: undecided. Which projects exist and
+//     whether one uses the GPU come from the project config (testProjects.list and usesGpu; this repository's config
+//     reads the GSharpTargetDialect of each test project, with the same module as the job queue).
 //   - just <recipe>: the options the recipe itself passes to {{queue}} in the justfile (--gpu, --weight <n>); a recipe
 //     that picks them from its arguments, or does not queue itself, is undecided.
 // An undecided command is denied as before, with a sentence saying that it may need --gpu.
 // A --gpu command of builds then tests that all pass --no-build becomes two queued runs joined by &&, the builds
 // without --gpu and the tests with it, so that the GPU turn is not held while the build runs (splitBuilds).
 //
-// Usage: require('./queue-rewrite.js').createRewriter(project, rules) returns { planRewrite, queuedText, quote };
+// Usage: require('./queue-rewrite.js').createRewriter(project, rules) returns { planRewrite, queuedText, quote } (it
+// throws when `project` does not have the shape of project-config.js);
 // planRewrite(command, dialect, cwd) returns { command, gpu } for a rewrite, { note } for a denial with a sentence to
 // add, or null for the plain denial; queuedText(rewritten, dialect) returns the command a rewritten command queues.
 
 const fs = require('fs');
 const path = require('path');
 const { createRules } = require('./command-rules.js');
+const { validateProject } = require('./project-config.js');
 const { createReader } = require('./shell-reader.js');
 
 const DirectoryChanges = ['cd', 'pushd', 'popd', 'chdir', 'set-location', 'sl', 'push-location', 'pop-location'];
@@ -72,18 +74,12 @@ function hasInputRedirection(segment) {
   return /</.test(segment.replace(/"(?:[^"\\`]|[\\`].)*"|'[^']*'/g, ''));
 }
 
-/** The names of the test projects under the project's test root. */
+/** The test projects of the repository at `root`: { names } or { error } when they cannot be read. */
 function testProjects(root, config) {
   try {
-    const names = config.list(root);
-    return { names: Array.isArray(names) ? names : [], error: '' };
+    return { names: config.list(root), error: '' };
   } catch (error) {
-    const detail = error && error.message ? error.message : String(error);
-    const message =
-      typeof config.readErrorMessage === 'function'
-        ? config.readErrorMessage(root, error)
-        : `could not read tests: ${detail}`;
-    return { names: [], error: message || `could not read tests: ${detail}` };
+    return { names: [], error: config.readErrorMessage(root, error) };
   }
 }
 
@@ -97,19 +93,13 @@ function namedProjects(text, projects) {
 
 /** GPU use of a dotnet test / vstest segment: { gpu } or { undecided: why }. */
 function testGpu(segment, root, config) {
-  if (!config || typeof config.list !== 'function') {
-    return { undecided: 'test projects are not configured' };
-  }
-  if (typeof config.usesGpu !== 'function') {
-    return { undecided: 'test project GPU check is not configured' };
-  }
   const { names, error } = testProjects(root, config);
   if (error !== '') {
     return { undecided: error };
   }
   const named = namedProjects(segment, names);
   if (named.length === 0) {
-    return { undecided: config.missingMessage || 'it names no test project' };
+    return { undecided: config.missingMessage };
   }
   let gpu = false;
   for (const entry of named) {
@@ -143,16 +133,13 @@ function recipeBodies(justfile, recipe) {
 
 /** The queue options of a just recipe: { options, gpu } or { undecided: why }. */
 function recipeQueue(recipe, root, justfileConfig) {
-  if (!justfileConfig || !justfileConfig.fileName) {
-    return { undecided: 'the justfile defines no queue variable' };
-  }
   let justfile;
   try {
     justfile = fs.readFileSync(path.join(root, justfileConfig.fileName), 'utf8');
   } catch (error) {
     return { undecided: `could not read the justfile: ${error.message}` };
   }
-  if (!justfileConfig.queueLinePattern || !justfileConfig.queueLinePattern.test(justfile)) {
+  if (!justfileConfig.queueLinePattern.test(justfile)) {
     return { undecided: 'the justfile defines no queue variable' };
   }
   const found = new Set();
@@ -167,7 +154,7 @@ function recipeQueue(recipe, root, justfileConfig) {
     return { undecided: `just ${recipe} does not queue itself` };
   }
   const [options] = [...found];
-  if (found.size > 1 || !justfileConfig.optionsPattern || !justfileConfig.optionsPattern.test(options)) {
+  if (found.size > 1 || !justfileConfig.optionsPattern.test(options)) {
     return { undecided: `just ${recipe} chooses its queue options from its arguments` };
   }
   const list = options === '' ? [] : options.split(' ');
@@ -205,16 +192,11 @@ function splitBuilds(segments, reader) {
 }
 
 /** Creates the command rewriter bound to repository config `project` and rule evaluator `rules`. */
-function createRewriter(project = {}, rules = createRules(project)) {
+function createRewriter(project, rules = createRules(project)) {
   const { checkDetailed, isQueueScript } = rules;
-  const queueScript = project.queueScript || '';
-  const cpuVerbs = project.dotnet && Array.isArray(project.dotnet.cpuVerbs) ? project.dotnet.cpuVerbs : [];
-  const testVerbs = project.dotnet && Array.isArray(project.dotnet.testVerbs) ? project.dotnet.testVerbs : [];
-  const messages = project.messages || {};
-  const undecidedNote =
-    typeof messages.undecidedNote === 'function'
-      ? messages.undecidedNote
-      : (undecided) => `Add --gpu if the command uses the GPU (${undecided.join('; ')}).`;
+  const { queueScript } = validateProject(project);
+  const { cpuVerbs, testVerbs } = project.dotnet;
+  const { undecidedNote } = project.messages;
 
   /** One denied segment: { gpu, options } or { undecided } or null (plain denial). */
   function deniedSegment(segment, list, reason, root, changedDirectory) {
@@ -242,7 +224,7 @@ function createRewriter(project = {}, rules = createRules(project)) {
    */
   function planRewrite(command, kind, cwd) {
     const text = command.trim();
-    if (text === '' || queueScript === '' || !fs.existsSync(path.join(cwd, queueScript))) {
+    if (text === '' || !fs.existsSync(path.join(cwd, queueScript))) {
       return null;
     }
     const reader = createReader(kind);

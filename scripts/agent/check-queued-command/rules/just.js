@@ -47,15 +47,14 @@ function justRecipe(list) {
 }
 
 /** Builds the `just` recipe command rule for the given repository config. */
-function justRules(project = {}) {
-  const recipes = project.justRecipes || null;
-  const dryRunRecipes = project.justDryRunRecipes || null;
+function justRules(project) {
+  const { justRecipes: recipes, justDryRunRecipes: dryRunRecipes } = project;
 
   const just = {
     matches: ({ name }) => name === 'just',
     reason: (_reader, { list }) => {
       const recipe = justRecipe(list);
-      if (!recipes || !recipes.test(recipe)) {
+      if (!recipes.test(recipe)) {
         return null;
       }
       const recipeIndex = list.findIndex((word, index) => index > 0 && unquote(word) === recipe);
@@ -65,7 +64,7 @@ function justRules(project = {}) {
       const printsOnly = before.some((arg) =>
         ['-n', '--dry-run', '-s', '--show', '-l', '--list', '--summary', '--evaluate'].includes(arg),
       );
-      const scriptDryRun = Boolean(dryRunRecipes && dryRunRecipes.test(recipe) && after.includes('--dry-run'));
+      const scriptDryRun = dryRunRecipes.test(recipe) && after.includes('--dry-run');
       return printsOnly || scriptDryRun ? null : { tool: 'just', verb: recipe, text: `just ${recipe}` };
     },
   };

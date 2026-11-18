@@ -137,34 +137,27 @@ function checkRewrites(assert) {
   checkTestProjectGuards(assert);
 }
 
-/** Guard fallbacks when `project.testProjects` is missing, throws, or returns invalid shapes. */
+/** A test-project lookup that fails or answers in an unusable shape leaves the command denied, saying why. */
 function checkTestProjectGuards(assert) {
-  const min = {
-    dotnet: { verbs: /^(test)$/, cpuVerbs: [], testVerbs: ['test'] },
-    queueScript: 'scripts/human/job-queue.js',
+  const base = {
+    list: () => [{ name: 'G' }],
+    readErrorMessage: (root, error) => `could not read tests: ${error.message}`,
+    missingMessage: 'it names no test project',
+    usesGpu: () => ({ gpu: true }),
   };
-  const gList = () => [{ name: 'G' }];
   const failList = () => {
     throw new Error('boom');
   };
   const cases = [
-    [undefined, 'dotnet test G', 'test projects are not configured'],
-    [{}, 'dotnet test G', 'test projects are not configured'],
-    [{ list: () => null, usesGpu: () => ({ gpu: true }) }, 'dotnet test G', 'it names no test project'],
-    [{ list: failList, usesGpu: () => ({ gpu: true }) }, 'dotnet test G', 'could not read tests: boom'],
-    [
-      { list: failList, readErrorMessage: () => '', usesGpu: () => ({ gpu: true }) },
-      'dotnet test G',
-      'could not read tests: boom',
-    ],
-    [{ list: gList, usesGpu: () => ({ gpu: true }) }, 'dotnet test', 'it names no test project'],
-    [{ list: gList }, 'dotnet test G', 'test project GPU check is not configured'],
-    [{ list: gList, usesGpu: () => null }, 'dotnet test G', 'GPU use is unknown'],
-    [{ list: gList, usesGpu: () => ({}) }, 'dotnet test G', 'GPU use is unknown'],
-    [{ list: gList, usesGpu: () => ({ undecided: 'ambiguous', gpu: true }) }, 'dotnet test G', 'ambiguous'],
+    [{ list: failList }, 'dotnet test G', 'could not read tests: boom'],
+    [{}, 'dotnet test', 'it names no test project'],
+    [{ usesGpu: () => null }, 'dotnet test G', 'GPU use is unknown'],
+    [{ usesGpu: () => ({}) }, 'dotnet test G', 'GPU use is unknown'],
+    [{ usesGpu: () => ({ undecided: 'ambiguous', gpu: true }) }, 'dotnet test G', 'ambiguous'],
   ];
-  for (const [tp, cmd, expectedReason] of cases) {
-    const out = createHook({ ...min, testProjects: tp }).hookAnswer({
+  for (const [override, cmd, expectedReason] of cases) {
+    const project = { ...projectHenicos, testProjects: { ...base, ...override } };
+    const out = createHook(project).hookAnswer({
       tool_name: 'Bash',
       tool_input: { command: cmd },
       cwd: Root,

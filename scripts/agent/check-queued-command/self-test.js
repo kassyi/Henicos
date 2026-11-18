@@ -424,40 +424,52 @@ function checkReaderIsolation(assert) {
   assert.strictEqual(cmd.dialect, 'cmd');
 }
 
-/** Custom and empty `project` configs work in isolation with zero Henicos rule or wording leakage. */
-function checkCustomProjectIsolation(assert) {
-  const emptyRules = createRules({});
-  const emptyHook = createHook({}, emptyRules);
-  for (const cmd of [
-    'just test',
-    'node scripts/human/long-checks.js',
-    'dotnet test',
-    'valgrind dotnet test',
-    'node foo.js',
-    'node .js',
-    './.js',
-    'node', 'node --version', 'node -v', 'node ""', 'node --', '""',
-    'node scripts/human/job-queue.js run -- "dotnet test"',
-  ]) {
-    assert.deepStrictEqual(emptyRules.check(cmd), [], `empty project allows: ${cmd}`);
+/**
+ * A project config with a key missing or of the wrong type stops the engine at creation (it never falls back to
+ * allowing the commands that key would deny), naming the key.
+ */
+function checkProjectValidation(assert) {
+  const { Schema } = require('./project-config.js');
+  // The schema names every key of this repository's config, nested ones included, so that none goes unchecked
+  const keys = (object, schema, where) =>
+    Object.keys(object).flatMap((key) =>
+      typeof schema[key] === 'object' ? keys(object[key], schema[key], `${where}${key}.`) : [`${where}${key}`],
+    );
+  assert.deepStrictEqual(keys(projectHenicos, Schema, '').sort(), keys(Schema, Schema, '').sort(), 'schema keys');
+  const factories = [
+    ['createRules', (project) => createRules(project)],
+    ['createHook', (project) => createHook(project, createRules(projectHenicos))],
+  ];
+  for (const [label, create] of factories) {
+    assert.throws(() => create(undefined), /must be an object/, `${label}: no config`);
+    for (const [key, type] of Object.entries(Schema)) {
+      const missing = { ...projectHenicos };
+      delete missing[key];
+      assert.throws(() => create(missing), new RegExp(`needs ${key} `), `${label}: ${key} missing`);
+      const wrong = { ...projectHenicos, [key]: 7 };
+      assert.throws(() => create(wrong), new RegExp(`needs ${key} `), `${label}: ${key} of the wrong type`);
+      if (typeof type === 'object') {
+        for (const inner of Object.keys(type)) {
+          const nested = { ...projectHenicos, [key]: { ...projectHenicos[key] } };
+          delete nested[key][inner];
+          assert.throws(() => create(nested), new RegExp(`needs ${key}\\.${inner} `), `${label}: ${key}.${inner}`);
+        }
+      }
+    }
   }
-  assert.deepStrictEqual(createRules({ nodeScripts: { names: [''] } }).check('node .js'), []);
-  const dotRules = createRules({ nodeScripts: { names: ['my.tool'] } });
-  assert.deepStrictEqual(dotRules.check('node tools/myXtool.js'), []);
+  const noNames = { ...projectHenicos, nodeScripts: { ...projectHenicos.nodeScripts, names: [] } };
+  assert.throws(() => createRules(noNames), /needs nodeScripts\.names /, 'no script names');
+  const emptyName = { ...projectHenicos, nodeScripts: { ...projectHenicos.nodeScripts, names: [''] } };
+  assert.throws(() => createRules(emptyName), /needs nodeScripts\.names /, 'an empty script name');
+  const dotted = { ...projectHenicos, nodeScripts: { ...projectHenicos.nodeScripts, names: ['my.tool'] } };
+  const dotRules = createRules(dotted);
+  assert.deepStrictEqual(dotRules.check('node tools/myXtool.js'), [], 'a dot in a script name is literal');
   assert.deepStrictEqual(dotRules.check('node tools/my.tool.js'), ['my.tool.js']);
-  assert.strictEqual(
-    emptyHook.hookAnswer({ tool_name: 'Bash', tool_input: { command: 'dotnet test' }, cwd: process.cwd() }),
-    null,
-    'empty project allows dotnet test in hook',
-  );
-  const emptyDeny = emptyHook.hookAnswer({
-    tool_name: 'Bash',
-    tool_input: { command: 'msbuild Foo.slnx' },
-    cwd: process.cwd(),
-  }).hookSpecificOutput;
-  assert.strictEqual(emptyDeny.permissionDecision, 'deny');
-  assert.ok(!/job-queue\.js|gpu-lock\.js/.test(emptyDeny.permissionDecisionReason), 'no Henicos wording in empty');
+}
 
+/** A custom `project` config works in isolation with zero Henicos rule or wording leakage. */
+function checkCustomProjectIsolation(assert) {
+  checkProjectValidation(assert);
   const customProject = {
     justRecipes: /^(custom-task)$/,
     justDryRunRecipes: /^(custom-task)$/,
@@ -480,6 +492,12 @@ function checkCustomProjectIsolation(assert) {
       fileName: 'justfile',
       queueLinePattern: /^queue := "node tools\/custom-queue\.js run"\s*$/m,
       optionsPattern: /^(--gpu( |$))*$/,
+    },
+    testProjects: {
+      list: () => [],
+      readErrorMessage: (root, error) => `CUSTOM READ: ${error.message}`,
+      missingMessage: 'CUSTOM NO PROJECT',
+      usesGpu: () => ({ gpu: false }),
     },
     messages: {
       denialText: (reasons) => `CUSTOM DENY: ${reasons.join('; ')}`,

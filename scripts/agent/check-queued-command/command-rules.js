@@ -17,10 +17,11 @@
 //     lock (--lock-path, for its own tests).
 // A segment that runs job-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
 //
-// Usage: require('./command-rules.js').createRules(project) returns { check, checkDetailed, isQueueScript,
-// resolveProgram }; check(command, dialect) returns the reason texts (empty when allowed), and checkDetailed(...)
-// returns structured { tool, verb, text } reasons.
+// Usage: require('./command-rules.js').createRules(project) returns { check, checkDetailed, isQueueScript } (it throws
+// when `project` does not have the shape of project-config.js); check(command, dialect) returns the reason texts
+// (empty when allowed), and checkDetailed(...) returns structured { tool, verb, text } reasons.
 
+const { validateProject } = require('./project-config.js');
 const { createReader, programName, unquote } = require('./shell-reader.js');
 const { wrapperRules } = require('./rules/wrappers.js');
 const { dotnetRules } = require('./rules/dotnet.js');
@@ -68,9 +69,8 @@ function resolveProgram(reader, segment, nestedReason) {
 }
 
 /** Creates the command rule evaluator bound to the given repository config `project`. */
-function createRules(project = {}) {
-  const exemptPrograms = Array.isArray(project.exemptPrograms) ? project.exemptPrograms : [];
-  const queueScriptPattern = project.queueScriptPattern || null;
+function createRules(project) {
+  const { exemptPrograms, queueScriptPattern } = validateProject(project);
 
   /** The first structured reason of a nested command, or null. */
   function nestedReason(command, reader) {
@@ -109,7 +109,6 @@ function createRules(project = {}) {
   /** True when a command word list runs the project's queue script via node. */
   function isQueueScript(list) {
     return (
-      queueScriptPattern !== null &&
       list.length > 1 &&
       programName(list[0] || '') === 'node' &&
       queueScriptPattern.test(unquote(list[1] || ''))
@@ -166,8 +165,7 @@ function createRules(project = {}) {
     check,
     checkDetailed,
     isQueueScript,
-    resolveProgram: (reader, segment) => resolveProgram(reader, segment, nestedReason),
   };
 }
 
-module.exports = { createRules, resolveProgram };
+module.exports = { createRules };
