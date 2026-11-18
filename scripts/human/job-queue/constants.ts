@@ -37,6 +37,10 @@ export const OverdueMs = 10 * 60 * 1000;
 export const HistoryRunsPerCommand = 9;
 export const HistoryCommands = 500;
 export const RegrantMs = 5 * 1000; // how often the scheduler re-orders and grants while jobs wait
+// A probe result of a turn resource serves a grant for this long; an older one is measured again
+export const ProbeFreshMs = 5 * 1000;
+// The least time between two probes of one resource (the server starts them)
+export const ProbeIntervalMs = 5 * 1000;
 export const ForecastNoticeMs = 60 * 1000; // a waiting client is told again when its expected start moved this much
 // forecast: the rest of a running job that has run longer than any recorded run
 export const OverrunGuessMs = 30 * 1000;

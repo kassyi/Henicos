@@ -109,6 +109,8 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `server-job.ts` | The job record the server keeps (`ServerJob`), how `status` shows it, and the invariant of the records (`checkRecords`, for the self-test) |
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
+| `resources.ts` | The turn resources, with no I/O: `ResourceSpec`, `resourceOf`, `usageOf` (the use of a resource counted from the running jobs) and `turnVerdict` (the grant rule) |
+| `resource-checks.ts` | Self-test checks of the turn resources (run through the unit checks) |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
@@ -174,8 +176,17 @@ sequenceDiagram
   and `--before` place jobs ahead of all of it. `backfill` and `fifo` keep arrival order without the fairness rules.
   The forecast replays the same grants on copies of the jobs and of the rotation.
 - **Resources**: CPU slots (one per 3 cores by default), a memory pool that test runs take their budget of
-  `tests/memory-budgets.yml` from, and one GPU turn at a time. A GPU holder (the command under `gpu-lock.js`) is
-  granted at once, over the pools, so it never deadlocks with a job that holds a slot and waits for the GPU.
+  `tests/memory-budgets.yml` from, and the turn resources (`gpu`): at most `slots` shared turns at a time, one with
+  `slots` 1. A GPU holder (the command under `gpu-lock.js`) is granted at once, over the pools, so it never deadlocks
+  with a job that holds a slot and waits for the GPU.
+- **Turn grants** (`turnVerdict`): only the first waiting turn of a resource is looked at, so an exclusive turn is
+  never passed by a shared one behind it. Use is counted from the running jobs on every grant, never stored. Only a
+  turn with `share` "shared" shares; a turn without it, and a holder that no running turn started, are exclusive. A
+  second shared turn also needs a probe result that is ok, at most `ProbeFreshMs` old and of the current generation
+  (the generation grows with every grant, so one result serves one grant); the first needs none, and neither does a
+  resource without a probe. A resource the configuration does not name gets one slot and no probe. The forecast
+  assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the running shared
+  turns have run `settleMs`; the server that runs it comes later.
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 
