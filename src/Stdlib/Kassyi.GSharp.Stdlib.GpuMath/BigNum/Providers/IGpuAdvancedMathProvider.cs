@@ -46,6 +46,25 @@ public interface IGpuAdvancedMathProvider
         int actualBits, int iterations);
 
     /// <summary>
+    /// Runs the Newton-Raphson iterations of <see cref="InverseSqrtMega"/> without the final correction to the floor:
+    /// the result is never above <c>floor(2^B / sqrt(a))</c> and at most
+    /// <see cref="GpuBigIntDivRem.ApproximateInverseSqrtMaxError"/> below it, for a caller that corrects its own result
+    /// exactly.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="targetOperand">The operand <c>a</c>, normalized as for <see cref="InverseSqrtMega"/>.</param>
+    /// <param name="resultBuffer">Holds the initial approximation on entry and receives the result.</param>
+    /// <param name="marginWords">The extra words of precision above the operand size.</param>
+    /// <param name="actualBits">The bit length of the operand.</param>
+    /// <param name="iterations">The number of Newton-Raphson iterations.</param>
+    /// <remarks>
+    /// The default runs <see cref="InverseSqrtMega"/>, whose exact floor is within any bound.
+    /// </remarks>
+    internal void ApproximateInverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand,
+        GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations) =>
+        InverseSqrtMega(workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+
+    /// <summary>
     /// Corrects an integer square root estimate <c>r</c> of <c>a</c> to <c>floor(sqrt(a))</c>.
     /// </summary>
     /// <param name="workspace">The GPU workspace.</param>

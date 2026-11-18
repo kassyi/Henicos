@@ -24,6 +24,8 @@ public static partial class ManagedGpuContext
 
     private readonly record struct WarpInstance(uint Path, int Site, uint Visit);
 
+    private readonly record struct WarpRegion(uint Path, int Site);
+
     private const int WarpRecordSlots = 2;
 
     // The last two values each thread of the block published, which slot it writes next, whether it waits at a warp
@@ -48,7 +50,7 @@ public static partial class ManagedGpuContext
     // inside, innermost last (#844): WarpRegionCapacity entries per thread; and whether it waits where the innermost
     // one ends, since which round and where. Allocated by the first kernel that enters one
     [ThreadStatic]
-    private static WarpInstance[]? s_warpRegions;
+    private static WarpRegion[]? s_warpRegions;
 
     [ThreadStatic]
     private static int[]? s_warpRegionDepth;
@@ -284,7 +286,7 @@ public static partial class ManagedGpuContext
     /// </summary>
     /// <typeparam name="TFrame">The frame of the state machine.</typeparam>
     /// <param name="root">Unused.</param>
-    /// <param name="frame">The frame the branch is in, which counts its entries.</param>
+    /// <param name="frame">The frame the branch is in.</param>
     /// <param name="site">The number of the branch in the body of its function.</param>
     /// <exception cref="InvalidOperationException">The lane is inside too many branches at once.</exception>
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -300,8 +302,7 @@ public static partial class ManagedGpuContext
                 "in methods that reach Warp.ActiveMask(); the CPU paths cannot follow which lanes run together");
         }
 
-        WarpRegions[WarpRegionCapacity * tid + depth] =
-            new WarpInstance(frame.WarpPath, site, frame.AdvanceWarpVisit(site));
+        WarpRegions[WarpRegionCapacity * tid + depth] = new WarpRegion(frame.WarpPath, site);
         WarpRegionDepth[tid] = depth + 1;
     }
 
@@ -362,8 +363,8 @@ public static partial class ManagedGpuContext
         __gsharp_warp_region_leave(root, ref frame, site);
     }
 
-    private static WarpInstance[] WarpRegions =>
-        s_warpRegions ??= new WarpInstance[WarpRegionCapacity * MaxThreadsPerBlock];
+    private static WarpRegion[] WarpRegions =>
+        s_warpRegions ??= new WarpRegion[WarpRegionCapacity * MaxThreadsPerBlock];
 
     private static int[] WarpRegionDepth => s_warpRegionDepth ??= new int[MaxThreadsPerBlock];
 
