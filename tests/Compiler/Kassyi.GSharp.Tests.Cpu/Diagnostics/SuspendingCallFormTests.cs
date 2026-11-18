@@ -84,13 +84,13 @@ public class SuspendingCallFormTests
         RoslynTestUtility.ReadTestCase("Analyzers/SuspendingCallProtectedFrame.cs")
     );
 
-    // A frame that holds a protected type of an internal function is private protected: a derived class names it
+    // A frame that holds a protected type is private protected (its fields are internal): a derived class names it
     // (Direct), any other class of the assembly reaches the function through the frame's entries
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("ProtectedFrameDerived", "HoldsProtectedType", Accessibility.ProtectedAndInternal, "Direct")]
     [InlineData("ProtectedFrameUnrelated", "HoldsProtectedType", Accessibility.ProtectedAndInternal, "Entry")]
-    [InlineData("ProtectedFrameDerived", "HoldsProtectedTypeProtected", Accessibility.Protected, "Direct")]
+    [InlineData("ProtectedFrameDerived", "HoldsProtectedTypeProtected", Accessibility.ProtectedAndInternal, "Direct")]
     public void GetCallForm_ProtectedFrame_DerivedNamesItAndOthersUseTheEntries(string caller, string name,
         Accessibility expectedFrame, string expected)
     {

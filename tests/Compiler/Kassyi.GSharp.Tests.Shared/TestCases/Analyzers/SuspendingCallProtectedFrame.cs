@@ -19,7 +19,7 @@ public partial class ProtectedFrameBase
         return hidden.X;
     }
 
-    // Protected as well: the frame is protected, not private protected
+    // A protected function holds the same type: a frame with internal fields is still private protected
     [GpuDeviceFunction]
     protected static int HoldsProtectedTypeProtected(int[] data)
     {
