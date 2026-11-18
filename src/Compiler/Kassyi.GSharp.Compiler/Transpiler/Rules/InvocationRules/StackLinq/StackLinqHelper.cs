@@ -97,7 +97,7 @@ internal static class StackLinqHelper
         IMethodSymbol symbol,
         [NotNullWhen(true)] out ExpressionSyntax? sourceExpression)
     {
-        if (symbol.ReducedFrom is not null)
+        if (symbol.ReducedFrom is not null || !symbol.IsStatic)
         {
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {

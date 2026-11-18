@@ -28,6 +28,26 @@ public class MixedHoistDeclarationTests : TranspilerTestBase
     public void HoistDeclaration_AlternatingHoist_DeclaratorsRunInSourceOrder() =>
         AssertAlternatingHoist();
 
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_LabeledHoistedBeforeLocal_LaterDeclaratorReadsHoistedValue() =>
+        AssertLabeledHoistedBeforeLocal();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_LabeledDeclarationWithoutInitializer_RunsAcrossBarrier() =>
+        AssertLabeledDeclaration();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_LabeledMultipleDeclarationsWithoutInitializer_RunsAcrossBarrier() =>
+        AssertLabeledDeclarations();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void HoistDeclaration_NestedLabeledDeclarationWithoutInitializer_RunsAcrossBarrier() =>
+        AssertNestedLabeledDeclaration();
+
     internal static void AssertHoistedBeforeLocal()
     {
         var o = new int[BlockSize];
@@ -74,6 +94,36 @@ public class MixedHoistDeclarationTests : TranspilerTestBase
             // a = t, b = t + 1, c = 2t + 2, d = 3t + 2
             Assert.Equal((t + 1) * 1000 + 3 * t + 2, p[t]);
             Assert.Equal(t * 1000 + 2 * t + 2, o[t]);
+        }
+    }
+
+    internal static void AssertLabeledDeclaration()
+    {
+        var o = new int[BlockSize];
+        MixedHoistDeclarationKernels.LaunchLabeledDeclarationKernel(o, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(t, o[t]);
+        }
+    }
+
+    internal static void AssertLabeledDeclarations()
+    {
+        var o = new int[BlockSize];
+        MixedHoistDeclarationKernels.LaunchLabeledDeclarationsKernel(o, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(3 * t, o[t]);
+        }
+    }
+
+    internal static void AssertNestedLabeledDeclaration()
+    {
+        var o = new int[BlockSize];
+        MixedHoistDeclarationKernels.LaunchNestedLabeledDeclarationKernel(o, blockDimX: BlockSize);
+        for (int t = 0; t < BlockSize; t++)
+        {
+            Assert.Equal(t, o[t]);
         }
     }
 }

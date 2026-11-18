@@ -475,16 +475,16 @@ export function checkRunHistory(assert: AssertModule): void {
   try {
     const file = path.join(directory, "history.json");
     const history = new RunHistory(file, () => {});
-    assert.strictEqual(history.estimate("dotnet build"), null);
-    [10, 30, 20].forEach((ms) => history.record("dotnet  build ", ms));
-    assert.deepStrictEqual(history.estimate("dotnet build"), { typicalMs: 20, longestMs: 30 }, "spaces do not matter");
-    history.record("dotnet build", 40);
-    assert.deepStrictEqual(history.estimate("dotnet build"), { typicalMs: 25, longestMs: 40 });
+    assert.strictEqual(history.estimate("node build.js"), null);
+    [10, 30, 20].forEach((ms) => history.record("node  build.js ", ms));
+    assert.deepStrictEqual(history.estimate("node build.js"), { typicalMs: 20, longestMs: 30 }, "spaces do not matter");
+    history.record("node build.js", 40);
+    assert.deepStrictEqual(history.estimate("node build.js"), { typicalMs: 25, longestMs: 40 });
     for (let i = 0; i < HistoryRunsPerCommand; i++) {
-      history.record("dotnet build", 5);
+      history.record("node build.js", 5);
     }
     assert.deepStrictEqual(
-      new RunHistory(file, () => {}).estimate("dotnet build"),
+      new RunHistory(file, () => {}).estimate("node build.js"),
       { typicalMs: 5, longestMs: 5 },
       "only the last runs count",
     );

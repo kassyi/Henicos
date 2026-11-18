@@ -25,8 +25,9 @@
 // Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
 // script file the command runs.
 // A hook that fails stops every command in Antigravity, which treats any non-zero exit code as a denial, so --hook
-// allows the command (no output, exit code 0) when a module fails to load or an exception escapes while judging, and
-// appends a line to tmp/hook-errors.log of the main checkout. --text and --self-test still fail loudly.
+// allows the command (no output, exit code 0) when a module fails to load, the input is not JSON, an exception escapes
+// while judging or a stream fails, and appends a line to tmp/hook-errors.log of the main checkout. --text and
+// --self-test still fail loudly.
 //
 // Usage:
 //   node scripts/agent/check-queued-command.js --hook                                reads the hook JSON on stdin

@@ -545,6 +545,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8604
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_SegmentCopyToKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy segment, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy mode, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy target, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst);
@@ -1237,6 +1238,7 @@ return;
 }
 }
 }
+#pragma warning restore CS8604
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_ImmutableCopyToKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy immutable, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy mode, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy target, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst);
