@@ -1,4 +1,5 @@
 // ReSharper disable All
+using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Shared.Core;
 
@@ -8,6 +9,20 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 /// Kernels whose local functions are declared in one state of the CPU state machine and called from another: the
 /// barrier splits the body, and a function that stays in the block of its own state is not visible in the others.
 /// </summary>
+/// <summary>A resource that appends its <see cref="Id"/> to <see cref="Log"/> when it is disposed.</summary>
+/// <remarks><c>Log[0]</c> counts the entries; entry <c>n</c> is at <c>Log[n]</c>.</remarks>
+public struct LocalFunctionAcrossStatesRecorder : IDisposable
+{
+    public int[] Log;
+    public int Id;
+
+    public void Dispose()
+    {
+        Log[0] = Log[0] + 1;
+        Log[Log[0]] = Id;
+    }
+}
+
 public static partial class LocalFunctionAcrossStatesKernels
 {
     // The function is declared before the barrier and called after it; it captures a local that crosses the barrier
@@ -170,5 +185,45 @@ public static partial class LocalFunctionAcrossStatesKernels
     {
         int tid = ThreadIndex.X;
         data[tid] = TopLevelAfterReturn(data, tid);
+    }
+
+    // A using declaration after the last barrier, captured by a function: the function stays in its state, and the
+    // using variable keeps its disposal
+    [GpuKernel]
+    public static void UsingCapturedKernel(int[] log, int[] o)
+    {
+        Gpu.SyncThreads();
+        using var r = new LocalFunctionAcrossStatesRecorder { Log = log, Id = 7 };
+        o[0] = Read();
+        int Read() => r.Id;
+    }
+
+    [GpuDeviceFunction]
+    public static int SplitParity(int x, out int rest)
+    {
+        rest = x % 2;
+        return x / 2;
+    }
+
+    // An out variable after the last barrier, captured by a function: it is not a declarator, so the function stays
+    [GpuKernel]
+    public static void OutVariableCapturedKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        int q = SplitParity(data[tid], out var r);
+        data[tid] = F() + q * 0;
+        int F() => r + 10;
+    }
+
+    // A function that calls a function that stays (the second captures a using variable) stays as well
+    [GpuKernel]
+    public static void ChainToStayingFunctionKernel(int[] log, int[] o)
+    {
+        Gpu.SyncThreads();
+        using var w = new LocalFunctionAcrossStatesRecorder { Log = log, Id = 5 };
+        o[0] = A();
+        int A() => B() + 1;
+        int B() => w.Id;
     }
 }

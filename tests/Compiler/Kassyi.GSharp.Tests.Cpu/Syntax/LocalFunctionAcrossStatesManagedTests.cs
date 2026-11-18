@@ -111,6 +111,39 @@ public class LocalFunctionAcrossStatesManagedTests : TranspilerTestBase
             x => x + 3
         );
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void UsingCaptured_Managed_KeepsTheDisposalOfTheCapturedVariable() =>
+        LocalFunctionAcrossStatesScenarios.RunWithLog(
+            s_runManaged,
+            static (log, o) => LocalFunctionAcrossStatesKernels.LaunchUsingCapturedKernel(log, o, blockDimX: 1),
+            [1, 7, 0, 0],
+            7
+        );
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void OutVariableCaptured_Managed_ReadsTheVariableOfItsState() =>
+        LocalFunctionAcrossStatesScenarios.Run(
+            s_runManaged,
+            static data => LocalFunctionAcrossStatesKernels.LaunchOutVariableCapturedKernel(data, blockDimX: 4),
+            x => x % 2 + 10
+        );
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ChainToStayingFunction_Managed_KeepsTheCallerWithTheCallee() =>
+        LocalFunctionAcrossStatesScenarios.RunWithLog(
+            s_runManaged,
+            static (log, o) => LocalFunctionAcrossStatesKernels.LaunchChainToStayingFunctionKernel(
+                log,
+                o,
+                blockDimX: 1
+            ),
+            [1, 5, 0, 0],
+            6
+        );
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

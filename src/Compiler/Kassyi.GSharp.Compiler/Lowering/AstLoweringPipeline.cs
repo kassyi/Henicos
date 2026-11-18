@@ -67,7 +67,13 @@ public static class AstLoweringPipeline
         // [WHY] Found once, before ContextHoister rewrites declarations, and given to both passes so that they agree
         var statePlan = StateLabelPlanner.Plan(hoistedBody, bodyModel);
         var refLocals = RefLocalLiveness.Analyze(body, bodyModel);
-        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan, refLocals?.StaysLocal);
+        // [WHY] One decision of which local functions move in front of the switch, for the hoister (the locals they
+        // capture) and the lowerer (the functions); a body without a split point moves nothing
+        var movedFunctions = StateMachineLocalFunctions.Plan(hoistedBody, bodyModel);
+        var hoister = new ContextHoister(copiedParameters, bodyModel, owner, statePlan, refLocals?.StaysLocal)
+        {
+            CapturedByMovedFunctions = movedFunctions.Captured
+        };
         var (contextHoistedBody, contextFields) = hoister.Hoist(hoistedBody);
         if (!hoister.HasSplitPoint)
         {
@@ -77,7 +83,7 @@ public static class AstLoweringPipeline
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan)
         {
-            MovesLocalFunctions = hoister.HasSplitPoint
+            MovedLocalFunctions = hoister.HasSplitPoint ? movedFunctions.Functions : []
         };
         lowerer.ReserveWarpSites(reconvergence?.RegionCount ?? 0);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);

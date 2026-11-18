@@ -16,4 +16,15 @@ internal static class LocalFunctionAcrossStatesScenarios
 
         Assert.Equal([expected(1), expected(2), expected(3), expected(4)], data);
     }
+
+    public static void RunWithLog(Action<Action> run, Action<int[], int[]> launch, int[] expectedLog, int expectedValue)
+    {
+        int[] log = new int[4];
+        int[] o = [0];
+
+        run(() => launch(log, o));
+
+        Assert.Equal(expectedLog, log);
+        Assert.Equal([expectedValue], o);
+    }
 }

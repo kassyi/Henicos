@@ -15,6 +15,10 @@ internal static class HoistedVariableAnalysis
     /// <param name="block">The body to analyze.</param>
     /// <param name="semanticModel">The semantic model of the method's syntax tree, or <see langword="null"/>.</param>
     /// <param name="plan">The labels that start a state, or <see langword="null"/> to plan them from the block.</param>
+    /// <param name="capturedByMovedFunctions">
+    /// The keys that the local functions written in front of the <c>switch</c> reference
+    /// (<see cref="MovedLocalFunctions.Captured"/>), or <see langword="null"/> when none moves.
+    /// </param>
     /// <param name="hoistedKeys">Receives the key of every hoisted declaration.</param>
     /// <param name="hoistedDeclarators">Receives the hoisted declarators.</param>
     /// <param name="refLocalsNotLiveAcrossSplit">
@@ -26,6 +30,7 @@ internal static class HoistedVariableAnalysis
         BlockSyntax block,
         SemanticModel? semanticModel,
         StatePlan? plan,
+        HashSet<DeclarationKey>? capturedByMovedFunctions,
         HashSet<DeclarationKey> hoistedKeys,
         ImmutableArray<VariableDeclaratorSyntax>.Builder hoistedDeclarators,
         HashSet<ISymbol>? refLocalsNotLiveAcrossSplit = null)
@@ -39,7 +44,6 @@ internal static class HoistedVariableAnalysis
         }
 
         var boundaries = FindStateBoundaries(block, analyzer.BarrierSpans, semanticModel, plan);
-        var captured = StateMachineLocalFunctions.FindCaptured(block, semanticModel);
         var variableCount = analyzer.Variables.Count;
         var keys = new DeclarationKey[variableCount];
         for (var v = 0; v < variableCount; v++)
@@ -47,7 +51,7 @@ internal static class HoistedVariableAnalysis
             var (decl, scopeEnd) = analyzer.Variables[v];
             keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
             if (MustHoist(decl, scopeEnd, keys[v], boundaries, refLocalsNotLiveAcrossSplit) ||
-                (captured.Contains(keys[v]) && IsBodyLocal(decl)))
+                (capturedByMovedFunctions?.Contains(keys[v]) == true && IsBodyLocal(decl)))
             {
                 hoistedKeys.Add(keys[v]);
             }

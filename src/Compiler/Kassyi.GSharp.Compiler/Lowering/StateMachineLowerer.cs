@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
 /// Lowers flat C# AST statements into a switch-based state machine separated by thread barriers. With
-/// <see cref="MovesLocalFunctions"/>, a body that has split points gets its local functions in front of the
+/// <see cref="MovedLocalFunctions"/>, a body that has split points gets its local functions in front of the
 /// <c>switch</c>, where every state sees them.
 /// </summary>
 /// <param name="isDeviceFunction">
@@ -26,12 +26,12 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         _plan = plan;
 
     /// <summary>
-    /// Whether <see cref="Lower"/> writes the local functions of the body (<see cref="StateMachineLocalFunctions"/>) in
-    /// front of the <c>switch</c>, in the order written, instead of in the state of their declaration. Set it for a body
-    /// that has a split point; the locals that the functions capture are then hoisted
+    /// The keys of the local functions that <see cref="Lower"/> writes in front of the <c>switch</c>, in the order
+    /// written, instead of in the state of their declaration (<see cref="StateMachineLocalFunctions.Plan"/>). Empty for
+    /// a body without a split point; the locals that the functions capture are hoisted
     /// (<see cref="HoistedVariableAnalysis"/>).
     /// </summary>
-    internal bool MovesLocalFunctions { get; init; }
+    internal HashSet<DeclarationKey> MovedLocalFunctions { get; init; } = [];
 
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -63,7 +63,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         foreach (var written in block.Statements)
         {
             var stmt = written;
-            if (MovesLocalFunctions && StateMachineLocalFunctions.GetMoved(stmt) is { } function)
+            if (MovedLocalFunctions.Count > 0 && StateMachineLocalFunctions.GetMoved(stmt) is { } function &&
+                MovedLocalFunctions.Contains(LoweringIdentity.ForDeclaration(function, semanticModel)))
             {
                 functions.Add(function);
                 if (StateMachineLocalFunctions.WithoutFunction(stmt) is not { } remainder)

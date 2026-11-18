@@ -107,4 +107,37 @@ public class LocalFunctionAcrossStatesTests : TranspilerTestBase
             static data => LocalFunctionAcrossStatesKernels.LaunchTopLevelAfterReturnKernel(data, blockDimX: 4),
             x => x + 3
         );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void UsingCaptured_Native_KeepsTheDisposalOfTheCapturedVariable() =>
+        LocalFunctionAcrossStatesScenarios.RunWithLog(
+            s_runNative,
+            static (log, o) => LocalFunctionAcrossStatesKernels.LaunchUsingCapturedKernel(log, o, blockDimX: 1),
+            [1, 7, 0, 0],
+            7
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void OutVariableCaptured_Native_ReadsTheVariableOfItsState() =>
+        LocalFunctionAcrossStatesScenarios.Run(
+            s_runNative,
+            static data => LocalFunctionAcrossStatesKernels.LaunchOutVariableCapturedKernel(data, blockDimX: 4),
+            x => x % 2 + 10
+        );
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ChainToStayingFunction_Native_KeepsTheCallerWithTheCallee() =>
+        LocalFunctionAcrossStatesScenarios.RunWithLog(
+            s_runNative,
+            static (log, o) => LocalFunctionAcrossStatesKernels.LaunchChainToStayingFunctionKernel(
+                log,
+                o,
+                blockDimX: 1
+            ),
+            [1, 5, 0, 0],
+            6
+        );
 }
