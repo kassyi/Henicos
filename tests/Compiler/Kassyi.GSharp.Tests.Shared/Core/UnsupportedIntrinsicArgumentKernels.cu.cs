@@ -35,7 +35,10 @@ public static partial class UnsupportedIntrinsicArgumentKernels
     public static void WmmaStoreKernel(int[] data)
     {
         WmmaAccumulator<WmmaM16N16K16, int> acc = default;
+        // The ref readonly argument is passed without in on purpose: that form is what this kernel covers.
+#pragma warning disable CS9192
         Wmma.Store(ref data[Tick(data, 1)], acc, (uint)Tick(data, 2), WmmaMemoryLayout.RowMajor);
+#pragma warning restore CS9192
         data[3] = 7;
     }
 

@@ -100,13 +100,13 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(137229342u, "UnsupportedIn
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(722375742u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 9, "ValueKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368947642u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 49, "ValueKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1730816039u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 59, "ValueKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(964128473u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 24, "WmmaStoreKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1426381174u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 34, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1396211030u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 61, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1876324784u, "UnsupportedIntrinsicArgumentKernels.cs", 39, 9, "WmmaStoreKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1769063187u, "UnsupportedIntrinsicArgumentKernels.cs", 47, 45, "ThrowingArgumentKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(131950357u, "UnsupportedIntrinsicArgumentKernels.cs", 47, 51, "ThrowingArgumentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1156931952u, "UnsupportedIntrinsicArgumentKernels.cs", 48, 9, "ThrowingArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1245659497u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 24, "WmmaStoreKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1671793030u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 34, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(767912254u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 61, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1174464932u, "UnsupportedIntrinsicArgumentKernels.cs", 42, 9, "WmmaStoreKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(790237519u, "UnsupportedIntrinsicArgumentKernels.cs", 50, 45, "ThrowingArgumentKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1789484461u, "UnsupportedIntrinsicArgumentKernels.cs", 50, 51, "ThrowingArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(171789984u, "UnsupportedIntrinsicArgumentKernels.cs", 51, 9, "ThrowingArgumentKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -495,11 +495,11 @@ public const string WmmaStoreKernel_Source = @"extern ""C"" __global__ void __gs
 __gsharp_launch_epoch = __gsharp_epoch;
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_1_acc = {};
 ([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1426381174u),1), 964128473u);
-unsigned int __gsharp_seq_1 = (unsigned int)__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1396211030u),2);
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_data, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1671793030u),1), 1245659497u);
+unsigned int __gsharp_seq_1 = (unsigned int)__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 767912254u),2);
 return __gsharp_wmma_store<__gsharp_wmma_shape<16, 16, 16>, int>(&__gsharp_seq_0,&__gsharp_id_1_acc,__gsharp_seq_1,0);
 }());
-__gsharp_array_at(__gsharp_id_0_data, 3, 1876324784u)=7;
+__gsharp_array_at(__gsharp_id_0_data, 3, 1174464932u)=7;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_WmmaStoreKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__WmmaStoreKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -621,8 +621,8 @@ finally
 public const string ThrowingArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__ThrowingArgumentKernel(GSharpArray<int> __gsharp_id_0_data, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 __shared__ unsigned long long __gsharp_id_1_bar[1];
-__gsharp_mbarrier_init(&__gsharp_id_1_bar[0],(unsigned int)(__gsharp_div_i32(100,__gsharp_array_at(__gsharp_id_0_data, 0, 131950357u),1769063187u)));
-__gsharp_array_at(__gsharp_id_0_data, 3, 1156931952u)=7;
+__gsharp_mbarrier_init(&__gsharp_id_1_bar[0],(unsigned int)(__gsharp_div_i32(100,__gsharp_array_at(__gsharp_id_0_data, 0, 1789484461u),790237519u)));
+__gsharp_array_at(__gsharp_id_0_data, 3, 171789984u)=7;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ThrowingArgumentKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__ThrowingArgumentKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

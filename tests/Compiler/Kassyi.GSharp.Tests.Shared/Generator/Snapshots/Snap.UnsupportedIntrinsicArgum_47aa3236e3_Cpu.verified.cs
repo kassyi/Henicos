@@ -47,13 +47,13 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(137229342u, "UnsupportedIn
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(722375742u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 9, "ValueKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(368947642u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 49, "ValueKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1730816039u, "UnsupportedIntrinsicArgumentKernels.cs", 30, 59, "ValueKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(964128473u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 24, "WmmaStoreKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1426381174u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 34, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1396211030u, "UnsupportedIntrinsicArgumentKernels.cs", 38, 61, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1876324784u, "UnsupportedIntrinsicArgumentKernels.cs", 39, 9, "WmmaStoreKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1769063187u, "UnsupportedIntrinsicArgumentKernels.cs", 47, 45, "ThrowingArgumentKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(131950357u, "UnsupportedIntrinsicArgumentKernels.cs", 47, 51, "ThrowingArgumentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1156931952u, "UnsupportedIntrinsicArgumentKernels.cs", 48, 9, "ThrowingArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1245659497u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 24, "WmmaStoreKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1671793030u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 34, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(767912254u, "UnsupportedIntrinsicArgumentKernels.cs", 40, 61, "WmmaStoreKernel", "G#: a null array is passed to the non-nullable parameter 'data' of Tick. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1174464932u, "UnsupportedIntrinsicArgumentKernels.cs", 42, 9, "WmmaStoreKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(790237519u, "UnsupportedIntrinsicArgumentKernels.cs", 50, 45, "ThrowingArgumentKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1789484461u, "UnsupportedIntrinsicArgumentKernels.cs", 50, 51, "ThrowingArgumentKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(171789984u, "UnsupportedIntrinsicArgumentKernels.cs", 51, 9, "ThrowingArgumentKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -981,8 +981,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_1_acc = {};
-(static_cast<void>(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1426381174u),1), 964128473u)),static_cast<void>(&__gsharp_id_1_acc),static_cast<void>((unsigned int)__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1396211030u),2)),static_cast<void>(0),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
-__gsharp_array_at(__gsharp_id_0_data, 3, 1876324784u)=7;
+(static_cast<void>(&__gsharp_array_at(__gsharp_id_0_data, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 1671793030u),1), 1245659497u)),static_cast<void>(&__gsharp_id_1_acc),static_cast<void>((unsigned int)__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__UnsupportedIntrinsicArgumentKernels__Tick(__gsharp_array_ref(__gsharp_id_0_data, 767912254u),2)),static_cast<void>(0),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
+__gsharp_array_at(__gsharp_id_0_data, 3, 1174464932u)=7;
 __gsharp_state=-1;
 return;
 }
@@ -1085,7 +1085,10 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 global::Kassyi.GSharp.Core.WmmaAccumulator<global::Kassyi.GSharp.Core.WmmaM16N16K16, int> acc = default;
+// The ref readonly argument is passed without in on purpose: that form is what this kernel covers.
+#pragma warning disable CS9192
 global::Kassyi.GSharp.Core.Wmma.Store(ref data[global::Kassyi.GSharp.Tests.Shared.Core.UnsupportedIntrinsicArgumentKernels.Tick(data, 1)], in acc, (uint)global::Kassyi.GSharp.Tests.Shared.Core.UnsupportedIntrinsicArgumentKernels.Tick(data, 2), global::Kassyi.GSharp.Core.WmmaMemoryLayout.RowMajor);
+#pragma warning restore CS9192
 data[3] = 7;
 __gsharp_ctx.__gsharp_state = -1;
 return;
@@ -1093,6 +1096,7 @@ return;
 }
 }
 }
+#pragma warning restore CS9192
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
 private unsafe delegate void __gsharp_delegate_WmmaStoreKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
@@ -1283,8 +1287,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 unsigned long long* __gsharp_id_1_bar = (unsigned long long*)__gsharp_allocate_smem_static(0x4ed5c5be4e701cf4ull, (1) * sizeof(unsigned long long), alignof(unsigned long long));
-(static_cast<void>(&__gsharp_id_1_bar[0]),static_cast<void>((unsigned int)(__gsharp_div_i32(100,__gsharp_array_at(__gsharp_id_0_data, 0, 131950357u),1769063187u))),__gsharp_unsupported(""Gpu.MBarrierInit is not implemented by the StandardCppDialect dialect""));
-__gsharp_array_at(__gsharp_id_0_data, 3, 1156931952u)=7;
+(static_cast<void>(&__gsharp_id_1_bar[0]),static_cast<void>((unsigned int)(__gsharp_div_i32(100,__gsharp_array_at(__gsharp_id_0_data, 0, 1789484461u),790237519u))),__gsharp_unsupported(""Gpu.MBarrierInit is not implemented by the StandardCppDialect dialect""));
+__gsharp_array_at(__gsharp_id_0_data, 3, 171789984u)=7;
 __gsharp_state=-1;
 return;
 }
