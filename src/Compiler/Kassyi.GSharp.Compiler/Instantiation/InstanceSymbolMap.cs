@@ -119,18 +119,7 @@ internal sealed class InstanceSymbolMap
         // [WHY] Constructed generic IMethodSymbol in Roslyn drops ExplicitInterfaceImplementations, so capture the
         // explicit target from the unconstructed implementation before constructing its type arguments.
         var target = GetExplicitTarget(implementation);
-        if (member is IMethodSymbol { IsGenericMethod: true } constructed &&
-            implementation is IMethodSymbol implMethod && implMethod.IsGenericMethod &&
-            implMethod.TypeParameters.Length == constructed.TypeArguments.Length)
-        {
-            var arguments = new ITypeSymbol[constructed.TypeArguments.Length];
-            for (var i = 0; i < arguments.Length; i++)
-            {
-                arguments[i] = constructed.TypeArguments[i];
-            }
-
-            implementation = implMethod.ConstructedFrom.Construct(arguments);
-        }
+        implementation = ConstructLikeMember(member, implementation);
 
         if (implementation.ContainingType is { TypeKind: TypeKind.Interface } interfaceType)
         {
@@ -155,6 +144,16 @@ internal sealed class InstanceSymbolMap
             : new ConstrainedMember.Unsupported(closed,
                 $"'{closed.Name}' implements '{target.Name}' explicitly; implement it as a public member");
     }
+
+    // The implementation of a generic interface method, constructed with the type arguments of the member
+    private static ISymbol ConstructLikeMember(ISymbol member, ISymbol implementation) =>
+        member is IMethodSymbol { IsGenericMethod: true } constructed &&
+        implementation is IMethodSymbol { IsGenericMethod: true } implMethod &&
+        implMethod.TypeParameters.Length == constructed.TypeArguments.Length
+            ? implMethod.ConstructedFrom.Construct(constructed.TypeArguments
+                .AsStackEnumerable()
+                .ToArray())
+            : implementation;
 
     // The type does not implement the member: its interface does, with a default implementation
     private ConstrainedMember ResolveDefault(ISymbol member, INamedTypeSymbol interfaceType, ITypeSymbol closed)
