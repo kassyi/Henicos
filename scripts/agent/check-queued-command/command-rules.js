@@ -20,19 +20,7 @@
 // Usage: require('./command-rules.js').check(command, dialect) returns the reason texts (empty when allowed), and
 // checkDetailed(command, dialect) returns structured { tool, verb, text } reasons.
 
-const {
-  currentDialect,
-  withDialect,
-  splitSegments,
-  words,
-  unquote,
-  argumentText,
-  programName,
-  dropPrefixes,
-  startProcessCommand,
-  shellCommandIndex,
-  substitutions,
-} = require('./shell-reader.js');
+const { createReader, programName, unquote } = require('./shell-reader.js');
 
 // \S*: a recipe name may hold a variable, as in a loop: just test-$r
 const JustRecipes = /^(test\S*|coverage-diff|fuzz-\S+|mutate|long-checks|bench\S*|doctest)$/;
@@ -84,11 +72,11 @@ function justRecipe(list) {
 }
 
 /** The first structured reason of a nested command, or null. */
-function nestedReason(command, kind = currentDialect()) {
+function nestedReason(command, reader) {
   if (command === '') {
     return null;
   }
-  const reasons = checkDetailed(command, kind);
+  const reasons = checkDetailedWithReader(command, reader);
   return reasons.length > 0 ? reasons[0] : null;
 }
 
@@ -117,10 +105,10 @@ function isStryker(word) {
 }
 
 /** The reason a segment needs the queue, or null. */
-function segmentReason(segment) {
-  const raw = words(segment.trim().replace(/^[({]+\s*/, ''));
+function segmentReason(segment, reader) {
+  const raw = reader.words(segment.trim().replace(/^[({]+\s*/, ''));
   // The closer of a group or subshell may stick to a word: (just test), (msbuild)
-  const list = dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
+  const list = reader.dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
   if (list.length === 0 || list[0] === '') {
     return null;
   }
@@ -136,7 +124,7 @@ function segmentReason(segment) {
   // PowerShell: a quoted string at the start is a value ($tool = "msbuild"), a command only after & or .
   const called =
     calledInGroup || raw.slice(0, Math.max(raw.length - list.length, 0)).some((word) => /^[({]*[&.]$/.test(word));
-  if (currentDialect() === 'pwsh' && /^["']/.test(list[0]) && !called) {
+  if (reader.dialect === 'pwsh' && /^["']/.test(list[0]) && !called) {
     return null;
   }
   // A PowerShell body after the condition: if (...) { dotnet test }, foreach (...) { ... }
@@ -145,17 +133,17 @@ function segmentReason(segment) {
     (word, index) => (index > 0 && (word === '{' || word.endsWith('{'))) || (index === 0 && /\(\)\{$/.test(word)),
   );
   if (brace >= 0 && !/^["']/.test(list[brace])) {
-    const inner = nestedReason(list.slice(brace + 1).join(' '));
+    const inner = nestedReason(list.slice(brace + 1).join(' '), reader);
     if (inner !== null) {
       return inner;
     }
   }
   const name = programName(list[0]);
   if (name === 'start-process' || name === 'saps') {
-    return nestedReason(startProcessCommand(list));
+    return nestedReason(reader.startProcessCommand(list), reader);
   }
   if (name === 'invoke-expression' || name === 'iex') {
-    return nestedReason(list.slice(1).map(argumentText).join(' '));
+    return nestedReason(list.slice(1).map(reader.argumentText).join(' '), reader);
   }
   if (name === 'wsl') {
     // wsl [options] [-e | --exec] <command>, wsl [options] -- <command line>: the command runs in Linux, on this
@@ -167,12 +155,13 @@ function segmentReason(segment) {
     if (['-e', '--exec', '--'].includes(list[i])) {
       i++;
     }
-    return nestedReason(list.slice(i).join(' '), 'bash');
+    return nestedReason(list.slice(i).join(' '), createReader('bash'));
   }
-  const shellIndex = shellCommandIndex(name, list);
+  const shellIndex = reader.shellCommandIndex(name, list);
   if (shellIndex > 0) {
-    const inner = list.slice(shellIndex).map(argumentText).join(' ');
-    return nestedReason(inner, name === 'cmd' ? 'cmd' : /^(pwsh|powershell)$/.test(name) ? 'pwsh' : 'bash');
+    const inner = list.slice(shellIndex).map(reader.argumentText).join(' ');
+    const innerDialect = name === 'cmd' ? 'cmd' : /^(pwsh|powershell)$/.test(name) ? 'pwsh' : 'bash';
+    return nestedReason(inner, createReader(innerDialect));
   }
   // The closer of a group or subshell may stick to the last word: (dotnet build)
   const args = list.slice(1).map((word) => unquote(word).replace(/[)}]+$/, ''));
@@ -201,7 +190,7 @@ function segmentReason(segment) {
   if (Runners.includes(name) || /^["']?\$/.test(list[0])) {
     for (let i = 1; i < list.length; i++) {
       if (['dotnet', 'just', 'msbuild', 'node'].includes(programName(list[i]))) {
-        const inner = segmentReason(list.slice(i).join(' '));
+        const inner = segmentReason(list.slice(i).join(' '), reader);
         if (inner !== null) {
           return inner;
         }
@@ -268,8 +257,8 @@ function isQueueScript(list) {
  * True when the segment runs job-queue.js (which queues the command quoted in it; build-queue.js is its name in older
  * checkouts) or is a git / gh command.
  */
-function isExempt(segment) {
-  const list = dropPrefixes(words(segment.trim()));
+function isExempt(segment, reader) {
+  const list = reader.dropPrefixes(reader.words(segment.trim()));
   if (list.length === 0) {
     return true;
   }
@@ -280,34 +269,37 @@ function isExempt(segment) {
   return isQueueScript(list);
 }
 
+/** The structured reasons for one command using an explicit shell reader. */
+function checkDetailedWithReader(command, reader) {
+  const reasons = [];
+  const seen = new Set();
+  const add = (reason) => {
+    if (reason !== null && !seen.has(reason.text)) {
+      seen.add(reason.text);
+      reasons.push(reason);
+    }
+  };
+  for (const segment of reader.splitSegments(command)) {
+    // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
+    reader.substitutions(segment).forEach((body) => checkDetailedWithReader(body, reader).forEach(add));
+    if (!isExempt(segment, reader)) {
+      add(segmentReason(segment, reader));
+    }
+  }
+  return reasons;
+}
+
 /**
  * The structured reasons (`{ tool, verb, text }`) the command needs the queue (empty when it may run as it is).
  * `kind` is the shell dialect ('bash', 'pwsh', 'cmd'); nested commands keep the dialect of their caller unless a
  * shell wrapper names another.
  */
-function checkDetailed(command, kind = currentDialect()) {
-  return withDialect(kind, () => {
-    const reasons = [];
-    const seen = new Set();
-    const add = (reason) => {
-      if (reason !== null && !seen.has(reason.text)) {
-        seen.add(reason.text);
-        reasons.push(reason);
-      }
-    };
-    for (const segment of splitSegments(command)) {
-      // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
-      substitutions(segment).forEach((body) => checkDetailed(body).forEach(add));
-      if (!isExempt(segment)) {
-        add(segmentReason(segment));
-      }
-    }
-    return reasons;
-  });
+function checkDetailed(command, kind = 'bash') {
+  return checkDetailedWithReader(command, createReader(kind));
 }
 
 /** The reason texts the command needs the queue (empty when it may run as it is). */
-function check(command, kind = currentDialect()) {
+function check(command, kind = 'bash') {
   return checkDetailed(command, kind).map((reason) => reason.text);
 }
 

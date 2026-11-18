@@ -35,15 +35,7 @@ const fs = require('fs');
 const path = require('path');
 const { testProjectFiles, dialectOf } = require('../../human/job-queue-henicos/target-dialect.js');
 const { checkDetailed, isQueueScript } = require('./command-rules.js');
-const {
-  withDialect,
-  splitSegments,
-  words,
-  unquote,
-  argumentText,
-  programName,
-  substitutions,
-} = require('./shell-reader.js');
+const { createReader } = require('./shell-reader.js');
 
 const QueueScript = 'scripts/human/job-queue.js';
 const DirectoryChanges = ['cd', 'pushd', 'popd', 'chdir', 'set-location', 'sl', 'push-location', 'pop-location'];
@@ -71,11 +63,10 @@ function queuedCommand(kind, command, options, comment) {
 
 /** The command a queued command runs: the word after `--`, unquoted as its shell does. */
 function queuedText(rewritten, kind) {
-  return withDialect(kind, () => {
-    const list = words(rewritten);
-    const index = list.indexOf('--');
-    return index < 0 || index + 1 >= list.length ? '' : argumentText(list[index + 1]);
-  });
+  const reader = createReader(kind);
+  const list = reader.words(rewritten);
+  const index = list.indexOf('--');
+  return index < 0 || index + 1 >= list.length ? '' : reader.argumentText(list[index + 1]);
 }
 
 /** True when a word outside quotes holds <: an input redirection or a process substitution. */
@@ -208,8 +199,9 @@ function planRewrite(command, kind, cwd) {
   if (text === '' || !fs.existsSync(path.join(cwd, QueueScript))) {
     return null;
   }
+  const reader = createReader(kind);
   const found = [];
-  withDialect(kind, () => splitSegments(text, found));
+  reader.splitSegments(text, found);
   const comments = found.filter((item) => item.kind === 'comment');
   if (found.some((item) => item.kind !== '&&' && item.kind !== 'comment') || comments.length > 1) {
     return null;
@@ -223,7 +215,7 @@ function planRewrite(command, kind, cwd) {
   ) {
     return null; // a bash backtick substitution; a path Git Bash converts; PowerShell's stop-parsing token
   }
-  const segments = withDialect(kind, () => splitSegments(body));
+  const segments = reader.splitSegments(body);
   let gpu = false;
   let options = [];
   let changedDirectory = false;
@@ -233,12 +225,12 @@ function planRewrite(command, kind, cwd) {
     if (segment === '' || /^[({@$&.!]/.test(segment) || hasInputRedirection(segment)) {
       return null;
     }
-    if (withDialect(kind, () => substitutions(segment)).length > 0) {
+    if (reader.substitutions(segment).length > 0) {
       return null;
     }
     // FOO=1 dotnet test: the assignment travels with the command
-    const list = stripBashAssignments(withDialect(kind, () => words(segment)), kind);
-    const name = programName(list[0] || '');
+    const list = stripBashAssignments(reader.words(segment), kind);
+    const name = reader.programName(list[0] || '');
     const reasons = checkDetailed(segment, kind);
     if (reasons.length === 0) {
       if (isQueueScript(list)) {
@@ -270,7 +262,7 @@ function planRewrite(command, kind, cwd) {
         `(${undecided.join('; ')}): add --gpu when it does.`,
     };
   }
-  const split = gpu ? splitBuilds(segments, kind) : null;
+  const split = gpu ? splitBuilds(segments, reader) : null;
   if (split !== null) {
     // The builds take CPU slots only; the GPU turn waits for them and is held for the tests alone
     const builds = queuedCommand(kind, split.builds, options, '');
@@ -285,12 +277,12 @@ function planRewrite(command, kind, cwd) {
  * joined by &&; environment assignments before a segment allowed), each part joined by && again: { builds, tests }, or
  * null for any other shape. A test without --no-build would build under the GPU turn again.
  */
-function splitBuilds(segments, kind) {
+function splitBuilds(segments, reader) {
   const builds = [];
   const tests = [];
   for (const raw of segments) {
     const segment = raw.trim();
-    const list = stripBashAssignments(withDialect(kind, () => words(segment)).map(unquote), kind);
+    const list = stripBashAssignments(reader.words(segment).map(reader.unquote), reader.dialect);
     if (!/^dotnet(\.exe)?$/i.test(list[0] || '')) {
       return null;
     }

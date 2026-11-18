@@ -4,6 +4,7 @@
 // per dialect, written out and generated from templates.
 
 const { check, checkDetailed } = require('./command-rules.js');
+const shellReader = require('./shell-reader.js');
 
 function selfTest() {
   const assert = require('assert');
@@ -237,6 +238,7 @@ function selfTest() {
   checkGeneratedForms(assert);
   require('./self-test-rewrite.js').checkRewrites(assert);
   checkDetailedReasons(assert);
+  checkReaderIsolation(assert);
   process.stdout.write('check-queued-command self-test passed\n');
 }
 
@@ -384,6 +386,34 @@ function checkDetailedReasons(assert) {
       `checkDetailed text parity(${kind}): ${command}`,
     );
   }
+}
+
+/** Independent `createReader(dialect)` instances do not share or mutate dialect state. */
+function checkReaderIsolation(assert) {
+  assert.strictEqual(shellReader.withDialect, undefined, 'withDialect removed');
+  assert.strictEqual(shellReader.currentDialect, undefined, 'currentDialect removed');
+  const bash = shellReader.createReader('bash');
+  const pwsh = shellReader.createReader('pwsh');
+  const cmd = shellReader.createReader('cmd');
+  assert.strictEqual(shellReader.createReader().dialect, 'bash');
+  assert.strictEqual(bash.dialect, 'bash');
+  assert.strictEqual(pwsh.dialect, 'pwsh');
+  assert.strictEqual(cmd.dialect, 'cmd');
+  assert.deepStrictEqual(bash.splitSegments('echo "x\\" ; echo ok'), ['echo "x\\" ; echo ok']);
+  assert.deepStrictEqual(pwsh.splitSegments('echo "x\\" ; echo ok'), ['echo "x\\" ', ' echo ok']);
+  assert.deepStrictEqual(cmd.splitSegments('echo "x\\" ; echo ok'), ['echo "x\\" ', ' echo ok']);
+  assert.deepStrictEqual(pwsh.splitSegments('echo "x`"; echo ok'), ['echo "x`"; echo ok']);
+  assert.deepStrictEqual(bash.splitSegments('echo "x`"; echo ok'), ['echo "x`"', ' echo ok']);
+  assert.deepStrictEqual(pwsh.substitutions('@(echo ok)'), ['echo ok']);
+  assert.deepStrictEqual(bash.substitutions('@(echo ok)'), []);
+  assert.deepStrictEqual(pwsh.words('&"echo" ok'), ['&', '"echo"', 'ok']);
+  assert.deepStrictEqual(bash.words('&"echo" ok'), ['&"echo"', 'ok']);
+  assert.strictEqual(pwsh.argumentText("'it''s'"), "it's");
+  assert.strictEqual(bash.argumentText("'it''s'"), 'its');
+  assert.deepStrictEqual(bash.splitSegments('echo "x\\" ; echo ok'), ['echo "x\\" ; echo ok']);
+  assert.strictEqual(bash.dialect, 'bash');
+  assert.strictEqual(pwsh.dialect, 'pwsh');
+  assert.strictEqual(cmd.dialect, 'cmd');
 }
 
 module.exports = { selfTest };
