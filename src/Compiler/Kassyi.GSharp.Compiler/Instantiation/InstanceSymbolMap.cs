@@ -107,11 +107,19 @@ internal sealed class InstanceSymbolMap
 
     private ConstrainedMember Resolve(ISymbol member, ITypeSymbol closed)
     {
-        var implementation = closed.FindImplementationForInterfaceMember(member);
+        // [WHY] FindImplementationForInterfaceMember requires the unconstructed generic method definition; then
+        // the implementation is constructed with the original method's type arguments.
+        var lookup = member is IMethodSymbol { IsGenericMethod: true } generic ? generic.ConstructedFrom : member;
+        var implementation = closed.FindImplementationForInterfaceMember(lookup);
         if (implementation is null)
         {
             return new ConstrainedMember.Unsupported(closed, $"'{closed.Name}' does not implement '{member.Name}'");
         }
+
+        // [WHY] Constructed generic IMethodSymbol in Roslyn drops ExplicitInterfaceImplementations, so capture the
+        // explicit target from the unconstructed implementation before constructing its type arguments.
+        var target = GetExplicitTarget(implementation);
+        implementation = ConstructLikeMember(member, implementation);
 
         if (implementation.ContainingType is { TypeKind: TypeKind.Interface } interfaceType)
         {
@@ -121,7 +129,6 @@ internal sealed class InstanceSymbolMap
         // A public member is bound by its name whether or not it also declares the interface member it implements
         // (the BCL's int.Max does: it is public and lists INumber<int>.Max); only a private explicit implementation
         // has no spelling of its own
-        var target = GetExplicitTarget(implementation);
         if (implementation.DeclaredAccessibility == Accessibility.Public || target is null)
         {
             return new ConstrainedMember.Member(closed, implementation);
@@ -137,6 +144,16 @@ internal sealed class InstanceSymbolMap
             : new ConstrainedMember.Unsupported(closed,
                 $"'{closed.Name}' implements '{target.Name}' explicitly; implement it as a public member");
     }
+
+    // The implementation of a generic interface method, constructed with the type arguments of the member
+    private static ISymbol ConstructLikeMember(ISymbol member, ISymbol implementation) =>
+        member is IMethodSymbol { IsGenericMethod: true } constructed &&
+        implementation is IMethodSymbol { IsGenericMethod: true } implMethod &&
+        implMethod.TypeParameters.Length == constructed.TypeArguments.Length
+            ? implMethod.ConstructedFrom.Construct(constructed.TypeArguments
+                .AsStackEnumerable()
+                .ToArray())
+            : implementation;
 
     // The type does not implement the member: its interface does, with a default implementation
     private ConstrainedMember ResolveDefault(ISymbol member, INamedTypeSymbol interfaceType, ITypeSymbol closed)
@@ -191,7 +208,8 @@ internal sealed class InstanceSymbolMap
         }
     }
 
-    // T.Abs and T.MaxMagnitude of an unsigned type, T.IsNaN of an integer type, T.Max, T.Min and T.Sign of char
+    // T.Abs and T.MaxMagnitude of an unsigned type, T.IsNaN of an integer type or decimal,
+    // T.Max, T.Min and T.Sign of char
     private static ConstrainedMember? ResolvePrivateMethod(string name, ITypeSymbol closed)
     {
         var isChar = closed.SpecialType == SpecialType.System_Char;
@@ -202,7 +220,8 @@ internal sealed class InstanceSymbolMap
                 new ConstrainedMember.MathCall(closed, "Max", isChar ? closed : null),
             "MinMagnitude" when BuiltinNumerics.IsUnsigned(closed) =>
                 new ConstrainedMember.MathCall(closed, "Min", isChar ? closed : null),
-            "IsNaN" when BuiltinNumerics.IsIntegral(closed) => new ConstrainedMember.FalseCall(closed),
+            "IsNaN" when BuiltinNumerics.IsIntegral(closed) || closed.SpecialType == SpecialType.System_Decimal =>
+                new ConstrainedMember.FalseCall(closed),
             "Max" when isChar => new ConstrainedMember.MathCall(closed, "Max", closed),
             "Min" when isChar => new ConstrainedMember.MathCall(closed, "Min", closed),
             "Sign" when isChar => new ConstrainedMember.MathCall(closed, "Sign", null),

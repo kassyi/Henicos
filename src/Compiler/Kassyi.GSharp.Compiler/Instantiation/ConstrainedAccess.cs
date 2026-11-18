@@ -27,6 +27,8 @@ internal static class ConstrainedAccess
         symbol is IMethodSymbol or IPropertySymbol or IEventSymbol &&
         symbol is { IsStatic: false, ContainingType.TypeKind: TypeKind.Interface };
 
+    // [WHY] Static abstract/virtual interface members record ConstrainedToType on the IOperation, while instance
+    // interface members (e.g. a.CompareTo(b), x.M()) have ConstrainedToType == null and constrain via Instance.Type.
     /// <summary>
     /// The type <paramref name="node"/> reaches <paramref name="member"/> through, or <see langword="null"/> when it
     /// reaches the member some other way.
@@ -36,24 +38,39 @@ internal static class ConstrainedAccess
         var depth = 0;
         for (SyntaxNode? current = node; current is not null && depth < MaxDepth; current = current.Parent, depth++)
         {
-            var (target, constrainedTo) = model.GetOperation(current) switch
+            var (target, constrainedTo, receiver) = GetOperationAccess(model.GetOperation(current));
+            if (target is null || !target.OriginalDefinition.IsEqualTo(member.OriginalDefinition))
             {
-                IInvocationOperation invocation => ((ISymbol?)invocation.TargetMethod, invocation.ConstrainedToType),
-                IMemberReferenceOperation reference => (reference.Member, reference.ConstrainedToType),
-                IBinaryOperation binary => (binary.OperatorMethod, binary.ConstrainedToType),
-                IUnaryOperation unary => (unary.OperatorMethod, unary.ConstrainedToType),
-                ICompoundAssignmentOperation compound => (compound.OperatorMethod, compound.ConstrainedToType),
-                IIncrementOrDecrementOperation increment => (increment.OperatorMethod, increment.ConstrainedToType),
-                IConversionOperation conversion => (conversion.OperatorMethod, conversion.ConstrainedToType),
-                _ => (null, null),
-            };
-            if (constrainedTo is not null && target is not null &&
-                target.OriginalDefinition.IsEqualTo(member.OriginalDefinition))
+                continue;
+            }
+
+            if (constrainedTo is not null)
             {
                 return constrainedTo;
+            }
+
+            if (IsInterfaceInstanceMember(member) && receiver is not null)
+            {
+                return receiver;
             }
         }
 
         return null;
     }
+
+    private static (ISymbol? Target, ITypeSymbol? ConstrainedTo, ITypeSymbol? Receiver) GetOperationAccess(
+        IOperation? operation) =>
+        operation switch
+        {
+            IInvocationOperation invocation =>
+                (invocation.TargetMethod, invocation.ConstrainedToType, invocation.Instance?.Type),
+            IMemberReferenceOperation reference =>
+                (reference.Member, reference.ConstrainedToType, reference.Instance?.Type),
+            IBinaryOperation binary => (binary.OperatorMethod, binary.ConstrainedToType, null),
+            IUnaryOperation unary => (unary.OperatorMethod, unary.ConstrainedToType, null),
+            ICompoundAssignmentOperation compound => (compound.OperatorMethod, compound.ConstrainedToType, null),
+            IIncrementOrDecrementOperation increment => (increment.OperatorMethod, increment.ConstrainedToType, null),
+            IConversionOperation conversion => (conversion.OperatorMethod, conversion.ConstrainedToType, null),
+            _ => (null, null, null),
+        };
 }
