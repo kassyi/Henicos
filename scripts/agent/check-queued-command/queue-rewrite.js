@@ -17,35 +17,27 @@
 //
 // --gpu, from data that already exists in the repository:
 //   - dotnet build / publish / pack / msbuild: no GPU, unless an MSBuild target named like a test target runs.
-//   - dotnet test / vstest: the test projects the command names (tests/<category>/<name>/<name>.csproj, matched by
-//     name); every one sets <GSharpTargetDialect>Cpu: no --gpu; any sets Cuda: --gpu; a project that says nothing of
-//     its dialect, or no project named at all: undecided (the same rule as cpuOnlyTestProjects of
-//     scripts/human/job-queue/machine.ts, which this CommonJS script cannot import).
+//   - dotnet test / vstest: the test projects the command names, matched by name; none uses the GPU: no --gpu; any
+//     does: --gpu; one whose GPU use is unknown, or no project named at all: undecided. Which projects exist and
+//     whether one uses the GPU come from the project config (testProjects.list and usesGpu; this repository's config
+//     reads the GSharpTargetDialect of each test project, with the same module as the job queue).
 //   - just <recipe>: the options the recipe itself passes to {{queue}} in the justfile (--gpu, --weight <n>); a recipe
 //     that picks them from its arguments, or does not queue itself, is undecided.
 // An undecided command is denied as before, with a sentence saying that it may need --gpu.
 // A --gpu command of builds then tests that all pass --no-build becomes two queued runs joined by &&, the builds
 // without --gpu and the tests with it, so that the GPU turn is not held while the build runs (splitBuilds).
 //
-// Usage: require('./queue-rewrite.js').planRewrite(command, dialect, cwd) returns { command, gpu } for a rewrite,
-// { note } for a denial with a sentence to add, or null for the plain denial; queuedText(rewritten, dialect) returns
-// the command a rewritten command queues.
+// Usage: require('./queue-rewrite.js').createRewriter(project, rules) returns { planRewrite, queuedText, quote } (it
+// throws when `project` does not have the shape of project-config.js);
+// planRewrite(command, dialect, cwd) returns { command, gpu } for a rewrite, { note } for a denial with a sentence to
+// add, or null for the plain denial; queuedText(rewritten, dialect) returns the command a rewritten command queues.
 
 const fs = require('fs');
 const path = require('path');
-const { testProjectFiles, dialectOf } = require('../../human/job-queue-henicos/target-dialect.js');
-const { check } = require('./command-rules.js');
-const {
-  withDialect,
-  splitSegments,
-  words,
-  unquote,
-  argumentText,
-  programName,
-  substitutions,
-} = require('./shell-reader.js');
+const { createRules } = require('./command-rules.js');
+const { validateProject } = require('./project-config.js');
+const { createReader } = require('./shell-reader.js');
 
-const QueueScript = 'scripts/human/job-queue.js';
 const DirectoryChanges = ['cd', 'pushd', 'popd', 'chdir', 'set-location', 'sl', 'push-location', 'pop-location'];
 
 /** The text quoted as one single-quoted word of the dialect. */
@@ -53,20 +45,28 @@ function quote(kind, text) {
   return kind === 'pwsh' ? `'${text.replace(/'/g, "''")}'` : `'${text.replace(/'/g, "'\\''")}'`;
 }
 
-/** The command that queues `command`: node scripts/human/job-queue.js run [options] --shell <s> -- '<command>'. */
-function queuedCommand(kind, command, options, comment) {
+/** Drops leading bash environment variable assignments (`FOO=1 cmd`) from a word list. */
+function stripBashAssignments(list, kind) {
+  let i = 0;
+  while (kind === 'bash' && list.length - i > 1 && /^[A-Za-z_]\w*=/.test(list[i])) {
+    i++;
+  }
+  return i === 0 ? list : list.slice(i);
+}
+
+/** The command that queues `command`: node <queueScript> run [options] --shell <s> -- '<command>'. */
+function queuedCommand(kind, command, options, comment, queueScript) {
   const shell = kind === 'pwsh' ? 'pwsh' : 'bash';
-  const head = ['node', QueueScript, 'run', ...options, '--shell', shell, '--'].join(' ');
+  const head = ['node', queueScript, 'run', ...options, '--shell', shell, '--'].join(' ');
   return `${head} ${quote(kind, command)}${comment === '' ? '' : ` ${comment}`}`;
 }
 
 /** The command a queued command runs: the word after `--`, unquoted as its shell does. */
 function queuedText(rewritten, kind) {
-  return withDialect(kind, () => {
-    const list = words(rewritten);
-    const index = list.indexOf('--');
-    return index < 0 || index + 1 >= list.length ? '' : argumentText(list[index + 1]);
-  });
+  const reader = createReader(kind);
+  const list = reader.words(rewritten);
+  const index = list.indexOf('--');
+  return index < 0 || index + 1 >= list.length ? '' : reader.argumentText(list[index + 1]);
 }
 
 /** True when a word outside quotes holds <: an input redirection or a process substitution. */
@@ -74,13 +74,12 @@ function hasInputRedirection(segment) {
   return /</.test(segment.replace(/"(?:[^"\\`]|[\\`].)*"|'[^']*'/g, ''));
 }
 
-/** The names of the test projects under tests/<category>/<name>/<name>.csproj. */
-function testProjects(root) {
-  const testsDir = path.join(root, 'tests');
+/** The test projects of the repository at `root`: { names } or { error } when they cannot be read. */
+function testProjects(root, config) {
   try {
-    return { names: testProjectFiles(testsDir), error: '' };
+    return { names: config.list(root), error: '' };
   } catch (error) {
-    return { names: [], error: `could not read ${testsDir}: ${error.message}` };
+    return { names: [], error: config.readErrorMessage(root, error) };
   }
 }
 
@@ -93,22 +92,22 @@ function namedProjects(text, projects) {
 }
 
 /** GPU use of a dotnet test / vstest segment: { gpu } or { undecided: why }. */
-function testGpu(segment, root) {
-  const { names, error } = testProjects(root);
+function testGpu(segment, root, config) {
+  const { names, error } = testProjects(root, config);
   if (error !== '') {
     return { undecided: error };
   }
   const named = namedProjects(segment, names);
   if (named.length === 0) {
-    return { undecided: 'it names no test project of tests/' };
+    return { undecided: config.missingMessage };
   }
   let gpu = false;
-  for (const { name, project } of named) {
-    const dialect = dialectOf(project);
-    if (dialect === null) {
-      return { undecided: `${name}.csproj sets no GSharpTargetDialect of Cpu or Cuda` };
+  for (const entry of named) {
+    const result = config.usesGpu(entry);
+    if (!result || result.undecided !== undefined || typeof result.gpu !== 'boolean') {
+      return { undecided: (result && result.undecided) || 'GPU use is unknown' };
     }
-    gpu = gpu || dialect === 'cuda';
+    gpu = gpu || result.gpu;
   }
   return { gpu };
 }
@@ -133,14 +132,14 @@ function recipeBodies(justfile, recipe) {
 }
 
 /** The queue options of a just recipe: { options, gpu } or { undecided: why }. */
-function recipeQueue(recipe, root) {
+function recipeQueue(recipe, root, justfileConfig) {
   let justfile;
   try {
-    justfile = fs.readFileSync(path.join(root, 'justfile'), 'utf8');
+    justfile = fs.readFileSync(path.join(root, justfileConfig.fileName), 'utf8');
   } catch (error) {
     return { undecided: `could not read the justfile: ${error.message}` };
   }
-  if (!/^queue := "node scripts\/human\/job-queue\.js run"\s*$/m.test(justfile)) {
+  if (!justfileConfig.queueLinePattern.test(justfile)) {
     return { undecided: 'the justfile defines no queue variable' };
   }
   const found = new Set();
@@ -155,7 +154,7 @@ function recipeQueue(recipe, root) {
     return { undecided: `just ${recipe} does not queue itself` };
   }
   const [options] = [...found];
-  if (found.size > 1 || !/^((--gpu|--weight \d+)( |$))*$/.test(options)) {
+  if (found.size > 1 || !justfileConfig.optionsPattern.test(options)) {
     return { undecided: `just ${recipe} chooses its queue options from its arguments` };
   }
   const list = options === '' ? [] : options.split(' ');
@@ -167,123 +166,17 @@ function runsTestTarget(list) {
   return list.some((word) => /^[-/]t(arget)?:.*test/i.test(word));
 }
 
-/** One denied segment: { gpu, options } or { undecided } or null (plain denial). */
-function deniedSegment(segment, list, reason, root, changedDirectory) {
-  if (!/^(dotnet|just|msbuild)(\.exe)?$/i.test(list[0])) {
-    return null; // a quoted path, a wrapper, a launch prefix, a script run directly
-  }
-  if (/^(dotnet (build|publish|pack|msbuild)|msbuild)$/.test(reason)) {
-    return runsTestTarget(list)
-      ? { undecided: 'it runs an MSBuild target named like a test target' }
-      : { gpu: false, options: [] };
-  }
-  if (/^dotnet (test|vstest)$/.test(reason)) {
-    const result = testGpu(segment, root);
-    return result.undecided === undefined ? { gpu: result.gpu, options: [] } : result;
-  }
-  if (/^just /.test(reason) && !changedDirectory) {
-    return recipeQueue(reason.slice('just '.length), root);
-  }
-  return null; // dotnet watch, Stryker, just after cd
-}
-
-/**
- * The rewrite of a command the hook denies, run by the Claude Code tool of `kind` ('bash' or 'pwsh') in `cwd`:
- * { command, gpu } to queue it, { note } to deny it with that sentence added, or null to deny it as before.
- */
-function planRewrite(command, kind, cwd) {
-  const text = command.trim();
-  if (text === '' || !fs.existsSync(path.join(cwd, QueueScript))) {
-    return null;
-  }
-  const found = [];
-  withDialect(kind, () => splitSegments(text, found));
-  const comments = found.filter((item) => item.kind === 'comment');
-  if (found.some((item) => item.kind !== '&&' && item.kind !== 'comment') || comments.length > 1) {
-    return null;
-  }
-  // A trailing comment (# intent: ...) stays outside the quotes, where the command gate reads it
-  const body = comments.length === 0 ? text : text.slice(0, comments[0].index).trimEnd();
-  const comment = comments.length === 0 ? '' : text.slice(comments[0].index);
-  if (
-    (kind === 'bash' && (/`/.test(body) || /^([^\s=]*=)?\//.test(body))) ||
-    (kind === 'pwsh' && /--%/.test(body))
-  ) {
-    return null; // a bash backtick substitution; a path Git Bash converts; PowerShell's stop-parsing token
-  }
-  const segments = withDialect(kind, () => splitSegments(body));
-  let gpu = false;
-  let options = [];
-  let changedDirectory = false;
-  const undecided = [];
-  for (const raw of segments) {
-    const segment = raw.trim();
-    if (segment === '' || /^[({@$&.!]/.test(segment) || hasInputRedirection(segment)) {
-      return null;
-    }
-    if (withDialect(kind, () => substitutions(segment)).length > 0) {
-      return null;
-    }
-    let list = withDialect(kind, () => words(segment));
-    while (kind === 'bash' && list.length > 1 && /^[A-Za-z_]\w*=/.test(list[0])) {
-      list = list.slice(1); // FOO=1 dotnet test: the assignment travels with the command
-    }
-    const name = programName(list[0] || '');
-    const reasons = check(segment, kind);
-    if (reasons.length === 0) {
-      if (name === 'node' && /(^|[\\/])(job|build)-queue\.js$/.test(unquote(list[1] || ''))) {
-        return null; // already queued: nesting would run it at once in this job
-      }
-      changedDirectory = changedDirectory || DirectoryChanges.includes(name);
-      continue;
-    }
-    if (reasons.length > 1) {
-      return null;
-    }
-    const result = deniedSegment(segment, list, reasons[0], cwd, changedDirectory);
-    if (result === null) {
-      return null;
-    }
-    if (result.undecided !== undefined) {
-      undecided.push(`${reasons[0]}: ${result.undecided}`);
-      continue;
-    }
-    gpu = gpu || result.gpu;
-    if (result.options.length > options.length) {
-      options = result.options; // --weight <n> of a just recipe
-    }
-  }
-  if (undecided.length > 0) {
-    return {
-      note:
-        `The hook did not queue it by itself, since it cannot tell whether the command uses the GPU ` +
-        `(${undecided.join('; ')}): add --gpu when it does.`,
-    };
-  }
-  const split = gpu ? splitBuilds(segments, kind) : null;
-  if (split !== null) {
-    // The builds take CPU slots only; the GPU turn waits for them and is held for the tests alone
-    const builds = queuedCommand(kind, split.builds, options, '');
-    const tests = queuedCommand(kind, split.tests, ['--gpu', ...options], comment);
-    return { command: `${builds} && ${tests}`, gpu, split: true };
-  }
-  return { command: queuedCommand(kind, body, gpu ? ['--gpu', ...options] : options, comment), gpu };
-}
-
 /**
  * The builds and the tests of `dotnet build <P> && dotnet test <P> --no-build` (several builds, then several tests,
  * joined by &&; environment assignments before a segment allowed), each part joined by && again: { builds, tests }, or
  * null for any other shape. A test without --no-build would build under the GPU turn again.
  */
-function splitBuilds(segments, kind) {
+function splitBuilds(segments, reader) {
   const builds = [];
   const tests = [];
   for (const raw of segments) {
     const segment = raw.trim();
-    let list = withDialect(kind, () => words(segment)).map(unquote);
-    while (kind === 'bash' && list.length > 1 && /^[A-Za-z_]\w*=/.test(list[0])) {
-      list = list.slice(1);
-    }
+    const list = stripBashAssignments(reader.words(segment).map(reader.unquote), reader.dialect);
     if (!/^dotnet(\.exe)?$/i.test(list[0] || '')) {
       return null;
     }
@@ -298,4 +191,112 @@ function splitBuilds(segments, kind) {
   return builds.length > 0 && tests.length > 0 ? { builds: builds.join(' && '), tests: tests.join(' && ') } : null;
 }
 
-module.exports = { planRewrite, queuedText, quote };
+/** Creates the command rewriter bound to repository config `project` and rule evaluator `rules`. */
+function createRewriter(project, rules = createRules(project)) {
+  const { checkDetailed, isQueueScript } = rules;
+  const { queueScript } = validateProject(project);
+  const { cpuVerbs, testVerbs } = project.dotnet;
+  const { undecidedNote } = project.messages;
+
+  /** One denied segment: { gpu, options } or { undecided } or null (plain denial). */
+  function deniedSegment(segment, list, reason, root, changedDirectory) {
+    if (!/^(dotnet|just|msbuild)(\.exe)?$/i.test(list[0])) {
+      return null; // a quoted path, a wrapper, a launch prefix, a script run directly
+    }
+    if (reason.tool === 'msbuild' || (reason.tool === 'dotnet' && cpuVerbs.includes(reason.verb))) {
+      return runsTestTarget(list)
+        ? { undecided: 'it runs an MSBuild target named like a test target' }
+        : { gpu: false, options: [] };
+    }
+    if (reason.tool === 'dotnet' && testVerbs.includes(reason.verb)) {
+      const result = testGpu(segment, root, project.testProjects);
+      return result.undecided ? result : { gpu: result.gpu, options: [] };
+    }
+    if (reason.tool === 'just' && !changedDirectory) {
+      return recipeQueue(reason.verb, root, project.justfile);
+    }
+    return null; // dotnet watch, Stryker, just after cd
+  }
+
+  /**
+   * The rewrite of a command the hook denies, run by the Claude Code tool of `kind` ('bash' or 'pwsh') in `cwd`:
+   * { command, gpu } to queue it, { note } to deny it with that sentence added, or null to deny it as before.
+   */
+  function planRewrite(command, kind, cwd) {
+    const text = command.trim();
+    if (text === '' || !fs.existsSync(path.join(cwd, queueScript))) {
+      return null;
+    }
+    const reader = createReader(kind);
+    const found = [];
+    reader.splitSegments(text, found);
+    const comments = found.filter((item) => item.kind === 'comment');
+    if (found.some((item) => item.kind !== '&&' && item.kind !== 'comment') || comments.length > 1) {
+      return null;
+    }
+    // A trailing comment (# intent: ...) stays outside the quotes, where the command gate reads it
+    const body = comments.length === 0 ? text : text.slice(0, comments[0].index).trimEnd();
+    const comment = comments.length === 0 ? '' : text.slice(comments[0].index);
+    if (
+      (kind === 'bash' && (/`/.test(body) || /^([^\s=]*=)?\//.test(body))) ||
+      (kind === 'pwsh' && /--%/.test(body))
+    ) {
+      return null; // a bash backtick substitution; a path Git Bash converts; PowerShell's stop-parsing token
+    }
+    const segments = reader.splitSegments(body);
+    let gpu = false;
+    let options = [];
+    let changedDirectory = false;
+    const undecided = [];
+    for (const raw of segments) {
+      const segment = raw.trim();
+      if (segment === '' || /^[({@$&.!]/.test(segment) || hasInputRedirection(segment)) {
+        return null;
+      }
+      if (reader.substitutions(segment).length > 0) {
+        return null;
+      }
+      // FOO=1 dotnet test: the assignment travels with the command
+      const list = stripBashAssignments(reader.words(segment), kind);
+      const name = reader.programName(list[0] || '');
+      const reasons = checkDetailed(segment, kind);
+      if (reasons.length === 0) {
+        if (isQueueScript(list)) {
+          return null; // already queued: nesting would run it at once in this job
+        }
+        changedDirectory = changedDirectory || DirectoryChanges.includes(name);
+        continue;
+      }
+      if (reasons.length > 1) {
+        return null;
+      }
+      const result = deniedSegment(segment, list, reasons[0], cwd, changedDirectory);
+      if (result === null) {
+        return null;
+      }
+      if (result.undecided !== undefined) {
+        undecided.push(`${reasons[0].text}: ${result.undecided}`);
+        continue;
+      }
+      gpu = gpu || result.gpu;
+      if (result.options.length > options.length) {
+        options = result.options; // --weight <n> of a just recipe
+      }
+    }
+    if (undecided.length > 0) {
+      return { note: undecidedNote(undecided) };
+    }
+    const split = gpu ? splitBuilds(segments, reader) : null;
+    if (split !== null) {
+      // The builds take CPU slots only; the GPU turn waits for them and is held for the tests alone
+      const builds = queuedCommand(kind, split.builds, options, '', queueScript);
+      const tests = queuedCommand(kind, split.tests, ['--gpu', ...options], comment, queueScript);
+      return { command: `${builds} && ${tests}`, gpu, split: true };
+    }
+    return { command: queuedCommand(kind, body, gpu ? ['--gpu', ...options] : options, comment, queueScript), gpu };
+  }
+
+  return { planRewrite, queuedText, quote };
+}
+
+module.exports = { createRewriter, queuedText, quote };

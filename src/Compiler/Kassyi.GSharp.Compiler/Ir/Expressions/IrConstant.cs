@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>
@@ -32,4 +34,11 @@ internal sealed class IrConstant(object? value, ISymbol? origin, ITypeSymbol typ
     /// Spelling only.
     /// </summary>
     public string? LiteralText { get; } = literalText;
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrConstantDecision Decided => GetDecision<IrConstantDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrConstant WithDecision(IrConstantDecision decision) =>
+        IrExpression.WithDecision<IrConstant>(this, decision);
 }

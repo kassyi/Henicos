@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>A conversion, explicit (a cast) or implicit.</summary>
@@ -26,4 +28,11 @@ internal sealed class IrConversion(IrExpression operand, IrOperator<IrConversion
         operand == Operand
             ? this
             : KeepSpelling(new IrConversion(operand, Conversion, IsImplicit, Type, Category, ConstantValue, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrConversionDecision Decided => GetDecision<IrConversionDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrConversion WithDecision(IrConversionDecision decision) =>
+        IrExpression.WithDecision<IrConversion>(this, decision);
 }

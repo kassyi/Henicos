@@ -195,7 +195,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         workspace.Dispose();
 
         // After Dispose, RentTemp throws for the workspace itself (not only through the memory manager).
-        // mutant: GpuWorkspace.cs:492 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
+        // mutant: GpuWorkspace.cs:497 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
         var rentError = Assert.Throws<ObjectDisposedException>(() => workspace.RentTemp(4));
         Assert.Equal(typeof(GpuWorkspace).FullName, rentError.ObjectName);
 

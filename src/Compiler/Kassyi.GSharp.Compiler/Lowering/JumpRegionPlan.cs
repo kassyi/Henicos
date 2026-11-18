@@ -27,6 +27,11 @@ internal sealed record JumpRegionPlan(
         new(ImmutableArray<JumpRegion>.Empty, ImmutableArray<GotoStatementSyntax>.Empty);
 }
 
+internal readonly record struct CrossSectionRejectedGoto(
+    GotoStatementSyntax Goto,
+    string TargetLabelName,
+    string RegionLabelName);
+
 internal static class JumpRegionPlanner
 {
     public static JumpRegionPlan Plan(
@@ -38,13 +43,16 @@ internal static class JumpRegionPlanner
             return JumpRegionPlan.Empty;
         }
 
+        var canonicalIndices = BuildCanonicalLabelIndices(statements);
         var minFirst = new int[statements.Count];
-        for (var i = 0; i < minFirst.Length; i++)
+        var maxLast = new int[statements.Count];
+        for (var i = 0; i < statements.Count; i++)
         {
             minFirst[i] = -1;
+            maxLast[i] = -1;
         }
 
-        var backwardGotos = new List<(int K, int L, GotoStatementSyntax Statement)>();
+        var allGotos = new List<(int K, int L, GotoStatementSyntax Statement)>();
 
         for (var k = 0; k < statements.Count; k++)
         {
@@ -69,12 +77,15 @@ internal static class JumpRegionPlanner
                     continue;
                 }
 
-                var l = FindStatementIndexForLabel(statements, targetLabel);
-                if (l < 0)
+                var rawL = FindStatementIndexForLabel(statements, targetLabel);
+                if (rawL < 0)
                 {
                     continue;
                 }
 
+                var l = canonicalIndices[rawL];
+
+                allGotos.Add((k, l, gotoStmt));
                 if (k < l)
                 {
                     if (minFirst[l] == -1 || k < minFirst[l])
@@ -82,9 +93,12 @@ internal static class JumpRegionPlanner
                         minFirst[l] = k;
                     }
                 }
-                else if (k > l)
+                else
                 {
-                    backwardGotos.Add((k, l, gotoStmt));
+                    if (k > maxLast[l])
+                    {
+                        maxLast[l] = k;
+                    }
                 }
             }
         }
@@ -93,68 +107,89 @@ internal static class JumpRegionPlanner
         for (var l = 0; l < statements.Count; l++)
         {
             var first = minFirst[l];
-            if (first < 0)
+            if (first >= 0 && HoldsSplitPoint(statements, first, l - 1, holdsSplitPoint))
             {
-                continue;
+                adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, l, first, l - 1));
             }
 
-            var hasSplit = false;
-            for (var s = first; s < l; s++)
+            var last = maxLast[l];
+            if (last >= 0 && HoldsSplitPoint(statements, l, last, holdsSplitPoint))
             {
-                if (holdsSplitPoint(statements[s]))
+                adopted.Add(new CandidateRange(JumpRegionKind.GotoLoop, l, l, last));
+
+                // A label with a GotoLoop and a forward goto must still close the forward range in front of the loop
+                if (first >= 0 && !HasForwardRangeForLabel(adopted, l))
                 {
-                    hasSplit = true;
-                    break;
+                    adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, l, first, l - 1));
                 }
-            }
-
-            if (hasSplit)
-            {
-                adopted.Add(new CandidateRange(l, first, l - 1));
             }
         }
 
-        if (adopted.Count == 0 && backwardGotos.Count == 0)
+        if (adopted.Count == 0)
         {
             return JumpRegionPlan.Empty;
         }
 
-        // Expand crossing ranges, and adopt a range without a split point whose goto comes from before an adopted
-        // range and whose label lies in its middle (the lanes that take it must enter the outer range first), until
+        // Expand crossing ranges, expand forward ranges that exit a GotoLoop, and adopt a forward range without a split
+        // point whose goto comes from before an adopted forward range and whose label lies in its middle, until
         // nothing changes
         var changed = true;
         while (changed)
         {
             changed = AdoptRangesIntoMiddle(minFirst, adopted);
+            changed |= AdoptRangesExitingLoop(minFirst, adopted);
             for (var i = 0; i < adopted.Count; i++)
             {
-                for (var j = 0; j < adopted.Count; j++)
+                if (adopted[i].Kind == JumpRegionKind.ForwardRange)
                 {
-                    if (i == j)
+                    for (var j = 0; j < adopted.Count; j++)
                     {
-                        continue;
+                        if (i == j || adopted[j].Kind != JumpRegionKind.ForwardRange)
+                        {
+                            continue;
+                        }
+
+                        var a1 = adopted[i].First;
+                        var l1 = adopted[i].LabelIndex;
+                        var a2 = adopted[j].First;
+                        var l2 = adopted[j].LabelIndex;
+
+                        if (a1 < a2 && a2 < l1 && l1 < l2)
+                        {
+                            adopted[j].First = a1;
+                            changed = true;
+                        }
                     }
-
-                    var a1 = adopted[i].First;
-                    var l1 = adopted[i].LabelIndex;
-                    var a2 = adopted[j].First;
-                    var l2 = adopted[j].LabelIndex;
-
-                    if (a1 < a2 && a2 < l1 && l1 < l2)
+                }
+                else
+                {
+                    var l = adopted[i].First;
+                    var j = adopted[i].Last;
+                    for (var f = 0; f < adopted.Count; f++)
                     {
-                        adopted[j].First = a1;
-                        changed = true;
+                        if (adopted[f].Kind != JumpRegionKind.ForwardRange)
+                        {
+                            continue;
+                        }
+
+                        var a = adopted[f].First;
+                        var m = adopted[f].LabelIndex;
+                        if (l < a && a <= j && j < m)
+                        {
+                            adopted[f].First = l;
+                            changed = true;
+                        }
                     }
                 }
             }
         }
 
         var rejected = ImmutableArray.CreateBuilder<GotoStatementSyntax>();
-        foreach (var (k, l, gotoStmt) in backwardGotos)
+        foreach (var (k, l, gotoStmt) in allGotos)
         {
             foreach (var range in adopted)
             {
-                if (l > range.First && l <= range.Last && k > range.Last)
+                if (l > range.First && l <= range.Last && (k < range.First || k > range.Last))
                 {
                     if (!rejected.Contains(gotoStmt))
                     {
@@ -166,11 +201,6 @@ internal static class JumpRegionPlanner
             }
         }
 
-        if (adopted.Count == 0 && rejected.Count == 0)
-        {
-            return JumpRegionPlan.Empty;
-        }
-
         adopted.Sort(static (r1, r2) =>
         {
             var cmp = r1.First.CompareTo(r2.First);
@@ -179,39 +209,105 @@ internal static class JumpRegionPlanner
                 return cmp;
             }
 
-            return r2.Last.CompareTo(r1.Last);
+            cmp = r2.Last.CompareTo(r1.Last);
+            if (cmp != 0)
+            {
+                return cmp;
+            }
+
+            return r1.Kind.CompareTo(r2.Kind);
         });
 
         var regions = ImmutableArray.CreateBuilder<JumpRegion>(adopted.Count);
         foreach (var r in adopted)
         {
-            regions.Add(new JumpRegion(JumpRegionKind.ForwardRange, r.LabelIndex, r.First, r.Last));
+            regions.Add(new JumpRegion(r.Kind, r.LabelIndex, r.First, r.Last));
         }
 
         return new JumpRegionPlan(regions.ToImmutable(), rejected.ToImmutable());
     }
 
-    // A label l whose earliest forward goto k lies before an adopted range [First, Last] with First < l <= Last
+    private static bool HoldsSplitPoint(
+        SyntaxList<StatementSyntax> statements,
+        int start,
+        int end,
+        Func<StatementSyntax, bool> holdsSplitPoint)
+    {
+        for (var s = start; s <= end; s++)
+        {
+            if (holdsSplitPoint(statements[s]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasForwardRangeForLabel(List<CandidateRange> adopted, int labelIndex) =>
+        adopted
+            .AsStackEnumerable()
+            .Any(labelIndex, static (range, label) =>
+                range.Kind == JumpRegionKind.ForwardRange && range.LabelIndex == label
+            );
+
+    // A label l whose earliest forward goto k lies before an adopted ForwardRange [First, Last] with First < l <= Last
     private static bool AdoptRangesIntoMiddle(int[] minFirst, List<CandidateRange> adopted)
     {
         var changed = false;
         for (var l = 0; l < minFirst.Length; l++)
         {
             var k = minFirst[l];
-            if (k < 0 ||
-                adopted
-                    .AsStackEnumerable()
-                    .Any(l, static (range, label) => range.LabelIndex == label) ||
-                !adopted
-                    .AsStackEnumerable()
-                    .Any((k, l), static (range, jump) => jump.k < range.First && range.First < jump.l &&
-                                                        jump.l <= range.Last))
+            if (k < 0 || HasForwardRangeForLabel(adopted, l))
             {
                 continue;
             }
 
-            adopted.Add(new CandidateRange(l, k, l - 1));
+            var entersForwardRange = adopted
+                .AsStackEnumerable()
+                .Any((k, l), static (range, jump) =>
+                    range.Kind == JumpRegionKind.ForwardRange &&
+                    jump.k < range.First &&
+                    range.First < jump.l &&
+                    jump.l <= range.Last
+                );
+            if (!entersForwardRange)
+            {
+                continue;
+            }
+
+            adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, l, k, l - 1));
             changed = true;
+        }
+
+        return changed;
+    }
+
+    // A label m whose earliest forward goto a starts inside an adopted GotoLoop [First, Last] and lands after it
+    // (First <= a <= Last < m): the lanes that jump skip the split points of the loop, so the range must wrap it
+    private static bool AdoptRangesExitingLoop(int[] minFirst, List<CandidateRange> adopted)
+    {
+        var changed = false;
+        for (var m = 0; m < minFirst.Length; m++)
+        {
+            var a = minFirst[m];
+            if (a < 0 || HasForwardRangeForLabel(adopted, m))
+            {
+                continue;
+            }
+
+            foreach (var range in adopted)
+            {
+                if (range.Kind == JumpRegionKind.GotoLoop &&
+                    range.First <= a &&
+                    a <= range.Last &&
+                    range.Last < m)
+                {
+                    adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, m, range.First, m - 1));
+                    changed = true;
+                    break;
+                }
+            }
         }
 
         return changed;
@@ -248,6 +344,179 @@ internal static class JumpRegionPlanner
         }
     }
 
+    internal static ImmutableArray<CrossSectionRejectedGoto> FindCrossSectionRejectedGotos(
+        SwitchStatementSyntax switchStatement,
+        JumpRegionPlan[] sectionPlans,
+        Func<GotoStatementSyntax, bool>? isIncluded = null)
+    {
+        var rejected = ImmutableArray.CreateBuilder<CrossSectionRejectedGoto>();
+        for (var s = 0; s < switchStatement.Sections.Count; s++)
+        {
+            var section = switchStatement.Sections[s];
+            foreach (var node in section.DescendantNodes(static n =>
+                         n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+            {
+                if (node is not GotoStatementSyntax gotoStmt ||
+                    !gotoStmt.IsKind(SyntaxKind.GotoStatement) ||
+                    gotoStmt.Expression is not IdentifierNameSyntax { Identifier.ValueText: var labelName })
+                {
+                    continue;
+                }
+
+                if (isIncluded != null && !isIncluded(gotoStmt))
+                {
+                    continue;
+                }
+
+                if (ReconvergenceSyntax.FindLabel(gotoStmt, labelName) is not { } targetLabel)
+                {
+                    continue;
+                }
+
+                for (var t = 0; t < switchStatement.Sections.Count; t++)
+                {
+                    if (t == s)
+                    {
+                        continue;
+                    }
+
+                    var targetSection = switchStatement.Sections[t];
+                    var l = FindCanonicalStatementIndexForLabel(targetSection.Statements, targetLabel);
+                    if (l < 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var range in sectionPlans[t].Regions)
+                    {
+                        // GotoLoop opens before the first statement's labels, so entering at First skips its enter;
+                        // ForwardRange opens after them unless a GotoLoop also starts there (caught by its own entry)
+                        var enters = range.Kind == JumpRegionKind.GotoLoop
+                            ? l >= range.First && l <= range.Last
+                            : l > range.First && l <= range.Last;
+                        if (enters)
+                        {
+                            var rangeLabel = FindRegionLabelName(targetSection.Statements, range);
+                            rejected.Add(new CrossSectionRejectedGoto(gotoStmt, labelName, rangeLabel));
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return rejected.Count == 0 ? ImmutableArray<CrossSectionRejectedGoto>.Empty : rejected.ToImmutable();
+    }
+
+    internal static bool IsEmptyLabeledStatement(StatementSyntax statement)
+    {
+        if (statement is not LabeledStatementSyntax)
+        {
+            return false;
+        }
+
+        while (statement is LabeledStatementSyntax labeled)
+        {
+            statement = labeled.Statement;
+        }
+
+        return statement is EmptyStatementSyntax;
+    }
+
+    internal static int[] BuildCanonicalLabelIndices(SyntaxList<StatementSyntax> statements)
+    {
+        var canonical = new int[statements.Count];
+        for (var i = 0; i < statements.Count; i++)
+        {
+            canonical[i] = i > 0 &&
+                           statements[i] is LabeledStatementSyntax &&
+                           IsEmptyLabeledStatement(statements[i - 1])
+                ? canonical[i - 1]
+                : i;
+        }
+
+        return canonical;
+    }
+
+    internal static int FindCanonicalStatementIndexForLabel(
+        SyntaxList<StatementSyntax> statements,
+        LabeledStatementSyntax targetLabel,
+        int[]? canonicalIndices = null)
+    {
+        var rawIndex = FindStatementIndexForLabel(statements, targetLabel);
+        if (rawIndex < 0)
+        {
+            return -1;
+        }
+
+        if (canonicalIndices != null)
+        {
+            return canonicalIndices[rawIndex];
+        }
+
+        var index = rawIndex;
+        while (index > 0 &&
+               statements[index] is LabeledStatementSyntax &&
+               IsEmptyLabeledStatement(statements[index - 1]))
+        {
+            index--;
+        }
+
+        return index;
+    }
+
+    internal static string FindRegionLabelName(SyntaxList<StatementSyntax> statements, JumpRegion range)
+    {
+        if (range.LabelIndex < 0 || range.LabelIndex >= statements.Count)
+        {
+            return string.Empty;
+        }
+
+        var groupLabels = new List<LabeledStatementSyntax>();
+        for (var i = range.LabelIndex; i < statements.Count; i++)
+        {
+            for (var cur = statements[i]; cur is LabeledStatementSyntax labeled; cur = labeled.Statement)
+            {
+                groupLabels.Add(labeled);
+            }
+
+            if (!IsEmptyLabeledStatement(statements[i]))
+            {
+                break;
+            }
+        }
+
+        if (groupLabels.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        if (groupLabels.Count > 1)
+        {
+            var start = range.First;
+            var end = range.Kind == JumpRegionKind.GotoLoop ? range.Last : range.LabelIndex - 1;
+            var gotos = new List<GotoStatementSyntax>();
+            for (var k = start; k <= end; k++)
+            {
+                gotos.Clear();
+                CollectGotos(statements[k], gotos);
+                foreach (var gotoStmt in gotos)
+                {
+                    if (gotoStmt.Expression is IdentifierNameSyntax { Identifier.ValueText: var name } &&
+                        ReconvergenceSyntax.FindLabel(gotoStmt, name) is { } targetLabel &&
+                        groupLabels.Contains(targetLabel))
+                    {
+                        return targetLabel.Identifier.ValueText;
+                    }
+                }
+            }
+        }
+
+        return groupLabels[0].Identifier.ValueText;
+    }
+
     internal static int FindStatementIndexForLabel(
         SyntaxList<StatementSyntax> statements,
         LabeledStatementSyntax targetLabel)
@@ -266,8 +535,9 @@ internal static class JumpRegionPlanner
         return -1;
     }
 
-    private sealed class CandidateRange(int labelIndex, int first, int last)
+    private sealed class CandidateRange(JumpRegionKind kind, int labelIndex, int first, int last)
     {
+        public JumpRegionKind Kind { get; } = kind;
         public int LabelIndex { get; } = labelIndex;
         public int First { get; set; } = first;
         public int Last { get; } = last;

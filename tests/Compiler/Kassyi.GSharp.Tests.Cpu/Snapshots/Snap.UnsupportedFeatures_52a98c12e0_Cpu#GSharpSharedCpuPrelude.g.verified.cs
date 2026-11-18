@@ -1831,7 +1831,7 @@ return missing;
 }
 
 // The thread-dependent branches and loops of a method that reaches Warp.ActiveMask() (#844). A lane enters one before
-// it (the entry is the frame's path, the number of the branch and how often the frame entered it) and leaves it where it
+// it (the entry is the frame's path and the number of the branch) and leaves it where it
 // ends, or by a jump out of it. Where it ends, the lane waits until no other lane of its warp is still inside the same
 // entry: the GPU runs the lanes of a warp that took different ways through a branch together again there, and
 // Warp.ActiveMask() returns the lanes that run together. ManagedGpuContext does the same.
@@ -1845,7 +1845,7 @@ __gsharp_trap(GSharpErrorCode::InvalidOperation,
 return;
 }
 __gsharp_root->__gsharp_warp_regions[__gsharp_root->__gsharp_warp_region_depth++] = {
-__gsharp_warp_path_of(__gsharp_root, __gsharp_ctx), site, ++__gsharp_ctx->__gsharp_warp_visits[site]};
+__gsharp_warp_path_of(__gsharp_root, __gsharp_ctx), site, 0u};
 }
 
 template<typename TRoot, typename TFrame>
@@ -1899,7 +1899,7 @@ continue;
 const TContext& other = contexts[laneTid];
 for (uint32_t depth = 0u; depth < other.__gsharp_warp_region_depth; depth++) {
 const __gsharp_warp_instance& entry = other.__gsharp_warp_regions[depth];
-if (entry.path != region.path || entry.site != region.site || entry.visit != region.visit) {
+if (entry.path != region.path || entry.site != region.site) {
 continue;
 }
 bool arrived = other.__gsharp_warp_reconverging && depth + 1u == other.__gsharp_warp_region_depth &&

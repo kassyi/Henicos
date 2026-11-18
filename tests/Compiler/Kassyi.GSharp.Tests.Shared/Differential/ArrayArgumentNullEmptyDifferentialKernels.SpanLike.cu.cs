@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public static partial class ArrayArgumentNullEmptyDifferentialKernels
 {
     [GpuKernel]
-    public static void SpanKernel(Span<int> s, int mode, int[] o)
+    public static void SpanKernel(Span<int> s, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -18,13 +18,13 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = s == null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = s.Length;
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in s)
                 {
@@ -36,7 +36,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
     }
 
     [GpuKernel]
-    public static void MemoryKernel(Memory<int> m, int mode, int[] o)
+    public static void MemoryKernel(Memory<int> m, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -45,20 +45,20 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = m.Span == null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = m.Length;
                 break;
-            case ArrayArgumentReads.IsEmpty:
+            case ArrayArgumentRead.IsEmpty:
                 o[0] = m.IsEmpty ? 1 : 0;
                 break;
         }
     }
 
     [GpuKernel]
-    public static void SegmentKernel(ArraySegment<int> g, int mode, int[] o)
+    public static void SegmentKernel(ArraySegment<int> g, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -67,14 +67,14 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = g.Count;
                 break;
         }
     }
 
     [GpuKernel]
-    public static void ImmutableKernel(ImmutableArray<int> ia, int mode, int[] o)
+    public static void ImmutableKernel(ImmutableArray<int> ia, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -83,29 +83,29 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = ia.AsSpan() == null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = ia.Length;
                 break;
-            case ArrayArgumentReads.Element:
+            case ArrayArgumentRead.Element:
                 o[0] = ia[0];
                 break;
-            case ArrayArgumentReads.IsEmpty:
+            case ArrayArgumentRead.IsEmpty:
                 o[0] = ia.IsEmpty ? 1 : 0;
                 break;
-            case ArrayArgumentReads.IsDefault:
+            case ArrayArgumentRead.IsDefault:
                 o[0] = ia.IsDefault ? 1 : 0;
                 break;
-            case ArrayArgumentReads.IsDefaultOrEmpty:
+            case ArrayArgumentRead.IsDefaultOrEmpty:
                 o[0] = ia.IsDefaultOrEmpty ? 1 : 0;
                 break;
-            case ArrayArgumentReads.DefaultLiteral:
+            case ArrayArgumentRead.DefaultLiteral:
                 o[0] = (default(ImmutableArray<int>).IsDefault ? 1 : 0) +
                     (default(ImmutableArray<int>).IsDefaultOrEmpty ? 2 : 0);
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in ia)
                 {
@@ -117,7 +117,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
     }
 
     [GpuKernel]
-    public static void NullableMemoryKernel(Memory<int>? m, int mode, int[] o)
+    public static void NullableMemoryKernel(Memory<int>? m, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -126,17 +126,17 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = (m.HasValue ? 1 : 0) + (m.HasValue && m.Value.Span == null ? 2 : 0);
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = m.HasValue ? m.Value.Length : -1;
                 break;
         }
     }
 
     [GpuKernel]
-    public static void ReadOnlySpanKernel(ReadOnlySpan<int> s, int mode, int[] o)
+    public static void ReadOnlySpanKernel(ReadOnlySpan<int> s, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -145,13 +145,13 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = s == null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = s.Length;
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in s)
                 {
@@ -159,14 +159,14 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 }
 
                 break;
-            case ArrayArgumentReads.InNullableFunction:
+            case ArrayArgumentRead.InNullableFunction:
                 o[0] = SpanSum(s);
                 break;
         }
     }
 
     [GpuKernel]
-    public static void ReadOnlyMemoryKernel(ReadOnlyMemory<int> m, int mode, int[] o)
+    public static void ReadOnlyMemoryKernel(ReadOnlyMemory<int> m, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -175,13 +175,13 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = m.Span == null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = m.Length;
                 break;
-            case ArrayArgumentReads.IsEmpty:
+            case ArrayArgumentRead.IsEmpty:
                 o[0] = m.IsEmpty ? 1 : 0;
                 break;
         }

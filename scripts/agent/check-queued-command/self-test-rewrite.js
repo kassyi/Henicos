@@ -1,12 +1,16 @@
 'use strict';
 
-// The self-test of the rewrite (queue-rewrite.js, hookAnswer of command-rules.js), part of --self-test: commands that
+// The self-test of the rewrite (queue-rewrite.js, hookAnswer of hook.js), part of --self-test: commands that
 // Claude Code gets back queued, with or without --gpu, and commands that stay denied, against the test projects and the
 // justfile of this checkout.
 
 const os = require('os');
 const path = require('path');
-const { check, hookAnswer } = require('./command-rules.js');
+const projectHenicos = require('./project-henicos.js');
+const rules = require('./command-rules.js').createRules(projectHenicos);
+const { check } = rules;
+const { createHook } = require('./hook.js');
+const { hookAnswer } = createHook(projectHenicos, rules);
 const { queuedText } = require('./queue-rewrite.js');
 
 const Root = path.resolve(__dirname, '..', '..', '..');
@@ -129,6 +133,40 @@ function checkRewrites(assert) {
     const denial = answer('Bash', command).hookSpecificOutput;
     assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
     assert.ok(/--gpu when it does/.test(denial.permissionDecisionReason), `should mention --gpu: ${command}`);
+  }
+  checkTestProjectGuards(assert);
+}
+
+/** A test-project lookup that fails or answers in an unusable shape leaves the command denied, saying why. */
+function checkTestProjectGuards(assert) {
+  const base = {
+    list: () => [{ name: 'G' }],
+    readErrorMessage: (root, error) => `could not read tests: ${error.message}`,
+    missingMessage: 'it names no test project',
+    usesGpu: () => ({ gpu: true }),
+  };
+  const failList = () => {
+    throw new Error('boom');
+  };
+  const cases = [
+    [{ list: failList }, 'dotnet test G', 'could not read tests: boom'],
+    [{}, 'dotnet test', 'it names no test project'],
+    [{ usesGpu: () => null }, 'dotnet test G', 'GPU use is unknown'],
+    [{ usesGpu: () => ({}) }, 'dotnet test G', 'GPU use is unknown'],
+    [{ usesGpu: () => ({ undecided: 'ambiguous', gpu: true }) }, 'dotnet test G', 'ambiguous'],
+  ];
+  for (const [override, cmd, expectedReason] of cases) {
+    const project = { ...projectHenicos, testProjects: { ...base, ...override } };
+    const out = createHook(project).hookAnswer({
+      tool_name: 'Bash',
+      tool_input: { command: cmd },
+      cwd: Root,
+    }).hookSpecificOutput;
+    assert.strictEqual(out.permissionDecision, 'deny', `must deny: ${cmd}`);
+    assert.ok(
+      out.permissionDecisionReason.includes(expectedReason),
+      `expected "${expectedReason}" in: ${out.permissionDecisionReason}`,
+    );
   }
 }
 

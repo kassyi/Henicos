@@ -27,6 +27,9 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
 {
     private readonly UniformityBodies _bodies = new();
 
+    // The parameters of each lambda and of the lambdas that enclose it, by its syntax
+    private readonly Dictionary<SyntaxNode, ImmutableArray<IParameterSymbol>> _lambdaParameters = new();
+
     private UniformityValues? _values;
 
     private MemoryUniformity? _memory;
@@ -234,22 +237,43 @@ internal sealed class UniformityRecorder(IMethodSymbol method, ArgumentMasks mas
         }
 
         _bodies.Push(body);
+        if (body.Kind == SplicedBodyKind.Lambda)
+        {
+            _lambdaParameters[body.Syntax] = _bodies.LambdaParameters;
+        }
     }
 
     public void OnBodyExited(SplicedBody body, int node) => _bodies.Pop(body);
 
-    // return <value> of a local function body spliced where it is called: the result of that call
+    // return <value> of a local function body spliced where it is called: the result of that call; of a lambda: the
+    // result of the lambda, which a call it is passed to reads as its operand
     public void OnBodyReturn(IOperation value, ControlFlowGraph graph, int node)
     {
-        if (_bodies.Innermost is not { Call: { } call })
+        switch (_bodies.Innermost)
         {
-            return;
+            case { Call: { } call }:
+                var result = Values.ResultOf(call.Syntax);
+                UniformityWrites.AddWritten(Nodes[node], result);
+                Nodes[node].Events.Add(
+                    new UniformityEvent(UniformityEventKind.Bind, value, graph, _bodies.Opaque, result)
+                );
+                break;
+            case { Kind: SplicedBodyKind.Lambda } lambda:
+                var lambdaResult = Values.ResultOf(lambda.Syntax);
+                UniformityWrites.AddWritten(Nodes[node], lambdaResult);
+                Nodes[node].Events.Add(
+                    new UniformityEvent(UniformityEventKind.BindLambdaResult, value, graph, lambda.Syntax, lambdaResult)
+                );
+                break;
         }
-
-        var result = Values.ResultOf(call.Syntax);
-        UniformityWrites.AddWritten(Nodes[node], result);
-        Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Bind, value, graph, _bodies.Opaque, result));
     }
+
+    /// <summary>
+    /// The parameters of the lambda, and of the lambdas that enclose it, that its result and the locals its body
+    /// declares read as uniform (<see cref="UniformityEventKind.BindLambdaResult"/>).
+    /// </summary>
+    public ImmutableArray<IParameterSymbol> GetLambdaParameters(SyntaxNode lambda) =>
+        _lambdaParameters.TryGetValue(lambda, out var parameters) ? parameters : ImmutableArray<IParameterSymbol>.Empty;
 
     public void OnTopOperation(IOperation operation, ControlFlowGraph graph, int node) =>
         Nodes[node].Events.Add(new UniformityEvent(UniformityEventKind.Observe, operation, graph, _bodies.Opaque));

@@ -5,6 +5,12 @@
 
 import * as path from "node:path";
 import { readCommand, type ReadStep } from "./command-reader.ts";
+import type { StepContext, StepKeys } from "./plugin-api.ts";
+
+/** Structural plugin hook subset so estimate-key.ts never runtime-imports plugin-host.ts. */
+export interface StepKeyProvider {
+  stepKeys(step: ReadStep, context: StepContext): StepKeys | undefined;
+}
 
 /**
  * Where a project or script argument lies, as the client found it with git (path-places.ts): the root of the worktree
@@ -59,54 +65,6 @@ const Trivial = new Set([
   "wc",
   "sed",
   "awk",
-]);
-
-// What a dotnet command line says that does not change the work: dropped by name
-const DroppedFlags = new Set(["--nologo", "-nologo", "--no-restore", "-tl", "--tl", "--interactive", "--blame"]);
-const DroppedFlagPrefixes = ["--blame-"];
-const DroppedValueOptions = new Set([
-  "-l",
-  "--logger",
-  "--results-directory",
-  "-v",
-  "--verbosity",
-  "--blame-crash-dump-type",
-  "--blame-hang-dump-type",
-  "--blame-hang-timeout",
-  "-s",
-  "--settings",
-  "--collect",
-  "-d",
-  "--diag",
-  "-e",
-  "--environment",
-  "--test-adapter-path",
-]);
-// MSBuild switches written with a value (-m:4, -nodeReuse:false, -v:q), by name
-const DroppedInline = new Set([
-  "m",
-  "maxcpucount",
-  "nodereuse",
-  "nr",
-  "v",
-  "verbosity",
-  "l",
-  "logger",
-  "clp",
-  "consoleloggerparameters",
-  "tl",
-  "nologo",
-  "results-directory",
-]);
-// What changes the work, with its value as the next word, under one name
-const KeptValueOptions = new Map([
-  ["-c", "-c"],
-  ["--configuration", "-c"],
-  ["-f", "-f"],
-  ["--framework", "-f"],
-  ["-r", "-r"],
-  ["--runtime", "-r"],
-  ["--filter", "--filter"],
 ]);
 
 const WindowsPath = /^[A-Za-z]:[\\/]/;
@@ -184,79 +142,23 @@ function programOf(word: string): string {
   return (parts[parts.length - 1] as string).toLowerCase().replace(/\.exe$/, "");
 }
 
-/** The name of a project or script for the shape: its file name without the extension. */
+/** The name of a script for the shape: its file name without the extension. */
 function nameOf(argument: string): string {
   const parts = slashes(argument).split("/");
-  return (parts[parts.length - 1] as string).replace(/\.(csproj|slnx?|js|ts|cs)$/, "");
+  return (parts[parts.length - 1] as string).replace(/\.(js|ts)$/, "");
 }
 
-interface StepKeys {
-  normalized: string;
-  shape: string;
-  kind: string;
-}
-
-/** One dotnet step: the verb, the projects, the options that change the work. */
-function dotnetKeys(words: string[], context: WalkContext): StepKeys {
-  const verb = words[1] ?? "";
-  const projects: string[] = [];
-  let where: Where = "";
-  const options: string[] = [];
-  let extra: string[] = [];
-  let noBuild = false;
-  let filtered = false;
-  for (let i = 2; i < words.length; i++) {
-    const word = words[i] as string;
-    const lower = word.toLowerCase();
-    const inline = /^(?:--?|\/)([\w-]+)[:=](.*)$/.exec(word);
-    if (word === "--") {
-      extra = words.slice(i + 1);
-      break;
-    }
-    if (inline !== null) {
-      const name = (inline[1] as string).toLowerCase();
-      if (name === "filter") {
-        filtered = true;
-        options.push(`--filter ${inline[2] ?? ""}`);
-      } else if (!DroppedInline.has(name)) {
-        options.push(word);
-      }
-    } else if (word.startsWith("-")) {
-      const kept = KeptValueOptions.get(lower);
-      if (kept !== undefined) {
-        filtered = filtered || kept === "--filter";
-        options.push(`${kept} ${words[++i] ?? ""}`);
-      } else if (DroppedValueOptions.has(lower)) {
-        i++;
-      } else if (!DroppedFlags.has(lower) && !DroppedFlagPrefixes.some((prefix) => lower.startsWith(prefix))) {
-        noBuild = noBuild || lower === "--no-build";
-        options.push(word);
-      }
-    } else {
-      const project = relativeToWorktree(word, context);
-      projects.push(project.text);
-      where = where === "" ? project.where : where;
-    }
-  }
-  const named = [...projects.map(nameOf)].sort().join("+");
-  const work = ["dotnet", verb, ...projects, ...options.sort(), ...(extra.length > 0 ? ["--", ...extra] : [])];
-  if (verb !== "build" && verb !== "test") {
-    return { normalized: work.join(" "), shape: `dotnet:${verb}`, kind: `dotnet${where}` };
-  }
-  const flags = `${noBuild ? ":nb" : ""}${verb === "test" && filtered ? ":f" : ""}`;
-  return { normalized: work.join(" "), shape: `${verb}:${named}${flags}`, kind: `${verb}${where}` };
-}
-
-function stepKeys(step: ReadStep, context: WalkContext): StepKeys {
+function stepKeys(step: ReadStep, context: WalkContext, plugins?: StepKeyProvider): StepKeys {
   const words = step.words;
+  const stepContext: StepContext = {
+    cwd: context.cwd,
+    resolvePath: (argument: string) => relativeToWorktree(argument, context),
+  };
+  const provided = plugins?.stepKeys(step, stepContext);
+  if (provided !== undefined) {
+    return provided;
+  }
   const program = programOf(words[0] as string);
-  if (program === "dotnet") {
-    return dotnetKeys(words, context);
-  }
-  if (program === "just") {
-    const recipe = words.slice(1).find((word) => !word.startsWith("-")) ?? "";
-    return { normalized: words.join(" "), shape: `just:${recipe}`, kind: "just" };
-  }
   if (program === "node") {
     // Code given inline (-e, -p) is no script of the repository: a probe or a sleep, its own kind
     if (words.some((word, i) => i > 0 && /^(?:-e|-p|--eval|--print)$/.test(word))) {
@@ -284,8 +186,8 @@ function firstProgram(command: string): string {
  * The keys of a command. A command that cannot be read (command-reader.ts) has no normalized key and no shape, only
  * the kind of its first program; one of trivial steps has none at all.
  */
-export function commandKeys(command: string, context: KeyContext): CommandKeys {
-  return walk(command, context) ?? { normalized: "", shape: "", kind: firstProgram(command) };
+export function commandKeys(command: string, context: KeyContext, plugins?: StepKeyProvider): CommandKeys {
+  return walk(command, context, plugins) ?? { normalized: "", shape: "", kind: firstProgram(command) };
 }
 
 /**
@@ -293,9 +195,9 @@ export function commandKeys(command: string, context: KeyContext): CommandKeys {
  * paths a client looks up with git (path-places.ts) and sends as the places of its job. None when the command cannot
  * be read or has no directory.
  */
-export function pathArguments(command: string, context: KeyContext): string[] {
+export function pathArguments(command: string, context: KeyContext, plugins?: StepKeyProvider): string[] {
   const collect: string[] = [];
-  walk(command, { cwd: context.cwd, worktree: context.worktree, collect });
+  walk(command, { cwd: context.cwd, worktree: context.worktree, collect }, plugins);
   return [...new Set(collect)];
 }
 
@@ -306,7 +208,7 @@ const DirectoryReturns = new Set(["pop-location", "popd"]);
 const Pushes = new Set(["push-location", "pushd"]);
 
 /** The keys of a readable command, the steps walked in order with the directory they run in; null when unreadable. */
-function walk(command: string, context: WalkContext): CommandKeys | null {
+function walk(command: string, context: WalkContext, plugins?: StepKeyProvider): CommandKeys | null {
   const read = readCommand(command);
   if (read === null) {
     return null;
@@ -327,7 +229,7 @@ function walk(command: string, context: WalkContext): CommandKeys | null {
     } else if (DirectoryReturns.has(program)) {
       directory = pushed.pop() ?? directory;
     } else if (!first.startsWith("$") && !Trivial.has(program)) {
-      steps.push(stepKeys(step, { ...context, cwd: directory }));
+      steps.push(stepKeys(step, { ...context, cwd: directory }, plugins));
     }
   }
   return {

@@ -1,5 +1,5 @@
 // The build step of run --gpu: before the job asks for its GPU turn, the builds that its command would run first
-// (planBuildStep, build-split.ts) run as a job of their own on CPU slots, so that the GPU is held only for the tests.
+// (splitBeforeTurn) run as a job of their own on CPU slots, so that the GPU is held only for the tests.
 // A build that fails or is cancelled ends the run with its exit code; the GPU turn is then never asked for.
 
 import type * as net from "node:net";
@@ -8,9 +8,10 @@ import { CpusVariable, JobVariable } from "./constants.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import type { RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
+import type { PluginHost } from "./plugin-host.ts";
 import type { Placement } from "./protocol.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
-import { ProcessTable } from "./system.ts";
+import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 
 /**
  * The RunHost of the build step: the run's own host, except that the end of the step resolves `ended` instead of
@@ -76,21 +77,41 @@ export async function runBuildStep(
   placement: Placement,
   build: string,
   host: RunHost,
+  role = "build, no GPU",
+  plugins?: PluginHost,
 ): Promise<number> {
   if (process.env[JobVariable]) {
     const cpus = Number(process.env[CpusVariable]) || 0;
-    const command = cpus > 0 ? CommandShell.limitMsbuildNodes(build, cpus) : build;
+    let command = build;
+    let env: NodeJS.ProcessEnv = process.env;
+    if (cpus > 0 && plugins !== undefined) {
+      const cwd = process.cwd();
+      const prepared = plugins.prepareCommand(
+        build,
+        { jobId: Number(process.env[JobVariable]) || 0, cpus, nested: true },
+        {
+          cwd,
+          worktree: resolveWorktree(cwd),
+          configRoot: plugins.configRoot,
+          shell: CommandShell.resolve(options.shell).name,
+          env: process.env,
+          log: prefix,
+        },
+      );
+      command = prepared.command;
+      env = { ...process.env, ...prepared.env };
+    }
     let child: ChildProcess | null = null;
     const stop = (): void => ProcessTable.killChild(child);
     process.once("SIGINT", stop);
     process.once("SIGTERM", stop);
-    const result = await host.runCommand(command, process.env, (c) => (child = c));
+    const result = await host.runCommand(command, env, (c) => (child = c));
     process.off("SIGINT", stop);
     process.off("SIGTERM", stop);
     return result.code;
   }
   const step = new StepRunHost(host);
-  const stepOptions: RunOptions = { ...options, command: build, commandWords: null, gpu: false, role: "build, no GPU" };
-  void new QueuedRun(stepOptions, { ...placement }, false, false, step).run();
+  const stepOptions: RunOptions = { ...options, command: build, commandWords: null, gpu: false, role };
+  void new QueuedRun(stepOptions, { ...placement }, false, false, step, plugins).run();
   return step.ended;
 }

@@ -65,6 +65,7 @@ internal static class ManagedCSharpTranspiler
             writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, frame,
             bodySource, accessibility.StateMachine, isUnsafe: isUnsafe);
         accessors.WriteTo(writer);
+        ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
     }
 
@@ -181,6 +182,7 @@ internal static class ManagedCSharpTranspiler
                 frame.CopiedParameters, methodSymbol.DeclaredAccessibility, isUnsafe);
         }
         accessors.WriteTo(writer);
+        ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
     }
 
@@ -232,6 +234,7 @@ internal static class ManagedCSharpTranspiler
         writer.AppendLine(ManagedStateMachineEmitter.ToSource(method));
         writer.AppendLine();
         accessors.WriteTo(writer);
+        ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
     }
 

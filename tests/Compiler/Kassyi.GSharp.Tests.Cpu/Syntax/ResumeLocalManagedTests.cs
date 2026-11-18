@@ -114,6 +114,31 @@ public class ResumeLocalManagedTests : TranspilerTestBase
     public void StackAllocPointer_ManagedCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ReadOnlyCollectionSpan_ManagedUsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.ReadOnlyCollectionSpan(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptyCollectionSpan_ManagedBeforeBarrier_HasZeroLength() =>
+        ResumeLocalScenarios.EmptyCollectionSpan(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CollectionSpan_ManagedUsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.CollectionSpanBeforeBarrier(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpanInLoop_ManagedLoopIteration_ReinitializesEveryIteration() =>
+        ResumeLocalScenarios.CollectionSpanInLoop(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpan_ManagedWithVariableElementBeforeBarrier_KeepsComputedValues() =>
+        ResumeLocalScenarios.VariableCollectionSpan(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))
