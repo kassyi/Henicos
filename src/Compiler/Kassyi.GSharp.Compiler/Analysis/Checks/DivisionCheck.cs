@@ -11,8 +11,8 @@ internal enum DivisionCheck : byte
     None,
 
     /// <summary>
-    /// The Prelude function: <see cref="DivideByZeroException"/> when the divisor is 0; for a signed type the native
-    /// build also gives the GPU result of <c>MinValue / -1</c> (MinValue) and <c>MinValue % -1</c> (0).
+    /// The Prelude function: <see cref="DivideByZeroException"/> when the divisor is 0; for a signed type every
+    /// build gives the GPU result of <c>MinValue / -1</c> (MinValue) and <c>MinValue % -1</c> (0).
     /// </summary>
     Divisor
 }
