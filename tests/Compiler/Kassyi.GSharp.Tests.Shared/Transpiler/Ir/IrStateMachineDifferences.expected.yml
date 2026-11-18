@@ -1474,6 +1474,8 @@
 - {file: "Runtime/ParallelAggregateKernels.cu.cs", method: "ParallelAggregateKernels.ULongSumKernel", status: "Compared", count: 1}
 - {file: "Runtime/ParallelReductionExecutionKernels.cu.cs", method: "ParallelReductionExecutionKernels.IntParallelSum", status: "Compared", count: 1}
 - {file: "Runtime/PtxEngineExperimentKernels.cu.cs", method: "PtxEngineExperimentKernels.AddKernel", status: "Compared", count: 1}
+- {file: "Runtime/SharedMemberErrorSiteRuntimeKernels.cu.cs", method: "SharedMemberErrorSiteRuntimeKernels.FirstKernel", status: "OpaqueStatement", count: 1}
+- {file: "Runtime/SharedMemberErrorSiteRuntimeKernels.cu.cs", method: "SharedMemberErrorSiteRuntimeKernels.SecondKernel", status: "OpaqueStatement", count: 1}
 - {file: "Runtime/StackLinqFusionExecutionKernels.cu.cs", method: "StackLinqFusionExecutionKernels.HellPattern", status: "Compared", count: 1}
 - {file: "Runtime/StackLinqFusionExecutionKernels.cu.cs", method: "StackLinqFusionExecutionKernels.MultipleSelect", status: "Compared", count: 1}
 - {file: "Runtime/StackLinqFusionExecutionKernels.cu.cs", method: "StackLinqFusionExecutionKernels.MultipleWhere", status: "Compared", count: 1}
@@ -4282,6 +4284,12 @@
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.Twice", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.UsingKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.Wait", status: "Compared", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "CtorSwitchKernels.FirstKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "CtorSwitchKernels.SecondKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeSwitchKernels.FirstKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeSwitchKernels.SecondKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.FirstKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.SecondKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "Inner.WaitNested", status: "Compared", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "LibSm.MakeSecret", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "LibSm.UseSecret", status: "NoStateMachine", count: 1}

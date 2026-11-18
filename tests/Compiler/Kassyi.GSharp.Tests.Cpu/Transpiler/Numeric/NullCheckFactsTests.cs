@@ -114,8 +114,10 @@ public class NullCheckFactsTests
         var binaryExpressions = root.DescendantNodes().OfType<BinaryExpressionSyntax>().Take(3).ToList();
         Assert.Equal(3, binaryExpressions.Count);
 
-        foreach (var node in binaryExpressions)
+        string[] expectedSourceMembers = ["DivideByAny", "DivideByPositive", "CheckedAdd"];
+        for (var i = 0; i < binaryExpressions.Count; i++)
         {
+            var node = binaryExpressions[i];
             var fromNode = ErrorSiteTable.CreateSite(node, model, "TestMember", "test message", "TestKind");
             var fromLocation = ErrorSiteTable.CreateSite(model.GetReportLocation(node), "TestMember",
                 "test message", "TestKind");
@@ -124,7 +126,8 @@ public class NullCheckFactsTests
             Assert.Equal(fromNode.File, fromLocation.File);
             Assert.Equal(fromNode.Line, fromLocation.Line);
             Assert.Equal(fromNode.Column, fromLocation.Column);
-            Assert.Equal(fromNode.MemberName, fromLocation.MemberName);
+            Assert.Equal(expectedSourceMembers[i], fromNode.MemberName);
+            Assert.Equal("TestMember", fromLocation.MemberName);
             Assert.Equal(fromNode.DefaultMessage, fromLocation.DefaultMessage);
 
             var span = model.GetReportLocation(node).GetLineSpan();
