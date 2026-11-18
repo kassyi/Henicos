@@ -3192,6 +3192,11 @@
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLambdaKernels.cu.cs", method: "SuspendingCallInLambdaKernels.LambdaKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLocalFunctionKernels.cu.cs", method: "SuspendingCallInLocalFunctionKernels.Broadcast", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLocalFunctionKernels.cu.cs", method: "SuspendingCallInLocalFunctionKernels.LocalFunctionKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs", method: "SuspendingCallInStructMemberKernels.AccessorCallKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs", method: "SuspendingCallInStructMemberKernels.ConstructorCallKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs", method: "SuspendingCallInStructMemberKernels.NonSuspendingIncrement", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs", method: "SuspendingCallInStructMemberKernels.SafeRotate", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs", method: "SuspendingCallInStructMemberKernels.TaggedRotate", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInSwitchExpressionKernels.cu.cs", method: "SuspendingCallInSwitchExpressionKernels.Broadcast", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInSwitchExpressionKernels.cu.cs", method: "SuspendingCallInSwitchExpressionKernels.SwitchExpressionKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SwitchExpressionBarrierKernels.cu.cs", method: "SwitchExpressionBarrierKernels.SwitchExpressionKernel", status: "Compared", count: 1}

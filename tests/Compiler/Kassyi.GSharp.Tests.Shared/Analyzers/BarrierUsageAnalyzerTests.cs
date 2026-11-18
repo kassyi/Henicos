@@ -421,6 +421,40 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.DoesNotContain(actual, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
     }
 
+    // An unattributed struct constructor or property accessor does not lower to a state machine, so calling a
+    // suspending device function there (or in a lambda inside it) reports GSH0062 on both dialects
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cuda")]
+    [InlineData("Cpu")]
+    public async Task SuspendingCallInStructMember_ConstructorAndAccessors_ReportsGSH0062(string dialect)
+    {
+        const string TestCase = "Analyzers/BarrierUsage/SuspendingCallInStructMemberKernels.cu.cs";
+        var actual = await RunAsync(TestCase, dialect);
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 32, 21, 32, 38),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 42, 38, 57),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 43, 31, 43, 50),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 50, 25, 50, 44)
+            ],
+            actual);
+
+        var messages = (await GeneratorTestRunner
+                .TestAnalyzer(TestCase, s_analyzer)
+                .WithDialect(dialect)
+                .GetDiagnosticsAsync())
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .Select(static d => d.GetMessage(CultureInfo.InvariantCulture))
+            .ToArray();
+        Assert.Contains("in a constructor", messages[0], StringComparison.Ordinal);
+        Assert.Contains("in a lambda or anonymous method", messages[1], StringComparison.Ordinal);
+        Assert.Contains("in a property accessor", messages[2], StringComparison.Ordinal);
+        Assert.Contains("in a property accessor", messages[3], StringComparison.Ordinal);
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task AsyncYieldInKernel_AwaitOrYield_ReportsGSH0046()

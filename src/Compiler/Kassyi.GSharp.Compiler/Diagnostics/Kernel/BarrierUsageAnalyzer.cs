@@ -127,20 +127,23 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed, and a
     // warp shuffle anywhere else is not a split point, so a lane would read another lane's value before that lane wrote
-    // it, or the shuffle would run where C# does not evaluate it (#1274).
+    // it, or the shuffle would run where C# does not evaluate it (#1274). Unattributed struct constructors and property
+    // accessors are not turned into state machines either.
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
         var (unsupportedContext, shuffleContext) = FindUnsupportedContexts(invocation, context.SemanticModel);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
-        if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
+        var memberContext = FindUnsupportedMember(context.ContainingSymbol);
+        if (unsupportedContext == null && shuffleContext == null &&
+            byReferenceArgument == null && memberContext == null)
         {
             return;
         }
 
         // A call that C# removes, or one in its arguments, never runs (RemovedCalls)
         if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol callee ||
-            !IsInGpuMethod(context.ContainingSymbol) ||
+            (!IsInGpuMethod(context.ContainingSymbol) && memberContext == null) ||
             RemovedCalls.IsInRemovedCall(invocation, context.SemanticModel))
         {
             return;
@@ -171,6 +174,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        unsupportedContext ??= memberContext;
         if (unsupportedContext != null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext, invocation.GetLocation(),
@@ -251,6 +255,27 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
 
         return symbol is IMethodSymbol && GpuExecutionSpace.IsGpuFunction(symbol);
+    }
+
+    private static string? FindUnsupportedMember(ISymbol? containing)
+    {
+        // Lambdas and local functions belong to the member that declares them
+        while (containing is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
+        {
+            containing = containing.ContainingSymbol;
+        }
+
+        if (containing is not IMethodSymbol { ContainingType.IsValueType: true } method)
+        {
+            return null;
+        }
+
+        return method.MethodKind switch
+        {
+            MethodKind.Constructor or MethodKind.StaticConstructor => "in a constructor",
+            MethodKind.PropertyGet or MethodKind.PropertySet => "in a property accessor",
+            _ => null
+        };
     }
 
     /// <summary>
