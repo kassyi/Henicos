@@ -354,7 +354,14 @@ public static class MethodTranspiler
             {
                 if (slot.Kind is FrameSlotKind.Field or FrameSlotKind.SharedMemory or FrameSlotKind.HeldRef)
                 {
-                    WriteMember(slot.Type, slot.Name, ref context);
+                    if (slot.HoldsReadOnlyArray && slot.Type.TryGetArrayLikeElementType(out var elementType))
+                    {
+                        WriteReadOnlyArrayMember(elementType, slot.Name, ref context);
+                    }
+                    else
+                    {
+                        WriteMember(slot.Type, slot.Name, ref context);
+                    }
                 }
             }
 
@@ -428,6 +435,15 @@ public static class MethodTranspiler
         StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
         context.Emitter.Dialect.AppendParameter(ref context, syntax, type, parameter);
         context.Emitter.Writer.Append(' ').AppendCppName(name).AppendLine(";");
+    }
+
+    // GSharpArray<const <element type>> <name>; a field that holds a [GpuReadOnly] array, as a copied parameter does
+    private static void WriteReadOnlyArrayMember(ITypeSymbol elementType, string name, ref TranspileContext context)
+    {
+        StructOrdering.RegisterUsedStructIfApplicable(elementType, ref context);
+        context.Emitter.Writer.Append("GSharpArray<const ");
+        context.Emitter.Dialect.AppendType(ref context, elementType);
+        context.Emitter.Writer.Append("> ").Append(name).AppendLine(";");
     }
 
     // <type> <name>;

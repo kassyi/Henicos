@@ -77,7 +77,8 @@ internal static class LoweredFrameBuilder
                 }
             }
 
-            slots.Add(new FrameSlot(kind, type, name, elementType, length, unsupportedLocation, Managed: null));
+            slots.Add(new FrameSlot(kind, type, name, elementType, length, unsupportedLocation, Managed: null,
+                HoldsReadOnlyArray: HoistedFieldTypeResolver.HoldsReadOnlyArray(field, semanticModel)));
         }
 
         return new StateMachineFrame(copiedParameters, slots.MoveToImmutable(), callFrameCallees.MoveToImmutable(),
