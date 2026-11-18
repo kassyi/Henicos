@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir;
 
 /// <summary>An expression: a node with a type, a value category and possibly a constant value.</summary>
@@ -28,13 +30,46 @@ internal abstract class IrExpression(ITypeSymbol type, IrCategory category, Opti
     public int Parentheses { get; private set; }
 
     /// <summary>
+    /// What the decision pass decided; <see langword="null"/> before it ran. Read it through the typed property of
+    /// the node.
+    /// </summary>
+    public IrDecision? Decision { get; private set; }
+
+    /// <summary>
+    /// The decision as <typeparamref name="T"/>; an error when the pass has not run or decided another kind.
+    /// </summary>
+    protected T GetDecision<T>() where T : IrDecision =>
+        Decision as T ?? throw new InvalidOperationException(Decision is null
+            ? $"{GetType().Name} has not been decided; run the decision pass first."
+            : $"{GetType().Name} holds a {Decision.GetType().Name}, not a {typeof(T).Name}.");
+
+    /// <summary>
+    /// A copy of <paramref name="node"/> that holds <paramref name="decision"/>; <paramref name="node"/> itself when
+    /// it holds that one.
+    /// </summary>
+    internal static TNode WithDecision<TNode>(TNode node, IrDecision decision) where TNode : IrExpression
+    {
+        if (ReferenceEquals(node.Decision, decision))
+        {
+            return node;
+        }
+
+        // [WHY] Every other field is read-only, so the copy shares nothing that changes
+        var copy = (TNode)node.MemberwiseClone();
+        ((IrExpression)copy).Decision = decision;
+        return copy;
+    }
+
+    /// <summary>
     /// <paramref name="rebuilt"/>, which an <c>Update</c> or <c>With...</c> of this node has just created, with the
-    /// spelling of this node.
+    /// spelling and the decision of this node. The decision stays valid only when children are replaced with values of
+    /// the same type and range.
     /// </summary>
     protected T KeepSpelling<T>(T rebuilt) where T : IrExpression
     {
         IrExpression node = rebuilt; // [WHY] the private setter is reached through the base type
         node.Parentheses = Parentheses;
+        node.Decision = Decision;
         return rebuilt;
     }
 

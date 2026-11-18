@@ -20,4 +20,10 @@ internal sealed class IrStateMachine(ImmutableArray<IrState> states, bool isDevi
 
     /// <summary>The called suspending device functions in call-frame index order.</summary>
     public ImmutableArray<IMethodSymbol> CallFrames { get; } = callFrames;
+
+    /// <summary>This state machine with <paramref name="states"/>; this node itself when unchanged.</summary>
+    public IrStateMachine Update(ImmutableArray<IrState> states) =>
+        states == States
+            ? this
+            : new IrStateMachine(states, IsDeviceFunction, WarpSiteCount, CallFrames, Source);
 }

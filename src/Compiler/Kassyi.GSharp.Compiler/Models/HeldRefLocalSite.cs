@@ -3,7 +3,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// <summary>
 /// Where a <c>ref</c> local is declared that the CPU state machine would keep in its frame and GSH0039 does not report
 /// (<see cref="HeldRefLocal"/> without <see cref="HeldRefLocal.IsReportedLive"/>): the generator reports GSH0003 there
-/// on a CPU dialect build (#1640).
+/// on a CPU dialect build (#1640). Also where a span local carries a value from one state into another
+/// (<see cref="LoweredStateMachine.SpansAcrossStates"/>), which the generator reports as GSH0039
+/// (<see cref="SpanName"/>).
 /// </summary>
 /// <remarks>
 /// Values only (the path and the spans of the declaration), so a result taken from the cache never refers to an earlier
@@ -18,7 +20,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// </param>
 /// <param name="Span">The span of the declared identifier.</param>
 /// <param name="LineSpan">Its lines and columns.</param>
-internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, TextSpan Span, LinePositionSpan LineSpan)
+/// <param name="SpanName">The name of the span local for GSH0039, or empty for a ref local (GSH0003).</param>
+internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, TextSpan Span, LinePositionSpan LineSpan,
+    string SpanName = "")
 {
     /// <summary>
     /// The sites of the held ref locals of <paramref name="lowered"/> that GSH0039 does not report, in the order of the
@@ -26,7 +30,7 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
     /// </summary>
     public static EquatableArray<HeldRefLocalSite> Collect(LoweredStateMachine? lowered, SemanticModel semanticModel)
     {
-        if (lowered is null || lowered.HeldRefLocals.IsEmpty)
+        if (lowered is null || (lowered.HeldRefLocals.IsEmpty && lowered.SpansAcrossStates.IsEmpty))
         {
             return default;
         }
@@ -40,12 +44,21 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
             }
         }
 
+        foreach (var span in lowered.SpansAcrossStates)
+        {
+            sites.Add(Create(semanticModel.GetReportLocation(span), semanticModel.Compilation) with
+            {
+                SpanName = span.Identifier.ValueText
+            });
+        }
+
         return sites.ToImmutable().AsEquatableArray();
     }
 
     /// <summary>
-    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>) at this site: in the syntax
-    /// tree of <paramref name="compilation"/> that declares it, so that the editor marks the declaration.
+    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), or GSH0039 for a span local,
+    /// at this site: in the syntax tree of <paramref name="compilation"/> that declares it, so that the editor marks
+    /// the declaration.
     /// </summary>
     public void Report(SourceProductionContext context, Compilation compilation)
     {
@@ -54,8 +67,10 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
             : Path.Length > 0
                 ? Location.Create(Path, Span, LineSpan)
                 : Location.None;
-        context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, location,
-            GpuCodeConstraints.RefLocalHeldByCpuStateMachine));
+        context.ReportDiagnostic(SpanName.Length > 0
+            ? Diagnostic.Create(GSharpDiagnostics.CrossBarrierRefStructProhibited, location, SpanName)
+            : Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, location,
+                GpuCodeConstraints.RefLocalHeldByCpuStateMachine));
     }
 
     // The tree with the site's path, or at its ordinal when it has no path
