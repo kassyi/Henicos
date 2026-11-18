@@ -33,6 +33,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { testProjectFiles, dialectOf } = require('../../human/job-queue-henicos/target-dialect.js');
 const { check } = require('./command-rules.js');
 const {
   withDialect,
@@ -76,22 +77,11 @@ function hasInputRedirection(segment) {
 /** The names of the test projects under tests/<category>/<name>/<name>.csproj. */
 function testProjects(root) {
   const testsDir = path.join(root, 'tests');
-  const names = [];
-  let categories = [];
   try {
-    categories = fs.readdirSync(testsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+    return { names: testProjectFiles(testsDir), error: '' };
   } catch (error) {
-    return { names, error: `could not read ${testsDir}: ${error.message}` };
+    return { names: [], error: `could not read ${testsDir}: ${error.message}` };
   }
-  for (const category of categories) {
-    for (const entry of fs.readdirSync(path.join(testsDir, category.name), { withFileTypes: true })) {
-      const project = path.join(testsDir, category.name, entry.name, `${entry.name}.csproj`);
-      if (entry.isDirectory() && fs.existsSync(project)) {
-        names.push({ name: entry.name, project });
-      }
-    }
-  }
-  return { names, error: '' };
 }
 
 /** The test projects named in the text: the name not followed by more of a name (.csproj and .dll do not count). */
@@ -114,11 +104,11 @@ function testGpu(segment, root) {
   }
   let gpu = false;
   for (const { name, project } of named) {
-    const dialect = /<GSharpTargetDialect>\s*(\w+)\s*<\/GSharpTargetDialect>/i.exec(fs.readFileSync(project, 'utf8'));
-    if (dialect === null || !/^(cpu|cuda)$/i.test(dialect[1])) {
+    const dialect = dialectOf(project);
+    if (dialect === null) {
       return { undecided: `${name}.csproj sets no GSharpTargetDialect of Cpu or Cuda` };
     }
-    gpu = gpu || /^cuda$/i.test(dialect[1]);
+    gpu = gpu || dialect === 'cuda';
   }
   return { gpu };
 }
