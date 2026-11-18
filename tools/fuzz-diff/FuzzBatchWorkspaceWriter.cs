@@ -195,6 +195,8 @@ public static class FuzzBatchWorkspaceWriter
                 <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
             """
             : string.Empty;
+        string sharedHarness = $"{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness";
+        string dialectHarness = $"{relRepo}/tests/Compiler/Kassyi.GSharp.Tests.{dialect}/Differential/Harness";
 
         return $$"""
             <Project Sdk="Microsoft.NET.Sdk">
@@ -218,8 +220,8 @@ public static class FuzzBatchWorkspaceWriter
                 <Compile Include="{{relGen}}/FuzzBatchKernels.cu.cs" />
                 <Compile Include="{{relGen}}/FuzzBatchCases.cs" />
                 <Compile Include="{{relGen}}/FuzzBatchHarnessStubs.cs" />
-                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/*.cs" Exclude="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.Shared/Differential/Harness/KnownDivergences.cs" />
-                <Compile Include="{{relRepo}}/tests/Compiler/Kassyi.GSharp.Tests.{{dialect}}/Differential/Harness/*.cs" />{{cpuCompileItems}}
+                <Compile Include="{{sharedHarness}}/*.cs" Exclude="{{sharedHarness}}/KnownDivergences.cs" />
+                <Compile Include="{{dialectHarness}}/*.cs" />{{cpuCompileItems}}
               </ItemGroup>
 
               <ItemGroup>

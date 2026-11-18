@@ -24,7 +24,10 @@ public sealed class FuzzBatchWorkspaceWriterTests
         string xml = FuzzBatchWorkspaceWriter.BuildProjectXml(dialect, "Generated", RelRepo, cudaArch: null);
         var items = XDocument.Parse(xml)
             .Descendants("Compile")
-            .Select(static e => (Include: (string?)e.Attribute("Include") ?? "", Exclude: (string?)e.Attribute("Exclude") ?? ""))
+            .Select(static e => (
+                Include: (string?)e.Attribute("Include") ?? "",
+                Exclude: (string?)e.Attribute("Exclude") ?? ""
+            ))
             .ToList();
 
         string ownFolder = HarnessFolder(dialect);
@@ -32,19 +35,21 @@ public sealed class FuzzBatchWorkspaceWriterTests
             RepositoryPaths.Combine("tests", "Compiler", $"Kassyi.GSharp.Tests.{dialect}", "Differential", "Harness"),
             "*.cs");
         Assert.NotEmpty(ownFiles);
+        string folderGlob = $"{RelRepo}/{ownFolder}/*.cs";
         foreach (string file in ownFiles)
         {
             string name = Path.GetFileName(file);
+            string single = $"{RelRepo}/{ownFolder}/{name}";
             Assert.True(
                 items.Any(item =>
-                    (item.Include == $"{RelRepo}/{ownFolder}/*.cs" || item.Include == $"{RelRepo}/{ownFolder}/{name}") &&
+                    (item.Include == folderGlob || item.Include == single) &&
                     !item.Exclude.Contains(name, StringComparison.Ordinal) &&
                     !item.Exclude.Contains($"{ownFolder}/*", StringComparison.Ordinal)),
                 $"The {dialect} batch project does not compile {ownFolder}/{name}.");
         }
 
-        string otherFolder = HarnessFolder(other);
-        Assert.DoesNotContain(items, item => item.Include.StartsWith($"{RelRepo}/{otherFolder}/", StringComparison.Ordinal));
+        string otherPrefix = $"{RelRepo}/{HarnessFolder(other)}/";
+        Assert.DoesNotContain(items, item => item.Include.StartsWith(otherPrefix, StringComparison.Ordinal));
     }
 
     private static string HarnessFolder(string dialect) =>
