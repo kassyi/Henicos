@@ -92,10 +92,6 @@ internal static class AccessibilityConsistency
 
             switch (type.TypeKind)
             {
-                case TypeKind.Dynamic:
-                case TypeKind.TypeParameter:
-                    return null;
-
                 case TypeKind.Array:
                     type = ((IArrayTypeSymbol)type).ElementType;
                     continue;
@@ -106,28 +102,16 @@ internal static class AccessibilityConsistency
 
                 case TypeKind.FunctionPointer:
                 {
-                    var signature = ((IFunctionPointerTypeSymbol)type).Signature;
-                    if (signature.Parameters.Length == 0)
+                    if (VisitFunctionPointerHead(
+                            ((IFunctionPointerTypeSymbol)type).Signature, state, isAllowed,
+                            out var failedHead,
+                            out var tail))
                     {
-                        type = signature.ReturnType;
+                        type = tail;
                         continue;
                     }
 
-                    if (VisitType(signature.ReturnType, state, isAllowed) is { } failedReturn)
-                    {
-                        return failedReturn;
-                    }
-
-                    for (var i = 0; i < signature.Parameters.Length - 1; i++)
-                    {
-                        if (VisitType(signature.Parameters[i].Type, state, isAllowed) is { } failedParameter)
-                        {
-                            return failedParameter;
-                        }
-                    }
-
-                    type = signature.Parameters[signature.Parameters.Length - 1].Type;
-                    continue;
+                    return failedHead;
                 }
 
                 case TypeKind.Class:
@@ -143,59 +127,128 @@ internal static class AccessibilityConsistency
                         return null;
                     }
 
-                    if (named.TypeKind is not (TypeKind.Error or TypeKind.Submission) &&
-                        named.ContainingType is { } containing &&
-                        VisitType(containing, state, isAllowed) is { } failedOuter)
+                    if (VisitNamedTypeHead(named, state, isAllowed, out var failedNamed, out var tail))
                     {
-                        return failedOuter;
+                        type = tail;
+                        continue;
                     }
 
-                    if (named.TypeKind != TypeKind.Error && !isAllowed(named, state))
-                    {
-                        return named;
-                    }
-
-                    if (named.TypeKind is TypeKind.Enum or TypeKind.Submission)
-                    {
-                        return null;
-                    }
-
-                    if (named.IsAnonymousType)
-                    {
-                        foreach (var member in named.GetMembers())
-                        {
-                            if (member is IPropertySymbol property &&
-                                VisitType(property.Type, state, isAllowed) is { } failedProperty)
-                            {
-                                return failedProperty;
-                            }
-                        }
-
-                        return null;
-                    }
-
-                    var arguments = named.TypeArguments;
-                    if (arguments.Length == 0)
-                    {
-                        return null;
-                    }
-
-                    for (var i = 0; i < arguments.Length - 1; i++)
-                    {
-                        if (VisitType(arguments[i], state, isAllowed) is { } failedArgument)
-                        {
-                            return failedArgument;
-                        }
-                    }
-
-                    type = arguments[arguments.Length - 1];
-                    continue;
+                    return failedNamed;
                 }
 
                 default:
+                    // Dynamic, TypeParameter and anything else has no constituent named type.
                     return null;
             }
         }
+    }
+
+    // Function pointer: return type first, then every parameter type; the last one is handed back to the caller's
+    // loop (Roslyn's tail position). Returns true with `tail` set when the walk continues, false with `failed`
+    // set (possibly null: nothing left to check) when it ends.
+    private static bool VisitFunctionPointerHead<TState>(
+        IMethodSymbol signature,
+        TState state,
+        Func<INamedTypeSymbol, TState, bool> isAllowed,
+        out INamedTypeSymbol? failed,
+        out ITypeSymbol tail)
+    {
+        failed = null;
+        tail = signature.ReturnType;
+        if (signature.Parameters.Length == 0)
+        {
+            return true;
+        }
+
+        if (VisitType(signature.ReturnType, state, isAllowed) is { } failedReturn)
+        {
+            failed = failedReturn;
+            return false;
+        }
+
+        for (var i = 0; i < signature.Parameters.Length - 1; i++)
+        {
+            if (VisitType(signature.Parameters[i].Type, state, isAllowed) is { } failedParameter)
+            {
+                failed = failedParameter;
+                return false;
+            }
+        }
+
+        tail = signature.Parameters[signature.Parameters.Length - 1].Type;
+        return true;
+    }
+
+    // Named type: containing type, the type itself, anonymous type properties, then type arguments (the last one is
+    // the tail). Same contract as VisitFunctionPointerHead.
+    private static bool VisitNamedTypeHead<TState>(
+        INamedTypeSymbol named,
+        TState state,
+        Func<INamedTypeSymbol, TState, bool> isAllowed,
+        out INamedTypeSymbol? failed,
+        out ITypeSymbol tail)
+    {
+        failed = null;
+        tail = named;
+        if (named.TypeKind is not (TypeKind.Error or TypeKind.Submission) &&
+            named.ContainingType is { } containing &&
+            VisitType(containing, state, isAllowed) is { } failedOuter)
+        {
+            failed = failedOuter;
+            return false;
+        }
+
+        if (named.TypeKind != TypeKind.Error && !isAllowed(named, state))
+        {
+            failed = named;
+            return false;
+        }
+
+        if (named.TypeKind is TypeKind.Enum or TypeKind.Submission)
+        {
+            return false;
+        }
+
+        if (named.IsAnonymousType)
+        {
+            failed = FindFailedAnonymousProperty(named, state, isAllowed);
+            return false;
+        }
+
+        var arguments = named.TypeArguments;
+        if (arguments.Length == 0)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < arguments.Length - 1; i++)
+        {
+            if (VisitType(arguments[i], state, isAllowed) is { } failedArgument)
+            {
+                failed = failedArgument;
+                return false;
+            }
+        }
+
+        tail = arguments[arguments.Length - 1];
+        return true;
+    }
+
+    private static INamedTypeSymbol? FindFailedAnonymousProperty<TState>(
+        INamedTypeSymbol named,
+        TState state,
+        Func<INamedTypeSymbol, TState, bool> isAllowed)
+    {
+        foreach (var member in named.GetMembers())
+        {
+            if (member is IPropertySymbol property &&
+                VisitType(property.Type, state, isAllowed) is { } failedProperty)
+            {
+                return failedProperty;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsAsRestrictive(
@@ -238,120 +291,127 @@ internal static class AccessibilityConsistency
         return false;
     }
 
+    // Mirrors one iteration of Roslyn IsAsRestrictive (SymbolExtensions / TypeSymbolExtensions): is a type with
+    // accessibility acc1 declared in parent1 as restrictive as a member with accessibility acc2 declared in
+    // s2ContainingType.
     private static bool IsStepAsRestrictive(
         Accessibility acc1,
         INamedTypeSymbol? parent1,
         IAssemblySymbol? assembly1,
         Accessibility acc2,
         INamedTypeSymbol? s2ContainingType,
+        IAssemblySymbol? assembly2) =>
+        acc1 switch
+        {
+            Accessibility.Internal => IsInternalAsRestrictive(assembly1, acc2, assembly2),
+            Accessibility.ProtectedAndInternal => IsProtectedAndInternalAsRestrictive(
+                parent1, assembly1, acc2, s2ContainingType, assembly2),
+            Accessibility.Protected => IsProtectedAsRestrictive(parent1, acc2, s2ContainingType),
+            Accessibility.ProtectedOrInternal => IsProtectedOrInternalAsRestrictive(
+                parent1, assembly1, acc2, s2ContainingType, assembly2),
+            Accessibility.Private => IsPrivateAsRestrictive(parent1, acc2, s2ContainingType),
+            _ => false,
+        };
+
+    private static bool IsInternalAsRestrictive(
+        IAssemblySymbol? assembly1,
+        Accessibility acc2,
+        IAssemblySymbol? assembly2) =>
+        acc2 is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal &&
+        HasInternalAccessTo(assembly2, assembly1);
+
+    // Roslyn falls through from the private protected case into the protected case.
+    private static bool IsProtectedAndInternalAsRestrictive(
+        INamedTypeSymbol? parent1,
+        IAssemblySymbol? assembly1,
+        Accessibility acc2,
+        INamedTypeSymbol? s2ContainingType,
+        IAssemblySymbol? assembly2) =>
+        acc2 is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal &&
+        HasInternalAccessTo(assembly2, assembly1) &&
+        IsProtectedAsRestrictive(parent1, acc2, s2ContainingType);
+
+    private static bool IsProtectedAsRestrictive(
+        INamedTypeSymbol? parent1,
+        Accessibility acc2,
+        INamedTypeSymbol? s2ContainingType)
+    {
+        if (parent1 is null)
+        {
+            return false;
+        }
+
+        if (acc2 == Accessibility.Private)
+        {
+            return IsInheritedByAnyOuter(parent1, s2ContainingType);
+        }
+
+        return acc2 is Accessibility.Protected or Accessibility.ProtectedAndInternal &&
+               s2ContainingType is not null &&
+               IsAccessibleViaInheritance(parent1, s2ContainingType);
+    }
+
+    private static bool IsProtectedOrInternalAsRestrictive(
+        INamedTypeSymbol? parent1,
+        IAssemblySymbol? assembly1,
+        Accessibility acc2,
+        INamedTypeSymbol? s2ContainingType,
         IAssemblySymbol? assembly2)
     {
-        switch (acc1)
+        if (parent1 is null)
         {
-            case Accessibility.Internal:
-                return acc2 is Accessibility.Private or Accessibility.Internal or Accessibility.ProtectedAndInternal &&
-                       HasInternalAccessTo(assembly2, assembly1);
-
-            case Accessibility.ProtectedAndInternal:
-                if (acc2 is not (Accessibility.Private
-                        or Accessibility.Internal
-                        or Accessibility.ProtectedAndInternal) ||
-                    !HasInternalAccessTo(assembly2, assembly1))
-                {
-                    return false;
-                }
-
-                goto case Accessibility.Protected;
-
-            case Accessibility.Protected:
-                if (parent1 is null)
-                {
-                    return false;
-                }
-
-                if (acc2 == Accessibility.Private)
-                {
-                    for (var parent2 = s2ContainingType; parent2 is not null; parent2 = parent2.ContainingType)
-                    {
-                        if (IsAccessibleViaInheritance(parent1, parent2))
-                        {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-
-                return acc2 is Accessibility.Protected or Accessibility.ProtectedAndInternal &&
-                       s2ContainingType is not null &&
-                       IsAccessibleViaInheritance(parent1, s2ContainingType);
-
-            case Accessibility.ProtectedOrInternal:
-                if (parent1 is null)
-                {
-                    return false;
-                }
-
-                switch (acc2)
-                {
-                    case Accessibility.Private:
-                        if (HasInternalAccessTo(assembly2, assembly1))
-                        {
-                            return true;
-                        }
-
-                        for (var parent2 = s2ContainingType; parent2 is not null; parent2 = parent2.ContainingType)
-                        {
-                            if (IsAccessibleViaInheritance(parent1, parent2))
-                            {
-                                return true;
-                            }
-                        }
-
-                        return false;
-
-                    case Accessibility.Internal:
-                        return HasInternalAccessTo(assembly2, assembly1);
-
-                    case Accessibility.Protected:
-                        return s2ContainingType is not null &&
-                               IsAccessibleViaInheritance(parent1, s2ContainingType);
-
-                    case Accessibility.ProtectedAndInternal:
-                        return HasInternalAccessTo(assembly2, assembly1) ||
-                               (s2ContainingType is not null &&
-                                IsAccessibleViaInheritance(parent1, s2ContainingType));
-
-                    case Accessibility.ProtectedOrInternal:
-                        return HasInternalAccessTo(assembly2, assembly1) &&
-                               s2ContainingType is not null &&
-                               IsAccessibleViaInheritance(parent1, s2ContainingType);
-
-                    default:
-                        return false;
-                }
-
-            case Accessibility.Private:
-                if (acc2 != Accessibility.Private || parent1 is null)
-                {
-                    return false;
-                }
-
-                var parent1Original = parent1.OriginalDefinition;
-                for (var parent2 = s2ContainingType; parent2 is not null; parent2 = parent2.ContainingType)
-                {
-                    if (SymbolEqualityComparer.Default.Equals(parent2.OriginalDefinition, parent1Original) ||
-                        (parent1Original.TypeKind == TypeKind.Submission && parent2.TypeKind == TypeKind.Submission))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-
-            default:
-                return false;
+            return false;
         }
+
+        var hasInternalAccess = HasInternalAccessTo(assembly2, assembly1);
+        var viaInheritance = s2ContainingType is not null &&
+                             IsAccessibleViaInheritance(parent1, s2ContainingType);
+        return acc2 switch
+        {
+            Accessibility.Private => hasInternalAccess || IsInheritedByAnyOuter(parent1, s2ContainingType),
+            Accessibility.Internal => hasInternalAccess,
+            Accessibility.Protected => viaInheritance,
+            Accessibility.ProtectedAndInternal => hasInternalAccess || viaInheritance,
+            Accessibility.ProtectedOrInternal => hasInternalAccess && viaInheritance,
+            _ => false,
+        };
+    }
+
+    private static bool IsPrivateAsRestrictive(
+        INamedTypeSymbol? parent1,
+        Accessibility acc2,
+        INamedTypeSymbol? s2ContainingType)
+    {
+        if (acc2 != Accessibility.Private || parent1 is null)
+        {
+            return false;
+        }
+
+        var parent1Original = parent1.OriginalDefinition;
+        for (var parent2 = s2ContainingType; parent2 is not null; parent2 = parent2.ContainingType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(parent2.OriginalDefinition, parent1Original) ||
+                (parent1Original.TypeKind == TypeKind.Submission && parent2.TypeKind == TypeKind.Submission))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // The loop over parent2 = s2ContainingType, its container, ... that the Roslyn protected cases share.
+    private static bool IsInheritedByAnyOuter(INamedTypeSymbol parent1, INamedTypeSymbol? s2ContainingType)
+    {
+        for (var parent2 = s2ContainingType; parent2 is not null; parent2 = parent2.ContainingType)
+        {
+            if (IsAccessibleViaInheritance(parent1, parent2))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Roslyn's fromAssembly.HasInternalAccessTo(toAssembly) corresponds to toAssembly.GivesAccessTo(fromAssembly).
