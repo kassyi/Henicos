@@ -126,7 +126,8 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
 | `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
 | `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js`, `process-liveness.js`, and `target-dialect.js`) |
-| `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, server optional `memoryMb`/`keys`, history key lookup/preservation, state-file `keys` persistence, and version skew |
+| `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, and the hardening of plugin names, command environments and `--config` forwarding |
+| `scheduler-intake-checks.ts` | Checks of the scheduler side of the optional `memoryMb`/`keys` fields: the job record, history key lookup/preservation, state-file `keys` persistence, and version skew |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
 | `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 

@@ -4,6 +4,7 @@
 import * as path from "node:path";
 import { createRequire } from "node:module";
 import { EntryScript, UsageExitCode } from "./constants.ts";
+import { errorMessage } from "./history.ts";
 import type { ConfigFileModule, ConfigFileStatus } from "./lib/types.ts";
 
 const require = createRequire(import.meta.url);
@@ -280,10 +281,9 @@ function validateLegacyClients(raw: unknown, warn: (message: string) => void): L
     try {
       new RegExp(raw.testPattern);
     } catch (error) {
-      throw new Error(
-        `config legacyClients.testPattern is not a valid regex: ${error instanceof Error ? error.message : String(error)}`,
-        { cause: error },
-      );
+      throw new Error(`config legacyClients.testPattern is not a valid regex: ${errorMessage(error)}`, {
+        cause: error,
+      });
     }
     legacy.testPattern = raw.testPattern;
   }
@@ -387,7 +387,8 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
 /**
  * Loads and validates job-queue.config.json.
  * - Missing config: returns defaults with status "missing".
- * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to defaults.
+ * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to
+ *   defaults.
  */
 export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   const fromDirectory = options.fromDirectory ?? path.dirname(EntryScript);
@@ -439,7 +440,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     };
   } catch (error) {
     const location = loaded.path ? ` (${loaded.path})` : "";
-    const detail = error instanceof Error ? error.message : String(error);
+    const detail = errorMessage(error);
     if (options.mode === "run") {
       warn(`invalid config${location}: ${detail}`);
       return exit(UsageExitCode);

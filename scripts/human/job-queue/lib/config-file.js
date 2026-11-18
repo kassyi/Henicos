@@ -63,7 +63,8 @@ function findConfigFile(fromDirectory, overridePath) {
  * Loads and parses job-queue.config.json, returning status 'ok' | 'missing' | 'invalid'.
  * @param {string} fromDirectory
  * @param {string} [overridePath]
- * @returns {{ status: 'ok' | 'missing' | 'invalid', path: string | null, raw: Record<string, unknown> | null, error: string | null }}
+ * @returns {{ status: 'ok' | 'missing' | 'invalid', path: string | null, raw: Record<string, unknown> | null,
+ *   error: string | null }}
  */
 function loadConfigFile(fromDirectory, overridePath) {
   const foundPath = findConfigFile(fromDirectory, overridePath);

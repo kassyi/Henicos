@@ -21,6 +21,7 @@ import {
   type StepKeys,
   type ViewPanel,
 } from "./plugin-api.ts";
+import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
 
 export type BaseClientContext = Omit<ClientContext, "options">;
@@ -156,18 +157,14 @@ export class PluginHost {
       try {
         realPath = fs.realpathSync.native(pluginPath);
       } catch (error) {
-        warn(
-          `[job-queue] plugin ${entry.name} could not be resolved: ${error instanceof Error ? error.message : String(error)}; skipping`,
-        );
+        warn(`[job-queue] plugin ${entry.name} could not be resolved: ${errorMessage(error)}; skipping`);
         continue;
       }
       let moduleValue: unknown;
       try {
         moduleValue = await importWithTimeout(pathToFileURL(realPath).href, timeoutMs);
       } catch (error) {
-        warn(
-          `[job-queue] plugin ${entry.name} failed to load: ${error instanceof Error ? error.message : String(error)}; skipping`,
-        );
+        warn(`[job-queue] plugin ${entry.name} failed to load: ${errorMessage(error)}; skipping`);
         continue;
       }
       const exported = isPlainObject(moduleValue) ? moduleValue.default : undefined;
@@ -181,7 +178,8 @@ export class PluginHost {
       }
       if (exported.apiVersion !== PluginApiVersion) {
         warn(
-          `[job-queue] plugin ${entry.name} apiVersion ${String(exported.apiVersion)} !== ${PluginApiVersion}; skipping`,
+          `[job-queue] plugin ${entry.name} apiVersion ${String(exported.apiVersion)}` +
+            ` !== ${PluginApiVersion}; skipping`,
         );
         continue;
       }
@@ -217,7 +215,7 @@ export class PluginHost {
       const key = `${pluginIndex}\0${plugin.name}\0${hookName}`;
       if (!this.warnedFailures.has(key)) {
         this.warnedFailures.add(key);
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
         this.warn(`[job-queue] plugin ${plugin.name}.${hookName} failed: ${message}; continuing without it`);
       }
       return undefined;
