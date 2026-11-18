@@ -55,6 +55,40 @@ public class WarpActiveMaskDifferentialTests
         }
     }
 
+    // Checks exact scalar flags in [0..flagCount) on all paths, exact masks on CPU, and classic-bound masks on CUDA
+    private static void RunFlagsAndMasksWithinClassicBounds(
+        int flagCount,
+        int outputLength,
+        Action<uint[]> launch,
+        uint[] classic)
+    {
+        foreach (var path in DiffPaths.Available)
+        {
+            path.Preflight?.Invoke();
+            var output = new uint[outputLength];
+            path.Run(() => launch(output));
+            if (path.Path != DiffPath.Cuda)
+            {
+                Assert.True(classic.SequenceEqual(output),
+                    $"{path.Name}: expected [{Format(classic)}], got [{Format(output)}]");
+                continue;
+            }
+
+            for (int i = 0; i < flagCount; i++)
+            {
+                Assert.Equal(classic[i], output[i]);
+            }
+
+            for (int i = flagCount; i < outputLength; i++)
+            {
+                var own = 1u << (i & 31);
+                Assert.True(
+                    classic[i] == 0u ? output[i] == 0u : (output[i] & own) != 0u && (output[i] & ~classic[i]) == 0u,
+                    $"{path.Name}: entry {i} is 0x{output[i]:X8}, not within 0x{classic[i]:X8} with lane {i & 31}");
+            }
+        }
+    }
+
     private static string Format<T>(T[] values) =>
         string.Join(", ", values.Select(static v => v is uint u ? $"0x{u:X8}" : $"{v}"));
 
@@ -566,25 +600,13 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void ActiveMask_GotoBackToRangeStart_RunsWithoutError()
-    {
-        // The goto back to the label of the first statement makes a goto loop, which the CPU paths do not reconverge
-        // yet: only the mask inside the range and the CUDA mask after the label are checked here
-        var expectedFirst32 = PerLane(32, static t => (t & 1) == 0, 0x55555555u);
-        foreach (var path in DiffPaths.Available)
-        {
-            path.Preflight?.Invoke();
-            var output = new uint[64];
-            path.Run(() => WarpActiveMaskDifferentialKernels.LaunchGotoBackToRangeStartKernel(
-                output, blockDimX: 32));
-
-            var checkedLength = path.Path == DiffPath.Cuda ? 64 : 32;
-            var expected = expectedFirst32.Concat(Enumerable.Repeat(0xFFFFFFFFu, 32)).Take(checkedLength).ToArray();
-            var actual = output.Take(checkedLength).ToArray();
-            Assert.True(expected.SequenceEqual(actual),
-                $"{path.Name}: expected [{Format(expected)}], got [{Format(actual)}]");
-        }
-    }
+    public void ActiveMask_GotoBackToRangeStart_ReconvergesAfterTheLoop() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoBackToRangeStartKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -624,6 +646,157 @@ public class WarpActiveMaskDifferentialTests
             static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoIntoRangeMiddleKernel(
                 output, blockDimX: 32),
             PerLane(32, static t => (t & 3) != 1, 0xDDDDDDDDu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_BackwardGotoLoop_ReconvergesAfterTheLoop() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchBackwardGotoKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoLoopWithExit_ReconvergesAfterBoth() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopWithExitKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 3) == 1 ? 0x22222222u : 0xFFFFFFFFu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_TwoBackwardGotosToSameLabel_ReconvergesAfterLatestGoto() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchTwoBackwardGotosKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 3) == 2 ? 0x44444444u : 0xFFFFFFFFu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_DoublyLabeledGotoLoop_ReopensInnerRangeOnSecondIteration() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchDoublyLabeledGotoLoopKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 1) == 1 ? 0u : ((t & 2) == 0 ? 0x11111111u : 0x55555555u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoLoopExitAfterSplit_ReconvergesAfterBoth() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopExitAfterSplitKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 4) == 0 && (t & 1) == 1 ? 0x0A0A0A0Au : 0xFFFFFFFFu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_ForwardGotoToLoopHead_ReconvergesBeforeAndAfterLoop() =>
+        RunFlagsAndMasksWithinClassicBounds(32, 96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoToLoopHeadKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 2) == 0 ? 1u : 0u)
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopInsideLabeledStatement_ReconvergesAfterTheLoop() =>
+        RunOnEveryPath(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopInsideLabeledStatementKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopAtKernelEnd_RecordsEachIteration() =>
+        RunOnEveryPath(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopAtKernelEndKernel(
+                output, blockDimX: 32),
+            PerLane(32, static _ => true, 0xFFFFFFFFu)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_NestedGotoLoops_ReconvergesAfterInnerAndOuter() =>
+        RunOnEveryPath(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchNestedGotoLoopsKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoBackToRangeStartWithoutSplit_LeavesAndReentersRange() =>
+        RunOnEveryPath(32,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoBackToRangeStartWithoutSplitKernel(
+                output, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u));
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopOverNestedBlock_ClosesOnlyInOuterList() =>
+        RunOnEveryPath(96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopOverNestedBlockKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 5u))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ChainedLabelDoubleLoopOnSplit_ReconvergesAfterBothLoops()
+    {
+        var expected = Enumerable.Range(0, 32)
+            .Select(static t => (t & 3) switch
+            {
+                0 => 0xFFFFFFFFu,
+                3 => 0x88888888u,
+                _ => 0xEEEEEEEEu
+            })
+            .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+            .ToArray();
+        RunWithinClassicBounds(64,
+            static output => WarpActiveMaskDifferentialKernels.LaunchChainedLabelDoubleLoopOnSplitKernel(
+                output, blockDimX: 32),
+            expected, static i => i & 31);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ChainedLabelSplitWithForwardGoto_ReconvergesBeforeAndAfterLoop() =>
+        RunFlagsAndMasksWithinClassicBounds(32, 96,
+            static output => WarpActiveMaskDifferentialKernels.LaunchChainedLabelSplitWithForwardGotoKernel(
+                output, blockDimX: 32),
+            Enumerable.Range(0, 32)
+                .Select(static t => (t & 2) == 0 ? 1u : 0u)
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 1) == 0 ? 0xFFFFFFFFu : 0xAAAAAAAAu))
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .ToArray());
 }
