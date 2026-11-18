@@ -52,8 +52,8 @@ function parse(text) {
     while (end < lines.length && lines[end].startsWith('|')) end++;
     const rows = [];
     for (const line of lines.slice(first + 2, end)) {
-        // Cells are separated by unescaped pipes; a literal pipe inside a cell is written as \|.
-        const cells = line.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim().replace(/\\\|/g, '|'));
+        // Every "|" in the file is a cell separator: literal pipes inside cells are stored as "&#124;" (see escapeCell).
+        const cells = line.split('|').slice(1, -1).map((c) => unescapeCell(c.trim()));
         if (cells.length === columns.length) rows.push(Object.fromEntries(columns.map((k, i) => [k, cells[i]])));
     }
     return { before: lines.slice(0, first), rows, after: lines.slice(end) };
@@ -74,9 +74,14 @@ function load(file) {
     return parse(fs.readFileSync(file, 'utf8'));
 }
 
-// A cell holds one line of text; a pipe is escaped so that it does not split the row.
+// A cell holds one line of text. "&" is encoded first and "|" becomes "&#124;", so a literal pipe never splits a row
+// and the encoding can be reversed exactly (no backslash escapes, which are easy to get wrong).
 function escapeCell(value) {
-    return String(value).replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
+    return String(value).replace(/[\r\n]+/g, ' ').replace(/&/g, '&amp;').replace(/\|/g, '&#124;');
+}
+
+function unescapeCell(value) {
+    return value.replace(/&(amp|#124);/g, (_, entity) => (entity === 'amp' ? '&' : '|'));
 }
 
 // Writes through a temporary file and a rename, so a reader never sees a half-written registry.
@@ -180,7 +185,7 @@ function runSet(opts) {
     const file = registryPath();
     withLock(file, () => {
         const model = upsert(load(file), opts.session, {
-            ref: escapeCell(opts.ref).replace(/\\\|/g, '|'), name: opts.name, call: opts.call, topic: opts.topic,
+            ref: opts.ref, name: opts.name, call: opts.call, topic: opts.topic,
             state: typeof opts.state === 'string' ? opts.state : 'active, confirmed',
         });
         save(file, model);
