@@ -141,4 +141,60 @@ public static partial class SpanAcrossStatesKernels
 
         o[tid] = acc;
     }
+
+    [GpuDeviceFunction]
+    public static void LateOut(Span<int> src, out Span<int> s)
+    {
+        Gpu.SyncThreads();
+        s = src;
+    }
+
+    // The callee writes it after its last barrier: the caller reads it in the call that returns it
+    [GpuKernel]
+    public static void WrittenAfterTheCalleesBarrier(int[] a, int[] o)
+    {
+        int tid = ThreadIndex.X;
+        LateOut(a, out Span<int> s);
+        o[tid] = s[tid];
+    }
+
+    [GpuDeviceFunction]
+    public static void OutThenBarrierInAnotherCall(Span<int> src, out Span<int> s)
+    {
+        s = src;
+        StepSpan(src, out Span<int> other);
+    }
+
+    // The callee writes it and then calls a function that suspends
+    [GpuKernel]
+    public static void WrittenBeforeANestedSuspendingCall(int[] a, int[] o)
+    {
+        int tid = ThreadIndex.X;
+        OutThenBarrierInAnotherCall(a, out Span<int> s);
+        o[tid] = s[tid];
+    }
+
+    [GpuDeviceFunction]
+    public static void OutBeforeBarrierInOneBranch(Span<int> src, Span<int> other, int flag, out Span<int> s)
+    {
+        if (flag > 0)
+        {
+            s = src;
+            Gpu.SyncThreads();
+        }
+        else
+        {
+            Gpu.SyncThreads();
+            s = other;
+        }
+    }
+
+    // The callee writes it before its barrier on one branch only
+    [GpuKernel]
+    public static void WrittenBeforeABarrierInOneBranch(int[] a, int[] o, int flag)
+    {
+        int tid = ThreadIndex.X;
+        OutBeforeBarrierInOneBranch(a, a, flag, out Span<int> s);
+        o[tid] = s[tid];
+    }
 }

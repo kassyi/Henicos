@@ -24,16 +24,24 @@ public class SpanAcrossStatesDiagnosticsTests
         // -> the second one is lost
         // mutant: SpanAcrossStates.EventWalker.VisitArgument counting no out argument as a write -> the span that
         // WrittenByOutInLoop writes in every iteration is reported
+        // mutant: SpanAcrossStates.EventWalker.IsWrittenBeforeASplit always true -> the out of a suspending call is
+        // never a write, and WrittenAfterTheCalleesBarrier is reported
+        // mutant: SpanAcrossStates.EventWalker.IsWrittenBeforeASplit always false -> the out of a suspending call is
+        // always a write, and the three suspending out forms are not reported
         // mutant: SpanAcrossStates.EventWalker.VisitBlock without the early return -> UsedInOtherBranch is reported
         // Declared before a loop that has a barrier (the analyzer reports it, so the generator does not repeat it),
-        // written through out by a suspending call, and live only across a reconvergence point; the other spans are
-        // declared in a loop body, created again after a barrier, written through out by a call that does not
-        // suspend, or used only on the branch without the barrier, and are not reported
+        // written through out by a suspending call whose callee writes it and then splits (before its barrier, before a
+        // nested suspending call, or before a barrier on one branch), and live only across a reconvergence point; the
+        // other spans are written by a callee after its last barrier, declared in a loop body, created again after a
+        // barrier, written through out by a call that does not suspend, or used only on the branch without the barrier,
+        // and are not reported
         Assert.Equal(
             [
                 (DiagnosticOrigin.Analyzer, 18, 19, 18, 22),
                 (DiagnosticOrigin.Generator, 40, 35, 40, 36),
-                (DiagnosticOrigin.Generator, 49, 19, 49, 20)
+                (DiagnosticOrigin.Generator, 49, 19, 49, 20),
+                (DiagnosticOrigin.Generator, 173, 54, 173, 55),
+                (DiagnosticOrigin.Generator, 197, 63, 197, 64)
             ],
             diagnostics.Ranges(Gsh0039));
     }

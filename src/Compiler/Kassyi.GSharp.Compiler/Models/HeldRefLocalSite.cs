@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// Where a <c>ref</c> local is declared that the CPU state machine would keep in its frame and GSH0039 does not report
 /// (<see cref="HeldRefLocal"/> without <see cref="HeldRefLocal.IsReportedLive"/>): the generator reports GSH0003 there
 /// on a CPU dialect build (#1640). Also where a span local carries a value from one state into another
-/// (<see cref="LoweredStateMachine.SpansAcrossStates"/>), which the generator reports as GSH0039 (<see cref="SpanName"/>).
+/// (<see cref="LoweredStateMachine.SpansAcrossStates"/>), which the generator reports as GSH0039
+/// (<see cref="SpanName"/>).
 /// </summary>
 /// <remarks>
 /// Values only (the path and the spans of the declaration), so a result taken from the cache never refers to an earlier
@@ -55,9 +56,9 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
     }
 
     /// <summary>
-    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), or GSH0039 for a span local, at
-    /// this site: in the syntax
-    /// tree of <paramref name="compilation"/> that declares it, so that the editor marks the declaration.
+    /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), or GSH0039 for a span local,
+    /// at this site: in the syntax tree of <paramref name="compilation"/> that declares it, so that the editor marks the
+    /// declaration.
     /// </summary>
     public void Report(SourceProductionContext context, Compilation compilation)
     {

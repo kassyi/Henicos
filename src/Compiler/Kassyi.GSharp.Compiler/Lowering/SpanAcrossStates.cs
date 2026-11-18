@@ -5,33 +5,38 @@ using Kassyi.GSharp.Compiler.Transpiler.Helpers.ResumeLocals;
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// Finds the span locals that the CPU state machine declares again on every resume (<see cref="ResumeLocals"/>) and that
-/// a state reads before it writes them, on the lowered state machine itself.
+/// Finds the span locals that the CPU state machine declares again on every resume (<see cref="ResumeLocals"/>) and
+/// that a state reads before it writes them, on the lowered state machine itself.
 /// </summary>
 /// <remarks>
 /// <para>
 /// [WHY] A span local is redeclared with its default value before the state switch on every resume, so it keeps a value
 /// from one state into another only inside one call of the state function, through <c>goto case</c>. A state that a
 /// resume enters (<c>__gsharp_state = n; return;</c>) and that reads the span before it declares or assigns it, or that
-/// reaches such a read through <c>goto case</c> without writing the span, reads <c>default</c>. The analyzer's flow graph
-/// misses the splits that lowering adds (the reconvergence points of <c>Warp.ActiveMask()</c>), the loops that bring a
-/// state back, and a span that a suspending call writes through <c>out</c>; the lowered body has all of them. Until the
-/// CPU paths keep a thread's stack, each one is GSH0039.
+/// reaches such a read through <c>goto case</c> without writing the span, reads <c>default</c>. The analyzer's flow
+/// graph misses the splits that lowering adds (the reconvergence points of <c>Warp.ActiveMask()</c>), the loops that
+/// bring a state back, and a span that a suspending call writes through <c>out</c>; the lowered body has all of them.
+/// Until the CPU paths keep a thread's stack, each one is GSH0039.
 /// </para>
 /// <para>
-/// A write is a declaration or assignment of the whole local, or an <c>out</c> argument of a call that does not suspend.
-/// The <c>out</c> argument of a suspending call is written by the callee in one of its own states, which does not run
-/// again after the resume, so it is not a write. A span that the analyzer reports as GSH0039 is left out
+/// A write is a declaration or assignment of the whole local, or an <c>out</c> argument of a call that does not
+/// suspend. The <c>out</c> argument of a suspending call is a write only when its callee does not split after writing
+/// the parameter (<see cref="OutParameterSplit"/>); otherwise the callee wrote it in a state that does not run again
+/// after the resume. A span that the analyzer reports as GSH0039 is left out
 /// (<see cref="HeldRefLocal.IsReportedLive"/> makes the same split for <c>ref</c> locals).
 /// </para>
 /// </remarks>
 internal static class SpanAcrossStates
 {
-    /// <summary>The declarators among <paramref name="lowered"/>'s context fields that carry a span from one state into another.</summary>
+    /// <summary>
+    /// The declarators among <paramref name="lowered"/>'s context fields that carry a span from one state into another.
+    /// </summary>
     /// <param name="lowered">The lowered state machine.</param>
     /// <param name="semanticModel">The semantic model of the tree that declares <paramref name="method"/>.</param>
     /// <param name="method">The kernel or device function, or <see langword="null"/> when it is not known.</param>
-    public static ImmutableArray<VariableDeclaratorSyntax> Find(LoweredStateMachine lowered, SemanticModel? semanticModel,
+    public static ImmutableArray<VariableDeclaratorSyntax> Find(
+        LoweredStateMachine lowered,
+        SemanticModel? semanticModel,
         MethodDeclarationSyntax? method)
     {
         if (semanticModel is null || lowered.LoweredBody.Statements.LastOrDefault() is not SwitchStatementSyntax body)
@@ -60,8 +65,10 @@ internal static class SpanAcrossStates
     }
 
     // The hoisted locals that are redeclared on every resume and are ref structs (not ref locals or pointers)
-    private static List<(DeclarationKey Key, VariableDeclaratorSyntax Field)> FindCandidates(LoweredStateMachine lowered,
-        SemanticModel semanticModel, string kernelName)
+    private static List<(DeclarationKey Key, VariableDeclaratorSyntax Field)> FindCandidates(
+        LoweredStateMachine lowered,
+        SemanticModel semanticModel,
+        string kernelName)
     {
         var candidates = new List<(DeclarationKey, VariableDeclaratorSyntax)>();
         foreach (var field in lowered.ContextFields)
@@ -113,7 +120,8 @@ internal static class SpanAcrossStates
         var states = new Dictionary<int, StateEvents>();
         foreach (var section in body.Sections)
         {
-            if (section.Labels is not [CaseSwitchLabelSyntax { Value: LiteralExpressionSyntax { Token.Value: int state } }])
+            if (section.Labels is not
+                [CaseSwitchLabelSyntax { Value: LiteralExpressionSyntax { Token.Value: int state } }])
             {
                 continue;
             }
@@ -127,7 +135,10 @@ internal static class SpanAcrossStates
     }
 
     // Whether a state that a resume enters reads the local before writing it, directly or through goto case
-    private static bool IsCarriedIntoAnEntry(DeclarationKey key, Dictionary<int, StateEvents> states, HashSet<int> entries)
+    private static bool IsCarriedIntoAnEntry(
+        DeclarationKey key,
+        Dictionary<int, StateEvents> states,
+        HashSet<int> entries)
     {
         var live = new HashSet<int>();
         var changed = true;
@@ -209,8 +220,8 @@ internal static class SpanAcrossStates
 
         public void AddJump(int target) => _jumps.Add((target, _accesses.Count));
 
-        // Whether entering the state with the local unset reaches a read of it before a write: its own read comes first,
-        // or a goto case that no write precedes leads to a state that is live
+        // Whether entering the state with the local unset reaches a read of it before a write: its own read comes
+        // first, or a goto case that no write precedes leads to a state that is live
         public bool IsLiveIn(DeclarationKey key, HashSet<int> live)
         {
             var written = false;
@@ -249,7 +260,8 @@ internal static class SpanAcrossStates
     {
         private int _suspendingCallDepth;
 
-        // The statements after a jump or a return never run: lowering leaves a goto case behind the jump that ends a state
+        // The statements after a jump or a return never run: lowering leaves a goto case behind the jump that ends a
+        // state
         public override void VisitBlock(BlockSyntax node)
         {
             foreach (var statement in node.Statements)
@@ -301,7 +313,7 @@ internal static class SpanAcrossStates
         {
             if (node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) && TryGetKey(node.Expression) is { } key)
             {
-                if (_suspendingCallDepth == 0)
+                if (_suspendingCallDepth == 0 || !IsWrittenBeforeASplit(node))
                 {
                     events.AddAccess(key, isWrite: true);
                 }
@@ -321,6 +333,40 @@ internal static class SpanAcrossStates
             }
 
             base.VisitMemberAccessExpression(node);
+        }
+
+        // Whether the callee of the call that takes the argument writes its out parameter and then splits: the value
+        // does not survive the next resume. A callee that cannot be looked into counts as splitting
+        private bool IsWrittenBeforeASplit(ArgumentSyntax argument)
+        {
+            if (argument.Parent?.Parent is not InvocationExpressionSyntax call)
+            {
+                return true;
+            }
+
+            SimpleNameSyntax? name = call.Expression switch
+            {
+                IdentifierNameSyntax identifier => identifier,
+                MemberAccessExpressionSyntax access => access.Name,
+                _ => null
+            };
+            if (name is null || semanticModel.GetSymbol(name) is not IMethodSymbol callee)
+            {
+                return true;
+            }
+
+            var arguments = call.ArgumentList.Arguments;
+            var index = arguments.IndexOf(argument);
+            var parameter = argument.NameColon is { } colon
+                ? callee.Parameters
+                    .AsStackEnumerable()
+                    .FirstOrDefault(
+                        colon.Name.Identifier.ValueText,
+                        static (p, parameterName) => p.Name == parameterName
+                    )
+                : index >= 0 && index < callee.Parameters.Length ? callee.Parameters[index] : null;
+            return parameter is null ||
+                   OutParameterSplit.IsWrittenBeforeASplit(callee, parameter, semanticModel.Compilation);
         }
 
         // <ctx>-><local> when <local> is a candidate

@@ -39,8 +39,8 @@ public sealed record LoweredStateMachine(
 
     /// <summary>
     /// The span locals among <see cref="ContextFields"/> that the CPU state machine declares again on every resume and
-    /// that a state reads before it writes (<see cref="SpanAcrossStates"/>), without the ones that the analyzer reports.
-    /// Each one is GSH0039 from the generator.
+    /// that a state reads before it writes (<see cref="SpanAcrossStates"/>), without the ones that the analyzer
+    /// reports. Each one is GSH0039 from the generator.
     /// </summary>
     public ImmutableArray<VariableDeclaratorSyntax> SpansAcrossStates { get; init; } =
         ImmutableArray<VariableDeclaratorSyntax>.Empty;
