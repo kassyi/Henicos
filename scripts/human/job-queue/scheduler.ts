@@ -10,6 +10,15 @@ import {
   DefaultPolicy,
   type Policy,
 } from "./constants.ts";
+import {
+  resourceOf,
+  turnVerdict,
+  usageOf,
+  type ProbeResult,
+  type ResourceSpec,
+  type ResourceState,
+  type ShareMode,
+} from "./resources.ts";
 
 /** The run times of a command's earlier runs: the median and the longest. */
 export interface Estimate {
@@ -36,9 +45,18 @@ export interface SchedulerJob {
   after: number | null;
   /**
    * run --gpu: the job waits for its turn at the GPU, not for CPU slots (it weighs nothing; the command it then starts
-   * under the GPU lock registers its own slots as a GPU holder). One turn is given at a time, while no GPU holder runs.
+   * under the GPU lock registers its own slots as a GPU holder). How many turns run at once is the rule of turnVerdict.
    */
   gpuTurn?: boolean;
+  /** The turn resource of a GPU turn or holder (resourceOf in resources.ts); absent means "gpu". */
+  resource?: string;
+  /** How a turn shares its resource; anything but "shared" is exclusive. */
+  share?: ShareMode;
+  /**
+   * A GPU holder: the id of the turn job that started it (ServerJob.turn). A holder tied to no running turn is
+   * exclusive.
+   */
+  turn?: number | null;
   /** run --keep-if-failed: the job runs after its predecessor whatever its outcome. */
   keepIfFailed?: boolean;
   /** The memory budget a test run takes from the memory pool, in MB; 0 or absent for a job that runs no tests. */
@@ -64,13 +82,14 @@ export interface SchedulerJob {
 }
 
 /**
- * The round-robin's memory: per kind of grant (CPU slots, GPU turns), the grant count at which each worktree was last
- * served. Kept in memory only; a restarted scheduler starts the rotation afresh.
+ * The round-robin's memory: per kind of grant (CPU slots, and the turns of each resource), the grant count at which
+ * each worktree was last served. Kept in memory only; a restarted scheduler starts the rotation afresh.
  */
 export interface Rotation {
   grants: number;
   slots: Map<string, number>;
-  turns: Map<string, number>;
+  /** By resource name, then by worktree. */
+  turns: Map<string, Map<string, number>>;
 }
 
 /** When a job is expected to start and end. */
@@ -118,12 +137,74 @@ export class Scheduler<J extends SchedulerJob> {
   running: J[] = [];
   waiting: J[] = [];
   rotation: Rotation = { grants: 0, slots: new Map(), turns: new Map() };
+  /** The turn resources by name: the configured ones, and those a turn named that the configuration does not. */
+  private readonly resources = new Map<string, ResourceState>();
 
-  constructor(capacity: number, holdUntil = 0, policy: Policy = DefaultPolicy, memoryCapacity = Infinity) {
+  /** `resources`: the turn resources (default: "gpu", one slot, no probe). */
+  constructor(
+    capacity: number,
+    holdUntil = 0,
+    policy: Policy = DefaultPolicy,
+    memoryCapacity = Infinity,
+    resources: ResourceSpec[] = [{ name: "gpu", slots: 1, probe: null }],
+  ) {
     this.capacity = capacity;
     this.holdUntil = holdUntil;
     this.policy = policy;
     this.memoryCapacity = memoryCapacity;
+    for (const spec of resources) {
+      this.resources.set(spec.name, { spec, generation: 0, probe: null });
+    }
+  }
+
+  /** The state of a turn resource; one the configuration does not name gets one slot and no probe (serialized). */
+  stateOf(name: string): ResourceState {
+    let state = this.resources.get(name);
+    if (state === undefined) {
+      state = { spec: { name, slots: 1, probe: null }, generation: 0, probe: null };
+      this.resources.set(name, state);
+    }
+    return state;
+  }
+
+  /** Keeps the result of a probe of the resource; the grant rule reads it (turnVerdict). */
+  recordProbe(name: string, result: ProbeResult): void {
+    this.stateOf(name).probe = result;
+  }
+
+  /** The grantable first waiting turn of each resource that has one, in the order of the waiting jobs. */
+  private headTurns(): Map<string, J> {
+    const heads = new Map<string, J>();
+    for (const job of this.waiting) {
+      const name = resourceOf(job);
+      if (job.gpuTurn === true && !this.isBlocked(job) && !heads.has(name)) {
+        heads.set(name, job);
+      }
+    }
+    return heads;
+  }
+
+  /**
+   * The resources whose first waiting turn waits for a probe (turnVerdict "probe") while every shared turn that runs
+   * has run settleMs: the server measures them. Nothing while paused or before holdUntil, when nothing is granted.
+   */
+  probeWanted(now: number): string[] {
+    if (this.paused || now < this.holdUntil) {
+      return [];
+    }
+    const wanted: string[] = [];
+    for (const [name, head] of this.headTurns()) {
+      const state = this.stateOf(name);
+      const usage = usageOf(this.running, name);
+      const settleMs = state.spec.probe?.settleMs ?? 0;
+      if (
+        turnVerdict(head, usage, state, now) === "probe" &&
+        usage.sharedTurns.every((turn) => now - turn.grantedAt >= settleMs)
+      ) {
+        wanted.push(name);
+      }
+    }
+    return wanted;
   }
 
   /** The memory a job takes from the pool: none for a GPU turn (its command registers its own). */
@@ -280,20 +361,19 @@ export class Scheduler<J extends SchedulerJob> {
     const arrival = (a: J, b: J): number => a.queuedAt - b.queuedAt || a.id - b.id;
     const overdue = this.waiting.filter((job) => !manual(job) && this.isOverdue(job, now)).sort(arrival);
     const rest = this.waiting.filter((job) => !overdue.includes(job));
-    const kindOf = (job: J): "manual" | "turns" | "slots" =>
-      manual(job) ? "manual" : job.gpuTurn === true ? "turns" : "slots";
-    const lists = {
-      manual: rest.filter((job) => kindOf(job) === "manual"),
-      turns: this.rotate(
-        rest.filter((job) => kindOf(job) === "turns"),
-        this.rotation.turns,
-      ),
-      slots: this.rotate(
-        rest.filter((job) => kindOf(job) === "slots"),
-        this.rotation.slots,
-      ),
-    };
-    return [...overdue, ...rest.map((job) => lists[kindOf(job)].shift() as J)];
+    // "manual", "slots", or "turn:<resource>": the turns of each resource rotate on their own
+    const kindOf = (job: J): string =>
+      manual(job) ? "manual" : job.gpuTurn === true ? `turn:${resourceOf(job)}` : "slots";
+    const kinds = new Map<string, J[]>();
+    for (const job of rest) {
+      kinds.set(kindOf(job), [...(kinds.get(kindOf(job)) ?? []), job]);
+    }
+    const lists = new Map<string, J[]>();
+    for (const [kind, jobs] of kinds) {
+      const served = kind === "slots" ? this.rotation.slots : this.rotation.turns.get(kind.slice("turn:".length));
+      lists.set(kind, kind === "manual" ? jobs : this.rotate(jobs, served ?? new Map()));
+    }
+    return [...overdue, ...rest.map((job) => (lists.get(kindOf(job)) as J[]).shift() as J)];
   }
 
   /** One job per worktree per round, the worktrees ordered by when they were last served (never: first). */
@@ -319,7 +399,12 @@ export class Scheduler<J extends SchedulerJob> {
 
   /** Records a grant from the order (not a GPU holder or a start by hand) for the round-robin. */
   private serve(job: J): void {
-    const served = job.gpuTurn === true ? this.rotation.turns : this.rotation.slots;
+    let served = this.rotation.slots;
+    if (job.gpuTurn === true) {
+      const name = resourceOf(job);
+      served = this.rotation.turns.get(name) ?? new Map();
+      this.rotation.turns.set(name, served);
+    }
     served.set(job.worktree ?? "", ++this.rotation.grants);
   }
 
@@ -375,15 +460,10 @@ export class Scheduler<J extends SchedulerJob> {
     this.waiting.splice(0, this.waiting.length, ...ordered);
   }
 
-  /** True while a job holds the GPU: a GPU holder runs, or a GPU turn was given and has not ended. */
-  gpuBusy(): boolean {
-    return this.running.some((job) => job.gpu || job.gpuTurn === true);
-  }
-
   /**
-   * Grants GPU holders and the jobs started by hand at once (also while paused: nothing else is), then the GPU turn to
-   * the first waiting turn in order while the GPU is free, then the first grantable waiting job while it fits, then
-   * backfills (unless fifo).
+   * Grants GPU holders and the jobs started by hand at once (also while paused: nothing else is), then the turns (per
+   * resource, the first waiting turn in order while turnVerdict says so: a turn behind it is never granted first), then
+   * the first grantable waiting job while it fits, then backfills (unless fifo).
    */
   grant(now = Date.now()): J[] {
     const granted: J[] = [];
@@ -405,11 +485,19 @@ export class Scheduler<J extends SchedulerJob> {
     if (this.paused) {
       return granted; // the places are told (order), but no waiting job starts
     }
-    // The GPU goes to the waiting turns one at a time, in the same order as the slots, so that none is passed for ever
-    const turn = this.gpuBusy() ? undefined : this.waiting.find((job) => job.gpuTurn === true && !this.isBlocked(job));
-    if (turn !== undefined) {
-      take(turn);
-      this.serve(turn);
+    // Each resource goes to its first waiting turn, in the same order as the slots, so that none is passed for ever;
+    // a turn that cannot be granted holds back the ones behind it
+    for (const name of this.headTurns().keys()) {
+      const state = this.stateOf(name);
+      for (;;) {
+        const head = this.headTurns().get(name);
+        if (head === undefined || turnVerdict(head, usageOf(this.running, name), state, now) !== "grant") {
+          break;
+        }
+        take(head);
+        this.serve(head);
+        state.generation++;
+      }
     }
     for (;;) {
       const first = this.waiting.find((job) => !job.gpuTurn && !this.isBlocked(job));
@@ -491,10 +579,14 @@ export class Scheduler<J extends SchedulerJob> {
    */
   forecast(now = Date.now()): Map<J, Expected> {
     const duration = (job: SchedulerJob): number => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
-    const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity);
+    const specs = [...this.resources.values()].map((state) => state.spec);
+    const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity, specs);
+    // The replay assumes every probe passes: an estimate, optimistic
+    simulation.resources.forEach((state) => (state.assumeProbeOk = true));
     // The replay continues the round-robin where this scheduler is, on its own copy
     const { grants, slots, turns } = this.rotation;
-    simulation.rotation = { grants, slots: new Map(slots), turns: new Map(turns) };
+    const turnsCopy = new Map([...turns].map(([name, served]) => [name, new Map(served)] as const));
+    simulation.rotation = { grants, slots: new Map(slots), turns: turnsCopy };
     // The replay counts every job it ends as succeeded, so that the jobs after it are forecast to start then
     const replayed = new Map(this.outcomes);
     simulation.outcomes = replayed;
