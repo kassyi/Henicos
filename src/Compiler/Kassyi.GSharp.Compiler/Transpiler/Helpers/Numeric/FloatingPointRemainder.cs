@@ -21,13 +21,27 @@ internal static class FloatingPointRemainder
     private const string DoubleRemainder = "fmod";
 
     /// <summary>
+    /// <c>fmodf</c> or <c>fmod</c> for a <see langword="float"/> or <see langword="double"/> <c>%</c> of kind
+    /// <paramref name="kind"/> (<paramref name="isBuiltIn"/>, <paramref name="type"/>); null for any other operator.
+    /// Shared by the transpiler rules and the IR decision pass.
+    /// </summary>
+    internal static string? GetHelper(BinaryOperatorKind kind, bool isBuiltIn, ITypeSymbol? type) =>
+        kind == BinaryOperatorKind.Remainder && isBuiltIn ? ForType(type) : null;
+
+    /// <summary>
     /// <c>fmodf</c> or <c>fmod</c> for a predefined <see langword="float"/> or <see langword="double"/> <c>%</c>
     /// (<paramref name="operation"/>); null for any other operator.
     /// </summary>
     public static string? GetHelper(IBinaryOperation operation) =>
-        operation is { OperatorKind: BinaryOperatorKind.Remainder, OperatorMethod: null, IsLifted: false }
-            ? ForType(operation.Type)
-            : null;
+        GetHelper(operation.OperatorKind, operation is { OperatorMethod: null, IsLifted: false }, operation.Type);
+
+    /// <summary>
+    /// <c>fmodf</c> or <c>fmod</c> for a <see langword="float"/> or <see langword="double"/> <c>%=</c> of kind
+    /// <paramref name="kind"/> (<paramref name="isBuiltIn"/>, <paramref name="targetType"/>); null for any other
+    /// compound assignment. Shared by the transpiler rules and the IR decision pass.
+    /// </summary>
+    internal static string? GetCompoundHelper(BinaryOperatorKind kind, bool isBuiltIn, ITypeSymbol? targetType) =>
+        kind == BinaryOperatorKind.Remainder && isBuiltIn ? ForType(targetType) : null;
 
     /// <summary>
     /// <c>fmodf</c> or <c>fmod</c> for a predefined <see langword="float"/> or <see langword="double"/> <c>%=</c>
@@ -39,9 +53,8 @@ internal static class FloatingPointRemainder
     /// never a <c>double</c> one.
     /// </remarks>
     public static string? GetCompoundHelper(ICompoundAssignmentOperation operation) =>
-        operation is { OperatorKind: BinaryOperatorKind.Remainder, OperatorMethod: null, IsLifted: false }
-            ? ForType(operation.Target.Type)
-            : null;
+        GetCompoundHelper(operation.OperatorKind, operation is { OperatorMethod: null, IsLifted: false },
+            operation.Target.Type);
 
     private static string? ForType(ITypeSymbol? type) => type?.SpecialType switch
     {

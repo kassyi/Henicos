@@ -11,8 +11,8 @@ internal static class DivisorCheck
     /// <summary>The text of the error, as .NET words <see cref="DivideByZeroException"/>.</summary>
     public const string Message = "Attempted to divide by zero.";
 
-    // The trap kind of the site ID, which tells the site apart from another trap at the same place
-    private const string TrapKind = "DivideByZero";
+    /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
+    internal const string TrapKind = "DivideByZero";
 
     /// <summary>
     /// The place of the division or compound assignment <paramref name="node"/> when <paramref name="helper"/> takes
