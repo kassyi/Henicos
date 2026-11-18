@@ -1,3 +1,6 @@
+using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Lowering;
+
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 /// <summary>
@@ -10,6 +13,13 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class IteratorTypeResolverTests
 {
     private const string TestCase = "Transpiler/IteratorTypeResolver/IteratorShapes.cs";
+    private const string CrossFileLibTestCase = "Transpiler/IteratorTypeResolver/CrossFileIterLib.cs";
+    private const string CrossFileKernelTestCase = "Transpiler/IteratorTypeResolver/CrossFileKernels.cu.cs";
+
+    private static Compilation CreateCrossFileCompilation() =>
+        RoslynTestUtility.CreateCompilationAt(
+            ("IterLib.cs", RoslynTestUtility.ReadTestCase(CrossFileLibTestCase)),
+            ("CrossFileKernels.cu.cs", RoslynTestUtility.ReadTestCase(CrossFileKernelTestCase)));
 
     private static readonly Lazy<Compilation> s_compilation = new(static () =>
     {
@@ -118,6 +128,58 @@ public class IteratorTypeResolverTests
         var model = s_compilation.Value.GetSemanticModel(forEach.SyntaxTree);
 
         Assert.Equal(expected, IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, model));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void TryResolveIteratorSource_LocalInitializedInDifferentSyntaxTree_ResolvesIteratorInvocation()
+    {
+        var compilation = CreateCrossFileCompilation();
+
+        var libTree = compilation.SyntaxTrees.First(
+            static t => t.FilePath.EndsWith("IterLib.cs", StringComparison.Ordinal));
+        var kernelTree = compilation.SyntaxTrees.First(
+            static t => t.FilePath.EndsWith("CrossFileKernels.cu.cs", StringComparison.Ordinal));
+        var kernelModel = compilation.GetSemanticModel(kernelTree);
+
+        var outerDecl = libTree.GetRoot().DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static m => m.Identifier.ValueText == "Outer");
+
+        var annotatedBody = LoweringAnnotations.AnnotateOriginalSpans(
+            outerDecl.Body ?? throw new InvalidOperationException("Outer has no body"),
+            compilation);
+
+        var forEach = annotatedBody.DescendantNodes()
+            .OfType<ForEachStatementSyntax>()
+            .Single(static f => f.Expression is IdentifierNameSyntax { Identifier.ValueText: "it" });
+
+        var resolved = IteratorTypeResolver.TryResolveIteratorSource(
+            forEach.Expression,
+            kernelModel,
+            out var invocation,
+            out var iteratorMethod);
+
+        Assert.True(resolved);
+        Assert.NotNull(invocation);
+        Assert.NotNull(iteratorMethod);
+        Assert.Equal("Inner", iteratorMethod.Name);
+        Assert.True(IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, kernelModel));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Generator_CrossFileIteratorEnumeratedThroughLocal_DoesNotEmitUndeclaredLoopVariable()
+    {
+        var compilation = CreateCrossFileCompilation();
+
+        var (driver, output, diagnostics) = GeneratorTestRunner.RunGenerator(compilation, "Cpu");
+        var generatedTrees = driver.GetRunResult().GeneratedTrees;
+        var combinedGenerated = string.Join("\n", generatedTrees.Select(static t => t.GetText().ToString()));
+
+        Assert.NotEmpty(combinedGenerated);
+        Assert.DoesNotContain(": __gsharp_il_1_1_it)", combinedGenerated);
+        Assert.DoesNotContain("for(auto x : it)", combinedGenerated);
     }
 
     private static ITypeSymbol CandidateType(string parameterName) =>
