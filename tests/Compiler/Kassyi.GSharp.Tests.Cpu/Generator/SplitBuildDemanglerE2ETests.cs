@@ -18,16 +18,10 @@ public sealed class SplitBuildDemanglerE2ETests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public async Task SplitArtifacts_CpuTestBuild_EmitsHeaderErrorSitesAndDemanglesUnits()
+    public void Manifest_SplitCpuBuild_ListsEveryUnitAndNotTheHeader()
     {
-        var objDir = LocateActiveObjDirectory();
-        var unitCount = ReadPartitionUnitCount(Path.Combine(objDir, PartitionFileName));
-        Assert.True(unitCount > 1, $"Expected split CPU module (B > 1), found B = {unitCount}.");
+        var (_, unitCount, manifestLines) = ReadSplitBuild();
 
-        // 1. Verify manifest lists exactly B unit files and never lists the shared header.
-        var manifestLines = File.ReadAllLines(Path.Combine(objDir, ManifestFileName))
-            .Where(static line => !string.IsNullOrWhiteSpace(line))
-            .ToArray();
         Assert.Equal(unitCount, manifestLines.Length);
         Assert.Equal($"{ModuleStem}.g.cpp", manifestLines[0]);
         for (var i = 1; i < unitCount; i++)
@@ -38,83 +32,55 @@ public sealed class SplitBuildDemanglerE2ETests
         Assert.DoesNotContain(
             manifestLines,
             static line => line.EndsWith(".g.hpp", StringComparison.OrdinalIgnoreCase));
+    }
 
-        // 2. Verify shared header + .gsym.json carry matching hashes and module error sites.
-        var headerPath = Path.Combine(objDir, $"{ModuleStem}.g.hpp");
-        var headerGsymPath = headerPath + ".gsym.json";
-        Assert.True(File.Exists(headerPath), $"Missing split header '{headerPath}'.");
-        Assert.True(File.Exists(headerGsymPath), $"Missing split header symbol file '{headerGsymPath}'.");
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void HeaderSymbolFile_SplitCpuBuild_MatchesTheHeaderHashAndHoldsTheErrorSites()
+    {
+        var (objDir, _, _) = ReadSplitBuild();
 
-        var headerSource = File.ReadAllText(headerPath, Encoding.UTF8);
-        var headerFirstLine = ReadFirstLine(headerPath);
-        Assert.True(
-            GSharpNameEncoding.TryReadSymbolHeaderHash(headerFirstLine, out var headerHash),
-            $"Missing symbol header line in '{headerPath}'.");
-        Assert.Equal(GSharpNameEncoding.ComputeSourceHash(headerSource), headerHash);
+        var (headerGsymText, headerHash) = ReadVerifiedSymbolFile(Path.Combine(objDir, $"{ModuleStem}.g.hpp"));
 
-        var headerGsymText = File.ReadAllText(headerGsymPath, Encoding.UTF8);
-        var headerErrorSites = GSharpNameEncoding.ParseErrorSitesFromSymbolFile(headerGsymText, headerHash);
-        Assert.NotEmpty(headerErrorSites);
-        var headerSymbols = GSharpNameEncoding.ParseSymbolFile(headerGsymText, headerHash);
+        Assert.NotEmpty(GSharpNameEncoding.ParseErrorSitesFromSymbolFile(headerGsymText, headerHash));
+    }
 
-        // 3. Verify every unit has matching hash and zero error sites in its unit .gsym.json.
-        string? nonZeroUnitKernelCpp = null;
-        string? nonZeroUnitKernelCs = null;
-        for (var i = 0; i < manifestLines.Length; i++)
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void UnitSymbolFiles_SplitCpuBuild_MatchTheUnitHashesAndHoldNoErrorSites()
+    {
+        var (objDir, _, manifestLines) = ReadSplitBuild();
+
+        foreach (var unitFileName in manifestLines)
         {
-            var unitPath = Path.Combine(objDir, manifestLines[i]);
-            var unitGsymPath = unitPath + ".gsym.json";
-            Assert.True(File.Exists(unitPath), $"Missing unit source '{unitPath}'.");
-            Assert.True(File.Exists(unitGsymPath), $"Missing unit symbol file '{unitGsymPath}'.");
+            var (unitGsymText, unitHash) = ReadVerifiedSymbolFile(Path.Combine(objDir, unitFileName));
 
-            var unitSource = File.ReadAllText(unitPath, Encoding.UTF8);
-            var unitFirstLine = ReadFirstLine(unitPath);
-            Assert.True(
-                GSharpNameEncoding.TryReadSymbolHeaderHash(unitFirstLine, out var unitHash),
-                $"Missing symbol header line in '{unitPath}'.");
-            Assert.Equal(GSharpNameEncoding.ComputeSourceHash(unitSource), unitHash);
-
-            var unitGsymText = File.ReadAllText(unitGsymPath, Encoding.UTF8);
-            var unitErrorSites = GSharpNameEncoding.ParseErrorSitesFromSymbolFile(unitGsymText, unitHash);
-            Assert.Empty(unitErrorSites);
-
-            var unitSymbols = GSharpNameEncoding.ParseSymbolFile(unitGsymText, unitHash);
-            if (i > 0 && nonZeroUnitKernelCpp is null)
-            {
-                foreach (var pair in unitSymbols)
-                {
-                    if (pair.Key.StartsWith(GSharpNameEncoding.KernelPrefix, StringComparison.Ordinal))
-                    {
-                        nonZeroUnitKernelCpp = pair.Key;
-                        nonZeroUnitKernelCs = pair.Value;
-                        break;
-                    }
-                }
-            }
+            Assert.Empty(GSharpNameEncoding.ParseErrorSitesFromSymbolFile(unitGsymText, unitHash));
         }
+    }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Demangler_SplitCpuBuild_DecodesAKernelOutsideUnitZeroAndAHeaderSymbol()
+    {
+        var (objDir, _, manifestLines) = ReadSplitBuild();
+        var (nonZeroUnitKernelCpp, nonZeroUnitKernelCs) = manifestLines
+            .Skip(1)
+            .SelectMany(unitFileName => ReadSymbols(Path.Combine(objDir, unitFileName)))
+            .FirstOrDefault(static pair =>
+                pair.Key.StartsWith(GSharpNameEncoding.KernelPrefix, StringComparison.Ordinal));
         Assert.NotNull(nonZeroUnitKernelCpp);
         Assert.NotNull(nonZeroUnitKernelCs);
+        var (headerSymbolCpp, headerSymbolCs) = ReadSymbols(Path.Combine(objDir, $"{ModuleStem}.g.hpp"))
+            .FirstOrDefault(static pair =>
+                pair.Key.StartsWith(GSharpNameEncoding.FunctionPrefix, StringComparison.Ordinal) ||
+                pair.Key.StartsWith(GSharpNameEncoding.TypePrefix, StringComparison.Ordinal));
 
-        string? headerSymbolCpp = null;
-        string? headerSymbolCs = null;
-        foreach (var pair in headerSymbols)
-        {
-            if (pair.Key.StartsWith(GSharpNameEncoding.FunctionPrefix, StringComparison.Ordinal) ||
-                pair.Key.StartsWith(GSharpNameEncoding.TypePrefix, StringComparison.Ordinal))
-            {
-                headerSymbolCpp = pair.Key;
-                headerSymbolCs = pair.Value;
-                break;
-            }
-        }
-
-        // 4. Demangle a synthetic log referencing non-unit-0 kernel + header symbols via CLI.
         var syntheticLog = headerSymbolCpp is not null
             ? $"error in {nonZeroUnitKernelCpp}: call to {headerSymbolCpp} failed\n"
             : $"error in {nonZeroUnitKernelCpp}: trap raised\n";
-
         var result = await RunDemanglerProcessAsync(objDir, syntheticLog);
+
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stderr);
         Assert.Contains(nonZeroUnitKernelCs, result.Stdout, StringComparison.Ordinal);
@@ -124,6 +90,37 @@ public sealed class SplitBuildDemanglerE2ETests
             Assert.Contains(headerSymbolCs, result.Stdout, StringComparison.Ordinal);
             Assert.DoesNotContain(headerSymbolCpp, result.Stdout, StringComparison.Ordinal);
         }
+    }
+
+    // The obj directory of this build, its unit count (B > 1) and the non-empty lines of its artifact manifest.
+    private static (string ObjDir, int UnitCount, string[] ManifestLines) ReadSplitBuild()
+    {
+        var objDir = LocateActiveObjDirectory();
+        var unitCount = ReadPartitionUnitCount(Path.Combine(objDir, PartitionFileName));
+        Assert.True(unitCount > 1, $"Expected split CPU module (B > 1), found B = {unitCount}.");
+        var manifestLines = File.ReadAllLines(Path.Combine(objDir, ManifestFileName))
+            .Where(static line => !string.IsNullOrWhiteSpace(line))
+            .ToArray();
+        return (objDir, unitCount, manifestLines);
+    }
+
+    // The symbol file of sourcePath, after checking that the source's line-1 hash matches its content.
+    private static (string GsymText, string Hash) ReadVerifiedSymbolFile(string sourcePath)
+    {
+        var gsymPath = sourcePath + ".gsym.json";
+        Assert.True(File.Exists(sourcePath), $"Missing generated source '{sourcePath}'.");
+        Assert.True(File.Exists(gsymPath), $"Missing symbol file '{gsymPath}'.");
+        Assert.True(
+            GSharpNameEncoding.TryReadSymbolHeaderHash(ReadFirstLine(sourcePath), out var hash),
+            $"Missing symbol header line in '{sourcePath}'.");
+        Assert.Equal(GSharpNameEncoding.ComputeSourceHash(File.ReadAllText(sourcePath, Encoding.UTF8)), hash);
+        return (File.ReadAllText(gsymPath, Encoding.UTF8), hash);
+    }
+
+    private static IReadOnlyDictionary<string, string> ReadSymbols(string sourcePath)
+    {
+        var (gsymText, hash) = ReadVerifiedSymbolFile(sourcePath);
+        return GSharpNameEncoding.ParseSymbolFile(gsymText, hash);
     }
 
     private static string LocateActiveObjDirectory()

@@ -92,7 +92,8 @@ public class LogDemanglerTests
     [InlineData("{\"cpp\":\"__gsharp_k_Fake\",\"cs\":\"Fake.Wrong\"}")]
     [InlineData("")]
     [Scenario(TestScenario.SadPath)]
-    public void Demangle_MalformedOrHeaderlessSymbolFileWithCompanionHash_ReturnsErrorExitCode(string invalidGsymContent)
+    public void Demangle_MalformedOrHeaderlessSymbolFileWithCompanionHash_ReturnsErrorExitCode(
+        string invalidGsymContent)
     {
         using var scratch = new ScratchDirectory();
         var body = "#include \"Kassyi.GSharp.Kernels_MyApp.g.hpp\"\nvoid __gsharp_k_MyApp__Run__() {}\n";

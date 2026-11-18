@@ -144,25 +144,28 @@ public static class LogDemangler
         if (Directory.Exists(explicitPath))
         {
             files.AddRange(Directory.EnumerateFiles(explicitPath, "*" + SymbolFileSuffix, SearchOption.AllDirectories));
+            return files;
         }
-        else if (!File.Exists(explicitPath))
+
+        if (!File.Exists(explicitPath))
         {
             throw new FileNotFoundException($"Symbols path not found: {explicitPath}");
         }
-        else if (explicitPath.EndsWith(SymbolFileSuffix, StringComparison.OrdinalIgnoreCase))
+
+        if (explicitPath.EndsWith(SymbolFileSuffix, StringComparison.OrdinalIgnoreCase))
         {
             files.Add(explicitPath);
-        }
-        else if (File.Exists(explicitPath + SymbolFileSuffix))
-        {
-            files.Add(explicitPath + SymbolFileSuffix);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported symbols path or missing companion .gsym.json: {explicitPath}");
+            return files;
         }
 
-        return files;
+        if (File.Exists(explicitPath + SymbolFileSuffix))
+        {
+            files.Add(explicitPath + SymbolFileSuffix);
+            return files;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported symbols path or missing companion .gsym.json: {explicitPath}");
     }
 
     /// <summary>The <c>// gsharp-symbols:</c> hash on line 1 of the artifact next to <paramref name="symbolFile"/>, if any.</summary>

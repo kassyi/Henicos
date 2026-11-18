@@ -89,9 +89,10 @@
                   Condition="Exists('%(_GSharpHeaderCandidates.Identity)')" />
       <FileWrites Include="@(_GSharpHeaderCandidates->'%(Identity).gsym.json')"
                   Condition="Exists('%(_GSharpHeaderCandidates.Identity).gsym.json')" />
-      <!-- The active module partition plan file when present -->
-      <_GSharpPartitionPlanCandidates Include="$(IntermediateOutputPath)$([System.IO.Path]::GetFileNameWithoutExtension('%(_GSharpAotArtifactNames.Filename)')).partition.json"
-                                      Condition="'@(_GSharpAotArtifactNames)' != ''" />
+      <!-- The active module partition plan file when present: X.g.cpp -> X.g -> X.partition.json -->
+      <_GSharpPartitionPlanStems Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Filename)')" />
+      <_GSharpPartitionPlanCandidates
+          Include="@(_GSharpPartitionPlanStems->'%(RelativeDir)%(Filename).partition.json')" />
       <FileWrites Include="@(_GSharpPartitionPlanCandidates)"
                   Condition="Exists('%(_GSharpPartitionPlanCandidates.Identity)')" />
     </ItemGroup>
