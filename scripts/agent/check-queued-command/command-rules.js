@@ -87,9 +87,9 @@ function createRules(project) {
     ...shellWrappers,
     dotnet,
     stryker,
-    ...runners,
     msbuild,
     ...justRules(project),
+    ...runners,
     ...nodeScriptRules(project),
   ];
 

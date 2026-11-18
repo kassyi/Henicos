@@ -118,6 +118,10 @@ function selfTest() {
     'just bench-x',
     'just doctest',
     'dotnet pack',
+    '"$X/msbuild.exe" foo.sln',
+    '$MSB/msbuild x',
+    '"$X/just" test',
+    '"$X/dotnet" test',
   ];
   const allowed = [
     'node scripts/human/job-queue.js run -- "dotnet test X"',
@@ -192,6 +196,9 @@ function selfTest() {
     'just --dry-run bench-x',
     'just --dry-run doctest',
     'dotnet pack --help',
+    '"$DOTNET" test',
+    '"$S/long-checks.js"',
+    '"$X/node" scripts/human/long-checks.js',
   ];
   for (const command of denied) {
     assert.notDeepStrictEqual(check(command), [], `should deny: ${command}`);
