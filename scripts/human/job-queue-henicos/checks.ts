@@ -436,10 +436,10 @@ function checkShortCommandWithPlugins(assert: AssertModule, host: PluginHost): v
 
 export async function checkHenicosPlugin(assert: AssertModule): Promise<void> {
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
-  assert.strictEqual(
-    loaded.config.resources?.gpu?.lock?.seats[0],
-    "tmp/gpu-test-lock",
-    "seats[0] stays tmp/gpu-test-lock for older gpu-lock.js and fuzz-diff",
+  assert.deepStrictEqual(
+    loaded.config.resources?.gpu?.lock?.seats,
+    ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"],
+    "seats stay tmp/gpu-test-lock and tmp/gpu-test-lock-seat1 so older gpu-lock.js and checkouts agree on both",
   );
   const host = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
     ...process.env,

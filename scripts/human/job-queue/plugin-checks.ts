@@ -117,9 +117,10 @@ async function checkConfig(assert: AssertModule): Promise<void> {
         { name: "./scripts/human/job-queue-henicos" },
         { name: "dotnet" },
         { name: "just" },
+        { name: "nvidia-gpu" },
       ]);
       assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
-      assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
+      assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);
       assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);
       assert.deepStrictEqual(repoConfig.config.legacyClients, {
         testPattern: [

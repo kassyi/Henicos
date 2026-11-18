@@ -11,7 +11,7 @@
 // a kernel ran. At release, one line goes to the console and one row to gpu-hold-log.tsv next to the lock directory:
 //
 //   start  heldSeconds  exit  periodMs  samples  utilMeanPercent  busySharePercent  memBaselineMiB  memPeakMiB  note
-//   command
+//   command  mode
 //
 // busySharePercent is the share of samples with a utilization of at least BusyThresholdPercent. When nvidia-smi is
 // missing or fails, the row keeps start, heldSeconds, exit and command, leaves the GPU columns empty and says why in
@@ -60,7 +60,10 @@ const Columns = [
   'memPeakMiB',
   'note',
   'command',
+  'mode',
 ];
+
+const LegacyColumnsLength = Columns.length - 1;
 
 /**
  * Parses the output of the sampler: lines "<index>, <utilization %>, <memory used MiB>". Keeps the GPU of the first
@@ -137,6 +140,7 @@ function formatRow(hold) {
     cell(hold.memPeakMiB),
     hold.note.replace(/[\t\r\n]+/g, ' '),
     shortCommand(hold.command),
+    hold.mode === 'shared' ? 'shared' : 'exclusive',
   ].join('\t');
 }
 
@@ -149,7 +153,9 @@ function parseLog(text) {
   const holds = [];
   for (const line of text.split(/\r?\n/)) {
     const fields = line.split('\t');
-    if (fields.length !== Columns.length || fields[0] === 'start' || Number.isNaN(Date.parse(fields[0]))) {
+    const isCurrent = fields.length === Columns.length;
+    const isLegacy = fields.length === LegacyColumnsLength;
+    if ((!isCurrent && !isLegacy) || fields[0] === 'start' || Number.isNaN(Date.parse(fields[0]))) {
       continue;
     }
     holds.push({
@@ -164,6 +170,7 @@ function parseLog(text) {
       memPeakMiB: numberOrNull(fields[8]),
       note: fields[9],
       command: fields[10],
+      mode: isCurrent && fields[11] === 'shared' ? 'shared' : 'exclusive',
     });
   }
   return holds;
@@ -276,7 +283,8 @@ function describeHold(hold) {
 }
 
 /** The hold record of one run of `commandText` under the lock directory `lockPath`. */
-function createHoldWatch(lockPath, commandText) {
+function createHoldWatch(lockPath, commandText, options = {}) {
+  const mode = options && options.mode === 'shared' ? 'shared' : 'exclusive';
   const enabled = process.env[DisableVariable] !== '0';
   const logPath = path.join(path.dirname(lockPath), LogName);
   let startedAt = 0;
@@ -358,6 +366,7 @@ function createHoldWatch(lockPath, commandText) {
         ...summarizeSamples(parsed.samples),
         note: notes.filter((note) => note !== '').join('; '),
         command: commandText,
+        mode,
       };
       process.stderr.write(`[gpu-lock] ${describeHold(hold)}\n`);
       const header = fs.existsSync(logPath) ? '' : `${Columns.join('\t')}\n`;
@@ -385,6 +394,22 @@ function createHoldWatch(lockPath, commandText) {
   return { start, report, reportSync, stop: stopSampler };
 }
 
+/** Formats `--holds` output, grouping by `mode` when `shared` rows exist and matching legacy output otherwise. */
+function formatHoldsReport(holds, since, source) {
+  const selected = holds.filter((hold) => since === null || Date.parse(hold.start) >= since);
+  const shared = selected.filter((hold) => hold.mode === 'shared');
+  if (shared.length === 0) {
+    return formatSummary(summarize(selected, null), source);
+  }
+  const exclusive = selected.filter((hold) => hold.mode !== 'shared');
+  const parts = [];
+  if (exclusive.length > 0) {
+    parts.push(formatSummary(summarize(exclusive, null), `${source} (exclusive)`));
+  }
+  parts.push(formatSummary(summarize(shared, null), `${source} (shared)`));
+  return parts.join('\n');
+}
+
 /** `gpu-lock.js --holds`: prints the summary of the log. Returns the exit code. */
 function printHolds(logPath, sinceText) {
   let since = null;
@@ -405,7 +430,7 @@ function printHolds(logPath, sinceText) {
     }
   }
   const source = since === null ? logPath : `${logPath} since ${new Date(since).toISOString()}`;
-  process.stdout.write(formatSummary(summarize(parseLog(text), since), source));
+  process.stdout.write(formatHoldsReport(parseLog(text), since, source));
   return 0;
 }
 
@@ -450,7 +475,7 @@ function selfTest() {
   };
   const row = formatRow(hold);
   assert.strictEqual(row.split('\t').length, Columns.length);
-  assert.ok(row.endsWith('y...'));
+  assert.ok(row.endsWith('y...\texclusive'));
   const failed = {
     ...hold,
     start: '2026-11-14T10:00:00.000Z',
@@ -460,7 +485,7 @@ function selfTest() {
     note: 'nvidia-smi could not run: ENOENT',
     command: 'just test',
   };
-  assert.match(formatRow(failed), /\t1\t1000\t0\t\t\t\t\tnvidia-smi could not run: ENOENT\tjust test$/);
+  assert.match(formatRow(failed), /\t1\t1000\t0\t\t\t\t\tnvidia-smi could not run: ENOENT\tjust test\texclusive$/);
   assert.match(describeHold(failed), /GPU hold 50\.0 s, GPU not sampled \(nvidia-smi could not run: ENOENT\)$/);
   assert.match(describeHold(hold), /busy 50% of 4 samples .*memory 3517 -> peak 5000 MiB$/);
   const idle = {
@@ -499,6 +524,51 @@ function selfTest() {
   assert.match(textSummary, /3 \(2 with GPU samples\), held 14m 10s/);
   assert.match(textSummary, /busy \(samples >= \d+%\): 20\.0% of the measured held time \(13m 20s\), idle 10m 40s/);
   assert.match(formatSummary(summarize([]), 'log'), /No GPU holds/);
+
+  // 11-column legacy rows and 12-column rows mix cleanly; --holds matches legacy output unless shared rows exist.
+  const legacyHeader = Columns.slice(0, LegacyColumnsLength).join('\t');
+  const legacyRow = formatRow(hold).split('\t').slice(0, LegacyColumnsLength).join('\t');
+  const sharedHold = { ...idle, start: '2026-11-14T12:00:00.000Z', command: 'shared-cmd', mode: 'shared' };
+  const mixedNoShared = parseLog([legacyHeader, legacyRow, formatRow(idle), ''].join('\r\n'));
+  assert.strictEqual(mixedNoShared.length, 2);
+  assert.deepStrictEqual(mixedNoShared.map((h) => h.mode), ['exclusive', 'exclusive']);
+  assert.strictEqual(formatHoldsReport(mixedNoShared, null, 'log'), formatSummary(summarize(mixedNoShared), 'log'));
+
+  const mixedWithShared = parseLog(
+    [legacyHeader, legacyRow, formatRow(idle), formatRow(sharedHold), ''].join('\r\n'),
+  );
+  assert.strictEqual(mixedWithShared.length, 3);
+  assert.deepStrictEqual(mixedWithShared.map((h) => h.mode), ['exclusive', 'exclusive', 'shared']);
+  const groupedReport = formatHoldsReport(mixedWithShared, null, 'log');
+  assert.match(groupedReport, /GPU holds in log \(exclusive\): 2 \(2 with GPU samples\)/);
+  assert.match(groupedReport, /GPU holds in log \(shared\): 1 \(1 with GPU samples\)/);
+
+  // Appending to an existing 11-column log keeps its 11-column header and writes trailing mode column.
+  const os = require('os');
+  const tmpDir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'holds-self-test-')));
+  const prevDisable = process.env[DisableVariable];
+  try {
+    delete process.env[DisableVariable];
+    const tmpLog = path.join(tmpDir, LogName);
+    fs.writeFileSync(tmpLog, `${legacyHeader}\n${legacyRow}\n`);
+    const watch = createHoldWatch(path.join(tmpDir, 'lock'), 'shared-append', { mode: 'shared' });
+    watch.start();
+    watch.reportSync(0);
+    const lines = fs.readFileSync(tmpLog, 'utf8').trim().split(/\r?\n/);
+    assert.strictEqual(lines.length, 3);
+    assert.strictEqual(lines[0], legacyHeader, 'existing 11-column header must not be rewritten');
+    assert.strictEqual(lines[2].split('\t').length, Columns.length);
+    assert.ok(lines[2].endsWith('\tshared'));
+    const reparsed = parseLog(lines.join('\n'));
+    assert.deepStrictEqual(reparsed.map((h) => h.mode), ['exclusive', 'shared']);
+  } finally {
+    if (prevDisable === undefined) {
+      delete process.env[DisableVariable];
+    } else {
+      process.env[DisableVariable] = prevDisable;
+    }
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 module.exports = {

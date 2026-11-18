@@ -123,10 +123,13 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, and return validation |
 | `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits and `GSHARP_JOB_QUEUE_MSBUILD_ARGS`, `classify`, `shortName`, and `api` (`isDotnetTest`, `selectsCategory`) |
 | `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`): `just` recipe estimate keys (`stepKeys`) and short command labels (`shortName`) |
+| `plugins/nvidia-gpu/` | Built-in CJS-only `nvidia-gpu` `holderWatch` plugin (`holder-watch.js`, `holds.js`, `pools.js`, `fault-watch.js`, `README.md`): GPU hold sampling (`gpu-hold-log.tsv` with `mode` column) and Windows kernel pool / Event 153 watches (`gpu-pool-log.tsv`) |
 | `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `target-dialect.js`, `checks.ts`): test classification, `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
+| `lib/seat-lock.js` | Generic 1-or-2-seat directory lock (`exclusive` and `shared` acquisition, per-seat stale takeover including `acquiring`, `stage` transitions, cleanup) |
+| `lib/resource-lock.js` | Generic resource lock CLI/runner (`--resource`, `--mode`, 10 s jitter wait backoff, `holderWatch` lifecycle, shared failure overlap report, signal handling) |
 | `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
 | `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js`, `process-liveness.js`, and `target-dialect.js`) |
 | `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, and the hardening of plugin names, command environments and `--config` forwarding |
@@ -256,7 +259,8 @@ their old meaning.
 
 1. Type-check: `node scripts/human/check-types.js` (installs `tsc` and `@types/node` into `tmp/typecheck/` on first
    use; until then an editor reports `Cannot find name 'process'`).
-2. Self-test: `node scripts/human/job-queue.js --self-test`. It starts schedulers on private ports with a private state
+2. Self-test: `node scripts/human/job-queue.js --self-test` (plus `node scripts/human/gpu-lock.js --self-test` and
+   `node scripts/human/gpu-fault-watch.js --self-test` when lock or NVIDIA watch modules change). It starts schedulers on private ports with a private state
    directory and never touches the machine's queue. Run it on Windows (Git Bash and PowerShell) and Linux; CI runs it
    on both (`.github/workflows/script-types.yml`). A failure prints the check or the part that failed before the
    error. The ports are below 32768 (`firstTestPort`): Linux gives the ports from there up to outgoing connections,
@@ -276,4 +280,5 @@ their old meaning.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
 `scripts/agent/check-queued-command.js` (engine modules `hook.js`, `queue-rewrite.js`, `command-rules.js`, `rules/`,
-`shell-reader.js`, and repository data `project-henicos.js`); the GPU lock is `scripts/human/gpu-lock.js`.
+`shell-reader.js`, and repository data `project-henicos.js`); the GPU lock facade is `scripts/human/gpu-lock.js`
+(backed by `lib/seat-lock.js`, `lib/resource-lock.js`, and `plugins/nvidia-gpu/`).
