@@ -66,10 +66,54 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         Assert.Equal(new[] { "Mark(17)" }, lowered);
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("GotoCaseJoinKernel", "Mark(20)", "Mark(21)")]
+    [InlineData("GotoLabelJoinKernel", "Mark(22)", "Mark(23)")]
+    public void Insert_ThreadVariantSwitchCrossSectionJump_ReconvergesAtJoinAndSwitchEnd(string kernel,
+        params string[] expected)
+    {
+        var (lowered, _) = LowerAndAnalyze(kernel);
+        Assert.Equal(expected, lowered);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ThreadVariantSwitchNoCrossJumpKernel")]
+    [InlineData("UniformSwitchGotoCaseNoJoinKernel")]
+    [InlineData("WhenSwitchNoJoinKernel")]
+    public void Insert_SwitchWithoutSecondEntryJoin_AddsNoJoinLabel(string kernel)
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, kernel);
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException($"{kernel} has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+
+        var hasJoinLabel = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<LabeledStatementSyntax>()
+            .Any(static label => label.Identifier.ValueText.StartsWith(
+                GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix,
+                StringComparison.Ordinal));
+        Assert.False(hasJoinLabel);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task Lower_BackwardGotoLoop_EmitsRegionAroundLoop() =>
         VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoop.cs");
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_SwitchSecondEntryJoin_EmitsSwitchJoinRegion() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceSwitchJoin.cs");
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_SwitchSecondEntryChain_EmitsOrderedSwitchJoins() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceSwitchJoinChain.cs");
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

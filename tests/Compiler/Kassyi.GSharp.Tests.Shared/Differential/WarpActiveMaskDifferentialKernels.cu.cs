@@ -1264,4 +1264,251 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t * 2] = a;
         result[t * 2 + 1] = b;
     }
+
+    // Thread-dependent switch with goto case into a section other lanes entered directly
+    [GpuKernel]
+    public static void GotoCaseJoinKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        uint m3 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m1 = Warp.ActiveMask();
+                m2 = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                m3 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = m3;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // Thread-dependent switch with goto case into an earlier section
+    [GpuKernel]
+    public static void GotoCaseToEarlierSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        uint m3 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m3 = Warp.ActiveMask();
+                break;
+            case 1:
+                m1 = Warp.ActiveMask();
+                m2 = Warp.ActiveMask();
+                goto case 0;
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = m3;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // Thread-dependent switch with cross-section goto to a label after another split point
+    [GpuKernel]
+    public static void GotoLabelJoinKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        uint m3 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m1 = Warp.ActiveMask();
+                m1 = Warp.ActiveMask();
+                goto shared;
+            case 1:
+                m2 = Warp.ActiveMask();
+            shared:
+                m3 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = m3;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // Thread-dependent switch with goto default into default section
+    [GpuKernel]
+    public static void GotoDefaultJoinKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        uint m3 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m1 = Warp.ActiveMask();
+                m2 = Warp.ActiveMask();
+                goto default;
+            default:
+                m3 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m1;
+        result[t + 32] = m2;
+        result[t + 64] = m3;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // Three sections chained via goto case with differing split point counts
+    [GpuKernel]
+    public static void GotoCaseChainKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m0a = 0u;
+        uint m0b = 0u;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                m0a = Warp.ActiveMask();
+                m0b = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                m1 = Warp.ActiveMask();
+                goto case 2;
+            case 2:
+                m2 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m0a;
+        result[t + 32] = m0b;
+        result[t + 64] = m1;
+        result[t + 96] = m2;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // Two sections both jumping via goto case to the same target section
+    [GpuKernel]
+    public static void TwoSourcesOneJoinKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m0 = 0u;
+        uint m1 = 0u;
+        uint m2a = 0u;
+        uint m2b = 0u;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                m1 = Warp.ActiveMask();
+                break;
+            case 2:
+                m2a = Warp.ActiveMask();
+                m2b = Warp.ActiveMask();
+                goto case 1;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m1;
+        result[t + 64] = m2a;
+        result[t + 96] = m2b;
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // Conditional goto case leaving some lanes to break directly
+    [GpuKernel]
+    public static void ConditionalGotoCaseKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m0 = 0u;
+        uint m0After = 0u;
+        uint m1 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                if ((t & 2) != 0)
+                {
+                    goto case 1;
+                }
+
+                m0After = Warp.ActiveMask();
+                break;
+            case 1:
+                m1 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m0After;
+        result[t + 64] = m1;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // Warp shuffle at the join of a thread-dependent switch
+    [GpuKernel]
+    public static void GotoCaseJoinShuffleKernel(int[] output, int u)
+    {
+        int t = ThreadIndex.X;
+        int v = t;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                uint m1 = Warp.ActiveMask();
+                uint m2 = Warp.ActiveMask();
+                v += (int)((m1 ^ m2) & 0u);
+                goto case 1;
+            case 1:
+                uint m3 = Warp.ActiveMask();
+                output[t] = Warp.ShuffleXorSync(m3, v, 1);
+                break;
+        }
+    }
+
+    // Section 0 conditionally jumps to case 1 and falls through to goto case 2 (skips join 1)
+    [GpuKernel]
+    public static void SkippedJoinGotoCaseKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m0 = 0u;
+        uint m0b = 0u;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                if ((t & 1) == 0)
+                {
+                    goto case 1;
+                }
+
+                m0b = Warp.ActiveMask();
+                goto case 2;
+            case 1:
+                m1 = Warp.ActiveMask();
+                break;
+            case 2:
+                m2 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m0b;
+        result[t + 64] = m1;
+        result[t + 96] = m2;
+        result[t + 128] = Warp.ActiveMask();
+    }
 }

@@ -323,4 +323,102 @@ public static class ReconvergenceCases
             goto top;
         }
     }
+
+    [GpuKernel]
+    public static void GotoCaseJoinKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        switch (t & 1)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                r[t + 32] = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                Mark(20);
+                r[t + 64] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(21);
+        r[t + 96] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLabelJoinKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        switch (t & 1)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                r[t + 32] = Warp.ActiveMask();
+                goto shared;
+            case 1:
+                r[t + 64] = Warp.ActiveMask();
+            shared:
+                Mark(22);
+                r[t + 96] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(23);
+        r[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void ThreadVariantSwitchNoCrossJumpKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        switch (t & 1)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                break;
+            case 1:
+                r[t + 32] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(24);
+    }
+
+    [GpuKernel]
+    public static void UniformSwitchGotoCaseNoJoinKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        switch (u)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                if ((t & 1) != 0)
+                {
+                    goto case 1;
+                }
+
+                break;
+            case 1:
+                r[t + 32] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(25);
+    }
+
+    [GpuKernel]
+    public static void WhenSwitchNoJoinKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        switch (t & 1)
+        {
+            case 0 when u == 0:
+                r[t] = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                r[t + 32] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(26);
+    }
 }

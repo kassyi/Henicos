@@ -156,4 +156,47 @@ public static partial class ReconvergenceJumpValidKernels
 
         result[t] = m;
     }
+
+    [GpuKernel]
+    public static void UniformSwitchGotoCaseCycleKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        switch (u)
+        {
+            case 0:
+                if ((t & 1) == 0)
+                {
+                    m = Warp.ActiveMask();
+                    goto case 1;
+                }
+
+                break;
+            case 1:
+                goto case 0;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void ThreadVariantSwitchCycleWithoutSplitKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = Warp.ActiveMask();
+        switch (t & 1)
+        {
+            case 0:
+                if (m == 0u)
+                {
+                    goto case 1;
+                }
+
+                break;
+            case 1:
+                goto case 0;
+        }
+
+        result[t] = m;
+    }
 }

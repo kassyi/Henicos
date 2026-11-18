@@ -183,4 +183,69 @@ public static partial class ReconvergenceJumpKernels
 
         result[t] = m;
     }
+
+    [GpuKernel]
+    public static void SwitchSelfCycleKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        switch (t & 1)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto case 0;
+            case 1:
+                break;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void SwitchMutualCycleKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        switch (t & 1)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                goto case 0;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void CrossSectionGotoIntoGotoLoopMiddleKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (u)
+        {
+            case 0:
+                if ((t & 1) == 0)
+                {
+                    goto mid;
+                }
+
+                break;
+            case 1:
+            top:
+                n++;
+            mid:
+                m = Warp.ActiveMask();
+                if ((t & 1) == 1 && n < 2)
+                {
+                    goto top;
+                }
+
+                break;
+        }
+
+        result[t] = m;
+    }
 }

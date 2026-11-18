@@ -409,7 +409,11 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 ("GSH0120", 101, 13, 101, 22),
                 ("GSH0120", 113, 13, 113, 22),
                 ("GSH0120", 139, 21, 139, 30),
-                ("GSH0120", 168, 21, 168, 33)
+                ("GSH0120", 168, 21, 168, 33),
+                ("GSH0120", 196, 17, 196, 29),
+                ("GSH0120", 213, 17, 213, 29),
+                ("GSH0120", 215, 17, 215, 29),
+                ("GSH0120", 232, 21, 232, 30)
             ],
             actual);
     }
@@ -433,7 +437,11 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 (DiagnosticOrigin.Analyzer, 101, 13, 101, 22),
                 (DiagnosticOrigin.Analyzer, 113, 13, 113, 22),
                 (DiagnosticOrigin.Analyzer, 139, 21, 139, 30),
-                (DiagnosticOrigin.Analyzer, 168, 21, 168, 33)
+                (DiagnosticOrigin.Analyzer, 168, 21, 168, 33),
+                (DiagnosticOrigin.Analyzer, 196, 17, 196, 29),
+                (DiagnosticOrigin.Analyzer, 213, 17, 213, 29),
+                (DiagnosticOrigin.Analyzer, 215, 17, 215, 29),
+                (DiagnosticOrigin.Analyzer, 232, 21, 232, 30)
             ],
             run.Analyzer
                 .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
@@ -441,7 +449,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 .Ranges("GSH0120")
                 .OrderBy(static r => r.StartLine)
                 .ToList());
-        Assert.Equal(7, run.Analyzer.Length);
+        Assert.Equal(11, run.Analyzer.Length);
         Assert.Empty(run.Generator);
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
         var inputTrees = run.Input.SyntaxTrees.ToHashSet();
@@ -480,6 +488,25 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             static tree => Assert.DoesNotContain(
                 tree.GetRoot().DescendantTrivia(),
                 static trivia => trivia.IsKind(SyntaxKind.ErrorDirectiveTrivia)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_NestedFunctionWithMiddleGoto_ReportsOnlyGSH0062WithoutGSH0120()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", "Cpu");
+
+        Assert.Equal(
+            [
+                ("GSH0062", 19, 17, 19, 34),
+                ("GSH0062", 47, 17, 47, 34),
+                ("GSH0062", 75, 17, 75, 34),
+                ("GSH0062", 101, 30, 101, 47),
+                ("GSH0062", 103, 40, 103, 57)
+            ],
+            actual);
+        Assert.DoesNotContain(actual, static d => d.Id == "GSH0120");
+        Assert.Empty(await RunAsync("Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", "Cuda"));
     }
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
