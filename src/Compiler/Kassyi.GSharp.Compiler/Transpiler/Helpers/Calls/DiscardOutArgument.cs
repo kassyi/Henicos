@@ -29,7 +29,7 @@ internal static class DiscardOutArgument
         var number = context.Emitter.DiscardStorages.Count;
         context.Emitter.DiscardStorages[expression] = number;
         StructOrdering.RegisterUsedStructIfApplicable(type, ref context);
-        context.Emitter.Dialect.AppendType(ref context, type);
+        SharedMemoryStorageType.Append(ref context, type);
         context.Emitter.Writer.AppendLine($" {StoragePrefix}{number}{{}};");
     }
 

@@ -244,6 +244,10 @@
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.PerBlockCountKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.RegionOrderKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.TwoRegionsKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutDiscardKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutTypedKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutVarKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.PickOut", status: "NoStateMachine", count: 1}
 - {file: "Core/SharedMemoryRefIndexerKernels.cu.cs", method: "SharedMemoryRefIndexerKernels.AtomicAddSharedMemoryKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryRefIndexerKernels.cu.cs", method: "SharedMemoryRefIndexerKernels.MBarrierSharedMemoryKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryRegionKernels.cu.cs", method: "SharedMemoryRegionKernels.GrowingDeclarationKernel", status: "Compared", count: 1}
