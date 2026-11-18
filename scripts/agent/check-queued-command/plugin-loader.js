@@ -174,7 +174,7 @@ function emptyConfig() {
 }
 
 /**
- * Loads `job-queue.config.json` and Phase 1 plugin modules (`hook-rules.js` and `hook-io.js`).
+ * Loads `job-queue.config.json` and the plugin modules of the hook (`hook-rules.js` and `hook-io.js`).
  * In tolerant mode (`--hook`), errors are passed to `onError` and the faulty config or plugin is skipped.
  */
 function loadHookConfig({ configPath, tolerant = false, onError = null } = {}) {

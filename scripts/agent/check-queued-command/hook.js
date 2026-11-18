@@ -83,7 +83,7 @@ function createHook(engineConfig, rules = createRules(engineConfig), { tolerant 
             return null;
           }
         }
-        const note = plan === null ? '' : `\n${plan.note}`;
+        const note = plan === null || plan.note === undefined ? '' : `\n${plan.note}`;
         try {
           return io.module.deny(readResult, `${denialText(reasons)}${note}`);
         } catch (error) {

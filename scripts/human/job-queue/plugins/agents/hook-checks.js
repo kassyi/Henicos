@@ -50,7 +50,7 @@ function withAgentsConfig(fn) {
 
 function checks(assert, { createEngine }) {
   withAgentsConfig((configPath, tmpDir) => {
-    const { hookAnswer } = createEngine({ configPath, tolerant: false });
+    const { hookAnswer, denialText } = createEngine({ configPath, tolerant: false });
 
     const bashRewrite = hookAnswer({
       tool_name: 'Bash',
@@ -102,6 +102,12 @@ function checks(assert, { createEngine }) {
     assert.strictEqual(antigravity.decision, 'deny', 'Antigravity denies and never rewrites');
     assert.strictEqual(antigravity.updatedInput, undefined);
     assert.strictEqual(antigravity.hookSpecificOutput, undefined);
+    // A command the rewrite could queue: Antigravity gets the plain denial, with no rewrite plan behind it
+    assert.deepStrictEqual(
+      antigravity,
+      { decision: 'deny', reason: denialText(['buildtool test']) },
+      'Antigravity gets the plain denial of a rewritable command',
+    );
     assert.strictEqual(
       hookIo.rewrite({ agent: 'antigravity', canRewrite: true }, 'cmd', 'ctx'),
       null,
