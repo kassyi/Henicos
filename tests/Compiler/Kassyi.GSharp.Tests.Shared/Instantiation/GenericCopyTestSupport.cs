@@ -58,17 +58,19 @@ internal static class GenericCopyTestSupport
     internal static string Describe(GenericCopy copy) =>
         string.Join("; ", copy.Findings.Select(f => $"{f.Location.GetLineSpan().StartLinePosition}: {f.Reason}"));
 
+    // The problems the checker finds in the copy after the mutation, against the plan the copy was not mutated by
     internal static ImmutableArray<CopyProblem> CheckMutatedCopy(
         string method,
         string typeArgument,
-        Func<MethodDeclarationSyntax, MethodDeclarationSyntax> mutate)
+        Func<MethodDeclarationSyntax, MethodDeclarationSyntax> mutate,
+        Func<GenericCopyPlan, GenericCopyPlan>? mutatePlan = null)
     {
         var compilation = CreateCompilation();
         var type = compilation.GetTypeByMetadataName(typeArgument) ??
                    throw new InvalidOperationException($"No type '{typeArgument}'.");
         var instance = Instance(compilation, method, type);
         var plan = GenericCopies.Plan(compilation, instance);
-        var set = GenericCopies.Create(compilation, [plan]);
+        var set = GenericCopies.Create(compilation, [mutatePlan?.Invoke(plan) ?? plan]);
         var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(set.Copies.Single().Declaration);
         var mutated = mutate(copyDeclaration);
         var oldTree = copyDeclaration.SyntaxTree;

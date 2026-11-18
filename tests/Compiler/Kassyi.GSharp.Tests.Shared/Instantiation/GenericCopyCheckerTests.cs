@@ -90,36 +90,20 @@ public class GenericCopyCheckerTests
     [Scenario(TestScenario.SadPath)]
     public void Check_IdentityConstantWithWrongValue_RejectsTheCopy()
     {
-        var compilation = CreateCompilation();
-        var decimalType = compilation.GetSpecialType(SpecialType.System_Decimal);
-        var instance = Instance(compilation, "Identities", decimalType);
-        var plan = GenericCopies.Plan(compilation, instance);
-        var rewrites = plan.Rewrites;
-        foreach (var entry in plan.Rewrites)
-        {
-            if (entry.Value is CopyRewrite.IdentityConstant { Value: 0 } identity)
+        var problems = CheckMutatedCopy(
+            "Identities",
+            "System.Decimal",
+            copy => copy,
+            plan => plan with
             {
-                rewrites = rewrites.SetItem(entry.Key, identity with { Value = 1 });
-            }
-        }
+                Rewrites = plan.Rewrites.ToImmutableDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value is CopyRewrite.IdentityConstant { Value: 0 } identity
+                        ? identity with { Value = 1 }
+                        : entry.Value),
+            });
 
-        var wrongSet = GenericCopies.Create(compilation, [plan with { Rewrites = rewrites }]);
-        var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(wrongSet.Copies.Single().Declaration);
-        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
-            instance.Definition.DeclaringSyntaxReferences.Single().GetSyntax());
-        var problems = GenericCopyChecker.Check(
-            CopyNodeIndex.List(declaration),
-            declaration,
-            compilation.GetSemanticModel(declaration.SyntaxTree),
-            copyDeclaration,
-            wrongSet.Compilation.GetSemanticModel(copyDeclaration.SyntaxTree),
-            plan,
-            new InstanceSymbolMap(instance, compilation));
-
-        var identityProblems = problems
-            .Where(p => p.Reason.Contains("identity", StringComparison.Ordinal))
-            .ToArray();
-        Assert.Equal(2, identityProblems.Length);
+        Assert.Equal(2, problems.Count(p => p.Reason.Contains("identity", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -138,35 +122,12 @@ public class GenericCopyCheckerTests
     [Scenario(TestScenario.Boundary)]
     public void Check_DecimalIdentityWithDifferentScale_AcceptsTheCopy()
     {
-        var compilation = CreateCompilation();
-        var decimalType = compilation.GetSpecialType(SpecialType.System_Decimal);
-        var instance = Instance(compilation, "Identities", decimalType);
-        var plan = GenericCopies.Plan(compilation, instance);
-        var set = GenericCopies.Create(compilation, [plan]);
-        var copyDeclaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(set.Copies.Single().Declaration);
-        var zeroTokens = copyDeclaration.DescendantTokens()
-            .Where(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 0)
-            .ToArray();
-        var scaledDeclaration = copyDeclaration.ReplaceTokens(
-            zeroTokens,
-            (_, _) => SyntaxFactory.Literal("0.0m", 0.0m));
-        var oldTree = copyDeclaration.SyntaxTree;
-        var newRoot = oldTree.GetRoot().ReplaceNode(copyDeclaration, scaledDeclaration);
-        var newTree = oldTree.WithRootAndOptions(newRoot, oldTree.Options);
-        var updatedCompilation = set.Compilation.ReplaceSyntaxTree(oldTree, newTree);
-        var updatedCopy = newTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
-            .Single(m => m.Identifier.ValueText == copyDeclaration.Identifier.ValueText);
-        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
-            instance.Definition.DeclaringSyntaxReferences.Single().GetSyntax());
-
-        var problems = GenericCopyChecker.Check(
-            CopyNodeIndex.List(declaration),
-            declaration,
-            compilation.GetSemanticModel(declaration.SyntaxTree),
-            updatedCopy,
-            updatedCompilation.GetSemanticModel(newTree),
-            plan,
-            new InstanceSymbolMap(instance, compilation));
+        var problems = CheckMutatedCopy(
+            "Identities",
+            "System.Decimal",
+            copy => copy.ReplaceTokens(
+                copy.DescendantTokens().Where(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 0).ToArray(),
+                (_, _) => SyntaxFactory.Literal("0.0m", 0.0m)));
 
         Assert.Empty(problems);
     }
@@ -218,8 +179,9 @@ public class GenericCopyCheckerTests
                 (binary, _) => SyntaxFactory.BinaryExpression(
                     SyntaxKind.SubtractExpression, binary.Left, binary.Right)));
 
-        Assert.NotEmpty(problems);
-        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not narrow the operator", problem.Reason, StringComparison.Ordinal);
+        Assert.Equal(RewriteIndex<CopyRewrite.NarrowedOperator>("Sum", "System.Byte"), problem.NodeIndex);
     }
 
     [Theory]
@@ -269,42 +231,57 @@ public class GenericCopyCheckerTests
         Assert.Contains(problems, p => p.Reason.Contains("narrow the shift", StringComparison.Ordinal));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_WrongStaticMemberWithPlanPresent_RejectsTheCopy()
+    {
+        var problems = CheckRenamedIdentifier("MaxValue", "System.Int32", "MaxValue", "MinValue");
+
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not read 'Int32.MaxValue'", problem.Reason, StringComparison.Ordinal);
+        Assert.Equal(RewriteIndex<CopyRewrite.StaticMember>("MaxValue", "System.Int32"), problem.NodeIndex);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_WrongMathCallWithPlanPresent_RejectsTheCopy()
+    {
+        var problems = CheckRenamedIdentifier("Max", "System.Char", "Max", "Min");
+
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not call 'System.Math.Max'", problem.Reason, StringComparison.Ordinal);
+        Assert.Equal(RewriteIndex<CopyRewrite.MathCall>("Max", "System.Char"), problem.NodeIndex);
+    }
+
+    // -0.0 == 0 in C#, but T.Zero is +0.0 and the two differ for 1 / x and Math.CopySign
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("Negate", "System.UInt32", "negate in the type")]
-    [InlineData("Negate", "System.SByte", "narrow the negation")]
-    public void Check_WrongNegationConstantWithPlanPresent_RejectsTheCopy(
-        string method,
-        string typeArgument,
-        string expectedReason)
+    [InlineData("Identities", "System.Double")]
+    [InlineData("Identities", "System.Single")]
+    [InlineData("OneOverZero", "System.Double")]
+    public void Check_NegativeZeroForZeroIdentity_RejectsTheCopy(string method, string typeArgument)
     {
         var problems = CheckMutatedCopy(
             method,
             typeArgument,
-            copy =>
-            {
-                var zero = copy.DescendantTokens()
-                    .Single(t => t.IsKind(SyntaxKind.NumericLiteralToken) && t.Value is 0);
-                return copy.ReplaceToken(zero, SyntaxFactory.Literal(1));
-            });
+            copy => copy.ReplaceNodes(
+                copy.DescendantNodes().OfType<LiteralExpressionSyntax>().Where(l => l.Token.Value is 0).Take(1),
+                (literal, _) => SyntaxFactory.PrefixUnaryExpression(
+                        SyntaxKind.UnaryMinusExpression,
+                        SyntaxFactory.LiteralExpression(
+                            SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0.0)))
+                    .WithAdditionalAnnotations(literal.GetAnnotations(CopyNodeIndex.AnnotationKind))));
 
-        Assert.NotEmpty(problems);
-        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
-        Assert.DoesNotContain(problems, p => p.Reason.Contains("does not compile", StringComparison.Ordinal));
-        Assert.Contains(problems, p => p.Reason.Contains(expectedReason, StringComparison.Ordinal));
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not give the identity of the type", problem.Reason, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [Scenario(TestScenario.SadPath)]
-    [InlineData("MaxValue", "System.Int32", "MaxValue", "MinValue")]
-    [InlineData("Max", "System.Char", "Max", "Min")]
-    public void Check_WrongStaticMemberOrMathCallWithPlanPresent_RejectsTheCopy(
+    private static ImmutableArray<CopyProblem> CheckRenamedIdentifier(
         string method,
         string typeArgument,
         string fromName,
-        string toName)
-    {
-        var problems = CheckMutatedCopy(
+        string toName) =>
+        CheckMutatedCopy(
             method,
             typeArgument,
             copy => copy.ReplaceTokens(
@@ -313,6 +290,14 @@ public class GenericCopyCheckerTests
                     .ToArray(),
                 (_, _) => SyntaxFactory.Identifier(toName)));
 
-        Assert.NotEmpty(problems);
+    // The node number of the occurrence-th rewrite of the kind in the plan of the instance
+    private static int RewriteIndex<TRewrite>(string method, string typeArgument, int occurrence = 0)
+        where TRewrite : CopyRewrite
+    {
+        var compilation = CreateCompilation();
+        var type = compilation.GetTypeByMetadataName(typeArgument) ??
+                   throw new InvalidOperationException($"No type '{typeArgument}'.");
+        var plan = GenericCopies.Plan(compilation, Instance(compilation, method, type));
+        return plan.Rewrites.Where(e => e.Value is TRewrite).Select(e => e.Key).Order().ElementAt(occurrence);
     }
 }

@@ -628,11 +628,16 @@ internal static class GenericCopyChecker
                 sbyte sb => sb == expected,
                 byte b => expected >= 0 && b == (byte)expected,
                 char c => expected >= 0 && c == (char)expected,
-                float f => f == expected,
-                double d => d == expected,
+                float f => SameBits(f, expected),
+                double d => SameBits(d, expected),
                 decimal m => m == expected,
                 _ => false,
             };
+
+        // [WHY] -0.0 == 0 in C#, but T.Zero is +0.0 and the two differ for 1 / x and Math.CopySign, so a floating-point
+        // identity matches by its bits (float to double is exact, so one comparison serves both)
+        private static bool SameBits(double value, int expected) =>
+            BitConverter.DoubleToInt64Bits(value) == BitConverter.DoubleToInt64Bits(expected);
 
         private static string Differs(ISymbol? copy, ISymbol? expected) =>
             $"the copy binds '{Describe(copy)}' where the declaration binds '{Describe(expected)}'";
