@@ -95,14 +95,23 @@ function recordHookError(error) {
  * recorded instead.
  */
 function runHookFailingOpen() {
+  // A broken rule fails once per segment and per pass (judgement, rewrite): record each message once per command
+  const recorded = new Set();
+  const onError = (error) => {
+    const key = error instanceof Error ? error.message : String(error);
+    if (!recorded.has(key)) {
+      recorded.add(key);
+      recordHookError(error);
+    }
+  };
   let hook;
   try {
-    hook = createEngine({ tolerant: true, onError: recordHookError });
+    hook = createEngine({ tolerant: true, onError });
   } catch (error) {
-    recordHookError(error);
+    onError(error);
     process.exit(0);
   }
-  hook.runHook(recordHookError);
+  hook.runHook(onError);
 }
 
 const usage = 'Usage: check-queued-command.js (--hook | --text <command> [--dialect bash|pwsh|cmd] | --self-test)';

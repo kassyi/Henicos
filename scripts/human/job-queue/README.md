@@ -287,3 +287,8 @@ The PreToolUse hook that sends build and test commands through the queue is a se
 `plugin-loader.js`, `rules/`, `shell-reader.js`, plus `hook-rules.js` and `hook-io.js` from the plugins configured in
 `job-queue.config.json`); the GPU lock facade is `scripts/human/gpu-lock.js` (backed by `lib/seat-lock.js`,
 `lib/resource-lock.js`, and `plugins/nvidia-gpu/`).
+The hook asks the plugins in the order of `plugins` in `job-queue.config.json`, and the first answer wins: the rules of
+`hook-rules.js` (the first rule that matches a program decides), `rewrite` (the first plugin that returns an answer
+decides the queue options) and `messages` (the first plugin that has them). A repository plugin therefore comes before
+the built-in plugins it refines: `job-queue-henicos` answers the `--gpu` question of `dotnet test` before `dotnet`,
+which alone can only call it undecided (`checkRepoBaselineConfig` fixes that order).

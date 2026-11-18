@@ -292,6 +292,7 @@ function selfTest(createEngine) {
   checkPluginValidationAndIsolation(assert, createEngine);
   checkZeroPluginEngine(assert, createEngine);
   checkTolerantAndStrictModes(assert, createEngine);
+  checkPluginFailuresKeepDenials(assert, createEngine);
   checkFastAllowPath(assert);
   checkNoProjectImportInEngine(assert, createEngine);
   checkBuiltInPluginIsolation(assert);
@@ -604,6 +605,7 @@ function checkTolerantAndStrictModes(assert, createEngine) {
 
     const textFail = spawnSync(process.execPath, [entry, '--text', 'goodtool'], { encoding: 'utf8' });
     assert.ok(textFail.status !== 0 && textFail.stderr.includes('broken plugin load'), 'strict --text fails');
+    assert.ok(textFail.stderr.includes('plugin ./bad-plugin hook-rules.js: broken plugin load'), 'names the plugin');
 
     // 2. Non-JSON config: tolerant --hook exits 0 with empty stdout and logs 1 line
     fs.writeFileSync(cfgPath, '{not valid json');
@@ -652,9 +654,93 @@ function checkTolerantAndStrictModes(assert, createEngine) {
     assert.deepStrictEqual(tolerantEng.check('goodtool'), ['goodtool']);
     assert.ok(errors.some((e) => e.message.includes('boom match')), 'tolerant catches runtime rule throw');
     const strictEng = createEngine({ configPath: cfgPath, tolerant: false });
-    assert.throws(() => strictEng.check('goodtool'), /boom match/, 'strict throws on runtime rule throw');
+    assert.throws(
+      () => strictEng.check('goodtool'),
+      /plugin \.\/throw-rule matches\(\): boom match/,
+      'strict throws on runtime rule throw, naming the plugin',
+    );
+
+    // 5. --hook records a failure once per command, not once per segment and pass
+    fs.writeFileSync(
+      cfgPath,
+      JSON.stringify({
+        version: 1,
+        entry: 'scripts/human/job-queue.js',
+        plugins: [{ name: './throw-rule' }, { name: './good-plugin' }, { name: './io-plugin' }],
+      }),
+    );
+    const logFile = path.join(tmpRoot, 'tmp', 'hook-errors.log');
+    const linesBefore = fs.readFileSync(logFile, 'utf8').trim().split('\n').length;
+    const hookMany = spawnSync(process.execPath, [entry, '--hook'], {
+      input: JSON.stringify({ cmd: 'cd a && goodtool && echo 1 && echo 2 && echo 3' }),
+      encoding: 'utf8',
+    });
+    assert.ok(hookMany.status === 0 && hookMany.stdout.includes('goodtool'), `still denies: ${hookMany.stderr}`);
+    const linesAfter = fs.readFileSync(logFile, 'utf8').trim().split('\n').length;
+    assert.strictEqual(linesAfter - linesBefore, 1, 'one log line for a rule that fails on every segment');
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+}
+
+/**
+ * A broken wording function or agent plugin never turns a denial into an allowed command: the default wording is
+ * used, a failed rewrite falls back to the denial, and a failed deny() leaves the answer to the next agent plugin.
+ * Strict mode names the plugin and the part that failed.
+ */
+function checkPluginFailuresKeepDenials(assert, createEngine) {
+  const { root, configPath } = createNeutralWorkspace({ entry: 'queue.js', includeDefaultIo: false });
+  try {
+    fs.writeFileSync(path.join(root, 'queue.js'), '// stub\n');
+    const write = (dir, lines) => {
+      fs.mkdirSync(path.join(root, dir), { recursive: true });
+      fs.writeFileSync(path.join(root, dir, dir.startsWith('io') ? 'hook-io.js' : 'hook-rules.js'), lines.join('\n'));
+    };
+    write('words', [
+      "'use strict';",
+      'module.exports = {',
+      "  name: './words',",
+      '  rewrite: (_s, list) => (list[0] === \'buildtool\' ? { gpu: false, options: [] } : null),',
+      '  messages: {',
+      "    denialText: () => { throw new Error('broken wording'); },",
+      "    additionalContext: () => 'context',",
+      "    undecidedNote: () => 'note',",
+      '  },',
+      '};',
+    ]);
+    const io = (name, deny, rewrite) => [
+      "'use strict';",
+      'module.exports = {',
+      `  name: './${name}',`,
+      "  read: (p) => ({ command: p.cmd, kind: 'bash', cwd: p.cwd, canRewrite: true }),",
+      `  deny: ${deny},`,
+      `  rewrite: ${rewrite},`,
+      '};',
+    ];
+    write('io-broken', io('io-broken', "() => { throw new Error('broken deny'); }", "() => { throw new Error('x'); }"));
+    write('io-plain', io('io-plain', "(_r, reason) => ({ decision: 'deny', reason })", '() => null'));
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    config.plugins.push({ name: './words' }, { name: './io-broken' }, { name: './io-plain' });
+    fs.writeFileSync(configPath, JSON.stringify(config));
+
+    const errors = [];
+    const tolerant = createEngine({ configPath, tolerant: true, onError: (e) => errors.push(e.message) });
+    const expected = { decision: 'deny', reason: tolerant.denialText(['buildtool test']) };
+    assert.ok(expected.reason.startsWith('buildtool test must run through the job queue'), 'default wording');
+    // io-broken: rewrite() throws, so the command is denied; its deny() throws too, so io-plain answers
+    assert.deepStrictEqual(tolerant.hookAnswer({ cmd: 'buildtool test', cwd: root }), expected);
+    for (const part of ['messages.denialText()', 'hook-io.js rewrite()', 'hook-io.js deny()']) {
+      assert.ok(errors.some((message) => message.includes(part)), `records the failure of ${part}: ${errors}`);
+    }
+    const strict = createEngine({ configPath, tolerant: false });
+    assert.throws(() => strict.denialText(['buildtool test']), /plugin \.\/words messages\.denialText\(\)/);
+    assert.throws(
+      () => strict.hookAnswer({ cmd: 'buildtool test', cwd: root }),
+      /plugin \.\/(words|io-broken) /,
+      'strict names the plugin',
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
 }
 

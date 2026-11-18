@@ -10,6 +10,7 @@
 
 const { createRules } = require('./command-rules.js');
 const { createRewriter, selectMessages } = require('./queue-rewrite.js');
+const { pluginError } = require('./plugin-loader.js');
 
 const ValidDialects = ['bash', 'pwsh', 'cmd'];
 
@@ -38,7 +39,7 @@ function createHook(engineConfig, rules = createRules(engineConfig), { tolerant 
   };
   const { check } = rules;
   const { planRewrite } = createRewriter(engineConfig, rules, { tolerant, onError });
-  const { denialText, additionalContext } = selectMessages(engineConfig);
+  const { denialText, additionalContext } = selectMessages(engineConfig, reportError);
 
   /**
    * The answer to one parsed hook input, or null when the command may run as it is (or when no enabled `hook-io.js`
@@ -57,10 +58,10 @@ function createHook(engineConfig, rules = createRules(engineConfig), { tolerant 
           typeof readResult.command !== 'string' ||
           !ValidDialects.includes(readResult.kind)
         ) {
-          throw new Error(`check-queued-command: plugin ${io.name} hook-io.js read() returned an invalid shape`);
+          throw new Error('read() returned an invalid shape');
         }
       } catch (error) {
-        reportError(error);
+        reportError(pluginError(io.name, 'hook-io.js', error));
         continue;
       }
 
@@ -69,37 +70,45 @@ function createHook(engineConfig, rules = createRules(engineConfig), { tolerant 
         return null;
       }
 
+      let note = '';
       if (readResult.canRewrite && typeof io.module.rewrite === 'function') {
         const cwd = String(readResult.cwd || process.cwd());
         const plan = planRewrite(readResult.command, readResult.kind, cwd);
         if (plan !== null && plan.command !== undefined) {
-          try {
-            const rewritten = io.module.rewrite(readResult, plan.command, additionalContext(plan));
-            if (rewritten !== null && rewritten !== undefined) {
-              return rewritten;
-            }
-          } catch (error) {
-            reportError(error);
-            return null;
+          // A rewrite that fails falls back to the denial below: the command never runs unqueued
+          const rewritten = answerOf(io, 'rewrite()', () =>
+            io.module.rewrite(readResult, plan.command, additionalContext(plan)),
+          );
+          if (rewritten !== null) {
+            return rewritten;
           }
         }
-        const note = plan === null || plan.note === undefined ? '' : `\n${plan.note}`;
-        try {
-          return io.module.deny(readResult, `${denialText(reasons)}${note}`);
-        } catch (error) {
-          reportError(error);
-          return null;
-        }
+        note = plan === null || plan.note === undefined ? '' : `\n${plan.note}`;
       }
-
-      try {
-        return io.module.deny(readResult, denialText(reasons));
-      } catch (error) {
-        reportError(error);
-        return null;
+      const denial = answerOf(io, 'deny()', () => io.module.deny(readResult, `${denialText(reasons)}${note}`));
+      if (denial !== null) {
+        return denial;
       }
+      // A deny() that failed: the next agent plugin that reads the payload answers instead
     }
     return null;
+  }
+
+  /** The answer object a hook-io.js function returns, or null when it returns none, returns no object or throws. */
+  function answerOf(io, part, call) {
+    try {
+      const answer = call();
+      if (answer === null || answer === undefined) {
+        return null;
+      }
+      if (!isPlainObject(answer)) {
+        throw new Error('must return an object or null');
+      }
+      return answer;
+    } catch (error) {
+      reportError(pluginError(io.name, `hook-io.js ${part}`, error));
+      return null;
+    }
   }
 
   /**

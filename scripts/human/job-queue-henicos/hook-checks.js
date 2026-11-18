@@ -45,8 +45,12 @@ function checkTestProjectGuards(assert) {
 }
 
 function checkRealConfigIntegration(assert, createEngine) {
-  const { check, checkDetailed, hookAnswer } = createEngine({ tolerant: false });
+  const { check, checkDetailed, hookAnswer, denialText } = createEngine({ tolerant: false });
   const { queuedText } = require('../../../scripts/agent/check-queued-command/queue-rewrite.js');
+
+  // The wording of this plugin, not the engine's neutral default, is what the agents read
+  assert.strictEqual(denialText(['dotnet build']), henicosPlugin.messages.denialText(['dotnet build']));
+  assert.ok(denialText(['dotnet build']).includes('(uses the GPU; replaces gpu-lock.js)'), 'repository wording');
 
   const denied = [
     'node scripts/human/gpu-lock.js -- "dotnet test X"',

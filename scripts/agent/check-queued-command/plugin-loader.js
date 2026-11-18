@@ -163,6 +163,18 @@ function validateHookIo(mod, expectedName) {
   validateSchema(mod, HookIoSchema, '', label);
 }
 
+/**
+ * The error of a plugin, naming the plugin and the part that failed (`hook-rules.js`, `rules()`, ...): an error the
+ * engine already raised about that plugin is kept as it is, any other one is wrapped with the original as its cause.
+ */
+function pluginError(name, part, error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.startsWith(`check-queued-command: plugin ${name} `)) {
+    return error instanceof Error ? error : new Error(message);
+  }
+  return new Error(`check-queued-command: plugin ${name} ${part}: ${message}`, { cause: error });
+}
+
 function emptyConfig() {
   return {
     entry: DefaultEntry,
@@ -235,7 +247,7 @@ function loadHookConfig({ configPath, tolerant = false, onError = null } = {}) {
           apiByName.set(entry.name, mod.api);
         }
       } catch (error) {
-        report(error);
+        report(pluginError(entry.name, 'hook-rules.js', error));
       }
     }
 
@@ -247,7 +259,7 @@ function loadHookConfig({ configPath, tolerant = false, onError = null } = {}) {
         validateHookIo(mod, entry.name);
         hookIo.push({ name: entry.name, options, module: mod });
       } catch (error) {
-        report(error);
+        report(pluginError(entry.name, 'hook-io.js', error));
       }
     }
   }
@@ -269,4 +281,5 @@ module.exports = {
   validateHookRules,
   validateHookIo,
   loadHookConfig,
+  pluginError,
 };

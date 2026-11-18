@@ -26,6 +26,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createRules } = require('./command-rules.js');
 const { createReader } = require('./shell-reader.js');
+const { pluginError } = require('./plugin-loader.js');
 
 const DirectoryChanges = ['cd', 'pushd', 'popd', 'chdir', 'set-location', 'sl', 'push-location', 'pop-location'];
 
@@ -49,14 +50,35 @@ function defaultMessages(entry) {
   };
 }
 
-/** Selects hook wording from the first rule plugin that supplies `messages`, falling back to neutral defaults. */
-function selectMessages(engineConfig) {
-  for (const plugin of engineConfig.rulePlugins) {
-    if (plugin.module.messages) {
-      return plugin.module.messages;
-    }
+/**
+ * The hook wording of the first rule plugin that supplies `messages`, else the neutral defaults. A wording function
+ * that throws or returns no string goes to `report` and the default wording is used for that call, so that a broken
+ * sentence never turns a denial into an allowed command.
+ */
+function selectMessages(engineConfig, report = (error) => {
+  throw error;
+}) {
+  const defaults = defaultMessages(engineConfig.entry);
+  const plugin = engineConfig.rulePlugins.find((item) => item.module.messages);
+  if (plugin === undefined) {
+    return defaults;
   }
-  return defaultMessages(engineConfig.entry);
+  const guarded = {};
+  for (const key of Object.keys(defaults)) {
+    guarded[key] = (...args) => {
+      try {
+        const text = plugin.module.messages[key](...args);
+        if (typeof text !== 'string') {
+          throw new Error('must return a string');
+        }
+        return text;
+      } catch (error) {
+        report(pluginError(plugin.name, `messages.${key}()`, error));
+        return defaults[key](...args);
+      }
+    };
+  }
+  return guarded;
 }
 
 /** The text quoted as one single-quoted word of the dialect. */
@@ -137,7 +159,7 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
 
   const { checkDetailed, isQueueScript } = rules;
   const queueScript = engineConfig.entry;
-  const { undecidedNote } = selectMessages(engineConfig);
+  const { undecidedNote } = selectMessages(engineConfig, reportError);
   const rewritePlugins = engineConfig.rulePlugins.filter((plugin) => typeof plugin.module.rewrite === 'function');
   const splitPlugins = engineConfig.rulePlugins.filter(
     (plugin) => typeof plugin.module.splitForRewrite === 'function',
@@ -154,7 +176,7 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
           return validateRewriteResult(result, plugin.name);
         }
       } catch (error) {
-        reportError(error);
+        reportError(pluginError(plugin.name, 'rewrite()', error));
       }
     }
     return null;
@@ -169,7 +191,7 @@ function createRewriter(engineConfig, rules = createRules(engineConfig), { toler
           return validateSplitResult(result, plugin.name);
         }
       } catch (error) {
-        reportError(error);
+        reportError(pluginError(plugin.name, 'splitForRewrite()', error));
       }
     }
     return null;

@@ -22,6 +22,7 @@ const path = require('node:path');
 const { createReader, programName, unquote } = require('./shell-reader.js');
 const { DefaultRunners, DefaultRunnerTargets, wrapperRules } = require('./rules/wrappers.js');
 const { nodeScriptRules } = require('./rules/node-scripts.js');
+const { pluginError } = require('./plugin-loader.js');
 
 const DefaultExemptPrograms = ['git', 'gh'];
 
@@ -143,9 +144,9 @@ function createRules(engineConfig, { tolerant = false, onError = null } = {}) {
       ) {
         throw new Error(`check-queued-command: plugin ${plugin.name} rules() must return { matches, reason } objects`);
       }
-      pluginRules.push(...list);
+      pluginRules.push(...list.map((rule) => ({ rule, owner: plugin.name })));
     } catch (error) {
-      reportError(error);
+      reportError(pluginError(plugin.name, 'rules()', error));
     }
   }
 
@@ -156,7 +157,14 @@ function createRules(engineConfig, { tolerant = false, onError = null } = {}) {
     }
   }
 
-  const ProgramRules = [...shellWrappers, ...pluginRules, ...runnerRules, ...nodeRules];
+  // Each entry: { rule, owner }, owner being the plugin that supplied the rule (null for the engine's own rules)
+  const engineRule = (rule) => ({ rule, owner: null });
+  const ProgramRules = [
+    ...shellWrappers.map(engineRule),
+    ...pluginRules,
+    ...runnerRules.map(engineRule),
+    ...nodeRules.map(engineRule),
+  ];
 
   /** The reason a segment needs the queue, or null. */
   function segmentReason(segment, reader) {
@@ -167,12 +175,13 @@ function createRules(engineConfig, { tolerant = false, onError = null } = {}) {
     if (program.inner !== null) {
       return program.inner;
     }
-    for (const rule of ProgramRules) {
+    for (const { rule, owner } of ProgramRules) {
+      const failed = (part, error) => reportError(owner === null ? error : pluginError(owner, part, error));
       let matched;
       try {
         matched = rule.matches(program, reader);
       } catch (error) {
-        reportError(error);
+        failed('matches()', error);
         continue;
       }
       if (!matched) {
@@ -181,11 +190,11 @@ function createRules(engineConfig, { tolerant = false, onError = null } = {}) {
       try {
         const reason = rule.reason(reader, program);
         if (reason !== null && (typeof reason !== 'object' || typeof reason.text !== 'string')) {
-          throw new Error('check-queued-command: rule reason must be null or an object with a text string');
+          throw new Error('a rule reason must be null or an object with a text string');
         }
         return reason;
       } catch (error) {
-        reportError(error);
+        failed('reason()', error);
         continue;
       }
     }
