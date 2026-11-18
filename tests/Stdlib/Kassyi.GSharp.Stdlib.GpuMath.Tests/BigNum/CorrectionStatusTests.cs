@@ -162,7 +162,7 @@ public class CorrectionStatusTests : IDisposable
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuCorrectionStatus.cs:418 `owner.EndRead();` (asynchronous
         //         reads) -> removed
         // input: SynchronizeStreamAsync, CopyDeviceToHostAsync
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:364
+        // mutant: CooperativeMegaKernelLauncher.cs:121
         //         `workspace.CorrectionStatus?.MarkPending();` (ReciprocalMega) -> removed
         // input: every read kind
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -245,7 +245,7 @@ public class CorrectionStatusTests : IDisposable
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:290
         //         `Gpu.AtomicAdd(ref status[0], 1u);` -> `status[1] = failureCode;` (not counted)
         // input: both offsets
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:272
+        // mutant: CooperativeMegaKernelLauncher.cs:74
         //         `workspace.CorrectionStatus?.MarkPending();` (InverseSqrtMega) -> removed
         // input: both offsets
         var exception = Assert.Throws<InvalidOperationException>(() => gpuX.ToBigInteger());
@@ -462,7 +462,7 @@ public class CorrectionStatusTests : IDisposable
         using var shortTrial = new GpuBigUInt(workspace, 8);
         using var shortSquare = new GpuBigUInt(workspace, 7);
 
-        // mutant: KernelAdvancedMathHandler.cs:281 `trial.NumWords < slackWords` -> `trial.NumWords < slackWords - 1`
+        // mutant: KernelAdvancedMathHandler.cs:213 `trial.NumWords < slackWords` -> `trial.NumWords < slackWords - 1`
         Assert.Throws<ArgumentException>(() =>
             workspace.Provider.SqrtFloorCorrection(workspace, operand, square, root, slack, shortTrial));
         Assert.Throws<ArgumentException>(() =>
