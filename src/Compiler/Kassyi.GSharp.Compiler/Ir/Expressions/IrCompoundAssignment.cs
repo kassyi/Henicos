@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
@@ -40,4 +41,11 @@ internal sealed class IrCompoundAssignment(IrOperator<BinaryOperatorKind> @opera
             ? this
             : KeepSpelling(new IrCompoundAssignment(Operator, target, value, InConversion, OutConversion, Category,
                 Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrCompoundDecision Decided => GetDecision<IrCompoundDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrCompoundAssignment WithDecision(IrCompoundDecision decision) =>
+        IrExpression.WithDecision<IrCompoundAssignment>(this, decision);
 }

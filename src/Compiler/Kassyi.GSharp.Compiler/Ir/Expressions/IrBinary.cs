@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
@@ -31,4 +32,10 @@ internal sealed class IrBinary(IrOperator<BinaryOperatorKind> @operator, IrExpre
         left == Left && right == Right
             ? this
             : KeepSpelling(new IrBinary(Operator, left, right, Type, Category, ConstantValue, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrBinaryDecision Decided => GetDecision<IrBinaryDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrBinary WithDecision(IrBinaryDecision decision) => IrExpression.WithDecision<IrBinary>(this, decision);
 }
