@@ -272,4 +272,5 @@ their old meaning.
    [job-queue-reference.md](../../../.agents/rules/job-queue-reference.md) with a change of behavior.
 
 The PreToolUse hook that sends build and test commands through the queue is a separate script,
-`scripts/agent/check-queued-command.js`; the GPU lock is `scripts/human/gpu-lock.js`.
+`scripts/agent/check-queued-command.js` (engine modules `hook.js`, `queue-rewrite.js`, `command-rules.js`, `rules/`,
+`shell-reader.js`, and repository data `project-henicos.js`); the GPU lock is `scripts/human/gpu-lock.js`.
