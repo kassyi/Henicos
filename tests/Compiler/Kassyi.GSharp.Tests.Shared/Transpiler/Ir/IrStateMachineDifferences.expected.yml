@@ -1352,6 +1352,8 @@
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.RefAndOutKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.ScalarsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.StructsKernel", status: "Compared", count: 1}
+- {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "Kernels.ScaleKernel", status: "Compared", count: 1}
+- {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "ProtectedNestedLaunchBase.DirectScaleKernel", status: "Compared", count: 1}
 - {file: "Runtime/AutoAllocateReturnArraysKernels.cu.cs", method: "AutoAllocateReturnArraysKernels.AutoLayoutResultKernel", status: "Compared", count: 1}
 - {file: "Runtime/AutoAllocateReturnArraysKernels.cu.cs", method: "AutoAllocateReturnArraysKernels.LinearThreadIndex", status: "NoStateMachine", count: 1}
 - {file: "Runtime/AutoAllocateReturnArraysKernels.cu.cs", method: "AutoAllocateReturnArraysKernels.NormalReturnKernel", status: "Compared", count: 1}
@@ -3490,6 +3492,10 @@
 - {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "SpillOwner.SpillOwnerKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "SpillOwner.SpillUse", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analyzers/SuspendingCallFrameSadPath.cs", method: "SpillOwner.SpillWait", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallProtectedFrame.cs", method: "ProtectedFrameBase.HoldsProtectedType", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallProtectedFrame.cs", method: "ProtectedFrameBase.HoldsProtectedTypeProtected", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallProtectedFrame.cs", method: "ProtectedFrameDerived.DerivedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/SuspendingCallProtectedFrame.cs", method: "ProtectedFrameUnrelated.UnrelatedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/SyncGridBodySadPath.cs", method: "SyncGridBodySadPath.DeclarationsKernel", status: "Fallback:OpaqueOperand", count: 1}
 - {file: "TestCases/Analyzers/SyncGridBodySadPath.cs", method: "SyncGridBodySadPath.GotoKernel", status: "Fallback:OpaqueOperand", count: 1}
 - {file: "TestCases/Analyzers/SyncGridBodySadPath.cs", method: "SyncGridBodySadPath.Read", status: "NoStateMachine", count: 1}
@@ -4341,6 +4347,11 @@
 - {file: "TestCases/Marshaling/LauncherAccessibilitySource.cs", method: "Open.RefK", status: "Compared", count: 2}
 - {file: "TestCases/Marshaling/LauncherAccessibilitySource.cs", method: "Open.ShadowK", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/LauncherSignatureSource.cs", method: "Kernels.Mixed", status: "Compared", count: 2}
+- {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "Kernels.ScaleKernel", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "ProtectedLauncherBase.DirectScaleKernel", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "ProtectedLauncherBase.SumProtectedPayload", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "ProtectedLauncherDerived.CallProtectedDeviceKernel", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "UnrelatedSuspendingCaller.CallPublicProtectedFrameKernel", status: "Compared", count: 1}
 - {file: "TestCases/NativeApi/GenericIntrinsicCalls.cu.cs", method: "GenericIntrinsicCallKernels.CopyAndReleaseKernel", status: "Compared", count: 1}
 - {file: "TestCases/Runtime/ErrorSiteLineEndingCases.cs", method: "ErrorSiteLineEndingKernels.SitesOnSeveralLinesKernel", status: "Compared", count: 1}
 - {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.HellPattern", status: "Compared", count: 1}
