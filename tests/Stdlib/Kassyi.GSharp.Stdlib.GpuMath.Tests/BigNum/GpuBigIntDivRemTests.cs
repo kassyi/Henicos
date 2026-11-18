@@ -812,7 +812,8 @@ public class GpuBigIntDivRemTests : IDisposable
         "Random1023Words",
         "Random1024Words",
         "Random1025Words",
-        // 1100 words makes n + resultWords > block width (768/1024) with zero low words, forcing multi-chunk borrow.
+        // A power of two leaves the low 1099 words of each product zero, so the subtraction's "no borrow" state
+        // (carry-in 1) crosses every chunk boundary of the block-parallel subtraction.
         "TopBitOnly1100Words"
     ];
 
@@ -907,7 +908,8 @@ public class GpuBigIntDivRemTests : IDisposable
         "Random1023WordsMargin16",
         "Random1024WordsMargin16",
         "SecondBitTop1025WordsMargin16",
-        // 1100 words makes 3n + 2m > block width (768/1024) with zero low words, forcing multi-chunk borrow.
+        // A power of two leaves the low 1099 words of each product zero, so the subtraction's "no borrow" state
+        // (carry-in 1) crosses every chunk boundary of the block-parallel subtraction.
         "PowerOfFour1100Words",
         "TopBitOnly1100Words"
     ];
