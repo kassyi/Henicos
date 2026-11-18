@@ -5,11 +5,20 @@
 //
 // Usage: require('./hook.js').createHook(project, rules) returns { denialText, hookAnswer, runHook };
 // hookAnswer(payload) returns the answer to one parsed hook input (null when allowed; a Claude Code command that
-// queue-rewrite.js can queue comes back as updatedInput); denialText(reasons) formats the denial message; runHook()
-// answers on stdin.
+// queue-rewrite.js can queue comes back as updatedInput); denialText(reasons) formats the denial message;
+// runHook(onError) answers on stdin and hands an exception while judging to onError.
 
 const { createRules } = require('./command-rules.js');
 const { createRewriter } = require('./queue-rewrite.js');
+
+/** The parsed hook input; throws an error that says the input was not JSON. */
+function parseInput(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`invalid hook input: ${error.message}`);
+  }
+}
 
 /**
  * Creates the hook adapter bound to repository config `project` and rule evaluator `rules`; createRewriter checks the
@@ -61,23 +70,37 @@ function createHook(project, rules = createRules(project)) {
     };
   }
 
-  function runHook() {
+  /**
+   * Answers the hook input on stdin. Input that is not JSON, an exception while judging and a stream error go to
+   * `onError` and the command is allowed (no output, exit code 0): Antigravity stops the command of a hook that exits
+   * with a non-zero code.
+   */
+  function runHook(onError) {
+    const allow = (error) => {
+      try {
+        onError(error);
+      } finally {
+        process.exit(0);
+      }
+    };
     let input = '';
     process.stdin.setEncoding('utf8');
+    process.stdin.on('error', allow);
+    process.stdout.on('error', allow);
     process.stdin.on('data', (chunk) => (input += chunk));
     process.stdin.on('end', () => {
-      let payload;
+      let output = '';
       try {
-        payload = JSON.parse(input);
+        const answer = hookAnswer(parseInput(input));
+        output = answer === null ? '' : JSON.stringify(answer);
       } catch (error) {
-        process.stderr.write(`check-queued-command --hook: invalid hook input: ${error.message}\n`);
-        process.exit(1);
+        allow(error);
       }
-      const answer = hookAnswer(payload);
-      if (answer !== null) {
-        process.stdout.write(JSON.stringify(answer));
+      if (output !== '') {
+        process.stdout.write(output, () => process.exit(0));
+      } else {
+        process.exit(0);
       }
-      process.exit(0);
     });
   }
 
