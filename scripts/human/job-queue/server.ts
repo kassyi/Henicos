@@ -64,10 +64,9 @@ export class JobServer {
   readonly options: ServeOptions;
   readonly config: QueueConfig;
   readonly scheduler: Scheduler<ServerJob>;
-  /** The machine the scheduler runs on: the budgets of its checkout give the memory each test run takes. */
-  readonly machine: MachineProfile;
   readonly history: RunHistory;
   readonly store: JobStore;
+  private readonly legacyTestPattern: RegExp | null;
   nextId: number;
   idleSince = Date.now();
   /**
@@ -102,10 +101,17 @@ export class JobServer {
       configPath: options.configPath || undefined,
       warn: (text) => this.log(text),
     }).config;
+    this.legacyTestPattern = this.config.legacyClients?.testPattern
+      ? new RegExp(this.config.legacyClients.testPattern)
+      : null;
+    const machine =
+      options.slots === 0 || options.memoryMb === 0
+        ? new MachineProfile(undefined, undefined, this.config.pools)
+        : null;
+    const slots = options.slots > 0 ? options.slots : (machine as MachineProfile).slots;
+    const memoryMb = options.memoryMb > 0 ? options.memoryMb : (machine as MachineProfile).memoryPoolMb;
     // nothing is granted before listening (see listen)
-    this.scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
-    this.machine = new MachineProfile();
-    void this.machine.budgets; // read now, as the scheduler starts
+    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb);
     const stateDirectory = options.stateDir || resolveStateDirectory();
     this.history = new RunHistory(path.join(stateDirectory, "history.json"), this.log);
     this.nextId = this.history.nextId;
@@ -239,6 +245,13 @@ export class JobServer {
     return this.nextId++;
   }
 
+  private legacyMemoryMb(command: string): number {
+    if (this.legacyTestPattern === null || this.config.legacyClients?.testMemoryMb === undefined) {
+      return 0;
+    }
+    return this.legacyTestPattern.test(command) ? this.config.legacyClients.testMemoryMb : 0;
+  }
+
   /** A record from a registration or a saved record, not bound to a connection yet (bind attaches it). */
   createJob(message: Incoming, id: number, phase: Phase): ServerJob {
     const command = String(message.command ?? "");
@@ -247,6 +260,7 @@ export class JobServer {
     const places = placesField(message);
     const keys = keysField(message);
     const memoryMb = memoryMbField(message);
+    const gpuTurn = message.gpuTurn === true;
     return {
       id,
       phase,
@@ -277,8 +291,8 @@ export class JobServer {
       before: idField(message, "before"),
       after: idField(message, "after"),
       keepIfFailed: message.keepIfFailed === true,
-      gpuTurn: message.gpuTurn === true,
-      memoryMb: memoryMb ?? this.machine.testMemoryMb(command),
+      gpuTurn,
+      memoryMb: gpuTurn ? 0 : (memoryMb ?? this.legacyMemoryMb(command)),
       lastPosition: -1,
       lastStartAt: null,
       done: false,
@@ -475,8 +489,8 @@ export class JobServer {
     this.server.listen(options.port, "127.0.0.1", () => {
       this.log(
         `scheduler pid ${process.pid} on 127.0.0.1:${options.port}, ${scheduler.capacity} slots, ` +
-          `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs ` +
-          `(${this.machine.budgets.size} budgets), policy ${scheduler.policy}`,
+          `${os.cpus().length} cores, ${Math.round(scheduler.memoryCapacity)} MB for test runs, ` +
+          `policy ${scheduler.policy}`,
       );
       // Only the scheduler that owns the port restores. A current state file holds every job: the slots of the running
       // ones count from the first event, so nothing needs to wait.
