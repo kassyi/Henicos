@@ -253,6 +253,68 @@ public class GenericCopyCheckerTests
         Assert.Equal(RewriteIndex<CopyRewrite.MathCall>("Max", "System.Char"), problem.NodeIndex);
     }
 
+    // OneOverZero with the second literal of the opaque Max of the zero changed: Max(0m, 1m) is not the identity 0m
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_OpaqueIdentityWithAnotherSecondArgument_RejectsTheCopy()
+    {
+        var problems = CheckMutatedCopy(
+            "OneOverZero",
+            "System.Decimal",
+            copy => copy.ReplaceTokens(
+                copy.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                    .Where(call => call.ArgumentList.Arguments[0].DescendantTokens().Any(t => t.Value is 0))
+                    .Select(call => call.ArgumentList.Arguments[1].DescendantTokens().Single(t => t.Value is 0)),
+                (_, _) => SyntaxFactory.Literal(1)));
+
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not give the identity of the type", problem.Reason, StringComparison.Ordinal);
+        Assert.Equal(RewriteIndex<CopyRewrite.IdentityConstant>("OneOverZero", "System.Decimal", 1), problem.NodeIndex);
+    }
+
+    // CheckedMaxValuePlusOne with the second member of the opaque Max changed: Max(255, 0) is not MaxValue
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_OpaqueStaticMemberWithAnotherSecondMember_RejectsTheCopy()
+    {
+        var problems = CheckMutatedCopy(
+            "CheckedMaxValuePlusOne",
+            "System.Byte",
+            copy => copy.ReplaceTokens(
+                copy.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                    .Select(call => call.ArgumentList.Arguments[1].DescendantTokens()
+                        .Where(t => t.ValueText == "MaxValue"))
+                    .SelectMany(tokens => tokens),
+                (_, _) => SyntaxFactory.Identifier("MinValue")));
+
+        var problem = Assert.Single(problems);
+        Assert.Contains("does not read 'Byte.MaxValue'", problem.Reason, StringComparison.Ordinal);
+        Assert.Equal(RewriteIndex<CopyRewrite.StaticMember>("CheckedMaxValuePlusOne", "System.Byte"), problem.NodeIndex);
+    }
+
+    // The operands of a + b are promoted to int; only the narrowing of the sum keeps the value of the byte
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_OperatorWithoutItsNarrowing_RejectsTheCopy()
+    {
+        var copy = CreateWithout<CopyRewrite.NarrowedOperator>("Sum", "System.Byte");
+
+        Assert.False(copy.IsFaithful);
+        Assert.Contains(copy.Findings, f => f.Reason.Contains("converts to", StringComparison.Ordinal));
+    }
+
+    // Math.Sign(char) binds Sign(int); the copy must not accept the argument converted to any other type (here the
+    // double of Math.Sqrt, the callee renamed so that the char still converts implicitly)
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Check_SignOfCharConvertedToAnotherType_RejectsTheCopy()
+    {
+        var problems = CheckRenamedIdentifier("Sign", "System.Char", "Sign", "Sqrt");
+
+        Assert.Contains(problems, p => p.Reason.Contains("converts to 'Double'", StringComparison.Ordinal));
+        Assert.DoesNotContain(problems, p => p.Reason.Contains("lost", StringComparison.Ordinal));
+    }
+
     // -0.0 == 0 in C#, but T.Zero is +0.0 and the two differ for 1 / x and Math.CopySign
     [Theory]
     [Scenario(TestScenario.SadPath)]
