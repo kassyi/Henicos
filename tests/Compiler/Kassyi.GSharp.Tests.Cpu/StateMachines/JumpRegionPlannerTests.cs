@@ -181,9 +181,12 @@ public class JumpRegionPlannerTests
             goto Mid;");
 
         var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
-        Assert.Single(plan.Regions);
-        Assert.Single(plan.Rejected);
-        Assert.Equal("Mid", ((IdentifierNameSyntax)plan.Rejected[0].Expression!).Identifier.ValueText);
+        Assert.Equal(2, plan.Regions.Length);
+        Assert.Equal(2, plan.Rejected.Length);
+        Assert.Contains(plan.Rejected,
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: "Mid" });
+        Assert.Contains(plan.Rejected,
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: "End" });
     }
 
     [Fact]
@@ -199,7 +202,7 @@ public class JumpRegionPlannerTests
             goto Start;");
 
         var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
-        Assert.Single(plan.Regions);
+        Assert.Equal(2, plan.Regions.Length);
         Assert.Empty(plan.Rejected);
     }
 
@@ -221,5 +224,433 @@ public class JumpRegionPlannerTests
         Assert.Equal(2, plan.Regions.Length);
         Assert.Equal((0, 3), (plan.Regions[0].First, plan.Regions[0].LabelIndex));
         Assert.Equal((0, 2), (plan.Regions[1].First, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_SingleBackwardGoto_ProducesGotoLoop()
+    {
+        var statements = ParseStatements(@"
+        L:
+            Split();
+            if (x) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Regions);
+        Assert.Empty(plan.Rejected);
+
+        var r = plan.Regions[0];
+        Assert.Equal(JumpRegionKind.GotoLoop, r.Kind);
+        Assert.Equal(0, r.First);
+        Assert.Equal(1, r.Last);
+        Assert.Equal(0, r.LabelIndex);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_BackwardGotoInLabeledStatementItself_ProducesGotoLoop()
+    {
+        var statements = ParseStatements(@"
+        L:
+            if (x) { Split(); goto L; }");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Regions);
+        Assert.Empty(plan.Rejected);
+
+        var r = plan.Regions[0];
+        Assert.Equal(JumpRegionKind.GotoLoop, r.Kind);
+        Assert.Equal(0, r.First);
+        Assert.Equal(0, r.Last);
+        Assert.Equal(0, r.LabelIndex);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_BackwardGotoWithoutSplitPoints_IsDiscarded()
+    {
+        var statements = ParseStatements(@"
+        L:
+            int a = 1;
+            if (x) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Same(JumpRegionPlan.Empty, plan);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_TwoBackwardGotosToSameLabel_ExtendsLastToLatestGoto()
+    {
+        var statements = ParseStatements(@"
+        L:
+            int a = 0;
+            if (x) goto L;
+            Split();
+            if (y) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Regions);
+        Assert.Empty(plan.Rejected);
+
+        var r = plan.Regions[0];
+        Assert.Equal(JumpRegionKind.GotoLoop, r.Kind);
+        Assert.Equal(0, r.First);
+        Assert.Equal(3, r.Last);
+        Assert.Equal(0, r.LabelIndex);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ForwardGotoToGotoLoopStartWithoutSplit_AdoptsForwardRange()
+    {
+        var statements = ParseStatements(@"
+            if (a) goto L;
+            int b = 1;
+        L:
+            Split();
+            if (x) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[0].Kind);
+        Assert.Equal((0, 1, 2), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[1].Kind);
+        Assert.Equal((2, 3, 2), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_ForwardGotoExitingGotoLoop_ExpandsForwardRangeToLoopStart()
+    {
+        var statements = ParseStatements(@"
+        L:
+            Split();
+            if (x) goto After;
+            if (y) goto L;
+        After:
+            int z = 0;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[0].Kind);
+        Assert.Equal((0, 2, 3), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[1].Kind);
+        Assert.Equal((0, 2, 0), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ForwardGotoAndGotoLoopWithSameSpan_OrdersForwardRangeOuter()
+    {
+        var statements = ParseStatements(@"
+        L:
+            if (x) goto After;
+            Split();
+            if (y) goto L;
+        After:
+            int z = 0;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[0].Kind);
+        Assert.Equal((0, 2, 3), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[1].Kind);
+        Assert.Equal((0, 2, 0), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_BackwardGotoFromOutsideIntoGotoLoopMiddle_IsRejected()
+    {
+        var statements = ParseStatements(@"
+        L:
+            int a = 0;
+        Mid:
+            Split();
+            if (x) goto L;
+            int b = 1;
+            if (y) goto Mid;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Rejected);
+        Assert.Equal("Mid", Assert.IsType<IdentifierNameSyntax>(plan.Rejected[0].Expression).Identifier.ValueText);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_ForwardGotoIntoGotoLoopMiddle_IsRejected()
+    {
+        var statements = ParseStatements(@"
+            if (a) goto Mid;
+        L:
+            int b = 0;
+        Mid:
+            Split();
+            if (x) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        var region = Assert.Single(plan.Regions);
+        Assert.Equal(JumpRegionKind.GotoLoop, region.Kind);
+        Assert.Single(plan.Rejected);
+        Assert.Equal("Mid", Assert.IsType<IdentifierNameSyntax>(plan.Rejected[0].Expression).Identifier.ValueText);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ForwardGotoToGotoLoopStart_IsNotRejected()
+    {
+        var statements = ParseStatements(@"
+            if (a) goto L;
+        L:
+            Split();
+            if (x) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_CrossingGotoLoops_IsRejected()
+    {
+        var statements = ParseStatements(@"
+        A:
+            Split();
+        B:
+            Split();
+            if (x) goto A;
+            if (y) goto B;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Rejected);
+        Assert.Equal("B", Assert.IsType<IdentifierNameSyntax>(plan.Rejected[0].Expression).Identifier.ValueText);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_DoublyLabeledGotoLoop_TargetsSecondLabelAtSameIndex()
+    {
+        var statements = ParseStatements(@"
+        first:
+        second:
+            Split();
+            if (x) goto second;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Single(plan.Regions);
+        Assert.Empty(plan.Rejected);
+
+        var r = plan.Regions[0];
+        Assert.Equal(JumpRegionKind.GotoLoop, r.Kind);
+        Assert.Equal(0, r.First);
+        Assert.Equal(1, r.Last);
+        Assert.Equal(0, r.LabelIndex);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ForwardGotoWithOwnSplitExitingGotoLoop_ExpandsFirstToLoopStart()
+    {
+        var statements = ParseStatements(@"
+        L:
+            int a = 0;
+            if (x) goto After;
+            Split();
+            if (y) goto L;
+        After:
+            int z = 0;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[0].Kind);
+        Assert.Equal((0, 3, 4), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[1].Kind);
+        Assert.Equal((0, 3, 0), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ConsecutiveEmptyLabeledStatements_MapsBothLabelsToGroupHead()
+    {
+        var statements = ParseStatements(@"
+            if (a) goto L1;
+        L0:
+            ;
+        L1:
+            Split();
+            if (x) goto L0;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[0].Kind);
+        Assert.Equal((0, 0, 1), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[1].Kind);
+        Assert.Equal((1, 3, 1), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ConsecutiveEmptyLabeledStatementsDoubleLoop_MergesIntoSingleGotoLoop()
+    {
+        var statements = ParseStatements(@"
+        L0:
+            ;
+        L1:
+            ;
+            Split();
+            if (x) goto L0;
+            if (y) goto L1;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        var region = Assert.Single(plan.Regions);
+        Assert.Equal(JumpRegionKind.GotoLoop, region.Kind);
+        Assert.Equal((0, 4, 0), (region.First, region.Last, region.LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ConsecutiveEmptyLabeledStatementsForwardRange_TargetsSecondLabel()
+    {
+        var statements = ParseStatements(@"
+            if (a) goto L1;
+            Split();
+        L0:
+            ;
+        L1:
+            Split();");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        var region = Assert.Single(plan.Regions);
+        Assert.Equal(JumpRegionKind.ForwardRange, region.Kind);
+        Assert.Equal((0, 1, 2), (region.First, region.Last, region.LabelIndex));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FindCrossSectionRejectedGotos_GotoToGotoLoopHead_IsRejected()
+    {
+        var switchStatement = (SwitchStatementSyntax)SyntaxFactory.ParseStatement(@"
+            switch (u)
+            {
+                case 0:
+                    if (a) goto top;
+                    if (d) goto selfLoop;
+                    break;
+                case 1:
+                    if (b) goto top;
+                top:
+                    Split();
+                    if (c) goto top;
+                    break;
+                case 2:
+                selfLoop:
+                    if (e) { Split(); goto selfLoop; }
+                    break;
+            }");
+
+        var plans = PlanSections(switchStatement);
+        var rejected = JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, plans);
+        Assert.Equal(2, rejected.Length);
+        Assert.Equal(("top", "top"), (rejected[0].TargetLabelName, rejected[0].RegionLabelName));
+        Assert.Equal(("selfLoop", "selfLoop"), (rejected[1].TargetLabelName, rejected[1].RegionLabelName));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void FindCrossSectionRejectedGotos_GotoToForwardRangeHead_IsAllowed()
+    {
+        var switchStatement = (SwitchStatementSyntax)SyntaxFactory.ParseStatement(@"
+            switch (u)
+            {
+                case 0:
+                    if (a) goto start;
+                    break;
+                case 1:
+                start:
+                    if (b) goto end;
+                    Split();
+                end:
+                    break;
+            }");
+
+        var plans = PlanSections(switchStatement);
+        var rejected = JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, plans);
+        Assert.Empty(rejected);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FindCrossSectionRejectedGotos_GotoToForwardRangeMiddle_IsRejected()
+    {
+        var switchStatement = (SwitchStatementSyntax)SyntaxFactory.ParseStatement(@"
+            switch (u)
+            {
+                case 0:
+                    if (a) goto mid;
+                    break;
+                case 1:
+                    if (b) goto end;
+                    Split();
+                mid:
+                    Split();
+                end:
+                    break;
+            }");
+
+        var plans = PlanSections(switchStatement);
+        var rejected = JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, plans);
+        var item = Assert.Single(rejected);
+        Assert.Equal(("mid", "end"), (item.TargetLabelName, item.RegionLabelName));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FindCrossSectionRejectedGotos_ChainedLabelToGotoLoopHead_IsRejected()
+    {
+        var switchStatement = (SwitchStatementSyntax)SyntaxFactory.ParseStatement(@"
+            switch (u)
+            {
+                case 0:
+                    if (a) goto second;
+                    break;
+                case 1:
+                first:
+                    ;
+                second:
+                    Split();
+                    if (b) goto first;
+                    break;
+            }");
+
+        var plans = PlanSections(switchStatement);
+        var rejected = JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, plans);
+        var item = Assert.Single(rejected);
+        Assert.Equal(("second", "first"), (item.TargetLabelName, item.RegionLabelName));
+    }
+
+    private static JumpRegionPlan[] PlanSections(SwitchStatementSyntax switchStatement)
+    {
+        var plans = new JumpRegionPlan[switchStatement.Sections.Count];
+        for (var i = 0; i < switchStatement.Sections.Count; i++)
+        {
+            plans[i] = JumpRegionPlanner.Plan(switchStatement.Sections[i].Statements, HoldsSplit);
+        }
+
+        return plans;
     }
 }

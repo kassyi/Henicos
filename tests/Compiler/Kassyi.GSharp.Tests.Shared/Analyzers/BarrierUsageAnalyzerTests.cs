@@ -395,6 +395,93 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.DoesNotContain(diagnostics, d => d.Id == "GSH0037");
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_GotoIntoMiddle_ReportsGSH0120OnGoto()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs");
+
+        Assert.Equal(
+            [
+                ("GSH0120", 25, 13, 25, 22),
+                ("GSH0120", 39, 13, 39, 22),
+                ("GSH0120", 64, 21, 64, 30),
+                ("GSH0120", 101, 13, 101, 22),
+                ("GSH0120", 113, 13, 113, 22),
+                ("GSH0120", 139, 21, 139, 30),
+                ("GSH0120", 168, 21, 168, 33)
+            ],
+            actual);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ReconvergenceJump_Generator_ReportsOnlyGSH0120WithoutInternalError(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        Assert.Equal(
+            [
+                (DiagnosticOrigin.Analyzer, 25, 13, 25, 22),
+                (DiagnosticOrigin.Analyzer, 39, 13, 39, 22),
+                (DiagnosticOrigin.Analyzer, 64, 21, 64, 30),
+                (DiagnosticOrigin.Analyzer, 101, 13, 101, 22),
+                (DiagnosticOrigin.Analyzer, 113, 13, 113, 22),
+                (DiagnosticOrigin.Analyzer, 139, 21, 139, 30),
+                (DiagnosticOrigin.Analyzer, 168, 21, 168, 33)
+            ],
+            run.Analyzer
+                .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+                .ToImmutableArray()
+                .Ranges("GSH0120")
+                .OrderBy(static r => r.StartLine)
+                .ToList());
+        Assert.Equal(7, run.Analyzer.Length);
+        Assert.Empty(run.Generator);
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+        var inputTrees = run.Input.SyntaxTrees.ToHashSet();
+        Assert.All(
+            run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)),
+            static tree => Assert.DoesNotContain(
+                tree.GetRoot().DescendantTrivia(),
+                static trivia => trivia.IsKind(SyntaxKind.ErrorDirectiveTrivia)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task ReconvergenceJump_ToLoopHeadOrWithoutActiveMask_HasNoDiagnostics()
+    {
+        await GeneratorTestRunner.TestAnalyzer("Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", s_analyzer)
+                               .ReportsNoDiagnosticsAsync();
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task ReconvergenceJumpValid_Generator_ReportsNoDiagnostics(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        Assert.Empty(run.Analyzer);
+        Assert.Empty(run.Generator);
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+        var inputTrees = run.Input.SyntaxTrees.ToHashSet();
+        Assert.All(
+            run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)),
+            static tree => Assert.DoesNotContain(
+                tree.GetRoot().DescendantTrivia(),
+                static trivia => trivia.IsKind(SyntaxKind.ErrorDirectiveTrivia)));
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath, string dialect = "Cuda")
     {

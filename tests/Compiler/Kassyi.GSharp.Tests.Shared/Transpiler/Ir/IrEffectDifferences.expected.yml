@@ -182,6 +182,12 @@
 - {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/FlowSensitiveUniformityKernels.cu.cs", method: "FlowSensitiveUniformityKernels.InterlockedRefLocalKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyLaneKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyUniformKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CapturedLaneKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CountMatches", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.LaneInLambdaKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.UniformLambdaKernel", reason: "known, a by-value extension receiver is not written", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BinaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BlockGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.CompoundOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
@@ -284,6 +290,10 @@
 - {file: "TestCases/Diagnostics/AssignmentFormsUnsupported.cu.cs", method: "AssignmentFormsUnsupportedKernels.DeconstructNonTupleKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "Acc.op_Addition", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.CompoundKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Box.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/HandWrittenConversionRecord.cs", method: "Meters.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs", method: "DynamicSharedMemoryWithoutTableKernels.ComputedPropertyKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/ExtensionCallDiagnostics.cs", method: "ExtensionCallKernels.IndependentReceiverKernel", reason: "known, a by-value extension receiver is not written", count: 1}
 - {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordMacroHolder.set_P", reason: "known, an initializer writes the new value", count: 1}

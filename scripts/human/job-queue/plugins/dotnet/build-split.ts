@@ -17,8 +17,7 @@
 // plan, and the command runs as before: a test that names no project, a test of an assembly (.dll), an unknown
 // option, a build after a test.
 
-import type { ShellName } from "./constants.ts";
-import { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./command-reader.ts";
+import { bare, rawWords, segmentParts, segmentsOf, variablePrefix, type ShellName } from "../../plugin-api.ts";
 
 export interface BuildStep {
   /** The builds, joined by &&: the explicit builds before the first test, then one build per test that builds. */

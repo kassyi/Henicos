@@ -60,6 +60,10 @@ internal abstract class IrRewriter
     public virtual IrState VisitState(IrState state) =>
         state.Update(VisitList(state.Statements, VisitStatement), state.UnreachableFrom);
 
+    /// <summary>Rewrites an <see cref="IrStateMachine"/>.</summary>
+    public virtual IrStateMachine VisitStateMachine(IrStateMachine machine) =>
+        machine.Update(VisitList(machine.States, VisitState));
+
     /// <summary>Rewrites an expression.</summary>
     public virtual IrExpression VisitExpression(IrExpression expression) => expression switch
     {

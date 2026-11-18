@@ -83,4 +83,43 @@ public static partial class MixedHoistDeclarationKernels
         a = 7;
         o[tid] = a;
     }
+
+    [GpuKernel]
+    public static void LabeledDeclarationKernel(int[] o)
+    {
+        int tid = ThreadIndex.X;
+        if (tid < 0) goto Start;
+    Start:
+        int x;
+        x = tid;
+        Gpu.SyncThreads();
+        o[tid] = x;
+    }
+
+    [GpuKernel]
+    public static void LabeledDeclarationsKernel(int[] o)
+    {
+        int tid = ThreadIndex.X;
+        if (tid < 0) goto Start;
+    Start:
+        int x, y;
+        x = tid;
+        y = 2 * tid;
+        Gpu.SyncThreads();
+        o[tid] = x + y;
+    }
+
+    [GpuKernel]
+    public static void NestedLabeledDeclarationKernel(int[] o)
+    {
+        int tid = ThreadIndex.X;
+        if (tid < 0) goto First;
+        if (tid < -1) goto Second;
+    First:
+    Second:
+        int x;
+        x = tid;
+        Gpu.SyncThreads();
+        o[tid] = x;
+    }
 }

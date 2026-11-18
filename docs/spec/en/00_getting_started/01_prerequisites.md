@@ -19,6 +19,7 @@ To leverage actual hardware acceleration:
     - The PTX image in the Fatbin (used on GPUs without matching native code, see the table of [`GSharpTargetArchitectures`](../02_architecture/01_aot_transpiler.md#151-target-gpu-architectures-gsharptargetarchitectures)) is JIT-compiled only by a driver at least as new as the CUDA Toolkit that built it (for example R615 for CUDA 13.4). On such a GPU, either keep the driver at the toolkit's version or add the GPU's architecture to `GSharpTargetArchitectures`.
 - **Build Tools**:
     - **[NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)** 13.0 or newer: Required for `nvcc` to compile the transpiled `.cu` files into native CUDA Fatbins (`.fatbin`). Ensure `nvcc` is available in your system `PATH`.
+        - An older `nvcc` stops the build with error [`GS0006`](../02_architecture/01_aot_transpiler.md#154-minimum-cuda-toolkit-version-check-gs0006). The Ubuntu package `nvidia-cuda-toolkit` installs CUDA 12.0 (Ubuntu 24.04); install the toolkit from NVIDIA's repository instead (for WSL, NVIDIA's `wsl-ubuntu` repository), and put the newer nvcc's `bin` directory first on `PATH`.
     - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.
 
 ## 2. CPU Mode ([StandardCppDialect](../02_architecture/01_aot_transpiler.md#123-transpiler-dialect-architecture-two-tier-design) / Fallback)

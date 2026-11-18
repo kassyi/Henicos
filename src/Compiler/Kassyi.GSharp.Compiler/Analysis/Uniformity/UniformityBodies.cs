@@ -15,6 +15,27 @@ internal sealed class UniformityBodies
     /// <summary>The innermost opaque body, which the events recorded in it carry; null outside every one.</summary>
     public SyntaxNode? Opaque => _opaque.Count > 0 ? _opaque[_opaque.Count - 1] : null;
 
+    /// <summary>
+    /// The parameters of the lambda bodies the walk is inside, the innermost first: what the result of a lambda reads
+    /// as uniform, as the call that takes it decides what it passes to each of them.
+    /// </summary>
+    public ImmutableArray<IParameterSymbol> LambdaParameters
+    {
+        get
+        {
+            var parameters = ImmutableArray.CreateBuilder<IParameterSymbol>();
+            for (var i = _bodies.Count - 1; i >= 0; i--)
+            {
+                if (_bodies[i].Kind == SplicedBodyKind.Lambda)
+                {
+                    parameters.AddRange(_bodies[i].Parameters);
+                }
+            }
+
+            return parameters.ToImmutable();
+        }
+    }
+
     /// <summary>The innermost body, when the walk is inside one.</summary>
     public SplicedBody? Innermost => _bodies.Count > 0 ? _bodies[_bodies.Count - 1] : null;
 

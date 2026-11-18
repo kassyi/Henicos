@@ -57,11 +57,35 @@ internal static class IntegerSemantics
             ? (type, value)
             : null;
 
+    /// <summary>
+    /// The type and value of the binary operator <paramref name="facts"/> with <paramref name="constantValue"/> when it
+    /// is folded to its constant value; null otherwise. Shared by the transpiler rules and the IR decision pass.
+    /// </summary>
+    public static (ITypeSymbol Type, object Value)? GetConstant(in IntegerBinaryFacts facts,
+        Optional<object?> constantValue) =>
+        GetConstant(facts.Type, constantValue,
+            facts.Type is not null && GetWidth(facts.Type) == 0 && TryGetNarrowEnumResultType(facts, out _));
+
+    /// <summary>
+    /// The type and value of the unary operator <paramref name="facts"/> with <paramref name="constantValue"/> when it
+    /// is folded to its constant value; null otherwise. Shared by the transpiler rules and the IR decision pass.
+    /// </summary>
+    public static (ITypeSymbol Type, object Value)? GetConstant(in IntegerUnaryFacts facts,
+        Optional<object?> constantValue) =>
+        GetConstant(facts.Type, constantValue,
+            facts.Type is not null && GetWidth(facts.Type) == 0 && TryGetNarrowEnumResultType(facts, out _));
+
     /// <inheritdoc cref="GetConstant(ITypeSymbol, Optional{object}, bool)"/>
-    public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) =>
-        operation is { Type: { } type, ConstantValue: { HasValue: true } constantValue }
-            ? GetConstant(type, constantValue, GetWidth(type) == 0 && TryGetNarrowEnumResultType(operation, out _))
-            : null;
+    public static (ITypeSymbol Type, object Value)? GetConstant(IOperation? operation) => operation switch
+    {
+        IBinaryOperation { ConstantValue.HasValue: true } binary =>
+            GetConstant(IntegerBinaryFacts.Of(binary), binary.ConstantValue),
+        IUnaryOperation { ConstantValue.HasValue: true } unary =>
+            GetConstant(IntegerUnaryFacts.Of(unary), unary.ConstantValue),
+        { Type: { } type, ConstantValue: { HasValue: true } constantValue } =>
+            GetConstant(type, constantValue, GetWidth(type) == 0 && TryGetNarrowEnumResultType(operation, out _)),
+        _ => null
+    };
 
     /// <summary>
     /// The narrow underlying type (<see langword="byte"/>, <see langword="sbyte"/>, <see langword="short"/> or

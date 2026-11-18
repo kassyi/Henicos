@@ -36,4 +36,12 @@ public sealed record LoweredStateMachine(
     /// <see cref="HeldRefLocal.IsReportedLive"/>, otherwise GSH0003 from the generator (#1640).
     /// </summary>
     public ImmutableArray<HeldRefLocal> HeldRefLocals { get; init; } = ImmutableArray<HeldRefLocal>.Empty;
+
+    /// <summary>
+    /// The span locals among <see cref="ContextFields"/> that the CPU state machine declares again on every resume and
+    /// that a state reads before it writes (<see cref="SpanAcrossStates"/>), without the ones that the analyzer
+    /// reports. Each one is GSH0039 from the generator.
+    /// </summary>
+    public ImmutableArray<VariableDeclaratorSyntax> SpansAcrossStates { get; init; } =
+        ImmutableArray<VariableDeclaratorSyntax>.Empty;
 }

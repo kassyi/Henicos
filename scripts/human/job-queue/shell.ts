@@ -1,44 +1,11 @@
-// How a queued command runs (CommandShell): the shell that runs it, the quoting of words already split by the caller's
-// shell and the MSBuild node limit added to its dotnet invocations; and which commands run tests.
+// How a queued command runs (CommandShell): the shell that runs it and the quoting of words already split by the
+// caller's shell.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { ShellVariable, isShellName, type ShellName } from "./constants.ts";
 import { prefix } from "./system.ts";
-
-// just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
-const TestCommandPattern = new RegExp(
-  [
-    String.raw`\bdotnet(\.exe)?"?\s+(test|vstest|stryker)\b`,
-    String.raw`\bdotnet-stryker\b`,
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|long-checks|mutate|coverage-diff)\.js\b`,
-  ].join("|"),
-);
-
-/** A test run (dotnet test, just test*, the long test scripts): it takes its memory budget from the pool. */
-export function isTestCommand(command: string): boolean {
-  return TestCommandPattern.test(command);
-}
-
-const NodeLimitPattern = /(^|\s)(--?|\/)(m|maxcpucount|max-cpu-count)([:=\s]|$)/i;
-
-/** The arguments of an invocation that starts at `start`: up to the next &&, ||, ;, | or line break outside quotes. */
-function invocationArguments(command: string, start: number): string {
-  let quote = "";
-  for (let i = start; i < command.length; i++) {
-    const ch = command[i];
-    if (quote !== "") {
-      quote = ch === quote ? "" : quote;
-    } else if (ch === '"' || ch === "'") {
-      quote = ch;
-    } else if (ch === ";" || ch === "|" || ch === "\n" || ch === "\r" || (ch === "&" && command[i + 1] === "&")) {
-      return command.slice(start, i);
-    }
-  }
-  return command.slice(start);
-}
 
 /**
  * Windows: the bash.exe of Git for Windows. A bare `bash` on the PATH may be the WSL launcher (System32\bash.exe),
@@ -117,24 +84,6 @@ export class CommandShell {
       return new CommandShell("sh");
     }
     return new CommandShell(process.env.MSYSTEM || process.env.SHELL ? "bash" : "pwsh");
-  }
-
-  /**
-   * Adds -m:<cpus> after each dotnet build / test / msbuild / publish / pack of the command whose own arguments (up
-   * to the next &&, ||, ;, | or line break) set no -m. MSBuild ignores the processor count variables and the affinity
-   * of its process; only the command line limits its nodes.
-   */
-  static limitMsbuildNodes(command: string, cpus: number): string {
-    const invocation = /((?:"[^"]*[\\/])?\bdotnet(?:\.exe)?"?)(\s+)(build|test|msbuild|publish|pack)(?![-\w.])/gi;
-    return command.replace(
-      invocation,
-      (match: string, program: string, space: string, verb: string, offset: number) => {
-        const rest = invocationArguments(command, offset + match.length);
-        // dotnet test <assembly>.dll runs VSTest without MSBuild
-        const vstest = verb.toLowerCase() === "test" && /(^|\s)"?[^\s"]+\.(dll|exe)"?(\s|$)/i.test(rest);
-        return NodeLimitPattern.test(rest) || vstest ? match : `${program}${space}${verb} -m:${cpus}`;
-      },
-    );
   }
 
   get isPowerShell(): boolean {

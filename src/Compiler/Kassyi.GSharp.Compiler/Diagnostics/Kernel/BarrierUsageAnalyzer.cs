@@ -29,7 +29,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.IteratorBodyConstructNotSupported, // GSH0072
             GSharpDiagnostics.DivergentDynamicSharedMemory, // GSH0077
             GSharpDiagnostics.LaunchDependentDivergentBarrier, // GSH0083
-            GSharpDiagnostics.BarrierAfterDivergentExit // GSH0084
+            GSharpDiagnostics.BarrierAfterDivergentExit, // GSH0084
+            GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle // GSH0120
         );
 
     public override void Initialize(AnalysisContext context)

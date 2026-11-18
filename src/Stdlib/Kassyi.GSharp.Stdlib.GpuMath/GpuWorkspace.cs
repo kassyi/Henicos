@@ -63,6 +63,11 @@ public class GpuWorkspace : IGpuResourceScope
         get; internal set; /*set this value only for tests*/
     }
 
+    /// <summary>
+    /// Gets the CUDA device ordinal (<c>CUdevice</c>) of this workspace, or <c>0</c> in CPU fallback mode.
+    /// </summary>
+    internal int DeviceOrdinal { get; }
+
     private int _disposed;
     private readonly List<IDisposable> _trackedResources = [];
 
@@ -211,6 +216,7 @@ public class GpuWorkspace : IGpuResourceScope
             Stream = stream;
 
             CudaDriverApi.cuCtxGetDevice(out var device);
+            DeviceOrdinal = device;
             CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
                 device);
             DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails

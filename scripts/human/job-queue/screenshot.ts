@@ -6,7 +6,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { displayWidth } from "./screen-line.ts";
-import { initialViewState, renderScreen, type ViewState } from "./view.ts";
+import { initialViewState, renderScreen, type ShortNameProvider, type ViewState } from "./view.ts";
 import { LaneWorktree, Minute, Now, PanelWorktree, job, sampleChats, sampleReply } from "./view-sample.ts";
 
 export const CellWidth = 8.4;
@@ -279,7 +279,7 @@ export const Screenshots: Screenshot[] = [
 const TimeZone = "Asia/Tokyo";
 
 /** Draws the screenshots into `dir` and returns their paths. */
-export function writeScreenshots(dir: string): string[] {
+export function writeScreenshots(dir: string, plugins?: ShortNameProvider): string[] {
   const zone = process.env.TZ;
   process.env.TZ = TimeZone;
   try {
@@ -291,6 +291,7 @@ export function writeScreenshots(dir: string): string[] {
         { columns, rows, now: Now },
         true,
         sampleChats(),
+        plugins,
       );
       const target = path.join(dir, file);
       fs.writeFileSync(target, terminalSvg(lines, columns));
