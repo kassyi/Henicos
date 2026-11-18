@@ -2919,6 +2919,16 @@
 - {file: "TestCases/Analyzers/BarrierUsage/KernelParameterRefStructKernels.cu.cs", method: "KernelParameterRefStructKernels.KernelWithRefParam", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/KernelParameterRefStructKernels.cu.cs", method: "KernelParameterRefStructKernels.KernelWithRefReadOnlyParam", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/KernelParameterRefStructKernels.cu.cs", method: "KernelParameterRefStructKernels.KernelWithSpanParam", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyLaneKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyUniformKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CapturedLaneKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CountMatches", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.DeviceFunctionLambdaKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.DirectLaneKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.LaneInLambdaKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.NestedLambdaLaneKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.NestedLambdaUniformKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.UniformLambdaKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/LocalFunctionVarianceKernels.cu.cs", method: "LocalFunctionVarianceKernels.ArgumentKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/LocalFunctionVarianceKernels.cu.cs", method: "LocalFunctionVarianceKernels.CapturedLaneKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/LocalFunctionVarianceKernels.cu.cs", method: "LocalFunctionVarianceKernels.DirectLaneKernel", status: "Compared", count: 1}

@@ -9,8 +9,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </summary>
 internal sealed class UniformitySolver(UniformityState state)
 {
-    // The values written in the influence region of each branch, each once, computed on first use
-    private ImmutableArray<int>?[] _writtenInRegion = [];
+    // The influence regions of the branches
+    private readonly UniformityRegions _regions = new(state);
 
     // The values fixed as uniform during EvaluateWithUniformParameters
     private HashSet<int>? _uniformValues;
@@ -28,13 +28,13 @@ internal sealed class UniformitySolver(UniformityState state)
 
         state.Region = new ThreadVariance[count];
         state.Branch = new ThreadVariance[count];
-        _writtenInRegion = new ImmutableArray<int>?[count];
+        _regions.Reset(count);
 
         var current = new ThreadVariance[values];
         do
         {
             Propagate(current);
-        } while (UpdateRegions(current));
+        } while (_regions.Update(this, current));
     }
 
     /// <summary>The variance of every value at the end of <paramref name="node"/>, into <paramref name="current"/>.</summary>
@@ -52,6 +52,18 @@ internal sealed class UniformitySolver(UniformityState state)
                     break;
                 case { Kind: UniformityEventKind.Bind, Operation: { } bound, Graph: { } boundGraph }:
                     current[flowEvent.Value] = state.Reader.Evaluate(bound, boundGraph, current);
+                    break;
+                case
+                {
+                    Kind: UniformityEventKind.BindLambdaResult, Operation: { } returned, Graph: { } returnedGraph,
+                    Opaque: { } lambda
+                }:
+                    current[flowEvent.Value] = state.Reader.EvaluateWithUniformParameters(
+                        state.Recorder.GetLambdaParameters(lambda),
+                        returned,
+                        returnedGraph,
+                        current
+                    );
                     break;
                 case { Kind: UniformityEventKind.Write, Operation: { } operation, Graph: { } graph }:
                     ApplyWrite(operation, graph, current, flowEvent.Opaque);
@@ -194,98 +206,6 @@ internal sealed class UniformitySolver(UniformityState state)
         } while (changed);
     }
 
-    // The variance of each branch at the end of its node; adds the variance of a branch to the nodes of its region, and
-    // to the values written in the region where its paths meet again
-    private bool UpdateRegions(ThreadVariance[] current)
-    {
-        var changed = false;
-        for (var node = 0; node < state.NodeCount; node++)
-        {
-            if (state.Graph.Nodes[node] is not { Condition: { } condition, Graph: { } graph } ||
-                state.Successors[node].Length < 2)
-            {
-                continue;
-            }
-
-            RunNode(node, current);
-            var variance = state.Branch[node] | state.Reader.Evaluate(condition, graph, current);
-            if (variance == state.Branch[node])
-            {
-                continue;
-            }
-
-            state.Branch[node] = variance;
-            var region = state.PostDominators.GetRegion(node);
-            changed |= AddToRegion(region, variance);
-            changed |= AddAtJoins(node, variance);
-        }
-
-        return changed;
-    }
-
-    private bool AddToRegion(ImmutableArray<int> region, ThreadVariance variance)
-    {
-        var changed = false;
-        foreach (var member in region)
-        {
-            var merged = state.Region[member] | variance;
-            if (merged != state.Region[member])
-            {
-                state.Region[member] = merged;
-                changed = true;
-            }
-        }
-
-        return changed;
-    }
-
-    // A value written in the region may differ where the paths of the branch meet again
-    private bool AddAtJoins(int branch, ThreadVariance variance)
-    {
-        var written = GetWrittenInRegion(branch);
-        var changed = false;
-        foreach (var join in state.PostDominators.GetJoins(branch))
-        {
-            var target = state.In[join];
-            foreach (var value in written)
-            {
-                var merged = target[value] | variance;
-                changed |= merged != target[value];
-                target[value] = merged;
-            }
-        }
-
-        return changed;
-    }
-
-    // The values that the nodes of the influence region of branch write, each once; the region does not change, only the
-    // variance of the branch grows
-    private ImmutableArray<int> GetWrittenInRegion(int branch)
-    {
-        if (_writtenInRegion[branch] is { } cached)
-        {
-            return cached;
-        }
-
-        var seen = new bool[state.Recorder.ValueCount];
-        var written = ImmutableArray.CreateBuilder<int>();
-        foreach (var member in state.PostDominators.GetRegion(branch))
-        {
-            foreach (var value in state.NodeAt(member).Written)
-            {
-                if (!seen[value])
-                {
-                    seen[value] = true;
-                    written.Add(value);
-                }
-            }
-        }
-
-        var result = written.ToImmutable();
-        _writtenInRegion[branch] = result;
-        return result;
-    }
-
     // target |= values; whether target changed
     private static bool Merge(ThreadVariance[] target, ThreadVariance[] values)
     {
@@ -325,16 +245,37 @@ internal sealed class UniformitySolver(UniformityState state)
         SyntaxNode? opaque)
     {
         var rebinds = assignment.IsRef || assignment.Target is not ILocalReferenceOperation { Local.IsRef: true };
-        Assign(assignment.Target, state.Reader.Evaluate(assignment.Value, graph, current), rebinds, current, opaque);
+        var assigned = EvaluateAssigned(assignment.Target, assignment.Value, graph, current, opaque);
+        Assign(assignment.Target, assigned, rebinds, current, opaque);
     }
 
     private void WriteCompound(ICompoundAssignmentOperation compound, ControlFlowGraph graph, ThreadVariance[] current,
         SyntaxNode? opaque) =>
-        Assign(compound.Target, state.Reader.Evaluate(compound, graph, current), strong: true, current, opaque);
+        Assign(compound.Target, EvaluateAssigned(compound.Target, compound, graph, current, opaque), strong: true,
+            current, opaque);
 
     private void WriteIncrement(IIncrementOrDecrementOperation increment, ControlFlowGraph graph,
         ThreadVariance[] current, SyntaxNode? opaque) =>
-        Assign(increment.Target, state.Reader.Evaluate(increment, graph, current), strong: true, current, opaque);
+        Assign(increment.Target, EvaluateAssigned(increment.Target, increment, graph, current, opaque),
+            strong: true, current, opaque);
+
+    // The value assigned to a local that a lambda body declares is read with the parameters of the lambda, and of the
+    // lambdas that enclose it, as uniform, as the result of the lambda is: the call that takes the lambda decides what
+    // it passes them. A write to anything the body does not declare keeps them thread-variant, since it is what the
+    // call passes in.
+    private ThreadVariance EvaluateAssigned(IOperation target, IOperation value, ControlFlowGraph graph,
+        ThreadVariance[] current, SyntaxNode? opaque)
+    {
+        if (opaque != null &&
+            target is ILocalReferenceOperation { Local: var local } &&
+            IsDeclaredIn(local, opaque) &&
+            state.Recorder.GetLambdaParameters(opaque) is { IsEmpty: false } parameters)
+        {
+            return state.Reader.EvaluateWithUniformParameters(parameters, value, graph, current);
+        }
+
+        return state.Reader.Evaluate(value, graph, current);
+    }
 
     // (a, b) = (x, y): each element from its own value when both sides are tuples, from the whole value otherwise
     private void Deconstruct(IOperation target, IOperation value, ControlFlowGraph graph, ThreadVariance[] current,
