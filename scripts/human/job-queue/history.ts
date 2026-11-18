@@ -82,9 +82,13 @@ export class RunHistory {
    * The estimate of a command: its own runs, else those of similar commands (same text without redirections, paths and
    * the like; same shape; same kinds of step), else null. `from` says which.
    */
-  estimateWithFallback(command: string, context: KeyContext): (Estimate & { from: EstimateLevel }) | null {
+  estimateWithFallback(
+    command: string,
+    context: KeyContext,
+    keys?: CommandKeys,
+  ): (Estimate & { from: EstimateLevel }) | null {
     const own = this.estimate(command);
-    return own !== null ? { ...own, from: "exact" } : this._fallback.lookup(command, context);
+    return own !== null ? { ...own, from: "exact" } : this._fallback.lookup(command, context, keys);
   }
 
   /** `context`: the directory and worktree the command ran in, in which its keys are made (none: paths as written). */
@@ -94,21 +98,22 @@ export class RunHistory {
     nextId = this.nextId,
     now = Date.now(),
     context: KeyContext = { cwd: "", worktree: "" },
+    keys?: CommandKeys,
   ): void {
     this.nextId = Math.max(this.nextId, nextId);
     const key = RunHistory.key(command);
     const entry = this.commands[key] ?? { runs: [], lastUsed: 0 };
     entry.runs = entry.runs.concat(Math.min(Math.round(ms), LongestRunMs)).slice(-HistoryRunsPerCommand);
     entry.lastUsed = now;
-    entry.keys = commandKeys(command, context);
+    entry.keys = keys ?? entry.keys ?? commandKeys(command, context);
     this.commands[key] = entry;
     this._fallback.invalidate();
-    const keys = Object.keys(this.commands);
-    if (keys.length > HistoryCommands) {
+    const commandNames = Object.keys(this.commands);
+    if (commandNames.length > HistoryCommands) {
       const lastUsed = (name: string): number => (this.commands[name] as HistoryEntry).lastUsed;
-      keys
+      commandNames
         .sort((a, b) => lastUsed(a) - lastUsed(b))
-        .slice(0, keys.length - HistoryCommands)
+        .slice(0, commandNames.length - HistoryCommands)
         .forEach((old) => delete this.commands[old]);
       this._fallback.invalidate();
     }

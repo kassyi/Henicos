@@ -2,7 +2,10 @@
 
 import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
-import type { PathPlace } from "./estimate-key.ts";
+import type { CommandKeys, PathPlace } from "./estimate-key.ts";
+
+export const MaxMemoryMb = 2 ** 20;
+export const MaxKeyLength = 2000;
 
 /** How a job ended, as --after reads it. `lost`: its client died and its command exited with an unknown code. */
 export type Outcome = "succeeded" | "failed" | "cancelled" | "lost";
@@ -36,6 +39,10 @@ export interface JobRequest {
   gpuTurn: boolean;
   /** A GPU holder: the id of the --gpu run whose turn started it (absent from older clients). */
   turn?: number | null;
+  /** Memory budget the job takes from the test memory pool, in MB (absent from older clients). */
+  memoryMb?: number;
+  /** Estimate fallback keys computed by the client (absent from older clients). */
+  keys?: CommandKeys;
 }
 
 export type ClientMessage =
@@ -262,4 +269,36 @@ export function placesField(message: Incoming): Record<string, PathPlace> | unde
     }
   }
   return any ? places : undefined;
+}
+
+/** A memory budget a client or a plugin may give: a finite number of MB in 0..2^20. */
+export function isMemoryMb(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= MaxMemoryMb;
+}
+
+/** Estimate keys a client or a plugin may give: three strings of at most 2000 characters each. */
+export function isCommandKeys(value: unknown): value is CommandKeys {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const { normalized, shape, kind } = value as Record<string, unknown>;
+  return (
+    typeof normalized === "string" &&
+    normalized.length <= MaxKeyLength &&
+    typeof shape === "string" &&
+    shape.length <= MaxKeyLength &&
+    typeof kind === "string" &&
+    kind.length <= MaxKeyLength
+  );
+}
+
+/** The `memoryMb` of a JobRequest; undefined when missing or invalid. */
+export function memoryMbField(message: Incoming): number | undefined {
+  return isMemoryMb(message.memoryMb) ? message.memoryMb : undefined;
+}
+
+/** The `keys` of a JobRequest, copied without other fields; undefined when missing or invalid. */
+export function keysField(message: Incoming): CommandKeys | undefined {
+  const value = message.keys;
+  return isCommandKeys(value) ? { normalized: value.normalized, shape: value.shape, kind: value.kind } : undefined;
 }
