@@ -85,7 +85,7 @@ export async function checkLegacyClientsMemoryMb(assert: AssertModule): Promise<
       entry: "scripts/human/job-queue.js",
       plugins: [],
       legacyClients: {
-        testPattern: String.raw`\bdotnet\s+test\b|\bjust\s+test\b`,
+        testPattern: String.raw`\brun-tests\b|\bsuite-runner\b`,
         testMemoryMb: 2880,
       },
     }),
@@ -118,27 +118,27 @@ export async function checkLegacyClientsMemoryMb(assert: AssertModule): Promise<
     };
 
     assert.strictEqual(
-      await submitAndReadMemory(registration("dotnet test Foo", 1, process.pid)),
+      await submitAndReadMemory(registration("run-tests Foo", 1, process.pid)),
       2880,
       "missing memoryMb matching legacyClients.testPattern gets testMemoryMb",
     );
     assert.strictEqual(
-      await submitAndReadMemory(registration("just test", 1, process.pid)),
+      await submitAndReadMemory(registration("suite-runner", 1, process.pid)),
       2880,
-      "just test matching legacyClients.testPattern gets testMemoryMb",
+      "second test command matching legacyClients.testPattern gets testMemoryMb",
     );
     assert.strictEqual(
-      await submitAndReadMemory(registration("dotnet build Foo", 1, process.pid)),
+      await submitAndReadMemory(registration("build Foo", 1, process.pid)),
       0,
       "missing memoryMb not matching testPattern gets 0",
     );
     assert.strictEqual(
-      await submitAndReadMemory({ ...registration("dotnet test Foo", 1, process.pid), gpuTurn: true }),
+      await submitAndReadMemory({ ...registration("run-tests Foo", 1, process.pid), gpuTurn: true }),
       0,
       "gpuTurn without memoryMb stays 0 even when command matches testPattern",
     );
     assert.strictEqual(
-      await submitAndReadMemory({ ...registration("dotnet test Foo", 1, process.pid), memoryMb: 0 }),
+      await submitAndReadMemory({ ...registration("run-tests Foo", 1, process.pid), memoryMb: 0 }),
       0,
       "explicit memoryMb: 0 overrides legacyClients",
     );
