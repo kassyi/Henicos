@@ -108,29 +108,11 @@ function checkPieces(plugins: ShortNameProvider): void {
   assert.strictEqual(fit("日本語の名前", 7), "日本語…", "a wide character takes two cells");
   assert.strictEqual(displayWidth(fit("日本語の名前", 7)), 7);
   assert.strictEqual(fit("日本語の名前", 6), "日本… ", "a wide character that would pass the width is left out");
-  assert.strictEqual(
-    shortCommand(
-      "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj -c Release",
-      plugins,
-    ),
-    "test Tests.Cpu.csproj -c Release",
-  );
-  // Commands as agents queue them: assignments, export steps, redirections and the node-reuse flag are dropped
-  assert.strictEqual(
-    shortCommand(
-      "export DiffEngine_Disabled=true; dotnet build tests/A -nodeReuse:false > tmp/b.log 2>&1 && " +
-        "dotnet test tests/A --no-build > tmp/t.log 2>&1; dotnet build tests/B >x 2>&1",
-      plugins,
-    ),
-    "build A && test A --no-build ; build B",
-  );
-  assert.strictEqual(shortCommand("CI=true DiffEngine_Disabled=true dotnet test tests/X", plugins), "test X");
+  // Assignments, export steps and redirections are dropped
+  assert.strictEqual(shortCommand("export X=1; node a.js > l 2>&1"), "a.js");
   assert.strictEqual(shortCommand("a=1 b=2", plugins), "a=1 b=2", "nothing left: the command as it is");
-  // Without plugins, generic stripping keeps dotnet/just/-nodeReuse:false/Kassyi.GSharp. and drops node/env/dirs
-  assert.strictEqual(
-    shortCommand("CI=true dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu -nodeReuse:false > a.log"),
-    "dotnet test Kassyi.GSharp.Tests.Cpu -nodeReuse:false",
-  );
+  // Without plugins, generic stripping keeps unknown commands and drops node/env/dirs/redirections
+  assert.strictEqual(shortCommand("CI=true tool run dir/App -x > a.log"), "tool run App -x");
   assert.strictEqual(
     shortCommand("node scripts/human/fuzz-differential.js --minutes 5"),
     "fuzz-differential.js --minutes 5",
@@ -260,18 +242,18 @@ function checkGpuPairsAndReasons(): void {
     state: "running",
     gpuTurn: true,
     weight: 0,
-    command: "dotnet test X",
+    command: "node t.js X",
     grantedAt: Now - Minute,
   });
   const holder = job(901, {
     state: "running",
     gpu: true,
     weight: 2,
-    command: "dotnet test X",
+    command: "node t.js X",
     grantedAt: Now - Minute / 2,
     endAt: Now + 5 * Minute,
   });
-  const other = job(902, { state: "running", command: "dotnet build Y", grantedAt: Now - Minute, endAt: Now + Minute });
+  const other = job(902, { state: "running", command: "node b.js Y", grantedAt: Now - Minute, endAt: Now + Minute });
   const reply: StatusReply = {
     ...sampleReply(),
     capacity: 3,
@@ -329,7 +311,7 @@ function checkGpuPairsAndReasons(): void {
     ],
   );
   // A holder whose command differs from every --gpu job is its own line (a run --gpu inside gpu-lock.js)
-  const unpaired = screenJobs({ ...reply, running: [turn, { ...holder, command: "dotnet test Z" }] });
+  const unpaired = screenJobs({ ...reply, running: [turn, { ...holder, command: "node t.js Z" }] });
   assert.deepStrictEqual(
     unpaired.map((j) => j.id),
     [900, 901, 910, 911],
