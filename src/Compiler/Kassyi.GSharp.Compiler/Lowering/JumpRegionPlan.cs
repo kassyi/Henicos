@@ -296,18 +296,21 @@ internal static class JumpRegionPlanner
                 continue;
             }
 
-            foreach (var range in adopted)
+            var exitsLoop = adopted
+                .AsStackEnumerable()
+                .Any((a, m), static (range, jump) =>
+                    range.Kind == JumpRegionKind.GotoLoop &&
+                    range.First <= jump.a &&
+                    jump.a <= range.Last &&
+                    range.Last < jump.m
+                );
+            if (!exitsLoop)
             {
-                if (range.Kind == JumpRegionKind.GotoLoop &&
-                    range.First <= a &&
-                    a <= range.Last &&
-                    range.Last < m)
-                {
-                    adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, m, range.First, m - 1));
-                    changed = true;
-                    break;
-                }
+                continue;
             }
+
+            adopted.Add(new CandidateRange(JumpRegionKind.ForwardRange, m, a, m - 1));
+            changed = true;
         }
 
         return changed;
