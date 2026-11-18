@@ -78,6 +78,12 @@ public static partial class GpuBigIntSqrtKernels
             Gpu.SyncGrid();
         }
 
+        // The approximate contract stops here; every thread reads the same flag, so all take the same branch.
+        if (dims.SkipsFloorCorrection)
+        {
+            return;
+        }
+
         // Final correction to x = floor(2^B / sqrt(a)) with B = (n + marginWords) * 32, the largest x with
         // a * x^2 <= 2^(2B): s = 2^(2B) - a * x^2 is updated by a * (2x -/+ 1) per step, so only additions follow the
         // three products below.
