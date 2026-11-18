@@ -3796,7 +3796,7 @@ __gsharp_switch_1_state_0:
 {
 auto __gsharp_lf_impl___gsharp_id_2_Factorial = [&](auto& __gsharp_lf_self___gsharp_id_2_Factorial, int __gsharp_id_3_n) -> int
 {
-auto __gsharp_id_2_Factorial = [&](int __gsharp_id_3_n) -> int
+auto __gsharp_id_2_Factorial = [=](int __gsharp_id_3_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_2_Factorial(__gsharp_lf_self___gsharp_id_2_Factorial, __gsharp_id_3_n);
 }
@@ -3806,7 +3806,7 @@ return (__gsharp_id_3_n<=1?1:__gsharp_mul_i32(__gsharp_id_3_n,__gsharp_id_2_Fact
 }
 }
 ;
-auto __gsharp_id_2_Factorial = [&](int __gsharp_id_3_n) -> int
+auto __gsharp_id_2_Factorial = [=](int __gsharp_id_3_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_2_Factorial(__gsharp_lf_impl___gsharp_id_2_Factorial, __gsharp_id_3_n);
 }
