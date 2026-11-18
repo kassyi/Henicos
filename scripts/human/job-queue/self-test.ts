@@ -6,6 +6,7 @@ import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import { createRequire, syncBuiltinESMExports } from "node:module";
 import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
@@ -67,19 +68,45 @@ async function named(name: string, check: () => void | Promise<void>): Promise<v
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
-    await named(name, () => check(assert));
+  const cjsAssert = createRequire(import.meta.url)("node:assert") as Record<string, unknown>;
+  const originalAssert = new Map<string, (...args: unknown[]) => unknown>();
+  let unitAssertions = 0;
+  for (const key of Object.keys(cjsAssert)) {
+    if (key === "AssertionError" || key === "strict") {
+      continue;
+    }
+    const value = cjsAssert[key];
+    if (typeof value === "function") {
+      const original = value as (...args: unknown[]) => unknown;
+      originalAssert.set(key, original);
+      cjsAssert[key] = function (this: unknown, ...args: unknown[]): unknown {
+        unitAssertions++;
+        return original.apply(this, args);
+      };
+    }
   }
-  await named("checkShellHelpers", checkShellHelpers);
-  for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
-    await named(name, () => check(assert));
+  syncBuiltinESMExports();
+  try {
+    for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
+      await named(name, () => check(assert));
+    }
+    await named("checkShellHelpers", checkShellHelpers);
+    for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
+      await named(name, () => check(assert));
+    }
+    await named("checkView", checkView);
+    await named("checkLib", checkLib);
+    await named("checkPlugins", () => checkPlugins(assert));
+    await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
+    await named("checkJustPlugin", () => checkJustPlugin(assert));
+    await named("checkHenicosPlugin", () => checkHenicosPlugin(assert));
+  } finally {
+    for (const [key, original] of originalAssert) {
+      cjsAssert[key] = original;
+    }
+    syncBuiltinESMExports();
   }
-  await named("checkView", checkView);
-  await named("checkLib", checkLib);
-  await named("checkPlugins", () => checkPlugins(assert));
-  await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
-  await named("checkJustPlugin", () => checkJustPlugin(assert));
-  await named("checkHenicosPlugin", () => checkHenicosPlugin(assert));
+  process.stdout.write(`job-queue self-test: ${unitAssertions} assertions in the unit checks\n`);
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;
