@@ -764,7 +764,7 @@ public class GpuBigIntDivRemTests : IDisposable
         "Words33"
     ];
 
-    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:159); the others run the inverse
+    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:200); the others run the inverse
     // square root and Heron's refinement. Even / odd leading zeros reach both sides of the lz parity fix (line 194).
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -1028,12 +1028,12 @@ public class GpuBigIntDivRemTests : IDisposable
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.Reciprocal(zero, reciprocal, 256));
 
         // Nor does the inverse square root of zero.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:40
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:71
         //         `throw new DivideByZeroException();` -> `return;`
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.InverseSqrt(zero, exactSize, 0));
 
         // InverseSqrt writes exactly n + marginWords words, so any other size is rejected.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:32 `!=` -> `<`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:63 `!=` -> `<`
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.InverseSqrt(normalized, oneWordTooLong, 0));
     }
 
@@ -1237,10 +1237,10 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertFloorSquareRoot(BigInteger value, BigInteger root)
     {
         // s * s <= a < (s + 1) * (s + 1) defines floor(sqrt(a)) without a reference implementation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:251
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:292
         //         `ShiftRight(sumWithDivision, 1, currentRoot)` -> `ShiftRight(sumWithDivision, 2, currentRoot)`
         // input: Sqrt PerfectSquare, AllOnes, Words33
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:178 `(uint)Math.Sqrt(val)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:219 `(uint)Math.Sqrt(val)`
         //         -> `(uint)Math.Sqrt(val) + 1`
         // input: Sqrt One, MaxSingleWord
         Assert.True(root.Sign >= 0 && root * root <= value, $"{root}^2 exceeds {value}");
@@ -1272,19 +1272,19 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertExactInverseSqrt(BigInteger value, int precisionBits, BigInteger inverseRoot)
     {
         // a * x^2 <= 2^(2B) < a * (x + 1)^2 (B = (n + marginWords) * 32) defines x = floor(2^B / sqrt(a)).
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:258 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:267 `delta--;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses 1, 3
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:284 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:293 `delta++;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses -2, -1, InverseSqrt PowerOfFour4Words (Newton gives floor - 1)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:27 carry chunk
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:30 carry chunk
         //         `chunkSize` -> `256` (the chunk size before #602)
         // input: Random1023WordsMargin16 (products above 256 words are corrupted)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:256 `ax -= a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:265 `ax -= a`
         //         (DeviceAddSubAlignedParallel(ax, ..., -1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guess 3 (the random-operand guesses do not detect it)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:282 `ax += a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:291 `ax += a`
         //         (DeviceAddSubAlignedParallel(ax, ..., 1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guesses -1, -2 (the random-operand guesses do not detect it)
         var twoTo2B = BigInteger.One << (2 * precisionBits);
