@@ -59,4 +59,7 @@ internal sealed class KernelBarrierScan(
     /// suspends); only then is the control flow graph built for the cross-barrier rules.
     /// </summary>
     public bool HasSplitPoint { get; set; }
+
+    /// <summary>Whether the body contains a <c>goto case</c> or <c>goto default</c> statement.</summary>
+    public bool HasSwitchJump { get; set; }
 }

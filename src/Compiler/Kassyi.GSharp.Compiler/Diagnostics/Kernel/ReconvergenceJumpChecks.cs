@@ -2,14 +2,15 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Validates that <c>goto</c> statements in methods reaching <c>Warp.ActiveMask()</c> do not jump into the middle of a
-/// reconvergence region (<c>ForwardRange</c> or <c>GotoLoop</c>, GSH0120) (<see cref="KernelBarrierValidator"/>).
+/// reconvergence region (<c>ForwardRange</c>, <c>GotoLoop</c>, or a <c>switch</c> join cycle, GSH0120)
+/// (<see cref="KernelBarrierValidator"/>).
 /// </summary>
 internal static class ReconvergenceJumpChecks
 {
     /// <summary>Reports GSH0120 for every <c>goto</c> that enters the middle of a reconvergence region.</summary>
     internal static void Validate(KernelBarrierScan scan)
     {
-        if (!scan.HasSplitPoint || scan.Gotos.Count == 0 || scan.Labels.Count == 0)
+        if (!scan.HasSplitPoint || ((scan.Gotos.Count == 0 || scan.Labels.Count == 0) && !scan.HasSwitchJump))
         {
             return;
         }
@@ -60,26 +61,88 @@ internal static class ReconvergenceJumpChecks
             ReportRejectedGotos(scan, statements, plan);
         }
 
-        ValidateCrossSectionGotos(scan, switchStatement, sectionPlans);
+        var crossSectionReported = ValidateCrossSectionGotos(scan, switchStatement, sectionPlans);
+        ValidateSwitchCycles(scan, switchStatement, crossSectionReported);
     }
 
-    private static void ValidateCrossSectionGotos(
+    private static HashSet<GotoStatementSyntax>? ValidateCrossSectionGotos(
         KernelBarrierScan scan,
         SwitchStatementSyntax switchStatement,
         JumpRegionPlan[] sectionPlans)
     {
+        HashSet<GotoStatementSyntax>? reported = null;
         foreach (var rejected in JumpRegionPlanner.FindCrossSectionRejectedGotos(
                      switchStatement,
                      sectionPlans,
                      gotoStmt => !RemovedCalls.IsInRemovedCall(gotoStmt, scan.SemanticModel)))
         {
+            reported ??= new HashSet<GotoStatementSyntax>();
+            reported.Add(rejected.Goto);
             scan.Context.ReportDiagnostic(
                 GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle,
                 rejected.Goto.GetLocation(),
                 rejected.TargetLabelName,
-                rejected.RegionLabelName);
+                $"into the statements between '{rejected.RegionLabelName}:' and a goto to it that hold a warp " +
+                "collective or barrier",
+                $"Move the label '{rejected.TargetLabelName}' out of that range, or write the loop as a while or " +
+                "for statement.");
+        }
+
+        return reported;
+    }
+
+    private static void ValidateSwitchCycles(
+        KernelBarrierScan scan,
+        SwitchStatementSyntax switchStatement,
+        HashSet<GotoStatementSyntax>? crossSectionReported)
+    {
+        if (!SwitchStatementFlattener.CanFlatten(switchStatement) ||
+            !switchStatement.Sections
+                .AsStackEnumerable()
+                .Any(scan.SemanticModel, static (section, model) =>
+                    section.Statements
+                        .AsStackEnumerable()
+                        .Any(model, static (stmt, m) => HoldsSplitPoint(stmt, m))
+                ))
+        {
+            return;
+        }
+
+        var masks = !scan.IsKernel ? new ArgumentMasks(ulong.MaxValue, 0) : default;
+        if (scan.Flow.TryGetUniformity(masks, out var uniformity) &&
+            !uniformity.IsThreadVariant(switchStatement.Expression))
+        {
+            return;
+        }
+
+        var sectionLookup = SwitchCaseLookup.CreateSectionLookup(switchStatement, scan.SemanticModel);
+        var joinPlan = SwitchJoinPlanner.Plan(
+            switchStatement,
+            sectionLookup,
+            gotoStmt => !RemovedCalls.IsInRemovedCall(gotoStmt, scan.SemanticModel));
+        foreach (var rejected in joinPlan.Rejected)
+        {
+            if (crossSectionReported != null && crossSectionReported.Contains(rejected))
+            {
+                continue;
+            }
+
+            scan.Context.ReportDiagnostic(
+                GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle,
+                rejected.GetLocation(),
+                FormatSwitchJumpTarget(rejected),
+                "on a cycle between sections of a thread-dependent switch that holds a warp collective or barrier",
+                "Break the cycle or write the loop as a while or for statement.");
         }
     }
+
+    private static string FormatSwitchJumpTarget(GotoStatementSyntax gotoStmt) =>
+        gotoStmt.Kind() switch
+        {
+            SyntaxKind.GotoDefaultStatement => "default",
+            SyntaxKind.GotoCaseStatement => $"case {gotoStmt.Expression}",
+            _ => gotoStmt.Expression is IdentifierNameSyntax targetId ? targetId.Identifier.ValueText : string.Empty
+        };
 
     private static void ReportRejectedGotos(
         KernelBarrierScan scan,
@@ -96,7 +159,10 @@ internal static class ReconvergenceJumpChecks
                 GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle,
                 gotoStmt.GetLocation(),
                 targetLabelName,
-                rangeLabelName);
+                $"into the statements between '{rangeLabelName}:' and a goto to it that hold a warp collective " +
+                "or barrier",
+                $"Move the label '{targetLabelName}' out of that range, or write the loop as a while or for " +
+                "statement.");
         }
     }
 

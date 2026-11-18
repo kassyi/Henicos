@@ -80,6 +80,9 @@ internal readonly ref struct KernelBarrierValidator(
                     KernelConstructChecks.CheckIteratorSharedMemory(_scan, declaration); break;
                 // goto case and goto default jump within a switch, never to a label
                 case GotoStatementSyntax jump when jump.IsKind(SyntaxKind.GotoStatement): _scan.Gotos.Add(jump); break;
+                case GotoStatementSyntax jump when jump.IsKind(SyntaxKind.GotoCaseStatement, SyntaxKind.GotoDefaultStatement):
+                    _scan.HasSwitchJump = true;
+                    break;
                 case LabeledStatementSyntax label: _scan.Labels.Add(label); break;
                 case VariableDeclaratorSyntax declarator:
                     KernelConstructChecks.InspectLocalVariableDeclarator(_scan, declarator); break;

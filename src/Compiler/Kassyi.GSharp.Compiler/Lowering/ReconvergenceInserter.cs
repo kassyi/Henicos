@@ -29,7 +29,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// A condition the analysis cannot map back to the method counts as thread-dependent, which only costs a round. A
 /// switch that holds a split point also gets a region when any section has a nested exit, even if its expression
 /// is uniform, because lanes that jump out early would otherwise run ahead of the lanes that stay inside. A
-/// region whose end is the end of a kernel is left out: the lanes exit there.
+/// thread-dependent switch that holds a split point also places join regions on section entries or labels reached from
+/// another section, so lanes jumping there meet the lanes arriving directly. A region whose end is the end of a kernel
+/// is left out: the lanes exit there.
 /// </para>
 /// <para>
 /// Runs after <see cref="ConditionalEvaluationRewriter"/> and <see cref="WarpInstructionRewriter"/> have turned the
@@ -105,7 +107,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private SyntaxList<StatementSyntax> RewriteList(
         SyntaxList<StatementSyntax> statements,
         bool isKernelBody,
-        JumpRegionPlan? precomputedPlan = null)
+        JumpRegionPlan? precomputedPlan = null,
+        SwitchSectionJoinState? switchJoins = null)
     {
         var plan = precomputedPlan ?? JumpRegionPlanner.Plan(statements, BarrierHelper.ContainsPhaseBarrier);
         if (!plan.Rejected.IsEmpty)
@@ -114,6 +117,30 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         }
 
         var rewritten = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count * 2);
+        var switchSegment = 0;
+        var nextJoinIndex = 0;
+        var switchFirstHeld = switchJoins != null ? switchJoins.Plan.FirstHeld[switchJoins.Section] : default;
+        if (switchJoins != null)
+        {
+            for (var order = switchJoins.Plan.Joins.Length; order >= switchFirstHeld[0]; order--)
+            {
+                OpenSwitchJoin(rewritten, switchJoins, order);
+            }
+
+            if (nextJoinIndex < switchJoins.SectionJoins.Length &&
+                switchJoins.SectionJoins[nextJoinIndex].Position == 0)
+            {
+                CloseSwitchJoin(
+                    rewritten,
+                    switchJoins.SwitchStatement.Sections[switchJoins.Section],
+                    switchJoins.SectionJoins[nextJoinIndex],
+                    switchFirstHeld,
+                    ref switchSegment,
+                    switchJoins);
+                nextJoinIndex++;
+            }
+        }
+
         // The ranges this list opened; a range closes in the list that opened it, never in a nested one
         var ranges = new List<Region>(plan.Regions.Length);
         for (var i = 0; i < statements.Count; i++)
@@ -126,6 +153,20 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                     CloseRange(rewritten, ranges[r], statements[i]);
                     ranges.RemoveAt(r);
                 }
+            }
+
+            if (switchJoins != null &&
+                nextJoinIndex < switchJoins.SectionJoins.Length &&
+                switchJoins.SectionJoins[nextJoinIndex].Position == i + 1)
+            {
+                CloseSwitchJoin(
+                    rewritten,
+                    statements[i],
+                    switchJoins.SectionJoins[nextJoinIndex],
+                    switchFirstHeld,
+                    ref switchSegment,
+                    switchJoins);
+                nextJoinIndex++;
             }
 
             // GotoLoops and any ForwardRanges enclosing them open before the statement's labels (so jumps to those
@@ -180,7 +221,89 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             }
         }
 
+        if (switchJoins != null)
+        {
+            while (_open.Count > switchJoins.BaseDepth)
+            {
+                if (_open[_open.Count - 1].OwnerSwitch != switchJoins.SwitchStatement)
+                {
+                    throw new InvalidOperationException(
+                        "A region inside a switch section was not closed before the section ended.");
+                }
+
+                _open.RemoveAt(_open.Count - 1);
+            }
+        }
+
         return SyntaxFactory.List(rewritten);
+    }
+
+    private void OpenSwitchJoin(
+        ImmutableArray<StatementSyntax>.Builder rewritten,
+        SwitchSectionJoinState switchJoins,
+        int order)
+    {
+        var join = switchJoins.Plan.Joins[order - 1];
+        var site = switchJoins.Sites[order - 1];
+        _open.Add(
+            new Region(
+                site,
+                switchJoins.SwitchStatement,
+                SwitchJoin: join,
+                OwnerSwitch: switchJoins.SwitchStatement,
+                SwitchJoinPlan: switchJoins.Plan));
+        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, site));
+    }
+
+    private void CloseSwitchJoin(
+        ImmutableArray<StatementSyntax>.Builder rewritten,
+        SyntaxNode placeNode,
+        SwitchJoin join,
+        ImmutableArray<int> firstHeld,
+        ref int segment,
+        SwitchSectionJoinState switchJoins)
+    {
+        var prevHeld = firstHeld[segment];
+        for (var order = prevHeld; order < join.Order; order++)
+        {
+            PopAndLeaveSwitchJoin(rewritten, switchJoins.SwitchStatement, order);
+        }
+
+        if (_open.Count == 0 ||
+            _open[_open.Count - 1].OwnerSwitch != switchJoins.SwitchStatement ||
+            _open[_open.Count - 1].SwitchJoin != join)
+        {
+            throw new InvalidOperationException("A switch join is not the innermost open region where it arrives.");
+        }
+
+        var site = _open[_open.Count - 1].Site;
+        rewritten.Add(
+            LoweringSyntax.EmptyLabel($"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{site}"));
+        rewritten.Add(CreateArrive(site, placeNode));
+        _open.RemoveAt(_open.Count - 1);
+
+        segment++;
+        var nextHeld = firstHeld[segment];
+        for (var order = join.Order + 1; order < nextHeld; order++)
+        {
+            PopAndLeaveSwitchJoin(rewritten, switchJoins.SwitchStatement, order);
+        }
+    }
+
+    private void PopAndLeaveSwitchJoin(
+        ImmutableArray<StatementSyntax>.Builder rewritten,
+        SwitchStatementSyntax ownerSwitch,
+        int expectedOrder)
+    {
+        if (_open.Count == 0 ||
+            _open[_open.Count - 1].OwnerSwitch != ownerSwitch ||
+            _open[_open.Count - 1].SwitchJoin?.Order != expectedOrder)
+        {
+            throw new InvalidOperationException("A held switch join is not on top of the open region stack.");
+        }
+
+        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionLeave, _open[_open.Count - 1].Site));
+        _open.RemoveAt(_open.Count - 1);
     }
 
     private void OpenJumpRegion(
@@ -299,14 +422,64 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
         var crossSectionRejected = JumpRegionPlanner.FindCrossSectionRejectedGotos(switchStatement, sectionPlans);
 
-        _targets.Add(new JumpTarget(switchStatement, IsLoop: false, _open.Count, ContinueDepth: 0, ContinueLabel: null));
+        var joinPlan = SwitchJoinPlan.Empty;
+        Func<GotoStatementSyntax, int>? sectionLookup = null;
+        int[]? joinSites = null;
+        if (crossSectionRejected.IsEmpty &&
+            SwitchStatementFlattener.CanFlatten(switchStatement) &&
+            switchStatement.Sections
+                .AsStackEnumerable()
+                .Any(BarrierHelper.ContainsPhaseBarrier) &&
+            IsThreadVariant(switchStatement.Expression))
+        {
+            sectionLookup = SwitchCaseLookup.CreateSectionLookup(switchStatement, _model);
+            joinPlan = SwitchJoinPlanner.Plan(switchStatement, sectionLookup);
+            if (!joinPlan.Joins.IsEmpty)
+            {
+                joinSites = new int[joinPlan.Joins.Length];
+                for (var j = joinPlan.Joins.Length - 1; j >= 0; j--)
+                {
+                    joinSites[j] = RegionCount++;
+                }
+            }
+        }
+
+        var baseDepth = _open.Count;
+        _targets.Add(new JumpTarget(
+            switchStatement,
+            IsLoop: false,
+            baseDepth,
+            ContinueDepth: 0,
+            ContinueLabel: null,
+            SectionLookup: joinSites != null ? sectionLookup : null));
         var sections = ImmutableArray.CreateBuilder<SwitchSectionSyntax>(switchStatement.Sections.Count);
         for (var s = 0; s < switchStatement.Sections.Count; s++)
         {
             var sectionPlan = crossSectionRejected.IsEmpty ? sectionPlans[s] : JumpRegionPlan.Empty;
+            SwitchSectionJoinState? sectionJoins = null;
+            if (joinSites != null)
+            {
+                var joinsBuilder = ImmutableArray.CreateBuilder<SwitchJoin>();
+                joinPlan.Joins
+                    .AsStackEnumerable()
+                    .Where(s, static (join, sec) => join.Section == sec)
+                    .AddTo(joinsBuilder);
+                sectionJoins = new SwitchSectionJoinState(
+                    switchStatement,
+                    s,
+                    baseDepth,
+                    joinPlan,
+                    joinsBuilder.ToImmutable(),
+                    joinSites);
+            }
+
             sections.Add(
                 switchStatement.Sections[s].WithStatements(
-                    RewriteList(switchStatement.Sections[s].Statements, isKernelBody: false, sectionPlan)));
+                    RewriteList(
+                        switchStatement.Sections[s].Statements,
+                        isKernelBody: false,
+                        sectionPlan,
+                        sectionJoins)));
         }
 
         _targets.RemoveAt(_targets.Count - 1);
@@ -392,6 +565,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 if (gotoStatement.Expression is IdentifierNameSyntax { Identifier.ValueText: var targetName } &&
                     ReconvergenceSyntax.FindLabel(gotoStatement, targetName) is { } targetLabel)
                 {
+                    var rewroteToJoin = false;
                     for (var r = _open.Count - 1; r >= 0; r--)
                     {
                         if (_open[r].JumpRegion is { Kind: JumpRegionKind.ForwardRange } fr &&
@@ -401,15 +575,59 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                                     $"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{_open[r].Site}")
                                 .WithTriviaFrom(statement)
                                 .WithOriginalSpanFrom(statement);
+                            rewroteToJoin = true;
                             break;
+                        }
+                    }
+
+                    if (!rewroteToJoin)
+                    {
+                        for (var r = _open.Count - 1; r >= 0; r--)
+                        {
+                            if (_open[r].SwitchJoin is { Position: > 0 } switchJoin &&
+                                _open[r].OwnerSwitch is { } ownerSwitch &&
+                                IsLabelAtCanonicalIndex(
+                                    ownerSwitch.Sections[switchJoin.Section].Statements,
+                                    switchJoin.Position - 1,
+                                    targetLabel))
+                            {
+                                jump = LoweringSyntax.Goto(
+                                        $"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{_open[r].Site}")
+                                    .WithTriviaFrom(statement)
+                                    .WithOriginalSpanFrom(statement);
+                                break;
+                            }
                         }
                     }
                 }
 
                 leaveFrom = FindLabelDepth(gotoStatement);
                 break;
-            case GotoStatementSyntax when FindSwitch() is { } target:
+            case GotoStatementSyntax gotoCase when FindSwitch() is { } target:
                 leaveFrom = target.BreakDepth;
+                if (target.Node is SwitchStatementSyntax switchOwner &&
+                    target.SectionLookup != null)
+                {
+                    var targetSection = target.SectionLookup(gotoCase);
+                    if (targetSection >= 0)
+                    {
+                        for (var r = _open.Count - 1; r >= target.BreakDepth; r--)
+                        {
+                            if (_open[r].OwnerSwitch == switchOwner &&
+                                _open[r].SwitchJoin is { Position: 0, Section: var section } &&
+                                section == targetSection)
+                            {
+                                jump = LoweringSyntax.Goto(
+                                        $"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{_open[r].Site}")
+                                    .WithTriviaFrom(statement)
+                                    .WithOriginalSpanFrom(statement);
+                                leaveFrom = r + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 break;
             default:
                 return false;
@@ -474,6 +692,43 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
     private static bool RegionContainsLabel(Region region, LabeledStatementSyntax label)
     {
+        if (region.SwitchJoin is { } switchJoin &&
+            region.OwnerSwitch is { } ownerSwitch &&
+            region.SwitchJoinPlan is { } joinPlan)
+        {
+            if (!ReconvergenceSyntax.IsInside(label, ownerSwitch))
+            {
+                return false;
+            }
+
+            foreach (var join in joinPlan.Joins)
+            {
+                if (join.Position > 0 &&
+                    IsLabelAtCanonicalIndex(
+                        ownerSwitch.Sections[join.Section].Statements,
+                        join.Position - 1,
+                        label))
+                {
+                    return switchJoin.Order >= join.Order;
+                }
+            }
+
+            for (var s = 0; s < ownerSwitch.Sections.Count; s++)
+            {
+                var statements = ownerSwitch.Sections[s].Statements;
+                for (var i = 0; i < statements.Count; i++)
+                {
+                    if (ReconvergenceSyntax.IsInside(label, statements[i]))
+                    {
+                        var segment = SwitchJoinPlanner.FindSegmentForStatement(joinPlan.Joins, s, i);
+                        return switchJoin.Order >= joinPlan.FirstHeld[s][segment];
+                    }
+                }
+            }
+
+            return false;
+        }
+
         if (region.JumpRegion is { } jumpRegion)
         {
             if (jumpRegion.Kind == JumpRegionKind.ForwardRange &&
@@ -509,14 +764,20 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private static bool IsTargetLabel(
         JumpRegion region,
         LabeledStatementSyntax label,
-        SyntaxList<StatementSyntax> statements)
+        SyntaxList<StatementSyntax> statements) =>
+        IsLabelAtCanonicalIndex(statements, region.LabelIndex, label);
+
+    private static bool IsLabelAtCanonicalIndex(
+        SyntaxList<StatementSyntax> statements,
+        int canonicalIndex,
+        LabeledStatementSyntax label)
     {
-        if (region.LabelIndex < 0 || region.LabelIndex >= statements.Count)
+        if (canonicalIndex < 0 || canonicalIndex >= statements.Count)
         {
             return false;
         }
 
-        for (var i = region.LabelIndex; i < statements.Count; i++)
+        for (var i = canonicalIndex; i < statements.Count; i++)
         {
             if (IsLabelAttachedTo(statements[i], label))
             {
@@ -673,7 +934,18 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         SyntaxNode Extent,
         JumpRegion? JumpRegion = null,
         SyntaxList<StatementSyntax> EnclosingStatements = default,
-        bool IncludesFirstLabels = false);
+        bool IncludesFirstLabels = false,
+        SwitchJoin? SwitchJoin = null,
+        SwitchStatementSyntax? OwnerSwitch = null,
+        SwitchJoinPlan? SwitchJoinPlan = null);
+
+    private sealed record SwitchSectionJoinState(
+        SwitchStatementSyntax SwitchStatement,
+        int Section,
+        int BaseDepth,
+        SwitchJoinPlan Plan,
+        ImmutableArray<SwitchJoin> SectionJoins,
+        int[] Sites);
 
     // A loop or switch that a break leaves (the regions from BreakDepth on are inside it) and, for a loop, where a
     // continue goes (the regions from ContinueDepth on are inside its body region)
@@ -682,5 +954,6 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         bool IsLoop,
         int BreakDepth,
         int ContinueDepth,
-        string? ContinueLabel);
+        string? ContinueLabel,
+        Func<GotoStatementSyntax, int>? SectionLookup = null);
 }
