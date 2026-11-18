@@ -47,6 +47,7 @@ const os = require('os');
 const { spawn, spawnSync } = require('child_process');
 const { faultWatch, createPoolWatch } = require('./gpu-lock/pools.js');
 const { createLock, readOwner, readOwnerRecord } = require('./gpu-lock/lock.js');
+const { mainCheckout } = require('./job-queue/lib/main-checkout.js');
 const holds = require('./gpu-lock/holds.js');
 
 const usage = [
@@ -150,18 +151,7 @@ function parseArgs(argv) {
 /** The lock lives in the main checkout's tmp/, whichever worktree runs the script. */
 function resolveLockPath() {
   const scriptRoot = path.resolve(__dirname, '..', '..');
-  let base = scriptRoot;
-  const git = spawnSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
-    cwd: __dirname,
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  if (!git.error && git.status === 0) {
-    const commonDir = git.stdout.trim();
-    if (commonDir !== '' && path.isAbsolute(commonDir)) {
-      base = path.dirname(path.resolve(commonDir));
-    }
-  }
+  const base = mainCheckout(__dirname, scriptRoot);
   return path.join(base, 'tmp', 'gpu-test-lock');
 }
 

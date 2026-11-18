@@ -10,9 +10,14 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { createRequire } from "node:module";
 import { errorCode, errorMessage } from "./history.ts";
 import { isTestCommand } from "./shell.ts";
 import { prefix } from "./system.ts";
+import type { TargetDialectModule, TestProjectEntry } from "./lib/types.ts";
+
+const require = createRequire(import.meta.url);
+const { testProjectFiles, dialectOf } = require("../job-queue-henicos/target-dialect.js") as TargetDialectModule;
 
 /** The cores a slot stands for. */
 export const CoresPerSlot = 3;
@@ -86,24 +91,21 @@ export function cpuOnlyTestProjects(command: string, names: Iterable<string>, te
   if (named.length === 0) {
     return [];
   }
-  let categories: string[];
+  let projects: TestProjectEntry[];
   try {
-    categories = fs
-      .readdirSync(testsDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name);
+    projects = testProjectFiles(testsDir);
   } catch (error) {
     prefix(`could not read ${testsDir}: ${errorMessage(error)}`);
     return [];
   }
-  const runsOnCpu = (name: string): boolean =>
-    categories.some((category) => {
-      const project = path.join(testsDir, category, name, `${name}.csproj`);
-      return (
-        fs.existsSync(project) &&
-        /<GSharpTargetDialect>\s*Cpu\s*<\/GSharpTargetDialect>/i.test(fs.readFileSync(project, "utf8"))
-      );
-    });
+  const projectsByName = new Map<string, string>();
+  for (const { name, project } of projects) {
+    projectsByName.set(name, project);
+  }
+  const runsOnCpu = (name: string): boolean => {
+    const project = projectsByName.get(name);
+    return project !== undefined && dialectOf(project) === "cpu";
+  };
   return named.every(runsOnCpu) ? named : [];
 }
 

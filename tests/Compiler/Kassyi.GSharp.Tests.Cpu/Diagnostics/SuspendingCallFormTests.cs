@@ -80,6 +80,35 @@ public class SuspendingCallFormTests
         Assert.True(SymbolEqualityComparer.Default.Equals(fileLocal, unavailable));
     }
 
+    private static readonly Compilation s_protectedCompilation = RoslynTestUtility.CreateCompilation(
+        RoslynTestUtility.ReadTestCase("Analyzers/SuspendingCallProtectedFrame.cs")
+    );
+
+    // A frame that holds a protected type is private protected (its fields are internal): a derived class names it
+    // (Direct), any other class of the assembly reaches the function through the frame's entries
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ProtectedFrameDerived", "HoldsProtectedType", Accessibility.ProtectedAndInternal, "Direct")]
+    [InlineData("ProtectedFrameUnrelated", "HoldsProtectedType", Accessibility.ProtectedAndInternal, "Entry")]
+    [InlineData("ProtectedFrameDerived", "HoldsProtectedTypeProtected", Accessibility.ProtectedAndInternal, "Direct")]
+    public void GetCallForm_ProtectedFrame_DerivedNamesItAndOthersUseTheEntries(string caller, string name,
+        Accessibility expectedFrame, string expected)
+    {
+        var function = GetProtectedType("ProtectedFrameBase").GetMembers(name).OfType<IMethodSymbol>().Single();
+
+        var frame = ManagedStateMachineAvailability.GetFrameAccessibility(function, s_protectedCompilation);
+        var form = ManagedStateMachineAvailability.GetCallForm(function, GetProtectedType(caller),
+            s_protectedCompilation);
+
+        Assert.Equal(
+            (expectedFrame, true, expected),
+            (frame, ManagedStateMachineAvailability.HasEntries(function, frame), form.ToString()));
+    }
+
+    private static INamedTypeSymbol GetProtectedType(string name) =>
+        s_protectedCompilation.GetTypeByMetadataName(Namespace + name)
+        ?? throw new InvalidOperationException($"The test case has no type '{name}'.");
+
     private static INamedTypeSymbol GetType(string name) =>
         s_compilation.GetTypeByMetadataName(Namespace + name)
         ?? throw new InvalidOperationException($"The test case has no type '{name}'.");

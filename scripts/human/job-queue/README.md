@@ -117,6 +117,10 @@ run TypeScript by stripping the types) and imports `cli.ts`. The modules use era
 | `build-split.ts` | `planBuildStep`: which builds a `run --gpu` command runs first and its tests with `--no-build`, or no plan for a command that is not plain; pure |
 | `shell.ts` | `CommandShell`, the shell a command runs in: quoting of pre-split words, the MSBuild node limit; which commands run tests |
 | `system.ts` | The state directory, and `ProcessTable`, the processes of the machine (liveness, process trees, stopping them) |
+| `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
+| `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
+| `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
+| `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js`, `process-liveness.js`, and `target-dialect.js`) |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
 | `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys, `self-test-chats.ts` its chat panel |
 
