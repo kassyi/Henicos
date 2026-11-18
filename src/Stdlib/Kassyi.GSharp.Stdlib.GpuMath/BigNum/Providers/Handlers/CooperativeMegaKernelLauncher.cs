@@ -97,7 +97,7 @@ internal static class CooperativeMegaKernelLauncher
             out var gridDim,
             out var sharedMemBytes);
 
-        // 2^(targetBits + 1), as wide as the product so that ExecuteSub reads no word past the end.
+        // 2^(targetBits + 1), at least as wide as the product so subtraction reads no word past the end.
         using var constant = CreateBitRunConstant(workspace, n + 2 * resultWords, lowestBit: targetBits + 1,
             bitCount: 1);
 
