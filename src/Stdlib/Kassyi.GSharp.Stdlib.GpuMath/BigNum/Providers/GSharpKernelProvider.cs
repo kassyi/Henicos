@@ -276,6 +276,11 @@ public sealed class GSharpKernelProvider : IGpuExecutionProvider
         int marginWords, int actualBits, int iterations) => AdvancedMathProvider.InverseSqrtMega(workspace,
         targetOperand, resultBuffer, marginWords, actualBits, iterations);
 
+    void IGpuAdvancedMathProvider.ApproximateInverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand,
+        GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations) =>
+        AdvancedMathProvider.ApproximateInverseSqrtMega(workspace, targetOperand, resultBuffer, marginWords, actualBits,
+            iterations);
+
     /// <inheritdoc />
     public void SqrtFloorCorrection(GpuWorkspace workspace, GpuBigUInt operand, GpuBigUInt rootSquared,
         GpuBigUInt root, GpuBigUInt slack, GpuBigUInt trial) =>
