@@ -26,9 +26,7 @@ import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
 import { checkLib } from "./lib-checks.ts";
 import { checkPlugins } from "./plugin-checks.ts";
-import { checkDotnetPlugin } from "./plugins/dotnet/checks.ts";
-import { checkJustPlugin } from "./plugins/just/checks.ts";
-import { checkHenicosPlugin } from "../job-queue-henicos/checks.ts";
+import { runPluginChecks } from "./plugin-host.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -97,9 +95,7 @@ export async function selfTest(): Promise<void> {
     await named("checkView", checkView);
     await named("checkLib", checkLib);
     await named("checkPlugins", () => checkPlugins(assert));
-    await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
-    await named("checkJustPlugin", () => checkJustPlugin(assert));
-    await named("checkHenicosPlugin", () => checkHenicosPlugin(assert));
+    await named("pluginChecks", () => runPluginChecks(assert));
   } finally {
     for (const [key, original] of originalAssert) {
       cjsAssert[key] = original;

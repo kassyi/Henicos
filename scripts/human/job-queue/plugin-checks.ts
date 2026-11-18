@@ -22,7 +22,7 @@ import { connect, request } from "./client-connect.ts";
 import { loadConfig } from "./config.ts";
 import type { ConfigFileModule } from "./lib/types.ts";
 import { PluginApiVersion, type QueuePlugin, type ShareMode } from "./plugin-api.ts";
-import { PluginHost, type BaseClientContext } from "./plugin-host.ts";
+import { PluginHost, runPluginChecks, type BaseClientContext } from "./plugin-host.ts";
 import { ProcessTable } from "./system.ts";
 import { delay, firstTestPort, removeDirectory } from "./self-test-support.ts";
 import {
@@ -50,7 +50,7 @@ function baseContext(configRoot: string, warnings: string[]): BaseClientContext 
 }
 
 /** Runs `body` with a temporary `JOB_QUEUE_CONFIG` value, restoring the original afterwards. */
-async function withConfigEnv(value: string | undefined, body: () => void | Promise<void>): Promise<void> {
+export async function withConfigEnv(value: string | undefined, body: () => void | Promise<void>): Promise<void> {
   const previous = process.env.JOB_QUEUE_CONFIG;
   if (value === undefined) {
     delete process.env.JOB_QUEUE_CONFIG;
@@ -101,33 +101,6 @@ async function checkConfig(assert: AssertModule): Promise<void> {
       });
       assert.strictEqual(missingOverride.status, "missing", "missing override falls back to defaults");
       assert.strictEqual(missingOverride.config.version, 1);
-    });
-
-    // Real repo baseline config check
-    await withConfigEnv(undefined, () => {
-      const repoWarnings: string[] = [];
-      const repoConfig = loadConfig({
-        mode: "status",
-        fromDirectory: path.dirname(EntryScript),
-        warn: (msg) => repoWarnings.push(msg),
-      });
-      assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
-      assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
-      assert.deepStrictEqual(repoConfig.config.plugins, [
-        { name: "./scripts/human/job-queue-henicos" },
-        { name: "dotnet" },
-        { name: "just" },
-      ]);
-      assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
-      assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
-      assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);
-      assert.deepStrictEqual(repoConfig.config.legacyClients, {
-        testPattern: [
-          String.raw`\bdotnet(\.exe)?"?\s+(test|vstest)\b`,
-          String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
-        ].join("|"),
-        testMemoryMb: 2880,
-      });
     });
 
     // Unknown keys warn and ignore; path normalized via realpathSync.native
@@ -521,6 +494,144 @@ async function checkPluginLoading(assert: AssertModule): Promise<void> {
 }
 
 /**
+ * Dynamic `checks.ts` loader verification:
+ * 1. Path-configured plugin's `checks.ts` runs (verified via `fs.realpathSync.native`).
+ * 2. Bundled `plugins/<name>/checks.ts` folders run even when omitted from `config.plugins[]`.
+ * 3. Throwing `checks()` rejects with the plugin name in the error message.
+ * 4. An enabled plugin in `config.plugins[]` missing `checks.ts` rejects with the plugin name.
+ * 5. `JOB_QUEUE_PLUGINS=0` does not suppress `runPluginChecks`.
+ */
+async function checkPluginChecksLoader(assert: AssertModule): Promise<void> {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-checks-loader-"));
+  try {
+    const writeJson = (filePath: string, data: unknown): void => {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, JSON.stringify(data));
+    };
+    const writeFile = (filePath: string, content: string): string => {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, content);
+      return filePath;
+    };
+    const writeRecorder = (filePath: string, logPath: string): string =>
+      writeFile(
+        filePath,
+        `import * as fs from "node:fs";\n` +
+          `export async function checks(): Promise<void> {\n` +
+          `  fs.appendFileSync(${JSON.stringify(logPath)}, import.meta.filename + "\\n");\n` +
+          `}\n`,
+      );
+    const readLines = (filePath: string): string[] =>
+      fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8").trim().split(/\r?\n/).filter(Boolean) : [];
+
+    // 1. Path-configured plugin runs
+    const case1Root = path.join(tempDir, "case1", "repo");
+    const case1Bundled = path.join(tempDir, "case1", "bundled");
+    const log1 = path.join(tempDir, "case1", "ran.log");
+    fs.mkdirSync(case1Bundled, { recursive: true });
+    writeJson(path.join(case1Root, "job-queue.config.json"), {
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [{ name: "./repo-plug" }],
+    });
+    const repoChecks1 = writeRecorder(path.join(case1Root, "repo-plug", "checks.ts"), log1);
+    await runPluginChecks(assert, { configRoot: case1Root, pluginsRoot: case1Bundled });
+    assert.deepStrictEqual(
+      readLines(log1).map((p) => fs.realpathSync.native(p)),
+      [fs.realpathSync.native(repoChecks1)],
+      "path-configured plugin checks.ts runs",
+    );
+
+    // 2. Two unlisted bundled folders both run in sorted order
+    const case2Root = path.join(tempDir, "case2", "repo");
+    const case2Bundled = path.join(tempDir, "case2", "bundled");
+    const log2 = path.join(tempDir, "case2", "ran.log");
+    writeJson(path.join(case2Root, "job-queue.config.json"), {
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [],
+    });
+    const betaChecks2 = writeRecorder(path.join(case2Bundled, "beta", "checks.ts"), log2);
+    const alphaChecks2 = writeRecorder(path.join(case2Bundled, "alpha", "checks.ts"), log2);
+    await runPluginChecks(assert, { configRoot: case2Root, pluginsRoot: case2Bundled });
+    assert.deepStrictEqual(
+      readLines(log2).map((p) => fs.realpathSync.native(p)),
+      [fs.realpathSync.native(alphaChecks2), fs.realpathSync.native(betaChecks2)],
+      "all bundled checks.ts run in order even when omitted from config.plugins",
+    );
+
+    // 3. Throwing checks() rejects with plugin name
+    const case3Root = path.join(tempDir, "case3", "repo");
+    const case3Bundled = path.join(tempDir, "case3", "bundled");
+    fs.mkdirSync(case3Bundled, { recursive: true });
+    writeJson(path.join(case3Root, "job-queue.config.json"), {
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [{ name: "./boom-plug" }],
+    });
+    writeFile(
+      path.join(case3Root, "boom-plug", "checks.ts"),
+      `export async function checks(): Promise<void> { throw new Error("boom-from-checks"); }\n`,
+    );
+    await assert.rejects(
+      () => runPluginChecks(assert, { configRoot: case3Root, pluginsRoot: case3Bundled }),
+      (err: unknown) =>
+        err instanceof Error && err.message.includes("./boom-plug") && err.message.includes("boom-from-checks"),
+      "throwing plugin checks.ts rejects with plugin name",
+    );
+
+    // 4. Enabled plugin without checks.ts rejects
+    const case4Root = path.join(tempDir, "case4", "repo");
+    const case4Bundled = path.join(tempDir, "case4", "bundled");
+    fs.mkdirSync(case4Bundled, { recursive: true });
+    writeJson(path.join(case4Root, "job-queue.config.json"), {
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [{ name: "./no-checks" }],
+    });
+    writeFile(
+      path.join(case4Root, "no-checks", "plugin.ts"),
+      `export default { name: "./no-checks", apiVersion: 1 };\n`,
+    );
+    await assert.rejects(
+      () => runPluginChecks(assert, { configRoot: case4Root, pluginsRoot: case4Bundled }),
+      (err: unknown) => err instanceof Error && err.message.includes("./no-checks"),
+      "enabled plugin lacking checks.ts rejects",
+    );
+
+    // 5. JOB_QUEUE_PLUGINS=0 does not skip plugin checks
+    const case5Root = path.join(tempDir, "case5", "repo");
+    const case5Bundled = path.join(tempDir, "case5", "bundled");
+    const log5 = path.join(tempDir, "case5", "ran.log");
+    writeJson(path.join(case5Root, "job-queue.config.json"), {
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [{ name: "./repo-plug" }],
+    });
+    const bundledChecks5 = writeRecorder(path.join(case5Bundled, "plug-a", "checks.ts"), log5);
+    const repoChecks5 = writeRecorder(path.join(case5Root, "repo-plug", "checks.ts"), log5);
+    const previousPluginsEnv = process.env.JOB_QUEUE_PLUGINS;
+    process.env.JOB_QUEUE_PLUGINS = "0";
+    try {
+      await runPluginChecks(assert, { configRoot: case5Root, pluginsRoot: case5Bundled });
+    } finally {
+      if (previousPluginsEnv === undefined) {
+        delete process.env.JOB_QUEUE_PLUGINS;
+      } else {
+        process.env.JOB_QUEUE_PLUGINS = previousPluginsEnv;
+      }
+    }
+    assert.deepStrictEqual(
+      readLines(log5).map((p) => fs.realpathSync.native(p)),
+      [fs.realpathSync.native(bundledChecks5), fs.realpathSync.native(repoChecks5)],
+      "JOB_QUEUE_PLUGINS=0 does not skip plugin checks",
+    );
+  } finally {
+    removeDirectory(tempDir);
+  }
+}
+
+/**
  * Hardening & cross-cwd config forwarding checks:
  * 1. prepareCommand env uses a null-prototype object, so "__proto__" keys do not change prototypes and survive
  *    Object.entries and JSON.
@@ -737,6 +848,7 @@ export async function checkPlugins(assert: AssertModule): Promise<void> {
   checkHistoryKeys(assert);
   await checkStateFileKeys(assert);
   await checkPluginLoading(assert);
+  await checkPluginChecksLoader(assert);
   await checkVersionSkewAndServeConfig(assert);
   await checkHardeningAndConfigForwarding(assert);
 }
