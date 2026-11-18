@@ -68,7 +68,7 @@ internal static class CooperativeMegaKernelLauncher
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
-        ctx.Dimensions.CorrectsToFloor = correctsToFloor;
+        ctx.Dimensions.SkipsFloorCorrection = !correctsToFloor;
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,

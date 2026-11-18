@@ -204,6 +204,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         CooperativeMegaKernelLauncher.InverseSqrtMega(
             this, workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations, correctsToFloor: true);
 
+    /// <inheritdoc />
     void IGpuAdvancedMathProvider.ApproximateInverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand,
         GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations) =>
         CooperativeMegaKernelLauncher.InverseSqrtMega(

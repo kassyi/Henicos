@@ -79,7 +79,7 @@ public static partial class GpuBigIntSqrtKernels
         }
 
         // The approximate contract stops here; every thread reads the same flag, so all take the same branch.
-        if (!dims.CorrectsToFloor)
+        if (dims.SkipsFloorCorrection)
         {
             return;
         }

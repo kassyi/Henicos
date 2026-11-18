@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
@@ -152,7 +154,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // mutant: GpuBigIntDivRem.Sqrt.cs:152 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
     //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:181 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:184 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
@@ -238,14 +240,14 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
 
     /// <summary>
     /// Inputs of the approximate inverse square root: the kind of operand and its words <c>n</c>, with the margin
-    /// <c>ceil(n / 2)</c> that SqrtFloor uses for a root of <c>n - 1</c> words.
+    /// <c>SqrtFloorMarginWords(n - 1)</c> that SqrtFloor uses for a root of <c>n - 1</c> words.
     /// </summary>
     public static TheoryData<string, int> ApproximateInverseSqrtInputs()
     {
         var data = new TheoryData<string, int>();
         foreach (var kind in new[] { "Random", "PowerOfFour", "TopBitOnly", "AllOnes", "TopWordOnly" })
         {
-            // 41 and 640: 32(n + ceil(n / 2)) bits lie just below 31 * 2^k, so the iterations have no spare one.
+            // 41 and 640: 32(n + floor(n / 2)) bits lie just below 31 * 2^k, so the iterations have no spare one.
             foreach (var n in new[] { 2, 3, 7, 31, 32, 33, 41, 127, 640, 1000, 5000 })
             {
                 data.Add(kind, n);
@@ -268,7 +270,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     {
         CudaCapability.EnsureGpuAvailable();
         var a = BuildApproximateInverseSqrtOperand(kind, n);
-        var marginWords = (n + 1) / 2;
+        var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(n - 1);
         using var ctx = new GpuWorkspace((n + marginWords) * 8, GpuExecutionEngine.GSharpAot);
         using var operand = GpuBigUInt.FromBigInteger(ctx, a, n);
         using var inverse = new GpuBigUInt(ctx, n + marginWords);
@@ -282,6 +284,33 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         Assert.True(
             below >= 0 && below <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
             $"{kind} n={n}: floor(2^B / sqrt(a)) - x = {below}");
+    }
+
+    // The approximate path skips the final correction: with zero Newton iterations a hand-built guess 5 below the
+    // floor comes back unchanged (the exact InverseSqrtMega corrects the same guess to the floor, see
+    // GpuBigIntDivRemTests.InverseSqrtMega_HandBuiltGuessWithoutIterations_IsCorrectedToExactFloor). Without this
+    // test, running the correction on the approximate path would pass every other test.
+    // mutant: KernelAdvancedMathHandler.cs:211 `correctsToFloor: false` -> `true` (the guess is corrected to the floor)
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ApproximateInverseSqrtMega_HandBuiltGuessWithoutIterations_IsLeftUncorrected()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int NumWords = 16;
+        const int MarginWords = 4;
+        const int PrecisionBits = (NumWords + MarginWords) * 32;
+        var a = BuildApproximateInverseSqrtOperand("Random", NumWords);
+        var guess = FloorSqrt((BigInteger.One << (2 * PrecisionBits)) / a) - 5;
+        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, NumWords);
+        using var inverse = GpuBigUInt.FromBigInteger(ctx, guess, NumWords + MarginWords);
+
+        IGpuAdvancedMathProvider handler = new KernelAdvancedMathHandler();
+        handler.ApproximateInverseSqrtMega(ctx, operand, inverse, MarginWords, actualBits: NumWords * 32,
+            iterations: 0);
+
+        Assert.Equal(guess, inverse.ToBigInteger());
     }
 
     private static BigInteger BuildApproximateInverseSqrtOperand(string kind, int n)

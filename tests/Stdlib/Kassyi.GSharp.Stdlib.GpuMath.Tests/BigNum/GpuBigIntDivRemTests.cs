@@ -1272,19 +1272,19 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertExactInverseSqrt(BigInteger value, int precisionBits, BigInteger inverseRoot)
     {
         // a * x^2 <= 2^(2B) < a * (x + 1)^2 (B = (n + marginWords) * 32) defines x = floor(2^B / sqrt(a)).
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:264 `delta--;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:267 `delta--;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses 1, 3
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:290 `delta++;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:293 `delta++;`
         //         -> removed
         // input: InverseSqrtMega hand-built guesses -2, -1, InverseSqrt PowerOfFour4Words (Newton gives floor - 1)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:27 carry chunk
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:30 carry chunk
         //         `chunkSize` -> `256` (the chunk size before #602)
         // input: Random1023WordsMargin16 (products above 256 words are corrupted)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:262 `ax -= a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:265 `ax -= a`
         //         (DeviceAddSubAlignedParallel(ax, ..., -1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guess 3 (the random-operand guesses do not detect it)
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:288 `ax += a`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntSqrtKernels.cu.cs:291 `ax += a`
         //         (DeviceAddSubAlignedParallel(ax, ..., 1, true)) -> removed
         // input: InverseSqrtMega near-square-boundary guesses -1, -2 (the random-operand guesses do not detect it)
         var twoTo2B = BigInteger.One << (2 * precisionBits);
