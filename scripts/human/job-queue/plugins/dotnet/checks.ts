@@ -2,7 +2,6 @@
 // generic keys, build/test split via PluginHost, MSBuild node limits, QueuedRun wire keys & JOB_QUEUE_PLUGINS=0,
 // and classify / shortName / api helpers.
 
-import type * as Assert from "node:assert";
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -15,13 +14,12 @@ import { loadConfig } from "../../config.ts";
 import { commandKeys, pathArguments, type KeyContext } from "../../estimate-key.ts";
 import { RunHistory } from "../../history.ts";
 import { resolvePlaces } from "../../path-places.ts";
-import type { StepKeys } from "../../plugin-api.ts";
+import type { AssertModule, StepKeys } from "../../plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../../plugin-host.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../../self-test-client.ts";
 import { resolveWorktree } from "../../system.ts";
+import { shortCommand } from "../../view.ts";
 import dotnetPlugin, { isDotnetTest, selectsCategory } from "./plugin.ts";
-
-type AssertModule = typeof Assert;
 
 const Cpu = "tests/Compiler/App.Cpu";
 const Cuda = "tests/Compiler/App.Cuda";
@@ -353,6 +351,21 @@ function checkDotnetEstimateAndPlaces(assert: AssertModule, host: PluginHost): v
   // Core without plugins falls back to generic dotnet keys
   assert.deepStrictEqual(commandKeys(`dotnet build ${Cpu} -c Release`, Windows), {
     normalized: `dotnet build ${Cpu} -c Release`,
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(commandKeys(`dotnet build ${Cpu}`, Windows), {
+    normalized: `dotnet build ${Cpu}`,
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(commandKeys(`dotnet test ${Cpu} -c Release`, Windows), {
+    normalized: `dotnet test ${Cpu} -c Release`,
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(commandKeys("dotnet run --project tools/x", Windows), {
+    normalized: "dotnet run --project tools/x",
     shape: "dotnet",
     kind: "dotnet",
   });
@@ -794,6 +807,11 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   assert.strictEqual(dotnetPlugin.shortName("just test", "just test"), undefined);
   assert.strictEqual(dotnetPlugin.shortName("dotnet", "dotnet"), undefined);
   assert.strictEqual(dotnetPlugin.shortName("-nodeReuse:false", "-nodeReuse:false"), undefined);
+  // Without plugins, core generic stripping keeps dotnet and -nodeReuse:false
+  assert.strictEqual(
+    shortCommand("CI=true dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu -nodeReuse:false > a.log"),
+    "dotnet test Kassyi.GSharp.Tests.Cpu -nodeReuse:false",
+  );
 
   assert.strictEqual(isDotnetTest("dotnet test X"), true);
   assert.strictEqual(isDotnetTest("dotnet build X"), false);
@@ -834,7 +852,7 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   }
 }
 
-export async function checkDotnetPlugin(assert: AssertModule): Promise<void> {
+export async function checks(assert: AssertModule): Promise<void> {
   const configWarnings: string[] = [];
   const loaded = loadConfig({
     mode: "status",

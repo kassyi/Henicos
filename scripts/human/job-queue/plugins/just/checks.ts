@@ -1,18 +1,16 @@
 // Self-tests of the just plugin: estimate keys (`stepKeys`), plugin-less core fallback, and `shortName`.
 
-import type * as Assert from "node:assert";
 import * as path from "node:path";
 import { EntryScript } from "../../constants.ts";
 import { loadConfig } from "../../config.ts";
 import { commandKeys, type KeyContext } from "../../estimate-key.ts";
+import type { AssertModule } from "../../plugin-api.ts";
 import { PluginHost } from "../../plugin-host.ts";
 import { shortCommand } from "../../view.ts";
 
-type AssertModule = typeof Assert;
-
 const Windows: KeyContext = { cwd: "C:\\work\\repo\\wt\\feat-a", worktree: "c:\\work\\repo\\wt\\feat-a" };
 
-export async function checkJustPlugin(assert: AssertModule): Promise<void> {
+export async function checks(assert: AssertModule): Promise<void> {
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
   const host = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
     ...process.env,

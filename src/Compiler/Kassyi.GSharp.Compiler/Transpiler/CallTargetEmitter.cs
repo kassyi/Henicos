@@ -24,7 +24,7 @@ internal static class CallTargetEmitter
             return TryFail(node, plan, ref context);
         }
 
-        AppendRuntimeFailure(called.ReturnType, plan, ref context);
+        AppendRuntimeFailure(node, called, plan, ref context);
         return true;
     }
 
@@ -102,14 +102,24 @@ internal static class CallTargetEmitter
     }
 
     // __gsharp_unsupported("<method> is not implemented by the <dialect> dialect")
-    // (__gsharp_unsupported("<method> is not implemented by the <dialect> dialect"), __gsharp_type<<return type>>())
-    // [WHY] The arguments are not evaluated: the failure stops the launch, and the dialect has no definition to pass
-    // them to. A call with a value gives the default of its type so that the expression around it still compiles.
-    private static void AppendRuntimeFailure(ITypeSymbol returnType, CallTargetPlan plan, ref TranspileContext context)
+    // (static_cast<void>(<arg0>),...,__gsharp_unsupported("<method> is not implemented by the <dialect> dialect"))
+    // (static_cast<void>(<arg0>),...,__gsharp_unsupported("<message>"),__gsharp_type<<return type>>())
+    // [WHY] C# evaluates the arguments left to right before the call, and the managed path does; the comma operator
+    // sequences them the same way in C++. The dialect has no definition to pass them to, so each argument is
+    // evaluated and discarded before the failure, and a call with a value gives the default of its type so the
+    // surrounding expression still compiles.
+    private static void AppendRuntimeFailure(
+        SyntaxNode node,
+        IMethodSymbol called,
+        CallTargetPlan plan,
+        ref TranspileContext context)
     {
         var message = DialectCallSupport.GetNotImplementedMessage(plan.Method, plan.Dialect);
         var writer = context.Emitter.Writer;
-        if (returnType.SpecialType == SpecialType.System_Void)
+        var arguments = node is InvocationExpressionSyntax call ? call.ArgumentList.Arguments : default;
+        var returnType = called.ReturnType;
+        var isVoid = returnType.SpecialType == SpecialType.System_Void;
+        if (isVoid && arguments.Count == 0)
         {
             writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"{message}\")");
             return;
@@ -117,8 +127,24 @@ internal static class CallTargetEmitter
 
         using (writer.Parentheses())
         {
-            writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"{message}\"), ");
-            DefaultValue.AppendZero(returnType, ref context);
+            var sequence = default(EvaluationOrder.CallSequence);
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                writer.Append("static_cast<void>");
+                using (writer.Parentheses())
+                {
+                    sequence.AppendArgument(arguments[i], called.FindParameter(arguments, i), ref context);
+                }
+
+                writer.Append(",");
+            }
+
+            writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"{message}\")");
+            if (!isVoid)
+            {
+                writer.Append(",");
+                DefaultValue.AppendZero(returnType, ref context);
+            }
         }
     }
 

@@ -113,4 +113,29 @@ public class ResumeLocalTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void StackAllocPointer_CapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ReadOnlyCollectionSpan_UsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.ReadOnlyCollectionSpan(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptyCollectionSpan_BeforeBarrier_HasZeroLength() =>
+        ResumeLocalScenarios.EmptyCollectionSpan(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CollectionSpan_UsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.CollectionSpanBeforeBarrier(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpanInLoop_LoopIteration_ReinitializesEveryIteration() =>
+        ResumeLocalScenarios.CollectionSpanInLoop(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpan_WithVariableElementBeforeBarrier_KeepsComputedValues() =>
+        ResumeLocalScenarios.VariableCollectionSpan(s_runNative);
 }

@@ -3,15 +3,17 @@
 // QueuedRun wire memoryMb (request, adopt, gpuTurn omission, JOB_QUEUE_PLUGINS=0, defaultTestMemoryMb),
 // and shortCommand prefix removal.
 
-import type * as Assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { createRequire } from "node:module";
 import { QueuedRun } from "../job-queue/client-queued-run.ts";
 import type { RunOptions } from "../job-queue/client.ts";
 import { loadConfig } from "../job-queue/config.ts";
 import { EntryScript } from "../job-queue/constants.ts";
-import { PluginApiVersion, type QueuePlugin } from "../job-queue/plugin-api.ts";
+import type { TargetDialectModule } from "../job-queue/lib/types.ts";
+import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
+import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
@@ -20,7 +22,8 @@ import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
 import { isHenicosTest } from "./plugin.ts";
 
-type AssertModule = typeof Assert;
+const require = createRequire(import.meta.url);
+const { dialectOf } = require("./target-dialect.js") as TargetDialectModule;
 
 const FixedBudgetsYaml = [
   "# fixed characterization budgets",
@@ -434,7 +437,67 @@ function checkShortCommandWithPlugins(assert: AssertModule, host: PluginHost): v
   }
 }
 
-export async function checkHenicosPlugin(assert: AssertModule): Promise<void> {
+/** Moved from plugin-checks.ts: real repo baseline config check. */
+async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
+  await withConfigEnv(undefined, () => {
+    const repoWarnings: string[] = [];
+    const repoConfig = loadConfig({
+      mode: "status",
+      fromDirectory: path.dirname(EntryScript),
+      warn: (msg) => repoWarnings.push(msg),
+    });
+    assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
+    assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
+    assert.deepStrictEqual(repoConfig.config.plugins, [
+      { name: "./scripts/human/job-queue-henicos" },
+      { name: "dotnet" },
+      { name: "just" },
+    ]);
+    assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
+    assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
+    assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);
+    assert.deepStrictEqual(repoConfig.config.legacyClients, {
+      testPattern: [
+        String.raw`\bdotnet(\.exe)?"?\s+(test|vstest)\b`,
+        String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
+      ].join("|"),
+      testMemoryMb: 2880,
+    });
+  });
+}
+
+/**
+ * Moved from lib-checks.ts: dialectOf reads `<GSharpTargetDialect> cpu </GSharpTargetDialect>` (lowercase, whitespace)
+ * -> "cpu", missing -> null.
+ */
+function checkDialectOf(assert: AssertModule): void {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-dialect-test-"));
+  try {
+    const cpuProj = path.join(tempDir, "cpu.csproj");
+    fs.writeFileSync(
+      cpuProj,
+      "<Project><PropertyGroup>\r\n  <GSharpTargetDialect> cpu </GSharpTargetDialect>\r\n</PropertyGroup></Project>",
+    );
+    assert.strictEqual(dialectOf(cpuProj), "cpu", "lowercase dialect with whitespace must return 'cpu'");
+
+    const noneProj = path.join(tempDir, "none.csproj");
+    fs.writeFileSync(
+      noneProj,
+      "<Project><PropertyGroup>\r\n  <TargetFramework>net9.0</TargetFramework>\r\n</PropertyGroup></Project>",
+    );
+    assert.strictEqual(dialectOf(noneProj), null, "project without GSharpTargetDialect must return null");
+  } finally {
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      // Cleanup tolerance
+    }
+  }
+}
+
+export async function checks(assert: AssertModule): Promise<void> {
+  await checkRepoBaselineConfig(assert);
+  checkDialectOf(assert);
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
   assert.strictEqual(
     loaded.config.resources?.gpu?.lock?.seats[0],
