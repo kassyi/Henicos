@@ -256,6 +256,7 @@
 - {file: "Core/SharedMemoryRegionKernels.cu.cs", method: "SharedMemoryRegionKernels.StaleSpanKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemorySiblingScopesKernels.cu.cs", method: "SharedMemorySiblingScopesKernels.BarrierAfterScopesKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemorySiblingScopesKernels.cu.cs", method: "SharedMemorySiblingScopesKernels.BarrierInsideScopeKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryStorageKernels.cu.cs", method: "SharedMemoryStorageKernels.PatternVariableKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryZeroSizeKernels.cu.cs", method: "SharedMemoryZeroSizeKernels.EmptyBesideUsedKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryZeroSizeKernels.cu.cs", method: "SharedMemoryZeroSizeKernels.EmptyInDeviceFunction", status: "NoStateMachine", count: 1}
 - {file: "Core/SharedMemoryZeroSizeKernels.cu.cs", method: "SharedMemoryZeroSizeKernels.ReadEmptyKernel", status: "Compared", count: 1}
@@ -4630,6 +4631,8 @@
 - {file: "TestCases/Transpiler/Emission/RecursiveIteratorKernels.cu.cs", method: "RecursiveIteratorKernels.MutualRecursiveKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Transpiler/Emission/RecursiveIteratorKernels.cu.cs", method: "RecursiveIteratorKernels.Rec", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Transpiler/Emission/RecursiveIteratorKernels.cu.cs", method: "RecursiveIteratorKernels.SelfRecursiveKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Transpiler/Emission/SharedMemoryStorageShapeKernels.cu.cs", method: "SharedMemoryStorageShapeKernels.PickShared", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Transpiler/Emission/SharedMemoryStorageShapeKernels.cu.cs", method: "SharedMemoryStorageShapeKernels.SyncGridOutVarKernel", status: "Fallback:OpaqueOperand", count: 1}
 - {file: "TestCases/Transpiler/Emission/SignatureShapeKernels.cu.cs", method: "SignatureShapeKernels.BlockResultKernel", status: "Compared", count: 1}
 - {file: "TestCases/Transpiler/Emission/SignatureShapeKernels.cu.cs", method: "SignatureShapeKernels.DefaultImpl", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Transpiler/Emission/SignatureShapeKernels.cu.cs", method: "SignatureShapeKernels.EnumAggressiveInlining", status: "NoStateMachine", count: 1}
