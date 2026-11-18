@@ -22,11 +22,10 @@ public sealed class FuzzBatchWorkspaceWriterTests
     public void BuildProjectXml_DialectHarnessFiles_CompilesEveryFileOfItsOwnDialectOnly(string dialect, string other)
     {
         string xml = FuzzBatchWorkspaceWriter.BuildProjectXml(dialect, "Generated", RelRepo, cudaArch: null);
-        var includes = XDocument.Parse(xml)
+        var items = XDocument.Parse(xml)
             .Descendants("Compile")
-            .Select(static e => (string?)e.Attribute("Include"))
-            .OfType<string>()
-            .ToHashSet(StringComparer.Ordinal);
+            .Select(static e => (Include: (string?)e.Attribute("Include") ?? "", Exclude: (string?)e.Attribute("Exclude") ?? ""))
+            .ToList();
 
         string ownFolder = HarnessFolder(dialect);
         string[] ownFiles = Directory.GetFiles(
@@ -35,13 +34,17 @@ public sealed class FuzzBatchWorkspaceWriterTests
         Assert.NotEmpty(ownFiles);
         foreach (string file in ownFiles)
         {
+            string name = Path.GetFileName(file);
             Assert.True(
-                includes.Contains($"{RelRepo}/{ownFolder}/*.cs") || includes.Contains($"{RelRepo}/{ownFolder}/{Path.GetFileName(file)}"),
-                $"The {dialect} batch project does not compile {ownFolder}/{Path.GetFileName(file)}.");
+                items.Any(item =>
+                    (item.Include == $"{RelRepo}/{ownFolder}/*.cs" || item.Include == $"{RelRepo}/{ownFolder}/{name}") &&
+                    !item.Exclude.Contains(name, StringComparison.Ordinal) &&
+                    !item.Exclude.Contains($"{ownFolder}/*", StringComparison.Ordinal)),
+                $"The {dialect} batch project does not compile {ownFolder}/{name}.");
         }
 
         string otherFolder = HarnessFolder(other);
-        Assert.DoesNotContain(includes, include => include.StartsWith($"{RelRepo}/{otherFolder}/", StringComparison.Ordinal));
+        Assert.DoesNotContain(items, item => item.Include.StartsWith($"{RelRepo}/{otherFolder}/", StringComparison.Ordinal));
     }
 
     private static string HarnessFolder(string dialect) =>
