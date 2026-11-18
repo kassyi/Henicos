@@ -75,7 +75,10 @@ public static class AstLoweringPipeline
             copiedParameters = ImmutableArray<string>.Empty;
         }
 
-        var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan);
+        var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan)
+        {
+            MovesLocalFunctions = hoister.HasSplitPoint
+        };
         lowerer.ReserveWarpSites(reconvergence?.RegionCount ?? 0);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
         if (hoister.HasSplitPoint)

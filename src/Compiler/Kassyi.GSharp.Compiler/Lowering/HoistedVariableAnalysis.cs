@@ -3,7 +3,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <summary>
 /// Decides which local declarations of a body move into the context struct (<see cref="ContextHoister"/>): those that
 /// cross a phase barrier, those used after a label that starts another state, a <c>SharedMemory&lt;T&gt;</c>, and the
-/// result of a call that may suspend.
+/// result of a call that may suspend. A local that a local function written in front of the <c>switch</c> captures
+/// (<see cref="StateMachineLocalFunctions"/>) moves too, as no state declares it.
 /// </summary>
 internal static class HoistedVariableAnalysis
 {
@@ -38,13 +39,15 @@ internal static class HoistedVariableAnalysis
         }
 
         var boundaries = FindStateBoundaries(block, analyzer.BarrierSpans, semanticModel, plan);
+        var captured = StateMachineLocalFunctions.FindCaptured(block, semanticModel);
         var variableCount = analyzer.Variables.Count;
         var keys = new DeclarationKey[variableCount];
         for (var v = 0; v < variableCount; v++)
         {
             var (decl, scopeEnd) = analyzer.Variables[v];
             keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
-            if (MustHoist(decl, scopeEnd, keys[v], boundaries, refLocalsNotLiveAcrossSplit))
+            if (MustHoist(decl, scopeEnd, keys[v], boundaries, refLocalsNotLiveAcrossSplit) ||
+                (captured.Contains(keys[v]) && IsBodyLocal(decl)))
             {
                 hoistedKeys.Add(keys[v]);
             }
@@ -87,7 +90,8 @@ internal static class HoistedVariableAnalysis
 
     // Whether the declaration lives in the context: always for shared memory and the result of a suspending call;
     // otherwise when a barrier lies in its scope after it (unless it is a ref local that no state after a split reads),
-    // or it is used after a split label in its scope
+    // or it is used after a split label in its scope. The caller adds the locals that a local function written in front
+    // of the switch captures
     private static bool MustHoist(
         VariableDeclaratorSyntax decl,
         int scopeEnd,
@@ -109,6 +113,12 @@ internal static class HoistedVariableAnalysis
                (boundaries.LastReferenceStarts is { } lastReferenceStarts &&
                 IsUsedAfterSplitLabel(boundaries.SplitLabelStarts, lastReferenceStarts, key, declEnd, scopeEnd));
     }
+
+    // Whether the declaration belongs to the body itself: a local of a local function or a lambda stays in it
+    private static bool IsBodyLocal(VariableDeclaratorSyntax decl) =>
+        !decl.Ancestors()
+            .AsStackEnumerable()
+            .Any(static ancestor => ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax);
 
     private static bool IsAlwaysHoisted(VariableDeclaratorSyntax decl)
     {

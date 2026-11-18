@@ -5,14 +5,17 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// locals, and renames the accesses to locals that share their
 /// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
 /// <see cref="DeclarationKey"/> (symbol and region). Labels that share their name with another label of the body are
-/// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>). The only entry is <see cref="Rewrite"/>,
-/// which builds the label table from the whole body before it visits any part of it.
+/// renamed with their gotos (<c>__gsharp_label_&lt;ordinal&gt;_&lt;name&gt;</c>), and so are the local functions that
+/// the state machine writes in front of its switch when another declaration of the body has their name, with their
+/// calls (<c>__gsharp_localfn_&lt;ordinal&gt;_&lt;name&gt;</c>). The only entry is <see cref="Rewrite"/>, which builds
+/// the label and function tables from the whole body before it visits any part of it.
 /// </summary>
 internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
 {
     private readonly IResumeLocalSet _resumeLocals;
     private readonly Dictionary<DeclarationKey, string> _renamedLocals;
     private readonly Dictionary<DeclarationKey, string> _labelRenames;
+    private readonly Dictionary<DeclarationKey, string> _localFunctionRenames;
     private readonly SemanticModel _semanticModel;
     private readonly string _kernelName;
 
@@ -20,12 +23,14 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         Dictionary<DeclarationKey, string> labelRenames,
+        Dictionary<DeclarationKey, string> localFunctionRenames,
         SemanticModel semanticModel,
         string kernelName)
     {
         _resumeLocals = resumeLocals;
         _renamedLocals = renamedLocals;
         _labelRenames = labelRenames;
+        _localFunctionRenames = localFunctionRenames;
         _semanticModel = semanticModel;
         _kernelName = kernelName;
     }
@@ -38,8 +43,8 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
     /// <param name="kernelName">The name of the kernel or device function, for internal-error reports.</param>
     public static SyntaxNode? Rewrite(SyntaxNode body, IResumeLocalSet resumeLocals,
         Dictionary<DeclarationKey, string> renamedLocals, SemanticModel semanticModel, string kernelName) =>
-        new ContextLocalRewriter(resumeLocals, renamedLocals, CreateLabelRenames(body, semanticModel), semanticModel,
-            kernelName).Visit(body);
+        new ContextLocalRewriter(resumeLocals, renamedLocals, CreateLabelRenames(body, semanticModel),
+            CreateLocalFunctionRenames(body, semanticModel), semanticModel, kernelName).Visit(body);
 
     /// <summary>
     /// Turns the context accesses of the resume locals of a native state machine back into locals; its labels stay as
@@ -48,7 +53,8 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
     public static SyntaxNode? RewriteResumeLocals(SyntaxNode body, IResumeLocalSet resumeLocals,
         SemanticModel semanticModel, string kernelName) =>
         new ContextLocalRewriter(resumeLocals, new Dictionary<DeclarationKey, string>(),
-            new Dictionary<DeclarationKey, string>(), semanticModel, kernelName).Visit(body);
+            new Dictionary<DeclarationKey, string>(), new Dictionary<DeclarationKey, string>(), semanticModel,
+            kernelName).Visit(body);
 
     // [WHY] StateMachineLowerer keeps a label that no goto in another state reaches in its state, and lowering flattens
     // sibling scopes, so two labels of one name can end up in one block (CS0140) or one inside the other's block
@@ -77,6 +83,71 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         }
 
         return renames;
+    }
+
+    // [WHY] StateMachineLowerer writes the local functions of a split body in front of its switch, where the sibling
+    // scopes that lowering flattened meet: two functions of one name there are CS0128. A function whose name another
+    // declaration of the body also has gets its own name, with its calls (a count that includes a lambda parameter of
+    // the same name renames one function too many, which does no harm). The C++ names come from the symbols
+    private static Dictionary<DeclarationKey, string> CreateLocalFunctionRenames(SyntaxNode body, SemanticModel model)
+    {
+        var renames = new Dictionary<DeclarationKey, string>();
+        if (body is not BlockSyntax block)
+        {
+            return renames;
+        }
+
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var node in body.DescendantNodes())
+        {
+            if (ManagedContextFields.GetDeclaredIdentifier(node) is { } identifier)
+            {
+                var declared = identifier.ValueText;
+                counts[declared] = counts.TryGetValue(declared, out var count) ? count + 1 : 1;
+            }
+        }
+
+        var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var statement in block.Statements)
+        {
+            if (statement is not LocalFunctionStatementSyntax function ||
+                counts[function.Identifier.ValueText] < 2)
+            {
+                continue;
+            }
+
+            var name = function.Identifier.ValueText;
+            var ordinal = ordinals.TryGetValue(name, out var previous) ? previous + 1 : 1;
+            ordinals[name] = ordinal;
+            renames[LoweringIdentity.ForDeclaration(function, model)] =
+                $"{GSharpInternalNames.Lowering.ManagedLocalFunctionPrefix}{ordinal}_{name}";
+        }
+
+        return renames;
+    }
+
+    public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+    {
+        var visited = (LocalFunctionStatementSyntax?)base.VisitLocalFunctionStatement(node) ?? node;
+        return _localFunctionRenames.Count > 0 &&
+               _localFunctionRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, _semanticModel), out var renamed)
+            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
+            : visited;
+    }
+
+    public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
+        _localFunctionRenames.Count > 0 && !HoistedVariableAnalysis.IsNonValueIdentifierPosition(node) &&
+        _localFunctionRenames.TryGetValue(LoweringIdentity.ForReference(node, _semanticModel), out var renamed)
+            ? node.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(node.Identifier))
+            : base.VisitIdentifierName(node);
+
+    public override SyntaxNode? VisitGenericName(GenericNameSyntax node)
+    {
+        var visited = (GenericNameSyntax?)base.VisitGenericName(node) ?? node;
+        return _localFunctionRenames.Count > 0 &&
+               _localFunctionRenames.TryGetValue(LoweringIdentity.ForReference(node, _semanticModel), out var renamed)
+            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
+            : visited;
     }
 
     public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)

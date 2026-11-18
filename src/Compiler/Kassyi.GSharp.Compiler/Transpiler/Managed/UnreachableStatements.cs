@@ -6,8 +6,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// whose statement is one, or a non-empty block whose last statement ends unconditionally.
 /// </param>
 /// <param name="StopsRemoval">
-/// A labeled statement (a jump may reach it) or a local declaration (a later label may use the local): the removal
-/// stops before it.
+/// A labeled statement (a jump may reach it), a local declaration (a later label may use the local) or a local function
+/// declaration (C# does not report it as unreachable, and a call before it may use it): the removal stops before it.
 /// </param>
 internal readonly record struct StatementReach(bool EndsUnconditionally, bool StopsRemoval);
 

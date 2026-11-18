@@ -2,7 +2,11 @@ using Kassyi.GSharp.Compiler.Analysis;
 
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
+/// <summary>
+/// Lowers flat C# AST statements into a switch-based state machine separated by thread barriers. With
+/// <see cref="MovesLocalFunctions"/>, a body that has split points gets its local functions in front of the
+/// <c>switch</c>, where every state sees them.
+/// </summary>
 /// <param name="isDeviceFunction">
 /// Whether the body belongs to a device function. Its end completes the call (a plain <c>return</c>, which the emitters
 /// turn into "reset the frame and report completion") instead of finishing the thread.
@@ -20,6 +24,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     internal StateMachineLowerer(bool isDeviceFunction, SemanticModel? semanticModel, StatePlan plan)
         : this(isDeviceFunction, semanticModel) =>
         _plan = plan;
+
+    /// <summary>
+    /// Whether <see cref="Lower"/> writes the local functions of the body (<see cref="StateMachineLocalFunctions"/>) in
+    /// front of the <c>switch</c>, in the order written, instead of in the state of their declaration. Set it for a body
+    /// that has a split point; the locals that the functions capture are then hoisted
+    /// (<see cref="HoistedVariableAnalysis"/>).
+    /// </summary>
+    internal bool MovesLocalFunctions { get; init; }
 
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -47,8 +59,21 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         var plan = _plan ?? StateLabelPlanner.Plan(block, semanticModel);
         var labelsReachedFromSwitch = FindLabelsReachedFromSwitch(block, plan.LabelStates);
         var sections = new SectionBuilder();
-        foreach (var stmt in block.Statements)
+        var functions = ImmutableArray.CreateBuilder<StatementSyntax>();
+        foreach (var written in block.Statements)
         {
+            var stmt = written;
+            if (MovesLocalFunctions && StateMachineLocalFunctions.GetMoved(stmt) is { } function)
+            {
+                functions.Add(function);
+                if (StateMachineLocalFunctions.WithoutFunction(stmt) is not { } remainder)
+                {
+                    continue;
+                }
+
+                stmt = remainder;
+            }
+
             if (stmt is LabeledStatementSyntax labeled && plan.StartsState(labeled))
             {
                 LowerStateLabel(labeled, plan.LabelStates, labelsReachedFromSwitch, sections);
@@ -76,7 +101,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         }
 
         // switch (__gsharp_state) { case 0: { ... } case 1: { ... } ... }
-        return SyntaxFactory.Block(sections.ToSwitch());
+        functions.Add(sections.ToSwitch());
+        return SyntaxFactory.Block(functions);
     }
 
     private void LowerStateLabel(LabeledStatementSyntax labeled, IReadOnlyDictionary<DeclarationKey, int> labelStates,
