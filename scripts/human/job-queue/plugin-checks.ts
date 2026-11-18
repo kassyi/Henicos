@@ -112,7 +112,7 @@ async function checkConfig(assert: AssertModule): Promise<void> {
       });
       assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
       assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
-      assert.deepStrictEqual(repoConfig.config.plugins, []);
+      assert.deepStrictEqual(repoConfig.config.plugins, [{ name: "dotnet" }]);
       assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
       assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
       assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);

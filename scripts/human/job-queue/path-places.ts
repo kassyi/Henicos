@@ -6,7 +6,7 @@
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { pathArguments, type KeyContext, type PathPlace } from "./estimate-key.ts";
+import { pathArguments, type KeyContext, type PathPlace, type StepKeyProvider } from "./estimate-key.ts";
 
 /** How long the git call of one worktree may take; a slower one leaves its paths without a place (judged as before). */
 const GitTimeoutMs = 5000;
@@ -16,10 +16,14 @@ const GitTimeoutMs = 5000;
  * nearest folder above it that holds `.git` (a folder in a clone, a file in a worktree or submodule), found without
  * git; whether it ignores the path takes one `git check-ignore` per worktree.
  */
-export function resolvePlaces(command: string, context: KeyContext): Record<string, PathPlace> {
+export function resolvePlaces(
+  command: string,
+  context: KeyContext,
+  plugins?: StepKeyProvider,
+): Record<string, PathPlace> {
   const places: Record<string, PathPlace> = Object.create(null) as Record<string, PathPlace>;
   const byRoot = new Map<string, string[]>();
-  for (const absolute of pathArguments(command, context)) {
+  for (const absolute of pathArguments(command, context, plugins)) {
     const root = worktreeRoot(absolute);
     if (root === "") {
       places[absolute] = { root, ignored: false };

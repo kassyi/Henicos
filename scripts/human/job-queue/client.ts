@@ -12,15 +12,15 @@ import {
   UsageExitCode,
   type ShellName,
 } from "./constants.ts";
-import { planBuildStep } from "./build-split.ts";
 import { runBuildStep } from "./client-build-step.ts";
 import { type Endpoint } from "./client-connect.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost } from "./client-run-host.ts";
 import { MachineProfile } from "./machine.ts";
+import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
 import { CommandShell } from "./shell.ts";
-import { ProcessTable, prefix } from "./system.ts";
+import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 
 export interface RunOptions extends Endpoint {
   command: string;
@@ -44,7 +44,18 @@ export function usageError(message: string): never {
   process.exit(UsageExitCode);
 }
 
-export async function run(options: RunOptions): Promise<void> {
+function clientContext(shell: ShellName | "", configRoot: string, worktree: string): BaseClientContext {
+  return {
+    cwd: process.cwd(),
+    worktree,
+    configRoot,
+    shell: CommandShell.resolve(shell).name,
+    env: process.env,
+    log: prefix,
+  };
+}
+
+export async function run(options: RunOptions, plugins: PluginHost): Promise<void> {
   if (options.commandWords !== null) {
     const shell = CommandShell.resolve(options.shell);
     if (shell.isPowerShell && options.commandWords.includes("--%")) {
@@ -70,7 +81,17 @@ export async function run(options: RunOptions): Promise<void> {
   if (process.env[JobVariable] && (inGpuLock || !options.gpu)) {
     // Inside a queued job: its slot covers this command, with the same node limit.
     const cpus = Number(process.env[CpusVariable]) || 0;
-    const command = cpus > 0 ? CommandShell.limitMsbuildNodes(options.command, cpus) : options.command;
+    let command = options.command;
+    let env: NodeJS.ProcessEnv = process.env;
+    if (cpus > 0) {
+      const prepared = plugins.prepareCommand(
+        command,
+        { jobId: Number(process.env[JobVariable]) || 0, cpus, nested: true },
+        clientContext(options.shell, plugins.configRoot, resolveWorktree(process.cwd())),
+      );
+      command = prepared.command;
+      env = { ...process.env, ...prepared.env };
+    }
     let child: ChildProcess | null = null;
     const stop = (code: number) => (): void => {
       ProcessTable.killChild(child);
@@ -78,7 +99,7 @@ export async function run(options: RunOptions): Promise<void> {
     };
     process.on("SIGINT", stop(130));
     process.on("SIGTERM", stop(143));
-    const result = await CommandShell.resolve(options.shell).run(command, process.env, (c) => (child = c));
+    const result = await CommandShell.resolve(options.shell).run(command, env, (c) => (child = c));
     process.exit(result.code);
   }
   if (options.gpu && !inGpuLock) {
@@ -96,24 +117,25 @@ export async function run(options: RunOptions): Promise<void> {
       );
     }
     const host = new ProcessRunHost(options);
-    const step = planBuildStep(options.command, CommandShell.resolve(options.shell).name);
-    if (step !== null) {
+    const context = clientContext(options.shell, plugins.configRoot, resolveWorktree(process.cwd()));
+    const step = plugins.splitBeforeTurn(options.command, { name: "gpu", forcedExclusive: false }, context);
+    if (step !== undefined) {
       // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
-      prefix(`building outside the GPU turn first, as a job of its own: ${step.build}`);
-      const code = await runBuildStep(options, placement, step.build, host);
+      prefix(`building outside the GPU turn first, as a job of its own: ${step.before}`);
+      const code = await runBuildStep(options, placement, step.before, host, step.beforeRole, plugins);
       if (code !== 0) {
         prefix(`the build ended with ${code}; the tests do not ask for the GPU turn`);
         process.exit(code);
       }
-      prefix(`the build succeeded; the tests wait for the GPU turn: ${step.tests}`);
-      options.command = step.tests;
-      options.role = "tests, GPU turn";
+      prefix(`the build succeeded; the tests wait for the GPU turn: ${step.after}`);
+      options.command = step.after;
+      options.role = step.afterRole;
       options.after = 0; // the build job waited for it
     }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
     // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too.
-    await new QueuedRun(options, placement, false, true, host).run();
+    await new QueuedRun(options, placement, false, true, host, plugins).run();
     return;
   }
-  await new QueuedRun(options, placement, inGpuLock, false, new ProcessRunHost(options)).run();
+  await new QueuedRun(options, placement, inGpuLock, false, new ProcessRunHost(options), plugins).run();
 }

@@ -3,7 +3,7 @@
   "entry": "scripts/human/job-queue.js",
   "stateDir": "tmp/job-queue",
   "sharedRoot": "git-main-checkout",
-  "plugins": [],
+  "plugins": [{ "name": "dotnet" }],
   "pools": {
     "coresPerSlot": 3,
     "minimumSlots": 2,
