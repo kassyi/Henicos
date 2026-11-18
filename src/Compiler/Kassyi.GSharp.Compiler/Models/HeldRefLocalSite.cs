@@ -57,8 +57,8 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
 
     /// <summary>
     /// Reports GSH0003 (<see cref="GpuCodeConstraints.RefLocalHeldByCpuStateMachine"/>), or GSH0039 for a span local,
-    /// at this site: in the syntax tree of <paramref name="compilation"/> that declares it, so that the editor marks the
-    /// declaration.
+    /// at this site: in the syntax tree of <paramref name="compilation"/> that declares it, so that the editor marks
+    /// the declaration.
     /// </summary>
     public void Report(SourceProductionContext context, Compilation compilation)
     {

@@ -24,9 +24,9 @@ public class SpanAcrossStatesDiagnosticsTests
         // -> the second one is lost
         // mutant: SpanAcrossStates.EventWalker.VisitArgument counting no out argument as a write -> the span that
         // WrittenByOutInLoop writes in every iteration is reported
-        // mutant: SpanAcrossStates.EventWalker.IsWrittenBeforeASplit always true -> the out of a suspending call is
+        // mutant: OutParameterSplit.IsWrittenBeforeASplit always true -> the out of a suspending call is
         // never a write, and WrittenAfterTheCalleesBarrier is reported
-        // mutant: SpanAcrossStates.EventWalker.IsWrittenBeforeASplit always false -> the out of a suspending call is
+        // mutant: OutParameterSplit.IsWrittenBeforeASplit always false -> the out of a suspending call is
         // always a write, and the three suspending out forms are not reported
         // mutant: SpanAcrossStates.EventWalker.VisitBlock without the early return -> UsedInOtherBranch is reported
         // Declared before a loop that has a barrier (the analyzer reports it, so the generator does not repeat it),

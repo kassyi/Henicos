@@ -170,33 +170,8 @@ internal static class SpanAcrossStates
             return carried.ToImmutable();
         }
 
-        var symbols = new List<ISymbol>();
-        var analyzed = new List<VariableDeclaratorSyntax>();
-        foreach (var field in carried)
-        {
-            if (LoweringIdentity.ForDeclaration(field, semanticModel).Symbol is ILocalSymbol
-                {
-                    DeclaringSyntaxReferences: [var reference]
-                } local && reference.GetSyntax() is VariableDeclaratorSyntax)
-            {
-                symbols.Add(local);
-                analyzed.Add(field);
-            }
-        }
-
-        var reported = new HashSet<VariableDeclaratorSyntax>();
-        if (symbols.Count > 0)
-        {
-            var live = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, symbols);
-            for (var i = 0; i < live.Length; i++)
-            {
-                if (live[i])
-                {
-                    reported.Add(analyzed[i]);
-                }
-            }
-        }
-
+        var (symbols, analyzed) = CollectTrackedLocals(carried, semanticModel);
+        var reported = FindReportedByAnalyzer(graph, liveness, symbols, analyzed);
         var remaining = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
         foreach (var field in carried)
         {
@@ -207,6 +182,49 @@ internal static class SpanAcrossStates
         }
 
         return remaining.ToImmutable();
+    }
+
+    // The carried spans that the analyzer tracks (a local of a declaration statement), with their symbols
+    private static (List<ISymbol> Symbols, List<VariableDeclaratorSyntax> Fields) CollectTrackedLocals(
+        ImmutableArray<VariableDeclaratorSyntax>.Builder carried, SemanticModel semanticModel)
+    {
+        var symbols = new List<ISymbol>();
+        var fields = new List<VariableDeclaratorSyntax>();
+        foreach (var field in carried)
+        {
+            if (LoweringIdentity.ForDeclaration(field, semanticModel).Symbol is ILocalSymbol
+                {
+                    DeclaringSyntaxReferences: [var reference]
+                } local && reference.GetSyntax() is VariableDeclaratorSyntax)
+            {
+                symbols.Add(local);
+                fields.Add(field);
+            }
+        }
+
+        return (symbols, fields);
+    }
+
+    // The fields whose symbol is live after a split of the flow graph: the ones that GSH0039 of the analyzer reports
+    private static HashSet<VariableDeclaratorSyntax> FindReportedByAnalyzer(SplicedFlowGraph graph,
+        LivenessRecorder liveness, List<ISymbol> symbols, List<VariableDeclaratorSyntax> fields)
+    {
+        var reported = new HashSet<VariableDeclaratorSyntax>();
+        if (symbols.Count == 0)
+        {
+            return reported;
+        }
+
+        var live = CrossBarrierLiveness.FindLiveAcrossSplit(graph, liveness, symbols);
+        for (var i = 0; i < live.Length; i++)
+        {
+            if (live[i])
+            {
+                reported.Add(fields[i]);
+            }
+        }
+
+        return reported;
     }
 
     // The reads, writes and jumps of one state, in the order they run: a jump records how many accesses precede it, so
@@ -313,7 +331,7 @@ internal static class SpanAcrossStates
         {
             if (node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) && TryGetKey(node.Expression) is { } key)
             {
-                if (_suspendingCallDepth == 0 || !IsWrittenBeforeASplit(node))
+                if (_suspendingCallDepth == 0 || !OutParameterSplit.IsWrittenBeforeASplit(node, semanticModel))
                 {
                     events.AddAccess(key, isWrite: true);
                 }
@@ -333,40 +351,6 @@ internal static class SpanAcrossStates
             }
 
             base.VisitMemberAccessExpression(node);
-        }
-
-        // Whether the callee of the call that takes the argument writes its out parameter and then splits: the value
-        // does not survive the next resume. A callee that cannot be looked into counts as splitting
-        private bool IsWrittenBeforeASplit(ArgumentSyntax argument)
-        {
-            if (argument.Parent?.Parent is not InvocationExpressionSyntax call)
-            {
-                return true;
-            }
-
-            SimpleNameSyntax? name = call.Expression switch
-            {
-                IdentifierNameSyntax identifier => identifier,
-                MemberAccessExpressionSyntax access => access.Name,
-                _ => null
-            };
-            if (name is null || semanticModel.GetSymbol(name) is not IMethodSymbol callee)
-            {
-                return true;
-            }
-
-            var arguments = call.ArgumentList.Arguments;
-            var index = arguments.IndexOf(argument);
-            var parameter = argument.NameColon is { } colon
-                ? callee.Parameters
-                    .AsStackEnumerable()
-                    .FirstOrDefault(
-                        colon.Name.Identifier.ValueText,
-                        static (p, parameterName) => p.Name == parameterName
-                    )
-                : index >= 0 && index < callee.Parameters.Length ? callee.Parameters[index] : null;
-            return parameter is null ||
-                   OutParameterSplit.IsWrittenBeforeASplit(callee, parameter, semanticModel.Compilation);
         }
 
         // <ctx>-><local> when <local> is a candidate

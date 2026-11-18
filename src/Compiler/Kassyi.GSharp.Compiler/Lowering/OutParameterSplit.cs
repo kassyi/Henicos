@@ -14,10 +14,49 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 internal static class OutParameterSplit
 {
     /// <summary>
-    /// Whether a write of <paramref name="parameter"/> in <paramref name="callee"/> is followed by a split point on
-    /// some path to the return, or <see langword="true"/> when the callee cannot be looked into.
+    /// Whether the callee of the call that takes <paramref name="argument"/> writes the <c>out</c> parameter that the
+    /// argument passes and then splits: the value does not survive the next resume. <see langword="true"/> when the
+    /// callee cannot be looked into.
     /// </summary>
-    public static bool IsWrittenBeforeASplit(IMethodSymbol callee, IParameterSymbol parameter, Compilation compilation)
+    public static bool IsWrittenBeforeASplit(ArgumentSyntax argument, SemanticModel semanticModel)
+    {
+        if (argument.Parent?.Parent is not InvocationExpressionSyntax call)
+        {
+            return true;
+        }
+
+        SimpleNameSyntax? name = call.Expression switch
+        {
+            IdentifierNameSyntax identifier => identifier,
+            MemberAccessExpressionSyntax access => access.Name,
+            _ => null
+        };
+        if (name is null || semanticModel.GetSymbol(name) is not IMethodSymbol callee)
+        {
+            return true;
+        }
+
+        var parameter = FindParameter(callee, call, argument);
+        return parameter is null || SplitsAfterWrite(callee, parameter, semanticModel.Compilation);
+    }
+
+    // The parameter that the argument is passed to, by name or by position
+    private static IParameterSymbol? FindParameter(IMethodSymbol callee, InvocationExpressionSyntax call,
+        ArgumentSyntax argument)
+    {
+        if (argument.NameColon is { } colon)
+        {
+            return callee.Parameters
+                .AsStackEnumerable()
+                .FirstOrDefault(colon.Name.Identifier.ValueText, static (p, parameterName) => p.Name == parameterName);
+        }
+
+        var index = call.ArgumentList.Arguments.IndexOf(argument);
+        return index >= 0 && index < callee.Parameters.Length ? callee.Parameters[index] : null;
+    }
+
+    // Whether a write of parameter in callee is followed by a split point on some path to the return
+    private static bool SplitsAfterWrite(IMethodSymbol callee, IParameterSymbol parameter, Compilation compilation)
     {
         if (callee.DeclaringSyntaxReferences is not [var reference] ||
             reference.GetSyntax() is not MethodDeclarationSyntax { Body: not null } declaration)
@@ -26,23 +65,7 @@ internal static class OutParameterSplit
         }
 
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
-        var lowered = AstLoweringPipeline.Lower(declaration, model, callee, isDeviceFunction: true);
-        if (lowered.LoweredBody.Statements.LastOrDefault() is not SwitchStatementSyntax body)
-        {
-            return false;
-        }
-
-        var states = new Dictionary<int, List<(Kind Kind, int Target)>>();
-        foreach (var section in body.Sections)
-        {
-            if (section.Labels is [CaseSwitchLabelSyntax { Value: LiteralExpressionSyntax { Token.Value: int state } }])
-            {
-                var events = new List<(Kind, int)>();
-                new Walker(parameter, model, events).Visit(section);
-                states[state] = events;
-            }
-        }
-
+        var states = ReadStates(declaration, callee, parameter, model);
         var splits = FindStatesThatSplit(states);
         foreach (var events in states.Values)
         {
@@ -56,6 +79,30 @@ internal static class OutParameterSplit
         }
 
         return false;
+    }
+
+    // The writes, splits and jumps of each state of the lowered callee, in the order they run
+    private static Dictionary<int, List<(Kind Kind, int Target)>> ReadStates(MethodDeclarationSyntax declaration,
+        IMethodSymbol callee, IParameterSymbol parameter, SemanticModel model)
+    {
+        var states = new Dictionary<int, List<(Kind Kind, int Target)>>();
+        var lowered = AstLoweringPipeline.Lower(declaration, model, callee, isDeviceFunction: true);
+        if (lowered.LoweredBody.Statements.LastOrDefault() is not SwitchStatementSyntax body)
+        {
+            return states;
+        }
+
+        foreach (var section in body.Sections)
+        {
+            if (section.Labels is [CaseSwitchLabelSyntax { Value: LiteralExpressionSyntax { Token.Value: int state } }])
+            {
+                var events = new List<(Kind, int)>();
+                new Walker(parameter, model, events).Visit(section);
+                states[state] = events;
+            }
+        }
+
+        return states;
     }
 
     // The states that split from their start: a state assignment later in the state, or a goto case to such a state
