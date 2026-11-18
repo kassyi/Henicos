@@ -21,55 +21,10 @@
 // checkDetailed(command, dialect) returns structured { tool, verb, text } reasons.
 
 const { createReader, programName, unquote } = require('./shell-reader.js');
-
-// \S*: a recipe name may hold a variable, as in a loop: just test-$r
-const JustRecipes = /^(test\S*|coverage-diff|fuzz-\S+|mutate|long-checks|bench\S*|doctest)$/;
-/** The long test scripts and gpu-lock.js, in any folder (gpu-lock.js was in scripts/agent/ in older checkouts). */
-const NodeScriptNames = [
-  'gpu-lock',
-  'test-stability',
-  'long-checks',
-  'test-memory',
-  'test-sanitized',
-  'mutate',
-  'coverage-diff',
-  'fuzz-differential',
-];
-const NodeScripts = new RegExp(`(^|[\\\\/])(${NodeScriptNames.join('|')})\\.js$`);
-const DotnetVerbs = /^(build|test|msbuild|publish|pack|vstest|stryker|watch)$/;
-/** just options that take a value. */
-const JustValueOptions = [
-  '-f',
-  '--justfile',
-  '-d',
-  '--working-directory',
-  '--dotenv-path',
-  '--dotenv-filename',
-  '--shell',
-  '--shell-arg',
-  '--color',
-  '--chooser',
-  '--command-color',
-  '--list-heading',
-  '--list-prefix',
-];
-
-/** The recipe of a just invocation, after its options. */
-function justRecipe(list) {
-  for (let i = 1; i < list.length; i++) {
-    const arg = unquote(list[i]);
-    if (JustValueOptions.includes(arg)) {
-      i++;
-    } else if (arg === '--set') {
-      i += 2;
-    } else if (/^\w[\w-]*=/.test(arg)) {
-      continue; // a variable assignment before the recipe: just profile=cpu fuzz-diff
-    } else if (!arg.startsWith('-')) {
-      return arg;
-    }
-  }
-  return '';
-}
+const { wrapperRules } = require('./rules/wrappers.js');
+const { dotnet, stryker, msbuild } = require('./rules/dotnet.js');
+const justRules = require('./rules/just.js');
+const nodeScriptRules = require('./rules/node-scripts.js');
 
 /** The first structured reason of a nested command, or null. */
 function nestedReason(command, reader) {
@@ -80,32 +35,8 @@ function nestedReason(command, reader) {
   return reasons.length > 0 ? reasons[0] : null;
 }
 
-/** Programs that run another command given among their arguments. */
-const Runners = [
-  'compute-sanitizer',
-  'cuda-memcheck',
-  'valgrind',
-  'strace',
-  'ltrace',
-  'nsys',
-  'ncu',
-  'drmemory',
-  'perf',
-  'gdb',
-  'lldb',
-  'dotnet-trace',
-  'dotnet-counters',
-  'dotnet-coverage',
-  'procdump',
-];
-
-/** True for the Stryker.NET tool name, also with a version: dotnet-stryker, dotnet-stryker@4.0.0. */
-function isStryker(word) {
-  return /^dotnet-stryker(@.*)?$/i.test(word);
-}
-
-/** The reason a segment needs the queue, or null. */
-function segmentReason(segment, reader) {
+/** Parses a segment into its target program ({ name, list, args, inner }), an inner brace reason, or null. */
+function resolveProgram(reader, segment) {
   const raw = reader.words(segment.trim().replace(/^[({]+\s*/, ''));
   // The closer of a group or subshell may stick to a word: (just test), (msbuild)
   const list = reader.dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
@@ -135,113 +66,37 @@ function segmentReason(segment, reader) {
   if (brace >= 0 && !/^["']/.test(list[brace])) {
     const inner = nestedReason(list.slice(brace + 1).join(' '), reader);
     if (inner !== null) {
-      return inner;
+      return { name: '', list: [], args: [], inner };
     }
   }
   const name = programName(list[0]);
-  if (name === 'start-process' || name === 'saps') {
-    return nestedReason(reader.startProcessCommand(list), reader);
-  }
-  if (name === 'invoke-expression' || name === 'iex') {
-    return nestedReason(list.slice(1).map(reader.argumentText).join(' '), reader);
-  }
-  if (name === 'wsl') {
-    // wsl [options] [-e | --exec] <command>, wsl [options] -- <command line>: the command runs in Linux, on this
-    // machine's CPU
-    let i = 1;
-    while (i < list.length && /^-/.test(list[i]) && !['-e', '--exec', '--'].includes(list[i])) {
-      i += ['-d', '--distribution', '-u', '--user', '--cd', '--shell-type'].includes(list[i]) ? 2 : 1;
-    }
-    if (['-e', '--exec', '--'].includes(list[i])) {
-      i++;
-    }
-    return nestedReason(list.slice(i).join(' '), createReader('bash'));
-  }
-  const shellIndex = reader.shellCommandIndex(name, list);
-  if (shellIndex > 0) {
-    const inner = list.slice(shellIndex).map(reader.argumentText).join(' ');
-    const innerDialect = name === 'cmd' ? 'cmd' : /^(pwsh|powershell)$/.test(name) ? 'pwsh' : 'bash';
-    return nestedReason(inner, createReader(innerDialect));
-  }
   // The closer of a group or subshell may stick to the last word: (dotnet build)
   const args = list.slice(1).map((word) => unquote(word).replace(/[)}]+$/, ''));
-  if (name === 'dotnet') {
-    const verbIndex = args.findIndex((arg) => !arg.startsWith('-'));
-    const verb = verbIndex < 0 ? '' : args[verbIndex];
-    const rest = args.slice(verbIndex + 1);
-    // dotnet tool run / exec, dotnet dnx, dotnet dotnet-stryker: Stryker anywhere among the words, with any version
-    // (dotnet-stryker@4.0.0) and options before it (--tool-manifest m.json)
-    if (/^(tool|dnx|dotnet-stryker(@.*)?)$/i.test(verb) && args.some(isStryker)) {
-      return { tool: 'stryker', verb: '', text: 'dotnet-stryker' };
-    }
-    if (rest.some((arg) => ['--help', '-h', '-?', '/?'].includes(arg))) {
-      return null; // dotnet test --help builds nothing
-    }
-    if (DotnetVerbs.test(verb)) {
-      return { tool: 'dotnet', verb, text: `dotnet ${verb}` };
-    }
+  return { name, list, args, inner: null };
+}
+
+const { shellWrappers, runners } = wrapperRules({ nestedReason, segmentReason });
+const ProgramRules = [
+  ...shellWrappers,
+  dotnet,
+  stryker,
+  ...runners,
+  msbuild,
+  ...justRules,
+  ...nodeScriptRules,
+];
+
+/** The reason a segment needs the queue, or null. */
+function segmentReason(segment, reader) {
+  const program = resolveProgram(reader, segment);
+  if (program === null) {
     return null;
   }
-  if (isStryker(name) || (name === 'dnx' && args.some(isStryker))) {
-    return { tool: 'stryker', verb: '', text: 'dotnet-stryker' };
+  if (program.inner !== null) {
+    return program.inner;
   }
-  // A program that runs the command given in its arguments (a sanitizer, tracer or profiler, or a program held in a
-  // variable): compute-sanitizer --tool memcheck dotnet test, "$CS" --log-file x dotnet test
-  if (Runners.includes(name) || /^["']?\$/.test(list[0])) {
-    for (let i = 1; i < list.length; i++) {
-      if (['dotnet', 'just', 'msbuild', 'node'].includes(programName(list[i]))) {
-        const inner = segmentReason(list.slice(i).join(' '), reader);
-        if (inner !== null) {
-          return inner;
-        }
-      }
-    }
-    return null;
-  }
-  if (name === 'msbuild') {
-    return { tool: 'msbuild', verb: '', text: 'msbuild' };
-  }
-  if (name === 'just') {
-    const recipe = justRecipe(list);
-    if (!JustRecipes.test(recipe)) {
-      return null;
-    }
-    const recipeIndex = list.findIndex((word, index) => index > 0 && unquote(word) === recipe);
-    const before = list.slice(1, recipeIndex).map(unquote);
-    const after = list.slice(recipeIndex + 1).map(unquote);
-    // just --dry-run / --show / --list prints the recipe; mutate and long-checks run nothing with --dry-run
-    const printsOnly = before.some((arg) =>
-      ['-n', '--dry-run', '-s', '--show', '-l', '--list', '--summary', '--evaluate'].includes(arg),
-    );
-    const scriptDryRun = /^(mutate|long-checks)$/.test(recipe) && after.includes('--dry-run');
-    return printsOnly || scriptDryRun ? null : { tool: 'just', verb: recipe, text: `just ${recipe}` };
-  }
-  if (NodeScripts.test(unquote(list[0]))) {
-    const file = unquote(list[0]).replace(/^.*[\\/]/, ''); // ./scripts/human/long-checks.js run directly
-    return { tool: 'node-script', verb: file, text: file };
-  }
-  if (name === 'node') {
-    const scriptIndex = args.findIndex((arg) => !arg.startsWith('-'));
-    const script = scriptIndex < 0 ? '' : args[scriptIndex];
-    // node --check <script>, <script> --help / --self-test / --dry-run: no build, no test run. Only the script's own
-    // options count, not those after `--` that it passes on (test-stability.js -- --dry-run still builds), and
-    // the fuzzer builds tools/fuzz-diff even for --help.
-    const ownArgs = args.slice(scriptIndex + 1);
-    const passOn = ownArgs.indexOf('--');
-    const helper =
-      args.slice(0, Math.max(scriptIndex, 0)).some((arg) => arg === '--check' || arg === '-c') ||
-      (!/fuzz-differential\.js$/.test(script) &&
-        (passOn < 0 ? ownArgs : ownArgs.slice(0, passOn)).some((arg) =>
-          ['--help', '-h', '--self-test', '--dry-run'].includes(arg),
-        )) ||
-      // gpu-lock.js --lock-path <dir> takes a private lock, for tests of the script itself
-      (/gpu-lock\.js$/.test(script) && ownArgs.includes('--lock-path'));
-    if (NodeScripts.test(script) && !helper) {
-      const file = script.replace(/^.*[\\/]/, '');
-      return { tool: 'node-script', verb: file, text: file };
-    }
-  }
-  return null;
+  const rule = ProgramRules.find((entry) => entry.matches(program, reader));
+  return rule === undefined ? null : rule.reason(reader, program);
 }
 
 /** True when a command word list runs job-queue.js or build-queue.js via node. */
@@ -303,4 +158,4 @@ function check(command, kind = 'bash') {
   return checkDetailed(command, kind).map((reason) => reason.text);
 }
 
-module.exports = { check, checkDetailed, isQueueScript };
+module.exports = { check, checkDetailed, isQueueScript, resolveProgram };
