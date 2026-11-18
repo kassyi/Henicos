@@ -6,38 +6,54 @@
 // groups, launch prefixes (time, env, nohup, timeout, nice, sudo, xargs, exec, !, the PowerShell call and dot
 // operators) and shell keywords (if, then, do, else, a { body }, a bash function body), and through Start-Process,
 // Invoke-Expression, wsl, shell wrappers (cmd /c, pwsh -Command, bash -c, with their other options; the wrapped string
-// is unescaped as its shell does) and programs that run a command given in their arguments (compute-sanitizer,
-// valgrind, a program held in a variable), is
-//   - dotnet build, test, msbuild, publish, pack, vstest, stryker or watch, Stryker in any form, or msbuild itself
-//     (dotnet run is left alone: it starts the small tools of the repository, such as the demangler),
-//   - just with a recipe that builds or runs tests (test*, coverage-diff, fuzz-*, mutate, long-checks, bench*,
-//     doctest), unless just only prints it (--dry-run, --show, --list) or mutate / long-checks get --dry-run,
-//   - node with one of the long test scripts or gpu-lock.js (in any folder: scripts/human/, or scripts/agent/ in older
-//     checkouts), unless they only print (--help, --self-test, --dry-run before any --), or gpu-lock.js takes a private
-//     lock (--lock-path, for its own tests).
-// A segment that runs job-queue.js is allowed with everything quoted in it, and a git or gh segment is left alone.
+// is unescaped as its shell does) and programs that run a command given in their arguments (runners from the engine
+// or plugins, or a program held in a variable), matches:
+//   - a rule returned by an enabled plugin's `hook-rules.js` (evaluated in configuration order), or
+//   - node with a script configured via a plugin's `nodeScripts`, unless it only prints (--help, --self-test, --dry-run
+//     before any --) or matches an exempt option.
+// A segment that runs the configured queue script is allowed with everything quoted in it, and git / gh are left
+// alone.
 //
-// Usage: require('./command-rules.js').createRules(project) returns { check, checkDetailed, isQueueScript } (it throws
-// when `project` does not have the shape of project-config.js); check(command, dialect) returns the reason texts
-// (empty when allowed), and checkDetailed(...) returns structured { tool, verb, text } reasons.
+// Usage: require('./command-rules.js').createRules(engineConfig, opts) returns
+// { check, checkDetailed, isQueueScript }; check(command, dialect) returns the reason texts (empty when allowed), and
+// checkDetailed(...) returns structured { tool, verb, text } reasons.
 
-const { validateProject } = require('./project-config.js');
+const path = require('node:path');
 const { createReader, programName, unquote } = require('./shell-reader.js');
-const { wrapperRules } = require('./rules/wrappers.js');
-const { dotnetRules } = require('./rules/dotnet.js');
-const { justRules } = require('./rules/just.js');
+const { DefaultRunners, DefaultRunnerTargets, wrapperRules } = require('./rules/wrappers.js');
 const { nodeScriptRules } = require('./rules/node-scripts.js');
+
+const DefaultExemptPrograms = ['git', 'gh'];
+
+/** Builds the regex matching `node <queue-script>` from `entry` and any plugin `legacyQueueScripts`. */
+function buildQueueScriptPattern(entry, rulePlugins) {
+  const names = new Set();
+  const addName = (value) => {
+    const base = path.basename(String(value).replace(/\\/g, '/'));
+    if (base !== '') {
+      names.add(base);
+    }
+  };
+  addName(entry);
+  for (const plugin of rulePlugins) {
+    for (const legacy of plugin.module.legacyQueueScripts || []) {
+      addName(legacy);
+    }
+  }
+  const escaped = [...names].map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(`(^|[\\\\/])(${escaped.join('|')})$`);
+}
 
 /** Parses a segment into its target program ({ name, list, args, inner }), an inner brace reason, or null. */
 function resolveProgram(reader, segment, nestedReason) {
   const raw = reader.words(segment.trim().replace(/^[({]+\s*/, ''));
-  // The closer of a group or subshell may stick to a word: (just test), (msbuild)
+  // The closer of a group or subshell may stick to a word: (buildtool test), (buildtool)
   const list = reader.dropPrefixes(raw).map((word) => (/^["']/.test(word) ? word : word.replace(/[)}]+$/, '')));
   if (list.length === 0 || list[0] === '') {
     return null;
   }
   let calledInGroup = false;
-  // A group or subexpression after an assignment: $out = (dotnet test), $r = @(dotnet test), $o = (& "x.exe" build)
+  // A group or subexpression after an assignment: $out = (buildtool test), $r = @(buildtool), $o = (& "x.exe" build)
   if (/^[@$]?\(+./.test(list[0])) {
     list[0] = list[0].replace(/^[@$]?\(+/, '');
     if ((list[0] === '&' || list[0] === '.') && list.length > 1) {
@@ -45,14 +61,14 @@ function resolveProgram(reader, segment, nestedReason) {
       calledInGroup = true;
     }
   }
-  // PowerShell: a quoted string at the start is a value ($tool = "msbuild"), a command only after & or .
+  // PowerShell: a quoted string at the start is a value ($tool = "buildtool"), a command only after & or .
   const called =
     calledInGroup || raw.slice(0, Math.max(raw.length - list.length, 0)).some((word) => /^[({]*[&.]$/.test(word));
   if (reader.dialect === 'pwsh' && /^["']/.test(list[0]) && !called) {
     return null;
   }
-  // A PowerShell body after the condition: if (...) { dotnet test }, foreach (...) { ... }
-  // ... and the body of a bash function: cnt(){ dotnet test; }, cnt() { dotnet test; }
+  // A PowerShell body after the condition: if (...) { buildtool test }, foreach (...) { ... }
+  // ... and the body of a bash function: cnt(){ buildtool test; }, cnt() { buildtool test; }
   const brace = list.findIndex(
     (word, index) => (index > 0 && (word === '{' || word.endsWith('{'))) || (index === 0 && /\(\)\{$/.test(word)),
   );
@@ -63,14 +79,24 @@ function resolveProgram(reader, segment, nestedReason) {
     }
   }
   const name = programName(list[0]);
-  // The closer of a group or subshell may stick to the last word: (dotnet build)
+  // The closer of a group or subshell may stick to the last word: (buildtool build)
   const args = list.slice(1).map((word) => unquote(word).replace(/[)}]+$/, ''));
   return { name, list, args, inner: null };
 }
 
-/** Creates the command rule evaluator bound to the given repository config `project`. */
-function createRules(project) {
-  const { exemptPrograms, queueScriptPattern } = validateProject(project);
+/** Creates the command rule evaluator bound to the loaded `engineConfig`. */
+function createRules(engineConfig, { tolerant = false, onError = null } = {}) {
+  const reportError = (error) => {
+    if (!tolerant) {
+      throw error;
+    }
+    if (typeof onError === 'function') {
+      onError(error);
+    }
+  };
+
+  const exemptPrograms = DefaultExemptPrograms;
+  const queueScriptPattern = buildQueueScriptPattern(engineConfig.entry, engineConfig.rulePlugins);
 
   /** The first structured reason of a nested command, or null. */
   function nestedReason(command, reader) {
@@ -81,17 +107,56 @@ function createRules(project) {
     return reasons.length > 0 ? reasons[0] : null;
   }
 
-  const { dotnet, stryker, msbuild } = dotnetRules(project);
-  const { shellWrappers, runners } = wrapperRules({ nestedReason, segmentReason }, project);
-  const ProgramRules = [
-    ...shellWrappers,
-    dotnet,
-    stryker,
-    msbuild,
-    ...justRules(project),
-    ...runners,
-    ...nodeScriptRules(project),
-  ];
+  const runners = new Set(DefaultRunners);
+  const runnerTargets = new Set(DefaultRunnerTargets);
+  for (const plugin of engineConfig.rulePlugins) {
+    for (const r of plugin.module.runners || []) {
+      runners.add(r);
+    }
+    for (const target of plugin.module.runnerTargets || []) {
+      runnerTargets.add(target);
+    }
+  }
+
+  const { shellWrappers, runners: runnerRules } = wrapperRules(
+    { nestedReason, segmentReason },
+    { runners: [...runners], runnerTargets: [...runnerTargets] },
+  );
+
+  const engineApi = {
+    nestedReason,
+    segmentReason,
+    entry: engineConfig.entry,
+    api: (name) => engineConfig.apiByName.get(name),
+  };
+
+  const pluginRules = [];
+  for (const plugin of engineConfig.rulePlugins) {
+    if (typeof plugin.module.rules !== 'function') {
+      continue;
+    }
+    try {
+      const list = plugin.module.rules(plugin.options, engineApi);
+      if (
+        !Array.isArray(list) ||
+        list.some((item) => !item || typeof item.matches !== 'function' || typeof item.reason !== 'function')
+      ) {
+        throw new Error(`check-queued-command: plugin ${plugin.name} rules() must return { matches, reason } objects`);
+      }
+      pluginRules.push(...list);
+    } catch (error) {
+      reportError(error);
+    }
+  }
+
+  const nodeRules = [];
+  for (const plugin of engineConfig.rulePlugins) {
+    if (plugin.module.nodeScripts !== undefined) {
+      nodeRules.push(...nodeScriptRules(plugin.module.nodeScripts));
+    }
+  }
+
+  const ProgramRules = [...shellWrappers, ...pluginRules, ...runnerRules, ...nodeRules];
 
   /** The reason a segment needs the queue, or null. */
   function segmentReason(segment, reader) {
@@ -102,8 +167,29 @@ function createRules(project) {
     if (program.inner !== null) {
       return program.inner;
     }
-    const rule = ProgramRules.find((entry) => entry.matches(program, reader));
-    return rule === undefined ? null : rule.reason(reader, program);
+    for (const rule of ProgramRules) {
+      let matched;
+      try {
+        matched = rule.matches(program, reader);
+      } catch (error) {
+        reportError(error);
+        continue;
+      }
+      if (!matched) {
+        continue;
+      }
+      try {
+        const reason = rule.reason(reader, program);
+        if (reason !== null && (typeof reason !== 'object' || typeof reason.text !== 'string')) {
+          throw new Error('check-queued-command: rule reason must be null or an object with a text string');
+        }
+        return reason;
+      } catch (error) {
+        reportError(error);
+        continue;
+      }
+    }
+    return null;
   }
 
   /** True when a command word list runs the project's queue script via node. */
@@ -138,7 +224,7 @@ function createRules(project) {
       }
     };
     for (const segment of reader.splitSegments(command)) {
-      // A substitution runs even inside an exempt command: git commit -m "$(dotnet test)"
+      // A substitution runs even inside an exempt command: git commit -m "$(buildtool test)"
       reader.substitutions(segment).forEach((body) => checkDetailedWithReader(body, reader).forEach(add));
       if (!isExempt(segment, reader)) {
         add(segmentReason(segment, reader));

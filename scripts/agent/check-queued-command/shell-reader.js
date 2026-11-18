@@ -2,8 +2,8 @@
 
 // The shell reader of check-queued-command.js: how a command line is read in the dialect of the tool that runs it.
 //
-// The command is read in the dialect of the tool that runs it: bash for the Claude Code Bash tool, PowerShell for its
-// PowerShell tool and for Antigravity (` escapes in double quotes, \ does not; '' in single quotes), cmd inside cmd /c.
+// The command is read in the dialect of the tool that runs it: bash for a bash tool, PowerShell for a PowerShell
+// tool (` escapes in double quotes, \ does not; '' in single quotes), and cmd inside cmd /c.
 // It is split into segments at &&, ||, ;, |, & and line breaks outside quotes, after joining continued lines
 // (\ or ` at the end of a line); comments, heredoc bodies and PowerShell here-strings are skipped, since their text is
 // data, and the bodies of command substitutions $( ... ) and PowerShell @( ... ) are returned to be checked as
@@ -128,7 +128,7 @@ function splitSegments(dialect, command, found = null) {
       continue;
     }
     // A single & separates (bash background, PowerShell call operator) except in redirections such as 2>&1 and &>
-    // PowerShell: & at the start of a command is the call operator (& "C:\x\dotnet.exe" test), not a separator
+    // PowerShell: & at the start of a command is the call operator (& "C:\x\buildtool.exe" test), not a separator
     // ... also after = ( { or , : $o = & "x.exe" test, { & "x.exe" test }, (& "x.exe" test)
     const callOperator = ch === '&' && dialect === 'pwsh' && /(^|[=({,])\s*$/.test(current);
     if (ch === ';' || ch === '|' || (ch === '&' && !callOperator && command[i - 1] !== '>' && next !== '>')) {
@@ -147,7 +147,7 @@ function splitSegments(dialect, command, found = null) {
 /** The words of a segment, quotes kept. */
 function words(dialect, segment) {
   // A word is a run of quoted parts and other non-blank characters, so that a quote may start inside it:
-  // msg="a b", -p:Foo="a b", $x="dotnet test"; in bash a substitution belongs to its word too:
+  // msg="a b", -p:Foo="a b", $x="buildtool test"; in bash a substitution belongs to its word too:
   // LD_PRELOAD=$(g++ -print-file-name=libasan.so) (its body is checked on its own, see substitutions)
   const pattern =
     dialect === 'bash'
@@ -156,7 +156,7 @@ function words(dialect, segment) {
         ? /(?:"(?:[^"`]|`.)*"?|'(?:[^']|'')*'?|`.|[^\s"'`])+/g
         : /(?:"[^"]*"?|[^\s"])+/g;
   const list = segment.match(pattern) || [];
-  // PowerShell: the call operator may touch its operand: &"dotnet" test
+  // PowerShell: the call operator may touch its operand: &"buildtool" test
   return dialect === 'pwsh'
     ? list.flatMap((word) => (/^&["'$\w.\\/]/.test(word) ? ['&', word.slice(1)] : [word]))
     : list;
@@ -169,7 +169,7 @@ function unquote(word) {
 
 /**
  * The text a quoted argument passes on, escapes undone in `dialect`: the command string of a shell wrapper,
- * as in pwsh -Command "& `"C:\x\dotnet.exe`" test" or bash -c "dotnet build \"x y\"".
+ * as in pwsh -Command "& `"C:\x\buildtool.exe`" test" or bash -c "buildtool build \"x y\"".
  */
 function argumentText(dialect, word) {
   // A word may join quoted and bare parts ("cd x --filter "A|B), and a cut command may leave a quote open: join the
@@ -216,7 +216,7 @@ function argumentText(dialect, word) {
   return out;
 }
 
-/** A program name without directory, extension and case: "C:\x\dotnet.exe" -> dotnet. */
+/** A program name without directory, extension and case: "C:\x\BuildTool.exe" -> buildtool. */
 function programName(word) {
   return unquote(word)
     .replace(/^.*[\\/]/, '')
@@ -227,8 +227,8 @@ function programName(word) {
 /** Words that run the rest of the segment: launch prefixes and the keywords that open a shell body. */
 const LaunchPrefixes = [
   '&',
-  '.', // PowerShell dot-source, bash source: . "C:\x\dotnet.exe" test
-  '(', // a group, subshell or subexpression whose opener stands alone: $o = ( dotnet test ), time ( dotnet build )
+  '.', // PowerShell dot-source, bash source: . "C:\x\buildtool.exe" test
+  '(', // a group, subshell or subexpression whose opener stands alone: $o = ( buildtool test ), time ( buildtool )
   '{',
   '@(',
   '$(',
@@ -256,12 +256,12 @@ function dropPrefixes(list) {
     }
     const head = rest[0];
     const name = programName(head);
-    // An opener stuck to the program: time (timeout 600 dotnet build), {dotnet test}
+    // An opener stuck to the program: time (timeout 600 buildtool build), {buildtool test}
     if (/^[({]+[^({]/.test(head)) {
       rest = [head.replace(/^[({]+/, ''), ...rest.slice(1)];
       continue;
     }
-    // PowerShell assignment: $out = dotnet test, $x=dotnet build, $env:X = ...
+    // PowerShell assignment: $out = buildtool test, $x=buildtool build, $env:X = ...
     const assignment = /^\$[\w:.]+\s*[+]?=(.*)$/.exec(head);
     if (assignment !== null) {
       rest = assignment[1] === '' ? rest.slice(1) : [assignment[1], ...rest.slice(1)];

@@ -1,33 +1,30 @@
 #!/usr/bin/env node
 'use strict';
 
-// PreToolUse hook of Claude Code (Bash and PowerShell, .claude/settings.json) and Antigravity (run_command,
-// .agents/hooks.json): denies a build or test command that does not go through the job queue
-// (scripts/human/job-queue.js), so that agents running side by side do not oversubscribe the machine. The input
-// format tells the two apart. A command that may run produces no output: an Antigravity "allow" would skip the
-// user's permission prompt. In Claude Code, a plain build or test command (segments joined by && only, no wrapper)
-// is not denied but handed back queued, `node scripts/human/job-queue.js run [--gpu] --shell <s> -- '<command>'`
-// (updatedInput, with no permission decision, so the user's permission prompt still runs); --gpu comes from the
-// dialect of the named test projects and from the queue options of a just recipe, and a command whose GPU use cannot
-// be told is denied with a sentence saying that it may need --gpu.
+// PreToolUse hook that denies a build or test command unless it goes through the configured job queue
+// (job-queue.config.json), so that agents running side by side do not oversubscribe the machine. Agent hook-io.js
+// plugins interpret payloads and format answers. A command that may run produces no output so the caller's normal
+// permission prompt still runs. For rewrite-capable agents, a plain denied command (segments joined by && only, no
+// wrapper) can be handed back queued via the agent plugin's rewrite formatter; --gpu and build/test splitting come
+// from enabled plugins' hook-rules.js modules, and a command whose GPU use cannot be told is denied with a sentence
+// saying that it may need --gpu.
 //
 // Modules (check-queued-command/):
 //   shell-reader.js       reads the command in the tool's dialect (bash, PowerShell, cmd): quotes, segments at &&,
 //                         ||, ;, |, & and line breaks, $( ) / @( ) substitutions, heredocs and here-strings,
 //                         assignments, launch prefixes and shell wrappers
-//   command-rules.js      what is denied and allowed (dispatches to rules/ handlers)
-//   rules/                per-program rule handlers (wrappers.js, dotnet.js, just.js, node-scripts.js)
-//   queue-rewrite.js      which denied commands are queued instead, with which queue options
-//   hook.js               the denial message, the hook input and output
-//   project-henicos.js    Henicos-specific recipes, scripts, verbs, runners, queue path, test lookup, and wording
-//   project-config.js     the shape of that config, checked when the engine is created (a missing key throws)
+//   command-rules.js      what is denied and allowed (dispatches to wrappers, plugin rules, runners, node-scripts)
+//   rules/                built-in rule helpers (wrappers.js, node-scripts.js)
+//   queue-rewrite.js      which denied commands are queued instead, delegating GPU/options/split to plugins
+//   hook.js               denial wording and hook-io.js dispatch
+//   plugin-loader.js      discovers job-queue.config.json and loads plugin hook-rules.js / hook-io.js modules
 //   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
-// Out of reach: a command held in a variable and run later ($c = 'dotnet test'; cmd /c $c) and the contents of a
+// Out of reach: a command held in a variable and run later ($c = 'buildtool test'; cmd /c $c) and the contents of a
 // script file the command runs.
-// A hook that fails stops every command in Antigravity, which treats any non-zero exit code as a denial, so --hook
-// allows the command (no output, exit code 0) when a module fails to load, the input is not JSON, an exception escapes
+// A hook that fails can stop every command in agents that treat a non-zero exit code as a denial, so --hook allows
+// the command (no output, exit code 0) when config/plugin loading fails, the input is not JSON, an exception escapes
 // while judging or a stream fails, and appends a line to tmp/hook-errors.log of the main checkout. --text and
-// --self-test still fail loudly.
+// --self-test fail loudly in strict mode.
 //
 // Usage:
 //   node scripts/agent/check-queued-command.js --hook                                reads the hook JSON on stdin
@@ -37,25 +34,41 @@
 //   require('./check-queued-command.js').check(command, dialect) returns the reasons (empty when allowed)
 //   require('./check-queued-command.js').hookAnswer(payload) returns the hook JSON response (or null when allowed)
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
-let loaded = null;
+let strictCached = null;
+let strictCachedKey = null;
 
-/** The rules and the hook adapter, loaded on first use so that --hook can catch a module that fails to load. */
+/** Creates an isolated hook engine instance without touching the cached strict singleton. */
+function createEngine({ configPath, tolerant = false, onError = null } = {}) {
+  const { loadHookConfig } = require('./check-queued-command/plugin-loader.js');
+  const { createRules } = require('./check-queued-command/command-rules.js');
+  const { createHook } = require('./check-queued-command/hook.js');
+  const engineConfig = loadHookConfig({ configPath, tolerant, onError });
+  const rules = createRules(engineConfig, { tolerant, onError });
+  const hook = createHook(engineConfig, rules, { tolerant, onError });
+  return {
+    check: rules.check,
+    checkDetailed: rules.checkDetailed,
+    isQueueScript: rules.isQueueScript,
+    ...hook,
+  };
+}
+
+/** Cached strict engine keyed by JOB_QUEUE_CONFIG so repeated exports calls stay fast while respecting overrides. */
 function engine() {
-  if (loaded === null) {
-    const projectHenicos = require('./check-queued-command/project-henicos.js');
-    const rules = require('./check-queued-command/command-rules.js').createRules(projectHenicos);
-    const hook = require('./check-queued-command/hook.js').createHook(projectHenicos, rules);
-    loaded = { check: rules.check, ...hook };
+  const key = process.env.JOB_QUEUE_CONFIG || '';
+  if (strictCached === null || strictCachedKey !== key) {
+    strictCached = createEngine({ tolerant: false });
+    strictCachedKey = key;
   }
-  return loaded;
+  return strictCached;
 }
 
 /**
  * Appends one line about a hook failure to tmp/hook-errors.log of the main checkout (of this script's checkout when
- * the lookup fails). Never throws: a hook that fails stops every command in Antigravity.
+ * the lookup fails). Never throws: a hook failure must not stop subsequent commands.
  */
 function recordHookError(error) {
   try {
@@ -63,7 +76,7 @@ function recordHookError(error) {
     let base = root;
     try {
       base = require('../human/job-queue/lib/main-checkout.js').mainCheckout(root, root);
-    } catch (lookupError) {
+    } catch (_lookupError) {
       // A checkout without the lookup module: the log goes next to this script's checkout instead.
       base = root;
     }
@@ -71,20 +84,20 @@ function recordHookError(error) {
     const text = error instanceof Error ? error.stack || error.message : String(error);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.appendFileSync(file, `${new Date().toISOString()} check-queued-command --hook: ${text.replace(/\s+/g, ' ')}\n`);
-  } catch (writeError) {
+  } catch (_writeError) {
     // Nowhere left to report it; the command must still run (see runHookFailingOpen).
     return;
   }
 }
 
 /**
- * --hook: a hook that exits with a non-zero code or throws stops the command in Antigravity (Claude Code runs it), so
- * a failure to load or to judge allows the command, with no output and exit code 0, and is recorded instead.
+ * --hook: a failure to load config/plugins or to judge allows the command, with no output and exit code 0, and is
+ * recorded instead.
  */
 function runHookFailingOpen() {
   let hook;
   try {
-    hook = engine();
+    hook = createEngine({ tolerant: true, onError: recordHookError });
   } catch (error) {
     recordHookError(error);
     process.exit(0);
@@ -109,7 +122,7 @@ function main() {
     process.stdout.write(reasons.length === 0 ? 'allowed\n' : `${engine().denialText(reasons)}\n`);
     process.exit(reasons.length === 0 ? 0 : 1);
   } else if (args[0] === '--self-test') {
-    require('./check-queued-command/self-test.js').selfTest();
+    require('./check-queued-command/self-test.js').selfTest(createEngine);
   } else if (args[0] === '--help' || args[0] === '-h') {
     process.stdout.write(`${usage}\n`);
   } else {
@@ -121,6 +134,7 @@ function main() {
 module.exports = {
   check: (command, kind) => engine().check(command, kind),
   hookAnswer: (payload) => engine().hookAnswer(payload),
+  createEngine,
 };
 
 if (require.main === module) {

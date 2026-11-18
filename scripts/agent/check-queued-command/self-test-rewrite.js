@@ -1,220 +1,245 @@
 'use strict';
 
-// The self-test of the rewrite (queue-rewrite.js, hookAnswer of hook.js), part of --self-test: commands that
-// Claude Code gets back queued, with or without --gpu, and commands that stay denied, against the test projects and the
-// justfile of this checkout.
+// Neutral self-test of the generic rewrite engine (queue-rewrite.js and hookAnswer of hook.js): verifies queuing,
+// quoting round-trips, tool_input field preservation, trailing # intent comments, build/test split delegation,
+// plain denials, undecided notes, and malformed plugin rewrite validation without any repo or plugin identifiers.
 
-const os = require('os');
-const path = require('path');
-const projectHenicos = require('./project-henicos.js');
-const rules = require('./command-rules.js').createRules(projectHenicos);
-const { check } = rules;
-const { createHook } = require('./hook.js');
-const { hookAnswer } = createHook(projectHenicos, rules);
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { queuedText } = require('./queue-rewrite.js');
 
-const Root = path.resolve(__dirname, '..', '..', '..');
-const Queue = 'node scripts/human/job-queue.js run ';
+const Queue = 'node tools/custom-queue.js run ';
 
-function answer(tool, command, extra = {}) {
-  return hookAnswer({ tool_name: tool, tool_input: { command, ...extra }, cwd: Root });
-}
-
-/** The words between `run` and `--` of a rewritten command. */
 function queueOptions(rewritten) {
   return rewritten.slice(Queue.length, rewritten.indexOf(' -- ')).split(' ');
 }
 
-function checkRewrites(assert) {
-  // [tool, command, --gpu expected, options other than --gpu and --shell]
-  const rewritten = [
-    ['Bash', 'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --no-build', false, []],
-    ['Bash', 'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj', true, []],
-    ['Bash', 'dotnet build Henicos.slnx -nodeReuse:false', false, []],
-    ['Bash', 'dotnet build X && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --no-build', false, []],
-    // Not split: the test builds again (no --no-build), or a segment is not a build or a test
-    ['Bash', 'dotnet build Kassyi.GSharp.Tests.Cuda && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
-    ['Bash', 'cd x && dotnet build A && dotnet test Kassyi.GSharp.Tests.Cuda --no-build', true, []],
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cuda --no-build && dotnet build A', true, []],
-    ['Bash', 'cd x && dotnet test ../Kassyi.GSharp.Tests.Cpu && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
-    ['Bash', `dotnet test Kassyi.GSharp.Tests.Cpu --filter "A|B" -p:X='it'"'"'s' > tmp/log.txt 2>&1`, false, []],
-    ['Bash', 'DiffEngine_Disabled=true dotnet test Kassyi.GSharp.Tests.Cpu', false, []],
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu --filter FullyQualifiedName~Kassyi.GSharp.Tests.Cuda.X', false, []],
-    ['Bash', 'just test', true, []],
-    ['Bash', 'just test-differential-cpu', false, []],
-    ['Bash', 'just fuzz-diff cpu 5', false, ['--weight', '2']],
-    ['PowerShell', `dotnet test Kassyi.GSharp.Tests.Cpu --filter "Name~it's" -p:Y='a b'`, false, []],
-    ['PowerShell', 'dotnet build X && dotnet test Kassyi.GSharp.Tests.Cuda', true, []],
-    ['PowerShell', 'just test-category Runtime', true, []],
-  ];
-  for (const [tool, command, gpu, options] of rewritten) {
-    const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';
-    const output = answer(tool, command).hookSpecificOutput;
-    assert.ok(output.updatedInput !== undefined, `should queue in ${kind}: ${command}`);
-    const queued = output.updatedInput.command;
-    assert.ok(queued.startsWith(Queue), `starts with the queue: ${queued}`);
-    assert.deepStrictEqual(check(queued, kind), [], `the queued form passes the hook: ${queued}`);
-    assert.strictEqual(queuedText(queued, kind), command, `quoting round-trips in ${kind}: ${queued}`);
-    const expected = [...(gpu ? ['--gpu'] : []), ...options, '--shell', kind];
-    assert.deepStrictEqual(queueOptions(queued), expected, `queue options of: ${command}`);
-  }
-  // The whole tool input is kept, only the command changes; no permission decision, so the user is still asked
-  const fields = { timeout: 600000, run_in_background: true, description: 'Run', dangerouslyDisableSandbox: false };
-  const output = answer('Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu', fields).hookSpecificOutput;
-  assert.deepStrictEqual(Object.keys(output).sort(), ['additionalContext', 'hookEventName', 'updatedInput']);
-  assert.deepStrictEqual(output.updatedInput, { command: output.updatedInput.command, ...fields });
-  assert.ok(output.additionalContext.includes(output.updatedInput.command), 'the context names the queued command');
-  // A trailing comment (# intent: ...) stays outside the quotes, where the command gate reads it
-  const intent = answer('Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu # intent: run the CPU tests').hookSpecificOutput;
-  assert.ok(intent.updatedInput.command.endsWith("Kassyi.GSharp.Tests.Cpu' # intent: run the CPU tests"));
-  assert.strictEqual(queuedText(intent.updatedInput.command, 'bash'), 'dotnet test Kassyi.GSharp.Tests.Cpu');
+function createNeutralFixtures(tmpDir) {
+  const root = fs.realpathSync.native(tmpDir);
+  fs.mkdirSync(path.join(root, 'tools'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'tools', 'custom-queue.js'), '// stub\n');
 
-  checkSplitBuilds(assert);
+  const pluginDir = path.join(root, 'neutral-plugin');
+  fs.mkdirSync(pluginDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(pluginDir, 'hook-rules.js'),
+    [
+      "'use strict';",
+      'module.exports = {',
+      "  name: './neutral-plugin',",
+      '  rules() {',
+      '    return [{',
+      "      matches: ({ name }) => name === 'buildtool',",
+      '      reason: (_r, { args }) => {',
+      "        const verb = args[0] || '';",
+      "        const hit = ['build', 'test', 'watch'].includes(verb);",
+      "        return hit ? { tool: 'buildtool', verb, text: 'buildtool ' + verb } : null;",
+      '      },',
+      '    }];',
+      '  },',
+      '  splitForRewrite(segments, reader) {',
+      '    const builds = [];',
+      '    const tests = [];',
+      '    for (const raw of segments) {',
+      '      const seg = raw.trim();',
+      '      const list = reader.words(seg).map(reader.unquote);',
+      "      if (list[0] !== 'buildtool') return null;",
+      "      if (list[1] === 'build' && tests.length === 0) builds.push(seg);",
+      "      else if (list[1] === 'test' && list.includes('--no-build')) tests.push(seg);",
+      '      else return null;',
+      '    }',
+      "    const ok = builds.length > 0 && tests.length > 0;",
+      "    return ok ? { builds: builds.join(' && '), tests: tests.join(' && ') } : null;",
+      '  },',
+      '  rewrite(segment, list, reason, context) {',
+      "    if (!/^buildtool(\\.exe)?$/i.test(list[0] || '')) return null;",
+      "    if (reason.verb === 'build') return { gpu: false, options: [] };",
+      "    if (reason.verb === 'test') {",
+      "      if (segment.includes('GpuSuite')) return { gpu: true, options: [] };",
+      "      if (segment.includes('CpuSuite')) return { gpu: false, options: [] };",
+      "      return { undecided: 'unknown suite' };",
+      '    }',
+      '    return null;',
+      '  },',
+      '};',
+    ].join('\n'),
+  );
 
-  // Denied as before: the same message, no rewrite
-  const plain = [
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu | tail -5'],
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu; echo done'],
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu || echo failed'],
-    ['Bash', 'dotnet build X &'],
-    ['Bash', 'dotnet build X\ndotnet test Kassyi.GSharp.Tests.Cpu'],
-    ['Bash', 'dotnet build \\\n  X'],
-    ['Bash', "cat <<'EOF' > a.txt\nx\nEOF\ndotnet build X"],
-    ['Bash', 'dotnet test $(echo Kassyi.GSharp.Tests.Cpu)'],
-    ['Bash', 'dotnet test `echo Kassyi.GSharp.Tests.Cpu`'],
-    ['Bash', 'dotnet test Kassyi.GSharp.Tests.Cpu < input.txt'],
-    ['Bash', 'cmd /c "dotnet test Kassyi.GSharp.Tests.Cpu"'],
-    ['Bash', 'pwsh -c "dotnet test Kassyi.GSharp.Tests.Cpu"'],
-    ['Bash', 'bash -c "dotnet test Kassyi.GSharp.Tests.Cpu"'],
-    ['Bash', 'wsl -- dotnet test Kassyi.GSharp.Tests.Cpu'],
-    ['Bash', '(dotnet build X)'],
-    ['Bash', 'timeout 600 dotnet build X'],
-    ['Bash', '"C:\\Program Files\\dotnet\\dotnet.exe" build X'],
-    ['Bash', 'node scripts/human/gpu-lock.js -- "dotnet test X"'],
-    ['Bash', 'node scripts/human/test-stability.js --count 3'],
-    ['Bash', 'dotnet watch test Kassyi.GSharp.Tests.Cpu'],
-    ['Bash', 'dotnet stryker'],
-    ['Bash', 'cd tmp/worktree/x && just test'],
-    ['Bash', 'X=/foo dotnet build X'],
-    ['Bash', 'node scripts/human/job-queue.js run -- "dotnet build X" && dotnet test Kassyi.GSharp.Tests.Cpu'],
-    ['PowerShell', '$o = dotnet test Kassyi.GSharp.Tests.Cpu'],
-    ['PowerShell', '& dotnet test Kassyi.GSharp.Tests.Cpu'],
-    ['PowerShell', 'dotnet test Kassyi.GSharp.Tests.Cpu --% -p:X=1'],
-    ['PowerShell', "$b = @'\nx\n'@\ndotnet build X"],
-  ];
-  for (const [tool, command] of plain) {
-    const denial = answer(tool, command).hookSpecificOutput;
-    assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
-    assert.strictEqual(denial.permissionDecision, 'deny', `should deny: ${command}`);
-    assert.ok(!/--gpu when it does/.test(denial.permissionDecisionReason), `plain denial: ${command}`);
-  }
-  // A working directory without the queue script (a subdirectory, an old checkout): denied as before
-  const elsewhere = hookAnswer({
-    tool_name: 'Bash',
-    tool_input: { command: 'dotnet build X' },
-    cwd: os.tmpdir(),
-  }).hookSpecificOutput;
-  assert.strictEqual(elsewhere.permissionDecision, 'deny', 'no queue script in the working directory');
-  // Antigravity: denied, never rewritten
-  const antigravity = hookAnswer({ toolCall: { name: 'run_command', args: { CommandLine: 'dotnet build X' } } });
-  assert.strictEqual(antigravity.decision, 'deny', 'Antigravity stays denied');
+  const ioDir = path.join(root, 'neutral-io');
+  fs.mkdirSync(ioDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(ioDir, 'hook-io.js'),
+    [
+      "'use strict';",
+      'module.exports = {',
+      "  name: './neutral-io',",
+      '  read(payload) {',
+      "    if (!payload || typeof payload !== 'object') return null;",
+      '    if (payload.noRewrite !== undefined) {',
+      "      return { command: String(payload.noRewrite || ''), kind: 'pwsh', canRewrite: false };",
+      '    }',
+      '    if (payload.tool_input !== undefined || payload.tool_name !== undefined) {',
+      '      const ti = payload.tool_input || {};',
+      "      const kind = payload.tool_name === 'PowerShell' ? 'pwsh' : 'bash';",
+      "      return { command: String(ti.command || ''), kind, cwd: payload.cwd, canRewrite: true, toolInput: ti };",
+      '    }',
+      '    return null;',
+      '  },',
+      '  deny(_read, reasonText) {',
+      "    return { decision: 'deny', reason: reasonText };",
+      '  },',
+      '  rewrite(read, command, additionalContext) {',
+      "    if (!read.canRewrite) return null;",
+      '    return { updatedInput: { ...read.toolInput, command }, additionalContext };',
+      '  },',
+      '};',
+    ].join('\n'),
+  );
 
-  // GPU use not decidable: denied, with the reason saying that --gpu may be needed
-  const undecided = [
-    'dotnet test',
-    'dotnet test Henicos.slnx',
-    'dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests',
-    'dotnet test Kassyi.GSharp.Tests.Cpu && dotnet test Kassyi.ZeroAlloc.Linq.Tests',
-    'dotnet msbuild Henicos.slnx -t:VSTest',
-    'just test-memory Kassyi.GSharp.Tests.Cuda',
-    'just mutate compiler',
-  ];
-  for (const command of undecided) {
-    const denial = answer('Bash', command).hookSpecificOutput;
-    assert.strictEqual(denial.updatedInput, undefined, `should not queue: ${command}`);
-    assert.ok(/--gpu when it does/.test(denial.permissionDecisionReason), `should mention --gpu: ${command}`);
-  }
-  checkTestProjectGuards(assert);
+  const configPath = path.join(root, 'job-queue.config.json');
+  fs.writeFileSync(
+    configPath,
+    JSON.stringify({
+      version: 1,
+      entry: 'tools/custom-queue.js',
+      plugins: [{ name: './neutral-plugin' }, { name: './neutral-io' }],
+    }),
+  );
+  return { root, configPath: fs.realpathSync.native(configPath) };
 }
 
-/** A test-project lookup that fails or answers in an unusable shape leaves the command denied, saying why. */
-function checkTestProjectGuards(assert) {
-  const base = {
-    list: () => [{ name: 'G' }],
-    readErrorMessage: (root, error) => `could not read tests: ${error.message}`,
-    missingMessage: 'it names no test project',
-    usesGpu: () => ({ gpu: true }),
-  };
-  const failList = () => {
-    throw new Error('boom');
-  };
-  const cases = [
-    [{ list: failList }, 'dotnet test G', 'could not read tests: boom'],
-    [{}, 'dotnet test', 'it names no test project'],
-    [{ usesGpu: () => null }, 'dotnet test G', 'GPU use is unknown'],
-    [{ usesGpu: () => ({}) }, 'dotnet test G', 'GPU use is unknown'],
-    [{ usesGpu: () => ({ undecided: 'ambiguous', gpu: true }) }, 'dotnet test G', 'ambiguous'],
-  ];
-  for (const [override, cmd, expectedReason] of cases) {
-    const project = { ...projectHenicos, testProjects: { ...base, ...override } };
-    const out = createHook(project).hookAnswer({
+function checkRewrites(assert, createEngine) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cqc-rewrite-neutral-'));
+  try {
+    const { root, configPath } = createNeutralFixtures(tmpDir);
+    const engine = createEngine({ configPath, tolerant: false });
+    const { check, hookAnswer } = engine;
+    const answer = (tool, command, extra = {}) =>
+      hookAnswer({ tool_name: tool, tool_input: { command, ...extra }, cwd: root });
+
+    const rewritten = [
+      ['Bash', 'buildtool test CpuSuite --no-build', false, []],
+      ['Bash', 'buildtool test GpuSuite', true, []],
+      ['Bash', 'buildtool build Solution.slnx', false, []],
+      ['Bash', 'buildtool build A && buildtool test GpuSuite', true, []],
+      ['Bash', "buildtool test CpuSuite --filter \"A|B\" -p:X='it'\"'\"'s' > tmp/log.txt 2>&1", false, []],
+      ['PowerShell', "buildtool test CpuSuite --filter \"Name~it's\" -p:Y='a b'", false, []],
+      ['PowerShell', 'buildtool build X && buildtool test GpuSuite', true, []],
+    ];
+    for (const [tool, command, gpu, options] of rewritten) {
+      const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';
+      const output = answer(tool, command);
+      assert.ok(output.updatedInput !== undefined, `neutral rewrite in ${kind}: ${command}`);
+      const queued = output.updatedInput.command;
+      assert.ok(queued.startsWith(Queue), `starts with queue: ${queued}`);
+      assert.deepStrictEqual(check(queued, kind), [], `queued form passes hook: ${queued}`);
+      assert.strictEqual(queuedText(queued, kind), command, `quoting round-trips in ${kind}: ${queued}`);
+      assert.deepStrictEqual(queueOptions(queued), [...(gpu ? ['--gpu'] : []), ...options, '--shell', kind]);
+    }
+
+    // Extra tool_input fields preserved
+    const fields = { timeout: 600000, run_in_background: true, description: 'Run' };
+    const fieldOut = answer('Bash', 'buildtool test CpuSuite', fields);
+    assert.deepStrictEqual(fieldOut.updatedInput, { command: fieldOut.updatedInput.command, ...fields });
+    assert.ok(fieldOut.additionalContext.includes(fieldOut.updatedInput.command));
+
+    // Trailing # intent comment preserved outside quotes
+    const intent = answer('Bash', 'buildtool test CpuSuite # intent: run CPU suite');
+    assert.ok(intent.updatedInput.command.endsWith("CpuSuite' # intent: run CPU suite"));
+    assert.strictEqual(queuedText(intent.updatedInput.command, 'bash'), 'buildtool test CpuSuite');
+
+    // Split build and test
+    const splitOut = answer('Bash', 'buildtool build A && buildtool test GpuSuite --no-build # intent: gpu');
+    const at = splitOut.updatedInput.command.indexOf(` && ${Queue}`);
+    assert.ok(at > 0, 'split builds into two queued runs');
+    const first = splitOut.updatedInput.command.slice(0, at);
+    const second = splitOut.updatedInput.command.slice(at + ' && '.length);
+    assert.deepStrictEqual(queueOptions(first), ['--shell', 'bash']);
+    assert.deepStrictEqual(queueOptions(second), ['--gpu', '--shell', 'bash']);
+    assert.strictEqual(queuedText(first, 'bash'), 'buildtool build A');
+    assert.ok(second.endsWith(' # intent: gpu'));
+    assert.strictEqual(queuedText(second, 'bash'), 'buildtool test GpuSuite --no-build');
+    assert.ok(/held only for the tests/.test(splitOut.additionalContext));
+
+    // Plain denials
+    const plain = [
+      ['Bash', 'buildtool test CpuSuite | tail -5'],
+      ['Bash', 'buildtool test CpuSuite; echo done'],
+      ['Bash', 'buildtool test CpuSuite || echo failed'],
+      ['Bash', 'buildtool build X &'],
+      ['Bash', 'buildtool build X\nbuildtool test CpuSuite'],
+      ['Bash', 'buildtool test $(echo CpuSuite)'],
+      ['Bash', 'buildtool test `echo CpuSuite`'],
+      ['Bash', 'buildtool test CpuSuite < input.txt'],
+      ['Bash', 'cmd /c "buildtool test CpuSuite"'],
+      ['Bash', '(buildtool build X)'],
+      ['Bash', 'timeout 600 buildtool build X'],
+      ['Bash', '"C:\\Program Files\\buildtool\\buildtool.exe" build X'],
+      ['Bash', 'buildtool watch test'],
+      ['Bash', 'X=/foo buildtool build X'],
+      ['Bash', 'node tools/custom-queue.js run -- "buildtool build X" && buildtool test CpuSuite'],
+      ['PowerShell', '$o = buildtool test CpuSuite'],
+      ['PowerShell', 'buildtool test CpuSuite --% -p:X=1'],
+    ];
+    for (const [tool, command] of plain) {
+      const denial = answer(tool, command);
+      assert.strictEqual(denial.updatedInput, undefined, `plain denial: ${command}`);
+      assert.strictEqual(denial.decision, 'deny');
+      assert.ok(!/--gpu when it does/.test(denial.reason));
+    }
+
+    // Missing queue entry in cwd stays denied
+    const elsewhere = hookAnswer({
       tool_name: 'Bash',
-      tool_input: { command: cmd },
-      cwd: Root,
-    }).hookSpecificOutput;
-    assert.strictEqual(out.permissionDecision, 'deny', `must deny: ${cmd}`);
-    assert.ok(
-      out.permissionDecisionReason.includes(expectedReason),
-      `expected "${expectedReason}" in: ${out.permissionDecisionReason}`,
-    );
-  }
-}
+      tool_input: { command: 'buildtool build X' },
+      cwd: os.tmpdir(),
+    });
+    assert.strictEqual(elsewhere.decision, 'deny');
 
-/**
- * A build and the tests of a GPU project: two queued runs, the builds without --gpu and then the tests with --gpu, so
- * that the GPU turn is not held while the build runs.
- */
-function checkSplitBuilds(assert) {
-  const cuda = 'tests/Compiler/Kassyi.GSharp.Tests.Cuda';
-  // [tool, command, the builds, the tests]
-  const split = [
-    [
-      'Bash',
-      `dotnet build ${cuda} -c Release && dotnet test ${cuda} -c Release --no-build --filter "A|B"`,
-      `dotnet build ${cuda} -c Release`,
-      `dotnet test ${cuda} -c Release --no-build --filter "A|B"`,
-    ],
-    [
-      'Bash',
-      `DiffEngine_Disabled=true dotnet build A && dotnet build ${cuda} && ` +
-        `dotnet test ${cuda} --no-build && dotnet test Kassyi.GSharp.Tests.Cpu --no-build -p:X='it'"'"'s'`,
-      `DiffEngine_Disabled=true dotnet build A && dotnet build ${cuda}`,
-      `dotnet test ${cuda} --no-build && dotnet test Kassyi.GSharp.Tests.Cpu --no-build -p:X='it'"'"'s'`,
-    ],
-    [
-      'PowerShell',
-      `dotnet build ${cuda} && dotnet test ${cuda} --no-build --filter "Name~it's"`,
-      `dotnet build ${cuda}`,
-      `dotnet test ${cuda} --no-build --filter "Name~it's"`,
-    ],
-  ];
-  for (const [tool, command, builds, tests] of split) {
-    const kind = tool === 'PowerShell' ? 'pwsh' : 'bash';
-    const intent = ' # intent: run the GPU tests';
-    const output = answer(tool, command + intent).hookSpecificOutput;
-    assert.ok(output.updatedInput !== undefined, `should queue in ${kind}: ${command}`);
-    const queued = output.updatedInput.command;
-    assert.deepStrictEqual(check(queued, kind), [], `the queued form passes the hook: ${queued}`);
-    const at = queued.indexOf(` && ${Queue}`);
-    assert.ok(queued.startsWith(Queue) && at > 0, `two queued runs joined by &&: ${queued}`);
-    const first = queued.slice(0, at);
-    const second = queued.slice(at + ' && '.length);
-    assert.deepStrictEqual(queueOptions(first), ['--shell', kind], `the builds take no GPU: ${queued}`);
-    assert.deepStrictEqual(queueOptions(second), ['--gpu', '--shell', kind], `the tests take the GPU: ${queued}`);
-    assert.strictEqual(queuedText(first, kind), builds, `the builds round-trip in ${kind}: ${queued}`);
-    assert.ok(second.endsWith(intent), `the intent comment stays at the end, outside the quotes: ${queued}`);
-    assert.strictEqual(queuedText(second, kind), tests, `the tests round-trip in ${kind}: ${queued}`);
-    assert.ok(/held only for the tests/.test(output.additionalContext), `the agent is told of the split: ${command}`);
+    // Non-rewriting agent stays denied
+    const noRewrite = hookAnswer({ noRewrite: 'buildtool build X' });
+    assert.strictEqual(noRewrite.decision, 'deny');
+    assert.strictEqual(noRewrite.updatedInput, undefined);
+
+    // Undecided note
+    const undecided = answer('Bash', 'buildtool test UnknownSuite');
+    assert.strictEqual(undecided.decision, 'deny');
+    assert.ok(/--gpu when it does/.test(undecided.reason));
+    assert.ok(undecided.reason.includes('unknown suite'));
+
+    // Malformed plugin rewrite return throws in strict mode
+    const badDir = path.join(root, 'bad-rewrite');
+    fs.mkdirSync(badDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(badDir, 'hook-rules.js'),
+      [
+        "'use strict';",
+        'module.exports = {',
+        "  name: './bad-rewrite',",
+        "  rules: () => [{ matches: ({ name }) => name === 'buildtool',",
+        "    reason: () => ({ tool: 'b', verb: 't', text: 'buildtool test' }) }],",
+        "  rewrite: () => ({ bad: true }),",
+        '};',
+      ].join('\n'),
+    );
+    const badConfig = path.join(root, 'bad-rewrite.json');
+    fs.writeFileSync(
+      badConfig,
+      JSON.stringify({
+        version: 1,
+        entry: 'tools/custom-queue.js',
+        plugins: [{ name: './bad-rewrite' }, { name: './neutral-io' }],
+      }),
+    );
+    const badEngine = createEngine({ configPath: fs.realpathSync.native(badConfig), tolerant: false });
+    assert.throws(
+      () => badEngine.hookAnswer({ tool_name: 'Bash', tool_input: { command: 'buildtool test' }, cwd: root }),
+      /rewrite\(\) must return/,
+      'malformed plugin rewrite return throws in strict mode',
+    );
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
