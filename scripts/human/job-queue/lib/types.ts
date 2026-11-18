@@ -28,3 +28,18 @@ export interface TargetDialectModule {
   testProjectFiles(testsDir: string): TestProjectEntry[];
   dialectOf(projectFile: string): "cpu" | "cuda" | null;
 }
+
+export type ConfigFileStatus = "ok" | "missing" | "invalid";
+
+export interface ConfigFileLoadResult {
+  status: ConfigFileStatus;
+  path: string | null;
+  raw: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export interface ConfigFileModule {
+  readonly ConfigFileName: string;
+  findConfigFile(fromDirectory: string, overridePath?: string): string | null;
+  loadConfigFile(fromDirectory: string, overridePath?: string): ConfigFileLoadResult;
+}

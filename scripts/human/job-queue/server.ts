@@ -16,10 +16,13 @@ import {
   UnknownTypicalMs,
   type Policy,
 } from "./constants.ts";
+import { loadConfig, type QueueConfig } from "./config.ts";
 import type { EstimateLevel } from "./estimate-fallback.ts";
 import { RunHistory } from "./history.ts";
 import {
   idField,
+  keysField,
+  memoryMbField,
   numberField,
   optionalNumberField,
   placesField,
@@ -46,6 +49,8 @@ export interface ServeOptions {
   port: number;
   /** '' for the default (resolveStateDirectory); a scheduler started through WMI gets it on its command line. */
   stateDir: string;
+  /** Optional explicit path to job-queue.config.json (--config). */
+  configPath?: string;
   /** Where the log lines go; stdout (server.log) by default. The self-test's in-process schedulers drop them. */
   log?: (text: string) => void;
 }
@@ -57,6 +62,7 @@ export function serve(options: ServeOptions): void {
 /** The scheduler process: the job table, the outcomes, the settle step, the timers and the TCP server. */
 export class JobServer {
   readonly options: ServeOptions;
+  readonly config: QueueConfig;
   readonly scheduler: Scheduler<ServerJob>;
   /** The machine the scheduler runs on: the budgets of its checkout give the memory each test run takes. */
   readonly machine: MachineProfile;
@@ -90,6 +96,12 @@ export class JobServer {
     this.log =
       options.log ??
       ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
+    // Scheduler reads only configuration data (never loads plugin code).
+    this.config = loadConfig({
+      mode: "serve",
+      configPath: options.configPath || undefined,
+      warn: (text) => this.log(text),
+    }).config;
     // nothing is granted before listening (see listen)
     this.scheduler = new Scheduler<ServerJob>(options.slots, Infinity, options.policy, options.memoryMb);
     this.machine = new MachineProfile();
@@ -233,6 +245,8 @@ export class JobServer {
     const cwd = String(message.cwd ?? "");
     const worktree = worktreeKey(String(message.worktree ?? "") || cwd);
     const places = placesField(message);
+    const keys = keysField(message);
+    const memoryMb = memoryMbField(message);
     return {
       id,
       phase,
@@ -253,17 +267,18 @@ export class JobServer {
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
       ...(places !== undefined ? { places } : {}),
+      ...(keys !== undefined ? { keys } : {}),
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
       grantedAt: numberField(message, "grantedAt"),
-      estimate: this.history.estimateWithFallback(command, { cwd, worktree, places }),
+      estimate: this.history.estimateWithFallback(command, { cwd, worktree, places }, keys),
       pin: optionalNumberField(message, "pin"),
       before: idField(message, "before"),
       after: idField(message, "after"),
       keepIfFailed: message.keepIfFailed === true,
       gpuTurn: message.gpuTurn === true,
-      memoryMb: this.machine.testMemoryMb(command),
+      memoryMb: memoryMb ?? this.machine.testMemoryMb(command),
       lastPosition: -1,
       lastStartAt: null,
       done: false,
@@ -324,7 +339,7 @@ export class JobServer {
         actualMs,
       );
       const context = { cwd: job.cwd, worktree: job.worktree, places: job.places };
-      this.history.record(job.command, actualMs, this.nextId, Date.now(), context);
+      this.history.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
     }
     this.scheduler.detach(job);
     this.recordOutcome(job.id, outcome);

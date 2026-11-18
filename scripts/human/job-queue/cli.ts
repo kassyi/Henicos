@@ -1,6 +1,7 @@
 // The command line of the job queue: parses the arguments and runs the mode. The entry script
 // (scripts/human/job-queue.js) checks the Node version and loads this module.
 
+import * as path from "node:path";
 import {
   DefaultPolicy,
   DefaultPort,
@@ -18,7 +19,9 @@ import {
 } from "./constants.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
 import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
+import { loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
+import { prefix } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
@@ -37,6 +40,7 @@ const Usage = [
   "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
+  "                                        [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
   "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
@@ -75,7 +79,8 @@ const Usage = [
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2); --memory-mb: the memory the budgets of the running test runs may add up",
-  "            to (tests/memory-budgets.yml; default half the physical memory).",
+  "            to (tests/memory-budgets.yml; default half the physical memory); --config: path to job-queue.config.json",
+  "            (default: JOB_QUEUE_CONFIG or upward from the entry script).",
   "--screenshots",
   "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
   "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
@@ -106,6 +111,7 @@ type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
 interface Options extends RunOptions {
   mode: Mode | "";
   stateDir: string;
+  configPath: string;
   commandFromEnv: boolean;
   json: boolean;
   watch: boolean;
@@ -150,6 +156,7 @@ export function parseArgs(argv: string[]): Options {
     commandFromEnv: false,
     shell: "",
     stateDir: "",
+    configPath: "",
     json: false,
     watch: false,
     accuracy: false,
@@ -258,6 +265,12 @@ export function parseArgs(argv: string[]): Options {
       case "--state-dir": // serve: a scheduler started through WMI does not inherit GSHARP_JOB_QUEUE_STATE_DIR
         options.stateDir = own[++i] ?? "";
         break;
+      case "--config":
+        options.configPath = own[++i] ?? "";
+        if (options.configPath === "") {
+          usageError("--config needs a path.");
+        }
+        break;
       case "--command-from-env": // set by the GPU wrapper, which cannot quote the command for the shell
         options.commandFromEnv = true;
         break;
@@ -305,6 +318,23 @@ export function parseArgs(argv: string[]): Options {
 
 export async function main(argv: string[]): Promise<void> {
   const options = parseArgs(argv);
+  if (
+    options.mode !== "" &&
+    options.mode !== "serve" &&
+    options.mode !== "self-test" &&
+    options.mode !== "screenshots"
+  ) {
+    const loaded = loadConfig({
+      mode: options.mode,
+      configPath: options.configPath || undefined,
+      warn: prefix,
+    });
+    if (loaded.path !== null) {
+      options.configPath = loaded.path;
+    } else if (options.configPath !== "") {
+      options.configPath = path.resolve(options.configPath);
+    }
+  }
   try {
     switch (options.mode) {
       case "run":
