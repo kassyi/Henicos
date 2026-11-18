@@ -13,6 +13,7 @@ import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
+import { ResourceChecks } from "./resource-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
 import { gitBashPath, quoteArgument } from "./shell.ts";
@@ -96,7 +97,12 @@ export async function selfTest(): Promise<void> {
   }
   syncBuiltinESMExports();
   try {
-    for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
+    for (const [name, check] of Object.entries({
+      ...FairnessChecks,
+      ...SchedulerChecks,
+      ...ResourceChecks,
+      ...JobStateChecks,
+    })) {
       await named(name, () => check(assert));
     }
     await named("checkShellHelpers", checkShellHelpers);

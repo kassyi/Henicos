@@ -235,6 +235,7 @@ internal static class NativeApiMethodReader
         {
             Name = RequireScalar(mapping, "name"),
             Type = RequireScalar(mapping, "type"),
+            TypeLine = LineOf(mapping, "type"),
             Description = OptionalScalar(mapping, "description"),
             DefaultValue = OptionalScalar(mapping, "defaultValue"),
         };
