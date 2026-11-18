@@ -5,6 +5,9 @@ import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { EntryScript } from "./constants.ts";
+import { loadConfig } from "./config.ts";
+import { PluginHost } from "./plugin-host.ts";
 import type { StatusReply } from "./protocol.ts";
 import {
   FlashMs,
@@ -17,6 +20,7 @@ import {
   shortCommand,
   timelineCells,
   timeWindow,
+  type ShortNameProvider,
   type ViewState,
 } from "./view.ts";
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
@@ -26,11 +30,11 @@ import { checkChats } from "./self-test-chats.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
-function checkLayout(): void {
+function checkLayout(plugins: ShortNameProvider): void {
   const reply = sampleReply();
   // The pane of a split VS Code panel: 70 columns, 13 rows; #812 selected
   const state: ViewState = { ...initialViewState(), selectedId: 812 };
-  const lines = plain(renderScreen(reply, state, { columns: 70, rows: 13, now: Now }, false));
+  const lines = plain(renderScreen(reply, state, { columns: 70, rows: 13, now: Now }, false, null, plugins));
   assert.strictEqual(lines.length, 13, "the screen fills the rows exactly, so nothing scrolls");
   lines.forEach((line, i) => assert.ok(displayWidth(line) <= 70, `line ${i} fits 70 columns: ${line}`));
   // Now is one column, marked on the axis and in every job line, past on its left and the expected rest on its right
@@ -98,14 +102,17 @@ function checkLayout(): void {
   assert.match(idle[12] ?? "", /no jobs/);
 }
 
-function checkPieces(): void {
+function checkPieces(plugins: ShortNameProvider): void {
   assert.strictEqual(fit("abcdef", 4), "abc…");
   assert.strictEqual(fit("ab", 4), "ab  ");
   assert.strictEqual(fit("日本語の名前", 7), "日本語…", "a wide character takes two cells");
   assert.strictEqual(displayWidth(fit("日本語の名前", 7)), 7);
   assert.strictEqual(fit("日本語の名前", 6), "日本… ", "a wide character that would pass the width is left out");
   assert.strictEqual(
-    shortCommand("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj -c Release"),
+    shortCommand(
+      "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj -c Release",
+      plugins,
+    ),
     "test Tests.Cpu.csproj -c Release",
   );
   // Commands as agents queue them: assignments, export steps, redirections and the node-reuse flag are dropped
@@ -113,11 +120,21 @@ function checkPieces(): void {
     shortCommand(
       "export DiffEngine_Disabled=true; dotnet build tests/A -nodeReuse:false > tmp/b.log 2>&1 && " +
         "dotnet test tests/A --no-build > tmp/t.log 2>&1; dotnet build tests/B >x 2>&1",
+      plugins,
     ),
     "build A && test A --no-build ; build B",
   );
-  assert.strictEqual(shortCommand("CI=true DiffEngine_Disabled=true dotnet test tests/X"), "test X");
-  assert.strictEqual(shortCommand("a=1 b=2"), "a=1 b=2", "nothing left: the command as it is");
+  assert.strictEqual(shortCommand("CI=true DiffEngine_Disabled=true dotnet test tests/X", plugins), "test X");
+  assert.strictEqual(shortCommand("a=1 b=2", plugins), "a=1 b=2", "nothing left: the command as it is");
+  // Without plugins, generic stripping keeps dotnet/just/-nodeReuse:false/Kassyi.GSharp. and drops node/env/dirs
+  assert.strictEqual(
+    shortCommand("CI=true dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu -nodeReuse:false > a.log"),
+    "dotnet test Kassyi.GSharp.Tests.Cpu -nodeReuse:false",
+  );
+  assert.strictEqual(
+    shortCommand("node scripts/human/fuzz-differential.js --minutes 5"),
+    "fuzz-differential.js --minutes 5",
+  );
   // The timeline of a running job: █ up to now, ▓ to its expected end, nothing after
   const running = job(1, { state: "running", grantedAt: Now - 5 * Minute, endAt: Now + 5 * Minute });
   const window = timeWindow([running], Now, 40);
@@ -460,7 +477,7 @@ function checkHelp(): void {
 }
 
 /** The SVG of the screenshots: text escaped, wide characters on their cells, and the files of the README written. */
-function checkScreenshots(): void {
+function checkScreenshots(plugins: ShortNameProvider): void {
   const svg = terminalSvg(["a<b&c>d", "[1;33m日本[0mx [7msel[0m"], 10);
   assert.ok(svg.includes(">a&lt;b&amp;c&gt;d</tspan>"), `markup in the text is escaped: ${svg}`);
   assert.ok(!svg.includes("a<b") && !svg.includes("&c"), "no raw < or & from the text");
@@ -471,7 +488,7 @@ function checkScreenshots(): void {
   assert.ok(svg.includes(`<rect ${x(6)}`), "reverse video draws its background");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-screenshots-"));
   try {
-    const files = writeScreenshots(dir);
+    const files = writeScreenshots(dir, plugins);
     assert.deepStrictEqual(
       files.map((file) => path.basename(file)),
       Screenshots.map((shot) => shot.file),
@@ -486,14 +503,19 @@ function checkScreenshots(): void {
   }
 }
 
-export function checkView(): void {
+export async function checkView(): Promise<void> {
+  const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
+  const plugins = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
+    ...process.env,
+    JOB_QUEUE_PLUGINS: undefined,
+  });
   checkHelp();
   checkStartKey();
   checkPauseKey();
-  checkPieces();
-  checkLayout();
+  checkPieces(plugins);
+  checkLayout(plugins);
   checkKeys();
   checkGpuPairsAndReasons();
   checkChats();
-  checkScreenshots();
+  checkScreenshots(plugins);
 }

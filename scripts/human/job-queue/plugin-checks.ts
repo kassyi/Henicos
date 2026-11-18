@@ -27,6 +27,7 @@ import { ProcessTable } from "./system.ts";
 import { delay, firstTestPort, removeDirectory } from "./self-test-support.ts";
 import {
   checkHistoryKeys,
+  checkLegacyClientsMemoryMb,
   checkServerMemoryMb,
   checkStateFileKeys,
   checkVersionSkewAndServeConfig,
@@ -112,11 +113,21 @@ async function checkConfig(assert: AssertModule): Promise<void> {
       });
       assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
       assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
-      assert.deepStrictEqual(repoConfig.config.plugins, [{ name: "dotnet" }]);
+      assert.deepStrictEqual(repoConfig.config.plugins, [
+        { name: "./scripts/human/job-queue-henicos" },
+        { name: "dotnet" },
+        { name: "just" },
+      ]);
       assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
       assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 1);
       assert.strictEqual(repoConfig.config.resources?.gpu?.probe, undefined);
-      assert.strictEqual(repoConfig.config.legacyClients, undefined);
+      assert.deepStrictEqual(repoConfig.config.legacyClients, {
+        testPattern: [
+          String.raw`\bdotnet(\.exe)?"?\s+(test|vstest)\b`,
+          String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
+        ].join("|"),
+        testMemoryMb: 2880,
+      });
     });
 
     // Unknown keys warn and ignore; path normalized via realpathSync.native
@@ -722,6 +733,7 @@ export async function checkPlugins(assert: AssertModule): Promise<void> {
   checkHostSequential(assert);
   checkHostValidation(assert);
   await checkServerMemoryMb(assert);
+  await checkLegacyClientsMemoryMb(assert);
   checkHistoryKeys(assert);
   await checkStateFileKeys(assert);
   await checkPluginLoading(assert);

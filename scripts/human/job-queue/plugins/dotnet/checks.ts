@@ -14,7 +14,6 @@ import type { RunOptions } from "../../client.ts";
 import { loadConfig } from "../../config.ts";
 import { commandKeys, pathArguments, type KeyContext } from "../../estimate-key.ts";
 import { RunHistory } from "../../history.ts";
-import { testMemoryMb } from "../../machine.ts";
 import { resolvePlaces } from "../../path-places.ts";
 import type { StepKeys } from "../../plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../../plugin-host.ts";
@@ -814,22 +813,22 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   assert.strictEqual(selectsCategory('dotnet test --filter "Category=Stressful"', ["Stress"]), false);
   assert.strictEqual(selectsCategory("dotnet test", ["Stress"]), false);
   assert.strictEqual(selectsCategory("dotnet test Stress", []), false);
-  // The same reading as the Stress budget of a test run (machine.ts)
-  const budgets = new Map([["App", { normal: 1, stress: 2 }]]);
-  for (const filter of [
-    "Category=Stress",
-    "Category!=Stress",
-    "Category!~Benchmark|Category=Benchmark",
-    "Category != Stress&Category!=Benchmark",
-    "Category!='Stress'",
-    "Category!=Foo-Stress",
-    "FullyQualifiedName~Stressful",
-    "Category=Benchmark.Long",
-  ]) {
+  // The same reading as the Stress budget of a test run (fixed pre-move characterization baseline)
+  const expectedStress: [string, boolean][] = [
+    ["Category=Stress", true],
+    ["Category!=Stress", false],
+    ["Category!~Benchmark|Category=Benchmark", true],
+    ["Category != Stress&Category!=Benchmark", false],
+    ["Category!='Stress'", true],
+    ["Category!=Foo-Stress", true],
+    ["FullyQualifiedName~Stressful", false],
+    ["Category=Benchmark.Long", true],
+  ];
+  for (const [filter, expected] of expectedStress) {
     const command = `dotnet test App --filter "${filter}"`;
     assert.strictEqual(
       selectsCategory(command, ["Stress", "Benchmark"]),
-      testMemoryMb(command, true, budgets) === 2,
+      expected,
       `selectsCategory reads ${filter} as the budget does`,
     );
   }

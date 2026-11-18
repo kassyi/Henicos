@@ -95,11 +95,16 @@ export function selectedJob(jobs: ScreenJob[], state: ViewState): ScreenJob | un
 
 const Assignment = /^[A-Za-z_][A-Za-z0-9_]*=/;
 
+/** Structural plugin hook subset so view.ts stays pure and never runtime-imports plugin-host.ts. */
+export interface ShortNameProvider {
+  shortName(command: string, short: string): string;
+}
+
 /**
- * A command for a short column: without leading `export X=1;` steps and `X=1` assignments, redirections, the program
- * name every command starts with (dotnet, just, node), directories and the `Kassyi.GSharp.` prefix of project names.
+ * A command for a short column: without leading `export X=1;` steps and `X=1` assignments, redirections, `node` at
+ * step start, and directories; then chained through plugin `shortName` hooks when provided.
  */
-export function shortCommand(command: string): string {
+export function shortCommand(command: string, plugins?: ShortNameProvider): string {
   const words: string[] = [];
   let atStart = true; // at the start of a step: assignments and the program name are dropped here
   let skipStep = false; // inside an `export ...` step
@@ -114,9 +119,9 @@ export function shortCommand(command: string): string {
       continue;
     } else if (/^\d*>>?(&\d)?$/.test(bare)) {
       skipTarget = !bare.includes("&");
-    } else if (/^\d*>>?\S/.test(bare) || bare === "-nodeReuse:false") {
-      // a redirection with its target in the same word, or a flag every agent adds
-    } else if (atStart && (Assignment.test(bare) || /^(dotnet|just|node)$/.test(bare))) {
+    } else if (/^\d*>>?\S/.test(bare)) {
+      // a redirection with its target in the same word
+    } else if (atStart && (Assignment.test(bare) || bare === "node")) {
       // dropped
     } else if (!/^(&&|\|\||;|\|)$/.test(word)) {
       const name = /[\\/]/.test(bare)
@@ -125,14 +130,14 @@ export function shortCommand(command: string): string {
             .filter((p) => p !== "")
             .pop() ?? bare)
         : bare;
-      words.push(name.replace(/^Kassyi\.GSharp\./, ""));
+      words.push(name);
       atStart = false;
     } else if (words.length > 0) {
       words.push(word);
     }
     if (separator) {
       atStart = true;
-      if (word.length > 1 && words.length > 0 && !/^(&&||||;||)$/.test(words[words.length - 1] ?? "")) {
+      if (word.length > 1 && words.length > 0 && !/^(&&|\|\||;|\|)$/.test(words[words.length - 1] ?? "")) {
         words.push(";"); // the ; of a word such as "x;" or "2>&1;"
       }
     }
@@ -140,7 +145,8 @@ export function shortCommand(command: string): string {
   while (words.length > 0 && /^(&&|\|\||;|\|)$/.test(words[words.length - 1] ?? "")) {
     words.pop();
   }
-  return words.length > 0 ? words.join(" ") : command.trim();
+  const generic = words.length > 0 ? words.join(" ") : command.trim();
+  return plugins !== undefined ? plugins.shortName(command, generic) : generic;
 }
 
 const clock = (time: number): string => new Date(time).toTimeString().slice(0, 5);
@@ -454,6 +460,7 @@ function jobLine(
   idWidth: number,
   window: TimeWindow | null,
   now: number,
+  plugins?: ShortNameProvider,
 ): ScreenLine {
   const commandWidth = window === null ? Math.max(8, columns - idWidth - 25) : Math.min(22, columns - idWidth - 14);
   const line = new ScreenLine(columns)
@@ -461,7 +468,7 @@ function jobLine(
     .add(String(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
     .add(job.gpu ? "G" : " ", "gpu")
     .add(" ")
-    .add(fit(shortCommand(job.command), commandWidth), job.state === "running" ? "" : "dim")
+    .add(fit(shortCommand(job.command, plugins), commandWidth), job.state === "running" ? "" : "dim")
     .add(" ");
   if (window === null) {
     return line.add(shortProgress(job, now), isLate(job, now) ? "late" : "").padTo();
@@ -492,6 +499,7 @@ export function renderScreen(
   screen: Screen,
   color: boolean,
   chats: ChatView | null = null,
+  plugins?: ShortNameProvider,
 ): string[] {
   const { columns, now } = screen;
   const rows = Math.max(1, screen.rows);
@@ -543,7 +551,10 @@ export function renderScreen(
         ? Math.min(Math.max(state.offset, 0), last)
         : Math.min(Math.max(state.offset, index - listRows + 1, 0), index, last);
     for (const job of jobs.slice(state.offset, state.offset + listRows)) {
-      area.push({ line: jobLine(job, job === selected, columns, idWidth, window, now), selected: job === selected });
+      area.push({
+        line: jobLine(job, job === selected, columns, idWidth, window, now, plugins),
+        selected: job === selected,
+      });
     }
   }
   while (area.length < listRows) {
