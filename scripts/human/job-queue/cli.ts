@@ -28,8 +28,8 @@ import { serve } from "./server.ts";
 
 const Usage = [
   "Usage:",
-  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu] [--after <id> [--keep-if-failed]] [--shell <name>]",
-  '                                       [--timeout-minutes <n>] -- "<command>"',
+  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--after <id> [--keep-if-failed]]",
+  '                                       [--shell <name>] [--timeout-minutes <n>] -- "<command>"',
   "  node scripts/human/job-queue.js status [<id>] [--json | --watch | --accuracy]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
@@ -48,7 +48,9 @@ const Usage = [
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
   "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
   "            --gpu                  Wait for the turn at the GPU (one job at a time, in order), then take the GPU",
-  "                                   lock (gpu-lock.js); the command's slots are then granted at once.",
+  "                                   lock (gpu-lock.js); the command's slots are then granted at once. The",
+  "                                   plugins decide whether the run may share the GPU with other shared runs.",
+  "            --gpu-exclusive        --gpu, and the run uses the GPU alone, whatever the plugins decide.",
   "            --after <id>           Start only after job <id> has ended. When it failed, was cancelled or its",
   "                                   client was lost, this job is cancelled too (exit 4), unless --keep-if-failed.",
   "            --shell <name>         bash, pwsh, powershell, cmd or sh (default: the caller's: Git Bash when MSYSTEM",
@@ -220,6 +222,10 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--gpu":
         options.gpu = true;
+        break;
+      case "--gpu-exclusive":
+        options.gpu = true;
+        options.gpuExclusive = true;
         break;
       case "--after":
         options.after = parsePositive("--after", own[++i]);

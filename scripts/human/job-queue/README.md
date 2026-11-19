@@ -89,7 +89,8 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `client.ts` | `run`: checks the options, runs a command inside a queued job at once, and otherwise hands it to a `QueuedRun` |
 | `client-build-step.ts` | `runBuildStep`: the builds of a `run --gpu` run as a queued job without the GPU before the turn (a `QueuedRun` whose `RunHost` resolves its exit code instead of ending the process) |
 | `client-queued-run.ts` | `QueuedRun`: registers a job, waits for the grant, runs the command, reports its end, re-registers after a scheduler restart |
-| `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` |
+| `client-run-host.ts` | `RunHost`, the effects of a `QueuedRun` (connection, command, exit), and `ProcessRunHost`, the real one; `commandEnd`, how a command's end is reported after a cancel; the GPU turn's run under `gpu-lock.js` (`gpuLockArguments`: `--mode shared` for a shared lock alone) |
+| `client-share-checks.ts` | Self-test checks of the share of a `--gpu` run against a fake scheduler and `RunHost`: what the turn asks for (request and adopt, not the holder), the lock mode for each `granted` echo, an older scheduler, `--gpu-exclusive`, no plugins |
 | `client-connect.ts` | One-shot requests to the scheduler, and `SchedulerLauncher`: connects, starts the scheduler on demand, reports a job's end to the next scheduler |
 | `client-commands.ts` | The other modes: `status`, `cancel`, `move` / `set-weight`, `start`, `pause` / `resume`, `wait`, `stop` |
 | `watch.ts` | `status --watch` (`just queue-watch`): the live view on the alternate screen, its refresh, the chats read through `chat-status.js` (`createRequire`), and `reduceKey`, the keys as a pure function |
@@ -115,7 +116,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `server-shared-checks.ts`, `server-probe-checks.ts` | Self-test checks of shared turns against a scheduler in the test's own process (the `share` of a grant, the probe before a second shared turn, restore, `status` resources, the log of a failed shared turn) and of `runProbe` and the `serve --gpu-slots` range |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
-| `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
+| `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read (`readCommandLine` also says whether a `|` stands outside quotes); pure |
 | `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
 | `estimate-checks.ts` | Self-test checks of the core keys, the fallback order and the accuracy log (run through `SchedulerChecks`) |
 | `machine.ts` | `MachineProfile`, hardware defaults for CPU slots and the memory pool parameterized by `config.pools` |
@@ -129,7 +130,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`, `hook-rules.js`, `justfile.js`, `hook-checks.js`): `just` recipe estimate keys (`stepKeys`), short command labels (`shortName`), and recipe hook rules (`options.hookRecipes` / `options.hookDryRunRecipes`) + `justfile` queue option lookup |
 | `plugins/nvidia-gpu/` | Built-in CJS-only `nvidia-gpu` `holderWatch` plugin (`holder-watch.js`, `holds.js`, `pools.js`, `fault-watch.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`, `README.md`): GPU hold sampling (`gpu-hold-log.tsv` with `mode` column) and Windows kernel pool / Event 153 watches (`gpu-pool-log.tsv`); the sanitizer and profiler runners of the PreToolUse hook (`hook-rules.js`) |
 | `plugins/agents/` | Built-in `agents` plugin (`checks.ts`, `hook-io.js`, `hook-checks.js`): PreToolUse payload parsing and denial/rewrite formatting for Claude Code and Antigravity |
-| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `target-dialect.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
+| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `share-rules.ts`, `target-dialect.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, the GPU share of a `--gpu` run (`share-rules.ts`, options `exclusiveCategories`, `exclusiveEnv`, `sharedRecipes`), `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
@@ -182,6 +183,10 @@ sequenceDiagram
   `tests/memory-budgets.yml` from, and the turn resources (`gpu`): at most `slots` shared turns at a time, one with
   `slots` 1. A GPU holder (the command under `gpu-lock.js`) is granted at once, over the pools, so it never deadlocks
   with a job that holds a slot and waits for the GPU.
+  The default slots were measured on a 24-core machine with 64 GB (a mix of 4 forced rebuilds and 4 test runs of
+  Tests.Cpu, two rounds each): 8 slots with test runs of 1 slot finished in 518 s on average, 6 slots with 1 slot in
+  555 s, 8 slots with test runs of 2 slots in 587 s and 6 slots with 2 slots, the earlier default, in 676 s at 76%
+  CPU; each test run took about its budget in memory.
 - **Turn grants** (`turnVerdict`): only the first waiting turn of a resource is looked at, so an exclusive turn is
   never passed by a shared one behind it. Use is counted from the running jobs on every grant, never stored. Only a
   turn with `share` "shared" shares; a turn without it, and a holder that no running turn started, are exclusive. A
@@ -208,6 +213,17 @@ and forecast by its own run time. The plan only reads plain commands (segments j
 appends (`>>`) to the log its build wrote, so the log holds what the one command wrote. Anything else runs
 as before. Inside a queued job the builds run at once on that job's slots. The Claude Code hook splits
 `dotnet build X && dotnet test X --no-build` the same way into two queued runs (`queue-rewrite.js`).
+
+## The share of a `--gpu` run
+
+The turn of a `--gpu` run (`QueuedRun` with `gpuTurn`) classifies its command once, at its first registration, after
+the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exclusive`), and sends `resource: "gpu"`
+and `share` (`"shared"` only for exactly that answer, else `"exclusive"`) with `request` and `adopt`. Without plugins
+it sends no `share`; the GPU holder and a job without a turn send neither. The repository's rules are in
+`../job-queue-henicos/share-rules.ts` (job-queue-reference.md lists them). Once granted, the turn runs `gpu-lock.js
+--mode shared` only when it asked for `"shared"` and `granted.share` is exactly `"shared"`: the scheduler and the lock
+then agree on every shared turn, and every other case (no echo from an older scheduler, an echo it did not ask for,
+the direct lock under a scheduler without turns) takes the lock exclusively.
 
 ## Job records
 
