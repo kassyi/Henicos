@@ -65,10 +65,11 @@ internal static class ConditionalAccess
 
     /// <summary>
     /// The GSH0003 text of a <c>?.</c> that calls an extension method returning <see langword="void"/> on a binding
-    /// outside a statement (<c>for (...; ...; i++, q?[t].M())</c>).
+    /// where C# needs an expression, not a statement (<c>for (...; ...; i++, q?[t].M())</c>).
     /// </summary>
     public const string VoidExtensionCallOutsideStatement =
-        "?. calling an extension method that returns void outside a statement, which the managed CPU path cannot write";
+        "?. calling an extension method that returns void in a for incrementor or initializer, " +
+        "which the managed CPU path cannot write";
 
     /// <summary>Decides how <paramref name="node"/> is written.</summary>
     /// <exception cref="InvalidOperationException">
@@ -95,9 +96,10 @@ internal static class ConditionalAccess
         return new ConditionalAccessPlan(kind, form, resultType, problem);
     }
 
-    // An extension method that returns void, called on a binding outside a statement (a for incrementor): the managed
-    // copy writes such a call as a statement on the receiver in a pattern variable (ManagedConditionalAccess), and C#
-    // has no expression for it
+    // An extension method that returns void, called on a binding outside a statement (a for incrementor; a void
+    // method or local function body, an inlined macro body and a statement chain are statements): the managed copy
+    // writes such a call as a statement on the receiver in a pattern variable (ManagedConditionalAccess), and C# has no
+    // expression for it
     private static bool IsVoidCallOutsideStatement(ConditionalAccessExpressionSyntax node, ITypeSymbol accessType,
         SemanticModel model) =>
         accessType.SpecialType == SpecialType.System_Void &&

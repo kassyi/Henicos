@@ -82,8 +82,27 @@ internal static class ManagedConditionalAccess
             AnonymousFunctionExpressionSyntax lambda when lambda.ExpressionBody == node =>
                 compilation.ContainsSyntaxTree(lambda.SyntaxTree) &&
                 SplitPointPlacement.IsInlinedMacroBody(lambda, compilation.GetCachedSemanticModel(lambda.SyntaxTree)),
+            ArrowExpressionClauseSyntax { Parent: MethodDeclarationSyntax { ReturnType: var returnType } } =>
+                IsVoid(returnType),
+            ArrowExpressionClauseSyntax { Parent: LocalFunctionStatementSyntax { ReturnType: var returnType } } =>
+                IsVoid(returnType),
             _ => false
         };
+
+    private static bool IsVoid(TypeSyntax type) =>
+        type is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
+
+    /// <summary>
+    /// The access that is the whole expression body of a local function that returns <see langword="void"/>
+    /// (<c>void F() =&gt; q?[t].M();</c>) and needs the pattern variable: the managed copy writes it as a block body.
+    /// </summary>
+    public static ConditionalAccessExpressionSyntax? GetVoidBodyAccess(LocalFunctionStatementSyntax node,
+        SemanticModel semanticModel) =>
+        node is { ExpressionBody.Expression: ConditionalAccessExpressionSyntax access } &&
+        IsVoid(node.ReturnType) &&
+        NeedsReceiverVariable(access, semanticModel)
+            ? access
+            : null;
 
     /// <summary>
     /// <c>(r is { } t ? (R)(&lt;access on t&gt;) : default(R))</c> for <paramref name="node"/>, whose receiver and
@@ -118,15 +137,6 @@ internal static class ManagedConditionalAccess
             SyntaxFactory.Block(ConditionalAccess.ReplaceBindings(body, SyntaxFactory.IdentifierName(variable)))
         );
 
-    /// <summary><c>((global::System.Action)(() =&gt; { &lt;statement&gt; }))()</c>.</summary>
-    public static ExpressionSyntax InvokeStatement(StatementSyntax statement) =>
-        SyntaxFactory.InvocationExpression(
-            SyntaxFactory.ParenthesizedExpression(
-                SyntaxFactory.CastExpression(
-                    SyntaxFactory.ParseTypeName("global::System.Action"),
-                    SyntaxFactory.ParenthesizedExpression(
-                        SyntaxFactory.ParenthesizedLambdaExpression(SyntaxFactory.Block(statement))))));
-
     // r is { } t
     private static ExpressionSyntax CreateTest(ExpressionSyntax receiver, string variable) =>
         SyntaxFactory.IsPatternExpression(
@@ -136,8 +146,11 @@ internal static class ManagedConditionalAccess
                 .WithDesignation(SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(variable)))
         );
 
-    // A reduced call on the receiver (?.M()) or whose receiver chain starts with a binding (?[i].M(), ?.A.B.M())
-    private static bool IsCallOnBinding(InvocationExpressionSyntax call) =>
+    /// <summary>
+    /// Whether <paramref name="call"/> is a call on the receiver of a null-conditional access (<c>?.M()</c>) or one
+    /// whose receiver chain starts with a binding (<c>?[i].M()</c>, <c>?.A.B.M()</c>).
+    /// </summary>
+    public static bool IsCallOnBinding(InvocationExpressionSyntax call) =>
         call.Expression switch
         {
             MemberBindingExpressionSyntax => true,

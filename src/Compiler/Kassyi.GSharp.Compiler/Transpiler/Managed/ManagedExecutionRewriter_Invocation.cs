@@ -16,10 +16,11 @@ internal sealed partial class ManagedExecutionRewriter
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
+            var rewritten = _keepsReducedCallsOnBindings > 0 && ManagedConditionalAccess.IsCallOnBinding(node)
+                ? null
+                : ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel);
             var result = AddCallerInfoArguments(node,
-                ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
-                    ? RouteExtensionCall(node, rewritten)
-                    : base.VisitInvocationExpression(node));
+                rewritten != null ? RouteExtensionCall(node, rewritten) : base.VisitInvocationExpression(node));
             return ManagedRewriteClassifier.IsSequentialSum(node, semanticModel) &&
                    result is InvocationExpressionSyntax sumCall
                 ? RewriteSequentialSum(sumCall)

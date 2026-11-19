@@ -55,6 +55,14 @@ internal sealed partial class ManagedExecutionRewriter(
     // (ManagedConditionalAccess)
     private int _nextConditionalReceiverId;
 
+    // The access that is the expression body of the void local function being rewritten, and the statement written
+    // for it (VisitLocalFunctionWithVoidBody)
+    private ConditionalAccessExpressionSyntax? _voidBodyAccess;
+    private StatementSyntax? _voidBodyStatement;
+
+    // Above 0 inside a void access outside a statement, whose extension calls on bindings stay in the reduced form
+    private int _keepsReducedCallsOnBindings;
+
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)
@@ -555,7 +563,7 @@ internal sealed partial class ManagedExecutionRewriter(
         ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));
 
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
-        VisitNestedCallable(node, base.VisitLocalFunctionStatement);
+        VisitLocalFunctionWithVoidBody(node);
 
     public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitSimpleLambdaExpression);

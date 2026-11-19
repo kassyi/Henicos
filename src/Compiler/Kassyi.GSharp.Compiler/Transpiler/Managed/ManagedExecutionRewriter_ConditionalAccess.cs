@@ -11,12 +11,28 @@ internal sealed partial class ManagedExecutionRewriter
             return base.VisitConditionalAccessExpression(node);
         }
 
-        // A call that returns void has no value to write: the statement form in an action invoked in place, for a
-        // position the plan rejects (GSH0003), so that the managed copy is valid C# anyway
+        // The expression body of a void local function: its statement goes into the block body that
+        // VisitLocalFunctionStatement writes
+        if (node == _voidBodyAccess)
+        {
+            _voidBodyStatement = RewriteConditionalAccessStatement(node);
+            return node;
+        }
+
+        // A call that returns void outside a statement (a for incrementor) has no value to write, and the plan reports
+        // it (GSH0003): the access is written as C# has it, with its calls in their reduced form, as the managed copy
+        // writes the other forms the plan rejects
         if (semanticModel.GetTypeSymbol(node) is { SpecialType: SpecialType.System_Void })
         {
-            return ManagedConditionalAccess.InvokeStatement(RewriteConditionalAccessStatement(node))
-                .WithTriviaFrom(node);
+            _keepsReducedCallsOnBindings++;
+            try
+            {
+                return base.VisitConditionalAccessExpression(node);
+            }
+            finally
+            {
+                _keepsReducedCallsOnBindings--;
+            }
         }
 
         var (receiver, whenNotNull, variable) = VisitWithReceiverVariable(node);
@@ -41,6 +57,34 @@ internal sealed partial class ManagedExecutionRewriter
             ? RewriteConditionalAccessStatement(nested)
             : SyntaxFactory.ExpressionStatement(VisitWhenNotNull(node));
         return ManagedConditionalAccess.CreateStatement(receiver, body, NextConditionalReceiver());
+    }
+
+    // void F() => a?[i].M(); becomes void F() { if (a is { } t) { global::N.C.M(t[i]); } }
+    private SyntaxNode? VisitLocalFunctionWithVoidBody(LocalFunctionStatementSyntax node)
+    {
+        if (ManagedConditionalAccess.GetVoidBodyAccess(node, semanticModel) is not { } access)
+        {
+            return VisitNestedCallable(node, base.VisitLocalFunctionStatement);
+        }
+
+        var outerAccess = _voidBodyAccess;
+        _voidBodyAccess = access;
+        try
+        {
+            var visited = VisitNestedCallable(node, base.VisitLocalFunctionStatement) as LocalFunctionStatementSyntax ??
+                          throw new InvalidOperationException($"'{node.Identifier}' did not rewrite.");
+            var statement = _voidBodyStatement ??
+                            throw new InvalidOperationException($"The body of '{node.Identifier}' did not rewrite.");
+            return visited
+                .WithExpressionBody(null)
+                .WithSemicolonToken(default)
+                .WithBody(SyntaxFactory.Block(statement));
+        }
+        finally
+        {
+            _voidBodyAccess = outerAccess;
+            _voidBodyStatement = null;
+        }
     }
 
     // The receiver and WhenNotNull rewritten in the order C# evaluates them, and the name of the pattern variable

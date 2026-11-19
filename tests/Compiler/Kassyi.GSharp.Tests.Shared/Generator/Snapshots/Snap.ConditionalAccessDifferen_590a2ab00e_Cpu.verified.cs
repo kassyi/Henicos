@@ -26,6 +26,9 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalA
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__Mark(int* __gsharp_id_0_log, int __gsharp_id_1_digit, int __gsharp_id_2_value);
 
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint;
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__IncrementElement(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_0_q, int __gsharp_id_1_t);
+
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__SwapArray(GSharpArray<int>* __gsharp_id_0_r, GSharpArray<int> __gsharp_id_1_other);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__SumOfFirstTwo(GSharpArray<int> __gsharp_id_0_values);
@@ -163,13 +166,36 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalA
 return __gsharp_id_2_value;
 }
 
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint
+{
+int __gsharp_mb_X;
+int __gsharp_mb_Y;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint)==8,""Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint)==4,""Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint.Y: offset"");
+#endif
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__IncrementElement(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_0_q, int __gsharp_id_1_t){
+([&]() {
+auto __gsharp_seq_0 = __gsharp_id_0_q;
+if((__gsharp_seq_0.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_0, __gsharp_id_1_t, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(491,80)""));
+}
+;
+}());
+}
+
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__SwapArray(GSharpArray<int>* __gsharp_id_0_r, GSharpArray<int> __gsharp_id_1_other){
 (*__gsharp_id_0_r)=__gsharp_id_1_other;
 return 0;
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__SumOfFirstTwo(GSharpArray<int> __gsharp_id_0_values){
-return __gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_values, 0, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(546,63)""),__gsharp_array_at(__gsharp_id_0_values, 1, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(546,75)""));
+return __gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_values, 0, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(557,63)""),__gsharp_array_at(__gsharp_id_0_values, 1, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(557,75)""));
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint__
@@ -207,7 +233,7 @@ __gsharp_sub_i32(((*__gsharp_id_0_p).__gsharp_mb_X=__gsharp_add_i32((*__gsharp_i
 }
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__SetAt(GSharpArray<int> __gsharp_id_0_values, int __gsharp_id_1_index, int __gsharp_id_2_value){
-__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(555,78)"")=__gsharp_id_2_value;
+__gsharp_array_at(__gsharp_id_0_values, __gsharp_id_1_index, ""G#: a null array is read at ConditionalAccessDifferentialKernels.cs(566,78)"")=__gsharp_id_2_value;
 }
 
 ";
@@ -443,23 +469,30 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1582864778u, "ConditionalA
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1156349968u, "ConditionalAccessDifferentialKernels.cs", 484, 13, "NestedExtensionCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(167709798u, "ConditionalAccessDifferentialKernels.cs", 485, 13, "NestedExtensionCallKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1481823448u, "ConditionalAccessDifferentialKernels.cs", 486, 13, "NestedExtensionCallKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1985270142u, "ConditionalAccessDifferentialKernels.cs", 496, 23, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1201142014u, "ConditionalAccessDifferentialKernels.cs", 498, 44, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1443987818u, "ConditionalAccessDifferentialKernels.cs", 499, 38, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(714116452u, "ConditionalAccessDifferentialKernels.cs", 502, 21, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(916210358u, "ConditionalAccessDifferentialKernels.cs", 503, 40, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1356986936u, "ConditionalAccessDifferentialKernels.cs", 507, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1433401842u, "ConditionalAccessDifferentialKernels.cs", 507, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(126139862u, "ConditionalAccessDifferentialKernels.cs", 508, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(737131819u, "ConditionalAccessDifferentialKernels.cs", 508, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(759336016u, "ConditionalAccessDifferentialKernels.cs", 509, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2105055013u, "ConditionalAccessDifferentialKernels.cs", 509, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1640047312u, "ConditionalAccessDifferentialKernels.cs", 529, 25, "ReceiverReassignedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1828163338u, "ConditionalAccessDifferentialKernels.cs", 530, 24, "ReceiverReassignedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(804133991u, "ConditionalAccessDifferentialKernels.cs", 530, 42, "ReceiverReassignedKernel", "G#: a null array is passed to the non-nullable parameter 'other' of SwapArray. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1450708242u, "ConditionalAccessDifferentialKernels.cs", 533, 13, "ReceiverReassignedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376002936u, "ConditionalAccessDifferentialKernels.cs", 534, 13, "ReceiverReassignedKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(913130736u, "ConditionalAccessDifferentialKernels.cs", 534, 30, "ReceiverReassignedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1406397556u, "ConditionalAccessDifferentialKernels.cs", 501, 23, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(665880472u, "ConditionalAccessDifferentialKernels.cs", 503, 44, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1449972248u, "ConditionalAccessDifferentialKernels.cs", 504, 38, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(701506914u, "ConditionalAccessDifferentialKernels.cs", 507, 21, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(963967088u, "ConditionalAccessDifferentialKernels.cs", 508, 40, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1313038806u, "ConditionalAccessDifferentialKernels.cs", 509, 31, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(341739643u, "ConditionalAccessDifferentialKernels.cs", 510, 39, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1535199463u, "ConditionalAccessDifferentialKernels.cs", 511, 39, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(674974140u, "ConditionalAccessDifferentialKernels.cs", 516, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1036556230u, "ConditionalAccessDifferentialKernels.cs", 516, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(661828482u, "ConditionalAccessDifferentialKernels.cs", 517, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1119501851u, "ConditionalAccessDifferentialKernels.cs", 517, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(364144456u, "ConditionalAccessDifferentialKernels.cs", 518, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(850936677u, "ConditionalAccessDifferentialKernels.cs", 518, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(691651970u, "ConditionalAccessDifferentialKernels.cs", 519, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1982719023u, "ConditionalAccessDifferentialKernels.cs", 519, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1151639570u, "ConditionalAccessDifferentialKernels.cs", 520, 13, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(605131371u, "ConditionalAccessDifferentialKernels.cs", 520, 28, "VoidExtensionStatementKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1058584814u, "ConditionalAccessDifferentialKernels.cs", 540, 25, "ReceiverReassignedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1393105022u, "ConditionalAccessDifferentialKernels.cs", 541, 24, "ReceiverReassignedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1847122387u, "ConditionalAccessDifferentialKernels.cs", 541, 42, "ReceiverReassignedKernel", "G#: a null array is passed to the non-nullable parameter 'other' of SwapArray. G# checks the nullable annotation at the call, earlier than C#, which throws only when the array is read; declare the parameter nullable (int[]?) to keep the C# behavior."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1221523694u, "ConditionalAccessDifferentialKernels.cs", 544, 13, "ReceiverReassignedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(44666488u, "ConditionalAccessDifferentialKernels.cs", 545, 13, "ReceiverReassignedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1517639752u, "ConditionalAccessDifferentialKernels.cs", 545, 30, "ReceiverReassignedKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -8143,14 +8176,17 @@ GSharpArray<int> __gsharp_id_0_a;
 GSharpArray<int> __gsharp_id_1_ws;
 GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_2_ps1;
 GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_3_ps2;
-GSharpArray<int> __gsharp_id_4_dst;
-int __gsharp_id_5_t;
-int __gsharp_id_6_sel;
-System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder> __gsharp_id_7_h;
-System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder> __gsharp_id_8_hp;
-GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_9_q;
+GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_4_ps3;
+GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_5_ps4;
+GSharpArray<int> __gsharp_id_6_dst;
+int __gsharp_id_7_t;
+int __gsharp_id_8_sel;
+System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder> __gsharp_id_9_h;
+System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder> __gsharp_id_10_hp;
+GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_11_q;
+GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_13_q4;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_ws, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_2_ps1, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_3_ps2, GSharpArray<int> __gsharp_in___gsharp_id_4_dst, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_ws, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_2_ps1, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_3_ps2, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_4_ps3, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_in___gsharp_id_5_ps4, GSharpArray<int> __gsharp_in___gsharp_id_6_dst, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -8160,22 +8196,34 @@ __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 __gsharp_ctx->__gsharp_id_1_ws=__gsharp_in___gsharp_id_1_ws;
 __gsharp_ctx->__gsharp_id_2_ps1=__gsharp_in___gsharp_id_2_ps1;
 __gsharp_ctx->__gsharp_id_3_ps2=__gsharp_in___gsharp_id_3_ps2;
-__gsharp_ctx->__gsharp_id_4_dst=__gsharp_in___gsharp_id_4_dst;
+__gsharp_ctx->__gsharp_id_4_ps3=__gsharp_in___gsharp_id_4_ps3;
+__gsharp_ctx->__gsharp_id_5_ps4=__gsharp_in___gsharp_id_5_ps4;
+__gsharp_ctx->__gsharp_id_6_dst=__gsharp_in___gsharp_id_6_dst;
 }
+auto __gsharp_id_14_IncrementOwn = [&, __gsharp_ctx]() {
+return ([&]() {
+auto __gsharp_seq_0 = __gsharp_ctx->__gsharp_id_13_q4;
+if((__gsharp_seq_0.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_0, __gsharp_ctx->__gsharp_id_7_t, 1535199463u));
+}
+;
+}());
+}
+;
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_5_t=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-__gsharp_ctx->__gsharp_id_6_sel=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_5_t, 1985270142u)&3;
-__gsharp_ctx->__gsharp_id_7_h=(__gsharp_ctx->__gsharp_id_6_sel==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder>(([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Data = (__gsharp_ctx->__gsharp_id_6_sel==1?GSharpArray<int>():__gsharp_ctx->__gsharp_id_1_ws); return __gsharp_tmp; }
+__gsharp_ctx->__gsharp_id_7_t=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+__gsharp_ctx->__gsharp_id_8_sel=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_7_t, 1406397556u)&3;
+__gsharp_ctx->__gsharp_id_9_h=(__gsharp_ctx->__gsharp_id_8_sel==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder>(([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalHolder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Data = (__gsharp_ctx->__gsharp_id_8_sel==1?GSharpArray<int>():__gsharp_ctx->__gsharp_id_1_ws); return __gsharp_tmp; }
 ())));
-__gsharp_ctx->__gsharp_id_8_hp=((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_5_t, 1201142014u)&4)==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder>(([&]() {
+__gsharp_ctx->__gsharp_id_10_hp=((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_7_t, 665880472u)&4)==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder>(([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPointsHolder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Pts = __gsharp_ctx->__gsharp_id_2_ps1; return __gsharp_tmp; }
 ())));
-__gsharp_ctx->__gsharp_id_9_q=((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_5_t, 1443987818u)&1)==0?GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint>():__gsharp_ctx->__gsharp_id_3_ps2);
+__gsharp_ctx->__gsharp_id_11_q=((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_7_t, 1449972248u)&1)==0?GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint>():__gsharp_ctx->__gsharp_id_3_ps2);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return;
@@ -8184,12 +8232,12 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 ([&]() {
-auto __gsharp_seq_0 = __gsharp_ctx->__gsharp_id_7_h;
-if((__gsharp_seq_0.HasValue)){
+auto __gsharp_seq_1 = __gsharp_ctx->__gsharp_id_9_h;
+if((__gsharp_seq_1.HasValue)){
 ([&]() {
-auto __gsharp_seq_1 = __gsharp_seq_0.Value.__gsharp_mb_Data;
-if((__gsharp_seq_1.data != nullptr)){
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__SetAt(__gsharp_seq_1,__gsharp_ctx->__gsharp_id_5_t,7);
+auto __gsharp_seq_2 = __gsharp_seq_1.Value.__gsharp_mb_Data;
+if((__gsharp_seq_2.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__SetAt(__gsharp_seq_2,__gsharp_ctx->__gsharp_id_7_t,7);
 }
 ;
 }());
@@ -8197,12 +8245,12 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtens
 ;
 }());
 ([&]() {
-auto __gsharp_seq_2 = __gsharp_ctx->__gsharp_id_8_hp;
-if((__gsharp_seq_2.HasValue)){
+auto __gsharp_seq_3 = __gsharp_ctx->__gsharp_id_10_hp;
+if((__gsharp_seq_3.HasValue)){
 ([&]() {
-auto __gsharp_seq_3 = __gsharp_seq_2.Value.__gsharp_mb_Pts;
-if((__gsharp_seq_3.data != nullptr)){
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_3, __gsharp_ctx->__gsharp_id_5_t, 714116452u));
+auto __gsharp_seq_4 = __gsharp_seq_3.Value.__gsharp_mb_Pts;
+if((__gsharp_seq_4.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_4, __gsharp_ctx->__gsharp_id_7_t, 701506914u));
 }
 ;
 }());
@@ -8212,22 +8260,25 @@ __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtens
 // [GpuUnroll] start=0, count=2
 {
 ([&]() {
-auto __gsharp_seq_4 = __gsharp_ctx->__gsharp_id_9_q;
-if((__gsharp_seq_4.data != nullptr)){
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_4, __gsharp_ctx->__gsharp_id_5_t, 916210358u));
+auto __gsharp_seq_5 = __gsharp_ctx->__gsharp_id_11_q;
+if((__gsharp_seq_5.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_5, __gsharp_ctx->__gsharp_id_7_t, 963967088u));
 }
 ;
 }());
 }
 {
 ([&]() {
-auto __gsharp_seq_5 = __gsharp_ctx->__gsharp_id_9_q;
-if((__gsharp_seq_5.data != nullptr)){
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_5, __gsharp_ctx->__gsharp_id_5_t, 916210358u));
+auto __gsharp_seq_6 = __gsharp_ctx->__gsharp_id_11_q;
+if((__gsharp_seq_6.data != nullptr)){
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessExtensionMethods__ConditionalAccessExtensions__IncrementX(&__gsharp_array_at(__gsharp_seq_6, __gsharp_ctx->__gsharp_id_7_t, 963967088u));
 }
 ;
 }());
 }
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__IncrementElement(((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_7_t, 1313038806u)&8)==0?GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint>():__gsharp_ctx->__gsharp_id_4_ps3),__gsharp_ctx->__gsharp_id_7_t);
+__gsharp_ctx->__gsharp_id_13_q4=((__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_a, __gsharp_ctx->__gsharp_id_7_t, 341739643u)&16)==0?GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint>():__gsharp_ctx->__gsharp_id_5_ps4);
+__gsharp_id_14_IncrementOwn();
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=2;
 return;
@@ -8235,10 +8286,12 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-int __gsharp_id_11_col = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_5_t,3);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_dst, __gsharp_id_11_col+0, 1356986936u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_ws, __gsharp_ctx->__gsharp_id_5_t, 1433401842u);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_dst, __gsharp_add_i32(__gsharp_id_11_col,1), 126139862u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_ps1, __gsharp_ctx->__gsharp_id_5_t, 737131819u).__gsharp_mb_X;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_dst, __gsharp_add_i32(__gsharp_id_11_col,2), 759336016u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_ps2, __gsharp_ctx->__gsharp_id_5_t, 2105055013u).__gsharp_mb_X;
+int __gsharp_id_15_col = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_7_t,5);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_6_dst, __gsharp_id_15_col+0, 674974140u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_ws, __gsharp_ctx->__gsharp_id_7_t, 1036556230u);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_6_dst, __gsharp_add_i32(__gsharp_id_15_col,1), 661828482u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_2_ps1, __gsharp_ctx->__gsharp_id_7_t, 1119501851u).__gsharp_mb_X;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_6_dst, __gsharp_add_i32(__gsharp_id_15_col,2), 364144456u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_3_ps2, __gsharp_ctx->__gsharp_id_7_t, 850936677u).__gsharp_mb_X;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_6_dst, __gsharp_add_i32(__gsharp_id_15_col,3), 691651970u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_4_ps3, __gsharp_ctx->__gsharp_id_7_t, 1982719023u).__gsharp_mb_X;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_6_dst, __gsharp_add_i32(__gsharp_id_15_col,4), 1151639570u)=__gsharp_array_at(__gsharp_ctx->__gsharp_id_5_ps4, __gsharp_ctx->__gsharp_id_7_t, 605131371u).__gsharp_mb_X;
 __gsharp_state=-1;
 return;
 }
@@ -8247,7 +8300,7 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_ws, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_2_ps1, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_3_ps2, GSharpArray<int> __gsharp_id_4_dst)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_ws, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_2_ps1, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_3_ps2, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_4_ps3, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__ConditionalPoint> __gsharp_id_5_ps4, GSharpArray<int> __gsharp_id_6_dst)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -8282,7 +8335,7 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contex
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(__gsharp_id_0_a, __gsharp_id_1_ws, __gsharp_id_2_ps1, __gsharp_id_3_ps2, __gsharp_id_4_dst, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(__gsharp_id_0_a, __gsharp_id_1_ws, __gsharp_id_2_ps1, __gsharp_id_3_ps2, __gsharp_id_4_ps3, __gsharp_id_5_ps4, __gsharp_id_6_dst, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel, which is not [GpuKernel(Cooperative = true)]"");
@@ -8332,27 +8385,40 @@ public int[] a;
 public int[] ws;
 public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps1;
 public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps2;
+public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps3;
+public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps4;
 public int[] dst;
 public int t;
 public int sel;
 public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalHolder? h;
 public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPointsHolder? hp;
 public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[]? q;
+public global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[]? q4;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(int[] __gsharp_in_a, int[] __gsharp_in_ws, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps1, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps2, int[] __gsharp_in_dst, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(int[] __gsharp_in_a, int[] __gsharp_in_ws, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps1, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps2, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps3, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] __gsharp_in_ps4, int[] __gsharp_in_dst, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.a = __gsharp_in_a;
 __gsharp_ctx.ws = __gsharp_in_ws;
 __gsharp_ctx.ps1 = __gsharp_in_ps1;
 __gsharp_ctx.ps2 = __gsharp_in_ps2;
+__gsharp_ctx.ps3 = __gsharp_in_ps3;
+__gsharp_ctx.ps4 = __gsharp_in_ps4;
 __gsharp_ctx.dst = __gsharp_in_dst;
 }
 {
+void IncrementOwn()
+{
+if ((__gsharp_ctx.q4)is { } __gsharp_cond_receiver_0)
+{
+global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.IncrementX(ref __gsharp_cond_receiver_0[__gsharp_ctx.t]);
+}
+}
+
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -8375,30 +8441,33 @@ return;
 
 case 1:
 {
-if ((__gsharp_ctx.h)is { } __gsharp_cond_receiver_1)
+if ((__gsharp_ctx.h)is { } __gsharp_cond_receiver_2)
 {
-if ((__gsharp_cond_receiver_1.Data)is { } __gsharp_cond_receiver_0)
+if ((__gsharp_cond_receiver_2.Data)is { } __gsharp_cond_receiver_1)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.SetAt(__gsharp_cond_receiver_0, __gsharp_ctx.t, 7);
+global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.SetAt(__gsharp_cond_receiver_1, __gsharp_ctx.t, 7);
 }
 }
 
-if ((__gsharp_ctx.hp)is { } __gsharp_cond_receiver_3)
+if ((__gsharp_ctx.hp)is { } __gsharp_cond_receiver_4)
 {
-if ((__gsharp_cond_receiver_3.Pts)is { } __gsharp_cond_receiver_2)
+if ((__gsharp_cond_receiver_4.Pts)is { } __gsharp_cond_receiver_3)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.IncrementX(ref __gsharp_cond_receiver_2[__gsharp_ctx.t]);
+global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.IncrementX(ref __gsharp_cond_receiver_3[__gsharp_ctx.t]);
 }
 }
 
 for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 2); __gsharp_unroll_0++)
 {
-if ((__gsharp_ctx.q)is { } __gsharp_cond_receiver_4)
+if ((__gsharp_ctx.q)is { } __gsharp_cond_receiver_5)
 {
-global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.IncrementX(ref __gsharp_cond_receiver_4[__gsharp_ctx.t]);
+global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMethods.ConditionalAccessExtensions.IncrementX(ref __gsharp_cond_receiver_5[__gsharp_ctx.t]);
 }
 }
 
+global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessDifferentialKernels.IncrementElement((__gsharp_ctx.a[__gsharp_ctx.t] & 8) == 0 ? null : __gsharp_ctx.ps3, __gsharp_ctx.t);
+__gsharp_ctx.q4 = (__gsharp_ctx.a[__gsharp_ctx.t] & 16) == 0 ? null : __gsharp_ctx.ps4;
+IncrementOwn();
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -8406,10 +8475,12 @@ return;
 
 case 2:
 {
-int col = __gsharp_ctx.t * 3;
+int col = __gsharp_ctx.t * 5;
 __gsharp_ctx.dst[col + 0] = __gsharp_ctx.ws[__gsharp_ctx.t];
 __gsharp_ctx.dst[col + 1] = __gsharp_ctx.ps1[__gsharp_ctx.t].X;
 __gsharp_ctx.dst[col + 2] = __gsharp_ctx.ps2[__gsharp_ctx.t].X;
+__gsharp_ctx.dst[col + 3] = __gsharp_ctx.ps3[__gsharp_ctx.t].X;
+__gsharp_ctx.dst[col + 4] = __gsharp_ctx.ps4[__gsharp_ctx.t].X;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }
@@ -8419,11 +8490,11 @@ return;
 
 private static bool __gsharp_layout_checked_VoidExtensionStatementKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_VoidExtensionStatementKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ws, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps1, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps2, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst);
+private unsafe delegate void __gsharp_delegate_VoidExtensionStatementKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ws, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps1, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps2, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps3, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps4, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchVoidExtensionStatementKernel(global::System.Int32[] a, global::System.Int32[] ws, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps1, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps2, global::System.Int32[] dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchVoidExtensionStatementKernel(global::System.Int32[] a, global::System.Int32[] ws, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps1, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps2, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps3, global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint[] ps4, global::System.Int32[] dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel");
@@ -8491,7 +8562,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(a, ws, ps1, ps2, dst, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel(a, ws, ps1, ps2, ps3, ps4, dst, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel");
@@ -8564,9 +8635,11 @@ fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Inter
 fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ws))
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ps1))
 fixed (global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint* __gsharp_p_3 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ps2))
-fixed (global::System.Int32* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(dst))
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ps3))
+fixed (global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalPoint* __gsharp_p_5 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(ps4))
+fixed (global::System.Int32* __gsharp_p_6 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(dst))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (ws?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (ps1?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = (ps2?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (dst?.Length ?? 0) });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (ws?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (ps1?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = (ps2?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (ps3?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_5, Length = (ps4?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_6, Length = (dst?.Length ?? 0) });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -8574,7 +8647,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchVoidExtensionStatementKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ws, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps1, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps2, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchVoidExtensionStatementKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ws, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps1, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps2, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps3, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ps4, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dst, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("a", a.Length, "The array length must not be negative.");
@@ -8600,6 +8673,18 @@ throw new global::System.ArgumentOutOfRangeException("ps2", ps2.Length, "The arr
 if (ps2.Data == global::System.IntPtr.Zero && ps2.Length != 0){
 throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "ps2");
 }
+if (ps3.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("ps3", ps3.Length, "The array length must not be negative.");
+}
+if (ps3.Data == global::System.IntPtr.Zero && ps3.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "ps3");
+}
+if (ps4.Length < 0){
+throw new global::System.ArgumentOutOfRangeException("ps4", ps4.Length, "The array length must not be negative.");
+}
+if (ps4.Data == global::System.IntPtr.Zero && ps4.Length != 0){
+throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "ps4");
+}
 if (dst.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("dst", dst.Length, "The array length must not be negative.");
 }
@@ -8619,12 +8704,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchVoidExtensionStatementKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchVoidExtensionStatementKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__VoidExtensionStatementKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = a.Data, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ws.Data, Length = ws.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps1.Data, Length = ps1.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps2.Data, Length = ps2.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = dst.Data, Length = dst.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = a.Data, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ws.Data, Length = ws.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps1.Data, Length = ps1.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps2.Data, Length = ps2.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps3.Data, Length = ps3.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = ps4.Data, Length = ps4.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = dst.Data, Length = dst.Length });
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
@@ -8649,20 +8734,20 @@ if(__gsharp_id_4_t>=__gsharp_id_3_n)
 {
 __gsharp_state = -1;return;
 }
-GSharpArray<int> __gsharp_id_5_r = ((__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_t, 1640047312u)&1)==0?GSharpArray<int>():__gsharp_id_0_a);
+GSharpArray<int> __gsharp_id_5_r = ((__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_t, 1058584814u)&1)==0?GSharpArray<int>():__gsharp_id_0_a);
 System_Nullable<int> __gsharp_id_6_v = ([&]() {
 auto __gsharp_seq_0 = __gsharp_id_5_r;
-return (__gsharp_seq_0.data != nullptr) ? System_Nullable<int>(__gsharp_array_at(__gsharp_seq_0, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__SwapArray(&__gsharp_id_5_r,__gsharp_array_ref(__gsharp_id_1_b, 804133991u)), 1828163338u)) : System_Nullable<int>();
+return (__gsharp_seq_0.data != nullptr) ? System_Nullable<int>(__gsharp_array_at(__gsharp_seq_0, __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__ConditionalAccessDifferentialKernels__SwapArray(&__gsharp_id_5_r,__gsharp_array_ref(__gsharp_id_1_b, 1847122387u)), 1393105022u)) : System_Nullable<int>();
 }());
 int __gsharp_id_7_col = __gsharp_mul_i32(__gsharp_id_4_t,2);
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_7_col+0, 1450708242u)=([&]() {
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_7_col+0, 1221523694u)=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_6_v;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());
-__gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_7_col,1), 376002936u)=([&]() {
+__gsharp_array_at(__gsharp_id_2_dst, __gsharp_add_i32(__gsharp_id_7_col,1), 44666488u)=([&]() {
 auto __gsharp_coalesce_tmp = ([&]() {
 auto __gsharp_seq_1 = __gsharp_id_5_r;
-return (__gsharp_seq_1.data != nullptr) ? System_Nullable<int>(__gsharp_array_at(__gsharp_seq_1, 0, 913130736u)) : System_Nullable<int>();
+return (__gsharp_seq_1.data != nullptr) ? System_Nullable<int>(__gsharp_array_at(__gsharp_seq_1, 0, 1517639752u)) : System_Nullable<int>();
 }());
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());

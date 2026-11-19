@@ -486,11 +486,16 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             dst[col + 3] = log2;
         }
 
+        // The expression body of a void device function is a statement
+        [GpuDeviceFunction]
+        public static void IncrementElement(ConditionalPoint[]? q, int t) => q?[t].IncrementX();
+
         // Extension methods that return void, called as statements: at the end of a chain (h?.Data?.M(),
-        // hp?.Pts?[t].M()) and as the body of a Gpu.ForUnroll lambda, which is inlined as a statement
+        // hp?.Pts?[t].M()), as the body of a Gpu.ForUnroll lambda, which is inlined as a statement, and as the
+        // expression body of a void device function and of a void local function
         [GpuKernel]
         public static void VoidExtensionStatementKernel(int[] a, int[] ws, ConditionalPoint[] ps1,
-            ConditionalPoint[] ps2, int[] dst)
+            ConditionalPoint[] ps2, ConditionalPoint[] ps3, ConditionalPoint[] ps4, int[] dst)
         {
             int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             int sel = a[t] & 3;
@@ -501,12 +506,18 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             h?.Data?.SetAt(t, 7);
             hp?.Pts?[t].IncrementX();
             Gpu.ForUnroll(0, 2, i => q?[t].IncrementX());
+            IncrementElement((a[t] & 8) == 0 ? null : ps3, t);
+            ConditionalPoint[]? q4 = (a[t] & 16) == 0 ? null : ps4;
+            void IncrementOwn() => q4?[t].IncrementX();
+            IncrementOwn();
             Gpu.SyncThreads();
 
-            int col = t * 3;
+            int col = t * 5;
             dst[col + 0] = ws[t];
             dst[col + 1] = ps1[t].X;
             dst[col + 2] = ps2[t].X;
+            dst[col + 3] = ps3[t].X;
+            dst[col + 4] = ps4[t].X;
         }
 
         [GpuDeviceFunction]

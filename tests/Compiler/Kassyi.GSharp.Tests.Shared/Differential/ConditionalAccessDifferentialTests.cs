@@ -271,15 +271,17 @@ public class ConditionalAccessDifferentialTests
 
     internal static readonly DifferentialCase s_voidExtensionStatement = BarrierCase(
         nameof(ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel),
-        ["chain_written", "element_of_chain_x", "unrolled_x"],
+        ["chain_written", "element_of_chain_x", "unrolled_x", "device_function_x", "local_function_x"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionStatementKernel(
-            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), Points(s.Rows), Points(s.Rows),
+            b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) =>
         [
             (a[t] & 3) < 2 ? 0 : 7,
             (a[t] & 4) == 0 ? t : t + 1,
-            IsNullRow(a, t) ? t : t + 2
+            IsNullRow(a, t) ? t : t + 2,
+            (a[t] & 8) == 0 ? t : t + 1,
+            (a[t] & 16) == 0 ? t : t + 1
         ]);
 
     internal static readonly DifferentialCase s_twinFirst = BarrierCase(
