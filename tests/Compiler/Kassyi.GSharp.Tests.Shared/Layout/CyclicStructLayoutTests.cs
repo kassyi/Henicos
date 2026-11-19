@@ -148,6 +148,23 @@ public class CyclicStructLayoutTests
             dialect,
             [("CS0523", 16, 27, 16, 32)]);
 
+    // Outer<Outer<int>> holds Outer<int>; the by-value search of Outer meets G<T>, G<G<T>>, ... and stops where G
+    // grows, so the layout ends without counting constructions. The two constructions of G and of Outer get the name
+    // collision any two constructions get (GSH0058)
+    [Theory(Timeout = 120_000)]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_CycleBelowAnotherGenericInsideItsOwnConstruction_ReportsOnlyTheNameCollisions(string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + "GrowingCycleBelowOuter.cu.cs", dialect);
+
+        Assert.Equal([("CS0523", 12, 24, 12, 29)], errors);
+        Assert.Equal(
+            [(Analyzer, "GSH0058", 10, 19, 10, 20), (Analyzer, "GSH0058", 16, 19, 16, 24)],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+    }
+
     // A<T> holds A<A<T>>?: the construction grows through Nullable<T>
     [Theory]
     [Scenario(TestScenario.SadPath)]
@@ -262,6 +279,28 @@ public class CyclicStructLayoutTests
         Assert.Equal(
             [("Kids", 0, 16), ("Value", 16, 24)],
             trees.DeviceFields.Select(static f => (f.Member.Name, f.Offset, f.Layout.Size)));
+    }
+
+    // Valid C#: a generic struct over 63 or 70 distinct structs held inside its own construction; the by-value search
+    // of the definition meets as many constructions and answers by what they hold, not by how many there are
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Holder63`1", 508, "Cpu")]
+    [InlineData("Holder63`1", 508, "Cuda")]
+    [InlineData("Holder70`1", 564, "Cpu")]
+    [InlineData("Holder70`1", 564, "Cuda")]
+    public void GetStructLayout_HolderOfManyStructsInsideItsOwnConstruction_LaysOutEveryField(string definition,
+        int size, string dialect)
+    {
+        var compilation = RoslynTestUtility.GetTestCaseContext(CyclicStructs + "WideHolders.cs").Compilation;
+        var holder = GetType(compilation, definition);
+        var nested = holder.Construct(holder.Construct(compilation.GetSpecialType(SpecialType.System_Int32)));
+
+        var layout = TypeLayoutCalculator.GetStructLayout(nested, dialect == "Cuda" ? s_cudaDialect : s_cpuDialect);
+
+        Assert.Equal(
+            (size, 4, size, TransferClass.Identical),
+            (layout.Device.Size, layout.Device.Alignment, layout.Host.Size, layout.Transfer));
     }
 
     [Theory]

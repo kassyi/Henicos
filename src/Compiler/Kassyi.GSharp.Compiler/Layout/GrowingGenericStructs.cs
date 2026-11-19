@@ -9,11 +9,6 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// </summary>
 internal static class GrowingGenericStructs
 {
-    // [WHY] The by-value search follows constructed field types, which a definition that grows elsewhere could make
-    // endless; past this many constructions it answers that the definition holds itself, which only stops a layout
-    // walk that already holds another construction of the definition
-    private const int MaxSearchedConstructions = 64;
-
     /// <summary>
     /// For a walk with a set of the structs it has met that follows arrays, properties or type arguments: whether
     /// <paramref name="type"/> is a construction that grows out of one in <paramref name="met"/> (each type argument
@@ -92,29 +87,38 @@ internal static class GrowingGenericStructs
         {
             foreach (var member in pending.Dequeue().GetMembers())
             {
-                if (member is IFieldSymbol { IsStatic: false } field &&
-                    field.Type.UnwrapNullable() is INamedTypeSymbol { TypeKind: TypeKind.Struct } held &&
-                    (SymbolEqualityComparer.Default.Equals(held.OriginalDefinition, definition) ||
-                     !TryQueue(held, searched, pending)))
+                if (member is not IFieldSymbol { IsStatic: false } field ||
+                    field.Type.UnwrapNullable() is not INamedTypeSymbol { TypeKind: TypeKind.Struct } held)
+                {
+                    continue;
+                }
+
+                if (SymbolEqualityComparer.Default.Equals(held.OriginalDefinition, definition))
                 {
                     return true;
                 }
+
+                QueueOnce(held, searched, pending);
             }
         }
 
         return false;
     }
 
-    // Queues a struct not searched yet; false once the search has met too many constructions
-    private static bool TryQueue(INamedTypeSymbol held, HashSet<INamedTypeSymbol> searched,
+    // Queues a construction not searched yet. [WHY] One that grows out of a searched construction of its definition
+    // (B<B<int>> after B<int> of B<U> { B<B<U>> Inner; }) is not queued: it would make the search endless, and what it
+    // holds by value is what the smaller one holds, with larger type arguments
+    private static void QueueOnce(INamedTypeSymbol held, HashSet<INamedTypeSymbol> searched,
         Queue<INamedTypeSymbol> pending)
     {
-        if (searched.Add(held))
+        if (!searched.Contains(held) &&
+            !searched
+                .AsStackEnumerable()
+                .Any(held, static (earlier, later) => GrowsOutOf(later, earlier)) &&
+            searched.Add(held))
         {
             pending.Enqueue(held);
         }
-
-        return searched.Count <= MaxSearchedConstructions;
     }
 
     // Whether a member type of definition, or of the definition of a struct that a member type names, names a

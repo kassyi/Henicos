@@ -29,4 +29,21 @@ public class NestedGenericConstructionTests
 
         Assert.Equal(34, output[0]);
     }
+
+    // 70 distinct structs: the by-value search of the definition meets many constructions, none of which grows
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void NestedWideHolderKernel_HolderOfHolders_ReadsBothLevels()
+    {
+        var inner = new WideHolder<int> { Value = 5 };
+        inner.F70.X = 3;
+        var outer = new WideHolder<WideHolder<int>> { Value = inner };
+        outer.F70.X = 7;
+        WideHolder<WideHolder<int>>[] values = [outer];
+        int[] output = [0];
+
+        WideHolderKernels.LaunchNestedWideHolderKernel(values, output, blockDimX: 1);
+
+        Assert.Equal(5037, output[0]);
+    }
 }

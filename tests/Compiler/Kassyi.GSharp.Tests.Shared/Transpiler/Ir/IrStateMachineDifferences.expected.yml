@@ -1480,6 +1480,7 @@
 - {file: "Generator/ArraySyntaxTest.cu.cs", method: "ArraySyntaxTestKernels.ImplicitArrayFormsKernel", status: "Compared", count: 1}
 - {file: "Generator/SourceGeneratorTestKernels.cu.cs", method: "SourceGeneratorTestKernels.MyTestKernel", status: "Compared", count: 1}
 - {file: "Layout/NestedGenericConstructionKernels.cu.cs", method: "NestedGenericConstructionKernels.NestedConstructionKernel", status: "Compared", count: 1}
+- {file: "Layout/WideHolderKernels.cu.cs", method: "WideHolderKernels.NestedWideHolderKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.AliasedKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.HolderKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.OptionalKernel", status: "Compared", count: 1}
@@ -4780,6 +4781,7 @@
 - {file: "TestCases/Layout/CyclicStructs/DeepChainMultidimensional.cu.cs", method: "DeepChainMultidimensional.ChainKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/DeepChainReservedName.cu.cs", method: "DeepChainReservedName.ChainKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/GenericCyclicStruct.cu.cs", method: "GenericCyclicStruct.GenericKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/GrowingCycleBelowOuter.cu.cs", method: "GrowingCycleBelowOuter.OuterKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/MutualCyclicStructs.cu.cs", method: "MutualCyclicStructs.MutualKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NestedCyclicStruct.cu.cs", method: "NestedCyclicStruct.NestedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NestedGenericConstruction.cu.cs", method: "NestedGenericConstruction.NestedConstructionKernel", status: "Compared", count: 1}
