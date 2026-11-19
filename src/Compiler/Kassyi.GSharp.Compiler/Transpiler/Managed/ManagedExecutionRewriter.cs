@@ -58,38 +58,8 @@ internal sealed partial class ManagedExecutionRewriter(
             _nextUnrollId = FindNextUnrollId(node);
         }
 
-        var visited = base.Visit(node);
-        return node is ExpressionSyntax { ContainsAnnotations: true } expression &&
-               expression.HasAnnotations(LoweringAnnotations.SegmentCheckAnnotationKind) &&
-               visited is ExpressionSyntax rewritten
-            ? CheckSegmentSource(expression, rewritten)
-            : visited;
+        return ManagedSegmentSource.Rewrite(node, base.Visit(node));
     }
-
-    // [WHY] The source of a lowered foreach over an ArraySegment<T> is read by Count and the indexer, which do not
-    // throw for a default segment, while C# enters the foreach with InvalidOperationException. Slice(0) throws that
-    // exception with the same message for a default segment and returns an equal segment otherwise; the source is
-    // evaluated once.
-    // <source>.Slice(0)
-    private static InvocationExpressionSyntax CheckSegmentSource(ExpressionSyntax written,
-        ExpressionSyntax rewritten) =>
-        SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                written is IdentifierNameSyntax or MemberAccessExpressionSyntax or InvocationExpressionSyntax
-                    or ElementAccessExpressionSyntax or ParenthesizedExpressionSyntax
-                    ? rewritten
-                    : SyntaxFactory.ParenthesizedExpression(rewritten),
-                SyntaxFactory.IdentifierName("Slice")
-            ),
-            SyntaxFactory.ArgumentList(
-                SyntaxFactory.SingletonSeparatedList(
-                    SyntaxFactory.Argument(
-                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0))
-                    )
-                )
-            )
-        ).WithTriviaFrom(rewritten);
 
     // A loop that PreLoweringExpander made of a barrier-bearing ForUnroll already uses these names. Its variable lives
     // in the context, so the two never clash; counting on from it only keeps the variables apart in the generated code

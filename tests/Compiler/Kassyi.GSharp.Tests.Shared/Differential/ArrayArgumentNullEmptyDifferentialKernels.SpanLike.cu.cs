@@ -94,6 +94,19 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
         }
     }
 
+    // The same lowered loop over an ImmutableArray<T>: a default one has no array and throws NullReferenceException at
+    // the loop entry, which the source check keeps in the CPU state machine
+    [GpuKernel]
+    public static void ImmutableForEachBarrierKernel(ImmutableArray<int> g, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in g)
+        {
+            Gpu.SyncThreads();
+            o[0] += v + 1;
+        }
+    }
+
     [GpuKernel]
     public static void ImmutableKernel(ImmutableArray<int> ia, ArrayArgumentRead mode, int[] o)
     {

@@ -35,7 +35,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         ForEachElementConversion.GetTarget(node, elementType, semanticModel) != null;
 
     private bool IsArraySegment(ExpressionSyntax source) =>
-        semanticModel != null && ArrayNullCheck.IsArraySegment(semanticModel.GetTypeSymbol(source));
+        semanticModel != null && ArrayViewMethods.IsArraySegment(semanticModel.GetTypeSymbol(source));
 
     // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706), and foreach over a
     // default ArraySegment<T> InvalidOperationException (#1828). The source is checked once, where the lowered local is

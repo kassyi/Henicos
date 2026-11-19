@@ -446,6 +446,7 @@
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8ColMajorBKernel", status: "Compared", count: 1}
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8ColMajorStoreKernel", status: "Compared", count: 1}
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8RowMajorKernel", status: "Compared", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ImmutableForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.MemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableImmutableKernel", status: "Compared", count: 1}

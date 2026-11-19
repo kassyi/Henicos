@@ -171,7 +171,7 @@ internal static class LoopStatementTranspilers
             context.Emitter.Writer.Append(" : ");
             // foreach over a null array throws NullReferenceException at the loop entry in C# (#706), over a default
             // ArraySegment<T> InvalidOperationException (#1828)
-            ArrayNullCheck.AppendForEachSource(node.Expression, ref context);
+            SegmentCheck.AppendForEachSource(node.Expression, ref context);
         }
 
         context.Emitter.Writer.AppendLine();
