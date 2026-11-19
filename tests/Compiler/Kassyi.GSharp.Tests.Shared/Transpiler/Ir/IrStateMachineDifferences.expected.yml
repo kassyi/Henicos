@@ -1729,6 +1729,9 @@
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.SynthesizedDefaultKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.Widen", status: "NoStateMachine", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.WidenByAttribute", status: "NoStateMachine", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.ClassConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.LocalConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.NonConstantDividendKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContextualKeywordTypeKernels.cu.cs", method: "ContextualKeywordTypeKernels.KeywordTypesKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxFollowedByWriteKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxKernel", status: "Compared", count: 1}
