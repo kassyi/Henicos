@@ -1,6 +1,6 @@
-// Checks of the shared GPU turn on the wire, in the state file and in status, against a scheduler in the self-test's own
-// process: the `share` of a request and of a grant, the probe before a second shared turn, the restore of the shared
-// turns, how status counts the holders, and the end of a failed shared turn in the log.
+// Checks of the shared GPU turn on the wire, in the state file and in status, against a scheduler in this process:
+// the `share` of a request and of a grant, the probe before a second shared turn, the restore of the shared turns,
+// how status counts the holders, and the end of a failed shared turn in the log.
 
 import type * as Assert from "node:assert";
 import * as fs from "node:fs";

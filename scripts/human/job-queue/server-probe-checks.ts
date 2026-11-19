@@ -67,6 +67,110 @@ export async function checkProbeTimeoutKillsTheProcess(assert: AssertModule): Pr
   }
 }
 
+/** A number that is not finite (a long run of digits reads as Infinity) fails; output beyond the cap is not read. */
+export async function checkProbeOutputLimits(assert: AssertModule): Promise<void> {
+  const { runProbe, MaxProbeOutput } = await import("./server-probe.ts");
+  const infinite = await runProbe(probeOf([node, "-e", "console.log('9'.repeat(400))"]), 1);
+  assert.deepStrictEqual([infinite.ok, infinite.value, infinite.why], [false, null, "not a finite number"]);
+  const late = `process.stdout.write('x'.repeat(${MaxProbeOutput + 1000}) + ' 99999\\n')`;
+  const capped = await runProbe(probeOf([node, "-e", late]), 1);
+  assert.deepStrictEqual([capped.ok, capped.why], [false, "no number"], "a number after the cap is never read");
+  const early = await runProbe(
+    probeOf([node, "-e", `console.log(4000); console.log('x'.repeat(${MaxProbeOutput * 2}))`]),
+    1,
+  );
+  assert.deepStrictEqual([early.ok, early.value], [true, 4000], "what is read before the cap counts");
+}
+
+/** One probe per resource, five seconds apart on the runner's own (injectable, monotonic) clock. */
+export async function checkProbeRunnerInterval(assert: AssertModule): Promise<void> {
+  const { ProbeRunner } = await import("./server-probe.ts");
+  const { ProbeIntervalMs } = await import("./constants.ts");
+  let clock = 1000;
+  const runner = new ProbeRunner(() => clock);
+  const spec = probeOf([node, "-e", "console.log(4000)"]);
+  const delivered: boolean[] = [];
+  const begin = (): boolean => runner.start("gpu", spec, 1, (result) => delivered.push(result.ok));
+  const finished = async (count: number): Promise<void> => {
+    for (let i = 0; i < 200 && delivered.length < count; i++) {
+      await delay(25);
+    }
+  };
+  assert.strictEqual(begin(), true, "the first probe starts");
+  assert.strictEqual(begin(), false, "not while it runs");
+  await finished(1);
+  assert.deepStrictEqual(delivered, [true]);
+  assert.strictEqual(begin(), false, "it has ended, but began less than the interval ago");
+  clock += ProbeIntervalMs - 1;
+  assert.strictEqual(begin(), false, "one millisecond short");
+  clock += 1;
+  assert.strictEqual(begin(), true, "the interval has passed");
+  await finished(2);
+  assert.strictEqual(
+    runner.start("other", spec, 1, () => {}),
+    true,
+    "another resource has its own interval",
+  );
+  runner.stopAll();
+}
+
+/** `stopAll` kills the probe that runs, and its result is not delivered. */
+export async function checkProbeRunnerStopAll(assert: AssertModule): Promise<void> {
+  const { ProbeRunner } = await import("./server-probe.ts");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-probe-"));
+  try {
+    const marker = path.join(directory, "pid.txt");
+    const code = "require('fs').writeFileSync(process.argv[1], String(process.pid)); setTimeout(() => {}, 30000)";
+    let delivered = 0;
+    const runner = new ProbeRunner();
+    assert.ok(runner.start("gpu", probeOf([node, "-e", code, marker], 3072, 20000), 1, () => delivered++));
+    for (let i = 0; i < 200 && !fs.existsSync(marker); i++) {
+      await delay(25);
+    }
+    await delay(50);
+    const pid = Number(fs.readFileSync(marker, "utf8"));
+    assert.ok(Number.isInteger(pid) && pid > 0 && alive(pid), "the probe runs");
+    runner.stopAll();
+    for (let i = 0; i < 80 && alive(pid); i++) {
+      await delay(50);
+    }
+    assert.strictEqual(alive(pid), false, "stopAll killed the program");
+    await delay(200);
+    assert.strictEqual(delivered, 0, "and no result is delivered");
+    runner.stopAll();
+  } finally {
+    removeDirectory(directory);
+  }
+}
+
+/** Windows: a probe run through cmd.exe starts a grandchild; the timeout ends the whole tree. Skipped elsewhere. */
+export async function checkProbeTimeoutKillsTheTree(assert: AssertModule): Promise<void> {
+  if (process.platform !== "win32") {
+    return;
+  }
+  const { runProbe } = await import("./server-probe.ts");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-probe-"));
+  let pid = 0;
+  try {
+    const marker = path.join(directory, "pid.txt");
+    // No character that cmd.exe reads as syntax (& | < > ^), so that the line reaches node as it is
+    const code = "require('fs').writeFileSync(process.argv[1],String(process.pid));setInterval(function(){},1000)";
+    const result = await runProbe(probeOf(["cmd.exe", "/d", "/c", "node", "-e", code, marker], 3072, 4000), 1);
+    assert.deepStrictEqual([result.ok, result.why], [false, "timeout"]);
+    assert.ok(fs.existsSync(marker), "the grandchild started");
+    pid = Number(fs.readFileSync(marker, "utf8"));
+    for (let i = 0; i < 200 && alive(pid); i++) {
+      await delay(50);
+    }
+    assert.strictEqual(alive(pid), false, "the grandchild was killed with its parent");
+  } finally {
+    if (pid > 0 && alive(pid)) {
+      process.kill(pid);
+    }
+    removeDirectory(directory);
+  }
+}
+
 /** The configuration of the checks: a GPU lock of `seats` seats. */
 const configWith = (seats: number): QueueConfig => ({
   version: 1,
@@ -120,6 +224,10 @@ export async function checkGpuSlotsUsageErrors(assert: AssertModule): Promise<vo
 export const ProbeChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkProbeRun,
   checkProbeTimeoutKillsTheProcess,
+  checkProbeOutputLimits,
+  checkProbeRunnerInterval,
+  checkProbeRunnerStopAll,
+  checkProbeTimeoutKillsTheTree,
   checkGpuSlotsRange,
   checkGpuSlotsUsageErrors,
 };

@@ -3,6 +3,7 @@
 // second shared turn is granted only on a probe that passed (turnVerdict); everything that goes wrong is "not ok".
 
 import { spawn, type ChildProcess } from "node:child_process";
+import { performance } from "node:perf_hooks";
 import { ProbeIntervalMs } from "./constants.ts";
 import type { ProbeResult, ResourceSpec } from "./resources.ts";
 
@@ -11,6 +12,20 @@ export type ProbeSpec = Pick<NonNullable<ResourceSpec["probe"]>, "argv" | "min" 
 
 /** The first number of the output; a unit or text around it does not matter. */
 const NumberPattern = /-?\d+(\.\d+)?/;
+
+/** The most output a probe is read for; what a program prints after it is dropped. */
+export const MaxProbeOutput = 64 * 1024;
+
+/** Ends a probe program and, on Windows, what it started (a program run through cmd.exe leaves a child behind). */
+function killTree(child: ChildProcess): void {
+  if (process.platform === "win32" && child.pid !== undefined) {
+    spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" }).on("error", () =>
+      child.kill(),
+    );
+  } else {
+    child.kill();
+  }
+}
 
 /** One running probe, with a way to stop it. */
 interface RunningProbe {
@@ -44,23 +59,28 @@ function startProbe(probe: ProbeSpec, generation: number): RunningProbe {
       }
     };
     const timer = setTimeout(() => {
-      child.kill();
+      killTree(child);
       settle(false, null, "timeout");
     }, probe.timeoutMs);
     stop = () => {
-      child.kill();
+      killTree(child);
       settle(false, null, "stopped");
     };
     child.stdout?.setEncoding("utf8");
-    child.stdout?.on("data", (chunk: string) => (output += chunk));
+    child.stdout?.on("data", (chunk: string) => {
+      if (output.length < MaxProbeOutput) {
+        output += chunk.slice(0, MaxProbeOutput - output.length);
+      }
+    });
     child.once("error", (error) => settle(false, null, `cannot start (${error.message})`));
     child.once("close", (code) => {
       const text = NumberPattern.exec(output)?.[0];
-      const value = text === undefined ? null : Number(text);
+      const parsed = text === undefined ? null : Number(text);
+      const value = parsed !== null && Number.isFinite(parsed) ? parsed : null;
       if (code !== 0) {
         settle(false, value, `exit ${String(code)}`);
       } else if (value === null) {
-        settle(false, null, "no number");
+        settle(false, null, parsed === null ? "no number" : "not a finite number");
       } else if (value < probe.min) {
         settle(false, value, `${value} < ${probe.min}`);
       } else {
@@ -88,12 +108,19 @@ export function describeProbe(name: string, probe: ProbeSpec, result: ProbeResul
 export class ProbeRunner {
   private readonly running = new Map<string, RunningProbe>();
   private readonly lastStart = new Map<string, number>();
+  private readonly clock: () => number;
+
+  /** `clock`: milliseconds on a monotonic scale (the default), so that a change of the wall clock moves nothing. */
+  constructor(clock: () => number = () => performance.now()) {
+    this.clock = clock;
+  }
 
   /**
    * Starts the probe of `name` unless one runs or the last began less than ProbeIntervalMs ago; `done` gets the
    * result, never after `stopAll`. True when it started.
    */
-  start(name: string, probe: ProbeSpec, generation: number, now: number, done: (result: ProbeResult) => void): boolean {
+  start(name: string, probe: ProbeSpec, generation: number, done: (result: ProbeResult) => void): boolean {
+    const now = this.clock();
     if (this.running.has(name) || now - (this.lastStart.get(name) ?? -Infinity) < ProbeIntervalMs) {
       return false;
     }

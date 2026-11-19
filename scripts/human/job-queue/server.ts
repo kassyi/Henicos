@@ -450,7 +450,7 @@ export class JobServer {
       if (probe === null) {
         continue;
       }
-      this.probes.start(name, probe, state.generation, now, (result) => {
+      this.probes.start(name, probe, state.generation, (result) => {
         this.scheduler.recordProbe(name, result);
         this.log(describeProbe(name, probe, result));
         this.settle();

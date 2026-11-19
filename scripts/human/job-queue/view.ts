@@ -29,13 +29,21 @@ export interface ScreenJob extends StatusJob {
 
 /**
  * Whether a waiting shared turn only waits for the probe: its resource has no exclusive user and a free slot (so that
- * what it lacks is free memory on the GPU). False without `resources` (an older scheduler) and for an exclusive turn.
+ * what it lacks is free memory on the GPU) and it is the first waiting turn of the resource. False without `resources` (an older scheduler) and for an exclusive turn.
  */
 function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
   if (job.share !== "shared") {
     return false;
   }
-  const resource = reply.resources?.find((entry) => entry.name === (job.resource ?? "gpu"));
+  // Only the first waiting turn of the resource is measured for (the others wait for it, whatever the probe says)
+  const name = job.resource ?? "gpu";
+  const head = reply.waiting.find(
+    (other) => other.gpuTurn && (other.resource ?? "gpu") === name && other.blockedBy == null,
+  );
+  if (head?.id !== job.id) {
+    return false;
+  }
+  const resource = reply.resources?.find((entry) => entry.name === name);
   return resource !== undefined && resource.exclusive.length === 0 && resource.shared.length < resource.slots;
 }
 

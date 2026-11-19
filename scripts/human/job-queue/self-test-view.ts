@@ -380,6 +380,19 @@ export function checkSharedView(): void {
   const exclusiveWaits = reply([turn(900, "shared")], [waitingTurn(910, undefined)], [resource([900], [])]);
   assert.strictEqual(reasonOf(exclusiveWaits, 910), "GPU busy", "an exclusive turn waits for the shared one");
   assert.strictEqual(reasonOf(older, 910), "GPU busy", "no resources: as before");
+  // Only the first waiting turn of the resource lacks the probe: the ones behind it wait for that turn
+  const behindExclusive = reply(
+    [turn(900, "shared")],
+    [waitingTurn(910, undefined), waitingTurn(911, "shared")],
+    [resource([900], [])],
+  );
+  assert.strictEqual(reasonOf(behindExclusive, 911), "GPU busy", "a shared turn behind an exclusive head");
+  const behindShared = reply(
+    [turn(900, "shared")],
+    [waitingTurn(910, "shared"), waitingTurn(911, "shared")],
+    [resource([900], [], 3)],
+  );
+  assert.deepStrictEqual([reasonOf(behindShared, 910), reasonOf(behindShared, 911)], ["GPU memory", "GPU busy"]);
   // The legend names it
   const legend = helpLines(100).map((line) => line.text);
   assert.ok(
