@@ -191,6 +191,10 @@
     ir:     spill(t + 1) spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
     syntax: spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
 #991 an earlier operand of an operation that does not split
+  GenericDeviceFunction.cu.cs GenericDeviceFunctionCases.K: xs[tid] = Pick(xs[tid], AfterSync(tid), true) + GenericDeviceFunctionHolder<long>.Twice(tid);
+    ir:     spill(xs[tid]) split(AfterSync(tid))
+    syntax: split(AfterSync(tid))
+#991 an earlier operand of an operation that does not split
   IrSpillPlannerCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
     ir:     spill(a[0]) split(Suspend())
     syntax: split(Suspend())

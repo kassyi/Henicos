@@ -4,9 +4,9 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// The assignment forms that the device cannot write are reported once, at the construct, as GSH0003 (never as a C++
-/// build error): a deconstruction of a value that is not a tuple literal or whose value is used, a conditional
-/// deconstruction of a generic element type (#1102), and a compound or <c>??=</c> assignment of a computed property
-/// with a lifted operator (#908).
+/// build error): a deconstruction of a value that is not a tuple literal or whose value is used, and a compound or
+/// <c>??=</c> assignment of a computed property with a lifted operator (#908). The conditional deconstruction of a
+/// generic element type (#1102) is in a generic device function, which is not compiled as it is written (GSH0121).
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class AssignmentFormsDiagnosticsTests
@@ -59,12 +59,14 @@ public class AssignmentFormsDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task ConditionalDeconstruction_GenericType_ReportsGsh0003AtConditional(string dialect)
+    public async Task ConditionalDeconstruction_GenericFunction_ReportsGsh0121AtItsName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         Assert.Equal(
-            [(Analyzer, 62, 18, 62, 40)],
+            [(Analyzer, 60, 24, 60, 30)],
+            diagnostics.Ranges(GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id, "'SwapIf'"));
+        Assert.Empty(
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "conditional whose element type is generic"));
     }
 }

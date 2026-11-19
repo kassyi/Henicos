@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Aot;
+using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Targets;
 using Kassyi.GSharp.Compiler.Transpiler.Managed;
@@ -459,6 +460,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
+        // A generic device function is not lowered or transpiled as it is written: its type parameters have no C++
+        // type, and the frame of one that reaches a barrier cannot be typed. The analyzer reports GSH0121 at the same
+        // name, and the record says that the function was not transpiled (GSH0089 for a consumer)
+        var (definition, _) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+        if (GenericDefinitions.IsLeftOut(methodSymbol, definition))
+        {
+            var failure = new TranspileFailure(GSharpDiagnostics.GenericDeviceFunctionNotCompiled,
+                definition.Identifier.GetLocation(), [methodSymbol.Name, GenericDefinitions.NotSupportedReason]);
+            return NotTranspiled(methodSymbol, context.SemanticModel.Compilation, failure,
+                CreateFailedFunctionRecord(methodSymbol, ""));
+        }
+
         try
         {
             var cudaFailures = new FailureCollector();
@@ -579,12 +592,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var location = methodDeclaration.Identifier.GetLocation();
             var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
-            var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
-            return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
-                methodSymbol.Name,
-                "", errorSource, "", errorSource,
-                default, default, "");
+            return NotTranspiled(methodSymbol, context.SemanticModel.Compilation, failure, default);
         }
         catch (Exception ex)
         {
@@ -595,6 +603,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.Name,
                 "", errorSource, "", errorSource, default, default, ex.ToString());
         }
+    }
+
+    // A device function that is not transpiled: both dialects state <failure> as #error, and <export> is its record
+    private static TranspiledDeviceMethodResult NotTranspiled(IMethodSymbol methodSymbol, Compilation compilation,
+        TranspileFailure failure, DeviceExportRecord export)
+    {
+        var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+        return new TranspiledDeviceMethodResult(
+            HostClassHeader.Create(methodSymbol.ContainingType, compilation),
+            methodSymbol.Name,
+            "", errorSource, "", errorSource,
+            default, default, "",
+            Export: export);
     }
 
     // The text of one dialect as the function's record stores it: the signature, and the body without the struct and

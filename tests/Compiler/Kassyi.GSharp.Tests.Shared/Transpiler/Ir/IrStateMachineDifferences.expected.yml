@@ -3928,6 +3928,9 @@
 - {file: "TestCases/Diagnostics/ExtensionCallDiagnostics.cs", method: "ExtensionCallKernels.SuspendingExtensionKernel", status: "Skip:SplitExtensionReceiver", count: 1}
 - {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordMacroValue.Add", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordPropertyUnsupportedKernels.MacroTargetKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionCases.K", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionCases.Pick", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionHolder.Twice", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/GpuConstantArguments.cu.cs", method: "GpuConstantArgumentKernels.ConstantArgumentsKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuConstantArguments.cu.cs", method: "GpuConstantArgumentKernels.NonConstantArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuFinalizer.cu.cs", method: "HostFinalizerKernels.Run", status: "Compared", count: 1}

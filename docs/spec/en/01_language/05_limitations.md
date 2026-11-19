@@ -31,7 +31,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **`try-catch`** | **Device Only** | Exception unwinding is not supported in CUDA device code (GSH0038). |
 | **Recursion** | **Device Only** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
 | **Reflection** | **Device Only** | The .NET reflection metadata is entirely absent on the GPU. |
-| **Generics** | **Device Only (Partial)** | True runtime generics are unsupported. However, **C++ Template generation is fully supported** for C# generic structs and methods, allowing the AOT transpiler to map C# generics directly to highly optimized C++ templates (`template <typename T>`). |
+| **Generics** | **Device Only (Partial)** | True runtime generics are unsupported. Each closed generic struct type used by device code is written as a C++ type of its own. Generic device functions are not compiled yet (Enforced by **GSH0121**), generic kernels are rejected (**GSH0111**), and generic iterators are rejected (**GSH0070**). |
 | **Expression-Bodied Members (`=>`)** | **Supported** | Transpiler automatically handles `void` and value-returning methods (injects `return` keyword). |
 | **Default & Named Arguments** | **Supported** | Supported across device functions, local methods, and kernel launchers. Named arguments are normalized to declaration order, and omitted optional arguments are synthesized with compile-time default constant literals. |
 | **Ternary Operator (`? :`)** | **Supported** | Standard conditional ternary operators are supported. |
@@ -211,6 +211,7 @@ examples:
 | [**GSH0117**](../03_bcl_api/diagnostics/GSH0117.md) | Error | SharedMemory<T> count must not be negative | Triggered when a `SharedMemory<T>` is created with a negative constant count. A count of 0 declares empty shared memory. |
 | [**GSH0119**](../03_bcl_api/diagnostics/GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates | Triggered on the CPU dialect when a body that the managed path must copy into a generated file (it suspends or holds a construct only the managed path rewrites, such as an integer division) names a file-local type; the managed launch of the kernel that needs the copy throws. |
 | [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop that holds a warp collective or barrier. |
+| [**GSH0121**](../03_bcl_api/diagnostics/GSH0121.md) | Error | A generic device function cannot be compiled for the GPU | Triggered at the name of a `[GpuDeviceFunction]` that declares type parameters; generic device functions are not compiled yet. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 
