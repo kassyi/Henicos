@@ -20,7 +20,7 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
-import { isHenicosTest } from "./plugin.ts";
+import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
 const { dialectOf } = require("./target-dialect.js") as TargetDialectModule;
@@ -288,6 +288,90 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
   }
 }
 
+const Gpu = { name: "gpu", forcedExclusive: false };
+
+/**
+ * The share of a --gpu command under the repository configuration: [command, expected]. Shared: a filtered dotnet test
+ * that selects no exclusive category, and the shared recipes. Exclusive: anything unreadable, piped, unfiltered, not a
+ * test, or that selects Stress, Benchmark or GpuTrap or names the trap variable.
+ */
+const ShareTable: readonly [string, "shared" | "exclusive"][] = [
+  ["just test", "shared"],
+  ["just test-coverage", "shared"],
+  ["just test-differential-cuda", "shared"],
+  ["just test-gpu-trap", "exclusive"],
+  ["just test-stability", "exclusive"],
+  ["just -f justfile test", "exclusive"],
+  ['dotnet test X --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"', "shared"],
+  ['dotnet test X --filter "Category = GpuTrap"', "exclusive"],
+  ['dotnet test X --filter "Category=GpuTrap"', "exclusive"],
+  ['dotnet test X --filter "Category=Stress"', "exclusive"],
+  ['dotnet test X --filter "Category=Benchmark"', "exclusive"],
+  ['dotnet test X --filter "Name~Foo" -e GSHARP_CUDA_TRAP_TESTS=1', "exclusive"],
+  ['GSHARP_CUDA_TRAP_TESTS=1 dotnet test X --filter "Name~Foo"', "exclusive"],
+  ["dotnet run --project X", "exclusive"],
+  ['dotnet test $(cat projects.txt) --filter "Name~Foo"', "exclusive"],
+  ['dotnet test X --filter "Name~Foo', "exclusive"],
+  ['dotnet test X --no-build --filter "Name~Foo"', "shared"],
+  ['dotnet build X && dotnet test X --no-build --filter "Name~Foo"', "exclusive"],
+  ['cd tests && dotnet test X --filter "Name~Foo"; echo done', "shared"],
+  ['Set-Location tests; dotnet test X --filter "Name~Foo"; Pop-Location', "shared"],
+  ['dotnet.exe test X --filter "Name~Foo"', "shared"],
+  ['dotnet test bin/Tests.dll --filter "Name~Foo"', "exclusive"],
+  ["dotnet test X --filter=Name~Foo", "shared"],
+  ['dotnet test X --filter ""', "exclusive"],
+  ["echo hello", "exclusive"],
+  ['node scripts/human/coverage-diff.js --run && dotnet test X --filter "Name~Foo"', "exclusive"],
+  // Q2: without a filter a test run also runs Stress and Benchmark
+  ["dotnet test X", "exclusive"],
+  ["dotnet test X --no-build", "exclusive"],
+  ['DiffEngine_Disabled=true dotnet test X --filter "FullyQualifiedName~Foo"', "shared"],
+  // A pipe hides its later stages from readCommand; a | inside the quoted filter is no pipe
+  ['dotnet test X --filter "Name~Foo" | tee log', "exclusive"],
+  ['dotnet test X --filter "Name~Foo" || echo failed', "exclusive"],
+  ['dotnet test X --filter "Name~A|Name~B"', "shared"],
+];
+
+/** Checks 3 to 7 of the share rules: the table, the environment, the plugin options. */
+function checkShareRules(assert: AssertModule, host: PluginHost): void {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-share-"));
+  try {
+    const wt = fs.realpathSync.native(dir);
+    const ctx = contextFor(wt, wt);
+    for (const [command, expected] of ShareTable) {
+      assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
+    }
+    const filtered = 'dotnet test X --filter "Name~Foo"';
+    assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
+    assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
+    assert.strictEqual(host.classify(filtered, { name: "gpu", forcedExclusive: true }, ctx).share, "exclusive");
+
+    const withEnv = (value: string) => ({ ...ctx, env: { GSHARP_CUDA_TRAP_TESTS: value } });
+    assert.strictEqual(host.classify(filtered, Gpu, withEnv("1")).share, "exclusive", "trap tests on in the env");
+    assert.strictEqual(host.classify(filtered, Gpu, withEnv("0")).share, "shared", "0 leaves them off");
+    assert.strictEqual(host.classify(filtered, Gpu, withEnv("")).share, "shared", "empty leaves them off");
+
+    const full = {
+      exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
+      exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
+      sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+    };
+    const shareWith = (options: Record<string, unknown> | undefined, command = filtered) =>
+      new PluginHost([henicosPlugin], [options], wt, () => {}).classify(command, Gpu, ctx).share;
+    assert.strictEqual(shareWith(full), "shared", "the full options share");
+    assert.notStrictEqual(shareWith(undefined), "shared", "no options: exclusive");
+    for (const key of Object.keys(full)) {
+      const missing: Record<string, unknown> = { ...full };
+      delete missing[key];
+      assert.notStrictEqual(shareWith(missing), "shared", `without ${key}: exclusive`);
+      assert.notStrictEqual(shareWith({ ...full, [key]: "Stress" }), "shared", `${key} not a list: exclusive`);
+      assert.notStrictEqual(shareWith({ ...full, [key]: [1] }), "shared", `${key} not names: exclusive`);
+    }
+  } finally {
+    removeDirectory(dir);
+  }
+}
+
 /**
  * Check 5 (mutant-verified): QueuedRun sends plugin-computed memoryMb on request and adopt, omits it on gpuTurn and
  * JOB_QUEUE_PLUGINS=0, and uses defaultTestMemoryMb when a plugin classifies test: true without memoryMb.
@@ -449,7 +533,14 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
     assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
     assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
     assert.deepStrictEqual(repoConfig.config.plugins, [
-      { name: "./scripts/human/job-queue-henicos" },
+      {
+        name: "./scripts/human/job-queue-henicos",
+        options: {
+          exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
+          exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
+          sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+        },
+      },
       { name: "dotnet" },
       {
         name: "just",
@@ -530,6 +621,7 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkMovedCpuOnlyProjects(assert);
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
+  checkShareRules(assert, host);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
 }

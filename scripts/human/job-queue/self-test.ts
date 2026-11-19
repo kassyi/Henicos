@@ -18,6 +18,7 @@ import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ProbeChecks } from "./server-probe-checks.ts";
 import { SharedServerChecks } from "./server-shared-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
+import { ShareClientChecks } from "./client-share-checks.ts";
 import { gitBashPath, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots } from "./machine.ts";
 import { delay, firstTestPort, stopChild, QueueFixture, registration } from "./self-test-support.ts";
@@ -113,6 +114,7 @@ export async function selfTest(): Promise<void> {
       ...SharedServerChecks,
       ...ProbeChecks,
       ...ClientChecks,
+      ...ShareClientChecks,
     })) {
       await named(name, () => check(assert));
     }

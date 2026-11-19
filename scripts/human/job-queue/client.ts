@@ -28,6 +28,8 @@ export interface RunOptions extends Endpoint {
   /** 0 for the default weight of the command. */
   weight: number;
   gpu: boolean;
+  /** --gpu-exclusive: the GPU run asks for the GPU alone, whatever the plugins classify (gpu is set too). */
+  gpuExclusive?: boolean;
   shell: ShellName | "";
   timeoutMinutes: number;
   /** --after: the job that must end first; 0 for none. */
@@ -107,8 +109,9 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
   const context = hasPlugins
     ? clientContext(options.shell, plugins.configRoot, resolveWorktree(process.cwd()))
     : undefined;
+  const gpu = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
   if (context !== undefined) {
-    const resource = options.gpu && !inGpuLock ? { name: "gpu", forcedExclusive: false } : null;
+    const resource = options.gpu && !inGpuLock ? gpu : null;
     const checked = plugins.check(options.command, resource, context);
     for (const hint of checked.hints ?? []) {
       prefix(hint);
@@ -119,10 +122,7 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
   }
   if (options.gpu && !inGpuLock) {
     const host = new ProcessRunHost(options);
-    const step =
-      context !== undefined
-        ? plugins.splitBeforeTurn(options.command, { name: "gpu", forcedExclusive: false }, context)
-        : undefined;
+    const step = context !== undefined ? plugins.splitBeforeTurn(options.command, gpu, context) : undefined;
     if (step !== undefined) {
       // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
       prefix(`building outside the GPU turn first, as a job of its own: ${step.before}`);
@@ -137,7 +137,8 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
       options.after = 0; // the build job waited for it
     }
     // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
-    // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too.
+    // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too. The turn
+    // classifies its share from options.command, which is the command after the split.
     await new QueuedRun(options, placement, false, true, host, plugins).run();
     return;
   }

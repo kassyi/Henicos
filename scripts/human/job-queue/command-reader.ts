@@ -135,7 +135,16 @@ const Separators = new Set([";", "\n", "\r"]);
  * redirection, a group, a background `&`.
  */
 export function readCommand(command: string): ReadStep[] | null {
+  return readCommandLine(command)?.steps ?? null;
+}
+
+/**
+ * readCommand, and whether the line has a `|` outside quotes (a pipe, or the `||` of an or-list): readCommand leaves
+ * the stage after a pipe out, so a caller that must see every program of the line checks `piped` as well.
+ */
+export function readCommandLine(command: string): { steps: ReadStep[]; piped: boolean } | null {
   const steps: ReadStep[] = [];
+  let piped = false;
   let words: string[] = [];
   let word = "";
   let inWord = false;
@@ -183,6 +192,7 @@ export function readCommand(command: string): ReadStep[] | null {
       endStep(false);
       i++;
     } else if (ch === "|") {
+      piped = true;
       const pair = next === "|";
       endStep(!pair);
       i += pair ? 1 : 0;
@@ -206,7 +216,7 @@ export function readCommand(command: string): ReadStep[] | null {
     return null;
   }
   endStep(false);
-  return steps;
+  return { steps, piped };
 }
 
 const AssignmentWord = /^[A-Za-z_]\w*=/;
