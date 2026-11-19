@@ -7,15 +7,16 @@ using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 /// <summary>
-/// Tier 2 tests for <see cref="AstLoweringPipeline.LowerForStack"/>: the body that the CPU stack models run for a method
-/// that reaches <c>Warp.ActiveMask()</c> has the reconvergence regions of the state machine, in the same places, and
-/// nothing of the state machine.
+/// Tier 2 tests for <see cref="AstLoweringPipeline.LowerForStack"/>: the body that the CPU stack models run for a
+/// method that reaches <c>Warp.ActiveMask()</c> has the reconvergence regions of the state machine, in the same places,
+/// every labeled jump names a target in it, and it has nothing of the state machine.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class StackLoweringTests
@@ -24,6 +25,7 @@ public class StackLoweringTests
         new()
         {
             new[] { "Differential", "WarpActiveMaskDifferentialKernels.cu.cs" },
+            new[] { "Differential", "LabeledJumpDifferentialKernels.cu.cs" },
             new[] { "TestCases", "StateMachines", "ReconvergenceCases.cs" }
         };
 
@@ -46,12 +48,63 @@ public class StackLoweringTests
             regionCalls += actual.Length;
             if (!expected.SequenceEqual(actual))
             {
-                mismatches.Add($"{name}: state machine [{string.Join("; ", expected)}], stack [{string.Join("; ", actual)}]");
+                mismatches.Add(
+                    $"{name}: state machine [{string.Join("; ", expected)}], stack [{string.Join("; ", actual)}]");
             }
         }
 
         Assert.Empty(mismatches);
         Assert.NotEqual(0, regionCalls);
+    }
+
+    // Every labeled break or continue of a stack body names a loop or switch around it, and every goto a label of the
+    // body. LabeledStatementSplitter detaches the label of a target that holds a split point (L: s becomes L: ; s), so
+    // without LabeledJumpRewriter a jump to it would name no statement (a labeled break out of a switch with
+    // Warp.ActiveMask(), a labeled continue around a barrier)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(ActiveMaskSources))]
+    public void LowerForStack_LabeledJumps_NameATargetInTheBody(string[] source)
+    {
+        var unresolved = new List<string>();
+        var labeledJumps = 0;
+        var gotos = 0;
+        foreach (var (name, plan) in CreatePlans(source))
+        {
+            var stack = plan.StackBody ?? throw new InvalidOperationException($"{name} has no stack body.");
+            var labels = stack.Body
+                .DescendantNodes()
+                .OfType<LabeledStatementSyntax>()
+                .Select(static labeled => labeled.Identifier.ValueText)
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (var jump in stack.Body.DescendantNodes().OfType<StatementSyntax>())
+            {
+                if (jump is BreakStatementSyntax or ContinueStatementSyntax &&
+                    LabeledJumpSyntax.GetLabelName(jump) is { } label)
+                {
+                    labeledJumps++;
+                    if (LabeledJumpSyntax.FindTarget(jump) == null)
+                    {
+                        unresolved.Add($"{name}: {label.Identifier.ValueText}");
+                    }
+                }
+                else if (jump is GotoStatementSyntax
+                         {
+                             RawKind: (int)SyntaxKind.GotoStatement,
+                             Expression: IdentifierNameSyntax { Identifier.ValueText: var target }
+                         })
+                {
+                    gotos++;
+                    if (!labels.Contains(target))
+                    {
+                        unresolved.Add($"{name}: goto {target}");
+                    }
+                }
+            }
+        }
+
+        Assert.Empty(unresolved);
+        Assert.NotEqual(0, labeledJumps + gotos);
     }
 
     // No state, no context, no root, and none of the calls of the state machine's regions
@@ -95,8 +148,8 @@ public class StackLoweringTests
     }
 
     // The right operand of && is a branch only once it is a statement: the odd lanes enter a region before it and meet
-    // the others where it ends, before Mark(20). The split pass of the IR writes it as an if; without it (a statement the
-    // IR leaves to the syntax passes), the first round of ConditionalEvaluationRewriter does
+    // the others where it ends, before Mark(20). The split pass of the IR writes it as an if; without it (a statement
+    // the IR leaves to the syntax passes), the first round of ConditionalEvaluationRewriter does
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(true)]
@@ -140,7 +193,7 @@ public class StackLoweringTests
         Assert.Same(plan.StackBody, copy.StackBody);
     }
 
-    // The plans of the kernels and the device functions that a state machine lowers, by name
+    // The plans of the kernels and the device functions that a state machine lowers, by name, with their stack bodies
     private static (string Name, MethodEmissionPlan Plan)[] CreatePlans(string[] source)
     {
         var path = RepositoryPaths.Combine(["tests", "Compiler", "Kassyi.GSharp.Tests.Shared", .. source]);
@@ -159,7 +212,7 @@ public class StackLoweringTests
             })
             .Where(static entry => entry.Plan.Kind is MethodEmissionKind.Kernel or
                                        MethodEmissionKind.SuspendingDeviceFunction &&
-                                   entry.Plan.Lowered != null)
+                                   entry.Plan.StackBody != null)
             .ToArray();
     }
 

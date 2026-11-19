@@ -63,9 +63,10 @@ internal readonly struct MethodEmissionPlan
 
     /// <summary>
     /// The body for the CPU stack models, with the reconvergence regions of a method that reaches
-    /// <c>Warp.ActiveMask()</c> where <see cref="Lowered"/> puts them (<see cref="AstLoweringPipeline.LowerForStack"/>),
-    /// for the same methods as <see cref="Lowered"/>. Reading it lowers the method for the stacks the first time, apart
-    /// from <see cref="Lowered"/>, so an output that reads only one of them pays for one lowering.
+    /// <c>Warp.ActiveMask()</c> where <see cref="Lowered"/> puts them
+    /// (<see cref="AstLoweringPipeline.LowerForStack"/>), for the same methods as <see cref="Lowered"/>.
+    /// Reading it lowers the method for the stacks the first time, apart from <see cref="Lowered"/>, so an output
+    /// that reads only one of them pays for one lowering.
     /// </summary>
     public StackLoweredBody? StackBody => _lowering?.StackBody;
 

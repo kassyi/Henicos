@@ -80,8 +80,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     /// <param name="stackForm">
     /// Whether the body runs on a stack of its own (the CPU stack models) rather than as a state machine: the regions
     /// take the warp frame of the stack (<c>__gsharp_warp_frame</c>) instead of the root and the context, and a lane
-    /// arrives at, waits at and passes the end of a region in one call (<c>__gsharp_stack_warp_reconverge</c>), which the
-    /// state machine splits into an arrive, a state and a pass.
+    /// arrives at, waits at and passes the end of a region in one call (<c>__gsharp_stack_warp_reconverge</c>), which
+    /// the state machine splits into an arrive, a state and a pass.
     /// </param>
     public static ReconvergenceInserter? TryCreate(SemanticModel? model, IMethodSymbol? owner, bool isDeviceFunction,
         bool stackForm = false)
