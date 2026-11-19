@@ -1,9 +1,9 @@
-// The self-test of the chat panel of the live view (view-chats.ts): the rows of the chats that wait for the person,
+// The self-test of the chat panel of the live view (view-chats.ts, panel.ts): the rows of the chats that wait for the person,
 // their order and styles, the one-line summary of a short screen, the job ids of a chat's worktree, the hide key, and
 // no panel when no chat waits. Drawn from the fixed chats of view-sample.ts.
 
 import * as assert from "node:assert";
-import type { StatusReply } from "./protocol.ts";
+import type { StatusReply } from "../../protocol.ts";
 import {
   chatCounts,
   chatJobs,
@@ -14,9 +14,19 @@ import {
   waitingChats,
   type ChatView,
 } from "./view-chats.ts";
-import { displayWidth, helpLines, initialViewState, renderScreen, screenJobs, type ViewState } from "./view.ts";
-import { reduceKey } from "./watch.ts";
-import { LaneWorktree, MainCheckout, Minute, Now, PanelWorktree, chat, job, sampleChats } from "./view-sample.ts";
+import { displayWidth, helpLines, initialViewState, renderScreen, screenJobs, type ViewState } from "../../view.ts";
+import { reduceKey } from "../../watch.ts";
+import {
+  LaneWorktree,
+  MainCheckout,
+  Minute,
+  Now,
+  PanelWorktree,
+  chat,
+  job,
+  sampleChats,
+  samplePanel,
+} from "../../view-sample.ts";
 
 /** Jobs of three worktrees, spelled as the scheduler keys them on Windows or as a shell gives the cwd. */
 function linkedReply(): StatusReply {
@@ -53,7 +63,7 @@ function panelOf(lines: string[]): string[] {
 function checkRows(): void {
   const chats = sampleChats();
   const screen = { columns: 120, rows: 17, now: Now };
-  const lines = renderScreen(linkedReply(), initialViewState(), screen, false, chats);
+  const lines = renderScreen(linkedReply(), initialViewState(), screen, false, samplePanel(chats));
   assert.strictEqual(lines.length, 17);
   lines.forEach((line, i) => assert.ok(displayWidth(line) <= 120, `line ${i} fits 120 columns: ${line}`));
   const rule = lines.find((line, i) => i > 1 && line.startsWith("──")) ?? "";
@@ -101,16 +111,18 @@ function checkRows(): void {
     ...chats,
     chats: chats.chats.map((c) => (c.askVerdict ? { ...c, summaryOf: c.since - 1 } : c)),
   };
-  const stale = panelOf(renderScreen(linkedReply(), initialViewState(), screen, false, earlier));
+  const stale = panelOf(renderScreen(linkedReply(), initialViewState(), screen, false, samplePanel(earlier)));
   assert.match(stale[3] ?? "", / 41m reply +Which of the two queue PRs merges first\? \(\+1\) +$/);
   // A tool's question stands out in the warning color, an asking reply by its mark
-  const colored = panelOf(renderScreen(linkedReply(), initialViewState(), screen, true, chats));
+  const colored = panelOf(renderScreen(linkedReply(), initialViewState(), screen, true, samplePanel(chats)));
   assert.ok((colored[1] ?? "").includes("\x1b[33mWhere should"), `a question in the warning color: ${colored[1]}`);
   assert.ok((colored[0] ?? "").includes("\x1b[33m?"), "the ? mark of a permission too");
   assert.ok((colored[3] ?? "").includes("\x1b[33m…?"), `the …? mark of an asking reply: ${colored[3]}`);
   assert.ok(!(colored[3] ?? "").includes("\x1b[33mWhich"), "but not its text");
   // A narrow screen leaves out the kind
-  const narrow = panelOf(renderScreen(linkedReply(), initialViewState(), { ...screen, columns: 60 }, false, chats));
+  const narrow = panelOf(
+    renderScreen(linkedReply(), initialViewState(), { ...screen, columns: 60 }, false, samplePanel(chats)),
+  );
   assert.match(narrow[1] ?? "", /^\? +claude issue-1851-panel +6m #900 Where/);
   assert.match(narrow[3] ?? "", /^…\? agy +Queue PR order +41m ≈ Which of the two … \(\+1\)$/);
   narrow.forEach((line) => assert.ok(displayWidth(line) <= 60, line));
@@ -151,7 +163,13 @@ function checkRows(): void {
 function checkShortAndOverflow(): void {
   const chats = sampleChats();
   // 70x13: one summary line under the rule, in the same order, the job list keeps the rest
-  const small = renderScreen(linkedReply(), initialViewState(), { columns: 70, rows: 13, now: Now }, false, chats);
+  const small = renderScreen(
+    linkedReply(),
+    initialViewState(),
+    { columns: 70, rows: 13, now: Now },
+    false,
+    samplePanel(chats),
+  );
   assert.strictEqual(small.length, 13);
   assert.match(small[11] ?? "", /^ 4 chats wait: \?issue-1835 40s, \?issue-1851-panel 6m, …\?issue-1890: Fi$/);
   assert.match(small[10] ?? "", /^── chats: 4 wait/);
@@ -167,7 +185,13 @@ function checkShortAndOverflow(): void {
     ...linkedReply(),
     waiting: [903, 904, 905, 906].map((id) => job(id, { startAt: Now + Minute, endAt: Now + 2 * Minute })),
   };
-  const tall = renderScreen(sixJobs, initialViewState(), { columns: 100, rows: 20, now: Now }, false, many);
+  const tall = renderScreen(
+    sixJobs,
+    initialViewState(),
+    { columns: 100, rows: 20, now: Now },
+    false,
+    samplePanel(many),
+  );
   assert.strictEqual(tall.length, 20);
   assert.match(tall[7] ?? "", /^ 906 /, "the job list keeps half of the rows: all six jobs show");
   assert.match(tall[8] ?? "", /^── chats: 30 wait/);
@@ -178,7 +202,13 @@ function checkShortAndOverflow(): void {
     ...linkedReply(),
     waiting: Array.from({ length: 20 }, (_, i) => job(903 + i, { startAt: Now + Minute, endAt: Now + 2 * Minute })),
   };
-  const taller = renderScreen(manyJobs, initialViewState(), { columns: 100, rows: 30, now: Now }, false, many);
+  const taller = renderScreen(
+    manyJobs,
+    initialViewState(),
+    { columns: 100, rows: 30, now: Now },
+    false,
+    samplePanel(many),
+  );
   assert.match(taller[14] ?? "", /^ 9\d\d /, "13 job rows, half of the 26 rows below the header");
   assert.match(taller[15] ?? "", /^── \+\d+ more ── chats: 30 wait/);
 }
@@ -218,24 +248,24 @@ function checkHideAndAbsence(): void {
   // a hides the panel and shows it again; the rule still says that chats wait
   let state: ViewState = initialViewState();
   state = reduceKey(state, "a", linkedReply(), Now).state;
-  assert.strictEqual(state.chatsHidden, true);
-  const hidden = renderScreen(linkedReply(), state, screen, false, chats);
+  assert.strictEqual(state.panelHidden, true);
+  const hidden = renderScreen(linkedReply(), state, screen, false, samplePanel(chats));
   assert.ok(!hidden.some((line) => /(claude|agy) +(issue-|main)/.test(line)), "no chat rows while hidden");
-  assert.match(hidden[15] ?? "", /^── 4 chats wait, a shows them ─+$/);
+  assert.match(hidden[15] ?? "", /^── chats: 4 wait, 1 idle, 2 working, 1 in background, a shows them ─+$/);
   assert.deepStrictEqual(
     hidden.filter((_, i) => i !== 15),
     without.filter((_, i) => i !== 15),
   );
   state = reduceKey(state, "a", linkedReply(), Now).state;
-  assert.strictEqual(state.chatsHidden, false);
+  assert.strictEqual(state.panelHidden, false);
   // a inside a prompt is not the hide key
   const prompting: ViewState = { ...initialViewState(), prompt: { kind: "cancel", id: 900 } };
-  assert.strictEqual(reduceKey(prompting, "a", linkedReply(), Now).state.chatsHidden, false);
+  assert.strictEqual(reduceKey(prompting, "a", linkedReply(), Now).state.panelHidden, false);
   // No waiting chat (only working and background ones), or no chat file at all: no panel and the screen as before
   const busy: ChatView = { ...chats, chats: chats.chats.filter((c) => c.state !== "waiting") };
   assert.deepStrictEqual(waitingChats(busy), []);
-  assert.deepStrictEqual(renderScreen(linkedReply(), initialViewState(), screen, false, busy), without);
-  assert.deepStrictEqual(renderScreen(linkedReply(), initialViewState(), screen, false, null), without);
+  assert.deepStrictEqual(renderScreen(linkedReply(), initialViewState(), screen, false, samplePanel(busy)), without);
+  assert.deepStrictEqual(renderScreen(linkedReply(), initialViewState(), screen, false, samplePanel(null)), without);
 }
 
 /** The label of a row (title, first prompt, worktree), the summary of the current wait, and the help's summary line. */
@@ -260,7 +290,13 @@ function checkLabelsAndLegend(): void {
     asks: true,
   });
   const wide: ChatView = { ...view, chats: [titled] };
-  const lines = renderScreen(linkedReply(), initialViewState(), { columns: 80, rows: 17, now: Now }, false, wide);
+  const lines = renderScreen(
+    linkedReply(),
+    initialViewState(),
+    { columns: 80, rows: 17, now: Now },
+    false,
+    samplePanel(wide),
+  );
   assert.ok(
     lines.some((line) => line.includes("チャット状態")),
     "the row is drawn",
@@ -269,7 +305,7 @@ function checkLabelsAndLegend(): void {
   // The help says who decides that a reply asks (Claude Haiku, or the question mark and how to turn Haiku on), and that
   // a report is idle
   const legend = (summaries: ChatView["summaries"]): string =>
-    helpLines(120, { ...view, summaries })
+    helpLines(120, chatLegend({ ...view, summaries }))
       .map((line) => line.text)
       .join("\n");
   assert.match(
