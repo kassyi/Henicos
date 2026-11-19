@@ -69,20 +69,31 @@ namespace PolymorphicRecursion
         }
     }
 
-    // O<T>.I -> O<Wrap<T>>.I
-    public struct O<T> where T : struct
+    // M<T> -> P<Wrap<T>> -> M<U>: the expansive call and the call back form the cycle
+    public struct M<T> where T : struct
     {
-        public struct I
-        {
-            public int N;
+        public int N;
 
-            public I(int n)
+        public M(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
             {
-                N = Kernels.Step(n);
-                if (n > 0)
-                {
-                    N += new O<Wrap<T>>.I(n - 1).N;
-                }
+                N += new P<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    public struct P<U> where U : struct
+    {
+        public int N;
+
+        public P(int n)
+        {
+            N = n;
+            if (n > 0)
+            {
+                N += new M<U>(n - 1).N;
             }
         }
     }
@@ -111,9 +122,9 @@ namespace PolymorphicRecursion
         }
 
         [GpuKernel]
-        public static void NestedTypeKernel(int[] d)
+        public static void MutualKernel(int[] d)
         {
-            d[0] = new O<int>.I(d[1]).N;
+            d[0] = new M<int>(d[1]).N;
         }
     }
 }

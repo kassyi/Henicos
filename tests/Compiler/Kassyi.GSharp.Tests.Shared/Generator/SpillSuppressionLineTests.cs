@@ -79,6 +79,7 @@ public class SpillSuppressionLineTests
     [InlineData("ViaUsingDeclaration")]
     [InlineData("ViaUsingExpression")]
     [InlineData("ViaFiniteGrowth")]
+    [InlineData("ViaIndirectGrowth")]
     public void CudaModule_FunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
     {
         var module = s_cudaModule.Value;
@@ -135,7 +136,7 @@ public class SpillSuppressionLineTests
     [InlineData("DeepKernel")]
     [InlineData("AlternatingKernel")]
     [InlineData("SwapKernel")]
-    [InlineData("NestedTypeKernel")]
+    [InlineData("MutualKernel")]
     public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends(string kernelName)
     {
         var compilation = RoslynTestUtility.CreateCompilation(

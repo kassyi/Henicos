@@ -106,6 +106,49 @@ namespace SpillSuppressionTest
         }
     }
 
+    // Forth<T> creates Back<int> (a constant), and Back<U> creates Forth<IndirectWrapper<U>>: an expansive call, but on
+    // no cycle, so the instantiations are finite (Forth<int>, Back<int>, Forth<IndirectWrapper<int>>); new T() of the
+    // last runs IndirectWrapper<int>(), which calls ViaIndirectGrowth
+    public struct IndirectWrapper<T> where T : struct
+    {
+        public int A;
+
+        public IndirectWrapper()
+        {
+            A = Kernels.ViaIndirectGrowth(1);
+        }
+    }
+
+    public struct Forth<T> where T : struct
+    {
+        public T Value;
+        public int N;
+
+        public Forth(int n)
+        {
+            Value = new T();
+            N = n;
+            if (n > 0)
+            {
+                N += new Back<int>(n - 1).N;
+            }
+        }
+    }
+
+    public struct Back<U> where U : struct
+    {
+        public int N;
+
+        public Back(int n)
+        {
+            N = n;
+            if (n > 0)
+            {
+                N += new Forth<IndirectWrapper<U>>(n - 1).N;
+            }
+        }
+    }
+
     public ref struct DeclarationDisposer
     {
         public int A;
@@ -239,6 +282,7 @@ namespace SpillSuppressionTest
         [GpuDeviceFunction] public static int ViaUsingDeclaration(int x) => x + 17;
         [GpuDeviceFunction] public static int ViaUsingExpression(int x) => x + 18;
         [GpuDeviceFunction] public static int ViaFiniteGrowth(int x) => x + 19;
+        [GpuDeviceFunction] public static int ViaIndirectGrowth(int x) => x + 20;
 
         // A device function whose own call of ViaNested is not an invocation (a property getter)
         [GpuDeviceFunction]
@@ -269,7 +313,7 @@ namespace SpillSuppressionTest
                 ViaTruthTest(d[1]) + ViaConstructor(d[1]) + ViaInitializer(d[1]) + ViaGenericNew(d[1]) +
                 ViaLocal(d[1]) + ViaLambda(d[1]) + ViaMethodGroup(d[1]) + ViaDispose(d[1]) + ViaBuilder(d[1]) +
                 ViaPinnable(d[1]) + ViaNested(d[1]) + ViaUsingDeclaration(d[1]) + ViaUsingExpression(d[1]) +
-                ViaFiniteGrowth(d[1]);
+                ViaFiniteGrowth(d[1]) + ViaIndirectGrowth(d[1]);
         }
 #pragma warning restore GS0001
 
@@ -423,6 +467,13 @@ namespace SpillSuppressionTest
         public static void UnmarkedFiniteGrowthKernel(int[] d)
         {
             d[0] = new Grower<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedIndirectGrowthKernel(int[] d)
+        {
+            d[0] = new Forth<int>(d[1]).N;
         }
 
         [GpuKernel]

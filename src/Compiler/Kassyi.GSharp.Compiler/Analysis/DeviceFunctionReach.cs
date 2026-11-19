@@ -33,20 +33,16 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <para>
 /// A generic struct whose constructor constructs the same struct with a type argument that contains its own
 /// (<c>Deep&lt;T&gt;</c> creating <c>Deep&lt;Wrap&lt;T&gt;&gt;</c>) would give a new construction at every step:
-/// the walk stops at an expansive call (one whose type arguments, as written in the caller, hold one of the caller's
-/// type parameters inside another type; ECMA-335 II.9.2) to a definition that is already on the path. A program that
-/// does this cannot be emitted anyway (#2199). A finite one (<c>C&lt;T&gt;</c> creating
-/// <c>C&lt;Wrap&lt;int&gt;&gt;</c>) is walked whole.
+/// the walk stops at a call that makes a new construction at every turn of a cycle (<see cref="GenericExpansion"/>,
+/// the rule of ECMA-335 II.9.2) to a definition that is already on the path. A program that does this cannot be
+/// emitted anyway (#2199). A finite one (<c>C&lt;T&gt;</c> creating <c>C&lt;Wrap&lt;int&gt;&gt;</c>, or
+/// <c>D&lt;T&gt;</c> creating <c>E&lt;int&gt;</c>, which creates <c>D&lt;Wrap&lt;U&gt;&gt;</c>) is walked whole.
 /// </para>
 /// </remarks>
 internal static class DeviceFunctionReach
 {
     // [WHY] The direct callees of each function are found once per compilation; the walk of each kernel reuses them.
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_callees = new();
-
-    // [WHY] Which callees of a generic definition grow its type arguments, found once per definition
-    private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_expansiveCallees =
-        new();
 
     /// <summary>
     /// The names of the functions that <paramref name="kernel"/> (declared by <paramref name="declaration"/>) reaches,
@@ -300,9 +296,9 @@ internal static class DeviceFunctionReach
         public ReachStep? Caller { get; } = caller;
     }
 
-    // Whether the step stops polymorphic recursion: the edge from its caller is expansive (ExpansiveCallees) and a
-    // function on the path to it is a construction of the same definition. Only an expansive edge makes a new type at
-    // every turn of a cycle (ECMA-335 II.9.2), so a finite program (C<T> creating C<Wrap<int>>) is walked whole
+    // Whether the step stops polymorphic recursion: the edge from its caller lies on a cycle of the type parameters
+    // that makes a new construction at every turn (GenericExpansion), and a function on the path to it is a
+    // construction of the same definition, so each definition is walked at least once
     private static bool StopsPolymorphicRecursion(ReachStep step, Compilation compilation)
     {
         if (step.Caller is not { } caller)
@@ -311,7 +307,7 @@ internal static class DeviceFunctionReach
         }
 
         var definition = DeviceFunctionEffects.GetDefinition(step.Function);
-        if (!GetExpansiveCallees(DeviceFunctionEffects.GetDefinition(caller.Function), compilation)
+        if (!GenericExpansion.GetExpandingCallees(DeviceFunctionEffects.GetDefinition(caller.Function), compilation)
                 .AsStackEnumerable()
                 .Any(definition, static (callee, own) => callee.IsEqualTo(own)))
         {
@@ -329,76 +325,32 @@ internal static class DeviceFunctionReach
         return false;
     }
 
-    // The definitions that the unsubstituted body of definition calls with a type argument that holds one of
-    // definition's own type parameters inside another type (Deep<Wrap<T>> written in Deep<T>): an expansive edge
-    private static ImmutableArray<IMethodSymbol> GetExpansiveCallees(IMethodSymbol definition,
-        Compilation compilation) =>
-        s_expansiveCallees.For(compilation).GetOrAdd(definition, d =>
-        {
-            var parameters = GetTypeParameters(d);
-            if (parameters.Count == 0 || !DeviceFunctionBodies.TryGet(d, compilation, out var bodies))
-            {
-                return ImmutableArray<IMethodSymbol>.Empty;
-            }
-
-            var called = ImmutableArray.CreateBuilder<IMethodSymbol>();
-            foreach (var body in bodies)
-            {
-                if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
-                    compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
-                {
-                    AddCalls(operation, TypeArgumentMap.None, compilation, called);
-                }
-            }
-
-            var expansive = ImmutableArray.CreateBuilder<IMethodSymbol>();
-            called
-                .AsStackEnumerable()
-                .Select(static method => method.GetConstructedReducedFrom() ?? method)
-                .Where(parameters, static (callee, own) => GetTypeArguments(callee)
-                    .AsStackEnumerable()
-                    .Any(own, static (argument, typeParameters) => typeParameters
-                        .AsStackEnumerable()
-                        .Any(argument, static (parameter, written) => ContainsStrictly(written, parameter))
-                    )
-                ).Select(static callee => DeviceFunctionEffects.GetDefinition(callee))
-                .AddTo(expansive);
-            return expansive.ToImmutable();
-        });
-
-    // The type parameters of the method and of each type that contains it
-    private static List<ITypeSymbol> GetTypeParameters(IMethodSymbol definition)
+    /// <summary>
+    /// The methods that the bodies of <paramref name="definition"/> call as written, with their type parameters not
+    /// replaced (extension methods in their static form); empty when it has no body in the compilation.
+    /// </summary>
+    internal static ImmutableArray<IMethodSymbol> GetWrittenCallees(IMethodSymbol definition, Compilation compilation)
     {
-        var parameters = new List<ITypeSymbol>(definition.TypeParameters);
-        for (var type = definition.ContainingType; type != null; type = type.ContainingType)
+        if (!DeviceFunctionBodies.TryGet(definition, compilation, out var bodies))
         {
-            parameters.AddRange(type.TypeParameters);
+            return ImmutableArray<IMethodSymbol>.Empty;
         }
 
-        return parameters;
-    }
-
-    // The type arguments of the method and of each type that contains it, innermost first
-    private static List<ITypeSymbol> GetTypeArguments(IMethodSymbol function)
-    {
-        var arguments = new List<ITypeSymbol>(function.TypeArguments);
-        for (var type = function.ContainingType; type != null; type = type.ContainingType)
+        var called = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        foreach (var body in bodies)
         {
-            arguments.AddRange(type.TypeArguments);
+            if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
+                compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
+            {
+                AddCalls(operation, TypeArgumentMap.None, compilation, called);
+            }
         }
 
-        return arguments;
-    }
-
-    // Whether inner is a type argument, array element or pointed-at type of outer, at any depth
-    private static bool ContainsStrictly(ITypeSymbol outer, ITypeSymbol inner) => outer switch
-    {
-        INamedTypeSymbol named => named.TypeArguments
+        var written = ImmutableArray.CreateBuilder<IMethodSymbol>(called.Count);
+        called
             .AsStackEnumerable()
-            .Any(inner, static (argument, target) => argument.IsEqualTo(target) || ContainsStrictly(argument, target)),
-        IArrayTypeSymbol array => array.ElementType.IsEqualTo(inner) || ContainsStrictly(array.ElementType, inner),
-        IPointerTypeSymbol pointer =>
-            pointer.PointedAtType.IsEqualTo(inner) || ContainsStrictly(pointer.PointedAtType, inner),
-        _ => false
-    };
+            .Select(static method => method.GetConstructedReducedFrom() ?? method)
+            .AddTo(written);
+        return written.ToImmutable();
+    }
 }

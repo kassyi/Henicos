@@ -4473,6 +4473,7 @@
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedGenericNewKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedGetterKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedIndexerKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedIndirectGrowthKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedInitializerKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedLambdaKernel", status: "Compared", count: 1}
@@ -4494,6 +4495,7 @@
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaGenericNew", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaGetter", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaIndexer", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaIndirectGrowth", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaInitializer", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaLambda", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaLocal", status: "NoStateMachine", count: 1}
