@@ -21,6 +21,7 @@
       }
     },
     { "name": "nvidia-gpu" },
+    { "name": "git" },
     {
       "name": "agents",
       "options": {

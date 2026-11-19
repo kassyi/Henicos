@@ -22,6 +22,7 @@ import type { RunOptions } from "./client.ts";
 import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
+import type { ContentDigest } from "./plugin-api.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import {
   numberField,
@@ -80,6 +81,11 @@ export class QueuedRun {
   private lastStartAt: number | null = null;
   /** What the job was last told it waits for (Outlook.waitFor): a change is told at once. */
   private lastWaitFor: unknown = undefined;
+  /**
+   * The digest of the worktree's content when the job was queued (plugins' contentDigest), taken once without waiting
+   * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
+   */
+  private queuedDigest: Promise<ContentDigest | undefined> | null = null;
   /** The pause was told (once per run). */
   private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
@@ -225,6 +231,8 @@ export class QueuedRun {
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
+    // Taken beside the start, never before it: the notice must not delay the command
+    void this.tellWorktreeChange(jobId);
     if (this.gpuTurn) {
       // Shared only when this turn asked for "shared" and the scheduler echoes exactly that: an older scheduler, or
       // one that counts the turn as exclusive, sends no echo, and the lock is then taken exclusively
@@ -264,6 +272,37 @@ export class QueuedRun {
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
+  }
+
+  /**
+   * Compares the digest of the worktree's content at the start with the one at the queue, and says so in one line when
+   * they differ: the job runs on what is there now, not on what was there when it was queued. Silent when either has
+   * no digest.
+   */
+  private async tellWorktreeChange(jobId: number): Promise<void> {
+    const queued = this.queuedDigest;
+    if (queued === null || this.plugins === undefined) {
+      return;
+    }
+    const now = await this.plugins.contentDigest(this.digestContext(this.plugins));
+    const then = await queued;
+    if (now !== undefined && then !== undefined && now.digest !== then.digest) {
+      const at = new Date(this.queuedAt).toTimeString().slice(0, 5);
+      prefix(`${formatJobId(jobId)}: the worktree changed after it was queued (${at}); it builds what is there now`);
+    }
+  }
+
+  /** The context of the digest hooks: the worktree resolved at the first registration. */
+  private digestContext(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: this.worktree ?? resolveWorktree(cwd),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
   }
 
   private onMessage(message: Incoming): void {
@@ -496,6 +535,11 @@ export class QueuedRun {
         this.share = classified.share === "shared" ? "shared" : "exclusive";
       }
       share = this.share;
+    }
+    // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
+    // its own
+    if (this.queuedDigest === null && this.state === "waiting" && !this.inGpuLock && this.plugins !== undefined) {
+      this.queuedDigest = this.plugins.contentDigest(this.digestContext(this.plugins));
     }
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",

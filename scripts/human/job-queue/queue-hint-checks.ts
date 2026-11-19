@@ -8,7 +8,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { parseArgs } from "./cli.ts";
 import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
+import type { RunOptions } from "./client.ts";
+import { QueuedRun } from "./client-queued-run.ts";
+import { ProtocolVersion } from "./constants.ts";
+import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
+import { PluginHost } from "./plugin-host.ts";
 import type { StatusJob } from "./protocol.ts";
+import { FakeHost, FakeScheduler, until } from "./self-test-client.ts";
 import { worktreeKey } from "./system.ts";
 import type { ResourceSpec } from "./resources.ts";
 import { Scheduler, type SchedulerJob } from "./scheduler.ts";
@@ -179,10 +185,113 @@ function checkHere(assert: AssertModule): void {
   assert.deepStrictEqual([parsed.here, parsed.json], [true, true], "--here goes with --json");
 }
 
+/** What `body` writes to stderr, kept off the console. */
+async function stderrOf(body: () => Promise<void>): Promise<string> {
+  const write = process.stderr.write;
+  let text = "";
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    text += String(chunk);
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    await body();
+  } finally {
+    process.stderr.write = write;
+  }
+  return text;
+}
+
+/**
+ * The digest at the queue and the one at the start: one line when they differ, nothing when they match or either is
+ * missing, and the command starts without waiting for the digest. A GPU holder takes none.
+ */
+async function checkWorktreeChange(assert: AssertModule): Promise<void> {
+  const options: RunOptions = {
+    port: 0,
+    slots: 2,
+    memoryMb: 1024,
+    policy: "hrrn",
+    command: "dotnet build X",
+    commandWords: null,
+    weight: 1,
+    gpu: false,
+    shell: "",
+    timeoutMinutes: 0,
+    after: 0,
+    keepIfFailed: false,
+  };
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  try {
+    const cases: [(string | undefined)[], boolean, boolean][] = [
+      [["a", "b"], false, true],
+      [["a", "a"], false, false],
+      [["a", undefined], false, false],
+      [[undefined, "b"], false, false],
+      [["a", "b"], true, false],
+    ];
+    for (const [index, [digests, inGpuLock, told]] of cases.entries()) {
+      const calls: number[] = [];
+      // The digest at the start resolves only once the command has started
+      let release = (): void => {};
+      const started = new Promise<void>((resolve) => (release = resolve));
+      const plugin: QueuePlugin = {
+        name: "digests",
+        apiVersion: PluginApiVersion,
+        contentDigest: async () => {
+          const call = calls.push(calls.length) - 1;
+          if (call === 1) {
+            await started;
+          }
+          const digest = digests[call];
+          return digest === undefined ? undefined : { digest, ms: 1 };
+        },
+      };
+      const plugins = new PluginHost([plugin], [undefined], process.cwd(), () => {});
+      const host = new FakeHost();
+      const text = await stderrOf(async () => {
+        void new QueuedRun(
+          { ...options },
+          { weight: 1, pin: null, before: null },
+          inGpuLock,
+          false,
+          host,
+          plugins,
+        ).run();
+        await until("the client connects", () => host.connects.length === 1);
+        host.connects[0]?.resolve(await scheduler.connect());
+        await until("the registration arrives", () => (scheduler.accepted[index]?.messages.length ?? 0) > 0);
+        const accepted = scheduler.accepted[index];
+        if (accepted === undefined) {
+          throw new Error("no connection");
+        }
+        FakeScheduler.send(accepted, { type: "granted", id: 18739, cpus: 1, capacity: 2, protocol: ProtocolVersion });
+        await until("the command starts before the digest", () => host.commands.length === 1);
+        release();
+        if (!inGpuLock) {
+          await until("both digests were taken", () => calls.length === 2);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        accepted.socket.destroy();
+        // The client notices the drop and tries to come back (to a host that never connects): keep its note here
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+      const line = /j8739: the worktree changed after it was queued \(\d\d:\d\d\); it builds what is there now/;
+      assert.strictEqual(line.test(text), told, `case ${index}: ${JSON.stringify(digests)}, in the lock ${inGpuLock}`);
+      if (inGpuLock) {
+        assert.deepStrictEqual(calls, [], "a GPU holder takes no digest");
+      }
+    }
+  } finally {
+    scheduler.close();
+  }
+}
+
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkWaitFor,
   checkDescribeWaitFor,
   checkLatestEnd,
   checkWaitForMessages,
   checkHere,
+  checkWorktreeChange,
 };
