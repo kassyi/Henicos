@@ -28,7 +28,7 @@ internal static class IrAccessorDecider
         // the receiver is read as its initializer
         var copyType = !isTarget &&
                        PropertyAccessorCall.NeedsCopy(property, context.NativeDialect, context.Compilation) &&
-                       IrReadOnlyReceivers.IsReadOnlyVariable(context.TemporaryInitializers.Resolve(receiver))
+                       IrReadOnlyReceivers.IsReadOnlyVariable(context.TemporaryInitializers.Resolve(receiver), context.Method)
             ? PropertyAccessorCall.CopyTypeOf(property, null, context.Compilation)
             : null;
         return new IrMemberDecision(IrMemberForm.Getter, null, -1, copyType);

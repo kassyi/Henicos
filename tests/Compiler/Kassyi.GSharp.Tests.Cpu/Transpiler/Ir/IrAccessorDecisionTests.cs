@@ -15,6 +15,7 @@ public class IrAccessorDecisionTests
 {
     private const string TestCase = "Ir/IrDecisionAccessorCases.cs";
     private const string TypeName = "IrDecisionAccessorCases.Accessors";
+    private const string CtorHolderName = "IrDecisionAccessorCases.CtorHolder";
     private const string CounterName = "IrDecisionAccessorCases.Counter";
 
     [Fact]
@@ -207,6 +208,29 @@ public class IrAccessorDecisionTests
         Assert.Equal(IrMemberForm.Other, member.Decided.Form);
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Decide_ReadonlyFieldOfThisInAConstructor_DoesNotCopy()
+    {
+        var member = ReadMember(CtorHolderName, ".ctor", 1);
+        Assert.Equal(IrMemberForm.Getter, member.Decided.Form);
+        Assert.Null(member.Decided.CopyType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Decide_ReadonlyFieldOfAnotherInstanceInAConstructor_Copies()
+    {
+        AssertCopiesCounter(ReadMember(CtorHolderName, ".ctor", 2));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Decide_ReadonlyFieldOfThisInAMethod_Copies()
+    {
+        AssertCopiesCounter(ReadMember(CtorHolderName, "ReadInMethod", 0));
+    }
+
     private static void AssertCopiesCounter(IrPropertyReference member)
     {
         var compilation = IrTestCases.Compile(TestCase);
@@ -215,9 +239,12 @@ public class IrAccessorDecisionTests
             SymbolEqualityComparer.Default);
     }
 
-    private static IrPropertyReference ReadMember(string name, int statementIndex)
+    private static IrPropertyReference ReadMember(string name, int statementIndex) =>
+        ReadMember(TypeName, name, statementIndex);
+
+    private static IrPropertyReference ReadMember(string type, string name, int statementIndex)
     {
-        var assignment = StatementAssignment(DecideMethod(name), statementIndex);
+        var assignment = StatementAssignment(DecideMethod(type, name), statementIndex);
         return Assert.IsType<IrPropertyReference>(assignment.Value);
     }
 
@@ -227,10 +254,12 @@ public class IrAccessorDecisionTests
         return Assert.IsType<IrAssignment>(statement.Expression);
     }
 
-    private static IrMethod DecideMethod(string name)
+    private static IrMethod DecideMethod(string name) => DecideMethod(TypeName, name);
+
+    private static IrMethod DecideMethod(string type, string name)
     {
         var compilation = IrTestCases.Compile(TestCase);
-        var built = IrTestCases.Build(TestCase, TypeName, name);
+        var built = IrTestCases.Build(TestCase, type, name);
         var context = IrDecisionTestContext.Create(compilation, built);
         var decided = IrDecisions.Decide(built, context);
         Assert.Empty(IrDecisionInvariants.Verify(decided.Body, context.TemporaryInitializers));

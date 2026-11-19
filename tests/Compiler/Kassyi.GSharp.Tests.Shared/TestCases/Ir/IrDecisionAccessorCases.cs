@@ -18,6 +18,20 @@ public struct Holder
     public Counter Loose;
 }
 
+public struct CtorHolder
+{
+    public readonly Counter Ro;
+
+    public CtorHolder(CtorHolder other, int[] r)
+    {
+        Ro = default;
+        r[0] = Ro.Bump;
+        r[1] = other.Ro.Bump;
+    }
+
+    public void ReadInMethod(int[] r) { r[0] = Ro.Bump; }
+}
+
 public static class Shared
 {
     private static Counter s_counter;

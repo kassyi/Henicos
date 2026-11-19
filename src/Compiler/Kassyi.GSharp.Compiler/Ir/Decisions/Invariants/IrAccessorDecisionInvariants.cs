@@ -27,7 +27,9 @@ internal static class IrAccessorDecisionInvariants
     {
         if (d.CopyType is not null &&
             !(node.Receiver is { } receiver &&
-              IrReadOnlyReceivers.IsCopiedBeforeTheCall(temporaries.Resolve(receiver), node.Property.GetMethod)))
+              // Without the enclosing method the check is a superset: a copy is never decided outside it
+              IrReadOnlyReceivers.IsCopiedBeforeTheCall(temporaries.Resolve(receiver), node.Property.GetMethod,
+                  enclosing: null)))
         {
             IrDecisionInvariants.AddI30(violations, node,
                 "CopyType requires a receiver that C# copies before the call");
