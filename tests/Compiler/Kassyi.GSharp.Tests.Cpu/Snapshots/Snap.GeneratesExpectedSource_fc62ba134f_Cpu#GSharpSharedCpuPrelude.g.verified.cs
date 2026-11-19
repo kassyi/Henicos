@@ -444,6 +444,8 @@ struct Kassyi_GSharp_Core_SharedMemory {
 T* data;
 inline T& operator[](int index) { return data[index]; }
 inline const T& operator[](int index) const { return data[index]; }
+// The frame of a state machine keeps a SharedMemory<T> local, which a device function result or a copy assigns
+inline Kassyi_GSharp_Core_SharedMemory<T>& operator=(T* pointer) { data = pointer; return *this; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };

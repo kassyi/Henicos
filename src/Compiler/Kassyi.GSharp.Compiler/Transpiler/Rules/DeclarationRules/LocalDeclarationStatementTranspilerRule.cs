@@ -45,90 +45,57 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
             var variable = node.Declaration.Variables[i];
-            if (!context.Emitter.Dialect.IsCuda)
+            if (DynamicSharedMemoryAnalysis.GetCreation(variable) is not { } creation)
             {
-                if (variable.Initializer?.Value is BaseObjectCreationExpressionSyntax creation)
+                // A copy of another local or the result of a call is a handle to memory that is already declared
+                if (variable.Initializer is { } initializer)
                 {
-                    WriteCpuSharedMemory(variable, creation, typeArg, node, i, ref context);
+                    WriteSharedMemoryHandle(variable, initializer, typeArg, node, ref context);
+                    AppendLineBetween(node, i, ref context);
                 }
 
                 continue;
             }
 
-            if (!DynamicSharedMemoryAnalysis.TryGetCount(variable, context.Query.SemanticModel, out var cudaCreation,
-                    out var count, out var constantCount))
+            var lengthBefore = context.Emitter.Writer.Length;
+            SharedMemoryDeclarationWriter.Write(SharedMemoryName.Of(variable), creation, typeArg,
+                GotoJumpAnalysis.MayBeJumpedOver(node), ref context);
+            if (context.Emitter.Writer.Length > lengthBefore)
             {
-                continue;
-            }
-
-            if (constantCount == null)
-            {
-                DynamicSharedMemoryEmitter.WritePlacement(variable, cudaCreation, count, typeArg, ref context);
-            }
-            else
-            {
-                WriteStaticSharedMemory(variable, count, constantCount.Value, typeArg, ref context);
-            }
-
-            if (i < node.Declaration.Variables.Count - 1)
-            {
-                context.Emitter.Writer.AppendLine();
+                AppendLineBetween(node, i, ref context);
             }
         }
     }
 
-    private static void WriteCpuSharedMemory(
-        VariableDeclaratorSyntax declarator,
-        BaseObjectCreationExpressionSyntax creation,
-        ITypeSymbol typeArg,
-        LocalDeclarationStatementSyntax node,
-        int index,
-        ref TranspileContext context)
+    private static void AppendLineBetween(LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
     {
-        context.Emitter.Dialect.AppendType(ref context, typeArg);
-        context.Emitter.Writer.Append("* ");
-        CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
-        if (GotoJumpAnalysis.MayBeJumpedOver(node))
-        {
-            // A goto may jump past the declaration, and C++ forbids that jump past an initialization:
-            // <T>* <name>;
-            // <name> = <allocation>;
-            context.Emitter.Writer.AppendLine(";");
-            CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
-        }
-
-        context.Emitter.Writer.Append(" = ");
-        SharedMemorySiteKey.AppendCpuAllocation(creation, typeArg, ref context);
-        context.Emitter.Writer.Append(';');
         if (index < node.Declaration.Variables.Count - 1)
         {
             context.Emitter.Writer.AppendLine();
         }
     }
 
-    // __shared__ <T> <name>[<n>];
-    // [WHY] C++ has no array of 0 elements, so an empty declaration (a count of 0, like new int[0]) is declared with
-    // one element, as the CPU paths allocate at least one byte. C# reaches no element of it either way: the count
-    // stays 0
-    private static void WriteStaticSharedMemory(VariableDeclaratorSyntax declarator, ExpressionSyntax count,
-        int constantCount, ITypeSymbol typeArg, ref TranspileContext context)
+    // <T>* <name> = <initializer>;
+    // A goto may jump past the declaration, and C++ forbids that jump past an initialization:
+    // <T>* <name>;
+    // <name> = <initializer>;
+    private static void WriteSharedMemoryHandle(VariableDeclaratorSyntax declarator,
+        EqualsValueClauseSyntax initializer, ITypeSymbol elementType, LocalDeclarationStatementSyntax node,
+        ref TranspileContext context)
     {
-        context.Emitter.Writer.Append("__shared__ ");
-        context.Emitter.Dialect.AppendType(ref context, typeArg);
-        context.Emitter.Writer.Append(' ');
+        // The memory of a creation inside the initializer ('c ? new ... : new ...', a call argument) is declared first
+        StatementPrelude.Emit(initializer, ref context);
+        context.Emitter.Dialect.AppendType(ref context, elementType);
+        context.Emitter.Writer.Append("* ");
         CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
-        using (context.Emitter.Writer.Brackets())
+        if (GotoJumpAnalysis.MayBeJumpedOver(node))
         {
-            if (constantCount == 0)
-            {
-                context.Emitter.Writer.Append('1');
-            }
-            else
-            {
-                context.Visitor.Visit(count);
-            }
+            context.Emitter.Writer.AppendLine(";");
+            CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
         }
 
-        context.Emitter.Writer.Append(";");
+        context.Emitter.Writer.Append(" = ");
+        context.Visitor.Visit(initializer.Value);
+        context.Emitter.Writer.Append(';');
     }
 }

@@ -541,6 +541,7 @@ public static class MethodTranspiler
     private static void WriteExpressionBody(in MethodEmissionPlan plan, ArrowExpressionClauseSyntax expressionBody,
         ref TranspileContext context)
     {
+        StatementPrelude.Emit(expressionBody.Expression, ref context);
         if (plan.Symbol is { ReturnsVoid: false })
         {
             context.Emitter.Writer.Append(plan.HasAutoResult

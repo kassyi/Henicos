@@ -119,7 +119,13 @@ public class SharedMemoryWithoutCountDiagnosticsTests
         AssertReportedAsync(dialect, GpuCodeConstraints.SharedMemoryGenericDefault, 121, 17, 121, 42);
 
     // AcceptedKernel (a count, the default of an int, a holder whose memory is assigned, by an object initializer or by
-    // a copy of another holder) adds nothing to the thirteen forms above
+    // a copy of another holder) adds nothing to the forms above. They give fourteen reports, not thirteen: the generic
+    // default (GenericDefaultKernel) is reported twice, for the default of a type parameter and for the call
+    // 'Make<SharedMemory<int>>()' itself. G# does not transpile a call of a generic device function yet (#1062
+    // (Generic device functions emit no C++ template and crash the CPU state machine when they reach a barrier)), so
+    // any such call reports unsupported syntax at its generic name, whatever its result type. The second report was
+    // missing only because the declaration of a SharedMemory<T> local initialized by a call was dropped (#1085), so the
+    // call was never written. The count returns to thirteen when generic device functions are transpiled.
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -128,7 +134,7 @@ public class SharedMemoryWithoutCountDiagnosticsTests
     {
         var diagnostics = await RunAsync(dialect);
 
-        Assert.Equal(13, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
+        Assert.Equal(14, diagnostics.Count(static d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 
     // new SharedMemory<int>() and the target-typed new() bind to the parameterless constructor, which is obsolete as an

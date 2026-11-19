@@ -41,9 +41,19 @@ internal static class DynamicSharedMemoryAnalysis
     {
         constantCount = null;
         count = null;
-        creation = declarator.Initializer?.Value as BaseObjectCreationExpressionSyntax;
+        creation = GetCreation(declarator);
         return creation != null && TryGetCount(creation, semanticModel, out count, out constantCount);
     }
+
+    /// <summary>
+    /// The creation that initializes a <c>SharedMemory&lt;T&gt;</c> local declarator, also when it is written in
+    /// parentheses; <see langword="null"/> for any other initializer (a copy of another local, the result of a call)
+    /// and for no initializer.
+    /// </summary>
+    public static BaseObjectCreationExpressionSyntax? GetCreation(VariableDeclaratorSyntax declarator) =>
+        declarator.Initializer is { } initializer
+            ? IteratorTypeResolver.UnwrapParentheses(initializer.Value) as BaseObjectCreationExpressionSyntax
+            : null;
 
     /// <summary>
     /// Reads the count of a <c>SharedMemory&lt;T&gt;</c> creation (also one in a lowered tree, such as the assignment
@@ -115,12 +125,8 @@ internal static class DynamicSharedMemoryAnalysis
         var semanticModel = compilation.GetSemanticModel(declaration.SyntaxTree);
         declaration.DescendantNodes()
             .AsStackEnumerable()
-            .OfType<LocalDeclarationStatementSyntax>()
-            .Where(semanticModel, static (local, model) => IsSharedMemoryDeclaration(local, model))
-            .SelectMany(static local => local.Declaration.Variables
-                .AsStackEnumerable()
-            ).Select(semanticModel, static (declarator, model) => GetDynamicCreation(declarator, model))
             .OfType<BaseObjectCreationExpressionSyntax>()
+            .Where(semanticModel, static (creation, model) => IsDynamicCreation(creation, model))
             .Select(semanticModel, static (creation, model) => SharedMemorySiteKey.Compute(model, creation))
             .AddTo(sites);
 
@@ -170,12 +176,8 @@ internal static class DynamicSharedMemoryAnalysis
         var semanticModel = compilation.GetSemanticModel(declaration.SyntaxTree);
         var declaresDynamic = declaration.DescendantNodes()
             .AsStackEnumerable()
-            .OfType<LocalDeclarationStatementSyntax>()
-            .Where(semanticModel, static (local, model) => IsSharedMemoryDeclaration(local, model))
-            .Any(semanticModel, static (local, model) => local.Declaration.Variables
-                .AsStackEnumerable()
-                .Any(model, static (declarator, m) => GetDynamicCreation(declarator, m) != null)
-            );
+            .OfType<BaseObjectCreationExpressionSyntax>()
+            .Any(semanticModel, static (creation, model) => IsDynamicCreation(creation, model));
         if (declaresDynamic)
         {
             return true;
@@ -192,14 +194,9 @@ internal static class DynamicSharedMemoryAnalysis
         return false;
     }
 
-    // The local declarations that LocalDeclarationStatementTranspilerRule emits as shared memory
-    private static bool IsSharedMemoryDeclaration(LocalDeclarationStatementSyntax local, SemanticModel semanticModel) =>
-        semanticModel.GetTypeSymbol(local.Declaration.Type).IsSharedMemoryType();
-
-    // The creation of a dynamic declarator, which CUDA places in the dynamic buffer; null for a fixed-size one
-    private static BaseObjectCreationExpressionSyntax? GetDynamicCreation(VariableDeclaratorSyntax declarator,
-        SemanticModel semanticModel) =>
-        TryGetCount(declarator, semanticModel, out var creation, out _, out var constantCount) && constantCount == null
-            ? creation
-            : null;
+    // A SharedMemory<T> creation with a count that is not a constant, which CUDA places in the dynamic buffer wherever
+    // it is written (a declaration, a return, an argument)
+    private static bool IsDynamicCreation(BaseObjectCreationExpressionSyntax creation, SemanticModel semanticModel) =>
+        semanticModel.GetTypeSymbol(creation).IsSharedMemoryType() &&
+        TryGetCount(creation, semanticModel, out _, out var constantCount) && constantCount == null;
 }
