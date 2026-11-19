@@ -482,6 +482,33 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 static trivia => trivia.IsKind(SyntaxKind.ErrorDirectiveTrivia)));
     }
 
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SuspendingCallContext_LambdaAndLocalFunction_ReportsGSH0062OnlyThere(string dialect)
+    {
+        const string testCase = "Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs";
+        var actual = await RunAsync(testCase, dialect);
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 23, 26, 23, 33),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 31, 21, 31, 28)
+            ],
+            actual);
+
+        var messages = (await GeneratorTestRunner
+                .TestAnalyzer(testCase, s_analyzer)
+                .WithDialect(dialect)
+                .GetDiagnosticsAsync())
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .Select(static d => d.GetMessage(CultureInfo.InvariantCulture))
+            .ToArray();
+        Assert.Contains("in a lambda or anonymous method", messages[0], StringComparison.Ordinal);
+        Assert.Contains("in a local function", messages[1], StringComparison.Ordinal);
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath, string dialect = "Cuda")
     {

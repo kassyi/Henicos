@@ -155,6 +155,7 @@ internal static class IdentifierNameTranspiler
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
             NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
+            SuspendingCallReference.FailIfReferencedWithoutCall(node, method, ref context);
         }
     }
 

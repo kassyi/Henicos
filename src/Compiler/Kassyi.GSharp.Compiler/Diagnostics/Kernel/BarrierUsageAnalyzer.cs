@@ -131,8 +131,10 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
-        var unsupportedContext = FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: false);
-        var shuffleContext = FindUnsupportedContext(invocation, context.SemanticModel, isWarpShuffle: true);
+        var unsupportedContext = SplitPointPlacement.FindUnsupportedContext(
+            invocation, context.SemanticModel, isWarpShuffle: false);
+        var shuffleContext = SplitPointPlacement.FindUnsupportedContext(
+            invocation, context.SemanticModel, isWarpShuffle: true);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
         if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
         {
@@ -175,7 +177,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         if (unsupportedContext != null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext, invocation.GetLocation(),
-                callee.Name, unsupportedContext, SuspendingDeviceFunctionCallee);
+                callee.Name, unsupportedContext, SplitPointPlacement.SuspendingDeviceFunctionCallee);
         }
 
         if (byReferenceArgument != null)
@@ -184,7 +186,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                 byReferenceArgument.GetLocation(),
                 callee.Name, "with a by-reference argument that a call, a property or a ref conditional selects",
-                SuspendingDeviceFunctionCallee);
+                SplitPointPlacement.SuspendingDeviceFunctionCallee);
         }
     }
 
@@ -193,9 +195,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         !TranspilerDialects.IsCuda(TranspilerDialects.GetName(options.AnalyzerConfigOptionsProvider.GlobalOptions));
 
     // The callee kinds of GSH0062, the third argument of its message
-    private const string SuspendingDeviceFunctionCallee =
-        "is a device function that reaches Gpu.SyncThreads() or a warp shuffle";
-
     private const string WarpShuffleCallee = "is a warp shuffle";
 
     private const string WarpVoteCallee = "is a warp vote or reduction";
@@ -217,57 +216,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         kind is WarpShuffleKind.Ballot or WarpShuffleKind.All or WarpShuffleKind.Any or WarpShuffleKind.ReduceAdd
             or WarpShuffleKind.ReduceMin or WarpShuffleKind.ReduceMax or WarpShuffleKind.ReduceAnd
             or WarpShuffleKind.ReduceOr or WarpShuffleKind.ReduceXor;
-
-    // isWarpShuffle: a Gpu.GridStrideLoop body is allowed for a warp shuffle, which the CPU lowering turns into a loop
-    // (#1091). A using or fixed statement and the scope of a using declaration are reported for a warp shuffle only:
-    // the CPU lowering does not flatten them, so the shuffle would not split there (#1172); a call that suspends there
-    // is GSH0003 / GSH0043 (BarrierDivergenceChecks).
-    private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation, SemanticModel semanticModel,
-        bool isWarpShuffle)
-    {
-        SyntaxNode child = invocation;
-        for (var ancestor = invocation.Parent;
-             ancestor is not (null or MemberDeclarationSyntax);
-             child = ancestor, ancestor = ancestor.Parent)
-        {
-            switch (ancestor)
-            {
-                // The transpiler inlines the body (CUDA), and the lowering inlines a SyncGrid body and turns ForUnroll, and a
-                // GridStrideLoop whose body holds a warp shuffle, into a loop (CPU dialects, managed)
-                case AnonymousFunctionExpressionSyntax when IsInlinedMacroBody(ancestor, semanticModel):
-                    break;
-                case AnonymousFunctionExpressionSyntax when isWarpShuffle &&
-                    GpuMacroClassifier.ClassifyBody(ancestor, semanticModel).Kind == GpuMacroKind.GridStrideLoop:
-                    break;
-                case AnonymousFunctionExpressionSyntax:
-                    return "in a lambda or anonymous method";
-                case LocalFunctionStatementSyntax:
-                    return "in a local function";
-                case SwitchExpressionArmSyntax:
-                    return "in a switch expression arm";
-                case WhenClauseSyntax:
-                    return "in a 'when' clause";
-                case ConditionalAccessExpressionSyntax access when child == access.WhenNotNull:
-                    return "after '?.'";
-                case BinaryExpressionSyntax binary
-                    when child == binary.Right && binary.IsKind(SyntaxKind.CoalesceExpression):
-                    return "as the right operand of '??'";
-                case UsingStatementSyntax usingStatement when isWarpShuffle && child == usingStatement.Statement:
-                    return "in a using statement";
-                case FixedStatementSyntax fixedStatement when isWarpShuffle && child == fixedStatement.Statement:
-                    return "in a fixed statement";
-                case BlockSyntax block when isWarpShuffle &&
-                                            BarrierDivergenceChecks.IsInUsingDeclarationScope(block, invocation):
-                    return "in the scope of a using declaration";
-            }
-        }
-
-        return null;
-    }
-
-    // The body lambda of a Gpu.ForUnroll or Gpu.SyncGrid(body), however the call is spelled (#503)
-    internal static bool IsInlinedMacroBody(SyntaxNode lambda, SemanticModel semanticModel) =>
-        GpuMacroClassifier.ClassifyBody(lambda, semanticModel).Kind is GpuMacroKind.ForUnroll or GpuMacroKind.SyncGrid;
 
     // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the
     // location it names, evaluating only its array or pointer and its indices once. A reference that a call, a property
