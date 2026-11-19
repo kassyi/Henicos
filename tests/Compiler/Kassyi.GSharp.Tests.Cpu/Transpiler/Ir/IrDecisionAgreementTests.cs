@@ -52,8 +52,7 @@ public class IrDecisionAgreementTests(ITestOutputHelper output)
                 var root = tree.GetRoot();
                 var where = $"{Path.GetFileName(tree.FilePath)} {symbol.ContainingType?.Name}.{symbol.Name}";
 
-                var decided = IrDecisions.Decide(built,
-                    new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
+                var decided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
 
                 foreach (var violation in IrDecisionInvariants.Verify(decided.Body))
                 {
@@ -121,10 +120,9 @@ public class IrDecisionAgreementTests(ITestOutputHelper output)
                 var machine = IrStateMachineBuilder.Build(linear, isDevice, built.Body.Source, compilation);
                 var where = IrCoverageInputs.Where(syntaxRef.SyntaxTree, symbol);
 
-                var preDecided = IrDecisions.Decide(built,
-                    new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
-                var postDecided = IrDecisions.Decide(machine,
-                    new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine)));
+                var preDecided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
+                var postContext = IrDecisionTestContext.Create(compilation, machine, built);
+                var postDecided = IrDecisions.Decide(machine, postContext);
 
                 foreach (var violation in IrDecisionInvariants.Verify(postDecided))
                 {

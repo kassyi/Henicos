@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions.Invariants;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 
 namespace Kassyi.GSharp.Compiler.Ir.Decisions;
@@ -69,6 +70,24 @@ internal static class IrDecisionInvariants
                 break;
             case (IrConditional conditional, IrConditionalDecision conditionalDecision):
                 CheckConditional(conditional, conditionalDecision, violations);
+                break;
+            case (IrElementReference element, IrElementDecision elementDecision):
+                IrNullDecisionInvariants.CheckElement(element, elementDecision, violations);
+                break;
+            case (IrAssignment assignment, IrAssignmentDecision assignmentDecision):
+                IrNullDecisionInvariants.CheckAssignment(assignment, assignmentDecision, violations);
+                break;
+            case (IrNullTest nullTest, IrNullTestDecision nullTestDecision):
+                IrNullDecisionInvariants.CheckNullTest(nullTest, nullTestDecision, violations);
+                break;
+            case (IrCoalesce coalesce, IrCoalesceDecision coalesceDecision):
+                IrNullDecisionInvariants.CheckCoalesce(coalesce, coalesceDecision, violations);
+                break;
+            case (IrPropertyReference member, IrMemberDecision memberDecision):
+                IrNullDecisionInvariants.CheckMember(member, memberDecision, violations);
+                break;
+            case (IrCall call, IrCallDecision callDecision):
+                IrCallDecisionInvariants.CheckCall(call, callDecision, violations);
                 break;
         }
     }
@@ -184,7 +203,7 @@ internal static class IrDecisionInvariants
         }
     }
 
-    private static void AddI30(ImmutableArray<string>.Builder violations, IrExpression node, string rule) =>
+    internal static void AddI30(ImmutableArray<string>.Builder violations, IrExpression node, string rule) =>
         Add(violations, "I30", node.Source, $"{node.GetType().Name}: {rule}");
 
     private static void Add(ImmutableArray<string>.Builder violations, string code, IrSource source, string text) =>

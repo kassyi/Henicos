@@ -15,10 +15,13 @@ internal sealed class IrDecider(IrDecisionContext context) : IrRewriter
         Decide(expression, above: null, isTarget: false);
 
     /// <inheritdoc />
-    public override IrAssignment VisitAssignment(IrAssignment assignment) =>
-        assignment.Update(
+    public override IrAssignment VisitAssignment(IrAssignment assignment)
+    {
+        var updated = assignment.Update(
             Decide(assignment.Target, above: null, isTarget: true),
             Decide(assignment.Value, above: null, isTarget: false));
+        return updated.WithDecision(IrNullDecider.DecideAssignment(updated, _context));
+    }
 
     private IrExpression Decide(IrExpression expression, IrConversionAbove? above, bool isTarget)
     {
@@ -69,6 +72,40 @@ internal sealed class IrDecider(IrDecisionContext context) : IrRewriter
             case IrConstant constant:
                 return constant.WithDecision(IrNumericDecider.DecideConstant(
                     constant, above?.Target, above?.IsNumericOrConstant ?? false));
+            default:
+                return DecideNullOrCall(expression);
+        }
+    }
+
+    private IrExpression DecideNullOrCall(IrExpression expression)
+    {
+        switch (expression)
+        {
+            case IrElementReference element:
+            {
+                var updated = (IrElementReference)base.VisitExpression(element);
+                return updated.WithDecision(IrNullDecider.DecideElement(updated, _context));
+            }
+            case IrNullTest nullTest:
+            {
+                var updated = (IrNullTest)base.VisitExpression(nullTest);
+                return updated.WithDecision(IrNullDecider.DecideNullTest(updated, _context));
+            }
+            case IrCoalesce coalesce:
+            {
+                var updated = (IrCoalesce)base.VisitExpression(coalesce);
+                return updated.WithDecision(IrNullDecider.DecideCoalesce(updated, _context));
+            }
+            case IrPropertyReference property:
+            {
+                var updated = (IrPropertyReference)base.VisitExpression(property);
+                return updated.WithDecision(IrNullDecider.DecideMember(updated, _context));
+            }
+            case IrCall call:
+            {
+                var updated = (IrCall)base.VisitExpression(call);
+                return updated.WithDecision(IrCallDecider.DecideCall(updated, _context));
+            }
             default:
                 if (IrDecisionKinds.Of(expression) is { } expectedKind)
                 {

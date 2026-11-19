@@ -22,8 +22,7 @@ public class IrDecisionCarryTests
     {
         var compilation = IrTestCases.Compile(TestCase);
         var built = IrTestCases.Build(TestCase, TypeName, "MixedUnsigned");
-        var decided = IrDecisions.Decide(built,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
+        var decided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
 
         var assignment = (IrAssignment)((IrExpressionStatement)IrTestCases.Statement(decided, 0)).Expression;
         var binary = (IrBinary)IrExpression.WithParentheses(assignment.Value, 2);
@@ -62,7 +61,7 @@ public class IrDecisionCarryTests
     {
         var compilation = IrTestCases.Compile(TestCase);
         var built = IrTestCases.Build(TestCase, TypeName, "MixedUnsigned");
-        var context = new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body));
+        var context = IrDecisionTestContext.Create(compilation, built);
 
         var first = IrDecisions.Decide(built, context);
         var second = IrDecisions.Decide(first, context);
@@ -87,8 +86,7 @@ public class IrDecisionCarryTests
 
         foreach (var built in IrTestCases.BuildAll(TestCase, TypeName))
         {
-            var decided = IrDecisions.Decide(built,
-                new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
+            var decided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
             var rebuilt = rewriter.RewriteMethod(decided);
 
             Assert.Empty(IrDecisionInvariants.Verify(rebuilt.Body));
