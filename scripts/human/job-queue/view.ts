@@ -552,6 +552,7 @@ function jobLine(
   if (job.state === "waiting" && from >= 0 && cells.slice(from, nowAt).every((cell) => cell.char === " ")) {
     reason.forEach((char, i) => (cells[from + i] = { char, style: "warn" }));
   }
+  line.timelineStart = line.width;
   for (const cell of cells) {
     line.add(cell.char, cell.style);
   }

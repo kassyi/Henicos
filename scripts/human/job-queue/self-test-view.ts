@@ -613,6 +613,35 @@ function checkTerminalLook(): void {
   assert.ok(line.includes(`${esc}[48;5;237;32m█${esc}[0m`), "the bar keeps its green on the highlight");
   assert.ok(!line.includes(`${esc}[7;32m█`), "the bar is not reversed");
   assert.ok(line.endsWith(`${esc}[48;5;237m ${esc}[0m`), "the rest of the line is the dim highlight");
+  // A selected job that waits: the dim cells of its timeline (⋯ and the now column) stay on the highlight, and the
+  // last reversed part is the command, so that nothing of the timeline is reversed
+  for (const id of [820, 822]) {
+    const waiting = renderScreen(
+      sampleReply(),
+      { ...initialViewState(), selectedId: id },
+      { columns: 120, rows: 17, now: Now },
+      true,
+    ).find((l) => l.includes(`${esc}[7m${id}`)) as string;
+    const reversed = [...waiting.matchAll(/\[7(?:;[\d;]*)?m([^]*)\[0m/g)].map((m) => m[1] ?? "");
+    assert.ok(
+      reversed.length > 0 && !reversed.slice(-1)[0]?.includes("│"),
+      `#${id}: the last reversed part is a column`,
+    );
+    assert.ok(
+      reversed.every((text) => text.trim() !== "" && !/[│⋯█▒▓┃]/.test(text)),
+      `#${id}: no timeline cell reversed`,
+    );
+    assert.ok(waiting.includes(`${esc}[48;5;237;2m`), `#${id}: dim timeline cells on the highlight`);
+  }
+  // Without a timeline (a narrow screen) the progress text of a late job is reversed like the other columns
+  const narrowSelected = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 40, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(!narrowSelected.includes(`${esc}[48;5;237;31m`), "no highlight on the progress text of a narrow line");
+  assert.ok(narrowSelected.includes(`${esc}[7;31m`), "the late progress text is reversed");
   const selected = terminalSvg([line], 70);
   assert.ok(selected.includes('fill="#13a10e"') && selected.includes('fill="#3a3a3a"'), "green bar, grey highlight");
 }
