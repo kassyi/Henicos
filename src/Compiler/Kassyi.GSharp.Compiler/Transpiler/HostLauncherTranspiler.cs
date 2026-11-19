@@ -52,16 +52,36 @@ internal static class HostLauncherTranspiler
         // The user structs that the launcher takes by pointer and copies into locals of the kernel's parameter names (#511)
         var structArguments = GetStructArguments(methodSymbol);
         WriteLauncherSignature(in plan, methodSymbol, structArguments, ref context);
-        var step = new KernelStep(
-            method,
-            GlobalCppNames.GetKernelName(methodSymbol),
-            effectiveHasContext,
-            plan.HasAutoResult,
-            !usesStack && effectiveHasContext && methodSymbol.IsCooperativeKernel(),
-            !usesStack && effectiveHasContext && SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation),
-            KernelHostNames.GetMessageName(methodSymbol),
-            usesStack
-        );
+        var traits = KernelStepTraits.None;
+        if (effectiveHasContext)
+        {
+            traits |= KernelStepTraits.HasContext;
+        }
+
+        if (plan.HasAutoResult)
+        {
+            traits |= KernelStepTraits.HasAutoResult;
+        }
+
+        if (usesStack)
+        {
+            traits |= KernelStepTraits.UsesStack;
+        }
+        else if (effectiveHasContext)
+        {
+            if (methodSymbol.IsCooperativeKernel())
+            {
+                traits |= KernelStepTraits.Cooperative;
+            }
+
+            if (SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation))
+            {
+                traits |= KernelStepTraits.ReachesWarpShuffle;
+            }
+        }
+
+        var step = new KernelStep(method, GlobalCppNames.GetKernelName(methodSymbol),
+            KernelHostNames.GetMessageName(methodSymbol), traits);
         WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, structArguments,
             ref context);
     }
@@ -129,7 +149,7 @@ internal static class HostLauncherTranspiler
     {
         if (step.UsesStack)
         {
-            WriteStackIndependentBlocks(step, ref context);
+            StackLauncherTranspiler.WriteIndependentBlocks(step, ref context);
             return;
         }
 
@@ -171,52 +191,6 @@ internal static class HostLauncherTranspiler
             }
 
             WriteStepAbortCatches(ref context);
-        }
-    }
-
-    // Runs each block's GPU threads on their own native stacks while keeping the OpenMP thread's stack pool for the launch
-    private static void WriteStackIndependentBlocks(in KernelStep step, ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append($"auto {Body} = [&]() ");
-        using (context.Emitter.Writer.Braces())
-        {
-            WriteDirectKernelCall(step, includeContext: false, ref context);
-            context.Emitter.Writer.Append(';');
-        }
-        context.Emitter.Writer.AppendLine(";");
-
-        context.Emitter.Writer.AppendLine($"const auto {Fp} = {CaptureFp}();");
-        context.Emitter.Writer.AppendLine(
-            $"#pragma omp parallel num_threads({ThreadLimit}((uint64_t){BlockDimX} * {BlockDimY} * {BlockDimZ}, {TotalBlocks}))");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine($"{PoolType} {Stacks}({Fp});");
-            context.Emitter.Writer.AppendLine("#pragma omp for schedule(dynamic)");
-            context.Emitter.Writer.AppendLine(
-                $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.AppendLine("try");
-                using (context.Emitter.Writer.Scope())
-                {
-                    WriteBlockCoordinates(ref context);
-                    context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
-                    context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
-                    context.Emitter.Writer.AppendLine(
-                        $"{BlockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body});");
-                    context.Emitter.Writer.AppendLine(
-                        $"{ThreadType}* {Contexts} = {Block}.threads.data();");
-                    context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
-                    context.Emitter.Writer.AppendLine($"while ({AnyActive})");
-                    using (context.Emitter.Writer.Scope())
-                    {
-                        context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
-                        WriteBlockLoop(step, declaresThreadsPerBlock: true, ref context);
-                    }
-                }
-
-                WriteStepAbortCatches(ref context);
-            }
         }
     }
 
@@ -493,7 +467,7 @@ internal static class HostLauncherTranspiler
     }
 
     // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result])
-    private static void WriteDirectKernelCall(in KernelStep step, bool includeContext, ref TranspileContext context)
+    internal static void WriteDirectKernelCall(in KernelStep step, bool includeContext, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(step.MethodName);
         using (context.Emitter.Writer.Parentheses())
@@ -577,28 +551,24 @@ internal static class HostLauncherTranspiler
     internal readonly struct KernelStep(
         MethodDeclarationSyntax method,
         string methodName,
-        bool hasContext,
-        bool hasAutoResult,
-        bool isCooperative,
-        bool reachesWarpShuffle,
         string messageName,
-        bool usesStack = false)
+        KernelStepTraits traits)
     {
         public MethodDeclarationSyntax Method { get; } = method;
 
         public string MethodName { get; } = methodName;
 
-        public bool HasContext { get; } = hasContext;
-
-        public bool HasAutoResult { get; } = hasAutoResult;
-
-        // A cooperative kernel with a state machine: it runs in grid phases
-        public bool IsCooperative { get; } = isCooperative;
-
-        public bool ReachesWarpShuffle { get; } = reachesWarpShuffle;
-
         public string MessageName { get; } = messageName;
 
-        public bool UsesStack { get; } = usesStack;
+        public bool HasContext => (traits & KernelStepTraits.HasContext) != 0;
+
+        public bool HasAutoResult => (traits & KernelStepTraits.HasAutoResult) != 0;
+
+        // A cooperative kernel with a state machine: it runs in grid phases
+        public bool IsCooperative => (traits & KernelStepTraits.Cooperative) != 0;
+
+        public bool ReachesWarpShuffle => (traits & KernelStepTraits.ReachesWarpShuffle) != 0;
+
+        public bool UsesStack => (traits & KernelStepTraits.UsesStack) != 0;
     }
 }

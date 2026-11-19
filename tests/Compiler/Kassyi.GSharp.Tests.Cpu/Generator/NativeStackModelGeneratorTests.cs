@@ -106,7 +106,7 @@ public class NativeStackModelGeneratorTests
         var result = driver.RunGenerators(s_kernelCompilation.Value).GetRunResult().Results.Single();
 
         Assert.Null(result.Exception);
-        var output = Assert.Single(result.TrackedSteps[GpuKernelGenerator.NativeStackSwitchTrackingName]
+        var output = Assert.Single(result.TrackedSteps[NativeStackPipeline.SwitchTrackingName]
             .SelectMany(static run => run.Outputs));
         Assert.Equal(expected, Assert.IsType<bool>(output.Value));
     }

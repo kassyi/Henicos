@@ -25,7 +25,8 @@ public static class PreludeGenerator
 
         var cudaPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cu", isCuda: true);
         var cppPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cpp", isCuda: false);
-        var cppStackThreads = LoadAndResolvePrelude(resourcesDir, Path.Combine("Prelude", "StackThreads.hpp"), isCuda: false);
+        var cppStackThreads = LoadAndResolvePrelude(resourcesDir, Path.Combine("Prelude", "StackThreads.hpp"),
+            isCuda: false);
 
         var internalNames = File.ReadAllText(Path.Combine(resourcesDir, "InternalNames.yml"), Encoding.UTF8);
         var source = GenerateSource(cudaPrelude, cppPrelude, cppStackThreads, internalNames);
@@ -240,8 +241,8 @@ public static class PreludeGenerator
             writer.Line();
             writer.Line("/// <summary>");
             writer.Line(
-                "/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/>, <see cref=\"CppStackThreads\"/> and " +
-                "<c>InternalNames.yml</c> (the spelling of the");
+                "/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/>, " +
+                "<see cref=\"CppStackThreads\"/> and <c>InternalNames.yml</c> (the spelling of the");
             writer.Line("/// generated names), without carriage returns.");
             writer.Line("/// </summary>");
             var hash = ComputeHash(cudaPrelude, cppPrelude, cppStackThreads, internalNames);

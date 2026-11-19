@@ -64,48 +64,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// </summary>
     public const string DeviceImportTableTrackingName = "GpuDeviceImports";
 
-    /// <summary>
-    /// The tracking name of the step that decides whether the kernels and device functions are also translated into
-    /// their native stack form (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
-    /// </summary>
-    public const string NativeStackSwitchTrackingName = "GpuNativeStackSwitch";
-
-    // The attribute's context on its way to the translation step, which also takes the configuration. A class compares by
-    // reference: the context holds the semantic model of one compilation, and the translation reruns on each one anyway
-    private sealed class AttributeTarget(GeneratorAttributeSyntaxContext context)
-    {
-        public GeneratorAttributeSyntaxContext Context { get; } = context;
-    }
-
-    /// <summary>
-    /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
-    /// states the reasons in place of that dialect's output.
-    /// </summary>
-    private sealed class FailureCollector
-    {
-        private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
-
-        // The text is what the generated source states, so a failure found by both the signature and the body is one
-        public void Fail(TranspileFailure failure)
-        {
-            var reason = failure.Format();
-            if (!_failures.Contains(reason))
-            {
-                _failures.Add(reason);
-            }
-        }
-
-        /// <summary>
-        /// <paramref name="source"/> when nothing failed; otherwise one <c>#error</c> per reason, so that a failure the
-        /// analyzer misses still stops the native build. The analyzer reports the same failures as diagnostics.
-        /// </summary>
-        public string Apply(string source) =>
-            _failures.Count == 0 ? source : NativeModuleAssembler.FormatTranspileFailures(_failures);
-
-        /// <summary>Whether anything failed.</summary>
-        public bool HasFailures => _failures.Count > 0;
-    }
-
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
     {
         var root = methodDeclaration.SyntaxTree.GetRoot();
@@ -178,10 +136,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 var targetLimits = GpuArchitectureLimits.Resolve(architectures);
 
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
-                    targetLimits)
-                {
-                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions)
-                };
+                    targetLimits) { NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions) };
             });
 
         // The wrappers take only the module name from the compilation, so this value compares equal across edits and
@@ -207,35 +162,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .Select(static (input, _) => DeviceImportAssembler.Collect(input.Left, input.Right))
             .WithTrackingName(DeviceImportTableTrackingName);
 
-        // [WHY] The stack form is translated only when the build asks for it (GSharpNativeBarrierModel=Stack on a C++
-        // dialect), so the translation takes the switch: the attribute's context passes through to a step that sees the
-        // configuration. The transform reruns on every compilation anyway, so this loses no caching; the tracked steps
-        // are the translations, whose results compare by value as before
-        var runsOnNativeStacks = configProvider
-            .Select(static (config, _) => config.RunsOnNativeStacks)
-            .WithTrackingName(NativeStackSwitchTrackingName);
+        var runsOnNativeStacks = NativeStackPipeline.Switch(configProvider);
 
         // ForAttributeWithMetadataName resolves the attribute through the symbol, so an alias of it is found as well; the
         // predicate only checks the node kind
-        var kernelMethods = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                KnownAttributes.GpuKernelMetadataName,
-                predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, _) => new AttributeTarget(ctx))
-            .Combine(runsOnNativeStacks)
-            .Select(static (input, cancellationToken) =>
-                TranspileKernel(input.Left.Context, input.Right, cancellationToken))
+        var kernelMethods = NativeStackPipeline.Translate(
+                context.SyntaxProvider.ForAttributeWithMetadataName(
+                    KnownAttributes.GpuKernelMetadataName,
+                    predicate: static (node, _) => node is MethodDeclarationSyntax,
+                    transform: NativeStackPipeline.Capture),
+                runsOnNativeStacks,
+                TranspileKernel)
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
-        var deviceMethods = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                KnownAttributes.GpuDeviceFunctionMetadataName,
-                predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, _) => new AttributeTarget(ctx))
-            .Combine(runsOnNativeStacks)
-            .Select(static (input, _) => TranspileDeviceMethod(input.Left.Context, input.Right))
+        var deviceMethods = NativeStackPipeline.Translate(
+                context.SyntaxProvider.ForAttributeWithMetadataName(
+                    KnownAttributes.GpuDeviceFunctionMetadataName,
+                    predicate: static (node, _) => node is MethodDeclarationSyntax,
+                    transform: NativeStackPipeline.Capture),
+                runsOnNativeStacks,
+                static (ctx, _) => TranspileDeviceMethod(ctx))
             .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
@@ -384,9 +332,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    // runsOnNativeStacks: whether the C++ text of an eligible kernel is its native stack form (GeneratorConfig.RunsOnNativeStacks)
-    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,
-        bool runsOnNativeStacks, CancellationToken cancellationToken)
+    private static TranspiledKernelResult? TranspileKernel(NativeStackContext context,
+        CancellationToken cancellationToken)
     {
         // A kernel that KernelDeclarationAnalyzer rejects (GSH0111, GSH0112) or whose return type cannot be the element
         // of the result array (GSH0004) gets nothing: a launcher in a struct, an interface or a generic method would be
@@ -431,34 +378,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 : string.Empty;
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
-            var kernelErrorSites = errorSites.Entries.AsEquatableArray();
             var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
-            var cppIncludes = ToIncludes(requiredIncludesCpp);
-            // A kernel that can run on native stacks replaces its C++ state machine with the stack form
-            if (runsOnNativeStacks &&
-                NativeStackEligibility.Classify(methodSymbol, bodyDeclaration, bodyModel) == NativeStackObstacle.None)
-            {
-                try
-                {
-                    var stackFailures = new FailureCollector();
-                    var stackErrorSites = new ErrorSiteTable();
-                    var stackSource = stackFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan,
-                        stackFailures.Fail, new StackCppDialect(), out var requiredIncludesStack,
-                        new StructSourceCollector(), stackErrorSites));
-                    if (stackSource.Length > 0)
-                    {
-                        cppSource = stackSource;
-                        cppIncludes = ToIncludes(requiredIncludesStack);
-                        kernelErrorSites = ErrorSiteTable.MergeSites(kernelErrorSites,
-                            stackErrorSites.Entries.AsEquatableArray());
-                    }
-                }
-                catch (Exception ex)
-                {
-                    cppSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
-                    cppIncludes = default;
-                }
-            }
+            var cppText = NativeStackTranslator.ForKernel(context, in plan, cppSource, requiredIncludesCpp, errorSites);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -466,19 +387,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     header,
                     host,
                     cudaSource,
-                    cppSource,
+                    cppText.Source,
                     managedCSharpSource,
                     ToIncludes(requiredIncludesCuda),
-                    cppIncludes,
+                    cppText.Includes,
                     "",
                     structExports,
-                    kernelErrorSites,
+                    cppText.ErrorSites,
                     heldRefLocalSites
                 );
             }
 
             cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
+            cppSource = "// gsharp:suppress GS0001\n" + cppText.Source;
 
             return new TranspiledKernelResult(
                 header,
@@ -487,10 +408,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSource,
                 managedCSharpSource,
                 ToIncludes(requiredIncludesCuda),
-                cppIncludes,
+                cppText.Includes,
                 "",
                 structExports,
-                kernelErrorSites,
+                cppText.ErrorSites,
                 heldRefLocalSites
             );
         }
@@ -519,10 +440,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return (declaration, model);
     }
 
-    // runsOnNativeStacks: whether an eligible suspending function also gets its native stack form
-    // (GeneratorConfig.RunsOnNativeStacks)
-    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context,
-        bool runsOnNativeStacks)
+    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(NativeStackContext context)
     {
         // A partial method without an implementing declaration has no body, and C# removes its calls
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
@@ -558,41 +476,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
                 out var requiredIncludesCpp, cppStructs, throwSites: throwSites);
             var functionSites = throwSites.Entries.AsEquatableArray();
-            var cudaBody = cudaFailures.Apply(cudaSource);
-            var cppBody = cppFailures.Apply(cppSource);
-
-            // A suspending function that can run on native stacks places its stack form next to its C++ state machine
-            var cppStackSignature = "";
-            var cppStackBody = "";
-            HashSet<string>? cppStackIncludes = null;
-            EquatableArray<ErrorSiteEntry> cppStackErrorSites = default;
-            if (runsOnNativeStacks &&
-                plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
-                NativeStackEligibility.CanRunOnStack(bodyDeclaration, bodyModel))
-            {
-                try
-                {
-                    var stackFailures = new FailureCollector();
-                    var stackDialect = new StackCppDialect();
-                    var stackThrowSites = new ErrorSiteTable();
-                    cppStackSignature = MethodTranspiler.GenerateCudaSignature(in plan, stackFailures.Fail, stackDialect);
-                    var stackSource = MethodTranspiler.GenerateCudaSource(in plan, stackFailures.Fail, stackDialect,
-                        out var requiredIncludesStack, new StructSourceCollector(), throwSites: stackThrowSites);
-                    cppStackBody = stackFailures.Apply(stackSource);
-                    cppStackIncludes = requiredIncludesStack;
-                    cppStackErrorSites = stackThrowSites.Entries.AsEquatableArray();
-                }
-                catch (InsufficientExecutionStackException)
-                {
-                    var location = methodDeclaration.Identifier.GetLocation();
-                    var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
-                    cppStackBody = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
-                }
-                catch (Exception ex)
-                {
-                    cppStackBody = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
-                }
-            }
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -663,31 +546,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 structExports = default;
             }
 
-            // The stack form follows the state machine in the module's C++ text; the records above keep the state machine
-            var cppIncludes = requiredIncludesCpp;
-            var cppSites = functionSites;
-            if (cppStackBody.Length > 0)
-            {
-                cppSignature = AppendOnNewLine(cppSignature, cppStackSignature);
-                cppBody = AppendOnNewLine(cppBody, cppStackBody);
-                if (cppStackIncludes is not null)
-                {
-                    cppIncludes = new HashSet<string>(requiredIncludesCpp);
-                    cppIncludes.UnionWith(cppStackIncludes);
-                }
-
-                cppSites = ErrorSiteTable.MergeSites(functionSites, cppStackErrorSites);
-            }
+            var cpp = NativeStackTranslator.ForDeviceFunction(context, in plan, methodDeclaration,
+                new DeviceCppText(cppSignature, cppFailures.Apply(cppSource), requiredIncludesCpp, functionSites));
 
             return new TranspiledDeviceMethodResult(
                 HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 cudaSignature,
-                cudaBody,
-                cppSignature,
-                cppBody,
+                cudaFailures.Apply(cudaSource),
+                cpp.Signature,
+                cpp.Body,
                 ToIncludes(requiredIncludesCuda),
-                ToIncludes(cppIncludes),
+                ToIncludes(cpp.Includes),
                 "",
                 frameName,
                 frames,
@@ -695,7 +565,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 export,
                 structExports,
                 HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel),
-                cppSites);
+                cpp.ErrorSites);
         }
         catch (InsufficientExecutionStackException)
         {
@@ -1283,25 +1153,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    // addition after existing, on a line of its own
-    private static string AppendOnNewLine(string existing, string addition)
-    {
-        if (addition.Length == 0)
-        {
-            return existing;
-        }
-
-        if (existing.Length == 0)
-        {
-            return addition;
-        }
-
-        return existing[existing.Length - 1] == '\n'
-            ? existing + addition
-            : existing + "\n" + addition;
-    }
-
-    private static EquatableArray<string> ToIncludes(HashSet<string> includes)
+    internal static EquatableArray<string> ToIncludes(HashSet<string> includes)
     {
         var builder = ImmutableArray.CreateBuilder<string>(includes.Count);
         includes
