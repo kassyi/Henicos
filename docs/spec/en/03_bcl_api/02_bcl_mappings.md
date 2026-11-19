@@ -22,7 +22,9 @@ These methods are mapped directly to PTX (Parallel Thread Execution) instruction
 | :--- | :--- | :--- | :--- |
 | `PopCount(value)` | `uint`, `ulong`, `nuint` | `__popc`, `__popcll` | Counts the number of set bits (1s) in the integer. |
 | `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_lzc_32`, `__gsharp_lzc_64` | Counts the number of leading zero bits. |
-| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__gsharp_tzc_32`, `__gsharp_tzc_64` | Counts the number of trailing zero bits. |
+| `TrailingZeroCount(value)` | `int`, `uint`, `long`, `nint`, `ulong`, `nuint` | `__gsharp_tzc_32`, `__gsharp_tzc_64` | Counts the number of trailing zero bits. |
+| `IsPow2(value)` | `int`, `uint`, `long`, `nint`, `ulong`, `nuint` | `__gsharp_is_pow2_{i32,u32,i64,u64}` | Returns whether the specified integer is a power of two. |
+| `RoundUpToPowerOf2(value)` | `uint`, `ulong`, `nuint` | `__gsharp_round_up_pow2_{32,64}` | Rounds the integer up to the next power of two, wrapping `0` and values above `2^(W-1)` to `0`. |
 | `Log2(value)` | `uint`, `ulong`, `nuint` | `__gsharp_log2_32`, `__gsharp_log2_64` | Returns the integer base-2 logarithm of the specified value. |
 | `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotl32`, `__gsharp_rotl64` | Rotates the bits of the integer left. |
 | `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | `__gsharp_rotr32`, `__gsharp_rotr64` | Rotates the bits of the integer right. |
@@ -97,7 +99,7 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 
 `Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as [`GSH0109`](diagnostics/GSH0109.md).
 
-`Math.Min` and `Math.Max` also have an `int` overload (`min`, `max`), `Math.Abs` of `int`, `long`, `short` and `sbyte` maps to a helper that throws `OverflowException` for the minimum value, as C# does (`__gsharp_abs_i32`, `_i64`, `_i16`, `_i8`), and `Math.Clamp` (`float`, `double`, `int`) maps to `__gsharp_clamp`. The constants (`Math.PI`, `Math.E`, `MathF.PI`) are written as their values. The C++ dialect maps the same members as the CUDA dialect. Any other member or overload (for example `Math.Min(long, long)` or `MathF.Cbrt`), and the generic math members of the numeric types that the dialect does not list (`int.Max`, `float.Clamp`), are reported as [`GSH0109`](diagnostics/GSH0109.md), with the parameter types, the dialect that does not map it, and the mapped members to use instead.
+`Math.Min` and `Math.Max` also support `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `nint` and `nuint` (`min` / `max` for `int`, `__gsharp_min_int` / `__gsharp_max_int` for the other integer types), `Math.Abs` of `int`, `long`, `short`, `sbyte` and `nint` maps to a helper that throws `OverflowException` for the minimum value as C# does (`__gsharp_abs_i32`, `_i64`, `_i16`, `_i8`), `Math.Sign` supports `sbyte`, `short`, `int`, `long` and `nint` (`__gsharp_sign_int`), and `Math.Clamp` (`float`, `double`, and the 10 integer types above) maps to `__gsharp_clamp`. The constants (`Math.PI`, `Math.E`, `MathF.PI`) are written as their values. The C++ dialect maps the same members as the CUDA dialect. Any other member or overload (for example `Math.Round(double, int)` or `MathF.Cbrt`), and the generic math members of the numeric types that the dialect does not list (`int.Max`, `float.Clamp`), are reported as [`GSH0109`](diagnostics/GSH0109.md), with the parameter types, the dialect that does not map it, and the mapped members to use instead.
 
 ---
 

@@ -574,6 +574,9 @@
 - {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.StackLinqMinKernel", status: "Compared", count: 1}
 - {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.StackLinqSingleKernel", status: "Compared", count: 1}
 - {file: "Differential/BclExceptionDifferentialKernels.cu.cs", method: "BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel", status: "Compared", count: 1}
+- {file: "Differential/BitOperationsPowerOfTwoDifferentialKernels.cu.cs", method: "BitOperationsPowerOfTwoDifferentialKernels.IsPow2AllOverloadsKernel", status: "Compared", count: 1}
+- {file: "Differential/BitOperationsPowerOfTwoDifferentialKernels.cu.cs", method: "BitOperationsPowerOfTwoDifferentialKernels.RoundUpToPowerOf2UnsignedKernel", status: "Compared", count: 1}
+- {file: "Differential/BitOperationsPowerOfTwoDifferentialKernels.cu.cs", method: "BitOperationsPowerOfTwoDifferentialKernels.TrailingZeroCountSignedKernel", status: "Compared", count: 1}
 - {file: "Differential/BoundsAndMemoryDifferentialKernels.cu.cs", method: "BoundsAndMemoryDifferentialKernels.AllThreadsEmptyFirstTrapKernel", status: "Compared", count: 1}
 - {file: "Differential/BoundsAndMemoryDifferentialKernels.cu.cs", method: "BoundsAndMemoryDifferentialKernels.AllThreadsNullDereferenceTrapKernel", status: "Compared", count: 1}
 - {file: "Differential/BoundsAndMemoryDifferentialKernels.cu.cs", method: "BoundsAndMemoryDifferentialKernels.ArrayAndSpanBoundaryEdgesKernel", status: "Compared", count: 1}
@@ -728,6 +731,16 @@
 - {file: "Differential/InArgumentAliasDifferentialKernels.cu.cs", method: "InArgumentAliasDifferentialKernels.ReadOnlyReferenceKernel", status: "Fallback:LocationNotRebuildable", count: 1}
 - {file: "Differential/InArgumentAliasDifferentialKernels.cu.cs", method: "InArgumentAliasDifferentialKernels.StructFieldInlineElementKernel", status: "Fallback:LocationNotRebuildable", count: 1}
 - {file: "Differential/InArgumentAliasDifferentialKernels.cu.cs", method: "InArgumentAliasDifferentialKernels.ValueElementKernel", status: "Fallback:OpaqueOperand", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.IncrementByte", status: "NoStateMachine", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.IncrementInt16", status: "NoStateMachine", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.IncrementSByte", status: "NoStateMachine", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.IncrementUInt16", status: "NoStateMachine", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.IntegerSignKernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.MixedOperandKernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.NarrowClampKernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.NarrowMaxMinKernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.WideClampKernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerMinMaxClampDifferentialKernels.cu.cs", method: "IntegerMinMaxClampDifferentialKernels.WideMaxMinKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerMinValueConstantKernels.cu.cs", method: "IntegerMinValueConstantKernels.Int32DivAssignKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerMinValueConstantKernels.cu.cs", method: "IntegerMinValueConstantKernels.Int32DivCallKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerMinValueConstantKernels.cu.cs", method: "IntegerMinValueConstantKernels.Int32DivConstDivisorKernel", status: "Compared", count: 1}
@@ -770,6 +783,7 @@
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt16Kernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt32Kernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsInt64Kernel", status: "Compared", count: 1}
+- {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsIntPtrKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsSByteKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel", status: "Compared", count: 1}
 - {file: "Differential/IntegerTrapAndCheckedDifferentialKernels.cu.cs", method: "IntegerTrapAndCheckedDifferentialKernels.SByteCompoundRemainderKernel", status: "Compared", count: 1}

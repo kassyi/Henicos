@@ -61,6 +61,12 @@
     - case: BclExceptionDifferentialKernels.MathClampDoubleKernel
       paths: [Native, Cuda]
       columns: [$exception]
+    - case: IntegerMinMaxClampDifferentialKernels.NarrowClampKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
+    - case: IntegerMinMaxClampDifferentialKernels.WideClampKernel
+      paths: [Native, Cuda]
+      columns: [$exception]
     # Array and span bounds, bounds-check elimination guards, simultaneous traps and Math.Abs(MinValue) on CUDA: they
     # still diverge after the device error channel of #729 (closed)
     - case: BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel
