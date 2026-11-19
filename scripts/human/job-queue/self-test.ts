@@ -12,6 +12,7 @@ import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { JobIdChecks } from "./job-id-checks.ts";
+import { QueueHintChecks } from "./queue-hint-checks.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { ResourceChecks } from "./resource-checks.ts";
@@ -113,6 +114,7 @@ export async function selfTest(): Promise<void> {
     await named("checkShellHelpers", checkShellHelpers);
     for (const [name, check] of Object.entries({
       ...JobServerChecks,
+      ...QueueHintChecks,
       ...SharedServerChecks,
       ...ProbeChecks,
       ...ClientChecks,

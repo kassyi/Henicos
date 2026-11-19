@@ -4,6 +4,7 @@ import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import { isResourceName, type ShareMode } from "./resources.ts";
+import type { WaitFor } from "./scheduler.ts";
 
 export const MaxMemoryMb = 2 ** 20;
 export const MaxKeyLength = 2000;
@@ -125,8 +126,14 @@ export interface Outlook {
   position: number;
   startAt: number | null;
   endAt: number | null;
+  /** The end at its longest recorded run time (absent without a record, and from older schedulers). */
+  latestEndAt?: number;
   /** The predecessor (--after) it waits for, while that one has not ended. */
   blockedBy: number | null;
+  /** What a waiting job waits for (Scheduler.waitFor; absent once it runs, and from older schedulers). */
+  waitFor?: WaitFor;
+  /** The turn resource a job that waits for a turn ("gpu", "gpu-memory") waits for. */
+  waitResource?: string;
 }
 
 export type StatusJob = JobView & Outlook;

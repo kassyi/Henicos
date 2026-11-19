@@ -52,9 +52,33 @@ function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
  * What a waiting job waits for, in words a person reads without the docs: "after j0821" (its --after job), "GPU busy"
  * (another job has the GPU), "GPU memory" (a shared turn waits for the probe of the free GPU memory), "CPU full"
  * (every slot in use), "mem full" (the memory pool of the test runs), or
- * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
+ * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it),
+ * "away" (its client is gone for now) or "restart" (the scheduler waits for the running jobs to re-register).
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
+  // The scheduler's own answer (Scheduler.waitFor); the guesses below are for an older scheduler
+  switch (job.waitFor) {
+    case "after":
+      return job.blockedBy != null ? `after ${formatJobId(job.blockedBy)}` : "after";
+    case "away":
+      return "away";
+    case "restart":
+      return "restart";
+    case "paused":
+      return "paused";
+    case "gpu":
+      return "GPU busy";
+    case "gpu-memory":
+      return "GPU memory";
+    case "slots":
+      return "CPU full";
+    case "memory":
+      return "mem full";
+    case "in-line":
+      return "in line";
+    default:
+      break;
+  }
   if (job.blockedBy != null) {
     return `after ${formatJobId(job.blockedBy)}`;
   }
@@ -410,6 +434,8 @@ const HelpLegend: LegendEntry[] = [
   { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after jnnnn", style: "warn", text: "until job n has ended" },
+  { sample: "away", style: "warn", text: "its client is gone for now" },
+  { sample: "restart", style: "warn", text: "running jobs re-register" },
   { heading: "GPU turn (mark before the command)" },
   { sample: "G", style: "gpu", text: "an exclusive GPU turn" },
   { sample: "g", style: "gpu", text: "a shared GPU turn" },

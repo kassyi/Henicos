@@ -35,12 +35,20 @@ function formatJob(job: StatusJob, now: number): string {
     job.after != null ? ` after ${formatJobId(job.after)}${job.keepIfFailed ? " (even if it fails)" : ""}` : "",
   ].join("");
   const outlook = describeOutlook(job, now);
-  const blocked = job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end; ` : "";
-  const detail = outlook || blocked ? `\n      ${blocked}${outlook}` : "";
+  // An older scheduler says only what a job waits for after another (blockedBy)
+  const waits = describeWaitFor(job) || (job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end` : "");
+  const detail = outlook || waits ? `\n      ${waits}${waits && outlook ? "; " : ""}${outlook}` : "";
   return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 
-/** "2 ahead, start ~20:31 (in 6m), end ~20:35 (in 10m)" for a waiting job, "end ~20:35 (in 4m)" for a running one. */
+/** The latest end is told when it is this much after the expected end: a shorter gap says nothing new. */
+const LatestEndNoticeMs = 60 * 1000;
+
+/**
+ * "2 ahead, expected start ~20:31 (in 6m), expected end ~20:35 (in 10m)" for a waiting job, "expected end ~20:35 (in
+ * 4m)" for a running one; ", at the latest ~20:52" follows when the longest recorded run would end a minute or more
+ * later.
+ */
 export function describeOutlook(outlook: object, now: number): string {
   const view = outlook as Partial<Record<string, unknown>>;
   const { startAt, endAt } = view;
@@ -54,11 +62,49 @@ export function describeOutlook(outlook: object, now: number): string {
   }
   const clock = (time: number): string => new Date(time).toTimeString().slice(0, 5);
   const minutes = (ms: number): string => `${Math.max(0, Math.round(ms / 60000))}m`;
-  const end = `expected end ~${clock(endAt)} (in ${minutes(endAt - now)})`;
+  const { latestEndAt } = view;
+  const latest =
+    typeof latestEndAt === "number" && Number.isFinite(latestEndAt) && latestEndAt - endAt >= LatestEndNoticeMs
+      ? `, at the latest ~${clock(latestEndAt)}`
+      : "";
+  const end = `expected end ~${clock(endAt)} (in ${minutes(endAt - now)})${latest}`;
   if (view.state === "running") {
     return end;
   }
   return `${String(view.ahead)} ahead, expected start ~${clock(startAt)} (in ${minutes(startAt - now)}), ${end}`;
+}
+
+/**
+ * What a waiting job waits for (Outlook.waitFor) in words: "waits for CPU slots", "waits for a turn at gpu", "waits
+ * for j0821 to end"; "" when the scheduler did not say (a running job, an older scheduler).
+ */
+export function describeWaitFor(outlook: object): string {
+  const view = outlook as Partial<Record<string, unknown>>;
+  const resource = typeof view.waitResource === "string" ? view.waitResource : "gpu";
+  switch (view.waitFor) {
+    case "after":
+      return typeof view.blockedBy === "number"
+        ? `waits for ${formatJobId(view.blockedBy)} to end`
+        : "waits for its predecessor";
+    case "away":
+      return "waits for its client to come back";
+    case "restart":
+      return "waits for the running jobs to re-register after a scheduler restart";
+    case "paused":
+      return "waits for the queue to resume";
+    case "gpu":
+      return `waits for a turn at ${resource}`;
+    case "gpu-memory":
+      return `waits for free memory on ${resource}`;
+    case "slots":
+      return "waits for CPU slots";
+    case "memory":
+      return "waits for the memory budget of the test runs";
+    case "in-line":
+      return "waits for the jobs that go first";
+    default:
+      return "";
+  }
 }
 
 function printReplyError(reply: Incoming): void {

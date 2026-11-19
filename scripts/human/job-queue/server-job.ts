@@ -40,6 +40,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   keepIfFailed: boolean;
   lastPosition: number;
   lastStartAt: number | null;
+  /** What it was last told it waits for (Outlook.waitFor), so that a change is told. */
+  lastWaitFor?: string;
   done: boolean;
   completed: boolean;
   /** The command's exit code from "done"; null when the client did not send one (protocol 2, or no "done"). */

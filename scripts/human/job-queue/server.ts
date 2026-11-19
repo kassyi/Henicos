@@ -177,13 +177,18 @@ export class JobServer {
   outlook(job: ServerJob, forecast: Map<ServerJob, Expected>): Outlook {
     const expected = forecast.get(job);
     const index = this.scheduler.waiting.indexOf(job);
+    const waitFor = this.scheduler.waitFor(job);
+    const onTurn = waitFor === "gpu" || waitFor === "gpu-memory";
     return {
       state: index >= 0 ? "waiting" : "running",
       ahead: Math.max(0, index),
       position: index + 1,
       startAt: expected ? expected.startAt : null,
       endAt: expected ? expected.endAt : null,
+      ...(expected?.latestEndAt !== undefined ? { latestEndAt: expected.latestEndAt } : {}),
       blockedBy: this.scheduler.awaitsPredecessor(job) ? job.after : null,
+      ...(waitFor !== undefined ? { waitFor } : {}),
+      ...(onTurn ? { waitResource: resourceOf(job) } : {}),
     };
   }
 
@@ -208,9 +213,10 @@ export class JobServer {
     scheduler.waiting.forEach((job, index) => {
       const view = this.outlook(job, forecast);
       const moved = Math.abs((view.startAt ?? 0) - (job.lastStartAt ?? 0)) >= ForecastNoticeMs;
-      if (job.lastPosition !== index || moved) {
+      if (job.lastPosition !== index || moved || job.lastWaitFor !== view.waitFor) {
         job.lastPosition = index;
         job.lastStartAt = view.startAt;
+        job.lastWaitFor = view.waitFor;
         this.tell(job, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });

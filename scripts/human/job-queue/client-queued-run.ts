@@ -15,7 +15,7 @@ import {
   TurnVariable,
   UsageExitCode,
 } from "./constants.ts";
-import { describeOutlook } from "./client-commands.ts";
+import { describeOutlook, describeWaitFor } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
@@ -37,6 +37,11 @@ import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
 import { formatJobId } from "./job-id.ts";
+
+/** The non-empty notes joined by "; ". */
+function joinNotes(...notes: string[]): string {
+  return notes.filter((note) => note !== "").join("; ");
+}
 
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
@@ -73,6 +78,8 @@ export class QueuedRun {
   private lastNotice = -Infinity;
   private lastPosition = 0;
   private lastStartAt: number | null = null;
+  /** What the job was last told it waits for (Outlook.waitFor): a change is told at once. */
+  private lastWaitFor: unknown = undefined;
   /** The pause was told (once per run). */
   private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
@@ -299,10 +306,12 @@ export class QueuedRun {
   private onQueued(message: Incoming): void {
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
-    const outlook = message.state === "waiting" ? describeOutlook(message, Date.now()) : "";
+    const outlook =
+      message.state === "waiting" ? joinNotes(describeWaitFor(message), describeOutlook(message, Date.now())) : "";
     // The first waiting notice says the same: skip it
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
+    this.lastWaitFor = message.waitFor;
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
     prefix(
@@ -327,11 +336,13 @@ export class QueuedRun {
     const startAt = typeof message.startAt === "number" ? message.startAt : null;
     const position = numberField(message, "position");
     const moved = Math.abs((startAt ?? 0) - (this.lastStartAt ?? 0)) >= ForecastNoticeMs;
-    if (position !== this.lastPosition || moved || now - this.lastNotice >= NoticeIntervalMs) {
+    const reason = message.waitFor !== this.lastWaitFor;
+    if (position !== this.lastPosition || moved || reason || now - this.lastNotice >= NoticeIntervalMs) {
       this.lastPosition = position;
       this.lastStartAt = startAt;
+      this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
-      const outlook = describeOutlook(message, now);
+      const outlook = joinNotes(describeWaitFor(message), describeOutlook(message, now));
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(
         `waiting ${formatJobId(this.jobId)}: position ${position}, ${slots} ` +
