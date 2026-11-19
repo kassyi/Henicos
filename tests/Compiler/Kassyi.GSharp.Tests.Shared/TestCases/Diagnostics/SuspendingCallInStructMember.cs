@@ -321,4 +321,27 @@ namespace SuspendingCallInStructMemberTest
 
         public int CompareTo(RotRecord other) => TaggedRotate(Key) - other.Key;
     }
+
+    // Gpu.SyncGrid() written directly in a struct member body
+    public static partial class SuspendingCallInStructMemberKernels
+    {
+        [GpuKernel(Cooperative = true)]
+        public static void GridBarrierKernel(int[] buffer, int[] output)
+        {
+            int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+            output[tid] = new GridBarrierCtor(buffer, tid).V;
+        }
+    }
+
+    public struct GridBarrierCtor
+    {
+        public int V;
+
+        public GridBarrierCtor(int[] buffer, int tid)
+        {
+            buffer[tid] = tid + 1;
+            Gpu.SyncGrid();
+            V = buffer[(tid + 1) % buffer.Length];
+        }
+    }
 }

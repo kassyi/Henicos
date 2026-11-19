@@ -6,10 +6,10 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// A struct member body that device code runs (constructor, member initializer, accessor, conversion operator, the
 /// truth operators that a <c>&amp;&amp;</c> over an operator macro calls, a <c>Dispose</c> that a device <c>using</c>
 /// calls, a <c>Compare</c> or <c>CompareTo</c> that a device <c>Sort</c> calls) is not turned into a state machine, so
-/// a call there of a device function that reaches a barrier, or of a warp shuffle, <c>Gpu.SyncWarp</c> or
-/// <c>Warp.ActiveMask()</c>, is GSH0062 at the call, with or without <c>[GpuDeviceFunction]</c> on the member, and once
-/// however many GPU methods use the struct. Members that only the host calls, a struct that no device code uses, a
-/// class and a static device function of a struct are not reported.
+/// a call there of a device function that reaches a barrier, or of a warp shuffle, <c>Gpu.SyncWarp</c>,
+/// <c>Warp.ActiveMask()</c> or <c>Gpu.SyncGrid()</c>, is GSH0062 at the call, with or without
+/// <c>[GpuDeviceFunction]</c> on the member, and once however many GPU methods use the struct. Members that only the
+/// host calls, a struct that no device code uses, a class and a static device function of a struct are not reported.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallInStructMemberDiagnosticsTests
@@ -50,7 +50,8 @@ public class SuspendingCallInStructMemberDiagnosticsTests
                 (Analyzer, 298, 13, 298, 38),
                 (Analyzer, 309, 26, 309, 43),
                 (Analyzer, 315, 45, 315, 60),
-                (Analyzer, 322, 50, 322, 67)
+                (Analyzer, 322, 50, 322, 67),
+                (Analyzer, 343, 13, 343, 27)
             ],
             Sorted(diagnostics.Ranges(GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id)));
         Assert.All(
@@ -85,6 +86,9 @@ public class SuspendingCallInStructMemberDiagnosticsTests
                 Id,
                 "'ActiveMask' returns the lanes of the warp that reach it together, so it cannot be called in a "
                 + "constructor"));
+        Assert.Equal(
+            [(Analyzer, 343, 13, 343, 27)],
+            diagnostics.Ranges(Id, "'SyncGrid' is a grid barrier, so it cannot be called in a constructor"));
     }
 
     [Theory]
@@ -98,7 +102,7 @@ public class SuspendingCallInStructMemberDiagnosticsTests
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
 
         var stated = KernelDiagnostics.FindStatedFailures(run);
-        Assert.Equal(20, stated.Count);
+        Assert.Equal(21, stated.Count);
         Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
         Assert.All(stated, static f => Assert.EndsWith("GSH0062", f.Failure, StringComparison.Ordinal));
     }

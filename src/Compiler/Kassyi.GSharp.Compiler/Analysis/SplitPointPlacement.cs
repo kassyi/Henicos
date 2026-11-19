@@ -10,6 +10,9 @@ internal static class SplitPointPlacement
     public const string SuspendingDeviceFunctionCallee =
         "is a device function that reaches Gpu.SyncThreads() or a warp shuffle";
 
+    /// <summary>The GSH0062 callee description for <c>Gpu.SyncGrid</c>.</summary>
+    public const string GridBarrierCallee = "is a grid barrier";
+
     private const string WarpShuffleCallee = "is a warp shuffle";
 
     private const string WarpVoteCallee = "is a warp vote or reduction";

@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 /// Records GSH0062 when the body of a struct member that the transpiler writes (a constructor and the member
 /// initializers it runs, a property accessor, a conversion or truth operator, <c>Dispose</c>, a sort comparison member)
 /// calls a <c>[GpuDeviceFunction]</c> that reaches a barrier or warp shuffle, or a warp intrinsic that splits the state
-/// machine (a warp shuffle, vote or reduction, <c>Gpu.SyncWarp</c>, <c>Warp.ActiveMask()</c>).
+/// machine (a warp shuffle, vote or reduction, <c>Gpu.SyncWarp</c>, <c>Warp.ActiveMask()</c>) or <c>Gpu.SyncGrid</c>.
 /// </summary>
 /// <remarks>
 /// [WHY] Only kernel and device function bodies are lowered into the CPU state machine; a struct member is written as a
@@ -21,7 +21,7 @@ internal static class StructMemberSuspendingCall
     /// <summary>
     /// Reports GSH0062 at <paramref name="invocation"/> when a struct member body is being written
     /// (<see cref="Emitter.CurrentStructType"/>) and <paramref name="method"/> reaches a barrier or warp shuffle, or is
-    /// a warp intrinsic that splits the state machine.
+    /// a warp intrinsic or grid barrier that splits the state machine.
     /// </summary>
     public static void FailIfInStructMember(InvocationExpressionSyntax invocation, IMethodSymbol method,
         ref TranspileContext context)
@@ -41,14 +41,14 @@ internal static class StructMemberSuspendingCall
     private static string? GetCallee(IMethodSymbol method, Compilation compilation)
     {
         var intrinsic = SyncIntrinsicClassifier.Classify(method);
-        if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
+        return intrinsic.Kind switch
         {
-            return SplitPointPlacement.GetWarpCallee(intrinsic.Shuffle);
-        }
-
-        return method.ReducedFrom == null && SuspensionAnalysis.IsSuspendingFunction(method, compilation)
-            ? SplitPointPlacement.SuspendingDeviceFunctionCallee
-            : null;
+            SyncIntrinsicKind.WarpShuffle => SplitPointPlacement.GetWarpCallee(intrinsic.Shuffle),
+            SyncIntrinsicKind.GridBarrier => SplitPointPlacement.GridBarrierCallee,
+            _ when method.ReducedFrom == null && SuspensionAnalysis.IsSuspendingFunction(method, compilation) =>
+                SplitPointPlacement.SuspendingDeviceFunctionCallee,
+            _ => null
+        };
     }
 
     // The member whose body holds the call; a lambda or local function belongs to the member that declares it
