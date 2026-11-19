@@ -1211,6 +1211,7 @@
 - {file: "TestCases/Ir/IrClassifierCases.cs", method: "Cases.BarrierInLoop", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Ir/IrClassifierCases.cs", method: "Cases.FenceInLoop", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Ir/IrClassifierCases.cs", method: "Cases.RemovedBarrierInLoop", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
+- {file: "TestCases/Ir/IrDecisionSiteOracleCases.cu.cs", method: "StackLengthOracleKernels.StackLengthKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Cases.SplitInLoop", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Ir/IrSplitLoweringCases.cs", method: "Cases.MixedIrAndLoopSplits", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/LabeledJumps/LabeledJumpPlanCases.cs", method: "LabeledJumpPlanCases.CountTwo", node: "statement", reason: "UnsupportedOperation", operation: "YieldReturn", syntax: "YieldReturnStatement", count: 2}

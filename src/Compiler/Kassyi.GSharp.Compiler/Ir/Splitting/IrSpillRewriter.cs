@@ -298,8 +298,10 @@ internal static class IrSpillRewriter
 
         public override IrExpression VisitExpression(IrExpression expression) =>
             _table.TryGetValue(expression, out var temporary)
-                ? new IrVariableReference(temporary, false, IrCategory.Value, default,
-                    expression.Source.AsSynthesized())
+                ? IrExpression.WithSpelling(
+                    new IrVariableReference(temporary, false, IrCategory.Value, default,
+                        expression.Source.AsSynthesized()),
+                    0, expression.SpellingSpan, expression.SpellingHasNullForgiving)
                 : base.VisitExpression(expression);
     }
 }
