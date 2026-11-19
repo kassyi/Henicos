@@ -148,7 +148,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     {
         // SetIsNegative(true) sets bit 31 of the top word and keeps it set when it already is; false clears it.
         // The other bits of the top word and the lower words are unchanged.
-        // mutant: GpuBigUInt.cs:528 `word |= 0x80000000` -> `word ^= 0x80000000` (second call)
+        // mutant: GpuBigUInt.cs:520 `word |= 0x80000000` -> `word ^= 0x80000000` (second call)
         using var value = new GpuBigUInt(_context, [5u, 0x1234_5678u]);
         value.SetIsNegative(true);
         value.SetIsNegative(true);
@@ -166,7 +166,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     public void Square_RequiresTwiceTheLogicalWords()
     {
         // The square of an n-word value needs 2n words; one word less is rejected.
-        // mutant: GpuBigUInt.cs:546 `NumWords < logicalWords * 2` -> `NumWords <= logicalWords * 2`
+        // mutant: GpuBigUInt.cs:538 `NumWords < logicalWords * 2` -> `NumWords <= logicalWords * 2`
         using var tooSmall = new GpuBigUInt(_context, 3);
         Assert.Throws<InvalidOperationException>(() => tooSmall.Square(2));
 
@@ -195,7 +195,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         workspace.Dispose();
 
         // After Dispose, RentTemp throws for the workspace itself (not only through the memory manager).
-        // mutant: GpuWorkspace.cs:497 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
+        // mutant: GpuWorkspace.cs:538 `ObjectDisposedException.ThrowIf(...)` removed (the manager throws for itself)
         var rentError = Assert.Throws<ObjectDisposedException>(() => workspace.RentTemp(4));
         Assert.Equal(typeof(GpuWorkspace).FullName, rentError.ObjectName);
 

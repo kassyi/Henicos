@@ -1,11 +1,7 @@
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
-using Xunit.Abstractions;
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
-public class GpuBigIntSqrtTests(ITestOutputHelper output)
+public class GpuBigIntSqrtTests
 {
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
@@ -117,8 +113,8 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     public void Sqrt_PrefilledResultBuffer_IsOverwritten(uint value, uint expectedRoot)
     {
         // The result buffer is filled with 0xFFFFFFFF first; every word above the root must be cleared.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:186 `resultBuffer.Clear()` removed (value 0)
-        // mutant: GpuBigIntDivRem.Sqrt.cs:209 `resultBuffer.Clear()` removed (value 10000)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:204 `resultBuffer.Clear()` removed (value 0)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:227 `resultBuffer.Clear()` removed (value 10000)
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { value, 0, 0, 0 });
@@ -150,11 +146,11 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // SqrtFloor gives floor(sqrt(a)) for an operand of 2n words with bit length 64n or 64n - 1 (the input of the
     // big-float Sqrt): the root agrees with the test's own integer square root and satisfies r² <= a < (r + 1)².
     // The squares, r² - 1 and r² + 2r are where an approximation one below the floor has to step up, or must not.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:144 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:152 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
+    // mutant: GpuBigIntDivRem.Sqrt.cs:160 `SqrtFloorCorrection(...)` removed (Square, n = 8, 16, 17)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:168 `(rootWords + 1) / 2` -> `Math.Max(1, (rootWords + 1) / 2 - 1)` (SquarePlus2R
     //         and SquareMinus1 at
     // n = 4, 8, 16: the estimate is more than one below, beyond what the design allows)
-    // mutant: GpuBigIntSqrtKernels.cu.cs:184 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
+    // mutant: GpuBigIntSqrtKernels.cu.cs:178 `AddSmallSigned(trial, slackWords, -1)` removed (Highest, n = 16, 17)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
@@ -200,10 +196,10 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // P2: the error of the approximation, sqrt(A) - A_top·x / 2^s, lies in [0, 2^-16 + 2^-32), the bound the design
     // derives. With a margin one word smaller (odd n) the error can reach 1; a gap of 2 then needs an input that no seeded
     // search found, so P2 is what catches it.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:152 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
+    // mutant: GpuBigIntDivRem.Sqrt.cs:168 `(rootWords + 1) / 2` -> `rootWords / 2` (every odd n with TopSquareMaxLow
     //         and others:
     // P2; P1 holds for every input here)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:159 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:175 `+ 48` -> `+ 47` (every input: the estimate is twice the root)
     [Theory]
     [Category(TestCategory.Stdlib)]
     [TestTarget(ExecutionTarget.CpuExecution)]
@@ -238,100 +234,6 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
             $"{kind} n={n}: the error of the approximation is outside [0, 2^-16 + 2^-32)");
     }
 
-    /// <summary>
-    /// Inputs of the approximate inverse square root: the kind of operand and its words <c>n</c>, with the margin
-    /// <c>SqrtFloorMarginWords(n - 1)</c> that SqrtFloor uses for a root of <c>n - 1</c> words.
-    /// </summary>
-    public static TheoryData<string, int> ApproximateInverseSqrtInputs()
-    {
-        var data = new TheoryData<string, int>();
-        foreach (var kind in new[] { "Random", "PowerOfFour", "TopBitOnly", "AllOnes", "TopWordOnly" })
-        {
-            // 41 and 640: 32(n + floor(n / 2)) bits lie just below 31 * 2^k, so the iterations have no spare one.
-            foreach (var n in new[] { 2, 3, 7, 31, 32, 33, 41, 127, 640, 1000, 5000 })
-            {
-                data.Add(kind, n);
-            }
-        }
-
-        return data;
-    }
-
-    // The approximate inverse root x of a normalized operand (bit length 32n or 32n - 1) is never above
-    // floor(2^B / sqrt(a)) and at most ApproximateInverseSqrtMaxError below it; the oracle is
-    // floor(2^B / sqrt(a)) = isqrt(floor(2^(2B) / a)).
-    // mutant: GpuBigIntDivRem.Sqrt.cs:79 two Newton iterations fewer for the approximate contract (14 inputs, n >= 31;
-    //         one fewer survives: the count keeps a spare iteration)
-    [SkippableTheory]
-    [Category(TestCategory.Stdlib)]
-    [Scenario(TestScenario.Boundary)]
-    [MemberData(nameof(ApproximateInverseSqrtInputs))]
-    public void ApproximateInverseSqrt_NormalizedOperand_IsAtMostMaxErrorBelowFloor(string kind, int n)
-    {
-        CudaCapability.EnsureGpuAvailable();
-        var a = BuildApproximateInverseSqrtOperand(kind, n);
-        var marginWords = GpuBigIntDivRem.SqrtFloorMarginWords(n - 1);
-        using var ctx = new GpuWorkspace((n + marginWords) * 8, GpuExecutionEngine.GSharpAot);
-        using var operand = GpuBigUInt.FromBigInteger(ctx, a, n);
-        using var inverse = new GpuBigUInt(ctx, n + marginWords);
-
-        GpuBigIntDivRem.ApproximateInverseSqrt(operand, inverse, marginWords);
-
-        var b = 32 * (n + marginWords);
-        var floor = FloorSqrt((BigInteger.One << (2 * b)) / a);
-        var below = floor - inverse.ToBigInteger();
-        output.WriteLine($"{kind} n={n}: floor - x = {below}");
-        Assert.True(
-            below >= 0 && below <= GpuBigIntDivRem.ApproximateInverseSqrtMaxError,
-            $"{kind} n={n}: floor(2^B / sqrt(a)) - x = {below}");
-    }
-
-    // The approximate path skips the final correction: with zero Newton iterations a hand-built guess 5 below the
-    // floor comes back unchanged (the exact InverseSqrtMega corrects the same guess to the floor, see
-    // GpuBigIntDivRemTests.InverseSqrtMega_HandBuiltGuessWithoutIterations_IsCorrectedToExactFloor). Without this
-    // test, running the correction on the approximate path would pass every other test.
-    // mutant: KernelAdvancedMathHandler.cs:211 `correctsToFloor: false` -> `true` (the guess is corrected to the floor)
-    [SkippableFact]
-    [Category(TestCategory.Stdlib)]
-    [Scenario(TestScenario.HappyPath)]
-    public void ApproximateInverseSqrtMega_HandBuiltGuessWithoutIterations_IsLeftUncorrected()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const int NumWords = 16;
-        const int MarginWords = 4;
-        const int PrecisionBits = (NumWords + MarginWords) * 32;
-        var a = BuildApproximateInverseSqrtOperand("Random", NumWords);
-        var guess = FloorSqrt((BigInteger.One << (2 * PrecisionBits)) / a) - 5;
-        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
-        using var operand = GpuBigUInt.FromBigInteger(ctx, a, NumWords);
-        using var inverse = GpuBigUInt.FromBigInteger(ctx, guess, NumWords + MarginWords);
-
-        IGpuAdvancedMathProvider handler = new KernelAdvancedMathHandler();
-        handler.ApproximateInverseSqrtMega(ctx, operand, inverse, MarginWords, actualBits: NumWords * 32,
-            iterations: 0);
-
-        Assert.Equal(guess, inverse.ToBigInteger());
-    }
-
-    private static BigInteger BuildApproximateInverseSqrtOperand(string kind, int n)
-    {
-        var bits = 32 * n;
-        var random = new Random(1301 + 41 * n);
-        var bytes = new byte[4 * n + 1];
-        random.NextBytes(bytes);
-        bytes[^1] = 0;
-        var randomWords = new BigInteger(bytes) | (BigInteger.One << (bits - 1));
-        return kind switch
-        {
-            "Random" => randomWords,
-            "PowerOfFour" => BigInteger.One << (bits - 2),
-            "TopBitOnly" => BigInteger.One << (bits - 1),
-            "AllOnes" => (BigInteger.One << bits) - 1,
-            "TopWordOnly" => (randomWords >> (bits - 32)) << (bits - 32),
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown inverse square root input."),
-        };
-    }
-
     // The operand of SqrtFloor must be twice as wide as the root.
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
@@ -346,7 +248,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.SqrtFloor(operand, root));
     }
 
-    private static BigInteger BuildSqrtFloorOperand(string kind, int n)
+    internal static BigInteger BuildSqrtFloorOperand(string kind, int n)
     {
         // Seed 661 + 37n keeps the values stable across runs.
         var random = new Random(661 + 37 * n);
@@ -403,10 +305,10 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // Sqrt of an operand above 32 bits normalizes it with an even shift for SqrtFloor and shifts the root back. The
     // squares and their neighbours are where a root one off shows; PowerOfTwoMinusOne and OddBitLength have an odd bit
     // length (64r - L odd), PowerOfTwo, AllOnes and EvenBitLength an even one.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
+    // mutant: GpuBigIntDivRem.Sqrt.cs:244 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:255 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
     //         EvenBitLength; OddBitLength of an even word count has 64r - L = 1, so k = 0)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
+    // mutant: GpuBigIntDivRem.Sqrt.cs:243 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
     //         is not a multiple of 64)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -428,9 +330,9 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // The gap 64r - L between the bit length and the root words: 0 (no shift), 1 (odd, k = 0 keeps the bit length
     // 64r - 1), 2 (k = 1) and 63 (the largest, k = 31), each in a 4-word operand; and the one-word roots (L = 33 to
     // 64, k = 15 down to 0), the shortest operands that take this path.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every bit length)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
+    // mutant: GpuBigIntDivRem.Sqrt.cs:244 `/ 2` -> `/ 2 + 1` (every bit length)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:255 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:243 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
     //         one-word roots below 64)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -479,7 +381,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
 
     // Any result buffer from ceil(8 / 2) = 4 words up receives the root and zeros above it: each separate buffer is
     // filled with ones first, and the whole buffer is read back. The operand itself may also be the result buffer.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `resultBuffer` -> `ResultBuffers.Head(resultBuffer, rootWords)` (131 with
+    // mutant: GpuBigIntDivRem.Sqrt.cs:255 `resultBuffer` -> `ResultBuffers.Head(resultBuffer, rootWords)` (131 with
     //         SameWidth, Wider, MinimumWidth and OperandItself: the words above the root keep their old value)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
@@ -510,7 +412,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
 
     // The minimum result width follows from the operand's width, not from its value: one word below ceil(8 / 2) = 4 is
     // rejected although the root of this 131-bit value fits in 3 words.
-    // mutant: GpuBigIntDivRem.Sqrt.cs:181 `ResultBuffers.ThrowIfNarrower(...)` removed (the root is written into 3
+    // mutant: GpuBigIntDivRem.Sqrt.cs:199 `ResultBuffers.ThrowIfNarrower(...)` removed (the root is written into 3
     //         words without an exception)
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
@@ -526,7 +428,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Sqrt(operand, result));
     }
 
-    private static void AssertIsFloorSquareRoot(BigInteger a, BigInteger r, string label)
+    internal static void AssertIsFloorSquareRoot(BigInteger a, BigInteger r, string label)
     {
         // r² <= a < (r + 1)² defines floor(sqrt(a)) without a reference implementation; the test's own integer square
         // root must give the same value.
@@ -534,7 +436,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         Assert.Equal(FloorSqrt(a), r);
     }
 
-    private static BigInteger BuildSqrtOperand(string kind, int words)
+    internal static BigInteger BuildSqrtOperand(string kind, int words)
     {
         var bits = 32 * words;
         // Seed 907 + 31 * words keeps the values stable across runs; every kind draws the same values.
@@ -559,7 +461,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         };
     }
 
-    private static BigInteger RandomWithBitLength(Random random, int bitLength)
+    internal static BigInteger RandomWithBitLength(Random random, int bitLength)
     {
         var bytes = new byte[bitLength / 8 + 2];
         random.NextBytes(bytes);
@@ -568,7 +470,7 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
         return (new BigInteger(bytes) & (top - 1)) | top;
     }
 
-    private static BigInteger FloorSqrt(BigInteger value)
+    internal static BigInteger FloorSqrt(BigInteger value)
     {
         if (value < 2)
         {

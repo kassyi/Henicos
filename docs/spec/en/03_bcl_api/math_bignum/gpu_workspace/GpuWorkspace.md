@@ -67,6 +67,7 @@ Thrown when CUDA context or workspace initialization fails.
 | [MemoryManager](#memorymanager) | Gets the memory manager for this workspace. |
 | [PolyAlgorithmThreshold](#polyalgorithmthreshold) | Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow. |
 | [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
+| [SqrtPrecisionDoublingThresholdWords](#sqrtprecisiondoublingthresholdwords) | Gets or sets the size of a square root, in words, above which its inverse square root is computed by precision doubling driven from the host. |
 | [Stream](#stream) | Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture. |
 | [Transcendental](#transcendental) | Gets the tuning parameters of the big-float `Exp`, `Log` and `Pow` run on this workspace. |
 | [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
@@ -118,6 +119,23 @@ Gets the active GPU arithmetic execution provider implementation (`GSharpKernelP
 ```csharp
 public IGpuExecutionProvider Provider { get; }
 ```
+
+## SqrtPrecisionDoublingThresholdWords
+
+Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by precision doubling driven from the host instead of one cooperative mega-kernel. Default is `45` words.
+
+```csharp
+public int SqrtPrecisionDoublingThresholdWords { get; set; }
+```
+
+The size is the word count of the root: `r` words for an operand of `2r` words of `GpuBigIntDivRem.Sqrt`, and the significand words of a big-float square root. A root of at most this many words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary kernel launches whose working precision doubles from two words to the full width, with far fewer multiplied words but a few hundred more launches.
+
+The result is exactly the same either way; only the time differs. The size at which the two take the same time depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. On the GPU the default was measured on, the mega-kernel is the faster while its transforms fit 512 points, which holds up to 45 root words. `0` sends every root to the precision doubling, `int.MaxValue` every root to the mega-kernel.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+The value is negative.
 
 ## Stream
 
