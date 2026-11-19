@@ -16,13 +16,13 @@ normal_tests := "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"
 
 # Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
-    {{queue}} --gpu -- dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" \
+    {{queue}} --gpu -- dotnet test --filter "{{normal_tests}}" \
         {{blame_crash}} {{args}}
 
 # Run tests with code coverage collection
 test-coverage *args="":
     {{queue}} --gpu -- dotnet test -s coverage.runsettings \
-        --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
+        --filter "{{normal_tests}}" {{blame_crash}} {{args}}
 
 # Run the tests with coverage and list the lines changed since base that no test executed
 coverage-diff base="main":
@@ -58,8 +58,9 @@ test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
 
-# Tests.Cuda built checked (C#'s checks in the device code), in an output folder of its own; a filter narrows the run
-# further (dotnet test takes one --filter, so it is joined to the fixed one): `just test-checked "FullyQualifiedName~X"`
+# Tests.Cuda built checked (C#'s checks in the device code), in an output folder of its own. A filter narrows the run
+# (dotnet test takes one --filter, so it is joined to the fixed one): `just test-checked "FullyQualifiedName~X"`.
+# Arguments without a filter go after an empty one: `just test-checked "" --no-build`
 test-checked filter="" *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         -p:GSharpCheckedBuild=true -p:GSharpOutputVariant=checked \

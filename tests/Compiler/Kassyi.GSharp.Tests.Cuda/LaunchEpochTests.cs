@@ -330,6 +330,7 @@ public sealed class LaunchEpochTests
     public void GraphLaunch_FailingThread_ThrowsAtTheSynchronizationAfterEveryReplay()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
         var keys = new int[BlockSize];
@@ -359,6 +360,7 @@ public sealed class LaunchEpochTests
     public Task GraphLaunch_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         return AssertWaitersLeaveAfterRecordConsumedAsync(captured: true);
     }
 
