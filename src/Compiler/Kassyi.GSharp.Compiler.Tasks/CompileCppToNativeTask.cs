@@ -22,8 +22,22 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     }
 
     /// <summary>Gets or sets the resulting compiled native DLL task items.</summary>
+    /// <remarks>
+    /// Each item compiled by the toolchain carries the <c>CxxCommandFile</c> metadata: the path of the file that records the
+    /// command the library was built with (see <see cref="CommandFileExtension"/>).
+    /// </remarks>
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
+
+    /// <summary>
+    /// The extension appended to a library path for the file that records the compiler, its arguments and the signing key
+    /// the library was built with. A library whose record differs from the current command is rebuilt even when it is
+    /// newer than its sources; the headers that the sources include are not recorded (the generated sources include only
+    /// system headers).
+    /// </summary>
+    public const string CommandFileExtension = ".cxx";
+
+    private const string CxxTool = "C++ compiler";
 
     private string[] _architectures = [];
     private NativeSanitizers _sanitizers;
@@ -97,27 +111,49 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             if (MockCompilation)
             {
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");
-                var mockTaskItem = new TaskItem(outputDllPath);
-                mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                items.Add(mockTaskItem);
+                items.Add(CreateOutputItem(outputDllPath, commandFilePath: null));
 
                 return;
             }
 
-            if (!Toolchain.TryCompileCppToSharedLibrary(
+            var commandRecord = Toolchain.DescribeCompilation(sourcePath, outputDllPath, arch, _sanitizers) +
+                "\nsigning-key " + ArtifactHelper.GetSigningKeyFingerprint();
+            var commandFilePath = outputDllPath + CommandFileExtension;
+            if (ArtifactHelper.IsNewerThanSources(outputDllPath, [sourcePath]) &&
+                CommandRecordFile.IsCurrent(Log, CxxTool, commandFilePath, commandRecord))
+            {
+                Log.LogMessage(MessageImportance.Low,
+                    $"Skipping compilation because '{outputDllPath}' is up-to-date.");
+                items.Add(CreateOutputItem(outputDllPath, commandFilePath));
+                return;
+            }
+
+            if (!CommandRecordFile.TryDelete(Log, CxxTool, commandFilePath) ||
+                !Toolchain.TryCompileCppToSharedLibrary(
                     sourcePath, outputDllPath, arch, Log, CancellationToken, _sanitizers) ||
-                !ArtifactHelper.TrySignArtifact(outputDllPath, Log))
+                !ArtifactHelper.TrySignArtifact(outputDllPath, Log) ||
+                !CommandRecordFile.TryWrite(Log, CxxTool, commandFilePath, commandRecord))
             {
                 Interlocked.Exchange(ref hasErrorsBox[0], 1);
                 return;
             }
 
-            var taskItem = new TaskItem(outputDllPath);
-            taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-            items.Add(taskItem);
+            items.Add(CreateOutputItem(outputDllPath, commandFilePath));
         });
 
         return Volatile.Read(ref hasErrorsBox[0]) != 0 ? null : [.. items];
+    }
+
+    private static TaskItem CreateOutputItem(string dllPath, string? commandFilePath)
+    {
+        var item = new TaskItem(dllPath);
+        item.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(dllPath)}");
+        if (commandFilePath is not null)
+        {
+            item.SetMetadata("CxxCommandFile", commandFilePath);
+        }
+
+        return item;
     }
 
     /// <summary>Gets the architecture name (<c>x64</c> or <c>arm64</c>) of the process that runs the build.</summary>

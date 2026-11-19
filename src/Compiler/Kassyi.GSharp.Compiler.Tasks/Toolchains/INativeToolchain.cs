@@ -48,4 +48,17 @@ public interface INativeToolchain
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
         NativeSanitizers sanitizers = NativeSanitizers.None);
+
+    /// <summary>The text that decides the output of <see cref="TryCompileCppToSharedLibrary"/> besides the source
+    /// contents: the compiler and its version, and the arguments. Equal texts mean an equal output.</summary>
+    /// <param name="sourcePath">The full path to the input C++ source file.</param>
+    /// <param name="outputPath">The full path to the output shared library file.</param>
+    /// <param name="architecture">The target CPU architecture (e.g., <c>x64</c>, <c>arm64</c>).</param>
+    /// <param name="sanitizers">The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.</param>
+    /// <returns>The description. Call it only after <see cref="PrepareEnvironment"/> returned <see cref="ToolchainPreparationResult.Ready"/>.</returns>
+    string DescribeCompilation(
+        string sourcePath,
+        string outputPath,
+        string architecture,
+        NativeSanitizers sanitizers);
 }

@@ -139,7 +139,9 @@
     </ItemGroup>
   </Target>
 
-  <!-- Not in a design-time build, as GSharpCompileCuda -->
+  <!-- Not in a design-time build, as GSharpCompileCuda. Inputs and Outputs stay as they are (the target always runs):
+       a skipped target would not create _GSharpCompiledDlls, which GSharpAddGeneratedItemsToOutputDirectory copies.
+       The task itself skips cl.exe / g++ for a library that is up to date. -->
   <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile" DependsOnTargets="GSharpReadArtifactManifest"
           Condition="'$(DesignTimeBuild)' != 'true'"
           Inputs="$(MSBuildAllProjects);@(Compile)"
@@ -165,6 +167,8 @@
     <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
       <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls)" />
+      <!-- The command record next to each library (CompileCppToNativeTask.CommandFileExtension) -->
+      <FileWrites Include="%(_GSharpCompiledDlls.CxxCommandFile)" Condition="'%(_GSharpCompiledDlls.CxxCommandFile)' != ''" />
       <FileWrites Include="@(_GSharpCompiledDlls->'%(RootDir)%(Directory)%(Filename).pdb')"
                   Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')" />
     </ItemGroup>

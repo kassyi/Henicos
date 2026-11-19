@@ -11,6 +11,7 @@ public sealed class GccClangToolchain : INativeToolchain
     private readonly string[] _compilerCandidates;
     private readonly string _hostArchitecture;
     private string? _resolvedCompiler;
+    private string _compilerVersion = "";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GccClangToolchain"/> class.
@@ -67,9 +68,10 @@ public sealed class GccClangToolchain : INativeToolchain
 
         foreach (var candidate in _compilerCandidates)
         {
-            if (IsCompilerAvailable(candidate, cancellationToken))
+            if (TryProbeCompiler(candidate, cancellationToken, out var versionLine))
             {
                 _resolvedCompiler = candidate;
+                _compilerVersion = versionLine;
                 return ToolchainPreparationResult.Ready;
             }
         }
@@ -93,15 +95,7 @@ public sealed class GccClangToolchain : INativeToolchain
         NativeSanitizers sanitizers = NativeSanitizers.None)
     {
         var compiler = _resolvedCompiler ?? _compilerCandidates[0];
-
-        // -O2 = Optimize for speed
-        // -shared -fPIC = Build position-independent shared library
-        // -std=c++17 = C++17 standard
-        // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
-        // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
-        var args =
-            $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
-            $"\"{sourcePath}\" -o \"{outputPath}\"";
+        var args = BuildCompilerArguments(sourcePath, outputPath, sanitizers);
 
         log.LogMessage(MessageImportance.Normal,
             $"Compiling C++ source for {architecture} with {compiler}: {sourcePath}");
@@ -147,6 +141,26 @@ public sealed class GccClangToolchain : INativeToolchain
         }
     }
 
+    /// <inheritdoc />
+    public string DescribeCompilation(
+        string sourcePath,
+        string outputPath,
+        string architecture,
+        NativeSanitizers sanitizers)
+    {
+        var compiler = _resolvedCompiler ?? _compilerCandidates[0];
+        return $"{compiler}\n{_compilerVersion}\n{BuildCompilerArguments(sourcePath, outputPath, sanitizers)}";
+    }
+
+    // -O2 = Optimize for speed
+    // -shared -fPIC = Build position-independent shared library
+    // -std=c++17 = C++17 standard
+    // -fopenmp = Enable OpenMP for BSP CPU scheduler parallelism
+    // -Wno-unused-label = C# already diagnoses unused user labels (CS0164); synthesized labels may be unreferenced
+    private static string BuildCompilerArguments(string sourcePath, string outputPath, NativeSanitizers sanitizers) =>
+        $"-O2 -shared -fPIC -std=c++17 -fopenmp -Wno-unused-label{BuildSanitizerFlags(sanitizers)} " +
+        $"\"{sourcePath}\" -o \"{outputPath}\"";
+
     // " -fsanitize=<names> [-fno-sanitize-recover=undefined] -fno-omit-frame-pointer -g", or "" when none is enabled.
     // -fno-sanitize-recover=undefined stops at the first UBSan report; -fno-omit-frame-pointer and -g give readable stacks.
     private static string BuildSanitizerFlags(NativeSanitizers sanitizers)
@@ -172,8 +186,10 @@ public sealed class GccClangToolchain : INativeToolchain
         return $" -fsanitize={string.Join(",", names)}{recover} -fno-omit-frame-pointer -g";
     }
 
-    private bool IsCompilerAvailable(string executable, CancellationToken cancellationToken)
+    // Runs "<executable> --version"; versionLine is the first line of its output (empty when there is none).
+    private bool TryProbeCompiler(string executable, CancellationToken cancellationToken, out string versionLine)
     {
+        versionLine = "";
         try
         {
             var checkInfo = new ProcessStartInfo
@@ -182,7 +198,14 @@ public sealed class GccClangToolchain : INativeToolchain
                 Arguments = "--version"
             };
             var result = _processRunner.Run(checkInfo, cancellationToken);
-            return result.ExitCode == 0;
+            if (result.ExitCode != 0)
+            {
+                return false;
+            }
+
+            using var reader = new StringReader(result.StandardOutput);
+            versionLine = reader.ReadLine()?.Trim() ?? "";
+            return true;
         }
         catch (OperationCanceledException)
         {

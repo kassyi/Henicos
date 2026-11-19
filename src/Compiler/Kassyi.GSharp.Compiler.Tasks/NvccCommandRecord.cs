@@ -3,8 +3,8 @@ using System.Text;
 namespace Kassyi.GSharp.Compiler.Tasks;
 
 /// <summary>
-/// The file next to a fatbin that records the nvcc command the fatbin was built with, so that a changed command
-/// rebuilds a fatbin that is newer than its sources.
+/// The content of the file next to a fatbin that records the nvcc command the fatbin was built with, so that a changed
+/// command rebuilds a fatbin that is newer than its sources. <see cref="CommandRecordFile"/> reads and writes the file.
 /// </summary>
 internal static class NvccCommandRecord
 {
@@ -27,66 +27,5 @@ internal static class NvccCommandRecord
         record.Append("signing-key ").Append(ArtifactHelper.GetSigningKeyFingerprint()).Append('\n');
         record.Append(nvccVersion);
         return record.ToString();
-    }
-
-    // Removes the record before nvcc runs: when nvcc, signing or the record write fails, no record of an earlier
-    // command can match the fatbin left behind, so the next build compiles again
-    public static bool TryDelete(TaskLoggingHelper log, string commandFilePath)
-    {
-        try
-        {
-            if (File.Exists(commandFilePath))
-            {
-                File.Delete(commandFilePath);
-            }
-
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            log.LogError($"Failed to delete the nvcc command record '{commandFilePath}': {ex.Message}");
-            return false;
-        }
-    }
-
-    public static bool IsCurrent(TaskLoggingHelper log, string commandFilePath, string commandRecord)
-    {
-        if (!File.Exists(commandFilePath))
-        {
-            log.LogMessage(MessageImportance.Low, $"Recompiling because '{commandFilePath}' does not exist.");
-            return false;
-        }
-
-        try
-        {
-            if (string.Equals(File.ReadAllText(commandFilePath), commandRecord, StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            log.LogMessage(MessageImportance.Normal,
-                $"Recompiling because the nvcc command differs from the one recorded in '{commandFilePath}'.");
-            return false;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            log.LogMessage(MessageImportance.Low,
-                $"Recompiling because '{commandFilePath}' could not be read: {ex.Message}");
-            return false;
-        }
-    }
-
-    public static bool TryWrite(TaskLoggingHelper log, string commandFilePath, string commandRecord)
-    {
-        try
-        {
-            File.WriteAllText(commandFilePath, commandRecord);
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            log.LogError($"Failed to write the nvcc command record '{commandFilePath}': {ex.Message}");
-            return false;
-        }
     }
 }

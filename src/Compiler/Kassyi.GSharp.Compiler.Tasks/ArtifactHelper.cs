@@ -73,6 +73,27 @@ public static class ArtifactHelper
         return new string(hex);
     }
 
+    // Returns false when the output does not exist. A source that does not exist is skipped, as before; removing a source
+    // still changes the command record.
+    internal static bool IsNewerThanSources(string outputPath, IReadOnlyList<string> sourcePaths)
+    {
+        if (!File.Exists(outputPath))
+        {
+            return false;
+        }
+
+        var outputTime = File.GetLastWriteTimeUtc(outputPath);
+        foreach (var sourcePath in sourcePaths)
+        {
+            if (File.Exists(sourcePath) && File.GetLastWriteTimeUtc(sourcePath) > outputTime)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static bool TryResolveSigningKey(TaskLoggingHelper log, out byte[] keySeed)
     {
         var envKey = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");

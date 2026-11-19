@@ -1,6 +1,9 @@
 #nullable enable
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Compiler.Tasks;
+using Kassyi.GSharp.Compiler.Tasks.Toolchains;
+using Microsoft.Build.Utilities;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
@@ -148,5 +151,248 @@ public class CompileCppToNativeTaskTests
         var output = Assert.Single(task.OutputDlls);
         Assert.EndsWith($"_{hostArchitecture}.dll", output.ItemSpec);
         Assert.Empty(ctx.BuildEngine.LoggedErrors);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CompileCppToNativeTask_SameSourceAndRecord_SecondRunSkipsCompileAndSigning()
+    {
+        using var ctx = new CompileTaskTestContext();
+        var source = CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+
+        var first = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(first.Execute());
+        var firstItem = Assert.Single(first.OutputDlls);
+        var signedBytes = File.ReadAllBytes(firstItem.ItemSpec);
+        Assert.Equal(firstItem.ItemSpec + CompileCppToNativeTask.CommandFileExtension,
+            firstItem.GetMetadata("CxxCommandFile"));
+        Assert.True(File.Exists(firstItem.GetMetadata("CxxCommandFile")));
+        Assert.True(File.Exists(source));
+
+        var second = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(second.Execute());
+
+        Assert.Equal(1, toolchain.CompileCount);
+        var secondItem = Assert.Single(second.OutputDlls);
+        Assert.Equal(firstItem.ItemSpec, secondItem.ItemSpec);
+        Assert.Equal(firstItem.GetMetadata("LogicalName"), secondItem.GetMetadata("LogicalName"));
+        Assert.Equal(firstItem.GetMetadata("CxxCommandFile"), secondItem.GetMetadata("CxxCommandFile"));
+        Assert.Equal(signedBytes, File.ReadAllBytes(secondItem.ItemSpec));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_SourceNewerThanLibrary_CompilesAgain()
+    {
+        using var ctx = new CompileTaskTestContext();
+        var source = CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        File.SetLastWriteTimeUtc(source, DateTime.UtcNow.AddMinutes(10));
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        Assert.Equal(2, toolchain.CompileCount);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_SanitizersChanged_CompilesAgain()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        var second = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        second.GSharpNativeSanitizers = "address";
+        Assert.True(second.Execute());
+
+        Assert.Equal(2, toolchain.CompileCount);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_ToolchainDescriptionChanged_CompilesAgain()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        toolchain.Version = "compiler 2";
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        Assert.Equal(2, toolchain.CompileCount);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_ArchitectureAdded_CompilesOnlyTheNewOne()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        var second = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        second.GSharpMultiTarget = true;
+        Assert.True(second.Execute());
+
+        Assert.Equal(2, second.OutputDlls.Length);
+        Assert.Equal(2, toolchain.CompileCount);
+        Assert.Contains(toolchain.CompiledArchitectures, a => a == "arm64");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_CommandRecordMissing_CompilesAgain()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        var first = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(first.Execute());
+        var commandFile = Assert.Single(first.OutputDlls).GetMetadata("CxxCommandFile");
+        File.Delete(commandFile);
+
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        Assert.Equal(2, toolchain.CompileCount);
+        Assert.True(File.Exists(commandFile));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void CompileCppToNativeTask_CompilationFails_LeavesNoRecordAndCompilesAgainNextTime()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        var toolchain = new CountingToolchain();
+        var first = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(first.Execute());
+        var commandFile = Assert.Single(first.OutputDlls).GetMetadata("CxxCommandFile");
+
+        toolchain.Version = "compiler 2";
+        toolchain.FailCompilation = true;
+        Assert.False(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+        Assert.False(File.Exists(commandFile));
+
+        toolchain.Version = "compiler 1";
+        toolchain.FailCompilation = false;
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], toolchain).Execute());
+
+        Assert.Equal(3, toolchain.CompileCount);
+        Assert.True(File.Exists(commandFile));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void MsvcToolchain_DescribeCompilation_ContainsClArgumentsAndToolsVersion()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        ctx.Runner.CmdStandardOutput = "VCToolsVersion=14.50.1\r\nVCToolsInstallDir=C:\\vc\\14.50.1\\";
+        var toolchain = ctx.CreateMsvcToolchain();
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(task.Execute());
+        var output = Assert.Single(task.OutputDlls).ItemSpec;
+        var cl = Assert.Single(ctx.Runner.Invocations, i => i.FileName.EndsWith("cl.exe", StringComparison.Ordinal));
+        var source = Path.Combine(ctx.TempDir, "kernel.cpp");
+
+        var description = toolchain.DescribeCompilation(source, output, HostArchitecture, NativeSanitizers.None);
+
+        Assert.Contains(cl.Arguments, description);
+        Assert.Contains("VCToolsVersion 14.50.1", description);
+        Assert.Contains("VCToolsInstallDir C:\\vc\\14.50.1\\", description);
+
+        ctx.Runner.CmdStandardOutput = "VCToolsVersion=14.50.2\r\nVCToolsInstallDir=C:\\vc\\14.50.2\\";
+        var otherToolchain = ctx.CreateMsvcToolchain();
+        Assert.True(ctx.CreateCppTask(["kernel.cpp"], otherToolchain).Execute());
+        Assert.NotEqual(description,
+            otherToolchain.DescribeCompilation(source, output, HostArchitecture, NativeSanitizers.None));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void GccClangToolchain_DescribeCompilation_ContainsCompilerVersionLineAndArguments()
+    {
+        using var ctx = new CompileTaskTestContext();
+        CreateOldSource(ctx);
+        ctx.Runner.VersionCheckOutput = "g++ (GCC) 13.2.0\nCopyright notice that is not recorded";
+        var toolchain = ctx.CreateGccClangToolchain("g++");
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+        Assert.True(task.Execute());
+        var output = Assert.Single(task.OutputDlls).ItemSpec;
+        var compile = Assert.Single(ctx.Runner.Invocations,
+            i => i.FileName == "g++" && !i.Arguments.Contains("--version"));
+        var source = Path.Combine(ctx.TempDir, "kernel.cpp");
+
+        var description = toolchain.DescribeCompilation(source, output, HostArchitecture, NativeSanitizers.None);
+
+        Assert.Contains("g++ (GCC) 13.2.0", description);
+        Assert.DoesNotContain("Copyright", description);
+        Assert.StartsWith("g++\n", description);
+        Assert.Contains(compile.Arguments, description);
+    }
+
+    private static string HostArchitecture => RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+        ? "arm64"
+        : "x64";
+
+    private static string CreateOldSource(CompileTaskTestContext ctx)
+    {
+        var source = ctx.CreateDummySource("kernel.cpp", "// source");
+        File.SetLastWriteTimeUtc(source, DateTime.UtcNow.AddMinutes(-10));
+        return source;
+    }
+
+    // Counts the compilations and writes a library file; the description is the version, the architecture and the
+    // sanitizers, so that a change of any of them changes the command record.
+    private sealed class CountingToolchain : INativeToolchain
+    {
+        private readonly ConcurrentBag<string> _compiledArchitectures = [];
+        private int _compileCount;
+
+        public string Version { get; set; } = "compiler 1";
+        public bool FailCompilation { get; set; }
+        public int CompileCount => Volatile.Read(ref _compileCount);
+        public IReadOnlyCollection<string> CompiledArchitectures => _compiledArchitectures;
+
+        public string Name => "Counting";
+        public bool IsWindows => false;
+
+        public ToolchainPreparationResult PrepareEnvironment(
+            string[] architectures,
+            TaskLoggingHelper log,
+            CancellationToken cancellationToken = default) => ToolchainPreparationResult.Ready;
+
+        public Dictionary<string, string>? GetEnvironmentVariables(string architecture) => null;
+
+        public bool TryCompileCppToSharedLibrary(
+            string sourcePath,
+            string outputPath,
+            string architecture,
+            TaskLoggingHelper log,
+            CancellationToken cancellationToken = default,
+            NativeSanitizers sanitizers = NativeSanitizers.None)
+        {
+            Interlocked.Increment(ref _compileCount);
+            _compiledArchitectures.Add(architecture);
+            if (FailCompilation)
+            {
+                return false;
+            }
+
+            File.WriteAllText(outputPath, "dll");
+            return true;
+        }
+
+        public string DescribeCompilation(
+            string sourcePath,
+            string outputPath,
+            string architecture,
+            NativeSanitizers sanitizers) => $"{Version}\n{architecture}\n{sanitizers}\n{sourcePath}";
     }
 }

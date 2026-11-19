@@ -52,6 +52,9 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     /// </summary>
     public const string CommandFileExtension = ".nvcc";
 
+    // The tool name in the messages of CommandRecordFile
+    private const string NvccTool = "nvcc";
+
     private string _nvccOptions = "";
     private string _nvccVersion = "";
     private string _nvccVersionOutput = "";
@@ -115,8 +118,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, sourcePaths);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
-        if (IsNewerThanSources(outputFatbinPath, sourcePaths) &&
-            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
+        if (ArtifactHelper.IsNewerThanSources(outputFatbinPath, sourcePaths) &&
+            CommandRecordFile.IsCurrent(Log, NvccTool, commandFilePath, commandRecord))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation because '{outputFatbinPath}' is up-to-date.");
@@ -154,14 +157,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
-        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+        if (!CommandRecordFile.TryDelete(Log, NvccTool, commandFilePath) ||
             !TryCompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, bundledPaths))
         {
             return false;
         }
 
         return ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) &&
-            NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord);
+            CommandRecordFile.TryWrite(Log, NvccTool, commandFilePath, commandRecord);
     }
 
     // One #include per source, except an earlier bundle of the same name. The included paths are added to bundledPaths.
@@ -189,27 +192,6 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         }
 
         return bundleContent.ToString();
-    }
-
-    // Returns false when the fatbin does not exist. A source that does not exist is skipped, as before; removing a source
-    // still changes the nvcc command record.
-    private static bool IsNewerThanSources(string fatbinPath, IReadOnlyList<string> sourcePaths)
-    {
-        if (!File.Exists(fatbinPath))
-        {
-            return false;
-        }
-
-        var fatbinTime = File.GetLastWriteTimeUtc(fatbinPath);
-        foreach (var sourcePath in sourcePaths)
-        {
-            if (File.Exists(sourcePath) && File.GetLastWriteTimeUtc(sourcePath) > fatbinTime)
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static TaskItem CreateOutputItem(string fatbinPath, string? commandFilePath)
@@ -327,22 +309,22 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         var commandRecord = NvccCommandRecord.Build(_nvccOptions, _nvccVersion, [sourcePath]);
         var commandFilePath = outputFatbinPath + CommandFileExtension;
-        if (File.Exists(sourcePath) && IsNewerThanSources(outputFatbinPath, [sourcePath]) &&
-            NvccCommandRecord.IsCurrent(Log, commandFilePath, commandRecord))
+        if (File.Exists(sourcePath) && ArtifactHelper.IsNewerThanSources(outputFatbinPath, [sourcePath]) &&
+            CommandRecordFile.IsCurrent(Log, NvccTool, commandFilePath, commandRecord))
         {
             Log.LogMessage(MessageImportance.Low,
                 $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
             return [CreateOutputItem(outputFatbinPath, commandFilePath)];
         }
 
-        if (!NvccCommandRecord.TryDelete(Log, commandFilePath) ||
+        if (!CommandRecordFile.TryDelete(Log, NvccTool, commandFilePath) ||
             !TryCompileWithNvcc(sourcePath, outputFatbinPath))
         {
             return null;
         }
 
         if (!ArtifactHelper.TrySignArtifact(outputFatbinPath, Log) ||
-            !NvccCommandRecord.TryWrite(Log, commandFilePath, commandRecord))
+            !CommandRecordFile.TryWrite(Log, NvccTool, commandFilePath, commandRecord))
         {
             return null;
         }

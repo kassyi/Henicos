@@ -135,6 +135,22 @@ public sealed class MsvcToolchain : INativeToolchain
         }
     }
 
+    /// <inheritdoc />
+    public string DescribeCompilation(
+        string sourcePath,
+        string outputPath,
+        string architecture,
+        NativeSanitizers sanitizers)
+    {
+        var vcvarsArch = ToVcvarsArchitecture(architecture);
+        var paths = ClBuildPaths.For(outputPath);
+        var clArgs = BuildClArguments(sourcePath, paths.ObjPath, outputPath, paths.VcPdbPath, sanitizers);
+        var env = ResolveCompileEnvironment(vcvarsArch, CancellationToken.None);
+        var toolsVersion = env != null && env.TryGetValue("VCToolsVersion", out var version) ? version : "";
+        var toolsInstallDir = env != null && env.TryGetValue("VCToolsInstallDir", out var installDir) ? installDir : "";
+        return $"{clArgs}\nVCToolsVersion {toolsVersion}\nVCToolsInstallDir {toolsInstallDir}";
+    }
+
     // The intermediate files that cl.exe writes next to the output library.
     private readonly record struct ClBuildPaths(string BaseDir, string BaseName, string ObjPath, string VcPdbPath)
     {
