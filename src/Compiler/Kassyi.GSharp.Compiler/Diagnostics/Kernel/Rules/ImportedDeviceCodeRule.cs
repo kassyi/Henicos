@@ -138,7 +138,9 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
             return FindTypeCollision(array.ElementType, compilation, index, visited);
         }
 
-        if (type is not INamedTypeSymbol named || !visited.Add(named))
+        if (type is not INamedTypeSymbol named ||
+            SelfHoldingGenericStructs.IsLargerConstruction(named, visited) ||
+            !visited.Add(named))
         {
             return default;
         }

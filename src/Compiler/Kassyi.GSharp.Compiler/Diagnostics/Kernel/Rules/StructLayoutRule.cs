@@ -74,7 +74,7 @@ internal sealed class StructLayoutRule :
                 }
             }
             else if (structType is not null &&
-                     TryFindConvertedInlineArrayElement(structType, context.Dialect, depth: 0, out var element))
+                     TryFindConvertedInlineArrayElement(structType, context.Dialect, out var element))
             {
                 ReportConverted(element, typeSyntax, ref context);
             }
@@ -191,21 +191,35 @@ internal sealed class StructLayoutRule :
         return true;
     }
 
-    private static void ReportConverted(ITypeSymbol type, SyntaxNode typeSyntax, ref ValidationContext context) =>
+    // [WHY] A struct that holds itself by value is CS0523, which no field order fixes, so the advice is left out
+    private static void ReportConverted(ITypeSymbol type, SyntaxNode typeSyntax, ref ValidationContext context)
+    {
+        var difference = TransferClassifier.DescribeLayoutDifference(type, context.Dialect, out var holdsItself);
         context.ReportDiagnostic(
             GSharpDiagnostics.StructArrayConvertedPerElement,
             typeSyntax,
             TypeLayoutCalculator.FormatTypeName(type),
-            TransferClassifier.DescribeLayoutDifference(type, context.Dialect));
+            difference,
+            holdsItself ? "" : " Reorder the fields or avoid array fields to transfer them as one block.");
+    }
 
     // The element of the first [InlineArray] in the struct, its nested structs included, that is converted element by
     // element
     private static bool TryFindConvertedInlineArrayElement(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        int depth, [NotNullWhen(true)] out INamedTypeSymbol? element)
+        [NotNullWhen(true)] out INamedTypeSymbol? element)
+    {
+        using var visits = StructVisits.Start();
+        return TryFindConvertedInlineArrayElement(structType, dialect, depth: 0, visits, out element);
+    }
+
+    // [WHY] Each struct is searched once (visits), so several fields of one struct type stay linear; the depth bound
+    // stops a generic struct that names ever larger constructions of itself
+    private static bool TryFindConvertedInlineArrayElement(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        int depth, StructVisits visits, [NotNullWhen(true)] out INamedTypeSymbol? element)
     {
         const int MaxDepth = 16;
         element = null;
-        if (depth > MaxDepth)
+        if (depth > MaxDepth || !visits.TryVisit(structType))
         {
             return false;
         }
@@ -224,7 +238,7 @@ internal sealed class StructLayoutRule :
                 return true;
             }
 
-            if (TryFindConvertedInlineArrayElement(nested, dialect, depth + 1, out element))
+            if (TryFindConvertedInlineArrayElement(nested, dialect, depth + 1, visits, out element))
             {
                 return true;
             }

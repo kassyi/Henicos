@@ -184,7 +184,7 @@ internal static class MemoryRecording
     private static void AddFieldTargets(MemoryValues values, INamedTypeSymbol type,
         ImmutableArray<MemoryCallTarget>.Builder targets, HashSet<ITypeSymbol> visited)
     {
-        if (!visited.Add(type))
+        if (SelfHoldingGenericStructs.IsLargerConstruction(type, visited) || !visited.Add(type))
         {
             return;
         }

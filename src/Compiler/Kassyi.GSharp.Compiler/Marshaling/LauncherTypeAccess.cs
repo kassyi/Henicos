@@ -37,22 +37,31 @@ internal static class LauncherTypeAccess
     /// array-like type), its nested structs included, whose type <paramref name="launcherClass"/> cannot access.
     /// </summary>
     public static InaccessibleFieldType? Find(ITypeSymbol type, INamedTypeSymbol launcherClass,
-        Compilation compilation) =>
-        UnwrapArrayLikeElements(type) is INamedTypeSymbol structType && TypeLayoutCalculator.IsUserStruct(structType)
-            ? FindInStruct(structType, launcherClass, compilation, depth: 0)
-            : null;
-
-    private static InaccessibleFieldType? FindInStruct(INamedTypeSymbol structType, INamedTypeSymbol launcherClass,
-        Compilation compilation, int depth)
+        Compilation compilation)
     {
-        if (depth > MaxDepth)
+        if (UnwrapArrayLikeElements(type) is not INamedTypeSymbol structType ||
+            !TypeLayoutCalculator.IsUserStruct(structType))
+        {
+            return null;
+        }
+
+        using var visits = StructVisits.Start();
+        return FindInStruct(structType, launcherClass, compilation, depth: 0, visits);
+    }
+
+    // [WHY] A struct searched once finds nothing the second time (visits), so several fields of one struct type stay
+    // linear; the depth bound stops a generic struct whose arrays name ever larger constructions of itself
+    private static InaccessibleFieldType? FindInStruct(INamedTypeSymbol structType, INamedTypeSymbol launcherClass,
+        Compilation compilation, int depth, StructVisits visits)
+    {
+        if (depth > MaxDepth || !visits.TryVisit(structType))
         {
             return null;
         }
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            if (FindInMember(member, launcherClass, compilation, depth) is { } found)
+            if (FindInMember(member, launcherClass, compilation, depth, visits) is { } found)
             {
                 return found;
             }
@@ -63,7 +72,7 @@ internal static class LauncherTypeAccess
 
     // The member's own type (after its array-like elements), or a field of it when it is a nested user struct
     private static InaccessibleFieldType? FindInMember(StructAbiMember member, INamedTypeSymbol launcherClass,
-        Compilation compilation, int depth)
+        Compilation compilation, int depth, StructVisits visits)
     {
         // GSH0078 reports a member the shadow struct leaves out
         if (NativeStructEmitter.IsOmittedFromShadow(member))
@@ -78,7 +87,7 @@ internal static class LauncherTypeAccess
         }
 
         return type is INamedTypeSymbol nested && TypeLayoutCalculator.IsUserStruct(nested) &&
-               FindInStruct(nested, launcherClass, compilation, depth + 1) is { } inner
+               FindInStruct(nested, launcherClass, compilation, depth + 1, visits) is { } inner
             ? inner with { FieldPath = member.Name + "." + inner.FieldPath }
             : null;
     }

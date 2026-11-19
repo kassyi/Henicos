@@ -9,21 +9,33 @@ public static class TransferClassifier
     /// the host and 8 on the device</c>, <c>the value is at offset 4 on the host and 8 on the device</c>).
     /// </summary>
     public static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect) =>
-        DescribeLayoutDifference(type, dialect, path: null);
+        DescribeLayoutDifference(type, dialect, out _);
 
-    private static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect, StructPath? path)
+    /// <summary>
+    /// <see cref="DescribeLayoutDifference(ITypeSymbol, ITranspilerDialect)"/>, and whether the difference is a struct
+    /// that holds itself by value (CS0523), which no field order fixes.
+    /// </summary>
+    internal static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect, out bool holdsItself)
+    {
+        holdsItself = false;
+        return DescribeLayoutDifference(type, dialect, path: null, ref holdsItself);
+    }
+
+    private static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect, StructPath? path,
+        ref bool holdsItself)
     {
         if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
             TransferPlanner.Plan(type, dialect) is TransferPlan.Nullable nullable)
         {
-            return DescribeNullableDifference(type.UnwrapNullable(), nullable, dialect, path);
+            return DescribeNullableDifference(type.UnwrapNullable(), nullable, dialect, path, ref holdsItself);
         }
 
         var structType = (INamedTypeSymbol)type;
         using var step = StructPath.Enter(path, structType);
         if (step.IsCycle)
         {
-            return $"'{TypeLayoutCalculator.FormatTypeName(structType)}' holds itself";
+            holdsItself = true;
+            return $"'{TypeLayoutCalculator.FormatTypeName(structType)}' holds itself by value (CS0523)";
         }
 
         var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect, step.Path);
@@ -32,26 +44,37 @@ public static class TransferClassifier
             return "LayoutKind.Auto lets the runtime reorder the fields on the host";
         }
 
-        if (!layout.Host.IsKnown)
-        {
-            foreach (var member in StructAbiMembers.Get(structType))
-            {
-                if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
-                {
-                    return $"field '{member.Name}' is an array, so the runtime may reorder the fields on the host";
-                }
+        return layout.Host.IsKnown
+            ? DescribeFieldDifference(layout, dialect, step.Path, ref holdsItself)
+            : DescribeUnknownHostLayout(structType, dialect, step.Path, ref holdsItself);
+    }
 
-                if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                    !HostLayoutCalculator.TryGetHostLayout(nested, out _, step.Path))
-                {
-                    return $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                           DescribeLayoutDifference(nested, dialect, step.Path);
-                }
+    // Why the host layout of the struct is not known: an array field, or a nested struct whose host layout is not known
+    private static string DescribeUnknownHostLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        StructPath path, ref bool holdsItself)
+    {
+        foreach (var member in StructAbiMembers.Get(structType))
+        {
+            if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
+            {
+                return $"field '{member.Name}' is an array, so the runtime may reorder the fields on the host";
             }
 
-            return "the host layout is not known";
+            if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
+                !HostLayoutCalculator.TryGetHostLayout(nested, out _, path))
+            {
+                return $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
+                       DescribeLayoutDifference(nested, dialect, path, ref holdsItself);
+            }
         }
 
+        return "the host layout is not known";
+    }
+
+    // The first field at another offset or of another size on the two sides, or a nested struct that is not identical
+    private static string DescribeFieldDifference(StructLayoutInfo layout, ITranspilerDialect dialect, StructPath path,
+        ref bool holdsItself)
+    {
         for (var i = 0; i < layout.DeviceFields.Length && i < layout.Host.Fields.Length; i++)
         {
             var device = layout.DeviceFields[i];
@@ -70,10 +93,10 @@ public static class TransferClassifier
 
             if (device.Member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
                 TypeLayoutCalculator.IsUserStruct(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect, step.Path).Transfer != TransferClass.Identical)
+                TypeLayoutCalculator.GetStructLayout(nested, dialect, path).Transfer != TransferClass.Identical)
             {
                 return $"field '{device.Member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                       DescribeLayoutDifference(nested, dialect, step.Path);
+                       DescribeLayoutDifference(nested, dialect, path, ref holdsItself);
             }
         }
 
@@ -82,13 +105,13 @@ public static class TransferClassifier
 
     // The value of a Nullable whose plan is not identical: its own difference, or where it sits
     private static string DescribeNullableDifference(ITypeSymbol valueType, TransferPlan.Nullable nullable,
-        ITranspilerDialect dialect, StructPath? path)
+        ITranspilerDialect dialect, StructPath? path, ref bool holdsItself)
     {
         if (nullable.Value is not TransferPlan.Blit &&
             valueType is INamedTypeSymbol { TypeKind: TypeKind.Struct } value)
         {
             return $"the value of type '{TypeLayoutCalculator.FormatTypeName(value)}': " +
-                   DescribeLayoutDifference(value, dialect, path);
+                   DescribeLayoutDifference(value, dialect, path, ref holdsItself);
         }
 
         if (nullable.ValueHostOffset != nullable.ValueDeviceOffset)

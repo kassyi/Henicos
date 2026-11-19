@@ -9,6 +9,9 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// code while it is being typed, and Roslyn gives the field the struct's own type. A walk enters each struct with
 /// <see cref="Enter"/> and passes <see cref="Step.Path"/> to the walks of its fields; the step leaves the struct when
 /// it is disposed, so a struct held twice without a cycle (<c>Outer { Inner A; Inner B; }</c>) is walked both times.
+/// A generic struct that holds a larger construction of itself (<c>G&lt;T&gt; { G&lt;G&lt;T&gt;&gt; Inner; }</c>, also
+/// CS0523) never meets the same constructed type again, so a construction counts as on the path when the path holds
+/// another construction of the same definition and that definition holds itself by value, as Roslyn checks it.
 /// </remarks>
 internal sealed class StructPath
 {
@@ -32,11 +35,18 @@ internal sealed class StructPath
             t_spare = null;
         }
 
-        return new Step(path, path._structs.Add(structType) ? structType : null, isOutermost);
+        var isCycle = path.Contains(structType);
+        if (!isCycle)
+        {
+            path._structs.Add(structType);
+        }
+
+        return new Step(path, isCycle ? null : structType, isOutermost);
     }
 
     /// <summary>Whether <paramref name="structType"/> is on the path: a field of its type closes a cycle.</summary>
-    public bool Contains(INamedTypeSymbol structType) => _structs.Contains(structType);
+    public bool Contains(INamedTypeSymbol structType) =>
+        _structs.Contains(structType) || SelfHoldingGenericStructs.IsLargerConstruction(structType, _structs);
 
     /// <summary>One struct entered on a <see cref="StructPath"/>; disposing it leaves the struct.</summary>
     public readonly ref struct Step

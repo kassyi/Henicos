@@ -67,7 +67,8 @@ internal static class TypeLayoutCalculator
         // ComputeDeviceStructLayout lays out candidate members before FindUnsupportedLayout rejects
         // them as UnsupportedLayout. A fallback 4-byte size/alignment is sufficient for this pass.
         _ when type.IsReferenceType => new TypeLayout(4, 4),
-        _ => throw new InvalidOperationException($"Unexpected type in GetDeviceLayout: {type.GetType().Name} ({FormatTypeName(type)})")
+        _ => throw new InvalidOperationException(
+            $"Unexpected type in GetDeviceLayout: {type.GetType().Name} ({FormatTypeName(type)})")
     };
 
     private static TypeLayout GetNullableLayout(TypeLayout valLayout)
@@ -102,7 +103,8 @@ internal static class TypeLayoutCalculator
         StructPath? path = null)
     {
         // [WHY] Already on the path only when a caller asks again for a struct it is laying out; the walks of the
-        // fields below stop at it, so this layout ends either way
+        // fields below stop at it, and its host layout there is not known, so ClassifyTransfer returns before it asks
+        // for the fields' transfer classes: this layout ends either way
         using var step = StructPath.Enter(path, structType);
         StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
 

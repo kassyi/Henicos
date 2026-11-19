@@ -60,49 +60,9 @@ public static class StructLayoutValidator
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+            if (FindUnsupportedMember(member, dialect, structPath) is { } memberProblem)
             {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
-                    null,
-                    null);
-            }
-
-            var type = member.Type;
-            if (type.IsArrayLikeType() || type.IsNullableArrayLike())
-            {
-                continue;
-            }
-
-            if (type.IsReferenceType)
-            {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' has the reference type '{TypeLayoutCalculator.FormatTypeName(type)}'",
-                    null,
-                    null);
-            }
-
-            if (!HasDeviceRepresentation(type, dialect))
-            {
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' has the type '{TypeLayoutCalculator.FormatTypeName(type)}', which has no device representation",
-                    member.Name,
-                    type);
-            }
-
-            // [WHY] A struct on the path holds itself: C# reports it (CS0523), and G# adds nothing
-            if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                TypeLayoutCalculator.IsUserStruct(nested) &&
-                !structPath.Contains(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect, structPath).Unsupported is { } nestedProblem)
-            {
-                var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
-                    ? nestedProblem.FieldPath
-                    : $"{member.Name}.{nestedProblem.FieldPath}";
-                return new UnsupportedLayout(
-                    $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': {nestedProblem.Reason}",
-                    path,
-                    nestedProblem.FieldType);
+                return memberProblem;
             }
         }
 
@@ -110,6 +70,60 @@ public static class StructLayoutValidator
         // an unsupported nested struct is reported for that member (GSH0078 / GSH0079 with the field), not as an arm
         // whose host and device layouts differ
         return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect, structPath) : null;
+    }
+
+    // A member the device cannot hold: a compiler-generated field G# does not know, a reference, a type without a
+    // device representation, or a nested struct with a reason of its own
+    private static UnsupportedLayout? FindUnsupportedMember(StructAbiMember member, ITranspilerDialect dialect,
+        StructPath structPath)
+    {
+        if (member.Kind == StructAbiMemberKind.UnknownHiddenField)
+        {
+            return new UnsupportedLayout(
+                $"field '{member.Name}' is a compiler-generated field that G# does not lay out",
+                null,
+                null);
+        }
+
+        var type = member.Type;
+        if (type.IsArrayLikeType() || type.IsNullableArrayLike())
+        {
+            return null;
+        }
+
+        if (type.IsReferenceType)
+        {
+            return new UnsupportedLayout(
+                $"field '{member.Name}' has the reference type '{TypeLayoutCalculator.FormatTypeName(type)}'",
+                null,
+                null);
+        }
+
+        if (!HasDeviceRepresentation(type, dialect))
+        {
+            return new UnsupportedLayout(
+                $"field '{member.Name}' has the type '{TypeLayoutCalculator.FormatTypeName(type)}', " +
+                "which has no device representation",
+                member.Name,
+                type);
+        }
+
+        // [WHY] A struct on the path holds itself: C# reports it (CS0523), and G# adds nothing
+        if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } nested ||
+            !TypeLayoutCalculator.IsUserStruct(nested) ||
+            structPath.Contains(nested) ||
+            TypeLayoutCalculator.GetStructLayout(nested, dialect, structPath).Unsupported is not { } nestedProblem)
+        {
+            return null;
+        }
+
+        var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
+            ? nestedProblem.FieldPath
+            : $"{member.Name}.{nestedProblem.FieldPath}";
+        return new UnsupportedLayout(
+            $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " + nestedProblem.Reason,
+            path,
+            nestedProblem.FieldType);
     }
 
     // A field at an offset its device alignment does not allow, or two fields that overlap without starting at the
@@ -162,8 +176,8 @@ public static class StructLayoutValidator
                 {
                     var badMember = !IsUnionArmBlittable(field, dialect, path) ? field.Member : earlier.Member;
                     return new UnsupportedLayout(
-                        $"field '{field.Member.Name}' at offset {field.Offset} overlaps field '{earlier.Member.Name}', " +
-                        $"and '{badMember.Name}' has different host and device layouts",
+                        $"field '{field.Member.Name}' at offset {field.Offset} overlaps " +
+                        $"field '{earlier.Member.Name}', and '{badMember.Name}' has different host and device layouts",
                         null,
                         null);
                 }
@@ -173,11 +187,14 @@ public static class StructLayoutValidator
         return null;
     }
 
+    // [WHY] An arm of a struct on the path is the cycle C# reports (CS0523); its host layout is not known only because
+    // the walk stops there, which is no difference between the layouts
     private static bool IsUnionArmBlittable(FieldLayout field, ITranspilerDialect dialect, StructPath path) =>
-        !field.Member.Type.IsArrayLikeType() &&
-        !field.Member.Type.IsNullableArrayLike() &&
-        HostLayoutCalculator.TryGetHostLayout(field.Member.Type, out var elemHost, path) &&
-        elemHost.Size * field.Member.ElementCount == field.Layout.Size &&
-        TransferClassifier.IsMemberTransferIdentical(field.Member.Type, dialect, path);
+        (field.Member.Type is INamedTypeSymbol arm && path.Contains(arm)) ||
+        (!field.Member.Type.IsArrayLikeType() &&
+         !field.Member.Type.IsNullableArrayLike() &&
+         HostLayoutCalculator.TryGetHostLayout(field.Member.Type, out var elemHost, path) &&
+         elemHost.Size * field.Member.ElementCount == field.Layout.Size &&
+         TransferClassifier.IsMemberTransferIdentical(field.Member.Type, dialect, path));
 
 }

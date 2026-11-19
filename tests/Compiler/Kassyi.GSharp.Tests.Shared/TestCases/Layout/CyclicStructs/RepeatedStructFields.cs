@@ -19,3 +19,15 @@ public struct Diamond
     public Pair Right;
     public Wrapper Wrapped;
 }
+
+// A generic struct held inside another construction of itself, without a cycle
+public struct Twin<T>
+{
+    public T A;
+    public T B;
+}
+
+public struct TwinHolder
+{
+    public Twin<Twin<long>> Nested;
+}

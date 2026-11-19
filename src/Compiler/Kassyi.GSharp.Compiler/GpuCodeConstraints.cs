@@ -343,7 +343,15 @@ internal static class GpuCodeConstraints
     /// Whether <paramref name="type"/> is, wraps, or holds (directly or in a nested user struct) a multidimensional array
     /// (<c>T[,]</c>, <c>T[,,]</c>, ...), which device code cannot represent (GSH0003, #613).
     /// </summary>
-    public static bool ContainsMultidimensionalArray(ITypeSymbol type, int depth = 0)
+    public static bool ContainsMultidimensionalArray(ITypeSymbol type)
+    {
+        using var visits = StructVisits.Start();
+        return ContainsMultidimensionalArray(type, depth: 0, visits);
+    }
+
+    // [WHY] Each struct is searched once (visits), so several fields of one struct type stay linear; the depth bound
+    // stops a generic struct whose arrays name ever larger constructions of itself (N<T> { N<T[]>[] Kids; })
+    private static bool ContainsMultidimensionalArray(ITypeSymbol type, int depth, StructVisits visits)
     {
         const int MaxDepth = 16;
         if (depth > MaxDepth)
@@ -359,15 +367,16 @@ internal static class GpuCodeConstraints
 
         if (unwrapped.TryGetArrayLikeElementType(out var elementType))
         {
-            return ContainsMultidimensionalArray(elementType, depth + 1);
+            return ContainsMultidimensionalArray(elementType, depth + 1, visits);
         }
 
         if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Struct } structType &&
-            TypeLayoutCalculator.IsUserStruct(structType))
+            TypeLayoutCalculator.IsUserStruct(structType) &&
+            visits.TryVisit(structType))
         {
             foreach (var member in StructAbiMembers.Get(structType))
             {
-                if (ContainsMultidimensionalArray(member.Type, depth + 1))
+                if (ContainsMultidimensionalArray(member.Type, depth + 1, visits))
                 {
                     return true;
                 }

@@ -81,15 +81,16 @@ internal static class WmmaTypeUsage
         [NotNullWhen(true)] out string? targetName,
         [NotNullWhen(true)] out string? reason)
     {
+        using var visits = StructVisits.Start();
         if (type is IPointerTypeSymbol pointerType &&
-            ContainsFragmentOrMarker(pointerType.PointedAtType, out targetName, depth: 0))
+            ContainsFragmentOrMarker(pointerType.PointedAtType, out targetName, depth: 0, visits))
         {
             reason = "pointers to WMMA fragments or markers are not supported";
             return true;
         }
 
         if (type.TryGetArrayLikeElementType(out var elementType) &&
-            ContainsFragmentOrMarker(elementType, out targetName, depth: 0))
+            ContainsFragmentOrMarker(elementType, out targetName, depth: 0, visits))
         {
             reason = "arrays or spans of WMMA fragments or markers are not supported";
             return true;
@@ -97,13 +98,13 @@ internal static class WmmaTypeUsage
 
         if (type is INamedTypeSymbol namedType)
         {
-            if (TryFindInTypeArguments(namedType, depth: 0, out targetName))
+            if (TryFindInTypeArguments(namedType, depth: 0, visits, out targetName))
             {
                 reason = $"WMMA fragments and markers cannot be used as type arguments of '{namedType.Name}'";
                 return true;
             }
 
-            if (TryFindInStructMembers(namedType, depth: 1, out var member, out var memberWmmaName))
+            if (TryFindInStructMembers(namedType, depth: 1, visits, out var member, out var memberWmmaName))
             {
                 var memberKind = member is IFieldSymbol ? "field" : "property";
                 targetName = namedType.Name;
@@ -118,10 +119,13 @@ internal static class WmmaTypeUsage
         return false;
     }
 
+    // [WHY] The members of each struct are searched once (visits), so several fields of one struct type stay linear;
+    // the depth bound stops a generic struct that names ever larger constructions of itself
     private static bool ContainsFragmentOrMarker(
         ITypeSymbol? type,
         [NotNullWhen(true)] out string? wmmaTypeName,
-        int depth)
+        int depth,
+        StructVisits visits)
     {
         if (type is null || depth > MaxDepth)
         {
@@ -137,22 +141,22 @@ internal static class WmmaTypeUsage
 
         if (type is IPointerTypeSymbol pointerType)
         {
-            return ContainsFragmentOrMarker(pointerType.PointedAtType, out wmmaTypeName, depth + 1);
+            return ContainsFragmentOrMarker(pointerType.PointedAtType, out wmmaTypeName, depth + 1, visits);
         }
 
         if (type.TryGetArrayLikeElementType(out var elementType))
         {
-            return ContainsFragmentOrMarker(elementType, out wmmaTypeName, depth + 1);
+            return ContainsFragmentOrMarker(elementType, out wmmaTypeName, depth + 1, visits);
         }
 
         if (type is INamedTypeSymbol namedType)
         {
-            if (TryFindInTypeArguments(namedType, depth + 1, out wmmaTypeName))
+            if (TryFindInTypeArguments(namedType, depth + 1, visits, out wmmaTypeName))
             {
                 return true;
             }
 
-            return TryFindInStructMembers(namedType, depth + 1, out _, out wmmaTypeName);
+            return TryFindInStructMembers(namedType, depth + 1, visits, out _, out wmmaTypeName);
         }
 
         wmmaTypeName = null;
@@ -162,11 +166,12 @@ internal static class WmmaTypeUsage
     private static bool TryFindInTypeArguments(
         INamedTypeSymbol type,
         int depth,
+        StructVisits visits,
         [NotNullWhen(true)] out string? wmmaTypeName)
     {
         foreach (var typeArgument in type.TypeArguments)
         {
-            if (ContainsFragmentOrMarker(typeArgument, out wmmaTypeName, depth))
+            if (ContainsFragmentOrMarker(typeArgument, out wmmaTypeName, depth, visits))
             {
                 return true;
             }
@@ -180,17 +185,19 @@ internal static class WmmaTypeUsage
     private static bool TryFindInStructMembers(
         INamedTypeSymbol type,
         int depth,
+        StructVisits visits,
         [NotNullWhen(true)] out ISymbol? member,
         [NotNullWhen(true)] out string? wmmaTypeName)
     {
         if (type.TypeKind == TypeKind.Struct &&
             !type.ContainingNamespace.IsSystemOrNumerics() &&
-            !type.ContainingNamespace.IsCoreNamespace())
+            !type.ContainingNamespace.IsCoreNamespace() &&
+            visits.TryVisit(type))
         {
             foreach (var candidate in type.GetMembers())
             {
                 if (GetInstanceMemberType(candidate) is { } memberType &&
-                    ContainsFragmentOrMarker(memberType, out wmmaTypeName, depth))
+                    ContainsFragmentOrMarker(memberType, out wmmaTypeName, depth, visits))
                 {
                     member = candidate;
                     return true;

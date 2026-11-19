@@ -141,6 +141,7 @@ internal static class NonNullProof
     {
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } structType ||
             structType.ContainingNamespace.IsSystemOrNumerics() ||
+            SelfHoldingGenericStructs.IsLargerConstruction(structType, visiting) ||
             !visiting.Add(structType))
         {
             return;

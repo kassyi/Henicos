@@ -98,37 +98,49 @@ internal static class HostLayoutCalculator
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullableType)
         {
-            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout, path))
-            {
-                layout = default;
-                return false;
-            }
-
-            var valOffset = TypeLayoutCalculator.AlignUp(1, valLayout.Alignment);
-            var size = TypeLayoutCalculator.AlignUp(valOffset + valLayout.Size, valLayout.Alignment);
-            layout = new TypeLayout(size, valLayout.Alignment);
-            return true;
+            return TryGetNullableHostLayout(nullableType.TypeArguments[0], out layout, path);
         }
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
-            using var step = StructPath.Enter(path, namedStruct);
-            StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-            var structHost = step.IsCycle
-                ? default
-                : ComputeStructHostLayout(namedStruct, kind, pack, explicitSize, step.Path);
-            if (!structHost.IsKnown)
-            {
-                layout = default;
-                return false;
-            }
-
-            layout = new TypeLayout(structHost.Size, structHost.Alignment);
-            return true;
+            return TryGetStructHostLayout(namedStruct, out layout, path);
         }
 
         layout = default;
         return false;
+    }
+
+    // A Nullable<T>: the bool, then the value at its own alignment
+    private static bool TryGetNullableHostLayout(ITypeSymbol valueType, out TypeLayout layout, StructPath? path)
+    {
+        if (!TryGetHostLayout(valueType, out var valLayout, path))
+        {
+            layout = default;
+            return false;
+        }
+
+        var valOffset = TypeLayoutCalculator.AlignUp(1, valLayout.Alignment);
+        var size = TypeLayoutCalculator.AlignUp(valOffset + valLayout.Size, valLayout.Alignment);
+        layout = new TypeLayout(size, valLayout.Alignment);
+        return true;
+    }
+
+    // A struct already on the path holds itself (CS0523) and has no host layout
+    private static bool TryGetStructHostLayout(INamedTypeSymbol structType, out TypeLayout layout, StructPath? path)
+    {
+        using var step = StructPath.Enter(path, structType);
+        StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
+        var structHost = step.IsCycle
+            ? default
+            : ComputeStructHostLayout(structType, kind, pack, explicitSize, step.Path);
+        if (!structHost.IsKnown)
+        {
+            layout = default;
+            return false;
+        }
+
+        layout = new TypeLayout(structHost.Size, structHost.Alignment);
+        return true;
     }
 
 }
