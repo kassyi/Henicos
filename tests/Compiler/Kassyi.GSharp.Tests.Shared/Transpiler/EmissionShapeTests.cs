@@ -482,17 +482,41 @@ public partial class EmissionShapeTests
     // withPath: the tree carries the test case's file name, so that places in the output name it
     private static string Generate(string testCase, string dialect, bool withPath = false)
     {
-        var trees = GenerateTrees(testCase, dialect, withPath);
-        // Exclude the generated CUDA prelude tree because it carries the #error guard for __CUDACC_VER_MAJOR__.
-        var nonPrelude = string.Join(
-            "\n",
-            trees
-                .Where(static t => !t.FilePath.EndsWith("GSharpSharedCudaPrelude.g.cs", StringComparison.Ordinal))
-                .Select(static t => t.GetText().ToString()))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
-        Assert.DoesNotContain("#error", nonPrelude, StringComparison.Ordinal);
-        return string.Join("\n", trees.Select(static t => t.GetText().ToString()))
-            .Replace("\r\n", "\n", StringComparison.Ordinal);
+        var preludeHint = $"GSharpShared{dialect}Prelude.g.cs";
+        var texts = GenerateTrees(testCase, dialect, withPath)
+            .Select(static t => (t.FilePath, Text: t.GetText().ToString()))
+            .ToList();
+        foreach (var (filePath, text) in texts)
+        {
+            // Only the guard at the start of the CUDA prelude may carry #error: one per branch, before any include
+            var isCudaPrelude = dialect == "Cuda" && filePath.EndsWith(preludeHint, StringComparison.Ordinal);
+            Assert.Equal(isCudaPrelude ? PreludeGuardErrorCount : 0, CountOccurrences(text, "#error"));
+            if (isCudaPrelude)
+            {
+                var lastError = text.LastIndexOf("#error", StringComparison.Ordinal);
+                Assert.True(
+                    lastError < text.IndexOf("#include", StringComparison.Ordinal),
+                    "The #error lines must be the guard before the first #include of the prelude.");
+            }
+        }
+
+        return string.Join("\n", texts.Select(static t => t.Text)).Replace("\r\n", "\n", StringComparison.Ordinal);
+    }
+
+    // The branches of the guard that the CUDA prelude starts with: the macro is missing, the release is too old
+    private const int PreludeGuardErrorCount = 2;
+
+    private static int CountOccurrences(string text, string value)
+    {
+        var count = 0;
+        for (var index = text.IndexOf(value, StringComparison.Ordinal);
+            index >= 0;
+            index = text.IndexOf(value, index + value.Length, StringComparison.Ordinal))
+        {
+            count++;
+        }
+
+        return count;
     }
 
     // The trees the generator adds for the test case, after checking that the output compiles

@@ -157,7 +157,7 @@ public class PreludeGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void CudaPrelude_WithDefaultInput_PrependsNvccMinimumGuardBeforeInclude()
+    public void CudaPrelude_WithIncludeInResource_PrependsNvccMinimumGuardBeforeInclude()
     {
         using var scratch = CreateResources(
             cuda: "#include <cooperative_groups.h>\nint cu;\n",
@@ -167,18 +167,17 @@ public class PreludeGeneratorTests
 
         Assert.Equal(0, result.ExitCode);
         var (cuda, cpp) = ReadPreludes(scratch);
-        Assert.StartsWith(ExpectedCudaGuard(), cuda, StringComparison.Ordinal);
-        var guardIndex = cuda.IndexOf("#if !defined(__CUDACC_VER_MAJOR__)", StringComparison.Ordinal);
-        var includeIndex = cuda.IndexOf("#include <cooperative_groups.h>", StringComparison.Ordinal);
-        Assert.True(guardIndex >= 0 && guardIndex < includeIndex, "The nvcc guard must precede #include.");
-        Assert.DoesNotContain("__CUDACC_VER_MAJOR__", cpp, StringComparison.Ordinal);
+        Assert.Equal(ExpectedCudaGuard() + "#include <cooperative_groups.h>\nint cu;\n\n", cuda);
+        Assert.Equal("#include <cstdint>\n\n", cpp);
     }
 
     private static string ExpectedCudaGuard()
     {
         var major = NvccMinimum.MajorRelease;
         return
-            $"#if !defined(__CUDACC_VER_MAJOR__) || __CUDACC_VER_MAJOR__ < {major}\n" +
+            "#if !defined(__CUDACC_VER_MAJOR__)\n" +
+            "#error \"The G# CUDA prelude must be compiled by nvcc (__CUDACC_VER_MAJOR__ is not defined).\"\n" +
+            $"#elif __CUDACC_VER_MAJOR__ < {major}\n" +
             $"#error \"G# needs the CUDA Toolkit {major}.0 or later " +
             $"(nvcc __CUDACC_VER_MAJOR__ is below {major}). Install a newer nvcc.\"\n" +
             "#endif\n";

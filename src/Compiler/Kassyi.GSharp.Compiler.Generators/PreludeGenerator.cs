@@ -50,7 +50,10 @@ public static class PreludeGenerator
     private static string PrependNvccMinimumGuard(string cudaPrelude)
     {
         using var writer = new SourceWriter();
-        writer.Append($"#if !defined(__CUDACC_VER_MAJOR__) || __CUDACC_VER_MAJOR__ < {NvccMinimum.MajorRelease}\n");
+        writer.Append("#if !defined(__CUDACC_VER_MAJOR__)\n");
+        writer.Append("#error \"The G# CUDA prelude must be compiled by nvcc ");
+        writer.Append("(__CUDACC_VER_MAJOR__ is not defined).\"\n");
+        writer.Append($"#elif __CUDACC_VER_MAJOR__ < {NvccMinimum.MajorRelease}\n");
         writer.Append($"#error \"G# needs the CUDA Toolkit {NvccMinimum.MajorRelease}.0 or later ");
         writer.Append($"(nvcc __CUDACC_VER_MAJOR__ is below {NvccMinimum.MajorRelease}). Install a newer nvcc.\"\n");
         writer.Append("#endif\n");
