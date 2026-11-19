@@ -1,0 +1,80 @@
+name: Review gate
+
+# Sets the "review-gate" commit status on the head of a pull request. It passes only when the pull request carries the
+# agent-reviewed or human-reviewed label and has at least one comment or review written by a person (not a bot). The
+# main ruleset requires this status, so a pull request that nobody reviewed cannot be merged. Agents and people share
+# one account, which cannot approve its own pull requests, so GitHub's required approvals cannot do this.
+#
+# The result is written as a commit status through the API instead of as the job's own check: a run started by a
+# comment or a label is not attached to the pull request's head commit. Every run reads the current state of the pull
+# request, so the last run decides. A manual run checks every open pull request.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
+  issue_comment:
+    types: [created, deleted]
+  workflow_dispatch:
+
+permissions:
+  statuses: write
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.issue.number || 'all' }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Review gate
+    # A comment on an issue (not a pull request) does not concern the gate.
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set the review-gate status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          check() {
+            local pr="$1"
+            local head labels comments reviews state description
+            head=$(gh api "repos/$REPO/pulls/$pr" --jq .head.sha)
+            labels=$(gh api --paginate "repos/$REPO/issues/$pr/labels" \
+              --jq '[.[] | select(.name == "agent-reviewed" or .name == "human-reviewed")] | length' \
+              | awk '{ s += $1 } END { print s + 0 }')
+            comments=$(gh api --paginate "repos/$REPO/issues/$pr/comments" \
+              --jq '[.[] | select(.user.type != "Bot")] | length' \
+              | awk '{ s += $1 } END { print s + 0 }')
+            reviews=$(gh api --paginate "repos/$REPO/pulls/$pr/reviews" \
+              --jq '[.[] | select(.user.type != "Bot" and .state != "PENDING")] | length' \
+              | awk '{ s += $1 } END { print s + 0 }')
+
+            if [ "$labels" -eq 0 ]; then
+              state=failure
+              description="Needs the agent-reviewed or human-reviewed label"
+            elif [ $((comments + reviews)) -eq 0 ]; then
+              state=failure
+              description="Needs at least one review comment by a person"
+            else
+              state=success
+              description="Reviewed: label and $((comments + reviews)) comment(s) or review(s)"
+            fi
+
+            echo "#$pr $head: $state ($description)"
+            gh api --silent "repos/$REPO/statuses/$head" \
+              -f state="$state" -f context=review-gate -f description="$description"
+          }
+
+          if [ -n "$PR" ]; then
+            check "$PR"
+          else
+            for pr in $(gh pr list --repo "$REPO" --state open --limit 500 --json number --jq '.[].number'); do
+              check "$pr"
+            done
+          fi
