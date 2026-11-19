@@ -483,10 +483,16 @@ public partial class EmissionShapeTests
     private static string Generate(string testCase, string dialect, bool withPath = false)
     {
         var trees = GenerateTrees(testCase, dialect, withPath);
-        var source = string.Join("\n", trees.Select(static t => t.GetText().ToString()))
+        // Exclude the generated CUDA prelude tree because it carries the #error guard for __CUDACC_VER_MAJOR__.
+        var nonPrelude = string.Join(
+            "\n",
+            trees
+                .Where(static t => !t.FilePath.EndsWith("GSharpSharedCudaPrelude.g.cs", StringComparison.Ordinal))
+                .Select(static t => t.GetText().ToString()))
             .Replace("\r\n", "\n", StringComparison.Ordinal);
-        Assert.DoesNotContain("#error", source, StringComparison.Ordinal);
-        return source;
+        Assert.DoesNotContain("#error", nonPrelude, StringComparison.Ordinal);
+        return string.Join("\n", trees.Select(static t => t.GetText().ToString()))
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
     }
 
     // The trees the generator adds for the test case, after checking that the output compiles

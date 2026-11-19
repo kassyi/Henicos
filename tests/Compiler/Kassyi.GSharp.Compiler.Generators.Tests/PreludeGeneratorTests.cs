@@ -1,4 +1,5 @@
 using System.Linq;
+using Kassyi.GSharp.Cuda;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Compiler.Generators.Tests;
@@ -30,7 +31,7 @@ public class PreludeGeneratorTests
 
         Assert.Equal(0, result.ExitCode);
         var (cuda, cpp) = ReadPreludes(scratch);
-        Assert.Equal("int b;\n\nint a;\n\nint cu;\n\n", cuda);
+        Assert.Equal(ExpectedCudaGuard() + "int b;\n\nint a;\n\nint cu;\n\n", cuda);
         // The C++ prelude drops one trailing line break of a header included at its very end.
         Assert.Equal("int a;\nint b;\n\n", cpp);
     }
@@ -59,7 +60,7 @@ public class PreludeGeneratorTests
         var result = RunPrelude(scratch);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Equal("int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
+        Assert.Equal(ExpectedCudaGuard() + "int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
     }
 
     [Fact]
@@ -150,8 +151,37 @@ public class PreludeGeneratorTests
 
         Assert.Equal(0, result.ExitCode);
         var (cuda, cpp) = ReadPreludes(scratch);
-        Assert.Equal("#include <mma.h>\nint cu;\n\n", cuda);
+        Assert.Equal(ExpectedCudaGuard() + "#include <mma.h>\nint cu;\n\n", cuda);
         Assert.Equal("#include <cstdint>\n\n", cpp);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CudaPrelude_WithDefaultInput_PrependsNvccMinimumGuardBeforeInclude()
+    {
+        using var scratch = CreateResources(
+            cuda: "#include <cooperative_groups.h>\nint cu;\n",
+            cpp: "#include <cstdint>\n");
+
+        var result = RunPrelude(scratch);
+
+        Assert.Equal(0, result.ExitCode);
+        var (cuda, cpp) = ReadPreludes(scratch);
+        Assert.StartsWith(ExpectedCudaGuard(), cuda, StringComparison.Ordinal);
+        var guardIndex = cuda.IndexOf("#if !defined(__CUDACC_VER_MAJOR__)", StringComparison.Ordinal);
+        var includeIndex = cuda.IndexOf("#include <cooperative_groups.h>", StringComparison.Ordinal);
+        Assert.True(guardIndex >= 0 && guardIndex < includeIndex, "The nvcc guard must precede #include.");
+        Assert.DoesNotContain("__CUDACC_VER_MAJOR__", cpp, StringComparison.Ordinal);
+    }
+
+    private static string ExpectedCudaGuard()
+    {
+        var major = NvccMinimum.MajorRelease;
+        return
+            $"#if !defined(__CUDACC_VER_MAJOR__) || __CUDACC_VER_MAJOR__ < {major}\n" +
+            $"#error \"G# needs the CUDA Toolkit {major}.0 or later " +
+            $"(nvcc __CUDACC_VER_MAJOR__ is below {major}). Install a newer nvcc.\"\n" +
+            "#endif\n";
     }
 
     private static ScratchDirectory CreateResources(string cuda, string cpp)

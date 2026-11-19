@@ -25,6 +25,8 @@
     <Compile Include="..\..\Shared\Naming\GlobalNamePath.cs" Link="Naming\GlobalNamePath.cs" />
     <Compile Include="..\..\Shared\Naming\GlobalNameSegment.cs" Link="Naming\GlobalNameSegment.cs" />
     <Compile Include="..\..\Shared\Hashing\Fnv1A64.cs" Link="Hashing\Fnv1A64.cs" />
+    <!-- Shared with the build tasks so GS0006 and the CUDA prelude guard use one minimum release. -->
+    <Compile Include="..\..\Shared\Cuda\NvccMinimum.cs" Link="Cuda\NvccMinimum.cs" />
     <Using Include="System.Collections.Immutable" />
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Text" />
@@ -60,6 +62,10 @@
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleParameterType.cs" Link="NativeApi\ModuleParameterType.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeIntrinsicEmitter.cs" Link="NativeApi\NativeIntrinsicEmitter.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiDocumentation.cs" Link="NativeApi\NativeApiDocumentation.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kassyi.GSharp.Compiler.Generators.Tests" />
   </ItemGroup>
 
 </Project>
