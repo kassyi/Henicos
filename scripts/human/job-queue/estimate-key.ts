@@ -137,7 +137,7 @@ function absoluteOf(argument: string, base: string): string {
 }
 
 /** The program of a step: its file name in lower case without `.exe`. */
-function programOf(word: string): string {
+export function programOf(word: string): string {
   const parts = slashes(word).split("/");
   return (parts[parts.length - 1] as string).toLowerCase().replace(/\.exe$/, "");
 }
@@ -207,6 +207,18 @@ const DirectoryChanges = new Set(["cd", "chdir", "set-location", "sl", "push-loc
 const DirectoryReturns = new Set(["pop-location", "popd"]);
 const Pushes = new Set(["push-location", "pushd"]);
 
+/**
+ * A step that does no work of its own: a Trivial program, a change of directory or a return to the one before, or a
+ * `$...` step of PowerShell (an assignment).
+ */
+export function isTrivialStep(step: ReadStep): boolean {
+  const first = step.words[0] ?? "";
+  const program = programOf(first);
+  return (
+    first.startsWith("$") || Trivial.has(program) || DirectoryChanges.has(program) || DirectoryReturns.has(program)
+  );
+}
+
 /** The keys of a readable command, the steps walked in order with the directory they run in; null when unreadable. */
 function walk(command: string, context: WalkContext, plugins?: StepKeyProvider): CommandKeys | null {
   const read = readCommand(command);
@@ -228,7 +240,7 @@ function walk(command: string, context: WalkContext, plugins?: StepKeyProvider):
       directory = target === undefined ? directory : directory === "" ? target : absoluteOf(target, directory);
     } else if (DirectoryReturns.has(program)) {
       directory = pushed.pop() ?? directory;
-    } else if (!first.startsWith("$") && !Trivial.has(program)) {
+    } else if (!isTrivialStep(step)) {
       steps.push(stepKeys(step, { ...context, cwd: directory }, plugins));
     }
   }

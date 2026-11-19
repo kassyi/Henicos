@@ -8,18 +8,7 @@ namespace Kassyi.GSharp.Core;
 // the launch's sharedMemBytes (#544)
 public static partial class ManagedGpuContext
 {
-    // One region per static shared memory declaration per block (a constant count, or a declaration in code that the
-    // compiler does not rewrite). A later declaration never moves an earlier region: threads keep the span they were
-    // handed, so moving a region would leave them writing to a copy nobody else reads. Only the same declaration reached
-    // with a larger count moves its own region (see GrowRegion), which a constant count never does.
-    // The thread-static state is kept between grids; only the region counts are reset.
-    [ThreadStatic]
-    private static SharedRegion?[]?[]? s_perBlockRegions;
-
-    [ThreadStatic]
-    private static int[]? s_perBlockRegionCount;
-
-    private sealed class SharedRegion
+    internal sealed class SharedRegion
     {
         public ulong SiteKey { get; set; }
 
@@ -30,27 +19,9 @@ public static partial class ManagedGpuContext
         public byte[] Bytes { get; set; } = [];
     }
 
-    // The dynamic shared memory of each block (#544): one array of the launch's sharedMemBytes, in which the dynamic
-    // declarations get their regions with the arithmetic of the CUDA placement (__gsharp_dsmem_place in Prelude.cu) and
-    // of the native CPU arena. When the blocks run in grid phases (a cooperative kernel), every block keeps its array for
-    // the grid, so a span stays valid across the grid syncs. Otherwise each block runs to its end before the next one
-    // starts, and the blocks use one array in turn, as the native arena of an OpenMP thread does.
-    [ThreadStatic]
-    private static DynamicSharedMemory?[]? s_perBlockDynamic;
-
-    [ThreadStatic]
-    private static bool s_blocksRunInPhases;
-
-    // The block that owns the one array of blocks that do not run in phases, or -1
-    [ThreadStatic]
-    private static int s_dynamicOwner;
-
-    [ThreadStatic]
-    private static uint s_sharedMemBytes;
-
     private const ulong DynamicRegionAlignment = 16;
 
-    private sealed class DynamicSharedMemory
+    internal sealed class DynamicSharedMemory
     {
         public byte[] Bytes { get; set; } = [];
 
@@ -63,7 +34,7 @@ public static partial class ManagedGpuContext
 
     // A region is identified by the site key alone, as on CUDA and the native CPU path: the instantiations of a generic
     // device function share it
-    private struct DynamicRegion
+    internal struct DynamicRegion
     {
         public ulong SiteKey;
         public ulong Offset;
@@ -178,18 +149,21 @@ public static partial class ManagedGpuContext
     // use by a block empties the array of the block before it, which has finished
     private static int CurrentDynamicIndex()
     {
-        if (s_blocksRunInPhases)
+        var state = BlockState;
+        if (state.BlocksRunInPhases)
         {
             return LinearBlockId;
         }
 
-        if (s_dynamicOwner != LinearBlockId && s_perBlockDynamic is { Length: > 0 } && s_perBlockDynamic[0] is { } shared)
+        if (state.DynamicOwner != LinearBlockId &&
+            state.PerBlockDynamic is { Length: > 0 } &&
+            state.PerBlockDynamic[0] is { } shared)
         {
             shared.Cursor = 0;
             shared.RegionCount = 0;
         }
 
-        s_dynamicOwner = LinearBlockId;
+        state.DynamicOwner = LinearBlockId;
         return 0;
     }
 
@@ -199,7 +173,7 @@ public static partial class ManagedGpuContext
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static void EndGrid() => s_perBlockDynamic = null;
+    public static void EndGrid() => BlockState.PerBlockDynamic = null;
 
     /// <summary>
     /// Initializes or resets the shared memory arrays for a grid without dynamic shared memory (a launch with
@@ -240,39 +214,40 @@ public static partial class ManagedGpuContext
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static void InitializeGrid(int totalBlocks, uint sharedMemBytes, bool blocksRunInPhases)
     {
+        var state = BlockState;
         s_currentTypeKeySalt = 0;
-        s_sharedMemBytes = sharedMemBytes;
-        s_blocksRunInPhases = blocksRunInPhases;
-        s_dynamicOwner = -1;
+        state.SharedMemBytes = sharedMemBytes;
+        state.BlocksRunInPhases = blocksRunInPhases;
+        state.DynamicOwner = -1;
         var dynamicArrays = blocksRunInPhases ? totalBlocks : Math.Min(totalBlocks, 1);
-        if (s_perBlockDynamic == null || s_perBlockDynamic.Length < dynamicArrays)
+        if (state.PerBlockDynamic == null || state.PerBlockDynamic.Length < dynamicArrays)
         {
-            Array.Resize(ref s_perBlockDynamic, dynamicArrays);
+            Array.Resize(ref state.PerBlockDynamic, dynamicArrays);
         }
 
         for (var block = 0; block < dynamicArrays; block++)
         {
-            if (s_perBlockDynamic[block] is { } dynamic)
+            if (state.PerBlockDynamic[block] is { } dynamic)
             {
                 dynamic.Cursor = 0;
                 dynamic.RegionCount = 0;
             }
         }
 
-        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
+        if (state.PerBlockRegions == null || state.PerBlockRegionCount == null)
         {
-            s_perBlockRegions = new SharedRegion?[]?[totalBlocks];
-            s_perBlockRegionCount = new int[totalBlocks];
+            state.PerBlockRegions = new SharedRegion?[]?[totalBlocks];
+            state.PerBlockRegionCount = new int[totalBlocks];
         }
         else
         {
-            if (s_perBlockRegions.Length < totalBlocks)
+            if (state.PerBlockRegions.Length < totalBlocks)
             {
-                Array.Resize(ref s_perBlockRegions, totalBlocks);
-                Array.Resize(ref s_perBlockRegionCount, totalBlocks);
+                Array.Resize(ref state.PerBlockRegions, totalBlocks);
+                Array.Resize(ref state.PerBlockRegionCount, totalBlocks);
             }
 
-            Array.Clear(s_perBlockRegionCount, 0, totalBlocks);
+            Array.Clear(state.PerBlockRegionCount, 0, totalBlocks);
             // The regions themselves are reused by the next grid, so they are not cleared
         }
     }
@@ -314,7 +289,8 @@ public static partial class ManagedGpuContext
             return [];
         }
 
-        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
+        var state = BlockState;
+        if (state.PerBlockRegions == null || state.PerBlockRegionCount == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
@@ -329,8 +305,8 @@ public static partial class ManagedGpuContext
         var byteCount = (int)bytes;
         var typeId = SharedMemoryTypeId<T>.Value;
         var blockId = LinearBlockId;
-        var regions = s_perBlockRegions[blockId] ??= new SharedRegion?[16];
-        var regionCount = s_perBlockRegionCount[blockId];
+        var regions = state.PerBlockRegions[blockId] ??= new SharedRegion?[16];
+        var regionCount = state.PerBlockRegionCount[blockId];
 
         for (var i = 0; i < regionCount; i++)
         {
@@ -351,7 +327,7 @@ public static partial class ManagedGpuContext
         if (regionCount == regions.Length)
         {
             Array.Resize(ref regions, regionCount * 2);
-            s_perBlockRegions[blockId] = regions;
+            state.PerBlockRegions[blockId] = regions;
         }
 
         var created = regions[regionCount] ??= new SharedRegion();
@@ -363,7 +339,7 @@ public static partial class ManagedGpuContext
         created.SiteKey = siteKey;
         created.TypeId = typeId;
         created.ByteLength = byteCount;
-        s_perBlockRegionCount[blockId] = regionCount + 1;
+        state.PerBlockRegionCount[blockId] = regionCount + 1;
 
         return MemoryMarshal.Cast<byte, T>(created.Bytes.AsSpan(0, byteCount));
     }
@@ -400,20 +376,21 @@ public static partial class ManagedGpuContext
             ThrowNegativeCount(count, place);
         }
 
-        if (s_perBlockDynamic == null)
+        var state = BlockState;
+        if (state.PerBlockDynamic == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
-        var block = s_perBlockDynamic[CurrentDynamicIndex()] ??= new DynamicSharedMemory();
+        var block = state.PerBlockDynamic[CurrentDynamicIndex()] ??= new DynamicSharedMemory();
         var bytes = (ulong)count * (ulong)Unsafe.SizeOf<T>();
         var index = FindDynamicRegion(block, siteKey);
         if (index < 0)
         {
-            if (block.RegionCount == 0 && block.Bytes.Length < s_sharedMemBytes)
+            if (block.RegionCount == 0 && block.Bytes.Length < state.SharedMemBytes)
             {
                 // The first region of the block in this grid: the array is allocated before any span into it is handed out
-                block.Bytes = GC.AllocateArray<byte>((int)s_sharedMemBytes, pinned: true);
+                block.Bytes = GC.AllocateArray<byte>((int)state.SharedMemBytes, pinned: true);
             }
 
             if (block.RegionCount == block.Regions.Length)
@@ -438,7 +415,7 @@ public static partial class ManagedGpuContext
                 throw new InvalidOperationException($"G#: a shared memory declaration grew after a later declaration ({place})");
             }
 
-            ulong limit = s_sharedMemBytes;
+            ulong limit = state.SharedMemBytes;
             if (bytes > limit || region.Offset + bytes > limit)
             {
                 throw new ArgumentOutOfRangeException(null,
@@ -475,7 +452,7 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> FindDynamicSharedMemory<T>(ulong siteKey) where T : unmanaged
     {
-        if (s_perBlockDynamic?[CurrentDynamicIndex()] is not { } block)
+        if (BlockState.PerBlockDynamic?[CurrentDynamicIndex()] is not { } block)
         {
             return [];
         }
@@ -498,10 +475,11 @@ public static partial class ManagedGpuContext
     /// </summary>
     internal static unsafe bool IsSharedMemoryAddress<T>(ref T address) where T : unmanaged
     {
+        var state = BlockState;
         var addr = (nuint)Unsafe.AsPointer(ref address);
         var blockId = LinearBlockId;
-        if (s_perBlockRegions is { } blockRegions &&
-            s_perBlockRegionCount is { } regionCounts &&
+        if (state.PerBlockRegions is { } blockRegions &&
+            state.PerBlockRegionCount is { } regionCounts &&
             (uint)blockId < (uint)blockRegions.Length &&
             (uint)blockId < (uint)regionCounts.Length &&
             blockRegions[blockId] is { } regions)
@@ -517,10 +495,10 @@ public static partial class ManagedGpuContext
             }
         }
 
-        if (s_perBlockDynamic is { Length: > 0 } dynamicBlocks)
+        if (state.PerBlockDynamic is { Length: > 0 } dynamicBlocks)
         {
-            var dynIndex = s_blocksRunInPhases ? blockId : 0;
-            if ((s_blocksRunInPhases || s_dynamicOwner == blockId) &&
+            var dynIndex = state.BlocksRunInPhases ? blockId : 0;
+            if ((state.BlocksRunInPhases || state.DynamicOwner == blockId) &&
                 (uint)dynIndex < (uint)dynamicBlocks.Length &&
                 dynamicBlocks[dynIndex] is { RegionCount: > 0 } dyn &&
                 ContainsAddress(dyn.Bytes, (nuint)dyn.Cursor, addr))

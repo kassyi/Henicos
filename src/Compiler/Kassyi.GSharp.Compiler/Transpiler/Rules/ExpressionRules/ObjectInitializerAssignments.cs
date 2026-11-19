@@ -21,8 +21,10 @@ internal static class ObjectInitializerAssignments
     {
         foreach (var expression in initializer.Expressions)
         {
+            // An element of a collection initializer: C# calls Add on the collection being built
             if (expression is not AssignmentExpressionSyntax assignment)
             {
+                CollectionInitializerElements.AppendAdd(expression, initializer, lineBreaks, ref context);
                 continue;
             }
 
@@ -32,33 +34,59 @@ internal static class ObjectInitializerAssignments
                 continue;
             }
 
-            context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
-            AppendPath(assignment, initializer, ref context);
+            if (assignment.Left is ImplicitElementAccessSyntax &&
+                CollectionInitializerElements.TryFailIndexer(assignment, lineBreaks, ref context))
+            {
+                continue;
+            }
+
+            AppendTarget(initializer, ref context);
+            context.Emitter.Writer.Append('.');
             PropertyAccessorCall.TranspileAssignment(assignment, " = ", ref context);
-            context.Emitter.Writer.Append(";");
-            if (lineBreaks)
-            {
-                context.Emitter.Writer.AppendLine();
-            }
-            else
-            {
-                context.Emitter.Writer.Append(' ');
-            }
+            AppendStatementEnd(lineBreaks, ref context);
         }
     }
 
-    // <outer member>.<inner member>. ... for the members whose nested initializers hold assignment, outermost first
-    private static void AppendPath(AssignmentExpressionSyntax assignment, InitializerExpressionSyntax initializer,
-        ref TranspileContext context)
+    /// <summary>
+    /// Writes the object or collection that <paramref name="initializer"/> initializes:
+    /// <c>__gsharp_tmp.&lt;outer member&gt;. ... .&lt;member&gt;</c>, or <c>__gsharp_tmp</c> for the outermost one.
+    /// </summary>
+    public static void AppendTarget(InitializerExpressionSyntax initializer, ref TranspileContext context)
     {
-        if (initializer.Parent is not AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax outerInitializer } outer ||
+        context.Emitter.Writer.Append(GSharpInternalNames.Lowering.AggregateTemp);
+        AppendMembers(initializer, ref context);
+    }
+
+    /// <summary>
+    /// Ends a statement of an initializer: <c>;</c> and a line break when <paramref name="lineBreaks"/> is set,
+    /// otherwise <c>;</c> and a space.
+    /// </summary>
+    public static void AppendStatementEnd(bool lineBreaks, ref TranspileContext context)
+    {
+        if (lineBreaks)
+        {
+            context.Emitter.Writer.AppendLine(";");
+        }
+        else
+        {
+            context.Emitter.Writer.Append("; ");
+        }
+    }
+
+    // .<outer member>. ... .<member> for the nested member initializers from the outermost one to initializer
+    private static void AppendMembers(InitializerExpressionSyntax initializer, ref TranspileContext context)
+    {
+        if (initializer.Parent is not AssignmentExpressionSyntax
+            {
+                Parent: InitializerExpressionSyntax outerInitializer
+            } outer ||
             outer.Right != initializer)
         {
             return;
         }
 
-        AppendPath(outer, outerInitializer, ref context);
-        context.Visitor.Visit(outer.Left);
+        AppendMembers(outerInitializer, ref context);
         context.Emitter.Writer.Append('.');
+        context.Visitor.Visit(outer.Left);
     }
 }

@@ -68,6 +68,9 @@ export function describeJob(job: ServerJob): JobView {
     keepIfFailed: job.keepIfFailed,
     gpuTurn: job.gpuTurn === true,
     memoryMb: job.memoryMb ?? 0,
+    ...(job.resource !== undefined ? { resource: job.resource } : {}),
+    ...(job.share === "shared" ? { share: "shared" as const } : {}),
+    ...(job.turn !== null ? { turn: job.turn } : {}),
   };
 }
 

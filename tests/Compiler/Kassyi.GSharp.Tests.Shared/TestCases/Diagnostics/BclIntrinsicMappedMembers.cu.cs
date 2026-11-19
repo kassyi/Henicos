@@ -28,7 +28,7 @@ public static partial class BclIntrinsicMappedKernels
     [SkipSnapshotConsistency("Diagnostics case")]
     public static void UnmappedBitOperationsKernel(uint[] data)
     {
-        data[0] = BitOperations.RoundUpToPowerOf2(data[0]);
+        data[0] = BitOperations.Crc32C(data[0], 1u);
     }
 
     // Not mapped for long and ulong operands of Or: GSH0109

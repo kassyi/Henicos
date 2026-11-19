@@ -16,8 +16,6 @@ using Kassyi.GSharp.Tests.TestCases.BclIntrinsicMap;
 [assembly: BclIntrinsicMap("System.Math", "Max", ["System.Double", null], "user_max")]
 // An empty parameter list on BitOperations: no overload of IsPow2 takes no argument
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", [], "user_ispow2_none")]
-// A native-sized signed parameter on BitOperations takes the cast of the platform
-[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.IntPtr"], "user_ispow2_nint")]
 
 namespace Kassyi.GSharp.Tests.TestCases.BclIntrinsicMap;
 

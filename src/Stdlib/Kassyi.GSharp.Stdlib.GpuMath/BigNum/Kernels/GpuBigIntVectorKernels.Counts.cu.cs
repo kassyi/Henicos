@@ -49,6 +49,39 @@ public static partial class GpuBigIntVectorKernels
     }
 
     /// <summary>
+    /// Writes the lowest index of the first n flags (n from <c>Count</c>) that is not 0 into <c>Result[0]</c>. The
+    /// caller sets <c>Result[0]</c> to <c>uint.MaxValue</c> first, which stays when no flag is set.
+    /// </summary>
+    [GpuKernel]
+    public static void VectorAnyTrueMinIndexKernel(VectorBoolReductionContext ctx) =>
+        DecidingMinIndex(ctx, decidesOnSet: true);
+
+    /// <summary>
+    /// Writes the lowest index of the first n flags (n from <c>Count</c>) that is 0 into <c>Result[0]</c>. The caller
+    /// sets <c>Result[0]</c> to <c>uint.MaxValue</c> first, which stays when every flag is set.
+    /// </summary>
+    [GpuKernel]
+    public static void VectorAllTrueMinIndexKernel(VectorBoolReductionContext ctx) =>
+        DecidingMinIndex(ctx, decidesOnSet: false);
+
+    // The lowest index of a flag that decides: a set flag for Any (decidesOnSet), a clear one for All. The call checks
+    // the arrays of the context once; the loop then reads them without a check
+    [GpuDeviceFunction]
+    private static void DecidingMinIndex(VectorBoolReductionContext ctx, bool decidesOnSet)
+    {
+        int n = GpuStreamCompactionKernels.ResolveCount(ctx.Count);
+        int i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int stride = GridDimension.X * BlockDimension.X;
+        for (; i < n; i += stride)
+        {
+            if ((ctx.Flags[i] != 0u) == decidesOnSet)
+            {
+                Gpu.AtomicMin(ref ctx.Result[0], (uint)i);
+            }
+        }
+    }
+
+    /// <summary>
     /// Writes the element count n into <c>Destination[0]</c> and clears the other words, without a host
     /// synchronization (the count of a vector after <c>Where</c> is known only on the device).
     /// </summary>

@@ -14,6 +14,16 @@ internal static class NativeModuleAssembler
         dialect.IsCuda ? GSharpPreludeResources.Cuda : GSharpPreludeResources.Cpp;
 
     /// <summary>
+    /// The prelude that precedes the device code in the dialect's native module, with the native stack runtime header
+    /// appended when the module runs its GPU threads on their own stacks
+    /// (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
+    /// </summary>
+    public static string GetPreludeSource(in GeneratorConfig config) =>
+        config.RunsOnNativeStacks
+            ? GSharpPreludeResources.Cpp + GSharpPreludeResources.CppStackThreads
+            : GetPreludeSource(config.CreateDialect());
+
+    /// <summary>
     /// The device functions as forward declarations followed by their bodies. On the CPU dialects a frame embeds the
     /// frames of its calls by value, so a callee's body comes before its caller's.
     /// </summary>

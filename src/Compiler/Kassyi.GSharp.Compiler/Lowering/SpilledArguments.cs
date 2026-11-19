@@ -131,7 +131,7 @@ internal static class SpilledArguments
     // argument's value only when no conversion sits between them; a field of a value is a value, which is copied.
     // Parentheses have no operation of their own, so the variable inside them is looked up.
     private static bool IsVariableOfReadOnlyReference(ArgumentSyntax argument, SemanticModel? model) =>
-        model?.GetSafeOperation(IteratorTypeResolver.UnwrapParentheses(argument.Expression)) is
+        model?.GetSafeOperation(argument.Expression.UnwrapParentheses()) is
         {
             Parent: IArgumentOperation { Parameter.RefKind: RefKind.In or RefKind.RefReadOnlyParameter }
         } operation &&

@@ -17,6 +17,7 @@
     <CompilerVisibleProperty Include="GSharpEmitSource" />
     <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
     <CompilerVisibleProperty Include="GSharpCheckedBuild" />
+    <CompilerVisibleProperty Include="GSharpNativeBarrierModel" />
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
@@ -25,6 +26,7 @@
     <CompilerVisibleProperty Include="GSharpCombinedFatbinName" />
     <!-- The generator takes the launch limits of the target GPUs from the architectures nvcc compiles for -->
     <CompilerVisibleProperty Include="GSharpTargetArchitectures" />
+    <CompilerVisibleProperty Include="GSharpManagedBarrierModel" />
     <!-- Opt-in marker for YAML native API definitions: <AdditionalFiles Include="*.yml" GSharpApi="true" /> -->
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
   </ItemGroup>
@@ -102,6 +104,13 @@
   <Target Name="GSharpValidateCudaArchitectures" BeforeTargets="GSharpCompileCuda"
           Condition="'$(GSharpTargetArchitectures)' != ''">
     <ValidateCudaArchitecturesTask TargetArchitectures="$(GSharpTargetArchitectures)" />
+  </Target>
+
+  <Target Name="GSharpValidateNativeBarrierModel" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(GSharpNativeBarrierModel)' != ''
+                     and '$(GSharpNativeBarrierModel)' != 'StateMachine'
+                     and '$(GSharpNativeBarrierModel)' != 'Stack'">
+    <Error Text="GSharpNativeBarrierModel value '$(GSharpNativeBarrierModel)' is invalid. Supported values are 'StateMachine' and 'Stack'." />
   </Target>
 
   <!-- Define the target to compile CUDA sources -->

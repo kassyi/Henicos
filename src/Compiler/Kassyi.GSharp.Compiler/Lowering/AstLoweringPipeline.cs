@@ -83,7 +83,8 @@ public static class AstLoweringPipeline
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan)
         {
-            MovedLocalFunctions = hoister.HasSplitPoint ? movedFunctions.Functions : []
+            MovedLocalFunctions = hoister.HasSplitPoint ? movedFunctions.Functions : [],
+            LiftedConstants = hoister.LiftedConstants
         };
         lowerer.ReserveWarpSites(reconvergence?.RegionCount ?? 0);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);

@@ -65,10 +65,11 @@ internal static class EvaluationOrder
     /// Writes <c>auto __gsharp_seq_&lt;n&gt; = &lt;expression&gt;;</c>, or <c>auto&amp;&amp;</c> for a
     /// <paramref name="reference"/> to the location (an assignment target), and returns <c>n</c>. A value is declared
     /// with <paramref name="type"/> when one is given (it is converted when it is evaluated, as in C#, and a brace
-    /// initializer such as <c>{}</c> needs a type), except a type parameter or an enum, which keep <c>auto</c>.
+    /// initializer such as <c>{}</c> needs a type), except a type parameter or an enum, which keep <c>auto</c>. The
+    /// declaration ends with a line break, or with a space when <paramref name="lineBreak"/> is false.
     /// </summary>
     public static int DeclareTemp(ref TranspileContext context, ExpressionSyntax expression, bool reference,
-        ITypeSymbol? type = null)
+        ITypeSymbol? type = null, bool lineBreak = true)
     {
         if (!reference && type is not { TypeKind: TypeKind.Enum } && TypeMapping.HasDirectCppType(type))
         {
@@ -81,7 +82,15 @@ internal static class EvaluationOrder
 
         var temp = AppendDeclaredName(ref context);
         context.Visitor.Visit(expression);
-        context.Emitter.Writer.AppendLine(";");
+        if (lineBreak)
+        {
+            context.Emitter.Writer.AppendLine(";");
+        }
+        else
+        {
+            context.Emitter.Writer.Append("; ");
+        }
+
         return temp;
     }
 

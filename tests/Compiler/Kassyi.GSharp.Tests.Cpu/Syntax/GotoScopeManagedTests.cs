@@ -173,6 +173,20 @@ public class GotoScopeManagedTests : TranspilerTestBase
         );
     }
 
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 4)]
+    public void Goto_ManagedOverSharedMemoryAlias_RunsLikeCSharp(int flag, int expectedFirst)
+    {
+        GotoScopeScenarios.Run(
+            s_runManaged,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverSharedMemoryAliasKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+    }
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

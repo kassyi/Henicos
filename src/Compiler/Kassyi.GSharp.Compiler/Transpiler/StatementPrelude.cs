@@ -5,7 +5,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// of inline declaration expressions (<c>out var x</c>, <c>is T x</c>) and of deconstruction declarations
 /// (<c>var (a, (b, c)) = ...</c>), the storages of the <c>stackalloc</c> and collection expressions outside a stack
 /// array declaration (<see cref="StackAllocEmitter"/>), and the variables of discard <c>out</c> arguments
-/// (<see cref="DiscardOutArgument"/>).
+/// (<see cref="DiscardOutArgument"/>), and the memory of a <c>SharedMemory&lt;T&gt;</c> created outside a local's
+/// initializer (<see cref="SharedMemoryCreationLift"/>).
 /// </summary>
 /// <remarks>
 /// The walk does not enter a block (the body of a lambda), whose statements write their own prelude; it enters an
@@ -17,6 +18,8 @@ internal static class StatementPrelude
 {
     public static void Emit(SyntaxNode node, ref TranspileContext context)
     {
+        // The walk below starts at the children, so a creation that is the node itself is declared here
+        SharedMemoryCreationLift.DeclareStorage(node, ref context);
         foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
         {
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
@@ -76,6 +79,7 @@ internal static class StatementPrelude
 
             StackAllocEmitter.DeclareStorage(desc, ref context);
             DiscardOutArgument.DeclareStorage(desc, ref context);
+            SharedMemoryCreationLift.DeclareStorage(desc, ref context);
         }
     }
 

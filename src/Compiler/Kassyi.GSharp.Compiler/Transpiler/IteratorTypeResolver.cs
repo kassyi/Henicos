@@ -151,7 +151,7 @@ internal static class IteratorTypeResolver
     /// contains <c>yield</c> (whether valid or rejected by GSH0070).
     /// </summary>
     public static bool IsIteratorCandidateInvocation(ExpressionSyntax expression, SemanticModel semanticModel) =>
-        UnwrapParentheses(expression) is InvocationExpressionSyntax inv &&
+        expression.UnwrapParentheses() is InvocationExpressionSyntax inv &&
         semanticModel.GetSymbol(inv) is IMethodSymbol method &&
         method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
         method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
@@ -183,7 +183,7 @@ internal static class IteratorTypeResolver
         SemanticModel semanticModel,
         [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
     {
-        var unwrapped = UnwrapParentheses(expression);
+        var unwrapped = expression.UnwrapParentheses();
         if (unwrapped is InvocationExpressionSyntax inv &&
             semanticModel.GetSymbol(inv) is IMethodSymbol directMethod &&
             IsExternalIteratorCandidate(directMethod))
@@ -196,7 +196,7 @@ internal static class IteratorTypeResolver
             semanticModel.GetSymbol(identifier) is ILocalSymbol local &&
             local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
             declarator.Initializer?.Value is { } initializerValue &&
-            UnwrapParentheses(initializerValue) is InvocationExpressionSyntax initInv &&
+            initializerValue.UnwrapParentheses() is InvocationExpressionSyntax initInv &&
             semanticModel.GetSymbol(initInv) is IMethodSymbol initMethod &&
             IsExternalIteratorCandidate(initMethod))
         {
@@ -321,20 +321,6 @@ internal static class IteratorTypeResolver
     }
 
     /// <summary>
-    /// Strips outer <see cref="ParenthesizedExpressionSyntax"/> wrappers from <paramref name="expression"/>.
-    /// </summary>
-    public static ExpressionSyntax UnwrapParentheses(ExpressionSyntax expression)
-    {
-        var current = expression;
-        while (current is ParenthesizedExpressionSyntax parenthesized)
-        {
-            current = parenthesized.Expression;
-        }
-
-        return current;
-    }
-
-    /// <summary>
     /// Resolves <paramref name="expression"/> as a direct invocation of a valid <c>[GpuDeviceFunction]</c> iterator.
     /// </summary>
     public static bool TryResolveIteratorInvocation(
@@ -343,7 +329,7 @@ internal static class IteratorTypeResolver
         [NotNullWhen(true)] out InvocationExpressionSyntax? invocation,
         [NotNullWhen(true)] out IMethodSymbol? iteratorMethod)
     {
-        if (UnwrapParentheses(expression) is InvocationExpressionSyntax inv &&
+        if (expression.UnwrapParentheses() is InvocationExpressionSyntax inv &&
             semanticModel.GetSymbol(inv) is IMethodSymbol method &&
             IsDeviceIteratorMethod(method))
         {
@@ -367,7 +353,7 @@ internal static class IteratorTypeResolver
         [NotNullWhen(true)] out InvocationExpressionSyntax? invocation,
         [NotNullWhen(true)] out IMethodSymbol? iteratorMethod)
     {
-        var unwrapped = UnwrapParentheses(expression);
+        var unwrapped = expression.UnwrapParentheses();
         if (TryResolveIteratorInvocation(unwrapped, semanticModel, out invocation, out iteratorMethod))
         {
             return true;
@@ -396,7 +382,7 @@ internal static class IteratorTypeResolver
     /// </summary>
     public static bool IsIteratorValueExpression(ExpressionSyntax expression, SemanticModel semanticModel)
     {
-        var unwrapped = UnwrapParentheses(expression);
+        var unwrapped = expression.UnwrapParentheses();
         if (TryResolveIteratorInvocation(unwrapped, semanticModel, out _, out _))
         {
             return true;
@@ -413,7 +399,7 @@ internal static class IteratorTypeResolver
     /// </summary>
     public static bool IsIteratorForEachSource(ExpressionSyntax expression, SemanticModel semanticModel)
     {
-        var unwrapped = UnwrapParentheses(expression);
+        var unwrapped = expression.UnwrapParentheses();
         if (TryResolveIteratorSource(unwrapped, semanticModel, out _, out _) ||
             TryResolveExternalIteratorSource(unwrapped, semanticModel, out _) ||
             IsIteratorCandidateInvocation(unwrapped, semanticModel))
@@ -429,7 +415,7 @@ internal static class IteratorTypeResolver
             return false;
         }
 
-        var unwrappedInit = UnwrapParentheses(initializerValue);
+        var unwrappedInit = initializerValue.UnwrapParentheses();
         return IsIteratorCandidateInvocation(unwrappedInit, semanticModel) ||
                unwrappedInit switch
                {

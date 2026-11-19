@@ -444,6 +444,8 @@ struct Kassyi_GSharp_Core_SharedMemory {
 T* data;
 inline T& operator[](int index) { return data[index]; }
 inline const T& operator[](int index) const { return data[index]; }
+// The frame of a state machine keeps a SharedMemory<T> local, which a device function result or a copy assigns
+inline Kassyi_GSharp_Core_SharedMemory<T>& operator=(T* pointer) { data = pointer; return *this; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
@@ -508,6 +510,13 @@ __forceinline__ int __popc(uint32_t value) { return (int)__popcnt(value); }
 __forceinline__ int __popcll(uint64_t value) { return (int)__popcnt64(value); }
 __forceinline__ int __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)(31 - index) : 32; }
 __forceinline__ int __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)(63 - index) : 64; }
+// BitOperations.RoundUpToPowerOf2: 0 for 0 and for values above the largest power of two, as .NET (see Prelude.cu)
+__forceinline__ uint32_t __gsharp_round_up_pow2_32(uint32_t value) {
+int shift = 32 - __gsharp_lzc_32(value - 1u); return shift < 32 ? 1u << shift : 0u;
+}
+__forceinline__ uint64_t __gsharp_round_up_pow2_64(uint64_t value) {
+int shift = 64 - __gsharp_lzc_64(value - 1ull); return shift < 64 ? 1ull << shift : 0ull;
+}
 __forceinline__ int __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? (int)index : 32; }
 __forceinline__ int __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? (int)index : 64; }
 __forceinline__ int __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)index : 0; }
@@ -787,6 +796,27 @@ __gsharp_wide_sum s;
 s.lo = a.lo + b.lo;
 s.hi = (long long)((unsigned long long)a.hi + (unsigned long long)b.hi + (s.lo < a.lo ? 1ull : 0ull));
 return s;
+}
+
+// Math.Max / Math.Min / Math.Sign of the integer types other than int. The C# overload returns the narrow type:
+// `var m = Math.Max(b1, b2)` is a byte, and `ref m` must be a pointer to one. CUDA's max(int, int) would give an int.
+// The arguments are already converted to the parameter type, so T is deduced from both.
+template <typename T> __device__ __forceinline__ T __gsharp_max_int(T a, T b) { return b > a ? b : a; }
+template <typename T> __device__ __forceinline__ T __gsharp_min_int(T a, T b) { return b < a ? b : a; }
+template <typename T> __device__ __forceinline__ int __gsharp_sign_int(T a) { return (int)(a > 0) - (int)(a < 0); }
+
+// BitOperations.IsPow2: the signed forms test v > 0 first and subtract in the unsigned type: MinValue - 1 is undefined
+// in C++. The nint form receives the unsigned long long cast that every native-sized BitOperations call gets
+// (BclIntrinsicMapBuilder), converted back to long long, which keeps the bits.
+__device__ __forceinline__ bool __gsharp_is_pow2_i32(int v) {
+return v > 0 && ((unsigned int)v & ((unsigned int)v - 1u)) == 0u;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u32(unsigned int v) { return v != 0u && (v & (v - 1u)) == 0u; }
+__device__ __forceinline__ bool __gsharp_is_pow2_i64(long long v) {
+return v > 0 && ((unsigned long long)v & ((unsigned long long)v - 1ull)) == 0ull;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u64(unsigned long long v) {
+return v != 0ull && (v & (v - 1ull)) == 0ull;
 }
 
 // --- Runtime Error Channel (CPU Dialect) ---
@@ -1079,6 +1109,18 @@ if (array.data == nullptr)
 __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
 return static_cast<A&&>(array);
+}
+
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// (""The underlying array is null."") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_segment_ref(A&& segment, S site)
+{
+if (segment.data == nullptr)
+{
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, site);
+}
+return static_cast<A&&>(segment);
 }
 
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails

@@ -92,6 +92,11 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                         create(), read, o, gridDimX: s.GridX, blockDimX: s.BlockX),
                     o => AfterBarrierModel(create(), read, o));
             }
+
+            yield return Create(nameof(K.NullableArrayForEachBarrierKernel), valueName, R.ForEach,
+                (o, s) => K.LaunchNullableArrayForEachBarrierKernel(
+                    create(), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => ForEachModel(create(), o));
         }
 
         foreach (var (valueName, create) in ((string, Func<DiffDeepBag[]?>)[])
@@ -117,6 +122,17 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
         R.IsNull => a is null ? 1 : 0,
         _ => a!.Length, // Deliberately unchecked: Length and InNullableFunction read a.Length, null throws as in C#
     };
+
+    // The body of NullableArrayForEachBarrierKernel for its one thread without the barrier, which the C# execution
+    // cannot run: a null array throws NullReferenceException when the loop starts
+    private static void ForEachModel(int[]? a, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in a!) // Deliberately unchecked: a null array throws as in the kernel's C#
+        {
+            o[0] += v + 1;
+        }
+    }
 
     // The launch is the oracle unless the case gives a model of the kernel's C#
     private static DifferentialCase Create(string kernel, string value, R read, Action<int[], LaunchShape> launch,

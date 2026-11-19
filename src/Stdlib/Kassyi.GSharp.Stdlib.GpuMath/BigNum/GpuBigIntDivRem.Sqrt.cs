@@ -159,7 +159,7 @@ public static partial class GpuBigIntDivRem
         16 * rootWords + 32 * marginWords + 48;
 
     /// <summary>
-    /// Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU using inverse square root approximation and Heron's refinement.
+    /// Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU.
     /// </summary>
     /// <param name="leftOperand">The non-negative big integer operand.</param>
     /// <param name="resultBuffer">The destination buffer receiving the integer square root. It may be the operand, or
@@ -167,7 +167,9 @@ public static partial class GpuBigIntDivRem
     /// <exception cref="ArgumentException"><paramref name="resultBuffer"/> is narrower than half the bits of <paramref
     /// name="leftOperand"/>, rounded up to words.</exception>
     /// <remarks>
-    /// <para><b>Algorithm:</b> First calculates an initial guess via Newton-Raphson inverse square root on the GPU, then refines it using Heron's method to guarantee the exact mathematical floor integer square root.</para>
+    /// <para><b>Algorithm:</b> Shifts the operand left by an even number of bits so that its root fills whole words,
+    /// takes that root with an inverse square root and an exact correction, and shifts it back: exactly the floor. The
+    /// work is queued on the workspace stream; only the operand's bit length is read back to the host first.</para>
     /// </remarks>
     public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
         SqrtCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
@@ -175,21 +177,9 @@ public static partial class GpuBigIntDivRem
     // Sqrt on the owned type; the public method above takes views and borrows them
     private static void SqrtCore(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
-        // The root has half the operand's bits; the Heron steps run in the operand's width, so another width goes
-        // through a temporary
         var words = leftOperand.NumWords;
         ResultBuffers.ThrowIfNarrower(resultBuffer, BigIntWidths.Words(BigIntWidths.Sqrt(BigIntWidths.OfWords(words))),
             nameof(Sqrt));
-        if (resultBuffer.NumWords != words)
-        {
-            using var root = leftOperand.Workspace.RentTemp(words);
-            SqrtCore(leftOperand, root);
-            var copied = Math.Min(words, resultBuffer.NumWords);
-            resultBuffer.CopyFrom(root, numWords: copied);
-            ResultBuffers.ClearAbove(resultBuffer, copied);
-            return;
-        }
-
         var actualBits = GetActualBits(leftOperand);
         if (actualBits == 0)
         {
@@ -202,8 +192,7 @@ public static partial class GpuBigIntDivRem
             return;
         }
 
-        using var currentRoot = ComputeInitialSqrtGuess(leftOperand, actualBits);
-        RefineSqrtWithHeronMethod(leftOperand, currentRoot, resultBuffer);
+        SqrtThroughSqrtFloor(leftOperand, resultBuffer, actualBits);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -227,139 +216,24 @@ public static partial class GpuBigIntDivRem
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static GpuBigUInt ComputeInitialSqrtGuess(GpuBigUInt leftOperand, int actualBits)
+    // An operand above 32 bits, shifted left by 2k bits to the bit length 64r or 64r - 1 that SqrtFloor takes; its
+    // root is shifted back right by k. The operand is read only by the first shift and the result written only by the
+    // last, so the result may be the operand.
+    private static void SqrtThroughSqrtFloor(GpuBigUInt leftOperand, GpuBigUInt resultBuffer, int actualBits)
     {
-        var n = leftOperand.NumWords;
-        var lz = n * 32 - actualBits;
-        if (lz % 2 != 0)
-        {
-            lz--;
-        }
+        var workspace = leftOperand.Workspace;
+        var rootWords = (actualBits + 63) / 64;
+        var halfShift = (64 * rootWords - actualBits) / 2;
 
-        using var aNorm = new GpuBigUInt(leftOperand.Workspace, n);
-        aNorm.Clear();
-        // lz is at most the count of leading zero bits of a in its n words: only zero bits are shifted out
-        GpuBigIntMath.ShiftLeftUnchecked(leftOperand, lz, aNorm);
+        using var normalized = workspace.RentTemp(2 * rootWords);
+        // actualBits + 2k <= 64r = 32 * 2r: the shift moves no set bit out of the 2r words
+        GpuBigIntMath.ShiftAndResize(leftOperand, 2 * halfShift, normalized);
 
-        var marginWords = 16;
-        using var xResult = new GpuBigUInt(leftOperand.Workspace, n + marginWords);
-        xResult.Clear();
-        InverseSqrt(aNorm, xResult, marginWords);
+        using var scaledRoot = workspace.RentTemp(rootWords);
+        SqrtFloor(normalized, scaledRoot);
 
-        using var rNorm = new GpuBigUInt(leftOperand.Workspace, 2 * n + marginWords);
-        GpuBigIntMath.Mul(aNorm, xResult, rNorm);
-
-        var bBits = actualBits + lz;
-        var marginBits = marginWords * 32;
-        var totalShift = bBits + marginBits + (lz / 2);
-
-        var currentRoot = new GpuBigUInt(leftOperand.Workspace, n);
-        try
-        {
-            GpuBigIntMath.ShiftAndResize(rNorm, -totalShift, currentRoot);
-
-            if (GetActualBits(currentRoot) == 0)
-            {
-                var rootWorkspace = currentRoot.Workspace;
-                rootWorkspace.Provider.WriteWord(currentRoot.DevicePointer, 0, 1u, rootWorkspace.Stream);
-            }
-
-            return currentRoot;
-        }
-        catch
-        {
-            currentRoot.Dispose();
-            throw;
-        }
+        // scaledRoot = floor(sqrt(a * 2^(2k))) = floor(sqrt(a) * 2^k), so floor(scaledRoot / 2^k) = floor(sqrt(a));
+        // the shift writes every word of the result, zeros above the root
+        GpuBigIntMath.ShiftAndResize(scaledRoot, -halfShift, resultBuffer);
     }
-
-    private static void RefineSqrtWithHeronMethod(GpuBigUInt leftOperand, GpuBigUInt currentRoot, GpuBigUInt resultBuffer)
-    {
-        var n = leftOperand.NumWords;
-        using var divisionResult = new GpuBigUInt(leftOperand.Workspace, n);
-        using var sumWithDivision = new GpuBigUInt(leftOperand.Workspace, n);
-        using var prevRoot = new GpuBigUInt(leftOperand.Workspace, n);
-
-        var maxIterations = 30;
-        var iter = 0;
-        while (iter++ < maxIterations)
-        {
-            prevRoot.CopyFrom(currentRoot, numWords: n);
-
-            Div(leftOperand, currentRoot, divisionResult);
-            GpuBigIntMath.Add(currentRoot, divisionResult, sumWithDivision);
-            currentRoot.Clear();
-            GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
-
-            using var diff = new GpuBigUInt(leftOperand.Workspace, n);
-            GpuBigIntMath.BitwiseXor(currentRoot, prevRoot, diff);
-            if (GetActualBits(diff) == 0)
-            {
-                break;
-            }
-
-            if (GetActualBits(currentRoot) == 0)
-            {
-                break;
-            }
-
-            using var plusOne = new GpuBigUInt(leftOperand.Workspace, n);
-            plusOne.Workspace.Provider.WriteWord(plusOne.DevicePointer, 0, 1u, plusOne.Workspace.Stream);
-            using var prevPlusOne = new GpuBigUInt(leftOperand.Workspace, n);
-            GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
-
-            GpuBigIntMath.BitwiseXor(currentRoot, prevPlusOne, diff);
-            if (GetActualBits(diff) == 0)
-            {
-                currentRoot.CopyFrom(prevRoot, numWords: n);
-                break;
-            }
-        }
-
-        using var squaredRoot = new GpuBigUInt(leftOperand.Workspace, 2 * n);
-        GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
-
-        var isGreater = false;
-        var topHalf = ArrayPool<uint>.Shared.Rent(n);
-        try
-        {
-            leftOperand.Workspace.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Workspace.Stream);
-            for (var i = 0; i < n; i++)
-            {
-                if (topHalf[i] == 0)
-                {
-                    continue;
-                }
-
-                isGreater = true;
-                break;
-            }
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(topHalf);
-        }
-
-        if (!isGreater)
-        {
-            using var lowerSquaredRoot = new GpuBigUInt(leftOperand.Workspace, n);
-            lowerSquaredRoot.CopyFrom(squaredRoot, numWords: n);
-            isGreater = GpuBigIntMath.IsLessThan(leftOperand, lowerSquaredRoot);
-        }
-
-        if (isGreater)
-        {
-            using var one = new GpuBigUInt(leftOperand.Workspace, n);
-            one.Workspace.Provider.WriteWord(one.DevicePointer, 0, 1u, one.Workspace.Stream);
-            GpuBigIntMath.Sub(currentRoot, one, resultBuffer);
-        }
-        else
-        {
-            resultBuffer.CopyFrom(currentRoot);
-        }
-    }
-
-
 }
-

@@ -427,11 +427,7 @@ internal static class GenericCopyPlanner
 
         private bool IsConstantLike(ExpressionSyntax expression)
         {
-            while (expression is ParenthesizedExpressionSyntax parenthesized)
-            {
-                expression = parenthesized.Expression;
-            }
-
+            expression = expression.UnwrapParentheses();
             return model.GetConstantValue(expression).HasValue ||
                    (expression is MemberAccessExpressionSyntax access &&
                     ResolveStatic(access) is ConstrainedMember.IdentityConstant or ConstrainedMember.StaticMember);

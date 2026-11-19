@@ -223,41 +223,67 @@ internal static class NativeStructEmitter
         member.Kind == StructAbiMemberKind.UnknownHiddenField ||
         (member.Type.IsReferenceType && !member.Type.IsArrayLikeType());
 
+    /// <summary>
+    /// Decides how <paramref name="field"/> is stored in the shadow struct. The shadow declaration and both marshal
+    /// methods switch on this one answer, so they cannot disagree about a member.
+    /// </summary>
+    internal static NativeFieldKind ClassifyField(StructAbiMember field, ITranspilerDialect dialect) =>
+        field.Kind is StructAbiMemberKind.FixedBuffer or StructAbiMemberKind.InlineArrayElement
+            ? NativeFieldKind.FixedBuffer
+            : ClassifyType(field.Type, dialect);
+
+    /// <summary>
+    /// Decides how a value of <paramref name="type"/> is stored in a shadow struct, apart from the member it is
+    /// declared as (a <c>Nullable&lt;T&gt;</c> decides its value with it). Never
+    /// <see cref="NativeFieldKind.FixedBuffer"/>.
+    /// </summary>
+    internal static NativeFieldKind ClassifyType(ITypeSymbol type, ITranspilerDialect dialect)
+    {
+        if (type.IsArrayLikeType())
+        {
+            return NativeFieldKind.ArrayProxy;
+        }
+
+        if (HostShadowStructs.UsesShadow(type, dialect))
+        {
+            return NativeFieldKind.UserStruct;
+        }
+
+        // An enum has no special type but is declared in the shadow like a primitive, so it is copied like one
+        return type.SpecialType != SpecialType.None || type.TypeKind == TypeKind.Enum
+            ? NativeFieldKind.DirectValue
+            : NativeFieldKind.FixedBytesFallback;
+    }
+
     private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize,
         ITranspilerDialect dialect)
     {
-        if (field.Kind is StructAbiMemberKind.FixedBuffer or StructAbiMemberKind.InlineArrayElement)
+        var name = field.Name.ToCSharpIdentifier();
+        switch (ClassifyField(field, dialect))
         {
-            // [WHY] An element block is copied as bytes, so the shadow holds all ElementCount elements and never names the (possibly private) element field's type.
-            writer.AppendLine($"public fixed byte {field.Name.ToCSharpIdentifier()}[{fieldSize}];");
-        }
-        else if (field.Type.IsArrayLikeType())
-        {
-            writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
-        }
-        else if (HostShadowStructs.UsesShadow(field.Type, dialect))
-        {
-            writer.Append("public ");
-            writer.AppendAotStructPath(field.Type);
-            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
-        }
-        else if (field.Type.SpecialType != SpecialType.None)
-        {
-            writer.Append("public ");
-            writer.AppendFullyQualifiedCsharpName(field.Type);
-            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
-        }
-        else if (field.Type.TypeKind == TypeKind.Enum)
-        {
-            writer.Append("public ");
-            writer.AppendFullyQualifiedCsharpName(field.Type);
-            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
-        }
-        else
-        {
-            // Core vector types (Float4, etc.) or explicit structs are emitted as fixed byte arrays.
-            // This is a workaround to bypass CLR nesting bugs (TypeLoadException) when explicit structs are nested inside other structs.
-            writer.AppendLine($"public fixed byte {field.Name.ToCSharpIdentifier()}[{fieldSize}];");
+            case NativeFieldKind.ArrayProxy:
+                writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {name};");
+                break;
+            case NativeFieldKind.UserStruct:
+                writer.Append("public ");
+                writer.AppendAotStructPath(field.Type);
+                writer.AppendLine($" {name};");
+                break;
+            case NativeFieldKind.DirectValue:
+                writer.Append("public ");
+                writer.AppendFullyQualifiedCsharpName(field.Type);
+                writer.AppendLine($" {name};");
+                break;
+            case NativeFieldKind.FixedBuffer:
+            case NativeFieldKind.FixedBytesFallback:
+                // [WHY] A fixed buffer's element block is copied as bytes, so the shadow holds all ElementCount
+                // elements and never names the (possibly private) element field's type. Core vector types (Float4,
+                // etc.) and explicit structs take the same form: a workaround for CLR nesting bugs
+                // (TypeLoadException) when explicit structs are nested inside other structs.
+                writer.AppendLine($"public fixed byte {name}[{fieldSize}];");
+                break;
+            default:
+                throw new InvalidOperationException($"The native field kind of '{field.Name}' is not known.");
         }
     }
 }

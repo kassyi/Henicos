@@ -6,7 +6,16 @@ import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import type { ShellName } from "./constants.ts";
 import type { ScreenLine } from "./screen-line.ts";
 
-export { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./command-reader.ts";
+export {
+  bare,
+  rawWords,
+  readCommand,
+  readCommandLine,
+  segmentParts,
+  segmentsOf,
+  variablePrefix,
+} from "./command-reader.ts";
+export { isTrivialStep, programOf } from "./estimate-key.ts";
 export { errorCode, errorMessage } from "./history.ts";
 export { dropShortWords } from "./short-name.ts";
 export type { CommandKeys, PathPlace, ReadStep, ScreenLine, ShellName };

@@ -355,6 +355,8 @@ public static IGpuBoolExpr Any(this IGpuBoolVectorExpression source);
 public static IGpuBoolExpr All(this IGpuBoolVectorExpression source);
 ```
 
+`Any` and `All` stop at the deciding element, as `System.Linq` does: the first `true` element for `Any`, the first `false` one for `All`. A projection of the chain that throws for an element after it (a zero divisor, the square root of a negative value, a float operation outside its domain) does not throw; one that throws for that element or an earlier one throws its exception, the earliest element first and, within one element, the inner projection first. The elements are still evaluated together, so the stop decides which exception is thrown, not how much is computed. A chain that contains a `Where`, or an expression implemented outside GpuMath, is evaluated in full and throws for any element that throws: after `Where` the flags no longer have the indices of the projected elements, and an outside expression can evaluate other vectors.
+
 ## Remarks
 
 Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations (`Sum`, `Max`, `Min`, `Count`) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
