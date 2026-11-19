@@ -24,7 +24,7 @@ import {
   type ViewState,
 } from "./view.ts";
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
-import { CellWidth, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
+import { Campbell, CellWidth, LineHeight, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
 import { Minute, Now, job, sampleReply } from "./view-sample.ts";
 import { checkChats } from "./self-test-chats.ts";
 
@@ -568,6 +568,93 @@ function checkHelp(): void {
   assert.ok(colored[1]?.includes("\x1b[1m ↑↓ j k"), "the keys are bold");
 }
 
+/** The look of the screenshots: the Windows Terminal defaults, blocks as merged shapes, shades as dots, selection. */
+function checkTerminalLook(): void {
+  const esc = "\x1b";
+  assert.deepStrictEqual(
+    Campbell.join(" "),
+    "#0c0c0c #c50f1f #13a10e #c19c00 #0037da #881798 #3a96dd #cccccc #767676 #e74856 #16c60c #f9f1a5 #3b78ff #b4009e #61d6d6 #f2f2f2",
+    "the Campbell scheme of Windows Terminal",
+  );
+  const colors = terminalSvg([`${esc}[31mr${esc}[0m ${esc}[36mc${esc}[0m ${esc}[1;32mg${esc}[0m`], 10);
+  assert.ok(colors.includes('<rect width="100%" height="100%" rx="6" fill="#0c0c0c"/>'), "the Campbell background");
+  assert.ok(colors.includes('fill="#c50f1f"') && colors.includes('fill="#3a96dd"'), "red and cyan of Campbell");
+  assert.ok(colors.includes('fill="#16c60c"'), "bold green is the bright green");
+  assert.ok(colors.includes(`font-family="'Cascadia Mono', 'Cascadia Code', Consolas,`), "Cascadia Mono comes first");
+
+  // A run of full blocks is one rectangle of the cell height; the rows below touch it
+  const bars = terminalSvg([`${esc}[32m████████${esc}[0m`, `${esc}[32m████████${esc}[0m`], 10);
+  const rects = [
+    ...bars.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="#13a10e"/g),
+  ];
+  assert.strictEqual(rects.length, 2, "one rectangle per row of blocks");
+  assert.strictEqual(Number(rects[0]?.[3]), Number((8 * CellWidth).toFixed(1)), "as wide as the eight cells");
+  assert.strictEqual(Number(rects[0]?.[4]), LineHeight, "as high as a cell");
+  assert.strictEqual(Number(rects[0]?.[2]) + LineHeight, Number(rects[1]?.[2]), "the next row starts where it ends");
+  assert.ok(!bars.includes("<tspan"), "no glyphs for blocks");
+
+  // Shades are dot patterns of one, two and three dots in four, not glyphs
+  const shades = terminalSvg([`${esc}[33m░▒▓${esc}[0m`], 10);
+  const tiles = [...shades.matchAll(/<pattern [^>]*>(.*?)<\/pattern>/g)].map(
+    (m) => (m[1]?.match(/<rect /g) ?? []).length,
+  );
+  assert.deepStrictEqual(tiles, [1, 2, 3], "the dots of the light, medium and dark shade");
+  assert.ok(shades.includes('fill="#c19c00"') && !shades.includes("<tspan"), "dots in the foreground color");
+
+  // A selected job: the id and command in reverse video, the bar in its own color on a dim highlight
+  const line = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 812 },
+    { columns: 70, rows: 13, now: Now },
+    true,
+  )[2] as string;
+  assert.ok(line.includes(`${esc}[7;1m812${esc}[0m`), "the id is in reverse video");
+  assert.ok(line.includes(`${esc}[7mjust test-category`), "the command is in reverse video");
+  assert.ok(line.includes(`${esc}[48;5;237;32m█${esc}[0m`), "the bar keeps its green on the highlight");
+  assert.ok(!line.includes(`${esc}[7;32m█`), "the bar is not reversed");
+  assert.ok(line.endsWith(`${esc}[48;5;237m ${esc}[0m`), "the rest of the line is the dim highlight");
+  // A selected job that waits: the dim cells of its timeline (⋯ and the now column) stay on the highlight, and the
+  // last reversed part is the command, so that nothing of the timeline is reversed
+  for (const id of [820, 822]) {
+    const waiting = renderScreen(
+      sampleReply(),
+      { ...initialViewState(), selectedId: id },
+      { columns: 120, rows: 17, now: Now },
+      true,
+    ).find((l) => l.includes(`${esc}[7m${id}`)) as string;
+    const reversed = [...waiting.matchAll(/\[7(?:;[\d;]*)?m([^]*)\[0m/g)].map((m) => m[1] ?? "");
+    assert.ok(
+      reversed.length > 0 && !reversed.slice(-1)[0]?.includes("│"),
+      `#${id}: the last reversed part is a column`,
+    );
+    assert.ok(
+      reversed.every((text) => text.trim() !== "" && !/[│⋯█▒▓┃]/.test(text)),
+      `#${id}: no timeline cell reversed`,
+    );
+    assert.ok(waiting.includes(`${esc}[48;5;237;2m`), `#${id}: dim timeline cells on the highlight`);
+  }
+  // The first timeline cell is not always blank: at 50 columns the bar of #815 starts in it, and stays unreversed
+  const firstCell = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 50, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(firstCell.includes(`${esc}[48;5;237;31m█`), "#815: the first timeline cell keeps its red");
+  assert.ok(!firstCell.includes(`${esc}[7;31m█`), "#815: the first timeline cell is not reversed");
+  // Without a timeline (a narrow screen) the progress text of a late job is reversed like the other columns
+  const narrowSelected = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 40, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(!narrowSelected.includes(`${esc}[48;5;237;31m`), "no highlight on the progress text of a narrow line");
+  assert.ok(narrowSelected.includes(`${esc}[7;31m`), "the late progress text is reversed");
+  const selected = terminalSvg([line], 70);
+  assert.ok(selected.includes('fill="#13a10e"') && selected.includes('fill="#3a3a3a"'), "green bar, grey highlight");
+}
+
 /** The SVG of the screenshots: text escaped, wide characters on their cells, and the files of the README written. */
 function checkScreenshots(plugins: ShortNameProvider): void {
   const svg = terminalSvg(["a<b&c>d", "[1;33m日本[0mx [7msel[0m"], 10);
@@ -576,8 +663,9 @@ function checkScreenshots(plugins: ShortNameProvider): void {
   const x = (column: number): string => `x="${Number((Padding + column * CellWidth).toFixed(1))}"`;
   assert.ok(svg.includes(`<tspan ${x(0)}`) && svg.includes(`<tspan ${x(2)}`), "each wide character on its own cells");
   assert.ok(svg.includes(`<tspan ${x(4)}`) && svg.includes(">x</tspan>"), "the text after two wide ones at column 4");
-  assert.ok(svg.includes('font-weight="bold"') && svg.includes('fill="#f5f543"'), "bold yellow");
+  assert.ok(svg.includes('fill="#f9f1a5"') && !svg.includes("font-weight"), "bold yellow is the bright yellow");
   assert.ok(svg.includes(`<rect ${x(6)}`), "reverse video draws its background");
+  checkTerminalLook();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-screenshots-"));
   try {
     const files = writeScreenshots(dir, plugins);
