@@ -10,7 +10,8 @@ internal static class ArgumentNullCheck
     /// <summary>The text of the error of a registered site of a null passed where the parameter is not nullable.</summary>
     public const string ArgumentSiteMessage = "G#: a null array is passed where it is not nullable";
 
-    private const string ArgumentTrapKind = "ArrayNullArgument";
+    /// <summary>The trap kind of an argument check site ID.</summary>
+    internal const string ArgumentTrapKind = "ArrayNullArgument";
 
     /// <summary>The kind of check a device function parameter needs.</summary>
     internal static ArgumentCheckKind GetArgumentCheckKind(IParameterSymbol parameter)
@@ -127,8 +128,10 @@ internal static class ArgumentNullCheck
         return ArrayNullCheck.PlanSite(argument, null, message, trapKind, ref context);
     }
 
-    // The path from the parameter to a nested struct field, for example "s.Inner.Data"
-    private static string FormatFieldPath(IParameterSymbol parameter, ImmutableArray<IFieldSymbol> path)
+    /// <summary>
+    /// The path from <paramref name="parameter"/> to a nested struct field, for example <c>"s.Inner.Data"</c>.
+    /// </summary>
+    internal static string FormatFieldPath(IParameterSymbol parameter, ImmutableArray<IFieldSymbol> path)
     {
         using var writer = new SourceWriter();
         writer.Append(MessageText.Name(parameter));
@@ -140,8 +143,10 @@ internal static class ArgumentNullCheck
         return writer.ToString();
     }
 
-    // Explains why G# throws earlier than C# at a device function call (#2044)
-    private static string FormatArgumentMessage(IParameterSymbol parameter, string? fieldPath, ITypeSymbol targetType,
+    /// <summary>
+    /// Formats the error message explaining why G# checks a non-nullable array argument earlier than C# (#2044).
+    /// </summary>
+    internal static string FormatArgumentMessage(IParameterSymbol parameter, string? fieldPath, ITypeSymbol targetType,
         string? place)
     {
         var calleeName = parameter.ContainingSymbol is { } callee ? MessageText.Name(callee) : "";

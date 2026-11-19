@@ -235,9 +235,51 @@ public static class ArtifactHelper
         var fileName = Path.GetFileNameWithoutExtension(sourcePath);
         if (fileName.EndsWith(".g", StringComparison.OrdinalIgnoreCase))
         {
-            fileName = fileName[..^2];
+            fileName = fileName.AsSpan(0, fileName.Length - 2).ToString();
         }
 
         return fileName;
+    }
+
+    /// <summary>
+    /// Maps a native C++ unit source path (<c>{stem}.g.cpp</c> or <c>{stem}.{i}.g.cpp</c>) to its module stem and
+    /// unit stem so all translation units of one module link into a single <c>{ModuleStem}_{arch}.dll</c>.
+    /// </summary>
+    public static (string ModuleStem, string UnitStem) GetNativeModuleAndUnitStem(string sourcePath)
+    {
+        var unitStem = GetCleanKernelFileName(sourcePath);
+        var lastDot = unitStem.LastIndexOf('.');
+        if (lastDot > 0 && IsAsciiNonNegativeInt(unitStem.AsSpan(lastDot + 1)))
+        {
+            return (unitStem.AsSpan(0, lastDot).ToString(), unitStem);
+        }
+
+        return (unitStem, unitStem);
+    }
+
+    private static bool IsAsciiNonNegativeInt(ReadOnlySpan<char> span)
+    {
+        if (span.Length == 0)
+        {
+            return false;
+        }
+
+        long value = 0;
+        for (var i = 0; i < span.Length; i++)
+        {
+            var c = span[i];
+            if (c is < '0' or > '9')
+            {
+                return false;
+            }
+
+            value = value * 10 + (c - '0');
+            if (value > int.MaxValue)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

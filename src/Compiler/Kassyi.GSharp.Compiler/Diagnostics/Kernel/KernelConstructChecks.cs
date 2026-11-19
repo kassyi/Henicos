@@ -94,7 +94,7 @@ internal static class KernelConstructChecks
         var isSyncThreads = intrinsic.Kind == SyncIntrinsicKind.BlockBarrier;
         var suspendingCallee = !isSyncThreads &&
                                callee != null &&
-                               SuspensionAnalysis.IsSuspendingFunction(callee, scan.SemanticModel.Compilation)
+                               IsBarrierCall(callee, scan.SemanticModel.Compilation)
             ? callee
             : null;
         var splits = intrinsic.SplitsStateMachine || suspendingCallee != null;
@@ -133,6 +133,15 @@ internal static class KernelConstructChecks
             scan.SyncPoints.Add((invocation, SyncScope.Grid, IsCall: false));
         }
     }
+
+    /// <summary>
+    /// Whether a call to <paramref name="callee"/> is one of the barriers of GSH0040 (<see cref="KernelBarrierScan.Barriers"/>):
+    /// a block barrier or a call that suspends. A warp collective and a grid sync split the state machine too, but a
+    /// goto may cross them.
+    /// </summary>
+    internal static bool IsBarrierCall(IMethodSymbol callee, Compilation compilation) =>
+        SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.BlockBarrier ||
+        SuspensionAnalysis.IsSuspendingFunction(callee, compilation);
 
     /// <summary>Checks if a variable declarator is a ref struct, local pointer, or iterator local that needs cross-barrier tracking.</summary>
     internal static void InspectLocalVariableDeclarator(KernelBarrierScan scan, VariableDeclaratorSyntax varDecl)

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>A call of a method.</summary>
@@ -36,4 +38,11 @@ internal sealed class IrCall(IMethodSymbol method, IrExpression? receiver, Immut
         receiver == Receiver && arguments == Arguments && classification.Equals(Classification)
             ? this
             : KeepSpelling(new IrCall(Method, receiver, arguments, classification, Type, Category, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrCallDecision Decided => GetDecision<IrCallDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrCall WithDecision(IrCallDecision decision) =>
+        IrExpression.WithDecision<IrCall>(this, decision);
 }

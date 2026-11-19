@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>An element of a one-dimensional array.</summary>
@@ -20,4 +22,11 @@ internal sealed class IrElementReference(IrExpression receiver, IrExpression ind
         receiver == Receiver && index == Index
             ? this
             : KeepSpelling(new IrElementReference(receiver, index, Type, Category, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrElementDecision Decided => GetDecision<IrElementDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrElementReference WithDecision(IrElementDecision decision) =>
+        IrExpression.WithDecision<IrElementReference>(this, decision);
 }

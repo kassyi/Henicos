@@ -23,8 +23,8 @@ export interface ViewState {
   help: number;
   /** How many pages the help takes at the current width (set by renderScreen: 1 when both columns fit). */
   helpPages: number;
-  /** The chat panel is hidden (key a). */
-  chatsHidden: boolean;
+  /** The lower panel of the plugin is hidden (key a). */
+  panelHidden: boolean;
   /** The mark flashed over the job rows after Space (pause or play), until `until`; null when none. */
   flash: Flash | null;
 }
@@ -37,7 +37,7 @@ export function initialViewState(): ViewState {
     message: null,
     help: 0,
     helpPages: 2,
-    chatsHidden: false,
+    panelHidden: false,
     flash: null,
   };
 }
