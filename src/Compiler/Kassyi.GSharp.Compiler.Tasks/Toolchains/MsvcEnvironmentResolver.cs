@@ -14,6 +14,8 @@ internal sealed class MsvcEnvironmentResolver(
     bool disableCache,
     string? vswherePathOverride)
 {
+    // Keyed by the architecture and the vswhere override, so that a resolver with another vswhere does not get the
+    // result of the first one
     private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -46,10 +48,24 @@ internal sealed class MsvcEnvironmentResolver(
             return ResolveVcvarsEnvironment(vcvarsArch, cancellationToken);
         }
 
-        return s_vcvarsCache.GetOrAdd(
-            vcvarsArch,
-            arch => new Lazy<Dictionary<string, string>?>(
-                () => ResolveVcvarsEnvironment(arch, cancellationToken))).Value;
+        var key = vcvarsArch + "|" + vswherePathOverride;
+        var entry = s_vcvarsCache.GetOrAdd(
+            key,
+            _ => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(vcvarsArch, cancellationToken)));
+        try
+        {
+            return entry.Value;
+        }
+        catch (Exception)
+        {
+            // [WHY] A Lazy keeps the exception of its factory, so a resolution that was cancelled (or failed) would
+            // fail every later build of the process with the first caller's exception. Remove this entry only: another
+            // caller may already have added a new one for the key. A resolved value, null (no Visual Studio) included,
+            // stays.
+            ((ICollection<KeyValuePair<string, Lazy<Dictionary<string, string>?>>>)s_vcvarsCache)
+                .Remove(new KeyValuePair<string, Lazy<Dictionary<string, string>?>>(key, entry));
+            throw;
+        }
     }
 
     /// <summary>
