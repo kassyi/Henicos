@@ -8,9 +8,10 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Left to other rules: a <c>new object()</c> or an array creation that initializes the variable (GSH0001), the type of a
-/// <c>x is object</c> test (decided by the types, <c>TypeTests</c>), and the signature of a method (whose parameter
-/// and return types have their own diagnostics).
+/// Left to other rules: a <c>new object()</c> or an array creation that initializes the variable (GSH0001), the type
+/// of a <c>x is object</c> test (decided by the types, <c>TypeTests</c>), and the signature of a method (parameters
+/// are reported by <see cref="KernelSignatureRule"/> for device functions and
+/// <see cref="KernelDeclarationAnalyzer"/> for kernels, and return types by <see cref="KernelSignatureRule"/>).
 /// </para>
 /// </remarks>
 internal sealed class HeapObjectTypeRule :

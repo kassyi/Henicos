@@ -23,7 +23,7 @@ internal static class BarrierDivergenceChecks
                     break;
                 // GSH0003: the state machine would leave the scope of the resource at the barrier and dispose it
                 case UsingStatementSyntax:
-                case BlockSyntax block when IsInUsingDeclarationScope(block, barrier):
+                case BlockSyntax block when SplitPointPlacement.IsInUsingDeclarationScope(block, barrier):
                     scan.Context.ReportDiagnostic(
                         GSharpDiagnostics.UnsupportedSyntax,
                         barrier.GetLocation(),
@@ -170,27 +170,12 @@ internal static class BarrierDivergenceChecks
         {
             if (ancestor is LocalFunctionStatementSyntax ||
                 (ancestor is AnonymousFunctionExpressionSyntax &&
-                 !BarrierUsageAnalyzer.IsInlinedMacroBody(ancestor, scan.SemanticModel)))
+                 !SplitPointPlacement.IsInlinedMacroBody(ancestor, scan.SemanticModel)))
             {
                 return true;
             }
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// Whether <paramref name="barrier"/> in <paramref name="block"/> is in the scope of a <c>using</c> declaration of the
-    /// block: one declared before it, or any one when the block is a nested block, whose statements the lowering moves
-    /// into the enclosing block (BranchRewriter, LoopRewriter) so that its scope would end there.
-    /// </summary>
-    internal static bool IsInUsingDeclarationScope(BlockSyntax block, InvocationExpressionSyntax barrier)
-    {
-        var isNested = block.Parent is BlockSyntax;
-        return block.Statements
-            .AsStackEnumerable()
-            .Any((barrier.SpanStart, isNested), static (statement, state) =>
-                UsingTranspiler.IsUsingDeclaration(statement) &&
-                (state.isNested || statement.SpanStart < state.SpanStart));
     }
 }
