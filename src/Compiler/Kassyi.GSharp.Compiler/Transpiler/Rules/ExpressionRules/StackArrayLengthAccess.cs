@@ -9,7 +9,7 @@ internal static class StackArrayLengthAccess
     /// <param name="Expression">
     /// The size expression of the declaration, when <paramref name="Count"/> is not known.
     /// </param>
-    private readonly record struct StackArraySize(int? Count, ExpressionSyntax? Expression);
+    internal readonly record struct StackArraySize(int? Count, ExpressionSyntax? Expression);
 
     // s.Length of a stack array local: the size its declaration gives.
     internal static bool TryTranspile(MemberAccessExpressionSyntax node, ref TranspileContext context)
@@ -23,13 +23,30 @@ internal static class StackArrayLengthAccess
         return true;
     }
 
-    private static bool TryGetStackArraySize(MemberAccessExpressionSyntax node, SemanticModel semanticModel,
+    internal static bool TryGetStackArraySize(MemberAccessExpressionSyntax node, SemanticModel semanticModel,
         out StackArraySize size)
     {
         size = default;
-        if (node.Name.Identifier.Text != "Length" ||
-            semanticModel.GetSymbol(node.Expression) is not ILocalSymbol local ||
-            !local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) ||
+        return node.Name.Identifier.Text == "Length" &&
+               semanticModel.GetSymbol(node.Expression) is ILocalSymbol local &&
+               TryGetDeclaredSize(local, semanticModel, out size);
+    }
+
+    /// <summary>
+    /// The size that the declaration of <paramref name="local"/> gives, for its <c>Length</c>: the syntax path writes
+    /// it in place of the member.
+    /// </summary>
+    internal static bool TryGetStackArraySize(ILocalSymbol local, Compilation compilation, out StackArraySize size)
+    {
+        size = default;
+        return local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
+               TryGetDeclaredSize(local, compilation.GetCachedSemanticModel(declarator.SyntaxTree), out size);
+    }
+
+    private static bool TryGetDeclaredSize(ILocalSymbol local, SemanticModel semanticModel, out StackArraySize size)
+    {
+        size = default;
+        if (!local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) ||
             declarator.Initializer == null ||
             !InitializationSyntaxExtractor.TryGetArrayInitialization(declarator.Initializer.Value, out var count,
                 out var sizeExpression, out _))

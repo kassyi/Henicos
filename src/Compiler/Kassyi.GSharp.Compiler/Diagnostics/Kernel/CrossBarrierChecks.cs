@@ -41,9 +41,6 @@ internal static class CrossBarrierChecks
             return;
         }
 
-        var firstBarrierStart = scan.Barriers[0].SpanStart;
-        var lastBarrierEnd = scan.Barriers[scan.Barriers.Count - 1].Span.End;
-
         foreach (var gotoStmt in scan.Gotos)
         {
             if (gotoStmt.Expression is not IdentifierNameSyntax gotoId)
@@ -62,22 +59,40 @@ internal static class CrossBarrierChecks
                 continue;
             }
 
-            var start = Math.Min(gotoStmt.SpanStart, targetLabel.SpanStart);
-            var end = Math.Max(gotoStmt.Span.End, targetLabel.Span.End);
-
-            if (end <= firstBarrierStart || start >= lastBarrierEnd)
-            {
-                continue;
-            }
-
-            var firstBarrier = FindFirstBarrierAfter(scan, start);
-            if (firstBarrier != null && firstBarrier.Span.End < end)
+            if (IsCrossBarrierGoto(scan.Barriers, gotoStmt, targetLabel))
             {
                 scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierGotoProhibited,
                     gotoStmt.GetLocation());
             }
         }
+    }
+
+    /// <summary>
+    /// Whether a goto to <paramref name="targetLabel"/> crosses one of <paramref name="barriers"/> (GSH0040): one that
+    /// starts inside the range from the earlier of the two to the later one and ends before the range does.
+    /// </summary>
+    /// <param name="barriers">
+    /// The block barriers and the calls that suspend of the method, in text order
+    /// (<see cref="KernelConstructChecks.IsBarrierCall"/>).
+    /// </param>
+    /// <remarks>
+    /// The one test of GSH0040 and of GSH0121 (<see cref="ChainedLabelJumpChecks.FindReported"/>): a goto that GSH0040
+    /// reports is left out of GSH0121, so each goto gets one of them.
+    /// </remarks>
+    internal static bool IsCrossBarrierGoto(IReadOnlyList<InvocationExpressionSyntax> barriers,
+        GotoStatementSyntax gotoStmt, LabeledStatementSyntax targetLabel)
+    {
+        var start = Math.Min(gotoStmt.SpanStart, targetLabel.SpanStart);
+        var end = Math.Max(gotoStmt.Span.End, targetLabel.Span.End);
+
+        if (barriers.Count == 0 || end <= barriers[0].SpanStart || start >= barriers[barriers.Count - 1].Span.End)
+        {
+            return false;
+        }
+
+        var firstBarrier = FindFirstBarrierAfter(barriers, start);
+        return firstBarrier != null && firstBarrier.Span.End < end;
     }
 
     /// <summary>
@@ -189,16 +204,17 @@ internal static class CrossBarrierChecks
             .AddTo(variables);
     }
 
-    private static InvocationExpressionSyntax? FindFirstBarrierAfter(KernelBarrierScan scan, int position)
+    private static InvocationExpressionSyntax? FindFirstBarrierAfter(IReadOnlyList<InvocationExpressionSyntax> barriers,
+        int position)
     {
         var low = 0;
-        var high = scan.Barriers.Count - 1;
+        var high = barriers.Count - 1;
         var resultIndex = -1;
 
         while (low <= high)
         {
             var mid = low + (high - low) / 2;
-            if (scan.Barriers[mid].SpanStart > position)
+            if (barriers[mid].SpanStart > position)
             {
                 resultIndex = mid;
                 high = mid - 1;
@@ -209,6 +225,6 @@ internal static class CrossBarrierChecks
             }
         }
 
-        return resultIndex >= 0 ? scan.Barriers[resultIndex] : null;
+        return resultIndex >= 0 ? barriers[resultIndex] : null;
     }
 }
