@@ -104,7 +104,7 @@ public class WarpFrameLayoutTests
     [InlineData("MutuallyRecursiveKernel")]
     [InlineData("PingShuffle")]
     [InlineData("PongShuffle")]
-    public void Layout_ImportedOrRecursiveCallee_Fails(string methodName)
+    public void Layout_RecursiveCallee_Fails(string methodName)
     {
         var (symbol, _, _) = GetMethod(methodName);
 
@@ -189,6 +189,82 @@ public class WarpFrameLayoutTests
         Assert.Equal(0, site);
         Assert.False(layout.TryGetSite(inlined, 0, out _));
         Assert.False(layout.TryGetSite(copy, 0, out _));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Layout_KernelCalledAsFunction_Fails()
+    {
+        var (inner, _, _) = GetMethod("InnerShuffleKernel");
+        var (outer, _, _) = GetMethod("KernelCallingKernel");
+
+        // The inner kernel has a layout of its own as a root, but a call of it is no frame of a device function
+        Assert.True(WarpFrameLayout.TryGet(inner, s_compilation, out _));
+        Assert.False(WarpFrameLayout.TryGet(outer, s_compilation, out _));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Layout_CopyWhoseOwnSpanIsASite_FindsNoSiteOutsideItsOriginalSpan()
+    {
+        var (_, declaration, _) = GetMethod("FullPairSum");
+        var layout = GetLayout("FullPairSum");
+        var call = Invocations(declaration).Single();
+        Assert.True(layout.TryGetSite(call, 0, out _));
+
+        // The same node in the same tree, so its own span is the span of a real site, but annotated as an inlined copy
+        // (region 1) or as a node of another tree: it stands for another call and must not take this site
+        foreach (var data in new[]
+                 {
+                     LoweringAnnotations.FormatOriginalSpanData(call.SpanStart, call.Span.Length, 0, region: 1),
+                     LoweringAnnotations.FormatOriginalSpanData(call.SpanStart, call.Span.Length, treeOrdinal: 7),
+                 })
+        {
+            var annotation = new SyntaxAnnotation(LoweringAnnotations.OriginalSpanAnnotationKind, data);
+            var root = declaration.SyntaxTree.GetRoot().ReplaceNode(call, call.WithAdditionalAnnotations(annotation));
+            var copy = root.GetAnnotatedNodes(annotation).OfType<InvocationExpressionSyntax>().Single();
+
+            Assert.Equal(call.Span, copy.Span);
+            Assert.False(layout.TryGetSite(copy, 0, out _));
+        }
+    }
+
+    // Dk(v) => D(k-1)(D(k-1)(v)): the size doubles with every level and passes int.MaxValue at D30
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(29, true, 1610612736)]
+    [InlineData(30, false, 0)]
+    [InlineData(34, false, 0)]
+    public void Layout_DoublingCallChain_FailsInsteadOfWrapping(int depth, bool fits, int expectedSize)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(DoublingChainSource(depth));
+        var kernel = compilation.GetTypeByMetadataName("WarpFrameLayoutChain.Kernels")?.GetMembers("DoubleKernel")
+            .OfType<IMethodSymbol>().Single() ?? throw new InvalidOperationException("No kernel");
+
+        Assert.Equal(fits, WarpFrameLayout.TryGet(kernel, compilation, out var layout));
+        Assert.Equal(expectedSize, layout?.Size ?? 0);
+    }
+
+    // D0 has one shuffle (size 2), Dk = 1 + 2 * D(k-1), the kernel = 1 + D(depth)
+    private static string DoublingChainSource(int depth)
+    {
+        var source = new System.Text.StringBuilder();
+        source.AppendLine("using Kassyi.GSharp.Core;");
+        source.AppendLine("namespace WarpFrameLayoutChain;");
+        source.AppendLine("public static partial class Kernels");
+        source.AppendLine("{");
+        source.AppendLine("    [GpuDeviceFunction]");
+        source.AppendLine("    public static int D0(int v) => Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);");
+        for (var k = 1; k <= depth; k++)
+        {
+            source.AppendLine("    [GpuDeviceFunction]");
+            source.AppendLine($"    public static int D{k}(int v) => D{k - 1}(D{k - 1}(v));");
+        }
+
+        source.AppendLine("    [GpuKernel]");
+        source.AppendLine($"    public static void DoubleKernel(int[] data) {{ data[0] = D{depth}(data[0]); }}");
+        source.AppendLine("}");
+        return source.ToString();
     }
 
     private static WarpFrameLayout GetLayout(string methodName)

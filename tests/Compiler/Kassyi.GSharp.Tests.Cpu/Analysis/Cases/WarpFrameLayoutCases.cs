@@ -136,6 +136,21 @@ namespace WarpFrameLayoutCases
             data[t] = FullPairSum(RecursivePlain(data[t], 3));
         }
 
+        // A kernel that reaches a shuffle, called like a function by another kernel: a kernel is no device function and
+        // gets no frame
+        [GpuKernel]
+        public static void InnerShuffleKernel(int[] data)
+        {
+            int t = ThreadIndex.X;
+            data[t] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[t], 1);
+        }
+
+        [GpuKernel]
+        public static void KernelCallingKernel(int[] data)
+        {
+            InnerShuffleKernel(data);
+        }
+
         // C# removes the call (WARP_FRAME_LAYOUT_TRACE is not defined), so its shuffle is no frame
         [Conditional("WARP_FRAME_LAYOUT_TRACE")]
         [GpuDeviceFunction]

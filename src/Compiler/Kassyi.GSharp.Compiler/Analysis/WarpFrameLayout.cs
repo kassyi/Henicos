@@ -82,8 +82,14 @@ internal sealed class WarpFrameLayout
     /// <summary>
     /// The layout of the frame of <paramref name="method"/>; <see langword="false"/> when a collective or a call cannot
     /// be placed: the method or a device function it calls that reaches a collective has no body in
-    /// <paramref name="compilation"/> (another assembly), or a call reaches a function again (recursion, GSH0061).
+    /// <paramref name="compilation"/> (another assembly), a call of a kernel reaches one, a call reaches a function
+    /// again (recursion, GSH0061), or the counts would not fit in an <see cref="int"/>.
     /// </summary>
+    /// <remarks>
+    /// The size doubles with every level of a function that calls the next one twice, as the nested frames of the
+    /// state machine do; a layout whose size or an offset would pass <see cref="int.MaxValue"/> fails instead of
+    /// wrapping around. What a launch does with a large but representable size is the runtime's business.
+    /// </remarks>
     public static bool TryGet(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out WarpFrameLayout? layout)
     {
@@ -158,8 +164,9 @@ internal sealed class WarpFrameLayout
             }
             else if (SuspensionAnalysis.ReachesWarpShuffle(callee, compilation))
             {
-                // A device function of another assembly reaches a collective, but its body, and so its frame, is not
-                // here
+                // Only a device function gets a frame. A kernel called like a function has a body here (Build takes
+                // kernels as roots), so it would get one without this check; a device function of another assembly
+                // has no body and fails in Build anyway
                 if (!SuspensionAnalysis.TryGetDeviceFunctionBody(callee.OriginalDefinition, compilation, out _) ||
                     Get(callee.OriginalDefinition, compilation, onPath) is not { } frame)
                 {
@@ -171,13 +178,17 @@ internal sealed class WarpFrameLayout
         }
 
         var callOffsets = new Dictionary<TextSpan, int>(calls.Count);
-        var offset = 1 + sites.Count;
+        long offset = 1 + sites.Count;
         foreach (var (span, size) in calls)
         {
-            callOffsets.Add(span, offset);
+            callOffsets.Add(span, (int)offset);
             offset += size;
+            if (offset > int.MaxValue)
+            {
+                return null;
+            }
         }
 
-        return new WarpFrameLayout(offset, sites, callOffsets);
+        return new WarpFrameLayout((int)offset, sites, callOffsets);
     }
 }
