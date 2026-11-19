@@ -31,8 +31,11 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             var targetLimits = GpuArchitectureLimits.Resolve(architectures);
             // One GSH0036 per type declaration, however many GPU methods it holds or encloses
             var reportedTypes = new ConcurrentDictionary<TypeDeclarationSyntax, byte>();
+            // One diagnostic per ID and location outside the GPU method that found it: the body of a struct member
+            // that several GPU methods write
+            var reportedOutside = new ConcurrentDictionary<(string Id, Location Location), byte>();
             start.RegisterSyntaxNodeAction(
-                context => AnalyzeMethod(context, dialect, exports, targetLimits, reportedTypes),
+                context => AnalyzeMethod(context, dialect, exports, targetLimits, reportedTypes, reportedOutside),
                 SyntaxKind.MethodDeclaration);
             // An operator or an accessor that is GPU code is a method of its type as well: that type is reopened too
             start.RegisterSyntaxNodeAction(context => AnalyzeOtherMember(context, reportedTypes),
@@ -117,7 +120,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect, bool exports,
-        in TargetLimits targetLimits, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes)
+        in TargetLimits targetLimits, ConcurrentDictionary<TypeDeclarationSyntax, byte> reportedTypes,
+        ConcurrentDictionary<(string Id, Location Location), byte> reportedOutside)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -169,6 +173,15 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         diagnostics
             .AsStackEnumerable()
             .Where(reported, static (diagnostic, seen) => seen.Add((diagnostic.Id, diagnostic.Location)))
-            .Do(context, static (diagnostic, analysis) => analysis.ReportDiagnostic(diagnostic));
+            .Where(
+                (methodDeclaration, reportedOutside),
+                static (diagnostic, state) => !IsOutside(diagnostic.Location, state.methodDeclaration) ||
+                                              state.reportedOutside.TryAdd((diagnostic.Id, diagnostic.Location), 0)
+            ).Do(context, static (diagnostic, analysis) => analysis.ReportDiagnostic(diagnostic));
     }
+
+    // A location in source that the declaration does not contain; a diagnostic without a location stays with its method
+    private static bool IsOutside(Location location, SyntaxNode declaration) =>
+        location.IsInSource &&
+        (location.SourceTree != declaration.SyntaxTree || !declaration.FullSpan.Contains(location.SourceSpan));
 }

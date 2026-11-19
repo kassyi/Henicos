@@ -100,6 +100,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        StructMemberSuspendingCall.FailIfInStructMember(node, symbol, ref context);
         StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
                                !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&

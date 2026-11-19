@@ -127,24 +127,22 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed, and a
     // warp shuffle anywhere else is not a split point, so a lane would read another lane's value before that lane wrote
-    // it, or the shuffle would run where C# does not evaluate it (#1274). Unattributed struct constructors,
-    // field and property initializers, property accessors and conversion operators are not turned into state machines
-    // either.
+    // it, or the shuffle would run where C# does not evaluate it (#1274). A struct member body is not turned into a state
+    // machine either; the transpiler reports a suspending call there when it writes the body
+    // (StructMemberSuspendingCall), so that a member that device code never runs is not reported.
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
         var (unsupportedContext, shuffleContext) = FindUnsupportedContexts(invocation, context.SemanticModel);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
-        var memberContext = FindUnsupportedMember(context.ContainingSymbol);
-        if (unsupportedContext == null && shuffleContext == null &&
-            byReferenceArgument == null && memberContext == null)
+        if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
         {
             return;
         }
 
         // A call that C# removes, or one in its arguments, never runs (RemovedCalls)
         if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol callee ||
-            (!IsInGpuMethod(context.ContainingSymbol) && memberContext == null) ||
+            !IsInGpuMethod(context.ContainingSymbol) ||
             RemovedCalls.IsInRemovedCall(invocation, context.SemanticModel))
         {
             return;
@@ -156,7 +154,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        unsupportedContext ??= memberContext;
         if (unsupportedContext != null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext, invocation.GetLocation(),
@@ -262,30 +259,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
     private static bool IsInGpuMethod(ISymbol? symbol) =>
         GetDeclaringMember(symbol) is IMethodSymbol declaring && GpuExecutionSpace.IsGpuFunction(declaring);
-
-    private static string? FindUnsupportedMember(ISymbol? containing)
-    {
-        var member = GetDeclaringMember(containing);
-        if (member?.ContainingType is not { IsValueType: true })
-        {
-            return null;
-        }
-
-        return member switch
-        {
-            // [WHY] Another unattributed method is GSH0107 at its call, a user-defined operator GSH0060 at its use
-            IMethodSymbol method when !GpuExecutionSpace.IsGpuFunction(method) => method.MethodKind switch
-            {
-                MethodKind.Constructor or MethodKind.StaticConstructor => "in a constructor",
-                MethodKind.PropertyGet or MethodKind.PropertySet => "in a property accessor",
-                MethodKind.Conversion => "in a conversion operator",
-                _ => null
-            },
-            // A field or property initializer runs as part of the constructor
-            IFieldSymbol or IPropertySymbol => "in a constructor",
-            _ => null
-        };
-    }
 
     /// <summary>
     /// Whether <paramref name="invocation"/> calls <c>Gpu.SyncThreads()</c>, however it is spelled (<c>Gpu.</c>, a
