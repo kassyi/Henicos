@@ -2,15 +2,13 @@
 leaf L3
 lease b0 2w
 sqrt b1+0:3 none -> b0+0:2
-lease b2 3w
-lease b3 4w
-lease b4 2w
-lease b5 4w
-lease b6 7w
-lease b7 4w
+lease b2 4w
+lease b3 2w
+lease b4 4w
+lease b5 7w
+lease b6 4w
+lease b7 5w
 lease b8 5w
-lease b9 5w
-release b9
 release b8
 release b7
 release b6
@@ -18,86 +16,84 @@ release b5
 release b4
 release b3
 release b2
-lease b4 2w
-not b0+0:2 none -> b4+0:2
+lease b3 2w
+not b0+0:2 none -> b3+0:2
 release b0
 leaf L4
 lease b0 2w
-shr b10+0:2 none -> b0+0:2
+shr b9+0:2 none -> b0+0:2
 leaf L5
 leaf L0
-lease b11 40w
-sub b12+0:40 b13+0:1 -> b11+0:40
+lease b10 40w
+sub b11+0:40 b12+0:1 -> b10+0:40
+lease b13 2w
+mod b0+0:2 b10+0:40 -> b13+0:2
 lease b14 2w
-mod b0+0:2 b11+0:40 -> b14+0:2
-lease b15 2w
-lease b16 40w
-release b16
+lease b15 40w
 release b15
-release b11
+release b14
+release b10
 release b0
 lease b0 2w
-sub b4+0:2 b14+0:2 -> b0+0:2
-release b14
-release b4
+sub b3+0:2 b13+0:2 -> b0+0:2
+release b13
+release b3
+lease b16 1w
+sqrt b0+0:2 none -> b16+0:1
+lease b3 2w
 lease b17 1w
-sqrt b0+0:2 none -> b17+0:1
-lease b4 2w
-lease b14 2w
-lease b18 1w
-lease b2 3w
-lease b8 5w
-lease b15 2w
+lease b18 3w
+lease b7 5w
+lease b13 2w
 lease b19 3w
 lease b20 3w
 release b20
 release b19
-release b15
-release b8
-release b2
+release b13
+release b7
 release b18
-release b14
-release b4
+release b17
+release b3
 release b0
 leaf L0
-lease b18 1w
-shr b13+0:1 none -> b18+0:1
+lease b17 1w
+shr b12+0:1 none -> b17+0:1
 lease b21 1w
-not b18+0:1 none -> b21+0:1
-release b18
+not b17+0:1 none -> b21+0:1
+release b17
 leaf L0
 leaf L1
 leaf L5
-lease b11 40w
-xor b22+0:1 b12+0:40 -> b11+0:40
-lease b16 40w
-xor b13+0:1 b11+0:40 -> b16+0:40
-release b11
-lease b18 1w
-mod b21+0:1 b16+0:40 -> b18+0:1
+lease b10 40w
+xor b22+0:1 b11+0:40 -> b10+0:40
+lease b15 40w
+xor b12+0:1 b10+0:40 -> b15+0:40
+release b10
+lease b17 1w
+mod b21+0:1 b15+0:40 -> b17+0:1
 lease b23 1w
-lease b11 40w
-release b11
+lease b10 40w
+release b10
 release b23
-release b16
+release b15
 release b21
 leaf L2
-lease b2 3w
-shr b24+0:3 none -> b2+0:3
+lease b18 3w
+shr b24+0:3 none -> b18+0:3
 lease b19 3w
-release b2
-lease b2 3w
-release b19
-lease b19 3w
-or b18+0:1 b2+0:3 -> b19+0:3
-release b2
 release b18
-lease b18 1w
-and b17+0:1 b19+0:3 -> b18+0:1
+lease b18 3w
 release b19
+lease b19 3w
+or b17+0:1 b18+0:3 -> b19+0:3
+release b18
 release b17
-result b18+0:1
-release b18
+lease b17 1w
+and b16+0:1 b19+0:3 -> b17+0:1
+release b19
+release b16
+result b17+0:1
+release b17
 tree 1 words=43 target=wide
 leaf L5
 leaf L5
@@ -131,34 +127,32 @@ lease b3 41w
 release b0
 lease b4 21w
 sqrt b3+0:41 none -> b4+0:21
-lease b0 41w
 lease b5 40w
 lease b6 20w
 lease b7 31w
 lease b8 52w
 lease b9 40w
+lease b0 41w
 lease b10 41w
-lease b11 41w
-release b11
 release b10
+release b0
 release b9
 release b8
 release b7
 release b6
 release b5
-release b0
 release b3
-lease b12 21w
+lease b11 21w
 release b4
 leaf L4
-lease b13 1w
-sqrt b14+0:1 none -> b13+0:1
+lease b12 1w
+sqrt b13+0:1 none -> b12+0:1
 lease b4 21w
-div b12+0:21 b13+0:1 -> b4+0:21
-lease b15 1w
-release b15
-release b13
+div b11+0:21 b12+0:1 -> b4+0:21
+lease b14 1w
+release b14
 release b12
+release b11
 result b4+0:21
 release b4
 tree 4 words=1 target=wide
@@ -451,14 +445,12 @@ release b0
 lease b3 20w
 sqrt b2+0:40 none -> b3+0:20
 lease b0 40w
-lease b4 40w
-lease b5 20w
-lease b6 31w
-lease b7 52w
-lease b8 40w
+lease b4 20w
+lease b5 31w
+lease b6 52w
+lease b7 40w
+lease b8 41w
 lease b9 41w
-lease b10 41w
-release b10
 release b9
 release b8
 release b7
@@ -469,38 +461,38 @@ release b0
 release b2
 leaf L2
 leaf L5
-lease b11 43w
-mul b12+0:3 b1+0:40 -> b11+0:43
-lease b13 44w
-add b3+0:20 b11+0:43 -> b13+0:44
-release b11
+lease b10 43w
+mul b11+0:3 b1+0:40 -> b10+0:43
+lease b12 44w
+add b3+0:20 b10+0:43 -> b12+0:44
+release b10
 release b3
 leaf L2
-lease b14 3w
-not b12+0:3 none -> b14+0:3
+lease b13 3w
+not b11+0:3 none -> b13+0:3
 leaf L0
 leaf L2
 leaf L0
-lease b15 3w
-div b12+0:3 b16+0:1 -> b15+0:3
-lease b17 1w
-release b17
-lease b18 3w
-xor b16+0:1 b15+0:3 -> b18+0:3
-release b15
-lease b19 6w
-mul b14+0:3 b18+0:3 -> b19+0:6
-release b18
+lease b14 3w
+div b11+0:3 b15+0:1 -> b14+0:3
+lease b16 1w
+release b16
+lease b17 3w
+xor b15+0:1 b14+0:3 -> b17+0:3
 release b14
-lease b20 6w
-shr b19+0:6 none -> b20+0:6
-release b19
-lease b21 44w
-sub b13+0:44 b20+0:6 -> b21+0:44
-release b20
+lease b18 6w
+mul b13+0:3 b17+0:3 -> b18+0:6
+release b17
 release b13
-result b21+0:44
-release b21
+lease b19 6w
+shr b18+0:6 none -> b19+0:6
+release b18
+lease b20 44w
+sub b12+0:44 b19+0:6 -> b20+0:44
+release b19
+release b12
+result b20+0:44
+release b20
 tree 9 words=2 target=none
 leaf L1
 leaf L2
@@ -708,14 +700,12 @@ leaf L1
 lease b0 1w
 sqrt b1+0:2 none -> b0+0:1
 lease b2 2w
-lease b3 2w
-lease b4 1w
-lease b5 3w
-lease b6 5w
-lease b7 2w
+lease b3 1w
+lease b4 3w
+lease b5 5w
+lease b6 2w
+lease b7 3w
 lease b8 3w
-lease b9 3w
-release b9
 release b8
 release b7
 release b6
@@ -724,30 +714,28 @@ release b4
 release b3
 release b2
 leaf L0
-lease b4 1w
+lease b3 1w
 lease b2 2w
-mul b0+0:1 b4+0:1 -> b2+0:2
+mul b0+0:1 b3+0:1 -> b2+0:2
+release b3
+release b0
+sqrt b2+0:2 none -> b9+0:1
+lease b6 2w
+lease b0 1w
+lease b4 3w
+lease b5 5w
+lease b10 2w
+lease b7 3w
+lease b8 3w
+release b8
+release b7
+release b10
+release b5
 release b4
 release b0
-sqrt b2+0:2 none -> b10+0:1
-lease b3 2w
-lease b7 2w
-lease b0 1w
-lease b5 3w
-lease b6 5w
-lease b11 2w
-lease b8 3w
-lease b9 3w
-release b9
-release b8
-release b11
 release b6
-release b5
-release b0
-release b7
-release b3
 release b2
-result b10+0:1
+result b9+0:1
 tree 11 words=3 target=operand
 leaf L4
 leaf L2
@@ -846,14 +834,12 @@ shr b1+0:2 none -> b0+0:2
 lease b4 1w
 sqrt b0+0:2 none -> b4+0:1
 lease b2 2w
-lease b5 2w
-lease b6 1w
-lease b7 3w
-lease b8 5w
-lease b9 2w
+lease b5 1w
+lease b6 3w
+lease b7 5w
+lease b8 2w
+lease b9 3w
 lease b10 3w
-lease b11 3w
-release b11
 release b10
 release b9
 release b8
@@ -862,17 +848,17 @@ release b6
 release b5
 release b2
 release b0
-lease b6 1w
-and b3+0:2 b4+0:1 -> b6+0:1
+lease b5 1w
+and b3+0:2 b4+0:1 -> b5+0:1
 release b4
 release b3
 leaf L0
 leaf L5
 lease b3 2w
-mod b12+0:2 b13+0:40 -> b3+0:2
+mod b11+0:2 b12+0:40 -> b3+0:2
 lease b0 2w
-lease b14 40w
-release b14
+lease b13 40w
+release b13
 release b0
 lease b0 2w
 shr b3+0:2 none -> b0+0:2
@@ -880,17 +866,17 @@ release b3
 leaf L0
 leaf L0
 lease b3 2w
-mod b12+0:2 b12+0:2 -> b3+0:2
+mod b11+0:2 b11+0:2 -> b3+0:2
 lease b2 2w
-lease b5 2w
-lease b9 2w
+lease b8 2w
+lease b14 2w
 lease b15 21w
 lease b16 21w
 lease b17 23w
 lease b18 4w
-lease b7 3w
+lease b6 3w
+lease b9 3w
 lease b10 3w
-lease b11 3w
 lease b19 3w
 lease b20 2w
 lease b21 3w
@@ -901,15 +887,15 @@ release b22
 release b21
 release b20
 release b19
-release b11
 release b10
-release b7
+release b9
+release b6
 release b18
 release b17
 release b16
 release b15
-release b9
-release b5
+release b14
+release b8
 release b2
 lease b4 1w
 release b3
@@ -918,23 +904,23 @@ add b0+0:2 b4+0:1 -> b3+0:2
 release b4
 release b0
 lease b0 2w
-xor b6+0:1 b3+0:2 -> b0+0:2
+xor b5+0:1 b3+0:2 -> b0+0:2
 release b3
-release b6
+release b5
 leaf L1
 leaf L2
-lease b7 3w
-shr b24+0:3 none -> b7+0:3
-lease b10 3w
-shr b7+0:3 none -> b10+0:3
-release b7
-lease b7 3w
-add b1+0:2 b10+0:3 -> b7+0:3
-release b10
+lease b6 3w
+shr b24+0:3 none -> b6+0:3
+lease b9 3w
+shr b6+0:3 none -> b9+0:3
+release b6
+lease b6 3w
+add b1+0:2 b9+0:3 -> b6+0:3
+release b9
 leaf L3
 lease b3 2w
-and b7+0:3 b25+0:2 -> b3+0:2
-release b7
+and b6+0:3 b25+0:2 -> b3+0:2
+release b6
 lease b2 2w
 and b0+0:2 b3+0:2 -> b2+0:2
 release b3
@@ -960,74 +946,68 @@ leaf L1
 lease b4 1w
 sqrt b5+0:2 none -> b4+0:1
 lease b6 2w
-lease b7 2w
-lease b8 1w
+lease b7 1w
 lease b0 3w
-lease b9 5w
-lease b10 2w
+lease b8 5w
+lease b9 2w
+lease b10 3w
 lease b11 3w
-lease b12 3w
-release b12
 release b11
 release b10
 release b9
-release b0
 release b8
+release b0
 release b7
 release b6
 lease b6 2w
 xor b5+0:2 b4+0:1 -> b6+0:2
 release b4
-lease b13 4w
-sub b3+0:4 b6+0:2 -> b13+0:4
+lease b12 4w
+sub b3+0:4 b6+0:2 -> b12+0:4
 release b6
 release b3
 leaf L2
 lease b6 2w
-sqrt b14+0:3 none -> b6+0:2
-lease b0 3w
+sqrt b13+0:3 none -> b6+0:2
 lease b3 4w
-lease b7 2w
-lease b15 4w
-lease b16 7w
-lease b17 4w
-lease b9 5w
-lease b18 5w
-release b18
-release b9
+lease b9 2w
+lease b14 4w
+lease b15 7w
+lease b16 4w
+lease b8 5w
+lease b17 5w
 release b17
+release b8
 release b16
 release b15
-release b7
+release b14
+release b9
 release b3
-release b0
 leaf L2
-lease b7 2w
-div b6+0:2 b14+0:3 -> b7+0:2
+lease b9 2w
+div b6+0:2 b13+0:3 -> b9+0:2
 lease b0 3w
 release b0
 release b6
 lease b4 1w
-sqrt b7+0:2 none -> b4+0:1
-lease b6 2w
-release b6
-release b7
+sqrt b9+0:2 none -> b4+0:1
+release b9
 lease b3 4w
-sub b13+0:4 b4+0:1 -> b3+0:4
+sub b12+0:4 b4+0:1 -> b3+0:4
 release b4
-release b13
+release b12
 leaf L4
-lease b7 2w
-shl b19+0:1 none -> b7+0:2
+lease b9 2w
+shl b18+0:1 none -> b9+0:2
 lease b6 2w
-shr b7+0:2 none -> b6+0:2
-release b7
-lease b13 4w
-or b3+0:4 b6+0:2 -> b13+0:4
+shr b9+0:2 none -> b6+0:2
+release b9
+lease b12 4w
+or b3+0:4 b6+0:2 -> b12+0:4
 release b6
 release b3
-result b13+0:4
-release b13
+result b12+0:4
+release b12
 tree 16 words=2 target=wide
 leaf L1
 leaf L2
@@ -1134,19 +1114,17 @@ leaf L2
 lease b5 1w
 sqrt b6+0:2 none -> b5+0:1
 lease b7 2w
-lease b8 2w
-lease b9 1w
+lease b8 1w
 lease b0 3w
-lease b10 5w
-lease b11 2w
+lease b9 5w
+lease b10 2w
+lease b11 3w
 lease b12 3w
-lease b13 3w
-release b13
 release b12
 release b11
 release b10
-release b0
 release b9
+release b0
 release b8
 release b7
 lease b7 2w
@@ -1160,28 +1138,27 @@ leaf L2
 leaf L1
 leaf L3
 lease b0 3w
-div b14+0:3 b15+0:1 -> b0+0:3
+div b13+0:3 b14+0:1 -> b0+0:3
 lease b5 1w
 release b5
 leaf L5
 leaf L5
-lease b16 40w
-div b17+0:40 b17+0:40 -> b16+0:40
+lease b15 40w
+div b16+0:40 b16+0:40 -> b15+0:40
+lease b17 40w
 lease b18 40w
-lease b19 40w
+lease b19 97w
 lease b20 97w
-lease b21 97w
-lease b22 137w
-lease b23 80w
+lease b21 137w
+lease b22 80w
+lease b23 41w
 lease b24 41w
 lease b25 41w
 lease b26 41w
-lease b27 41w
-lease b28 40w
+lease b27 40w
+lease b28 41w
 lease b29 41w
-lease b30 41w
-lease b31 40w
-release b31
+lease b30 40w
 release b30
 release b29
 release b28
@@ -1195,42 +1172,41 @@ release b21
 release b20
 release b19
 release b18
-lease b18 40w
-or b0+0:3 b16+0:40 -> b18+0:40
-release b16
+release b17
+lease b17 40w
+or b0+0:3 b15+0:40 -> b17+0:40
+release b15
 release b0
 lease b7 2w
-mod b6+0:2 b18+0:40 -> b7+0:2
-lease b8 2w
-lease b16 40w
-release b16
-release b8
-release b18
-lease b32 4w
-mul b3+0:2 b7+0:2 -> b32+0:4
+mod b6+0:2 b17+0:40 -> b7+0:2
+lease b10 2w
+lease b15 40w
+release b15
+release b10
+release b17
+lease b31 4w
+mul b3+0:2 b7+0:2 -> b31+0:4
 release b7
 release b3
-lease b33 4w
-or b2+0:1 b32+0:4 -> b33+0:4
-release b32
+lease b32 4w
+or b2+0:1 b31+0:4 -> b32+0:4
+release b31
 release b2
-result b33+0:4
-release b33
+result b32+0:4
+release b32
 tree 19 words=41 target=wide
 leaf L5
 lease b0 40w
 leaf L3
 lease b1 2w
 sqrt b2+0:3 none -> b1+0:2
-lease b3 3w
-lease b4 4w
-lease b5 2w
-lease b6 4w
-lease b7 7w
-lease b8 4w
+lease b3 4w
+lease b4 2w
+lease b5 4w
+lease b6 7w
+lease b7 4w
+lease b8 5w
 lease b9 5w
-lease b10 5w
-release b10
 release b9
 release b8
 release b7
@@ -1238,65 +1214,63 @@ release b6
 release b5
 release b4
 release b3
-lease b5 2w
-shr b1+0:2 none -> b5+0:2
+lease b4 2w
+shr b1+0:2 none -> b4+0:2
 release b1
 lease b1 2w
-shl b5+0:2 none -> b1+0:2
-release b5
+shl b4+0:2 none -> b1+0:2
+release b4
 leaf L0
 leaf L3
-lease b11 1w
-div b12+0:1 b2+0:3 -> b11+0:1
-lease b3 3w
-release b3
+lease b10 1w
+div b11+0:1 b2+0:3 -> b10+0:1
+lease b12 3w
+release b12
 leaf L3
-lease b5 2w
-sqrt b2+0:3 none -> b5+0:2
-lease b3 3w
-lease b4 4w
+lease b4 2w
+sqrt b2+0:3 none -> b4+0:2
+lease b3 4w
 lease b13 2w
-lease b6 4w
-lease b7 7w
-lease b8 4w
+lease b5 4w
+lease b6 7w
+lease b7 4w
+lease b8 5w
 lease b9 5w
-lease b10 5w
-release b10
 release b9
 release b8
 release b7
 release b6
-release b13
-release b4
-release b3
-lease b3 3w
-mul b11+0:1 b5+0:2 -> b3+0:3
 release b5
-release b11
+release b13
+release b3
+lease b12 3w
+mul b10+0:1 b4+0:2 -> b12+0:3
+release b4
+release b10
 leaf L0
 leaf L2
-lease b11 1w
-and b12+0:1 b14+0:3 -> b11+0:1
+lease b10 1w
+and b11+0:1 b14+0:3 -> b10+0:1
 leaf L4
 leaf L2
-lease b5 2w
-div b15+0:2 b14+0:3 -> b5+0:2
+lease b4 2w
+div b15+0:2 b14+0:3 -> b4+0:2
 lease b16 3w
 release b16
 lease b16 3w
-add b11+0:1 b5+0:2 -> b16+0:3
-release b5
-release b11
+add b10+0:1 b4+0:2 -> b16+0:3
+release b4
+release b10
 lease b17 3w
-or b3+0:3 b16+0:3 -> b17+0:3
+or b12+0:3 b16+0:3 -> b17+0:3
 release b16
-release b3
-lease b5 2w
-sub b1+0:2 b17+0:3 -> b5+0:2
+release b12
+lease b4 2w
+sub b1+0:2 b17+0:3 -> b4+0:2
 release b17
 release b1
-add b0+0:40 b5+0:2 -> b18+0:41
-release b5
+add b0+0:40 b4+0:2 -> b18+0:41
+release b4
 release b0
 result b18+0:41
 tree 20 words=7 target=operand
@@ -1376,14 +1350,12 @@ leaf L4
 lease b0 1w
 sqrt b1+0:2 none -> b0+0:1
 lease b2 2w
-lease b3 2w
-lease b4 1w
-lease b5 3w
-lease b6 5w
-lease b7 2w
+lease b3 1w
+lease b4 3w
+lease b5 5w
+lease b6 2w
+lease b7 3w
 lease b8 3w
-lease b9 3w
-release b9
 release b8
 release b7
 release b6
@@ -1396,36 +1368,34 @@ shl b0+0:1 none -> b2+0:2
 release b0
 lease b0 1w
 sqrt b2+0:2 none -> b0+0:1
-lease b3 2w
-lease b7 2w
-lease b4 1w
-lease b5 3w
-lease b6 5w
-lease b10 2w
+lease b6 2w
+lease b3 1w
+lease b4 3w
+lease b5 5w
+lease b9 2w
+lease b7 3w
 lease b8 3w
-lease b9 3w
-release b9
 release b8
-release b10
-release b6
+release b7
+release b9
 release b5
 release b4
-release b7
 release b3
+release b6
 release b2
 leaf L0
-lease b4 1w
+lease b3 1w
 lease b2 2w
-shl b4+0:1 none -> b2+0:2
-release b4
-lease b4 1w
+shl b3+0:1 none -> b2+0:2
+release b3
+lease b3 1w
 release b2
-lease b11 1w
-or b0+0:1 b4+0:1 -> b11+0:1
-release b4
+lease b10 1w
+or b0+0:1 b3+0:1 -> b10+0:1
+release b3
 release b0
 lease b0 1w
-release b11
+release b10
 result b0+0:1
 release b0
 tree 22 words=1 target=wide
@@ -1463,15 +1433,13 @@ lease b5 41w
 add b7+0:40 b1+0:1 -> b5+0:41
 lease b13 21w
 sqrt b5+0:41 none -> b13+0:21
-lease b14 41w
-lease b15 40w
-lease b16 20w
-lease b17 31w
-lease b18 52w
-lease b19 40w
+lease b14 40w
+lease b15 20w
+lease b16 31w
+lease b17 52w
+lease b18 40w
+lease b19 41w
 lease b20 41w
-lease b21 41w
-release b21
 release b20
 release b19
 release b18
@@ -1480,19 +1448,19 @@ release b16
 release b15
 release b14
 release b5
-lease b22 44w
-add b11+0:44 b13+0:21 -> b22+0:44
+lease b21 44w
+add b11+0:44 b13+0:21 -> b21+0:44
 release b13
 release b11
 lease b3 1w
-div b0+0:1 b22+0:44 -> b3+0:1
+div b0+0:1 b21+0:44 -> b3+0:1
 lease b11 44w
 release b11
-release b22
+release b21
 release b0
-not b3+0:1 none -> b23+0:1
+not b3+0:1 none -> b22+0:1
 release b3
-result b23+0:1
+result b22+0:1
 tree 23 words=2 target=operand
 leaf L2
 lease b0 2w
@@ -1541,20 +1509,18 @@ add b7+0:3 b15+0:1 -> b6+0:4
 lease b12 2w
 sqrt b6+0:4 none -> b12+0:2
 lease b16 4w
-lease b17 4w
 lease b9 2w
-lease b18 4w
+lease b17 4w
 lease b14 7w
-lease b19 4w
+lease b18 4w
 lease b8 5w
-lease b20 5w
-release b20
-release b8
+lease b19 5w
 release b19
-release b14
+release b8
 release b18
-release b9
+release b14
 release b17
+release b9
 release b16
 release b6
 lease b9 2w

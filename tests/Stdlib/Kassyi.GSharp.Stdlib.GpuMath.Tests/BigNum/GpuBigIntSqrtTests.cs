@@ -26,20 +26,20 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Sqrt_LargeValues_ProducesNonEmptyResult()
+    public void Sqrt_LargeAllOnesOperand_IsFloorOfSquareRoot()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
-        
+
         var aArr = new uint[512];
         Array.Fill(aArr, 0xFFFFFFFFu);
-        
+
         using var a = new GpuBigUInt(ctx, aArr);
         using var result = new GpuBigUInt(ctx, 512);
-        
+
         GpuBigIntDivRem.Sqrt(a, result);
-        
-        Assert.True(result.NumWords > 0);
+
+        AssertIsFloorSquareRoot(a.ToBigInteger(), result.ToBigInteger(), "512 words of ones");
     }
 
     [SkippableTheory]
@@ -404,8 +404,8 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     // squares and their neighbours are where a root one off shows; PowerOfTwoMinusOne and OddBitLength have an odd bit
     // length (64r - L odd), PowerOfTwo, AllOnes and EvenBitLength an even one.
     // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts, Odd- and
-    //         EvenBitLength)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
+    //         EvenBitLength; OddBitLength of an even word count has 64r - L = 1, so k = 0)
     // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
     //         is not a multiple of 64)
     [SkippableTheory]
@@ -426,10 +426,12 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     }
 
     // The gap 64r - L between the bit length and the root words: 0 (no shift), 1 (odd, k = 0 keeps the bit length
-    // 64r - 1), 2 (k = 1) and 63 (the largest, k = 31), each in a 4-word operand.
+    // 64r - 1), 2 (k = 1) and 63 (the largest, k = 31), each in a 4-word operand; and the one-word roots (L = 33 to
+    // 64, k = 15 down to 0), the shortest operands that take this path.
     // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every bit length)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (126, 65)
-    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
+    //         one-word roots below 64)
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
@@ -437,6 +439,15 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     [InlineData(127)]
     [InlineData(126)]
     [InlineData(65)]
+    [InlineData(64)]
+    [InlineData(63)]
+    [InlineData(62)]
+    [InlineData(61)]
+    [InlineData(48)]
+    [InlineData(47)]
+    [InlineData(40)]
+    [InlineData(34)]
+    [InlineData(33)]
     public void Sqrt_NormalizationGap_IsFloorOfSquareRoot(int bitLength)
     {
         CudaCapability.EnsureGpuAvailable();

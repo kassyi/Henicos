@@ -34,7 +34,7 @@ public class GpuBigIntDivRemTests : IDisposable
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void DivRemReduceInverseSqrtHeron_FixedOperands_MatchesExactResults()
+    public void DivRemReduceInverseSqrt_FixedOperands_MatchesExactResults()
     {
         using var customCtx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 

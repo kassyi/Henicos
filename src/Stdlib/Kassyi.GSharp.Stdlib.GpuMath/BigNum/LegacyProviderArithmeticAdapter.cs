@@ -122,21 +122,20 @@ internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
     /// <inheritdoc/>
     public void Sqrt(ref GpuBigIntExecutionContext context, GpuBigIntMemoryHandle operand, GpuBigIntMemoryHandle result)
     {
-        // The root has half the bits of the operand; the square root kernels write the operand's width, so a narrower
-        // result gets it through a temporary
+        // Sqrt writes any result at least half the operand's words wide (zeros above); a narrower result, whose root
+        // the expression's width bounds, gets it through a temporary of that minimum
         var workspace = context.GpuWorkspace;
         var resultBuffer = Wrap(workspace, result);
-        if (result.NumWords == operand.NumWords)
+        var minimumWords = BigIntWidths.Words(BigIntWidths.Sqrt(BigIntWidths.OfWords(operand.NumWords)));
+        if (result.NumWords >= minimumWords)
         {
             GpuBigIntDivRem.Sqrt(Wrap(workspace, operand), resultBuffer);
             return;
         }
 
-        using var root = workspace.RentTemp(operand.NumWords);
+        using var root = workspace.RentTemp(minimumWords);
         GpuBigIntDivRem.Sqrt(Wrap(workspace, operand), root);
-        var copied = Math.Min(result.NumWords, operand.NumWords);
-        resultBuffer.CopyFrom(root, numWords: copied);
-        ResultBuffers.ClearAbove(resultBuffer, copied);
+        resultBuffer.CopyFrom(root, numWords: result.NumWords);
     }
 
     // operand * 2^leftShift into result (a negative leftShift shifts right); the kernel never sees a negative count

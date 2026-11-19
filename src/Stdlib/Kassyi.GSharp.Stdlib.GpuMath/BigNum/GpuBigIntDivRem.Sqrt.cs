@@ -168,8 +168,8 @@ public static partial class GpuBigIntDivRem
     /// name="leftOperand"/>, rounded up to words.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> Shifts the operand left by an even number of bits so that its root fills whole words,
-    /// takes that root with an inverse square root, one product and an exact correction, and shifts it back right by
-    /// half the shift. The result is exactly the floor of the square root.</para>
+    /// takes that root with an inverse square root and an exact correction, and shifts it back: exactly the floor. The
+    /// work is queued on the workspace stream; only the operand's bit length is read back to the host first.</para>
     /// </remarks>
     public static void Sqrt(scoped GpuBigUIntView leftOperand, scoped GpuBigUIntView resultBuffer) =>
         SqrtCore(leftOperand.AsBorrowedBigUInt(), resultBuffer.AsBorrowedBigUInt());
