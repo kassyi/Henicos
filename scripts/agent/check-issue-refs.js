@@ -13,6 +13,7 @@
 // Fails (exit 1) when a number does not exist, or when a closing keyword (Fixes / Closes / Resolves #n) names a pull
 // request or an issue that is already closed. In --hook mode the same failures deny the command; otherwise the table
 // is passed back to the agent as additional context, and the command goes on to the normal permission check.
+// The hook also denies a `gh issue create` into milestone M1 or M2 that has no `found-by:` label (foundByProblem).
 'use strict';
 
 const fs = require('fs');
@@ -34,6 +35,9 @@ const branchPattern = /\bissue-(\d{1,6})\b/g;
 const targetPattern = /\bgh\s+(?:issue|pr)\s+(?:comment|edit|close|review|merge)\s+(\d{1,6})\b/g;
 // Commands whose text is published: issue and PR bodies and comments, commits, new branches and worktrees.
 const publishingCommand = /\bgh\s+(?:issue|pr)\s+(?:create|comment|edit|close|review|merge)\b|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b/;
+
+const foundByLabels = ['found-by:audit', 'found-by:matrix', 'found-by:differential', 'found-by:review'];
+const trackedMilestones = ['M1 Wrong Results', 'M2 Build Failures & Missing Diagnostics'];
 
 function fail(message) {
     console.error(message);
@@ -167,6 +171,75 @@ function check(text, repo, lookUpNumbers = lookUp) {
     return { lines, problems };
 }
 
+// Splits a shell command into words (single and double quotes, backslash escapes inside double quotes) and keeps the
+// separators && || ; | and newlines as their own words, so that the arguments of one gh command can be cut out.
+function shellWords(command) {
+    const words = [];
+    let current = '';
+    let inWord = false;
+    const push = () => { if (inWord) words.push(current); current = ''; inWord = false; };
+    for (let i = 0; i < command.length; i++) {
+        const c = command[i];
+        if (c === "'" || c === '"') {
+            inWord = true;
+            for (i++; i < command.length && command[i] !== c; i++) {
+                if (c === '"' && command[i] === '\\' && i + 1 < command.length && '"\\$`'.includes(command[i + 1])) i++;
+                current += command[i];
+            }
+        } else if (/\s/.test(c)) {
+            push();
+            if (c === '\n') words.push(';');
+        } else if (c === ';' || c === '|' || c === '&') {
+            push();
+            let separator = c;
+            if ((c === '|' || c === '&') && command[i + 1] === c) { separator += c; i++; }
+            words.push(separator);
+        } else {
+            inWord = true;
+            current += c;
+        }
+    }
+    push();
+    return words;
+}
+
+// True when a milestone name (a full title or a prefix of one, any case) names M1 or M2.
+function isTrackedMilestone(name) {
+    const value = name.trim().toLowerCase();
+    return value.length >= 2 && trackedMilestones.some(title => title.toLowerCase().startsWith(value));
+}
+
+// The denial text when a command contains a `gh issue create` into M1 or M2 without a `found-by:` label, else null.
+// --milestone / -m and --label / -l are read as `--x v`, `--x=v` and `-xv`; labels may repeat or be comma separated.
+function foundByProblem(command) {
+    const words = shellWords(command);
+    const separators = ['&&', '||', ';', '|', '&'];
+    for (let start = 0; start + 2 < words.length; start++) {
+        if (words[start] !== 'gh' || words[start + 1] !== 'issue' || words[start + 2] !== 'create') continue;
+        const milestones = [];
+        const labels = [];
+        for (let i = start + 3; i < words.length && !separators.includes(words[i]); i++) {
+            const w = words[i];
+            const take = (long, short, target) => {
+                if (w === long || w === short) {
+                    if (i + 1 < words.length) target.push(words[++i]);
+                    return true;
+                }
+                if (w.startsWith(`${long}=`)) { target.push(w.slice(long.length + 1)); return true; }
+                if (w.startsWith(short) && !w.startsWith('--')) { target.push(w.slice(2).replace(/^=/, '')); return true; }
+                return false;
+            };
+            if (!take('--milestone', '-m', milestones)) take('--label', '-l', labels);
+        }
+        if (!milestones.some(isTrackedMilestone)) continue;
+        const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
+        if (names.some(l => foundByLabels.includes(l))) continue;
+        return 'An issue filed into milestone M1 or M2 needs a found-by label: '
+            + `${foundByLabels.join(', ')}. Add the label of how the bug was found; add the issue to its tracking table.`;
+    }
+    return null;
+}
+
 // Files a command reads its message or body from: --body-file <f>, -F <f>, --file <f>, -F<f> is not used by gh/git.
 function referencedFiles(command, cwd) {
     const texts = [];
@@ -207,6 +280,12 @@ function hookAnswer(input, env) {
         ? String((input.toolCall.args && input.toolCall.args.CommandLine) || '')
         : (input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '');
     if (!publishingCommand.test(command)) return null;
+    const foundBy = foundByProblem(command);
+    if (foundBy !== null) {
+        return antigravity
+            ? { decision: 'deny', reason: foundBy }
+            : { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: foundBy } };
+    }
     const cwd = commandDirectory(input, antigravity, env.processCwd);
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
     const repo = env.repo || defaultRepo(cwd);
@@ -298,6 +377,49 @@ function selfTest() {
             const payload = { cwd: root, tool_input: { command: `${create} --body-file tmp/good.md` } };
             const answer = hookAnswer(payload, env);
             assert.match(answer.hookSpecificOutput.additionalContext, /#1\tissue\tOPEN/);
+        });
+        const hook = command => hookAnswer({ cwd: root, tool_input: { command } }, env);
+        const denied = command => {
+            const answer = hook(command);
+            const reason = answer === null ? '' : answer.hookSpecificOutput.permissionDecisionReason;
+            return answer !== null && answer.hookSpecificOutput.permissionDecision === 'deny'
+                && reason.includes('found-by:audit, found-by:matrix, found-by:differential, found-by:review')
+                && reason.includes('add the issue to its tracking table');
+        };
+        const issueCreate = ['gh', 'issue', 'create'].join(' ');
+        const m1 = '"M1 Wrong Results"';
+        const m2 = '"M2 Build Failures & Missing Diagnostics"';
+        test('found-by: M1 with a found-by label is allowed', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --milestone ${m1} --label bug --label found-by:audit`), null);
+        });
+        test('found-by: M2 without a found-by label is denied', () => {
+            assert.ok(denied(`${issueCreate} --title x --milestone ${m2} --label bug`));
+        });
+        test('found-by: M4 without a found-by label is allowed', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --milestone "M4 Bug-Finding Infrastructure" --label bug`), null);
+        });
+        test('found-by: comma-separated labels count', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x -m M1 --label bug,found-by:matrix`), null);
+            assert.ok(denied(`${issueCreate} --title x -m M1 --label bug,tracking`));
+        });
+        test('found-by: -l and -m short forms, prefix and = forms', () => {
+            assert.ok(denied(`${issueCreate} -t x -m M1 -l bug`));
+            assert.strictEqual(hook(`${issueCreate} -t x -m "M2 Build" -l found-by:review`), null);
+            assert.ok(denied(`${issueCreate} -t x --milestone=M2 --label=bug`));
+        });
+        test('found-by: a quoted milestone with spaces, single quotes', () => {
+            assert.ok(denied(`${issueCreate} --title 'x y' --milestone 'M1 Wrong Results'`));
+        });
+        test('found-by: --body-file without labels in M1 is denied', () => {
+            assert.ok(denied(`${issueCreate} --title x --body-file tmp/good.md --milestone ${m1}`));
+        });
+        test('found-by: no milestone is allowed, a later command is not mixed in', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug`), null);
+            assert.strictEqual(hook(`${issueCreate} --title x && echo -m M1`), null);
+        });
+        test('found-by: Antigravity denies M2 without a label', () => {
+            const answer = hookAnswer(antigravity(`${issueCreate} --title x -m M2`), env);
+            assert.strictEqual(answer && answer.decision, 'deny');
         });
         let failed = 0;
         for (const { name, body } of cases) {
