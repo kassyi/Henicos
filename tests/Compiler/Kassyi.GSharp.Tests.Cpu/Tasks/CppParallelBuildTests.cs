@@ -353,35 +353,60 @@ public class CppParallelBuildTests
         Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
     }
 
-    // GCC and Clang search CPATH, so a CPATH that changes between builds must recompile every unit.
-    // mutant: GccClangToolchain.GetCompilerIdentity without the environment argument (the record misses CPATH)
+    // cl.exe starts from the build's environment with the vcvars variables over it, so a CL that only the build's
+    // environment sets must also recompile the unit.
+    // mutant: DescribeEnvironment reads only the vcvars variables when it has them
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void CompileCppToNativeTask_GccCpathChanged_RecompilesAllUnits()
+    public void CompileCppToNativeTask_MsvcClOutsideVcvarsChanged_RecompilesTheUnit()
     {
-        var saved = Environment.GetEnvironmentVariable("CPATH");
-        try
-        {
-            using var ctx = new CompileTaskTestContext();
-            ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
-            ctx.CreateDummySource("Mod.1.g.cpp", "// unit 1");
-            var objDir = Path.Combine(ctx.TempDir, "objs");
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
+        var objDir = Path.Combine(ctx.TempDir, "objs");
+        var clDir = Path.Combine(ctx.TempDir, "msvc");
+        Directory.CreateDirectory(clDir);
+        File.WriteAllText(Path.Combine(clDir, "cl.exe"), "");
+        ctx.Runner.CmdStandardOutput = $"VCToolsVersion=14.40.0\r\nPATH={clDir}";
 
-            Environment.SetEnvironmentVariable("CPATH", null);
-            Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir)
-                .Execute());
+        ctx.SetEnv("CL", null);
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp"], ctx.CreateMsvcToolchain(), objDir).Execute());
 
-            ctx.Runner.Invocations.Clear();
-            Environment.SetEnvironmentVariable("CPATH", Path.Combine(ctx.TempDir, "include"));
-            Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir)
-                .Execute());
+        ctx.Runner.Invocations.Clear();
+        ctx.SetEnv("CL", "/DFOO=1");
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp"], ctx.CreateMsvcToolchain(), objDir).Execute());
 
-            Assert.Equal(2, CountGccCompiles(ctx.Runner));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("CPATH", saved);
-        }
+        Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+    }
+
+    // GCC and Clang read include paths, extra options and the folders of their compiler passes from the
+    // environment, so a change of any of them between builds must recompile every unit.
+    // mutant: GccClangToolchain.GetCompilerIdentity without the environment argument, or without one of the names
+    [Theory]
+    [InlineData("g++", "CPATH", "/opt/include")]
+    [InlineData("g++", "CPLUS_INCLUDE_PATH", "/opt/include")]
+    [InlineData("clang++", "CCC_OVERRIDE_OPTIONS", "+-DFOO=1")]
+    [InlineData("g++", "GCC_EXEC_PREFIX", "/opt/gcc/lib/gcc/")]
+    [InlineData("g++", "COMPILER_PATH", "/opt/gcc/libexec")]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_GccClangEnvironmentChanged_RecompilesAllUnits(
+        string compiler, string name, string value)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
+        ctx.CreateDummySource("Mod.1.g.cpp", "// unit 1");
+        var objDir = Path.Combine(ctx.TempDir, "objs");
+
+        ctx.SetEnv(name, null);
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain(compiler), objDir)
+            .Execute());
+
+        ctx.Runner.Invocations.Clear();
+        ctx.SetEnv(name, value);
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain(compiler), objDir)
+            .Execute());
+
+        Assert.Equal(2, ctx.Runner.Invocations.Count(i =>
+            i.FileName == compiler && i.Arguments.StartsWith("-c ", StringComparison.Ordinal)));
     }
 
     [Theory]

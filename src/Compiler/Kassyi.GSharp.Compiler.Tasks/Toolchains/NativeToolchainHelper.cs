@@ -125,8 +125,10 @@ internal static class NativeToolchainHelper
         var builder = new StringBuilder();
         foreach (var name in names)
         {
-            var value = env is not null
-                ? env.TryGetValue(name, out var set) ? set : string.Empty
+            // The compiler starts with the process environment overlaid by env, so a name env lacks comes from the
+            // process
+            var value = env is not null && env.TryGetValue(name, out var set)
+                ? set
                 : Environment.GetEnvironmentVariable(name) ?? string.Empty;
             if (builder.Length > 0)
             {

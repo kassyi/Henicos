@@ -93,9 +93,11 @@ public sealed class GccClangToolchain : INativeToolchain
     {
         var (compiler, version) = ResolveCompilerAndVersion(cancellationToken);
         var resolvedPath = NativeToolchainHelper.FindExecutableInPath(compiler, env: null);
-        // GCC and Clang search CPATH and the language include paths of the environment the build runs in
+        // Read by the compiler from the environment the build runs in: the C++ include paths, the options Clang adds
+        // to its command line, and the folders GCC takes its compiler passes and assembler from
         return new CompilerIdentity(resolvedPath, version,
-            NativeToolchainHelper.DescribeEnvironment(null, "CPATH", "CPLUS_INCLUDE_PATH", "C_INCLUDE_PATH"));
+            NativeToolchainHelper.DescribeEnvironment(null,
+                "CPATH", "CPLUS_INCLUDE_PATH", "CCC_OVERRIDE_OPTIONS", "GCC_EXEC_PREFIX", "COMPILER_PATH"));
     }
 
     /// <inheritdoc />
