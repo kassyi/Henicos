@@ -39,4 +39,13 @@ public static partial class MathClampInvertedBoundsKernels
         d[t] = Math.Clamp(d[t], 0.0, -0.0);
         d[t] = Math.Clamp(d[t], 1.0, double.NaN);
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void InfiniteBoundsKernel(double[] d, float[] f)
+    {
+        int t = ThreadIndex.X;
+        d[t] = Math.Clamp(d[t], double.PositiveInfinity, double.NegativeInfinity);
+        f[t] = Math.Clamp(f[t], 0f, float.NegativeInfinity);
+    }
 }

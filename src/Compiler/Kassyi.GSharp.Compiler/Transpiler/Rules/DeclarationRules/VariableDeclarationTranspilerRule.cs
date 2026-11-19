@@ -290,9 +290,9 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
     // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct (a struct with a
     // C++ default constructor is declared at the start of its list instead, JumpedOverDeclarations). A const local is
-    // not declared in C++ at all (its references are its value), so it never gets here. A ref local, a using declaration and a ref struct local (a Span
-    // that is not a stackalloc, which TryWriteFixedSizeArray handles) keep their form: a goto past them stays ill-formed
-    // C++.
+    // not declared in C++ at all (its references are its value), so it never gets here. A ref local, a using
+    // declaration and a ref struct local (a Span that is not a stackalloc, which TryWriteFixedSizeArray handles) keep
+    // their form: a goto past them stays ill-formed C++.
     private static bool IsJumpedOverInitialization(VariableDeclaratorSyntax declarator, ITypeSymbol? typeSymbol) =>
         declarator.Initializer != null &&
         IsAssignableAfterDeclaration(typeSymbol) &&

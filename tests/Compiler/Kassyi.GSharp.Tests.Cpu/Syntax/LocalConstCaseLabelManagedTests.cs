@@ -42,7 +42,7 @@ public class LocalConstCaseLabelManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void LabeledConst_ManagedAtBlockEnd_SkipsNothing() =>
+    public void LabeledConst_ManagedAtBlockEnd_JumpSkipsOnlyTheAssignment() =>
         LocalConstCaseLabelScenarios.LabeledConstAtBlockEnd(s_runManaged);
 
     [Fact]

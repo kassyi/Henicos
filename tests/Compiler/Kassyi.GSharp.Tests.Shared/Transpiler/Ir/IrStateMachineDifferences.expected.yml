@@ -4079,6 +4079,7 @@
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalLocalKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalReturnKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.AcceptedBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InfiniteBoundsKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedBoundsKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedInDevice", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/MultidimensionalParameterDiagnostics.cs", method: "MultidimensionalParameterDiagnostics.MatrixParamKernel", status: "Compared", count: 1}

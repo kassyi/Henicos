@@ -100,9 +100,9 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(161443093u, "LocalConstCas
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1100790345u, "LocalConstCaseLabelKernels.cs", 69, 17, "SharedSectionConstKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2125245389u, "LocalConstCaseLabelKernels.cs", 72, 17, "SharedSectionConstKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(420580425u, "LocalConstCaseLabelKernels.cs", 85, 9, "InArgumentLocalConstKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1887522131u, "LocalConstCaseLabelKernels.cs", 93, 9, "LabeledConstAtBlockEndKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1048918527u, "LocalConstCaseLabelKernels.cs", 99, 9, "LabeledConstAtBlockEndKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1531553431u, "LocalConstCaseLabelKernels.cs", 112, 9, "LocalConstSharedMemoryCountKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(613964909u, "LocalConstCaseLabelKernels.cs", 94, 9, "LabeledConstAtBlockEndKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1141964799u, "LocalConstCaseLabelKernels.cs", 100, 9, "LabeledConstAtBlockEndKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1409060319u, "LocalConstCaseLabelKernels.cs", 113, 9, "LocalConstSharedMemoryCountKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -798,12 +798,12 @@ finally
 public const string LabeledConstAtBlockEndKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalConstCaseLabelKernels__LabeledConstAtBlockEndKernel(GSharpArray<int> __gsharp_id_0_result, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_1_tid, 1887522131u)=0;
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_1_tid, 613964909u)=0;
 if(__gsharp_id_1_tid==0)
 {
 goto __gsharp_id_2_L;
 }
-__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_1_tid, 1048918527u)=1;
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_1_tid, 1141964799u)=1;
 __gsharp_id_2_L:;
 }
 ";
@@ -931,7 +931,7 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = (int)threadIdx.x;
 __shared__ int __gsharp_id_3_s[4];
 __gsharp_id_3_s[__gsharp_id_2_tid]=__gsharp_id_2_tid;
-__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_2_tid, 1531553431u)=__gsharp_id_3_s[__gsharp_id_2_tid];
+__gsharp_array_at(__gsharp_id_0_result, __gsharp_id_2_tid, 1409060319u)=__gsharp_id_3_s[__gsharp_id_2_tid];
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LocalConstSharedMemoryCountKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__LocalConstCaseLabelKernels__LocalConstSharedMemoryCountKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

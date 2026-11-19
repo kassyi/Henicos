@@ -75,5 +75,14 @@ internal sealed class MathClampBoundsRule : ISyntaxValidationRule<InvocationExpr
         _ => false
     };
 
-    private static string Format(object value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+    // The text of a bound as C# source: an infinity has no literal, so the message names it by its constant, which the
+    // swapped example in the message then compiles with
+    private static string Format(object value) => value switch
+    {
+        double d when double.IsPositiveInfinity(d) => "double.PositiveInfinity",
+        double d when double.IsNegativeInfinity(d) => "double.NegativeInfinity",
+        float f when float.IsPositiveInfinity(f) => "float.PositiveInfinity",
+        float f when float.IsNegativeInfinity(f) => "float.NegativeInfinity",
+        _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
+    };
 }

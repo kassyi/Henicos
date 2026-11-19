@@ -85,7 +85,8 @@ public static partial class LocalConstCaseLabelKernels
         result[tid] = AddIn(K, tid);
     }
 
-    // The declaration writes nothing, so the label needs a statement of its own at the end of the block
+    // The label stands before a const declaration that ends the block: C++ writes no declaration, so the output
+    // gives the label an empty statement
     [GpuKernel]
     public static void LabeledConstAtBlockEndKernel(int[] result)
     {

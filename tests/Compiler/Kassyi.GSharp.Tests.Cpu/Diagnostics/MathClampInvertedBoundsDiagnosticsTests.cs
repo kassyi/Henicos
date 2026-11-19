@@ -13,7 +13,7 @@ public class MathClampInvertedBoundsDiagnosticsTests
     private const string SadPath = "Diagnostics/MathClampInvertedBounds.cu.cs";
 
     // Lines 18 to 23: literals, const field and local, long, byte, double, named arguments. Line 28: a device function.
-    // AcceptedBoundsKernel (lines 35 to 40) is not reported
+    // Lines 48 and 49: infinite bounds. AcceptedBoundsKernel (lines 35 to 40) is not reported
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -30,7 +30,9 @@ public class MathClampInvertedBoundsDiagnosticsTests
                 (Analyzer, 21, 16, 21, 51),
                 (Analyzer, 22, 16, 22, 43),
                 (Analyzer, 23, 16, 23, 56),
-                (Analyzer, 28, 57, 28, 80)
+                (Analyzer, 28, 57, 28, 80),
+                (Analyzer, 48, 16, 48, 82),
+                (Analyzer, 49, 16, 49, 60)
             ],
             diagnostics.Ranges(GSharpDiagnostics.MathClampMinGreaterThanMax.Id));
         var messages = diagnostics
@@ -42,6 +44,13 @@ public class MathClampInvertedBoundsDiagnosticsTests
             "If the bounds are swapped, write Math.Clamp(value, 5, 10).",
             messages[0]);
         Assert.Contains("min 1 greater than max 0.5", messages[4]);
+        // An infinity has no literal: the message names it by its constant, so the swapped call it suggests is C#
+        Assert.Equal(
+            "Math.Clamp is called with min double.PositiveInfinity greater than max double.NegativeInfinity, so the " +
+            "call always throws ArgumentException. If the bounds are swapped, write " +
+            "Math.Clamp(value, double.NegativeInfinity, double.PositiveInfinity).",
+            messages[7]);
+        Assert.Contains("min 0 greater than max float.NegativeInfinity", messages[8]);
     }
 
     [Theory]
@@ -57,7 +66,7 @@ public class MathClampInvertedBoundsDiagnosticsTests
             .Where(static d => d.Id == GSharpDiagnostics.MathClampMinGreaterThanMax.Id)
             .ToList();
 
-        Assert.Equal(7, reported.Count);
+        Assert.Equal(9, reported.Count);
         Assert.All(reported, static d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
     }
 }
