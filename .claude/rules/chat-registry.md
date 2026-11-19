@@ -33,4 +33,4 @@ It keeps no session name: a person can rename a session (`/rename`), so the name
 ## 3. Keeping it current
 
 - A chat that changes its topic runs `set` again with the same session ID.
-- A row for a chat that has ended stays until someone removes it; a send to it reports a delivery failure.
+- A row for a chat that has ended stays until someone removes it; `ListAgents` has no row with its ref, so nothing is sent to it.

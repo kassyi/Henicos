@@ -39,7 +39,8 @@ const headerKeys = {
 
 // The registry is shared by all worktrees: the directory of the main checkout (the parent of the common git directory).
 function registryPath() {
-    // CHAT_REGISTRY_FILE lets the self-test and manual checks use a scratch file instead of the real registry.
+    // CHAT_REGISTRY_FILE lets the self-test and manual checks use a scratch file instead of the real registry. Never point
+    // it at a file named registry.md that an older version of the script also writes: that version drops five-column rows.
     if (process.env.CHAT_REGISTRY_FILE) return process.env.CHAT_REGISTRY_FILE;
     try {
         const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
@@ -58,12 +59,19 @@ function parse(text) {
     if (first < 0) return { before: lines, rows: [], after: [] };
     let end = first;
     while (end < lines.length && lines[end].startsWith('|')) end++;
-    const keys = lines[first].split('|').slice(1, -1).map((c) => headerKeys[c.trim()]);
+    const titles = lines[first].split('|').slice(1, -1).map((c) => c.trim());
+    const keys = titles.map((t) => headerKeys[t]);
+    for (const t of titles.filter((t) => !headerKeys[t])) {
+        process.stderr.write(`chat-registry: unknown column "${t}" is dropped on the next write\n`);
+    }
     const rows = [];
     for (const line of lines.slice(first + 2, end)) {
         // Every "|" in the file is a cell separator: literal pipes inside cells are stored as "&#124;" (see escapeCell).
         const cells = line.split('|').slice(1, -1).map((c) => unescapeCell(c.trim()));
-        if (cells.length !== keys.length) continue;
+        if (cells.length !== keys.length) {
+            process.stderr.write(`chat-registry: a row with ${cells.length} cells instead of ${keys.length} is dropped on the next write: ${line}\n`);
+            continue;
+        }
         const row = {};
         keys.forEach((k, i) => { if (columns.includes(k)) row[k] = cells[i]; });
         rows.push(row);
@@ -81,14 +89,25 @@ function render(model) {
     return [...before, ...table, ...model.after].join('\n').replace(/\n*$/, '\n');
 }
 
+// The older registry.md beside the file is read, never written. The first load starts from its rows (keeping none of its
+// other text). Later, a chat that an older version registered there (a worktree of an older branch) is taken over when
+// registry.md was written after this file: only rows whose session is not here yet, so a row removed here comes back
+// only if an older version writes registry.md again.
 function load(file) {
+    const legacy = path.join(path.dirname(file), 'registry.md');
+    const hasLegacy = legacy !== file && fs.existsSync(legacy);
     if (!fs.existsSync(file)) {
-        // The first load starts from the rows of the older registry beside it, keeping none of its other text.
-        const legacy = path.join(path.dirname(file), 'registry.md');
-        const rows = legacy !== file && fs.existsSync(legacy) ? parse(fs.readFileSync(legacy, 'utf8')).rows : [];
+        const rows = hasLegacy ? parse(fs.readFileSync(legacy, 'utf8')).rows : [];
         return { before: header.slice(0, 4), rows, after: [] };
     }
-    return parse(fs.readFileSync(file, 'utf8'));
+    const model = parse(fs.readFileSync(file, 'utf8'));
+    if (hasLegacy && fs.statSync(legacy).mtimeMs > fs.statSync(file).mtimeMs) {
+        const known = new Set(model.rows.map((r) => r.session));
+        for (const r of parse(fs.readFileSync(legacy, 'utf8')).rows) {
+            if (r.session && r.session !== '-' && !known.has(r.session)) model.rows.push(r);
+        }
+    }
+    return model;
 }
 
 // A cell holds one line of text. "&" is encoded first and "|" becomes "&#124;", so a literal pipe never splits a row
@@ -213,6 +232,7 @@ function runSet(opts) {
 }
 
 function runResolve(call) {
+    if (typeof call !== 'string' || !call) { console.error(usage); return 1; }
     // Rows still waiting for their call name or ref are not callable.
     const hits = load(registryPath()).rows.filter((r) => r.ref !== '-' && r.call !== '(not set)'
         && r.call.toLowerCase() === String(call || '').toLowerCase());
@@ -250,7 +270,21 @@ function selfTest() {
     save(file, upsert(load(file), 'dddd-4444', { ref: '555555', call: 'delta', topic: 'topic D' }));
     const started = load(file).rows;
     ok = ok && started.length === 2 && started[0].call === 'gamma' && started[1].call === 'delta'
-        && fs.readFileSync(legacy, 'utf8') === legacyText;
+        && fs.readFileSync(legacy, 'utf8') === legacyText && !fs.readFileSync(file, 'utf8').includes('# old');
+    // A chat an older version registers in registry.md later is taken over; a row removed from the new file stays
+    // removed while registry.md is older than the new file.
+    fs.writeFileSync(legacy, ['| Call name | Ref | Display name | Session ID | Topic | State |',
+        '| :--- | :--- | :--- | :--- | :--- | :--- |', '| gamma | 444444 | henicos-z | cccc-3333 | topic C | active |',
+        '| epsilon | 666666 | henicos-e | eeee-5555 | topic E | active |', ''].join('\n'));
+    const later = new Date(Date.now() + 60000);
+    fs.utimesSync(legacy, later, later);
+    const merged = load(file).rows;
+    ok = ok && merged.length === 3 && merged[2].call === 'epsilon' && merged[2].session === 'eeee-5555';
+    save(file, { before: header.slice(0, 4), rows: [started[1]], after: [] });
+    const earlier = new Date(Date.now() - 60000);
+    fs.utimesSync(legacy, earlier, earlier);
+    const kept = load(file).rows;
+    ok = ok && kept.length === 1 && kept[0].call === 'delta';
     fs.rmSync(dir, { recursive: true, force: true });
     console.log(ok ? 'self-test passed' : 'self-test FAILED');
     return ok ? 0 : 1;
@@ -264,9 +298,10 @@ function main(argv) {
     if (cmd === 'set') return runSet(opts);
     if (cmd === 'resolve') return runResolve(opts._[1]);
     if (cmd === 'show') {
-        const file = registryPath();
-        if (!fs.existsSync(file)) { console.error('registry is empty'); return 1; }
-        process.stdout.write(fs.readFileSync(file, 'utf8'));
+        // Through load, so that rows still only in the older registry.md are shown as resolve sees them.
+        const model = load(registryPath());
+        if (model.rows.length === 0) { console.error('registry is empty'); return 1; }
+        process.stdout.write(render(model));
         return 0;
     }
     console.error(usage);
