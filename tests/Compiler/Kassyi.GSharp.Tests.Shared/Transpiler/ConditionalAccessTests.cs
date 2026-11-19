@@ -58,6 +58,8 @@ public class ConditionalAccessTests
         nameof(ConditionalResultForm.Lifted), "Nullable", ConditionalAccess.NullableArrayView)]
     [InlineData("NullableSegmentElement", nameof(ConditionalReceiverKind.Unsupported),
         nameof(ConditionalResultForm.Lifted), "Nullable", ConditionalAccess.NullableArrayView)]
+    [InlineData("NullableVectorMember", nameof(ConditionalReceiverKind.Unsupported),
+        nameof(ConditionalResultForm.Lifted), "Nullable", ConditionalAccess.NullableVector)]
     [InlineData("NullableHolderWithNestedElement", nameof(ConditionalReceiverKind.Nullable),
         nameof(ConditionalResultForm.Passthrough), "Nullable", null)]
     [Scenario(TestScenario.HappyPath)]
@@ -69,7 +71,7 @@ public class ConditionalAccessTests
         var plan = ConditionalAccess.Plan(node, model);
 
         // mutant: ConditionalAccess.Plan: choose Passthrough for a value type, ArrayLike for a stack array, Nullable
-        // for an indexer or an array view of a Nullable<T>, or read the last binding instead of the first
+        // for an indexer, an array view or a vector of a Nullable<T>, or read the last binding instead of the first
         Assert.Equal(receiver, plan.Receiver.ToString());
         Assert.Equal(form, plan.Form.ToString());
         Assert.Equal(resultTypeName, plan.ResultType?.Name);

@@ -78,4 +78,9 @@ internal static class Cases
     {
         int? n = h?.Data?[0];
     }
+
+    public static void NullableVectorMember(System.Numerics.Vector2? v)
+    {
+        float? x = v?.X;
+    }
 }

@@ -30,6 +30,10 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <c>[Conditional]</c> calls that a <c>#define</c> of the user's file keeps
 /// (<see cref="RemovedCalls.GetSymbolsToDefine"/>).
 /// </param>
+/// <param name="ExtensionImports">
+/// The classes that the generated files of the class import with <c>using static</c>, for the extension calls that a
+/// managed body keeps in their reduced form (<see cref="ManagedExtensionImports.Get"/>).
+/// </param>
 internal readonly record struct HostClassHeader(
     string HintName,
     string Namespace,
@@ -40,7 +44,8 @@ internal readonly record struct HostClassHeader(
     EquatableArray<string> OuterDeclarations,
     string FullyQualifiedName,
     EquatableArray<string> DefinedSymbols = default,
-    EquatableArray<string> WarmupRelayHosts = default)
+    EquatableArray<string> WarmupRelayHosts = default,
+    EquatableArray<string> ExtensionImports = default)
 {
     public bool IsGlobalNamespace => Namespace.Length == 0;
 
@@ -53,7 +58,8 @@ internal readonly record struct HostClassHeader(
         type.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public,
         CreateOuterDeclarations(type),
         type.GetFullyQualifiedCsharpName(),
-        RemovedCalls.GetSymbolsToDefine(type, compilation));
+        RemovedCalls.GetSymbolsToDefine(type, compilation),
+        ExtensionImports: ManagedExtensionImports.Get(type, compilation));
 
     /// <summary>
     /// <see cref="Create"/> for the class of a kernel, with the containers that relay its warmups

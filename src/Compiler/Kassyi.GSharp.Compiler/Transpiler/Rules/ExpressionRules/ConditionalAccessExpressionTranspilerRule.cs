@@ -35,16 +35,16 @@ public sealed class ConditionalAccessExpressionTranspilerRule
         Emit(node, plan, receiver, access, ref context);
     }
 
+    // The plan has the GSH0003 text exactly when the receiver cannot be written
     private static bool IsSupported(ConditionalAccessExpressionSyntax node, ConditionalAccessPlan plan,
         ref TranspileContext context)
     {
-        if (plan.Receiver != ConditionalReceiverKind.Unsupported)
+        if (plan.Problem is not { } problem)
         {
             return true;
         }
 
-        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
-            plan.Problem ?? ConditionalAccess.UnsupportedReceiver);
+        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, problem);
         context.Visitor.AppendUnsupportedPlaceholder(node);
         return false;
     }
@@ -78,39 +78,38 @@ public sealed class ConditionalAccessExpressionTranspilerRule
 
         using var sequence = EvaluationOrder.BeginSequence(context.Emitter.Writer);
         var temp = EvaluationOrder.DeclareTemp(ref context, node.Expression, reference: false);
-        var tempName = GSharpInternalNames.Lowering.SequenceTempPrefix + temp;
-        var cookie = context.Emitter.PushOverrideScope(ReceiverName, new OverrideValue(tempName));
-        var valueCookie = context.Emitter.PushOverrideScope(ReceiverValueName, new OverrideValue(tempName + ".Value"));
-        try
+        using var names = ReceiverNames.Bind(
+            context.Emitter.LocalVariableOverrides,
+            GSharpInternalNames.Lowering.SequenceTempPrefix + temp);
+        if (plan.Form == ConditionalResultForm.Statement)
         {
-            if (plan.Form == ConditionalResultForm.Statement)
-            {
-                WriteStatement(access, receiver, ref context);
-                return;
-            }
+            WriteStatement(access, receiver, ref context);
+            return;
+        }
 
-            sequence.Return();
-            NullRepresentation.AppendNullTest(receiver, isNull: false, ref context);
-            context.Emitter.Writer.Append(" ? ");
-            if (plan.Form == ConditionalResultForm.Lifted)
-            {
-                AppendResultType(plan, ref context);
-            }
+        sequence.Return();
+        EmitValue(plan, receiver, access, ref context);
+    }
 
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Visitor.Visit(access);
-            }
-
-            context.Emitter.Writer.Append(" : ");
+    // <receiver is not null> ? <Result>(<access>) : <Result>(), the access lifted when it has a value type
+    private static void EmitValue(ConditionalAccessPlan plan, ExpressionSyntax receiver, ExpressionSyntax access,
+        ref TranspileContext context)
+    {
+        NullRepresentation.AppendNullTest(receiver, isNull: false, ref context);
+        context.Emitter.Writer.Append(" ? ");
+        if (plan.Form == ConditionalResultForm.Lifted)
+        {
             AppendResultType(plan, ref context);
-            context.Emitter.Writer.Append("()");
         }
-        finally
+
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.PopOverrideScope(valueCookie);
-            context.Emitter.PopOverrideScope(cookie);
+            context.Visitor.Visit(access);
         }
+
+        context.Emitter.Writer.Append(" : ");
+        AppendResultType(plan, ref context);
+        context.Emitter.Writer.Append("()");
     }
 
     // The receiver is a stack array, which is never null: the access itself, lifted when it has a value type
@@ -150,5 +149,19 @@ public sealed class ConditionalAccessExpressionTranspilerRule
         }
 
         context.Emitter.Dialect.AppendType(ref context, type);
+    }
+
+    // The names that stand for the receiver (the temporary) and its value (the temporary's Value) while the access is
+    // written; disposing unbinds both
+    private readonly struct ReceiverNames(OverrideScopeStack overrides, int cookie) : IDisposable
+    {
+        public static ReceiverNames Bind(OverrideScopeStack overrides, string tempName)
+        {
+            var cookie = overrides.Push(ReceiverName, new OverrideValue(tempName));
+            overrides.Push(ReceiverValueName, new OverrideValue(tempName + ".Value"));
+            return new ReceiverNames(overrides, cookie);
+        }
+
+        public void Dispose() => overrides.Pop(cookie);
     }
 }

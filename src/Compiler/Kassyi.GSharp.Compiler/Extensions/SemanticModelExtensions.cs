@@ -106,6 +106,14 @@ internal static class SemanticModelExtensions
 
             var span = new TextSpan(start, length);
             originalNode = targetTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+            // An element binding ([i] of a?[i]) and its argument list share the span; the expression is the binding,
+            // which a rewrite of the binding (the element access of a null-conditional access) stands for
+            if (originalNode is BracketedArgumentListSyntax { Parent: ElementBindingExpressionSyntax binding } &&
+                binding.Span == span)
+            {
+                originalNode = binding;
+            }
+
             return true;
         }
 

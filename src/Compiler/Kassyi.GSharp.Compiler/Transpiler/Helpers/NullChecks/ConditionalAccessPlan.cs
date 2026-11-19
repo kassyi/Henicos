@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.Operations;
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
 
 /// <summary>
@@ -37,7 +35,8 @@ internal enum ConditionalResultForm
 
 /// <summary>
 /// The decision how a <c>a?.b</c> is written: its receiver kind, result form and result type, and the GSH0003 text
-/// (<paramref name="Problem"/>) when the receiver kind is <see cref="ConditionalReceiverKind.Unsupported"/>.
+/// (<paramref name="Problem"/>), which is set exactly when the receiver kind is
+/// <see cref="ConditionalReceiverKind.Unsupported"/>.
 /// </summary>
 internal readonly record struct ConditionalAccessPlan(
     ConditionalReceiverKind Receiver,
@@ -61,6 +60,9 @@ internal static class ConditionalAccess
     /// <summary>The GSH0003 text of <c>?.</c> or <c>?[]</c> on a <c>Nullable&lt;T&gt;</c> of an array view.</summary>
     public const string NullableArrayView = "?. on a Nullable<T> of an array view";
 
+    /// <summary>The GSH0003 text of <c>?.</c> on a <c>Nullable&lt;T&gt;</c> of a vector (<c>Vector2?</c>).</summary>
+    public const string NullableVector = "?. on a Nullable<T> of a vector";
+
     /// <summary>Decides how <paramref name="node"/> is written.</summary>
     /// <exception cref="InvalidOperationException">
     /// The type of the receiver or of the access did not resolve.
@@ -70,18 +72,14 @@ internal static class ConditionalAccess
         var receiverType = model.GetTypeSymbol(node.Expression) ?? throw Unresolved("receiver", node.Expression);
         var (kind, problem) = GetReceiverKind(node, receiverType, model);
 
-        // The operation, not the syntax: the type of the binding [1] of a lowered a?[1] is not found by its span,
-        // which an argument list shares
-        var accessType = (model.GetSafeOperation(node) as IConditionalAccessOperation)?.WhenNotNull.Type ??
-                         model.GetTypeSymbol(node.WhenNotNull) ??
-                         throw Unresolved("access", node.WhenNotNull);
+        var accessType = model.GetTypeSymbol(node.WhenNotNull) ?? throw Unresolved("access", node.WhenNotNull);
         if (accessType.SpecialType == SpecialType.System_Void || node.Parent is ExpressionStatementSyntax)
         {
             return new ConditionalAccessPlan(kind, ConditionalResultForm.Statement, null, problem);
         }
 
         var resultType = model.GetTypeSymbol(node) ?? throw Unresolved("access", node);
-        var form = accessType.IsArrayLikeType() || NullRepresentation.IsNullComparable(accessType)
+        var form = NullRepresentation.IsNullComparable(accessType)
             ? ConditionalResultForm.Passthrough
             : ConditionalResultForm.Lifted;
         return new ConditionalAccessPlan(kind, form, resultType, problem);
@@ -110,10 +108,15 @@ internal static class ConditionalAccess
         }
 
         // The value of the receiver is written without its type, so a member that the receiver's type maps (an array
-        // view's Count or Length) or an indexer of the value cannot be written
+        // view's Count or Length, a vector's X) or an indexer of the value cannot be written
         if (valueType.IsArrayLikeType())
         {
             return (ConditionalReceiverKind.Unsupported, NullableArrayView);
+        }
+
+        if (valueType.IsSystemNumericsVector())
+        {
+            return (ConditionalReceiverKind.Unsupported, NullableVector);
         }
 
         return FirstBinding(node) is ElementBindingExpressionSyntax

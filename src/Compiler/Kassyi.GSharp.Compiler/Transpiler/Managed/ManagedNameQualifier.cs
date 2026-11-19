@@ -48,10 +48,12 @@ internal static class ManagedNameQualifier
     /// </para>
     /// <para>
     /// The reduced form finds the method through the <c>using</c> of its namespace, which the generated file does not
-    /// have (CS1061). The static call evaluates the receiver and then the arguments, as the reduced form does. A
-    /// <c>ref this</c> receiver is passed with <c>ref</c>; an <c>in this</c> receiver with <c>in</c> when it is a
-    /// variable of the parameter type, and without a modifier otherwise (a value, a field of a value, another type),
-    /// where <c>in</c> would not compile (CS8156, CS1612) and C# copies the value into a temporary in both forms.
+    /// have (CS1061). A call on a binding of a null-conditional access (<c>q?[i].M()</c>) keeps the reduced form, which
+    /// the <c>using static</c> of its class in the generated file resolves. The static call evaluates the receiver and
+    /// then the arguments, as the reduced form does. A <c>ref this</c> receiver is passed with <c>ref</c>; an
+    /// <c>in this</c> receiver with <c>in</c> when it is a variable of the parameter type, and without a modifier
+    /// otherwise (a value, a field of a value, another type), where <c>in</c> would not compile (CS8156, CS1612) and C#
+    /// copies the value into a temporary in both forms.
     /// </para>
     /// </remarks>
     public static ExpressionSyntax? TryRewriteInvocation(InvocationExpressionSyntax node,
@@ -66,6 +68,7 @@ internal static class ManagedNameQualifier
         }
 
         if (node.Expression is not MemberAccessExpressionSyntax access ||
+            StartsWithBinding(access.Expression) ||
             semanticModel.GetSymbol(node) is not IMethodSymbol { ReducedFrom: { Parameters.Length: > 0 } extension } ||
             semanticModel.GetOriginalNode(node) is not InvocationExpressionSyntax)
         {
@@ -101,6 +104,36 @@ internal static class ManagedNameQualifier
             ),
             arguments.WithArguments(arguments.Arguments.Insert(0, receiverArgument))
         ).WithTriviaFrom(node);
+    }
+
+    // Whether the receiver chain of a call starts with the binding of a null-conditional access (q?[i].M(),
+    // h?.Inner.M()): the binding cannot stand alone as an argument, so the call keeps its reduced form, which the
+    // using static of its class in the generated file resolves (HostClassHeader.ExtensionImports)
+    private static bool StartsWithBinding(ExpressionSyntax receiver)
+    {
+        while (true)
+        {
+            switch (receiver)
+            {
+                case MemberBindingExpressionSyntax or ElementBindingExpressionSyntax:
+                    return true;
+                case MemberAccessExpressionSyntax member:
+                    receiver = member.Expression;
+                    break;
+                case ElementAccessExpressionSyntax element:
+                    receiver = element.Expression;
+                    break;
+                case InvocationExpressionSyntax invocation:
+                    receiver = invocation.Expression;
+                    break;
+                case PostfixUnaryExpressionSyntax suppressed when suppressed.IsKind(
+                    SyntaxKind.SuppressNullableWarningExpression):
+                    receiver = suppressed.Operand;
+                    break;
+                default:
+                    return false;
+            }
+        }
     }
 
     /// <summary>

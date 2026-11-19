@@ -48,7 +48,57 @@ public class ConditionalAccessDifferentialTests
             },
         };
 
+    // A kernel that reads a second input array b
+    private static DifferentialCase CaseWithSecondInput(string kernel, string[] columns,
+        Action<DiffBuffers, LaunchShape> launch) =>
+        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+        {
+            Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
+            Inputs = (rng, rows) => new DiffBuffers()
+                .In("a", DiffValues.Int32(rng, rows))
+                .In("b", DiffValues.Int32(rng, rows))
+                .Out<int>("dst", rows, columns, OutputPolicy.Exact),
+            Launch = launch,
+            OracleIsLaunch = true,
+        };
+
     private static bool IsNullRow(int[] a, int t) => (a[t] & 1) == 0;
+
+    // Fresh for each launch: the kernels write into them
+    private static ConditionalPoint[] Points(int rows)
+    {
+        var points = new ConditionalPoint[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            points[i] = new ConditionalPoint { X = i, Y = 2 * i };
+        }
+
+        return points;
+    }
+
+    // Every third element null
+    private static ConditionalPoint?[] NullablePoints(int rows)
+    {
+        var points = new ConditionalPoint?[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            points[i] = i % 3 == 0 ? null : new ConditionalPoint { X = i + 100, Y = 0 };
+        }
+
+        return points;
+    }
+
+    // Every other element null
+    private static int?[] NullableInts(int rows)
+    {
+        var values = new int?[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            values[i] = i % 2 == 0 ? null : i;
+        }
+
+        return values;
+    }
 
     internal static readonly DifferentialCase s_array = Case(
         nameof(ConditionalAccessDifferentialKernels.ArrayConditionalAccessKernel),
@@ -165,6 +215,32 @@ public class ConditionalAccessDifferentialTests
         ["has_value", "sum"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchExtensionCallKernel(
             b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+
+    internal static readonly DifferentialCase s_nestedElementReceiver = Case(
+        nameof(ConditionalAccessDifferentialKernels.NestedElementReceiverKernel),
+        ["has_value", "x"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchNestedElementReceiverKernel(
+            b.Get<int>("a"), NullablePoints(s.Rows), b.Get<int>("dst"), s.Rows,
+            gridDimX: s.GridX, blockDimX: s.BlockX));
+
+    internal static readonly DifferentialCase s_coalesceAssignmentElement = Case(
+        nameof(ConditionalAccessDifferentialKernels.CoalesceAssignmentElementKernel),
+        ["element", "right_side_evaluations"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchCoalesceAssignmentElementKernel(
+            b.Get<int>("a"), NullableInts(s.Rows), b.Get<int>("dst"), s.Rows,
+            gridDimX: s.GridX, blockDimX: s.BlockX));
+
+    internal static readonly DifferentialCase s_extensionOnBinding = Case(
+        nameof(ConditionalAccessDifferentialKernels.ExtensionOnBindingKernel),
+        ["element_plus_one", "x_after_increment", "inner_plus_one"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchExtensionOnBindingKernel(
+            b.Get<int>("a"), Points(s.Rows), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+
+    internal static readonly DifferentialCase s_receiverReassigned = CaseWithSecondInput(
+        nameof(ConditionalAccessDifferentialKernels.ReceiverReassignedKernel),
+        ["element", "first_after_swap"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchReceiverReassignedKernel(
+            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -288,4 +364,32 @@ public class ConditionalAccessDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ConditionalAccess_ExtensionMethodCall_CallsOnlyForANonNullReceiver() =>
         DifferentialRunner.Run(s_extensionCall);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_ReceiverIsANullableElement_ReadsItsValueOnlyWhenItHasOne() =>
+        DifferentialRunner.Run(s_nestedElementReceiver);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_CoalesceAssignmentOfAnElement_EvaluatesTheRightSideOnlyForANullElement() =>
+        DifferentialRunner.Run(s_coalesceAssignmentElement);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_ExtensionCallOnABinding_CallsOnlyForANonNullReceiver() =>
+        DifferentialRunner.Run(s_extensionOnBinding);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_IndexReassignsTheReceiver_ReadsTheReceiverEvaluatedFirst() =>
+        DifferentialRunner.Run(s_receiverReassigned);
 }

@@ -45,4 +45,16 @@ public static partial class ConditionalAccessUnsupported
         int? length = mem?.Length;
         dst[ThreadIndex.X] = length ?? -1;
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Sad Path")]
+    public static void VectorKernel(float[] dst, int mode)
+    {
+        System.Numerics.Vector2? v = mode == 0 ? null : new System.Numerics.Vector2(3f, 4f);
+        Float2? f = mode == 0 ? null : new Float2(5f, 6f);
+        // GSH0003 twice: a member of the value of a Nullable<T> of a vector
+        float? x = v?.X;
+        float? y = f?.Y;
+        dst[ThreadIndex.X] = (x ?? -1f) + (y ?? -1f);
+    }
 }

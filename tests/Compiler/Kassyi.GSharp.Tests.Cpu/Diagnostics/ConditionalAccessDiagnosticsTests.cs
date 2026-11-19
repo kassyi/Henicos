@@ -6,53 +6,47 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
 /// A null-conditional access on a <c>Nullable&lt;T&gt;</c> whose value the transpiler cannot read without its type
-/// (an indexer of the value, a member or element of an array view) is GSH0003 at the whole access, where the C++
-/// build otherwise stops at a C++ error; a field of the value is written as usual.
+/// (an indexer of the value, a member or element of an array view, a member of a vector) is GSH0003 at the whole
+/// access, where the C++ build otherwise stops at a C++ error; a field of the value is written as usual.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class ConditionalAccessDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/ConditionalAccessUnsupported.cu.cs";
 
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task ConditionalAccess_IndexerOfANullableStruct_ReportsGsh0003AtTheAccess(string dialect)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
-
-        Assert.Equal(
-            [(DiagnosticOrigin.Analyzer, 22, 18, 22, 23)],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, ConditionalAccess.NullableElementAccess));
-    }
+    private static readonly string[] s_problems =
+    [
+        ConditionalAccess.NullableElementAccess,
+        ConditionalAccess.NullableArrayView,
+        ConditionalAccess.NullableVector
+    ];
 
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task ConditionalAccess_NullableArrayView_ReportsGsh0003AtEachAccess(string dialect)
+    public async Task ConditionalAccess_UnsupportedNullableReceivers_ReportGsh0003AtEachAccessOnly(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
+        var actual = diagnostics
+            .OrderBy(static d => d.StartLine)
+            .ThenBy(static d => d.StartColumn)
+            .Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn,
+                Problem: Array.Find(s_problems, p => d.Message.Contains(p, StringComparison.Ordinal)) ?? d.Message))
+            .ToArray();
+        var id = GSharpDiagnostics.UnsupportedSyntax.Id;
+        const DiagnosticOrigin Analyzer = DiagnosticOrigin.Analyzer;
         Assert.Equal(
             [
-                (DiagnosticOrigin.Analyzer, 34, 22, 34, 32),
-                (DiagnosticOrigin.Analyzer, 35, 22, 35, 29),
-                (DiagnosticOrigin.Analyzer, 45, 23, 45, 34)
+                (Analyzer, id, 22, 18, 22, 23, ConditionalAccess.NullableElementAccess),
+                (Analyzer, id, 34, 22, 34, 32, ConditionalAccess.NullableArrayView),
+                (Analyzer, id, 35, 22, 35, 29, ConditionalAccess.NullableArrayView),
+                (Analyzer, id, 45, 23, 45, 34, ConditionalAccess.NullableArrayView),
+                (Analyzer, id, 56, 20, 56, 24, ConditionalAccess.NullableVector),
+                (Analyzer, id, 57, 20, 57, 24, ConditionalAccess.NullableVector)
             ],
-            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, ConditionalAccess.NullableArrayView));
-    }
-
-    [Theory]
-    [InlineData("Cpu")]
-    [InlineData("Cuda")]
-    [Scenario(TestScenario.SadPath)]
-    public async Task ConditionalAccess_UnsupportedReceivers_ReportNothingElse(string dialect)
-    {
-        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
-
-        Assert.Equal(4, diagnostics.Length);
+            actual);
     }
 
     [Theory]
