@@ -1046,15 +1046,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(contextSource, Encoding.UTF8));
     }
 
-    internal static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
-    {
-        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
-        deviceMethods
-            .AsStackEnumerable()
-            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
-        return distinct;
-    }
+    private static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods) =>
+        NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
 
     // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
     // function's sites once, however many results it has

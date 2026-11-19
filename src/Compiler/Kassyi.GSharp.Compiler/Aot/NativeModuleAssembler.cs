@@ -9,6 +9,17 @@ namespace Kassyi.GSharp.Compiler.Aot;
 /// </summary>
 internal static class NativeModuleAssembler
 {
+    /// <summary>The device functions without repeats, in their first order (one result per function and dialect).</summary>
+    public static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
+        deviceMethods
+            .AsStackEnumerable()
+            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
+        return distinct;
+    }
+
     /// <summary>The prelude that precedes the device code in the dialect's native module.</summary>
     public static string GetPreludeSource(ITranspilerDialect dialect) =>
         dialect.IsCuda ? GSharpPreludeResources.Cuda : GSharpPreludeResources.Cpp;

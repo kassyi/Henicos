@@ -8,7 +8,8 @@ namespace Kassyi.GSharp.Naming;
 
 /// <summary>
 /// Reads the sidecar symbol file (<c>*.gsym.json</c>) that <see cref="GSharpNameEncoding"/> writes: one JSON object per
-/// line, the first one a <c>gsharp_symbols</c> header that carries the hash of the source the file belongs to.
+/// line, one of them (the writer puts it first; the readers take the first they find) a <c>gsharp_symbols</c> header
+/// that carries the hash of the source the file belongs to.
 /// </summary>
 /// <remarks>
 /// When the caller passes the hash its source expects, the header is required and must match; a file without a header

@@ -24,7 +24,7 @@ internal static class AotModuleWriter
         }
 
         var isCuda = config.IsCuda;
-        var distinctDeviceMethods = GpuKernelGenerator.GetDistinctDeviceMethods(deviceMethods);
+        var distinctDeviceMethods = NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
         var commonDeviceSource = imports.Source + NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
         var preludeSource = BuildPreludeSource(config);
         var symbolSites = CollectSymbolSites(context, kernelMethods);
