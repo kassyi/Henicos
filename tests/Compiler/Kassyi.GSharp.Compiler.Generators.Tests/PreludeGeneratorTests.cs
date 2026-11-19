@@ -1,4 +1,5 @@
 using System.Linq;
+using Kassyi.GSharp.Cuda;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Compiler.Generators.Tests;
@@ -29,8 +30,8 @@ public class PreludeGeneratorTests
         var result = RunPrelude(scratch);
 
         Assert.Equal(0, result.ExitCode);
-        var (cuda, cpp) = ReadPreludes(scratch);
-        Assert.Equal("int b;\n\nint a;\n\nint cu;\n\n", cuda);
+        var (cuda, cpp, _) = ReadPreludes(scratch);
+        Assert.Equal(ExpectedCudaGuard() + "int b;\n\nint a;\n\nint cu;\n\n", cuda);
         // The C++ prelude drops one trailing line break of a header included at its very end.
         Assert.Equal("int a;\nint b;\n\n", cpp);
     }
@@ -59,7 +60,7 @@ public class PreludeGeneratorTests
         var result = RunPrelude(scratch);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Equal("int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
+        Assert.Equal(ExpectedCudaGuard() + "int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
     }
 
     [Fact]
@@ -149,9 +150,73 @@ public class PreludeGeneratorTests
         var result = RunPrelude(scratch);
 
         Assert.Equal(0, result.ExitCode);
-        var (cuda, cpp) = ReadPreludes(scratch);
-        Assert.Equal("#include <mma.h>\nint cu;\n\n", cuda);
+        var (cuda, cpp, cppStackThreads) = ReadPreludes(scratch);
+        Assert.Equal(ExpectedCudaGuard() + "#include <mma.h>\nint cu;\n\n", cuda);
         Assert.Equal("#include <cstdint>\n\n", cpp);
+        Assert.Equal("int stack_helper;\n\n", cppStackThreads);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackThreadsHeader_GeneratesSeparateConstant_ExcludedFromCppPrelude()
+    {
+        using var scratch = CreateResources(cuda: "int cu;\n", cpp: "int cpp;\n");
+        scratch.Write("res/Prelude/StackThreads.hpp", "    inline void __gsharp_stack_barrier() {}\n");
+
+        var result = RunPrelude(scratch);
+
+        Assert.Equal(0, result.ExitCode);
+        var (cuda, cpp, cppStackThreads) = ReadPreludes(scratch);
+        Assert.DoesNotContain("__gsharp_stack_barrier", cuda, StringComparison.Ordinal);
+        Assert.DoesNotContain("__gsharp_stack_barrier", cpp, StringComparison.Ordinal);
+        Assert.Equal("inline void __gsharp_stack_barrier() {}\n\n", cppStackThreads);
+    }
+
+    // The export hash covers the stack threads header: a library built with another one is not imported silently
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StackThreadsHeader_OnlyItChanges_ChangesTheHash()
+    {
+        using var before = CreateResources(cuda: "int cu;\n", cpp: "int cpp;\n");
+        using var after = CreateResources(cuda: "int cu;\n", cpp: "int cpp;\n");
+        after.Write("res/Prelude/StackThreads.hpp", "int other_stack_helper;\n");
+
+        Assert.Equal(0, RunPrelude(before).ExitCode);
+        Assert.Equal(0, RunPrelude(after).ExitCode);
+
+        var beforeConstants = ReadConstants(before);
+        var afterConstants = ReadConstants(after);
+        Assert.Equal(beforeConstants["Cpp"], afterConstants["Cpp"]);
+        Assert.NotEqual(beforeConstants["CppStackThreads"], afterConstants["CppStackThreads"]);
+        Assert.NotEqual(beforeConstants["Hash"], afterConstants["Hash"]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CudaPrelude_WithIncludeInResource_PrependsNvccMinimumGuardBeforeInclude()
+    {
+        using var scratch = CreateResources(
+            cuda: "#include <cooperative_groups.h>\nint cu;\n",
+            cpp: "#include <cstdint>\n");
+
+        var result = RunPrelude(scratch);
+
+        Assert.Equal(0, result.ExitCode);
+        var (cuda, cpp, _) = ReadPreludes(scratch);
+        Assert.Equal(ExpectedCudaGuard() + "#include <cooperative_groups.h>\nint cu;\n\n", cuda);
+        Assert.Equal("#include <cstdint>\n\n", cpp);
+    }
+
+    private static string ExpectedCudaGuard()
+    {
+        var major = NvccMinimum.MajorRelease;
+        return
+            "#if !defined(__CUDACC_VER_MAJOR__)\n" +
+            "#error \"The G# CUDA prelude must be compiled by nvcc (__CUDACC_VER_MAJOR__ is not defined).\"\n" +
+            $"#elif __CUDACC_VER_MAJOR__ < {major}\n" +
+            $"#error \"G# needs the CUDA Toolkit {major}.0 or later " +
+            $"(nvcc __CUDACC_VER_MAJOR__ is below {major}). Install a newer nvcc.\"\n" +
+            "#endif\n";
     }
 
     private static ScratchDirectory CreateResources(string cuda, string cpp)
@@ -159,6 +224,7 @@ public class PreludeGeneratorTests
         var scratch = new ScratchDirectory();
         scratch.Write("res/Prelude.cu", cuda);
         scratch.Write("res/Prelude.cpp", cpp);
+        scratch.Write("res/Prelude/StackThreads.hpp", "int stack_helper;\n");
         scratch.Write("res/InternalNames.yml", "");
         return scratch;
     }
@@ -170,15 +236,20 @@ public class PreludeGeneratorTests
         return run.Result;
     }
 
-    private static (string Cuda, string Cpp) ReadPreludes(ScratchDirectory scratch)
+    private static (string Cuda, string Cpp, string CppStackThreads) ReadPreludes(ScratchDirectory scratch)
+    {
+        var constants = ReadConstants(scratch);
+        return (constants["Cuda"], constants["Cpp"], constants["CppStackThreads"]);
+    }
+
+    private static Dictionary<string, string> ReadConstants(ScratchDirectory scratch)
     {
         var root = GeneratorRun.ParseWithoutErrors(File.ReadAllText(scratch.Combine("out", "GSharpPreludeResources.g.cs")));
-        var constants = root.DescendantNodes()
+        return root.DescendantNodes()
             .OfType<VariableDeclaratorSyntax>()
             .ToDictionary(
                 static v => v.Identifier.ValueText,
                 static v => v.Initializer?.Value is LiteralExpressionSyntax literal ? literal.Token.ValueText : ""
             );
-        return (constants["Cuda"], constants["Cpp"]);
     }
 }

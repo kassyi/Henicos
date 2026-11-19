@@ -651,7 +651,7 @@
 - name: StructArrayConvertedPerElement
   id: GSH0080
   title: "Struct array or returned struct is converted element by element"
-  messageFormat: "The values of '{0}' are converted element by element because its host and device layouts differ ({1}). Reorder the fields or avoid array fields to transfer them as one block."
+  messageFormat: "The values of '{0}' are converted element by element because its host and device layouts differ ({1}).{2}"
   category: GSharpTranspiler
   defaultSeverity: Warning
   isEnabledByDefault: true
@@ -861,6 +861,14 @@
   id: GSH0120
   title: "A goto jumps into the middle of a reconvergence region"
   messageFormat: "'goto {0}' jumps {1}, in a method that reaches Warp.ActiveMask(); the CPU paths cannot tell which lanes run together there. {2}"
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: GotoToChainedLabelAcrossStates
+  id: GSH0121
+  title: "A goto reaches the inner label of chained labels from another state"
+  messageFormat: "'goto {0}' jumps to the label '{0}' of the chain of labels that starts with '{1}', from another state of the CPU state machine: a warp collective, a grid sync or a label that starts a state lies between them. Only '{1}' can start a state, so the CPU paths cannot build this jump yet. Write 'goto {1};', which jumps to the same statement, or write an empty statement right before the label ('...: ; {0}: ...') so that '{0}' starts a statement of its own. A goto across a barrier or a call that suspends is reported as GSH0040 instead."
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true

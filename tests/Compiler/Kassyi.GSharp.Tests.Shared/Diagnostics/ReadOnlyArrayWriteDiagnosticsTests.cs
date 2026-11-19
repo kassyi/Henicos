@@ -164,11 +164,15 @@ public class ReadOnlyArrayWriteDiagnosticsTests
         Assert.Equal(20, diagnostics.Ranges(GSharpDiagnostics.ReadOnlyArrayWritten.Id).Count);
     }
 
-    // The ranges of GSH0118 inside the method, with the lines counted from the line that declares it
-    private static IReadOnlyList<(DiagnosticOrigin Origin, int StartLine, int StartColumn, int EndLine, int EndColumn)>
-        InKernel(ImmutableArray<ReportedDiagnostic> diagnostics, string method, string? reason = null)
+    // The ranges of GSH0118 inside the method of the test case, with the lines counted from the line that declares it
+    internal static IReadOnlyList<(DiagnosticOrigin Origin, int StartLine, int StartColumn, int EndLine, int EndColumn)>
+        InKernel(
+            ImmutableArray<ReportedDiagnostic> diagnostics,
+            string method,
+            string? reason = null,
+            string testCase = TestCase)
     {
-        var declaration = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase(TestCase)).GetRoot()
+        var declaration = CSharpSyntaxTree.ParseText(RoslynTestUtility.ReadTestCase(testCase)).GetRoot()
             .DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Single(m => m.Identifier.ValueText == method);

@@ -114,6 +114,56 @@ public class ResumeLocalManagedTests : TranspilerTestBase
     public void StackAllocPointer_ManagedCapturedByStackLinqLambdaBeforeBarrier_KeepsItsMemory() =>
         ResumeLocalScenarios.StackLinqBeforeBarrier(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Lambda_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LambdaCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LocalFunctionCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.RecursiveLocalFuncCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void MutuallyRecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.MutuallyRecursiveLocalFuncCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void AsymmetricMutuallyRecursiveLocalFunction_ManagedCapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.AsymmetricMutuallyRecursiveLocalFuncCapturedInt(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ReadOnlyCollectionSpan_ManagedUsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.ReadOnlyCollectionSpan(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void EmptyCollectionSpan_ManagedBeforeBarrier_HasZeroLength() =>
+        ResumeLocalScenarios.EmptyCollectionSpan(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CollectionSpan_ManagedUsedOnlyBeforeBarrier_KeepsItsValues() =>
+        ResumeLocalScenarios.CollectionSpanBeforeBarrier(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpanInLoop_ManagedLoopIteration_ReinitializesEveryIteration() =>
+        ResumeLocalScenarios.CollectionSpanInLoop(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CollectionSpan_ManagedWithVariableElementBeforeBarrier_KeepsComputedValues() =>
+        ResumeLocalScenarios.VariableCollectionSpan(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         using (GpuExecution.Use(KernelExecution.Managed))

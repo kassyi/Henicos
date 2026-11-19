@@ -58,7 +58,9 @@ intrinsics as follows:
   values the GPU may return ([Semantics Charter §6.5](06_semantics.md#65-the-cpu-paths)).
 
 The CPU paths cannot split every shape into states. These forms are compile errors, reported for every dialect, except
-that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists:
+that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists, and the jump that GSH0121
+lists in its kernels, and in its device functions too when it does not export its device code
+(`GSharpExportDeviceCode=false`):
 
 * [GSH0037](../03_bcl_api/diagnostics/GSH0037.md): a barrier in a lambda or a local function that the CPU dialects do
   not split.
@@ -75,6 +77,9 @@ that a project built only for CUDA accepts a warp shuffle in the places that GSH
 * [GSH0120](../03_bcl_api/diagnostics/GSH0120.md): in a method that reaches `Warp.ActiveMask()`, a `goto` that jumps
   from outside into the middle of a forward-goto range or a goto loop, or forms a cross-section cycle in a
   thread-dependent `switch`, holding a warp collective or barrier.
+* [GSH0121](../03_bcl_api/diagnostics/GSH0121.md): a `goto` to a label written right after another label
+  (`second` in `first: second: s`) from another state: across a warp collective, a grid sync or a label that starts a
+  state (temporary; across a barrier or a call that suspends it is GSH0040).
 
 Other differences of the CPU paths:
 
@@ -202,7 +207,7 @@ examples:
 | [**GSH0106**](../03_bcl_api/diagnostics/GSH0106.md) | Error | Kernel parameter name conflicts with a launch parameter | Triggered when a kernel parameter shares a name with a launch wrapper parameter. |
 | [**GSH0107**](../03_bcl_api/diagnostics/GSH0107.md) | Error | A method without [GpuDeviceFunction] is called from GPU code | Triggered when unmarked code is invoked from device context. |
 | [**GSH0108**](../03_bcl_api/diagnostics/GSH0108.md) | Error | Struct field type is not accessible to the generated launcher | Triggered when a struct used by a kernel parameter or return value has a field whose type the generated launcher cannot name, such as a private type nested in the struct. |
-| [**GSH0109**](../03_bcl_api/diagnostics/GSH0109.md) | Error | A method without a device implementation is called from GPU code | Triggered when GPU code calls a method of another assembly, such as `int.Max` or `Math.Max(long, long)`, that the target dialect does not implement. |
+| [**GSH0109**](../03_bcl_api/diagnostics/GSH0109.md) | Error | A method without a device implementation is called from GPU code | Triggered when GPU code calls a method of another assembly, such as `int.Max` or `Math.Round(double, int)`, that the target dialect does not implement. |
 | [**GSH0110**](../03_bcl_api/diagnostics/GSH0110.md) | Error | The launcher of a [CudaImport] method cannot pass a parameter to the kernel | Triggered when a `[CudaImport]` parameter is a reference type, a struct with `LayoutKind.Auto`, a ref struct, `Nullable<T>`, passed by reference, a multidimensional or jagged array, or a launch setting name of the wrong type. |
 | [**GSH0111**](../03_bcl_api/diagnostics/GSH0111.md) | Error | [GpuKernel] is only allowed on an ordinary static method of a class | Triggered when `[GpuKernel]` is on an operator, an accessor, a lambda, a local function, an instance method, a member of a struct, interface or generic type, a generic method, the entry point, a `[ModuleInitializer]` or `[UnmanagedCallersOnly]` method, a method that implements an interface member, an extension method that C# calls by its name, or a method that `[CollectionBuilder]` names. |
 | [**GSH0112**](../03_bcl_api/diagnostics/GSH0112.md) | Error | Kernel parameter type has no device representation | Triggered when a `[GpuKernel]` parameter is a reference to a managed object (a class, `string`, an interface, a delegate or `object`), or an array or span of such references. |
@@ -212,6 +217,7 @@ examples:
 | [**GSH0117**](../03_bcl_api/diagnostics/GSH0117.md) | Error | SharedMemory<T> count must not be negative | Triggered when a `SharedMemory<T>` is created with a negative constant count. A count of 0 declares empty shared memory. |
 | [**GSH0119**](../03_bcl_api/diagnostics/GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates | Triggered on the CPU dialect when a body that the managed path must copy into a generated file (it suspends or holds a construct only the managed path rewrites, such as an integer division) names a file-local type; the managed launch of the kernel that needs the copy throws. |
 | [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop, or forms a cross-section cycle in a thread-dependent `switch`, holding a warp collective or barrier. |
+| [**GSH0121**](../03_bcl_api/diagnostics/GSH0121.md) | Error | A goto reaches the inner label of chained labels from another state | Triggered when a `goto` jumps to a label written right after another label from another state of the CPU state machine (across a warp collective, a grid sync or a label that starts a state; across a barrier or a call that suspends it is GSH0040). Temporary. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 

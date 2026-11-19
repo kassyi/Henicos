@@ -163,10 +163,10 @@ internal sealed class SharedMemoryWithoutCountRule :
     // The local itself, or a member access chain that starts at it
     private static bool IsRootedAt(ExpressionSyntax expression, ILocalSymbol local, SemanticModel model)
     {
-        var current = IteratorTypeResolver.UnwrapParentheses(expression);
+        var current = expression.UnwrapParentheses();
         while (current is MemberAccessExpressionSyntax access)
         {
-            current = IteratorTypeResolver.UnwrapParentheses(access.Expression);
+            current = access.Expression.UnwrapParentheses();
         }
 
         return current is IdentifierNameSyntax name &&

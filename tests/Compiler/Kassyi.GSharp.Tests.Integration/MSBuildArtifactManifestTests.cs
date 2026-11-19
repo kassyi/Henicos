@@ -150,6 +150,144 @@ public class MSBuildArtifactManifestTests : IDisposable
         Directory.Exists(Path.Combine(_objDir, "GSharpNativeDlls")).Should().BeFalse("no DLL is built at design time");
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Build_SplitCpuRepeatedExecution_KeepsHeaderAndSymbolFile()
+    {
+        WriteObjFile("X.g.cpp");
+        WriteObjFile("X.1.g.cpp");
+        var headerPath = WriteObjFile("X.g.hpp");
+        var headerSymbolPath = WriteObjFile("X.g.hpp.gsym.json");
+        WriteManifest("X.g.cpp", "X.1.g.cpp");
+
+        await BuildAsync();
+        await BuildAsync();
+
+        File.Exists(headerPath).Should().BeTrue();
+        File.Exists(headerSymbolPath).Should().BeTrue();
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Build_SplitCpuDialectSwitch_CleansHeaderAndHeaderSymbolFile()
+    {
+        var unit0Path = WriteObjFile("X.g.cpp");
+        var unit1Path = WriteObjFile("X.1.g.cpp");
+        var headerPath = WriteObjFile("X.g.hpp");
+        var headerSymbolPath = WriteObjFile("X.g.hpp.gsym.json");
+        WriteManifest("X.g.cpp", "X.1.g.cpp");
+
+        await BuildAsync();
+
+        WriteObjFile("X.g.cu");
+        WriteManifest("X.g.cu");
+
+        await BuildAsync();
+
+        File.Exists(headerPath).Should().BeFalse("IncrementalClean removes stale header on dialect switch");
+        File.Exists(headerSymbolPath).Should().BeFalse("IncrementalClean removes stale header symbol file");
+        File.Exists(unit0Path).Should().BeFalse();
+        File.Exists(unit1Path).Should().BeFalse();
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Build_SplitCpuToEmptyManifest_CleansHeaderAndHeaderSymbolFile()
+    {
+        WriteObjFile("X.g.cpp");
+        WriteObjFile("X.1.g.cpp");
+        var headerPath = WriteObjFile("X.g.hpp");
+        var headerSymbolPath = WriteObjFile("X.g.hpp.gsym.json");
+        WriteManifest("X.g.cpp", "X.1.g.cpp");
+
+        await BuildAsync();
+
+        WriteManifest();
+
+        await BuildAsync();
+
+        File.Exists(headerPath).Should().BeFalse("IncrementalClean removes stale header when manifest is empty");
+        File.Exists(headerSymbolPath).Should().BeFalse("IncrementalClean removes stale header symbol file");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Build_SplitCpuMockCompilation_LinksSingleModuleDll()
+    {
+        WriteObjFile("X.g.cpp");
+        WriteObjFile("X.1.g.cpp");
+        WriteObjFile("X.g.hpp");
+        WriteManifest("X.g.cpp", "X.1.g.cpp");
+
+        await BuildAsync();
+
+        var nativeDlls = Path.Combine(_objDir, "GSharpNativeDlls");
+        Directory.GetFiles(nativeDlls, "X_*.dll").Should().ContainSingle();
+        Directory.GetFiles(nativeDlls, "X.1_*.dll").Should().BeEmpty();
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Build_SplitCpuRealCompilation_IncrementalSkipShrinkAndCleanRemoveIntermediates()
+    {
+        var arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
+            System.Runtime.InteropServices.Architecture.Arm64 ? "arm64" : "x64";
+        var objExt = OperatingSystem.IsWindows() ? ".obj" : ".o";
+
+        File.WriteAllText(Path.Combine(_objDir, "X.g.hpp"), "inline int shared_helper(int v) { return v + 1; }\n");
+        File.WriteAllText(
+            Path.Combine(_objDir, "X.g.cpp"),
+            "#include \"X.g.hpp\"\nextern \"C\" int unit0(int v) { return shared_helper(v); }\n");
+        var unit1Path = Path.Combine(_objDir, "X.1.g.cpp");
+        File.WriteAllText(
+            unit1Path,
+            "#include \"X.g.hpp\"\nextern \"C\" int unit1(int v) { return shared_helper(v) + 1; }\n");
+        WriteManifest("X.g.cpp", "X.1.g.cpp");
+
+        await BuildAsync("-p:GSharpMockCompilation=false");
+
+        var archObjDir = Path.Combine(_objDir, "GSharpNativeObjs", arch);
+        var obj0 = Path.Combine(archObjDir, $"X{objExt}");
+        var obj1 = Path.Combine(archObjDir, $"X.1{objExt}");
+        var dllPath = Path.Combine(_objDir, "GSharpNativeDlls", $"X_{arch}.dll");
+        if (!File.Exists(dllPath))
+        {
+            // Toolchain unavailable on host (e.g., Linux without g++).
+            return;
+        }
+
+        File.Exists(obj0).Should().BeTrue();
+        File.Exists(obj1).Should().BeTrue();
+        File.Exists(obj0 + ".record").Should().BeTrue();
+        File.Exists(obj1 + ".record").Should().BeTrue();
+
+        var secondBuild = await BuildProcessRunner.RunBuildAsync(
+            _projectDir,
+            "Producer.csproj",
+            extraArguments: ["-p:GSharpMockCompilation=false", "-v:normal"]);
+        secondBuild.ExitCode.Should().Be(0);
+        secondBuild.Stdout.Should().Contain(
+            "Skipping C++ object compilation: all 2 translation unit(s) are up-to-date.");
+
+        // Shrink B=2 -> B=1: IncrementalClean should remove unit 1's object, record, and stale header
+        File.WriteAllText(Path.Combine(_objDir, "X.g.cpp"), "extern \"C\" int unit0(int v) { return v + 1; }\n");
+        File.Delete(Path.Combine(_objDir, "X.g.hpp"));
+        File.Delete(unit1Path);
+        WriteManifest("X.g.cpp");
+
+        await BuildAsync("-p:GSharpMockCompilation=false");
+
+        File.Exists(obj0).Should().BeTrue();
+        File.Exists(obj1).Should().BeFalse("IncrementalClean removes orphaned unit 1 object");
+        File.Exists(obj1 + ".record").Should().BeFalse("IncrementalClean removes orphaned unit 1 record");
+
+        await BuildAsync("-t:Clean", "-p:GSharpMockCompilation=false");
+
+        File.Exists(obj0).Should().BeFalse("Clean deletes compiled object file");
+        File.Exists(obj0 + ".record").Should().BeFalse("Clean deletes object command record");
+        File.Exists(dllPath).Should().BeFalse("Clean deletes linked native DLL");
+    }
+
     private string WriteObjFile(string fileName)
     {
         var path = Path.Combine(_objDir, fileName);

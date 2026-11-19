@@ -4362,7 +4362,7 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_value=__gsharp_in___gsharp_id_0_value;
 __gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
 }
-auto __gsharp_id_3_Add = [&](int __gsharp_id_4_d) {
+auto __gsharp_id_3_Add = [&, __gsharp_ctx](int __gsharp_id_4_d) {
 __gsharp_ctx->__gsharp_id_0_value=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_value,__gsharp_id_4_d);
 }
 ;

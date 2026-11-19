@@ -105,24 +105,33 @@ internal static class ArrayViewMethods
     private static ViewCheck GetDestinationCheck(ITypeSymbol destination) =>
         destination is IArrayTypeSymbol
             ? ViewCheck.ArgumentNull
-            : GetViewType(destination as INamedTypeSymbol) == ViewType.ArraySegment
+            : IsArraySegment(destination)
                 ? ViewCheck.InvalidOperation
                 : ViewCheck.None;
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is <c>System.ArraySegment&lt;T&gt;</c>, whose default value has no array; a
+    /// user type of that name in another namespace is not.
+    /// </summary>
+    public static bool IsArraySegment(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: 1, Name: "ArraySegment" } named &&
+        named.ContainingNamespace.IsSystemNamespace();
 
     private static ViewType GetViewType(INamedTypeSymbol? type) =>
         type is not { IsGenericType: true, TypeArguments.Length: 1 }
             ? ViewType.None
-            : type.ContainingNamespace.IsSystemNamespace()
-                ? type.Name switch
-                {
-                    "Memory" => ViewType.Memory,
-                    "ReadOnlyMemory" => ViewType.ReadOnlyMemory,
-                    "ArraySegment" => ViewType.ArraySegment,
-                    _ => ViewType.None,
-                }
-                : type is { Name: "ImmutableArray" } && type.ContainingNamespace.IsSystemCollectionsImmutable()
-                    ? ViewType.ImmutableArray
-                    : ViewType.None;
+            : IsArraySegment(type)
+                ? ViewType.ArraySegment
+                : type.ContainingNamespace.IsSystemNamespace()
+                    ? type.Name switch
+                    {
+                        "Memory" => ViewType.Memory,
+                        "ReadOnlyMemory" => ViewType.ReadOnlyMemory,
+                        _ => ViewType.None,
+                    }
+                    : type is { Name: "ImmutableArray" } && type.ContainingNamespace.IsSystemCollectionsImmutable()
+                        ? ViewType.ImmutableArray
+                        : ViewType.None;
 
     /// <summary>One listed method: the types that declare it, its name and its parameter shapes.</summary>
     private readonly struct Member(ViewType types, string name, params Shape[] parameters)

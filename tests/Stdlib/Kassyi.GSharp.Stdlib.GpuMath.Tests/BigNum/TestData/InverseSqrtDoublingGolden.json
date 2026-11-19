@@ -1,0 +1,1138 @@
+[
+ {
+  "n": 1,
+  "label": "2^62",
+  "w": 2,
+  "m": 1,
+  "B": 96,
+  "E": 66,
+  "A": "0x4000000000000000",
+  "x0": "0x1fffffff800000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffff"
+ },
+ {
+  "n": 1,
+  "label": "allones",
+  "w": 2,
+  "m": 1,
+  "B": 96,
+  "E": 66,
+  "A": "0xffffffffffffffff",
+  "x0": "0x10000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x10000000000000000"
+ },
+ {
+  "n": 1,
+  "label": "rnd",
+  "w": 2,
+  "m": 1,
+  "B": 96,
+  "E": 66,
+  "A": "0xff5f9831ec08d9a2",
+  "x0": "0x1005059aa00000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4014166aded29bf9"
+   },
+   {
+    "p": 3,
+    "Y": "0x4014166aded29bfa6bcb12be"
+   }
+  ],
+  "x_tilde": "0x1005059ab7b4a6fe9"
+ },
+ {
+  "n": 1,
+  "label": "rnd",
+  "w": 2,
+  "m": 1,
+  "B": 96,
+  "E": 66,
+  "A": "0xd684f1a5e9f3c82d",
+  "x0": "0x117a85db000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x45ea176c82ba72ee"
+   },
+   {
+    "p": 3,
+    "Y": "0x45ea176c82ba72f0262c8d7a"
+   }
+  ],
+  "x_tilde": "0x117a85db20ae9cbc0"
+ },
+ {
+  "n": 2,
+  "label": "2^126",
+  "w": 3,
+  "m": 1,
+  "B": 128,
+  "E": 82,
+  "A": "0x400000000000000000000000",
+  "x0": "0x1fffffff8000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffff"
+ },
+ {
+  "n": 2,
+  "label": "allones",
+  "w": 3,
+  "m": 1,
+  "B": 128,
+  "E": 82,
+  "A": "0xffffffffffffffffffffffff",
+  "x0": "0x100000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x100000000000000000000"
+ },
+ {
+  "n": 2,
+  "label": "rnd",
+  "w": 3,
+  "m": 1,
+  "B": 128,
+  "E": 82,
+  "A": "0xc1cbdf1cf88067e505f1cf4e",
+  "x0": "0x1263ae8fa000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x498eba3f44383792"
+   },
+   {
+    "p": 3,
+    "Y": "0x498eba3f443837961087313c"
+   },
+   {
+    "p": 4,
+    "Y": "0x498eba3f443837961087313cf89e231c"
+   }
+  ],
+  "x_tilde": "0x1263ae8fd10e0de58421c"
+ },
+ {
+  "n": 2,
+  "label": "rnd",
+  "w": 3,
+  "m": 1,
+  "B": 128,
+  "E": 82,
+  "A": "0xd3bcf227d8ef4b851ac7700a",
+  "x0": "0x1197d0684000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x465f41a199492992"
+   },
+   {
+    "p": 3,
+    "Y": "0x465f41a199492994906af150"
+   },
+   {
+    "p": 4,
+    "Y": "0x465f41a199492994906af15107963cd0"
+   }
+  ],
+  "x_tilde": "0x1197d06866524a65241ab"
+ },
+ {
+  "n": 3,
+  "label": "2^190",
+  "w": 4,
+  "m": 2,
+  "B": 192,
+  "E": 130,
+  "A": "0x40000000000000000000000000000000",
+  "x0": "0x1fffffff8000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 5,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 3,
+  "label": "allones",
+  "w": 4,
+  "m": 2,
+  "B": 192,
+  "E": 130,
+  "A": "0xffffffffffffffffffffffffffffffff",
+  "x0": "0x100000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 5,
+    "Y": "0x4000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x100000000000000000000000000000000"
+ },
+ {
+  "n": 3,
+  "label": "rnd",
+  "w": 4,
+  "m": 2,
+  "B": 192,
+  "E": 130,
+  "A": "0xa7720e1854273572dfa996720bfdd93c",
+  "x0": "0x13c893a40000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4f224e904455f52a"
+   },
+   {
+    "p": 3,
+    "Y": "0x4f224e904455f52a954e39cf"
+   },
+   {
+    "p": 4,
+    "Y": "0x4f224e904455f52a954e39cfd5a6ee7b"
+   },
+   {
+    "p": 5,
+    "Y": "0x4f224e904455f52a954e39cfd5a6ee7b5ed6cb61"
+   }
+  ],
+  "x_tilde": "0x13c893a411157d4aa5538e73f569bb9ed"
+ },
+ {
+  "n": 3,
+  "label": "rnd",
+  "w": 4,
+  "m": 2,
+  "B": 192,
+  "E": 130,
+  "A": "0x903ae4b4fddeff12f933f680b508cfa8",
+  "x0": "0x1550f9e02000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x5543e7819c3cfb64"
+   },
+   {
+    "p": 3,
+    "Y": "0x5543e7819c3cfb6a6621f651"
+   },
+   {
+    "p": 4,
+    "Y": "0x5543e7819c3cfb6a6621f65105127555"
+   },
+   {
+    "p": 5,
+    "Y": "0x5543e7819c3cfb6a6621f6510512755545a38159"
+   }
+  ],
+  "x_tilde": "0x1550f9e0670f3eda99887d9441449d555"
+ },
+ {
+  "n": 7,
+  "label": "2^446",
+  "w": 8,
+  "m": 4,
+  "B": 384,
+  "E": 258,
+  "A": "0x4000000000000000000000000000000000000000000000000000000000000000",
+  "x0": "0x1fffffff800000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 6,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 9,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 7,
+  "label": "allones",
+  "w": 8,
+  "m": 4,
+  "B": 384,
+  "E": 258,
+  "A": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "x0": "0x10000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 6,
+    "Y": "0x400000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 9,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x10000000000000000000000000000000000000000000000000000000000000000"
+ },
+ {
+  "n": 7,
+  "label": "rnd",
+  "w": 8,
+  "m": 4,
+  "B": 384,
+  "E": 258,
+  "A": "0xfcbf18343b1aa4fea003fff5564e484c9130c7126ac30d164b7ca20f3eba74b7",
+  "x0": "0x101a476fa00000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x40691dbf5a88e0bf"
+   },
+   {
+    "p": 3,
+    "Y": "0x40691dbf5a88e0c3ac91fa68"
+   },
+   {
+    "p": 4,
+    "Y": "0x40691dbf5a88e0c3ac91fa688bf96eb6"
+   },
+   {
+    "p": 6,
+    "Y": "0x40691dbf5a88e0c3ac91fa688bf96eb71030525c7a151d3f"
+   },
+   {
+    "p": 9,
+    "Y": "0x40691dbf5a88e0c3ac91fa688bf96eb71030525c7a151d3fadcac46fbeb418159195d59d"
+   }
+  ],
+  "x_tilde": "0x101a476fd6a23830eb247e9a22fe5badc40c14971e85474feb72b11befad06056"
+ },
+ {
+  "n": 7,
+  "label": "rnd",
+  "w": 8,
+  "m": 4,
+  "B": 384,
+  "E": 258,
+  "A": "0x86b86a733103f2296caa5f2c5f694f98b0db46b6d941f417a57e4d35281c33b4",
+  "x0": "0x160e4a9b000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x58392a6c9c7b6b44"
+   },
+   {
+    "p": 3,
+    "Y": "0x58392a6c9c7b6b467c8c25a7"
+   },
+   {
+    "p": 4,
+    "Y": "0x58392a6c9c7b6b467c8c25a72e41faa9"
+   },
+   {
+    "p": 6,
+    "Y": "0x58392a6c9c7b6b467c8c25a72e41faa9fb6e00d1df5c4bea"
+   },
+   {
+    "p": 9,
+    "Y": "0x58392a6c9c7b6b467c8c25a72e41faa9fb6e00d1df5c4beaeeddb0d49e76c98f83c4d39c"
+   }
+  ],
+  "x_tilde": "0x160e4a9b271edad19f230969cb907eaa7edb803477d712fabbb76c35279db263e"
+ },
+ {
+  "n": 31,
+  "label": "2^1982",
+  "w": 32,
+  "m": 16,
+  "B": 1536,
+  "E": 1026,
+  "A": "0x4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "x0": "0x1fffffff800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 6,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 10,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 18,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 33,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 31,
+  "label": "allones",
+  "w": 32,
+  "m": 16,
+  "B": 1536,
+  "E": 1026,
+  "A": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "x0": "0x10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 6,
+    "Y": "0x400000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 10,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 18,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 33,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+ },
+ {
+  "n": 31,
+  "label": "rnd",
+  "w": 32,
+  "m": 16,
+  "B": 1536,
+  "E": 1026,
+  "A": "0x9de51326262de96cb3a704bb7fe0d01d0639f6f3fc6558b91addd12f2ba9e789bc2726bc31a2c9706b49f8ad77cab52e86eee2dc4d5a93ca2cafd1a83a0a231b750686b76f4852954b2516f6ec8fab7836239c39bc295fb67d9dda8a3e1ba0a993f810ec5369f77f1651436f5dc8107ee7a6d6c75955918ae1eb567e9858b1fd",
+  "x0": "0x145f801b600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x517e006de2aaa0d9"
+   },
+   {
+    "p": 3,
+    "Y": "0x517e006de2aaa0dabf131b3c"
+   },
+   {
+    "p": 4,
+    "Y": "0x517e006de2aaa0dabf131b3c92ba76ac"
+   },
+   {
+    "p": 6,
+    "Y": "0x517e006de2aaa0dabf131b3c92ba76acb3e8c4a81ea3be2f"
+   },
+   {
+    "p": 10,
+    "Y": "0x517e006de2aaa0dabf131b3c92ba76acb3e8c4a81ea3be2f70bad39b42418cf976b5293470d709be"
+   },
+   {
+    "p": 18,
+    "Y": "0x517e006de2aaa0dabf131b3c92ba76acb3e8c4a81ea3be2f70bad39b42418cf976b5293470d709bef9a62bd4da0cf882c22cc9ee026f26519fc6977c44a9437a8bce6a593b160448"
+   },
+   {
+    "p": 33,
+    "Y": "0x517e006de2aaa0dabf131b3c92ba76acb3e8c4a81ea3be2f70bad39b42418cf976b5293470d709bef9a62bd4da0cf882c22cc9ee026f26519fc6977c44a9437a8bce6a593b160448b621dfdafe349144002b8c61bd9f99983ee9b2d3f1d81ffe3644b28712568416400bec225b29a81fd2a20574cbdb295ee9a89e5e10db8a528f3b293a"
+   }
+  ],
+  "x_tilde": "0x145f801b78aaa836afc4c6cf24ae9dab2cfa312a07a8ef8bdc2eb4e6d090633e5dad4a4d1c35c26fbe698af536833e20b08b327b809bc99467f1a5df112a50dea2f39a964ec581122d8877f6bf8d2451000ae3186f67e6660fba6cb4fc7607ff8d912ca1c495a1059002fb0896ca6a07f4a8815d32f6ca57ba6a27978436e294a"
+ },
+ {
+  "n": 31,
+  "label": "rnd",
+  "w": 32,
+  "m": 16,
+  "B": 1536,
+  "E": 1026,
+  "A": "0xea263028ac9cbedb3fca4b8c3acea268864fc0a05cf1f1b3d8f83fb7375d0f618ccd541f6ea410d0916aa0e4c3ba9e0099e074cfbbdbcc1bcd6f9c6c59dafbf588c1d845ffccd902677fd168ec3965d8c5ae86a47c4b0f11eda208c8604b7c1572fbf107728e4ba9485bc71ad7bc3a30d27dca0f282bb5485a4507a346fe3f4b",
+  "x0": "0x10badb80200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x42eb6e00d975abea"
+   },
+   {
+    "p": 3,
+    "Y": "0x42eb6e00d975abeb15cb9acd"
+   },
+   {
+    "p": 4,
+    "Y": "0x42eb6e00d975abeb15cb9acd78205512"
+   },
+   {
+    "p": 6,
+    "Y": "0x42eb6e00d975abeb15cb9acd78205512e7ba4186bdabcd4f"
+   },
+   {
+    "p": 10,
+    "Y": "0x42eb6e00d975abeb15cb9acd78205512e7ba4186bdabcd4fe28fb1ef72eac815074496c536514e1a"
+   },
+   {
+    "p": 18,
+    "Y": "0x42eb6e00d975abeb15cb9acd78205512e7ba4186bdabcd4fe28fb1ef72eac815074496c536514e1a2cebfaf33eba5e31175a33a973dfeb1b9e4378b3fc76beac8831f7bc72ce8bbb"
+   },
+   {
+    "p": 33,
+    "Y": "0x42eb6e00d975abeb15cb9acd78205512e7ba4186bdabcd4fe28fb1ef72eac815074496c536514e1a2cebfaf33eba5e31175a33a973dfeb1b9e4378b3fc76beac8831f7bc72ce8bbb5e60982bc17a121a4d55c1a7c7fd42151215eb305eff38e53cd3096bc015521dc30484ba0d66f63561f781373834e5519341577cc91a0fead4608c2c"
+   }
+  ],
+  "x_tilde": "0x10badb80365d6afac572e6b35e081544b9ee9061af6af353f8a3ec7bdcbab20541d125b14d9453868b3afebccfae978c45d68cea5cf7fac6e790de2cff1dafab220c7def1cb3a2eed798260af05e848693557069f1ff508544857acc17bfce394f34c25af005548770c1212e8359bd8d587de04dce0d395464d055df324683fab"
+ },
+ {
+  "n": 32,
+  "label": "2^2046",
+  "w": 33,
+  "m": 16,
+  "B": 1568,
+  "E": 1042,
+  "A": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "x0": "0x1fffffff8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 6,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 10,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 18,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 34,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 32,
+  "label": "allones",
+  "w": 33,
+  "m": 16,
+  "B": 1568,
+  "E": 1042,
+  "A": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "x0": "0x100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 6,
+    "Y": "0x400000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 10,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 18,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 34,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+ },
+ {
+  "n": 32,
+  "label": "rnd",
+  "w": 33,
+  "m": 16,
+  "B": 1568,
+  "E": 1042,
+  "A": "0x9a0fa68eb3c9fd941484ea604cc04033160a353c6681e5917183224e9abb0986e2fcce2f5d343a1910e9da82d563be83482ac28e38ba28026fb9b1c9ed16b7d8435861441604af1f2884f83f6d334d4b1db585bd20c48e24303d72e4494b1a740178745b192531254f9de3e91c3c718137c08288f2bba91f83e07e7bbebda3cf5add3bd2",
+  "x0": "0x149ffe528000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x527ff94afa1245ca"
+   },
+   {
+    "p": 3,
+    "Y": "0x527ff94afa1245ceb7ac735d"
+   },
+   {
+    "p": 4,
+    "Y": "0x527ff94afa1245ceb7ac735d158eb9cc"
+   },
+   {
+    "p": 6,
+    "Y": "0x527ff94afa1245ceb7ac735d158eb9cc168431416123c0fa"
+   },
+   {
+    "p": 10,
+    "Y": "0x527ff94afa1245ceb7ac735d158eb9cc168431416123c0fa18c2df9d38ff40313fa5aaf72523214d"
+   },
+   {
+    "p": 18,
+    "Y": "0x527ff94afa1245ceb7ac735d158eb9cc168431416123c0fa18c2df9d38ff40313fa5aaf72523214dd6e860e3b802dcb887c667eed8002866579acedc7158f1e3a1ac064222fd56de"
+   },
+   {
+    "p": 34,
+    "Y": "0x527ff94afa1245ceb7ac735d158eb9cc168431416123c0fa18c2df9d38ff40313fa5aaf72523214dd6e860e3b802dcb887c667eed8002866579acedc7158f1e3a1ac064222fd56def9268b4b9a5cea2c3f0406d4b5e4f9cbd7c8ca65f9c78f7a9f498b4f1cddf5d77c9832cb87c8692d3b0727a2c2f2132ae5c21d76e174a4a069a7de78640cf2ca"
+   }
+  ],
+  "x_tilde": "0x149ffe52be849173adeb1cd74563ae7305a10c505848f03e8630b7e74e3fd00c4fe96abdc948c85375ba1838ee00b72e21f199fbb6000a1995e6b3b71c563c78e86b019088bf55b7be49a2d2e6973a8b0fc101b52d793e72f5f232997e71e3dea7d262d3c7377d75df260cb2e1f21a4b4ec1c9e8b0bc84cab970875db85d29281a69f"
+ },
+ {
+  "n": 32,
+  "label": "rnd",
+  "w": 33,
+  "m": 16,
+  "B": 1568,
+  "E": 1042,
+  "A": "0xa3353c24d855194c34cf1355a6930e0240d31f089aea011408387cbdb68cb7ed8a197dfe00faf28acbbc91bcc169ebf2f9cbdb55f7eacda8ef41db47d16ef2fc9c2b97d337f0e236474b10b761b6a3ceea41f331106a5f5d94418c93346a0202a95ce6105c2e00cc4ef5cb1de04a3fbf576d5dc6ed34aadefae4c06bd447d1979475c3f3",
+  "x0": "0x1409e78ac000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x50279e2b9358a4b5"
+   },
+   {
+    "p": 3,
+    "Y": "0x50279e2b9358a4b6eca45a4f"
+   },
+   {
+    "p": 4,
+    "Y": "0x50279e2b9358a4b6eca45a4f4e008af9"
+   },
+   {
+    "p": 6,
+    "Y": "0x50279e2b9358a4b6eca45a4f4e008af92db7add634db1b26"
+   },
+   {
+    "p": 10,
+    "Y": "0x50279e2b9358a4b6eca45a4f4e008af92db7add634db1b2628ee6a9b2860ea359abe42a9782aa6b5"
+   },
+   {
+    "p": 18,
+    "Y": "0x50279e2b9358a4b6eca45a4f4e008af92db7add634db1b2628ee6a9b2860ea359abe42a9782aa6b519aa493eb4ddf0b55a24a32fd0184b42b8c6831070bbf0648d34164555e69be3"
+   },
+   {
+    "p": 34,
+    "Y": "0x50279e2b9358a4b6eca45a4f4e008af92db7add634db1b2628ee6a9b2860ea359abe42a9782aa6b519aa493eb4ddf0b55a24a32fd0184b42b8c6831070bbf0648d34164555e69be3dd6c498fafce46c6a5c86ff97dcb487220bde942f929dce1ddb387d909adc8309bdfa596343a702617e7d3e7b55cf3f6385ce88f2d3deddcc44abcc95a1a490f"
+   }
+  ],
+  "x_tilde": "0x1409e78ae4d6292dbb291693d38022be4b6deb758d36c6c98a3b9aa6ca183a8d66af90aa5e0aa9ad466a924fad377c2d568928cbf40612d0ae31a0c41c2efc19234d05915579a6f8f75b1263ebf391b1a9721bfe5f72d21c882f7a50be4a7738776ce1f6426b720c26f7e9658d0e9c0985f9f4f9ed573cfd8e173a23cb4f7b773112a"
+ },
+ {
+  "n": 33,
+  "label": "2^2110",
+  "w": 34,
+  "m": 17,
+  "B": 1632,
+  "E": 1090,
+  "A": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "x0": "0x1fffffff8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 5,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 7,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 11,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 19,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 35,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 33,
+  "label": "allones",
+  "w": 34,
+  "m": 17,
+  "B": 1632,
+  "E": 1090,
+  "A": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "x0": "0x100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 5,
+    "Y": "0x4000000000000000000000000000000000000000"
+   },
+   {
+    "p": 7,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 11,
+    "Y": "0x4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 19,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 35,
+    "Y": "0x4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+ },
+ {
+  "n": 33,
+  "label": "rnd",
+  "w": 34,
+  "m": 17,
+  "B": 1632,
+  "E": 1090,
+  "A": "0xe20977ea2eeb9a7662e3661f49ce3f1e8ff5403e70541bac9ca6e6171cd01f557364031a3156542b1e8ac281fa486f4a32eae68d2d34e95d81b1c6954da24021055c3d0987bbcbc2a0323a8e5bbf894ef0e094309d8f18e593c8e0d39af9c8e2c0ed68a8f7b8b41e56c9df6e4ac6a189457685b1e840431072b39cebc08d4ad7e0469a8ac586b3b4",
+  "x0": "0x1107087fa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x441c21ff1ca115ad"
+   },
+   {
+    "p": 3,
+    "Y": "0x441c21ff1ca115af772425b0"
+   },
+   {
+    "p": 4,
+    "Y": "0x441c21ff1ca115af772425b0f793497d"
+   },
+   {
+    "p": 5,
+    "Y": "0x441c21ff1ca115af772425b0f793497d590544ad"
+   },
+   {
+    "p": 7,
+    "Y": "0x441c21ff1ca115af772425b0f793497d590544ad548ebf73e3f99131"
+   },
+   {
+    "p": 11,
+    "Y": "0x441c21ff1ca115af772425b0f793497d590544ad548ebf73e3f99131899fe5c8e9fa5bb6e605dd585304ed8e"
+   },
+   {
+    "p": 19,
+    "Y": "0x441c21ff1ca115af772425b0f793497d590544ad548ebf73e3f99131899fe5c8e9fa5bb6e605dd585304ed8e68037eaa27effd70833912e84ae3d4896f7cbba5d8373a80e45c54a6d8fe808e"
+   },
+   {
+    "p": 35,
+    "Y": "0x441c21ff1ca115af772425b0f793497d590544ad548ebf73e3f99131899fe5c8e9fa5bb6e605dd585304ed8e68037eaa27effd70833912e84ae3d4896f7cbba5d8373a80e45c54a6d8fe808e7dfab4818f809d8a754c83081852e6ddc3c08b53fb8090eca18b12a4d91369a1dd69906c24de01d73f3c378c0fcbb7fd6175817f54e75b6ca7b4b82f7de47809"
+   }
+  ],
+  "x_tilde": "0x1107087fc728456bddc9096c3de4d25f5641512b5523afdcf8fe644c6267f9723a7e96edb981775614c13b639a00dfaa89fbff5c20ce44ba12b8f5225bdf2ee9760dcea039171529b63fa0239f7ead2063e027629d5320c20614b9b770f022d4fee0243b2862c4a93644da68775a641b09378075cfcf0de303f2edff585d605fd539d6db29ed2e0bd"
+ },
+ {
+  "n": 33,
+  "label": "rnd",
+  "w": 34,
+  "m": 17,
+  "B": 1632,
+  "E": 1090,
+  "A": "0xffb8719ff6b3e679a1e2c3b469390563ab7f1ffd0cedd1406ceace3d218bd687031b2dfabe9a7ad34e5745e4771bfdfa9f239811b4d0b43cf5334fa8876f0e10a02abc295363691b5a3aabc733ea75ce95738df54db64b8adfb9f050925534ddd78fdbf42698e722552bfa9dc19876924ac2dedc438a2fc1846c7347dd5eccfb42699703980fbce6",
+  "x0": "0x10023ceb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4008f3ac77dfca0c"
+   },
+   {
+    "p": 3,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc"
+   },
+   {
+    "p": 4,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8"
+   },
+   {
+    "p": 5,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8a92a927a"
+   },
+   {
+    "p": 7,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8a92a927b015ac08b271f9523"
+   },
+   {
+    "p": 11,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8a92a927b015ac08b271f95241ba91aacb37fe51bc730e2d7764095c5"
+   },
+   {
+    "p": 19,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8a92a927b015ac08b271f95241ba91aacb37fe51bc730e2d7764095c565a033f42b9c00628e04c82fc6896086a140da2ac14f84250a34d846b126eaa7"
+   },
+   {
+    "p": 35,
+    "Y": "0x4008f3ac77dfca0e0e3ccbbc224e94f8a92a927b015ac08b271f95241ba91aacb37fe51bc730e2d7764095c565a033f42b9c00628e04c82fc6896086a140da2ac14f84250a34d846b126eaa71fd41f0b8e97144bd46ace9eed18f57d79c8e040181bbd99327b6a1a6fd2ad272140ff8de5c83026877aa221051ef1ea72c276abda5180ab9e5fa7209f026e06"
+   }
+  ],
+  "x_tilde": "0x10023ceb1df7f283838f32ef0893a53e2a4aa49ec056b022c9c7e54906ea46ab2cdff946f1cc38b5dd90257159680cfd0ae70018a381320bf1a25821a850368ab053e109428d3611ac49baa9c7f507c2e3a5c512f51ab3a7bb463d5f5e7238100606ef664c9eda869bf4ab49c8503fe379720c09a1dea8884147bc7a9cb09daaf694602ae797e9c82"
+ },
+ {
+  "n": 127,
+  "label": "2^8126",
+  "w": 128,
+  "m": 64,
+  "B": 6144,
+  "E": 4098,
+  "A": "0x4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "x0": "0x1fffffff800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x7ffffffffffffff4"
+   },
+   {
+    "p": 3,
+    "Y": "0x7fffffffffffffffffffffff"
+   },
+   {
+    "p": 4,
+    "Y": "0x7fffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 6,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 10,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 18,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 34,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 66,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   },
+   {
+    "p": 129,
+    "Y": "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+   }
+  ],
+  "x_tilde": "0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+ },
+ {
+  "n": 127,
+  "label": "allones",
+  "w": 128,
+  "m": 64,
+  "B": 6144,
+  "E": 4098,
+  "A": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "x0": "0x10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4000000000000000"
+   },
+   {
+    "p": 3,
+    "Y": "0x400000000000000000000000"
+   },
+   {
+    "p": 4,
+    "Y": "0x40000000000000000000000000000000"
+   },
+   {
+    "p": 6,
+    "Y": "0x400000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 10,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 18,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 34,
+    "Y": "0x40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 66,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   },
+   {
+    "p": 129,
+    "Y": "0x400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000"
+   }
+  ],
+  "x_tilde": "0x10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+ },
+ {
+  "n": 127,
+  "label": "rnd",
+  "w": 128,
+  "m": 64,
+  "B": 6144,
+  "E": 4098,
+  "A": "0x5f25e40588f4ec78fa998fe28c41aa4c5f1496e3f4a6fc8680b75030ae25ed87875b3887edbc0c4412df55f74ec3969c9d5f2b7944ef4ea358725fba3ee2a129d00a13fa18c1d595f899c8f476a30645623c5869e95370625fd7e73093455714f318a54a7bb10ea8538511a3d125a1f46a109e79a93e239ac4d66102ef9e070629d3dda122185eb3f4f465f92d421ed1fe216fedbb6692ecf1e474e285011bdb0a9e168e8653a1951063af4908c4ed92bebb7a7cd689a3e7709604ac98c60db548f434bb1decf2f30f4a7e67bf844822a9c91ade28defa05c54d24c3ff02c4c86be302704e7f684fd2087924a6eeae9546452b5980b5253481c0a2f04250e8c6fbf6098c1fd2850689e3e1b25ce73378d3d2c60722daca581c16143cce094d096e2410435f589de51178db564d1897b6c3cae4ff7a1f41bd078d405944f2e88d251510274d7864d5345124c767f8def2019771be671288e265b09a1dadf2871e0cbfc6dcf10119e2a254b81cde4f4e792563d200b4d6cbc2017206b840ec333b8ec971633b5c3ab2566a13cc7c366fc67acb1d2d92b259e50b89a737989fb8bae674492c7bbc16ebd4ef6f53fba526221be6852b58a560bffa02246bb8db68f0853340d95a6a0e7a8b4ad935f4939617d249b610357bc15996416ed8246b5a5995fdbd357e6a4a13e713cea5f966e42f179cd83e82161450e1898adf9b37e387",
+  "x0": "0x1a3e9eb4400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x68fa7ad175490d6d"
+   },
+   {
+    "p": 3,
+    "Y": "0x68fa7ad175490d6ec154f4fb"
+   },
+   {
+    "p": 4,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e"
+   },
+   {
+    "p": 6,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba4"
+   },
+   {
+    "p": 10,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba42dbdba09d0dfd302969bc2f84e8d86c6"
+   },
+   {
+    "p": 18,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba42dbdba09d0dfd302969bc2f84e8d86c67511f895ea5fd4320030e0f539e69f13dc9b97bab52e89e50ffb3b9000f7d71c"
+   },
+   {
+    "p": 34,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba42dbdba09d0dfd302969bc2f84e8d86c67511f895ea5fd4320030e0f539e69f13dc9b97bab52e89e50ffb3b9000f7d71cbc6c5d5fff8b8635f8c82efb434acc092548ea1d21868ce4e46d6e7b79fd06024398684fb2f1b6d9734019f27413c2337ae768a3227c02f2052182366b6448df"
+   },
+   {
+    "p": 66,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba42dbdba09d0dfd302969bc2f84e8d86c67511f895ea5fd4320030e0f539e69f13dc9b97bab52e89e50ffb3b9000f7d71cbc6c5d5fff8b8635f8c82efb434acc092548ea1d21868ce4e46d6e7b79fd06024398684fb2f1b6d9734019f27413c2337ae768a3227c02f2052182366b6448dfd5f8254a922e7d311efd6c498630c2241caaa9e7a12ee548a9a76b53ad9dd0607e986d6935f9663641630c8ecc5c455fc1eec97158a7556df0e8d2749404f46aa60c81899bc11e1761457c4b655564f4db1918a846ff6aa1094015142abb83b5d7e361a8cfe79a2535df94230301f63ae37684ef7782cac40389555514d78fa5"
+   },
+   {
+    "p": 129,
+    "Y": "0x68fa7ad175490d6ec154f4fbac7d789e45f6e957cf198ba42dbdba09d0dfd302969bc2f84e8d86c67511f895ea5fd4320030e0f539e69f13dc9b97bab52e89e50ffb3b9000f7d71cbc6c5d5fff8b8635f8c82efb434acc092548ea1d21868ce4e46d6e7b79fd06024398684fb2f1b6d9734019f27413c2337ae768a3227c02f2052182366b6448dfd5f8254a922e7d311efd6c498630c2241caaa9e7a12ee548a9a76b53ad9dd0607e986d6935f9663641630c8ecc5c455fc1eec97158a7556df0e8d2749404f46aa60c81899bc11e1761457c4b655564f4db1918a846ff6aa1094015142abb83b5d7e361a8cfe79a2535df94230301f63ae37684ef7782cac40389555514d78fa5b2540ae29266f9e2b85fc41c86fb1df6e24bd090aebed861a42bedbed3a148703e8ee60f8fd1d06a38b4466fa4cb59643997549d2c4690f689d6da18b9596105d9c45fdb043c28a6b6d6ba647e4fab981d0521aeab333ff5ad5ca63997de5c38c93250627a0dd74b26e724511f90e0d6edd7d3dd371fb25655cff63cf56304366205387e1821f2687fa423ed43eab1a23b87a737a6cdcb9edda63fcac67e51df57e548af18b1adcd5db399322373970304624c80c4b0677460d5e15b16da1d3bb3dadf3be9391ba79e916ccf22177097b21df251947b9a63b87f98dbc75092563586182e677c48a40a02198e749f1e2aec1e4ca470c2165872dac5cf"
+   }
+  ],
+  "x_tilde": "0x1a3e9eb45d52435bb0553d3eeb1f5e27917dba55f3c662e90b6f6e827437f4c0a5a6f0be13a361b19d447e257a97f50c800c383d4e79a7c4f726e5eead4ba27943fecee4003df5c72f1b1757ffe2e18d7e320bbed0d2b30249523a874861a339391b5b9ede7f418090e61a13ecbc6db65cd0067c9d04f08cdeb9da28c89f00bc8148608d9ad91237f57e0952a48b9f4c47bf5b12618c3089072aaa79e84bb9522a69dad4eb6774181fa61b5a4d7e598d9058c323b3171157f07bb25c5629d55b7c3a349d25013d1aa983206266f04785d8515f12d955593d36c6462a11bfdaa8425005450aaee0ed75f8d86a33f9e6894d77e508c0c07d8eb8dda13bdde0b2b100e255554535e3e96c9502b8a499be78ae17f10721bec77db892f4242bafb618690afb6fb4e8521c0fa3b983e3f4741a8e2d119be932d6590e65d5274b11a43da275b6862e565841767117f6c10f0a29adb5ae991f93eae60741486baacccffd6b57298e65f7970e324c94189e8375d2c9b9c91447e43835bb75f4f74dc7ec959573fd8f3d58c10d98814e1f86087c9a1fe908fb50faac688ee1e9cde9b372e7b7698ff2b19f9477d5f9522bc62c6b73576ce64c88dce5c0c1189320312c19dd18357856c5b6874eecf6b7cefa4e46e9e7a45b33c885dc25ec877c94651ee698ee1fe636f1d424958d61860b99df1229028086639d27c78abb0793291c3085961"
+ },
+ {
+  "n": 127,
+  "label": "rnd",
+  "w": 128,
+  "m": 64,
+  "B": 6144,
+  "E": 4098,
+  "A": "0xada64b04bd687201369279db6e57a286cc5cb0cfa9cd6717b3a50a6a2bad555f40ee1eb26a114d77c81bed11c3230e9d10e870bf76f2180346200a77bdd5643a3f944130e4031bc2b680369e6cebd20a23332009823cc77f9a9f2f63cbe4ab0c422dc4c4cd546cd1515b3d7961b8d38eedc7b6b0744dae705bcb4795fc85fdc2311bd160713a49b2107edd6d61545efe968fd6262e9fbe18bf41cc5b246ab3b15f92b27ac124d14f76245fb84787f3b63ef3fb06146f9be372e0fbb21071378910c2f7a79a51522b438c5a801b93cca59dfa1d056acbf660ab953683495cd76279d6f231d6cc007815ab9b5c79936ff1e046f0bf7c2f79a2697ea916725c2b7ec3bbaa12e9596499f142b628a8f95c97d9e6b9634f8b055a5d5f4b0111812d22f2b96b6d305699cd062c970a82d842c76ce7b29f2c2fddcd59a085ebf2dcbf88f2c1eaf001187fbd44fd058ce573711ed039dce32bb5e6a59ff62750a2723830cfcac16f00eb6915fac1030c1ee27f9d2e2efbfa5c3398a0697653de25827fcfebce361ed94cf974794a26982cfa9863e046413c82936e017c431e00f3f81cefea8139620b1d5f2e2c97d41b29a6716fb03a53eccf45eb603a8d3238f5874df9641262d78e36f2fa6544e585431a4ac33c6122648506247bc737358d0069c915b5a6fa86ceb9e51c90278191e9e1281b72e6b954a7e3179a668b3525546dac05",
+  "x0": "0x136d481d200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "stages": [
+   {
+    "p": 2,
+    "Y": "0x4db5207529fb4c65"
+   },
+   {
+    "p": 3,
+    "Y": "0x4db5207529fb4c67ded7fbb6"
+   },
+   {
+    "p": 4,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781"
+   },
+   {
+    "p": 6,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea"
+   },
+   {
+    "p": 10,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea526cd857d27fe0ab40707ef68f7b79a0"
+   },
+   {
+    "p": 18,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea526cd857d27fe0ab40707ef68f7b79a0adf4f1f40946eb0ac5dd8d9287e47b8da141ef819db385e56965dd7f1f121188"
+   },
+   {
+    "p": 34,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea526cd857d27fe0ab40707ef68f7b79a0adf4f1f40946eb0ac5dd8d9287e47b8da141ef819db385e56965dd7f1f121188f9fa35afd0191875e764f7de32cb9f63c2f59c4e6f6f4021b50d05361ece78bf0b9dbce2dd1ae668c9ac396c2ff782ec7128e98f4904ba1e546ef3715da7a64c"
+   },
+   {
+    "p": 66,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea526cd857d27fe0ab40707ef68f7b79a0adf4f1f40946eb0ac5dd8d9287e47b8da141ef819db385e56965dd7f1f121188f9fa35afd0191875e764f7de32cb9f63c2f59c4e6f6f4021b50d05361ece78bf0b9dbce2dd1ae668c9ac396c2ff782ec7128e98f4904ba1e546ef3715da7a64c750f309a02550fd15aa2faee08e0dc0e0e78bf0cd5b2adcc81bc014dfbba1f4b64b45d2d18cf9b8a672067c76e00ab427e168dfb1a3ca95fb9b89c5d6c4385b6831c173b38bd289f662d75fd0e02a115aff2170624628a574121dbb492136a3a4393e5066361f5885ef220abffb62b10579a72d29cd97abb881091a39dec8218"
+   },
+   {
+    "p": 129,
+    "Y": "0x4db5207529fb4c67ded7fbb696b30781faf4c826d3a050ea526cd857d27fe0ab40707ef68f7b79a0adf4f1f40946eb0ac5dd8d9287e47b8da141ef819db385e56965dd7f1f121188f9fa35afd0191875e764f7de32cb9f63c2f59c4e6f6f4021b50d05361ece78bf0b9dbce2dd1ae668c9ac396c2ff782ec7128e98f4904ba1e546ef3715da7a64c750f309a02550fd15aa2faee08e0dc0e0e78bf0cd5b2adcc81bc014dfbba1f4b64b45d2d18cf9b8a672067c76e00ab427e168dfb1a3ca95fb9b89c5d6c4385b6831c173b38bd289f662d75fd0e02a115aff2170624628a574121dbb492136a3a4393e5066361f5885ef220abffb62b10579a72d29cd97abb881091a39dec8218d8e704911f4336d30763633633311723b40e92c774e3c2eaf1f1c89ac63aab8c64f8b9053a33bcfadb189b8e3fd814d6fa6d274ade164a2a320d6a16ba9254f022db8ed644ea6ee1893c27a81a8c73cf2e2d0bb9fa59336ac31485985672efc3d391765b78444c7f47c2a161cbf9cef7cf87358a80c7f55a27180d40912f3252103f51c0ead677911c6047ac0694e361ef1d7a1381c452a85939fcdf6084f0f48a2c92950a9933cf676d630f7e93d7d0eb5db2c72e234112f8ac10546af0d2f2f13781cf6e3cacba587142a45c458e648cd77df239d2851d99feabb3692c72f10f19de67cb44770af702e0350134b36b765fe524c83c7bbd06b5bd35"
+   }
+  ],
+  "x_tilde": "0x136d481d4a7ed319f7b5feeda5acc1e07ebd3209b4e8143a949b3615f49ff82ad01c1fbda3dede682b7d3c7d0251bac2b1776364a1f91ee368507be0676ce1795a59775fc7c484623e7e8d6bf406461d79d93df78cb2e7d8f0bd67139bdbd0086d43414d87b39e2fc2e76f38b746b99a326b0e5b0bfde0bb1c4a3a63d2412e87951bbcdc5769e9931d43cc26809543f456a8bebb82383703839e2fc3356cab73206f00537eee87d2d92d174b4633e6e299c819f1db802ad09f85a37ec68f2a57ee6e27175b10e16da0c705cece2f4a27d98b5d7f4380a8456bfc85c18918a295d04876ed2484da8e90e4f94198d87d6217bc882affed8ac415e69cb4a7365eaee2042468e77b20863639c12447d0cdb4c1d8d8cd8ccc45c8ed03a4b1dd38f0babc7c7226b18eaae3193e2e414e8cef3eb6c626e38ff60535be9b49d2b785928a8c835a85aea4953c08b6e3b5913a9bb8624f09ea06a31cf3cb8b42ee7e964cdab0c52166159cbbf0f4e45d96de11131fd1f0a85872fe73bdf3e1cd62a031fd5689c60350244bcc94840fd4703ab59de4471811eb01a538d87bc75e84e07114aa164e7f37d8213c3d228b24a542a64cf3d9db58c3dfa4f5f43ad76cb1cb88d044be2b04151abc34bcbc4de073db8f2b2e961c50a9171163992335df7c8e74a147667faaecda4b1cbc43c67799f2d11dc2bdc0b80d404d2cdadd97f949320f1eef4"
+ }
+]

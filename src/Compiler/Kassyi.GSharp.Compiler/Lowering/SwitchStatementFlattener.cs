@@ -12,7 +12,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// jumps to the break label at the end, and <c>goto case</c> / <c>goto default</c> jump to the label of the section
 /// that holds that case (<c>SwitchBinder.BindGotoCaseOrDefault</c>).
 /// <code>
-/// &lt;section consts&gt;
 /// { var __gsharp_switch_temp_N = &lt;expr&gt;; if (__gsharp_switch_temp_N == &lt;c&gt;) goto __gsharp_SwitchSection_N_&lt;i&gt;; ... goto &lt;default section or end&gt;; }
 /// __gsharp_SwitchSection_N_0: ; &lt;section 0&gt;
 /// ...
@@ -25,10 +24,10 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// local of the state that dispatches instead of a context field. C# requires the end of every section to be
 /// unreachable, so no section falls into the next one.
 /// <para>
-/// A const declared directly in a section is in scope in every section and in the case labels, and C# reads it without
-/// an assignment (#795). Its section starts a state of its own once flattened, so a const hoisted into the context would
-/// be assigned only on the path through its section; the consts are declared ahead of the dispatch instead, in source
-/// order (a const reads only earlier consts). Their initializers are constants, so the move changes no evaluation.
+/// A const declared directly in a section is in scope in every section and in the case labels (#795). It stays in its
+/// section here: a switch is flattened only when it holds a split point, so its body is split, and
+/// <see cref="ContextHoister"/> takes every const of a split body to the front of the state switch, where the dispatch
+/// and every section see it (<see cref="StateMachineLowerer.LiftedConstants"/>).
 /// </para>
 /// </remarks>
 internal static class SwitchStatementFlattener
@@ -53,14 +52,6 @@ internal static class SwitchStatementFlattener
     {
         var dispatch = BuildDispatch(node, id, expression, semanticModel);
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        foreach (var section in sections)
-        {
-            section
-                .AsStackEnumerable()
-                .Where(IsSectionConstant)
-                .AddTo(statements);
-        }
-
         statements.Add(dispatch.Block);
         LayOutSections(sections, dispatch, semanticModel, statements);
         statements.Add(LoweringSyntax.EmptyLabel(dispatch.EndLabel));
@@ -132,7 +123,7 @@ internal static class SwitchStatementFlattener
             : SyntaxFactory.BinaryExpression(SyntaxKind.EqualsExpression, temp, AsOperand(value.WithoutTrivia()));
     }
 
-    // <section label i>: ; <section i without its consts, jumps rewritten> ...
+    // <section label i>: ; <section i, jumps rewritten> ...
     private static void LayOutSections(ImmutableArray<SyntaxList<StatementSyntax>> sections, SwitchDispatch dispatch,
         SemanticModel? semanticModel, ImmutableArray<StatementSyntax>.Builder statements)
     {
@@ -142,19 +133,11 @@ internal static class SwitchStatementFlattener
             statements.Add(LoweringSyntax.EmptyLabel(dispatch.SectionLabels[i]));
             foreach (var statement in sections[i])
             {
-                if (IsSectionConstant(statement))
-                {
-                    continue;
-                }
-
                 statements.Add(jumps.Visit(statement) as StatementSyntax
                                ?? throw new InvalidOperationException("Switch flattening removed a statement."));
             }
         }
     }
-
-    private static bool IsSectionConstant(StatementSyntax statement) =>
-        statement is LocalDeclarationStatementSyntax { IsConst: true };
 
     // A case value that is not a primary expression is parenthesized, so that == compares the whole value
     private static ExpressionSyntax AsOperand(ExpressionSyntax value) =>

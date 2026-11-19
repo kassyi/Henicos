@@ -197,7 +197,6 @@ GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles;
 __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal;
 int __gsharp_id_4_particleCount;
 int __gsharp_id_5_unrollFactor;
-float __gsharp_id_6_Gravity;
 int __gsharp_id_7_tx;
 int __gsharp_id_8_ty;
 int __gsharp_id_9_tz;
@@ -234,13 +233,13 @@ __gsharp_ctx->__gsharp_id_3_largeStructVal=__gsharp_in___gsharp_id_3_largeStruct
 __gsharp_ctx->__gsharp_id_4_particleCount=__gsharp_in___gsharp_id_4_particleCount;
 __gsharp_ctx->__gsharp_id_5_unrollFactor=__gsharp_in___gsharp_id_5_unrollFactor;
 }
+float __gsharp_id_6_Gravity = 9.8f;
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 (*__gsharp_id_2_successFlag)=false;
-__gsharp_ctx->__gsharp_id_6_Gravity=9.8f;
 __gsharp_ctx->__gsharp_id_7_tx=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_8_ty=(int)threadIdx.y;
 __gsharp_ctx->__gsharp_id_9_tz=(int)threadIdx.z;
@@ -276,7 +275,7 @@ if(__gsharp_ctx->__gsharp_id_29_i==1)
 {
 continue;
 }
-__gsharp_ctx->__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_28_mag,__gsharp_ctx->__gsharp_id_23_p.__gsharp_mb_X*__gsharp_ctx->__gsharp_id_29_i+__gsharp_ctx->__gsharp_id_6_Gravity);
+__gsharp_ctx->__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_28_mag,__gsharp_ctx->__gsharp_id_23_p.__gsharp_mb_X*__gsharp_ctx->__gsharp_id_29_i+__gsharp_id_6_Gravity);
 }
 if(!__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(__gsharp_ctx->__gsharp_id_28_mag))
 {
@@ -459,7 +458,6 @@ public global::DebugReduc.PhysicsVector[] particles;
 public global::DebugReduc.SpecTypes largeStructVal;
 public int particleCount;
 public int unrollFactor;
-public float Gravity;
 public int tx;
 public int ty;
 public int tz;
@@ -499,12 +497,12 @@ __gsharp_ctx->particleCount = __gsharp_in_particleCount;
 __gsharp_ctx->unrollFactor = __gsharp_in_unrollFactor;
 }
 {
+const float Gravity = 9.8f; // Triggers const evaluation in C++
 switch (__gsharp_ctx->__gsharp_state)
 {
 case 0:
 {
 successFlag = false;
-__gsharp_ctx->Gravity = 9.8f;
 __gsharp_ctx->tx = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx->ty = global::Kassyi.GSharp.Core.ThreadIndex.Y;
 __gsharp_ctx->tz = global::Kassyi.GSharp.Core.ThreadIndex.Z;
@@ -538,7 +536,7 @@ for (__gsharp_ctx->i = 0; __gsharp_ctx->i < __gsharp_ctx->unrollFactor; __gsharp
 {
 if (__gsharp_ctx->i == 1)
 continue;
-__gsharp_ctx->mag = (float)global::System.Math.Max(__gsharp_ctx->mag, __gsharp_ctx->p.X * __gsharp_ctx->i + __gsharp_ctx->Gravity);
+__gsharp_ctx->mag = (float)global::System.Math.Max(__gsharp_ctx->mag, __gsharp_ctx->p.X * __gsharp_ctx->i + Gravity);
 }
 
 if (!global::DebugReduc.ComprehensiveSpecKernel.IsPositive(__gsharp_ctx->mag))

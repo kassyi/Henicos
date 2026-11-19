@@ -78,11 +78,23 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.DuplicateAotContextName,
-                duplicate.Locations.Length > 0 ? duplicate.Locations[0] : Location.None,
+                GetDeclarationLocation(duplicate, type),
                 kept.GetFullyQualifiedCsharpName(),
                 duplicate.GetFullyQualifiedCsharpName(),
                 name,
                 type.Name);
         }
     }
+
+    // The declaration of the struct, of the value of a Nullable<T> (the BCL declares Nullable<T> itself), or else of
+    // the kernel class, so that the diagnostic has a place in the user's source
+    private static Location GetDeclarationLocation(INamedTypeSymbol duplicate, INamedTypeSymbol kernelClass) =>
+        FirstSourceLocation(duplicate.UnwrapNullable()) ??
+        FirstSourceLocation(kernelClass) ??
+        Location.None;
+
+    private static Location? FirstSourceLocation(ISymbol symbol) =>
+        symbol.Locations
+            .AsStackEnumerable()
+            .FirstOrDefault(static location => location.IsInSource);
 }

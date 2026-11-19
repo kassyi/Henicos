@@ -450,6 +450,17 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     internal GpuBigUInt AsBorrowed() => new(Workspace, Handle.Borrow());
 
     /// <summary>
+    /// Returns a view of <paramref name="numWords"/> words of this value from word <paramref name="wordOffset"/> that
+    /// does not own the buffer; disposing the view does nothing.
+    /// </summary>
+    /// <param name="wordOffset">The first word of the view.</param>
+    /// <param name="numWords">The number of words of the view.</param>
+    /// <returns>A borrowed <see cref="GpuBigUInt"/>, valid while this value is not disposed.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range is not inside this value.</exception>
+    internal GpuBigUInt BorrowWords(int wordOffset, int numWords) =>
+        Handle.Slice(wordOffset, numWords).AsBorrowedBigUInt(Workspace);
+
+    /// <summary>
     /// Determines whether the value of this instance is 0 (zero).
     /// </summary>
     /// <returns><see langword="true"/> if all limb words equal 0; otherwise, <see langword="false"/>.</returns>

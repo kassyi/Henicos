@@ -49,6 +49,13 @@
 #else
 #define __GSHARP_COLD
 #endif
+#if defined(_MSC_VER)
+#define GSHARP_EXPORT_INLINE inline
+#elif defined(__GNUC__) || defined(__clang__)
+#define GSHARP_EXPORT_INLINE inline __attribute__((used))
+#else
+#define GSHARP_EXPORT_INLINE inline
+#endif
 #define __shared__
 #if defined(_MSC_VER)
 #define __restrict__ __restrict

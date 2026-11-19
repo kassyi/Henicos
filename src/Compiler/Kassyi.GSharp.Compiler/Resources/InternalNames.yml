@@ -86,6 +86,21 @@ ManagedVersion:
     # (__gsharp_bind(receiver, global::Type.__gsharp_managed_F), #940).
     Bind: { Value: __gsharp_bind, Managed: ManagedGpuContext.Bind.cs }
 
+StackModel:
+  Summary: >-
+    The managed stack model: a kernel or device function that reaches a block barrier gets a stack form, its body as
+    written, which each GPU thread runs on a stack of its own.
+  Names:
+    # Followed by the body of the function's name (GlobalCppNames.GetKernelDerivedName).
+    MethodPrefix: __gsharp_stackmodel_
+    # The nested class that holds the [UnsafeAccessor] stub through which a stack form calls a target it cannot name
+    # (ManagedAccessorSet): followed by the body of the function's name and a counter
+    # (__gsharp_stackaccessor_<path>_<n>). A prefix of its own, so that the stubs of a function's stack form and of its
+    # managed version never share a name.
+    AccessorPrefix: __gsharp_stackaccessor_
+    # The block barrier of a stack form: the GPU thread waits in it until the scheduler runs it again.
+    BlockBarrier: { Value: __gsharp_stack_block_barrier, Managed: ManagedGpuContext.Stack.cs }
+
 DynamicSharedMemory:
   Summary: >-
     The placement of dynamic SharedMemory<T> declarations (CUDA). A kernel that reaches one owns a per-thread table of
@@ -108,6 +123,10 @@ Lowering:
     # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
+    # The receiver of a null-conditional access that the managed copy writes as a pattern variable, so that an extension
+    # method called on one of its bindings is the static call the semantic model chose:
+    # r is { } <name> ? M(<name>[i]) : ...
+    ConditionalReceiverPrefix: __gsharp_cond_receiver_
     # The governing value of a switch statement that lowering flattens because a section holds a split point
     # (SwitchStatementFlattener); its labels are __gsharp_SwitchSection_<id>_<section> and __gsharp_SwitchEnd_<id>
     SwitchTempPrefix: __gsharp_switch_temp_
@@ -168,6 +187,10 @@ Lowering:
     # (__gsharp_localfn_<ordinal>_<name>); the state machine writes the local functions of the body in front of its
     # switch, where sibling scopes of the source meet. The C++ output names local functions by symbol instead
     ManagedLocalFunctionPrefix: __gsharp_localfn_
+    # A const of a split body whose name another declaration of the body also has, in the managed output
+    # (__gsharp_const_<ordinal>_<name>); the state machine writes the consts of the body in front of its switch, where
+    # sibling scopes of the source meet. The C++ output names locals by symbol instead
+    ManagedConstPrefix: __gsharp_const_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
@@ -359,6 +382,8 @@ Prelude:
     # The array that a C# array read (Length, an element, foreach) goes through: a null array fails with
     # NullReferenceException on every build; declared by ErrorChannel.hpp and the CUDA prelude
     ArrayRef: { Value: __gsharp_array_ref, Prelude: ErrorChannel.hpp }
+    # The ArraySegment<T> of a foreach: a default one has no array and fails with InvalidOperationException
+    SegmentRef: { Value: __gsharp_segment_ref, Prelude: ErrorChannel.hpp }
     # The array a StackLinq query starts from: a null array fails with ArgumentNullException (source)
     SourceArgument: { Value: __gsharp_source_argument, Prelude: ErrorChannel.hpp }
     # An element of such an array, checked after the array and the index are evaluated (C# order)
@@ -565,7 +590,7 @@ IntegerSemantics:
     ConvertToInt64: { Value: __gsharp_to_i64, Prelude: IntegerSemantics.hpp }
     ConvertToUInt64: { Value: __gsharp_to_u64, Prelude: IntegerSemantics.hpp }
     # x / y and x % y where y may be 0 (DivideByZeroException on every build), or -1 for a
-    # dividend that may be MinValue (the GPU result, which x86 idiv would turn into a hardware exception)
+    # dividend that may be MinValue (the GPU result, which x86 idiv traps on and nvcc folds as UB)
     DivideInt32: { Value: __gsharp_div_i32, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     DivideInt64: { Value: __gsharp_div_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     DivideUInt32: { Value: __gsharp_div_u32, Prelude: IntegerDivision.hpp }
@@ -602,3 +627,18 @@ IntegerSemantics:
     RemainderPropertyStore: { Value: __gsharp_rem_property_store, Managed: ManagedGpuContext.IntegerDivision.cs }
     DividePropertyStoreOf: { Value: __gsharp_div_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderPropertyStoreOf: { Value: __gsharp_rem_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
+
+NativeStack:
+  Summary: Per-thread native stacks (GSharpNativeBarrierModel=Stack).
+  Names:
+    Barrier: { Value: __gsharp_stack_barrier, Prelude: StackThreads.hpp }
+    Resume: { Value: __gsharp_stack_resume, Prelude: StackThreads.hpp }
+    BlockType: { Value: __gsharp_stack_block, Prelude: StackThreads.hpp }
+    PoolType: { Value: __gsharp_stack_pool, Prelude: StackThreads.hpp }
+    ThreadType: { Value: __gsharp_stack_thread, Prelude: StackThreads.hpp }
+    ThreadLimit: { Value: __gsharp_stack_thread_limit, Prelude: StackThreads.hpp }
+    CaptureFp: { Value: __gsharp_stack_capture_fp, Prelude: StackThreads.hpp }
+    Body: __gsharp_stack_body
+    Fp: __gsharp_stack_fp
+    Stacks: __gsharp_stack_stacks
+    Block: __gsharp_stack

@@ -79,7 +79,8 @@ internal sealed class CppReservedIdentifierRule :
         }
 
         var structType = UnwrapElementType(type);
-        if (TryFindReservedMember(structType, depth: 0, out var memberPath))
+        using var visits = StructVisits.Start();
+        if (TryFindReservedMember(structType, visits, out var memberPath))
         {
             context.ReportDiagnostic(GSharpDiagnostics.DoubleUnderscoreIdentifier, declaration.GetLocation(),
                 $"{structType.Name}.{memberPath}");
@@ -107,13 +108,16 @@ internal sealed class CppReservedIdentifierRule :
 
     // [WHY] Struct definitions are emitted once per kernel and dialect, so reporting at the declaration site that
     // pulls the struct into GPU code avoids duplicate diagnostics and keeps host-only structs unaffected.
-    private static bool TryFindReservedMember(ITypeSymbol type, int depth, [NotNullWhen(true)] out string? memberPath)
+    // [WHY] Each struct is searched once (visits), also a struct that holds itself (CS0523) or arrays of itself
+    // several times; a larger construction of a generic struct that names itself stops there
+    // (GrowingGenericStructs), so the search ends without a depth bound, which would cut off what lies below a
+    // struct first met deep in the tree
+    private static bool TryFindReservedMember(ITypeSymbol type, StructVisits visits,
+        [NotNullWhen(true)] out string? memberPath)
     {
-        // Value-type fields cannot form cycles; the bound only guards self-referencing array fields.
-        const int MaxDepth = 8;
-
         memberPath = null;
-        if (depth > MaxDepth || !TypeLayoutCalculator.IsUserStruct(type) || type is not INamedTypeSymbol structType)
+        if (!TypeLayoutCalculator.IsUserStruct(type) || type is not INamedTypeSymbol structType ||
+            !visits.TryVisit(structType))
         {
             return false;
         }
@@ -127,7 +131,7 @@ internal sealed class CppReservedIdentifierRule :
                 return true;
             }
 
-            if (TryFindReservedMember(UnwrapElementType(member.Type), depth + 1, out var nestedPath))
+            if (TryFindReservedMember(UnwrapElementType(member.Type), visits, out var nestedPath))
             {
                 memberPath = $"{member.Name}.{nestedPath}";
                 return true;

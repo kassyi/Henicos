@@ -48,7 +48,7 @@ internal static class PropertyAccessorCall
     public static bool WritesBackingField(ExpressionSyntax expression, ref TranspileContext context) =>
         WritesBackingField(
             expression,
-            GetTargetSymbol(IntegerSemanticsEmitter.Unparenthesize(expression), context.Query.SemanticModel),
+            GetTargetSymbol(expression.UnwrapParentheses(), context.Query.SemanticModel),
             context.Emitter.Dialect
         );
 
@@ -209,7 +209,7 @@ internal static class PropertyAccessorCall
     /// The property that the target <paramref name="target"/> of an assignment or a step names, if any.
     /// </summary>
     public static IPropertySymbol? GetTargetProperty(ExpressionSyntax target, SemanticModel model) =>
-        GetTargetSymbol(IntegerSemanticsEmitter.Unparenthesize(target), model) as IPropertySymbol;
+        GetTargetSymbol(target.UnwrapParentheses(), model) as IPropertySymbol;
 
     private static ISymbol? GetTargetSymbol(ExpressionSyntax left, SemanticModel model) =>
         left is MemberAccessExpressionSyntax memberAccess

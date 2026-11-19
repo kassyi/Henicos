@@ -58,7 +58,7 @@ internal sealed partial class ManagedExecutionRewriter(
             _nextUnrollId = FindNextUnrollId(node);
         }
 
-        return base.Visit(node);
+        return ManagedSegmentSource.Rewrite(node, base.Visit(node));
     }
 
     // A loop that PreLoweringExpander made of a barrier-bearing ForUnroll already uses these names. Its variable lives
@@ -550,14 +550,19 @@ internal sealed partial class ManagedExecutionRewriter(
     public override SyntaxNode? VisitInterpolation(InterpolationSyntax node) =>
         ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));
 
+    // A void local function or lambda whose expression body is a null-conditional access that calls an extension
+    // method on a binding gets a block body (ManagedConditionalAccessWriter)
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
-        VisitNestedCallable(node, base.VisitLocalFunctionStatement);
+        ConditionalAccessWriter.VisitCallable(node, callable =>
+            VisitNestedCallable((LocalFunctionStatementSyntax)callable, base.VisitLocalFunctionStatement));
 
     public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
-        VisitNestedCallable(node, base.VisitSimpleLambdaExpression);
+        ConditionalAccessWriter.VisitCallable(node, callable =>
+            VisitNestedCallable((SimpleLambdaExpressionSyntax)callable, base.VisitSimpleLambdaExpression));
 
     public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
-        VisitNestedCallable(node, base.VisitParenthesizedLambdaExpression);
+        ConditionalAccessWriter.VisitCallable(node, callable => VisitNestedCallable(
+            (ParenthesizedLambdaExpressionSyntax)callable, base.VisitParenthesizedLambdaExpression));
 
     public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitAnonymousMethodExpression);

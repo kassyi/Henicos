@@ -202,17 +202,41 @@ internal static class ManagedCSharpTranspiler
             throw new ArgumentException("Only a device function that needs a managed version has one.", nameof(plan));
         }
 
+        return GenerateCopy(in plan, methodSymbol, GSharpInternalNames.ManagedVersion.MethodPrefix,
+            ManagedBodyKind.ManagedVersion);
+    }
+
+    /// <summary>
+    /// Emits the stack form of a kernel or a device function that reaches a block barrier: a static method with the
+    /// user's parameters, named <c>__gsharp_stackmodel_&lt;path&gt;</c>, whose body is the user's body after the
+    /// managed rewrites (<see cref="ManagedExecutionRewriter"/>). The body is not lowered: each GPU thread runs it on a
+    /// stack of its own and waits inside the barrier.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="plan"/> has no symbol or no body.
+    /// </exception>
+    public static string GenerateStackForm(in MethodEmissionPlan plan)
+    {
+        if (plan.Symbol is not { } methodSymbol ||
+            (plan.Declaration.Body is null && plan.Declaration.ExpressionBody is null))
+        {
+            throw new ArgumentException("A stack form requires a method symbol with a body.", nameof(plan));
+        }
+
+        return GenerateCopy(in plan, methodSymbol, GSharpInternalNames.StackModel.MethodPrefix,
+            ManagedBodyKind.StackBody);
+    }
+
+    private static string GenerateCopy(in MethodEmissionPlan plan, IMethodSymbol methodSymbol, string prefix,
+        ManagedBodyKind bodyKind)
+    {
         var declaration = plan.Declaration;
         var semanticModel = plan.SemanticModel;
-        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation);
-        var rewriter = new ManagedExecutionRewriter(semanticModel, ManagedBodyKind.ManagedVersion, accessors);
+        var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation,
+            isStackForm: bodyKind == ManagedBodyKind.StackBody);
+        var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors);
 
-        // <node> without Stryker's switches when the compilation is mutated (#1191), rewritten for managed execution
-        T RewriteBody<T>(T node) where T : SyntaxNode =>
-            rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
-            ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
-
-        // <modifiers> static <return type> __gsharp_managed_<path><type parameters>(<parameters>) <constraints> <body>
+        // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
         // directives), without attributes (the version is not a device function) and without 'this'
         var method = declaration
@@ -221,13 +245,11 @@ internal static class ManagedCSharpTranspiler
             .WithReturnType(ManagedNameQualifier.Qualify(declaration.ReturnType, semanticModel))
             .WithExplicitInterfaceSpecifier(null)
             .WithIdentifier(SyntaxFactory.Identifier(
-                GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.MethodPrefix, methodSymbol)))
+                GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol)))
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
             .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
-            .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel))
-            .WithBody(declaration.Body is { } body ? RewriteBody(body) : null)
-            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody ? RewriteBody(expressionBody) : null)
-            .WithoutTrivia();
+            .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel));
+        method = WriteBody(method, declaration, rewriter, semanticModel).WithoutTrivia();
 
         using var writer = new SourceWriter();
         writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
@@ -236,6 +258,28 @@ internal static class ManagedCSharpTranspiler
         accessors.WriteTo(writer);
         ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
+    }
+
+    // The body of the copy: the user's body or expression body rewritten for managed execution, without Stryker's
+    // switches when the compilation is mutated (#1191). A void expression body that is a null-conditional access
+    // calling an extension method on a binding is a block body: its access is written as a statement on the receiver
+    // in a pattern variable (ManagedConditionalAccess)
+    private static MethodDeclarationSyntax WriteBody(MethodDeclarationSyntax method,
+        MethodDeclarationSyntax declaration, ManagedExecutionRewriter rewriter, SemanticModel semanticModel)
+    {
+        if (declaration.ExpressionBody is { } arrow &&
+            rewriter.TryRewriteBody(MutantSwitchRemover.Remove(arrow, semanticModel)) is { } accessBody)
+        {
+            return method.WithExpressionBody(null).WithSemicolonToken(default).WithBody(accessBody);
+        }
+
+        return method
+            .WithBody(declaration.Body is { } body ? Rewrite(body) : null)
+            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody ? Rewrite(expressionBody) : null);
+
+        T Rewrite<T>(T node) where T : SyntaxNode =>
+            rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
+            ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
     }
 
     // The user's accessibility, static, and unsafe when the version needs it (the partial declaration that holds it is
@@ -311,12 +355,22 @@ internal static class ManagedCSharpTranspiler
     }
 
     // The source of the state machine body: the lowered body rewritten for managed execution, or only a throw when the
-    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own
+    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own, or the body is not
+    // written when it holds a goto to an inner chained label from another state (GSH0121)
     private static string CreateBody(LoweredStateMachine lowered,
         Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
+        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The analyzer and the generator report
+        // it as an error (GSH0121, or GSH0040 across a barrier; ChainedLabelJumpChecks.FindReported), so the build
+        // never runs this method: the declarations stay for the launcher and the callers, and the
+        // body that the managed path cannot express is left out (no throw in place of the jump)
+        if (!lowered.GotosToChainedLabelsAcrossStates.IsEmpty)
+        {
+            return string.Empty;
+        }
+
         if (lowered.HeldRefLocals is [var heldRefLocal, ..])
         {
             return ManagedContextFields.CreateHeldRefLocalThrow(methodName, heldRefLocal.Declarator);

@@ -16,7 +16,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <summary>
     /// Reports <see cref="SuspendingExtensionCall"/> and returns <see langword="true"/> when <paramref name="extension"/>
     /// reaches a barrier: a suspending call passes its frame after the arguments of the static call (lowering, both
-    /// dialects alike), which the reduced form does not have.
+    /// dialects alike), which the reduced form does not have. Only a call is decided here (GSH0003); a reduced
+    /// extension method group without a call is GSH0062 (<c>SuspendingCallReference.FailIfReferencedWithoutCall</c>).
     /// </summary>
     internal static bool FailIfSuspendingExtension(SyntaxNode node, IMethodSymbol extension, ref TranspileContext context)
     {
@@ -51,6 +52,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 return;
             }
 
+            // Before the custom rules, which write the warp intrinsics
+            StructMemberSuspendingCall.FailIfInStructMember(node, symbol, ref context);
             if (TryTranspileCustomInvocation(node, symbol, ref context))
             {
                 return;
@@ -93,15 +96,14 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
+        // [WHY] Unsupported targets are all static, so there is no receiver expression.
         if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
             return;
         }
 
         StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
-        var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
-                               !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
-                               symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
+        var convertArguments = CallTargetClassifier.ConvertsArguments(symbol, context.Emitter.Dialect);
         var checks = PlanArgumentChecks(symbol, node.ArgumentList.Arguments, ref context);
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);

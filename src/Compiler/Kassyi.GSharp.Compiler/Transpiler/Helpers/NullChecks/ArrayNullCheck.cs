@@ -28,8 +28,8 @@ internal static class ArrayNullCheck
     /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
     public const string MessagePrefix = SiteMessage + PlaceSeparator;
 
-    // The trap kind of the site ID, which tells the site apart from another trap at the same place
-    private const string TrapKind = "ArrayNull";
+    /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
+    internal const string TrapKind = "ArrayNull";
 
     // The trap kind of the check of the array a StackLinq query starts from
     private const string LinqSourceTrapKind = "LinqSourceNull";
@@ -66,8 +66,13 @@ internal static class ArrayNullCheck
         }
 
         // A host static member, which GSH0065 reports
-        return semanticModel.GetSymbol(expression) is not IFieldSymbol { IsStatic: true };
+        return !IsHostStaticField(semanticModel.GetSymbol(expression));
     }
+
+    /// <summary>
+    /// Whether <paramref name="symbol"/> is a static field (a host static member, which GSH0065 reports).
+    /// </summary>
+    internal static bool IsHostStaticField(ISymbol? symbol) => symbol is IFieldSymbol { IsStatic: true };
 
     /// <summary>
     /// Writes <paramref name="receiver"/> for a read: <c>__gsharp_array_ref(&lt;receiver&gt;, "&lt;message&gt;")</c> when
@@ -229,25 +234,48 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>
-    /// Writes <paramref name="expression"/> through the check when lowering marked it
-    /// (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>, the source of a lowered <c>foreach</c>), with the
-    /// place the annotation carries.
+    /// Writes <paramref name="expression"/> through the check when lowering marked it, the source of a lowered
+    /// <c>foreach</c>: the null check of an array (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>) or
+    /// the check of a default segment (<see cref="LoweringAnnotations.SegmentCheckAnnotationKind"/>), with the place
+    /// the annotation carries.
     /// </summary>
     /// <returns><see langword="false"/>, writing nothing, when the expression carries no such annotation.</returns>
-    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context)
+    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context) =>
+        TryAppendMarkedCheck(expression, s_arrayNullCheck, ref context) ||
+        TryAppendMarkedCheck(expression, s_segmentCheck, ref context);
+
+    // A check that lowering puts on the source of a foreach: the annotation kind that marks the source, the Prelude
+    // helper the source goes through, and the text and trap kind of its error site
+    private readonly record struct AnnotatedCheck(string Kind, string Helper, string Message, string TrapKind);
+
+    private static readonly AnnotatedCheck s_arrayNullCheck = new(
+        LoweringAnnotations.ArrayNullCheckAnnotationKind,
+        GSharpInternalNames.Prelude.ArrayRef,
+        SiteMessage,
+        TrapKind);
+
+    private static readonly AnnotatedCheck s_segmentCheck = new(
+        LoweringAnnotations.SegmentCheckAnnotationKind,
+        GSharpInternalNames.Prelude.SegmentRef,
+        SegmentCheck.SiteMessage,
+        SegmentCheck.TrapKind);
+
+    private static bool TryAppendMarkedCheck(ExpressionSyntax expression, in AnnotatedCheck check,
+        ref TranspileContext context)
     {
-        if (!expression.HasAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        if (!expression.HasAnnotations(check.Kind))
         {
             return false;
         }
 
-        foreach (var annotation in expression.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        foreach (var annotation in expression.GetAnnotations(check.Kind))
         {
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
-                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                var receiver = expression.WithoutAnnotations(check.Kind);
+                var site = PlanSite(receiver, place, check.Message, check.TrapKind, ref context);
+                AppendHelperCall(check.Helper, receiver, site, ref context);
                 return true;
             }
         }
@@ -348,7 +376,7 @@ internal static class ArrayNullCheck
             return new NullCheckSite(0u, message + PlaceSeparator + (place ?? SourcePlace.Format(location)));
         }
 
-        var memberName = GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
+        var memberName = ErrorSiteTable.GetSourceMemberName(location, compilation) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
 
@@ -366,7 +394,7 @@ internal static class ArrayNullCheck
         }
 
         var location = model.GetReportLocation(node);
-        var memberName = GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
+        var memberName = ErrorSiteTable.GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
 
@@ -374,26 +402,6 @@ internal static class ArrayNullCheck
     internal static NullCheckSite PlanReadSite(Location location, Compilation compilation, ErrorSiteTable? table,
         string? currentMemberName) =>
         PlanSite(location, null, SiteMessage, TrapKind, compilation, table, currentMemberName);
-
-    // The method that holds the receiver in the user's source, past lambdas and local functions.
-    // [WHY] A member function of a struct (Dispose of a using) is emitted once per kernel that uses it, into one guarded
-    // definition of the module, so its site must be the same entry for every kernel: named after the kernel, two kernels
-    // would give one site ID two entries (GSH0103)
-    private static string? GetSourceMemberName(Location location, Compilation compilation)
-    {
-        if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
-        {
-            return null;
-        }
-
-        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
-        return symbol is IMethodSymbol method ? method.Name : null;
-    }
 
     /// <summary>Writes <c>&lt;site&gt;u</c> for a registered site, otherwise the message as a string literal.</summary>
     internal static void AppendSite(SourceWriter writer, NullCheckSite site)

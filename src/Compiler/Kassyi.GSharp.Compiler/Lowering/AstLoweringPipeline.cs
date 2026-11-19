@@ -83,7 +83,8 @@ public static class AstLoweringPipeline
 
         var lowerer = new StateMachineLowerer(isDeviceFunction, bodyModel, statePlan)
         {
-            MovedLocalFunctions = hoister.HasSplitPoint ? movedFunctions.Functions : []
+            MovedLocalFunctions = hoister.HasSplitPoint ? movedFunctions.Functions : [],
+            LiftedConstants = hoister.LiftedConstants
         };
         lowerer.ReserveWarpSites(reconvergence?.RegionCount ?? 0);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
@@ -99,7 +100,8 @@ public static class AstLoweringPipeline
         };
         return lowered with
         {
-            SpansAcrossStates = SpanAcrossStates.Find(lowered, bodyModel, body.Parent as MethodDeclarationSyntax)
+            SpansAcrossStates = SpanAcrossStates.Find(lowered, bodyModel, body.Parent as MethodDeclarationSyntax),
+            GotosToChainedLabelsAcrossStates = statePlan.GotosToChainedLabelsAcrossStates
         };
     }
 
@@ -276,8 +278,10 @@ public static class AstLoweringPipeline
 
     // Maps the span of each call that splits the state machine to its annotation: a call to a device function that
     // suspends (whether its callee returns a value), or a synchronization intrinsic that splits the state machine,
-    // decided by symbol however the call is spelled (#503). Lambda bodies are included: PreLoweringExpander decides with
-    // the annotations whether a Gpu.ForUnroll body holds a split point. Without a semantic model nothing is annotated.
+    // decided by symbol however the call is spelled (#503). Lambda bodies that the lowering inlines are included
+    // (Gpu.ForUnroll, Gpu.SyncGrid(body), and a Gpu.GridStrideLoop body for a warp shuffle); a call to a suspending
+    // device function where the state machine cannot split (SplitPointPlacement) is left without an annotation, so the
+    // output builds and the analyzer reports it (GSH0062). Without a semantic model nothing is annotated.
     private static Dictionary<TextSpan, SyntaxAnnotation> CollectSplitPoints(SyntaxNode body, SemanticModel? bodyModel)
     {
         var splitPoints = new Dictionary<TextSpan, SyntaxAnnotation>();
@@ -292,7 +296,11 @@ public static class AstLoweringPipeline
                 bodyModel.GetSymbol(invocation) is IMethodSymbol callee &&
                 ClassifySplitPoint(callee, bodyModel.Compilation) is { } annotation)
             {
-                splitPoints[invocation.Span] = annotation;
+                if (annotation.Kind != LoweringAnnotations.SuspendingCallAnnotationKind ||
+                    SplitPointPlacement.FindUnsupportedContext(invocation, bodyModel, isWarpShuffle: false) == null)
+                {
+                    splitPoints[invocation.Span] = annotation;
+                }
             }
         }
 

@@ -2,7 +2,6 @@
 // generic keys, build/test split via PluginHost, MSBuild node limits, QueuedRun wire keys & JOB_QUEUE_PLUGINS=0,
 // and classify / shortName / api helpers.
 
-import type * as Assert from "node:assert";
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -15,13 +14,12 @@ import { loadConfig } from "../../config.ts";
 import { commandKeys, pathArguments, type KeyContext } from "../../estimate-key.ts";
 import { RunHistory } from "../../history.ts";
 import { resolvePlaces } from "../../path-places.ts";
-import type { StepKeys } from "../../plugin-api.ts";
+import type { AssertModule, StepKeys } from "../../plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../../plugin-host.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../../self-test-client.ts";
 import { resolveWorktree } from "../../system.ts";
+import { shortCommand } from "../../view.ts";
 import dotnetPlugin, { isDotnetTest, selectsCategory } from "./plugin.ts";
-
-type AssertModule = typeof Assert;
 
 const Cpu = "tests/Compiler/App.Cpu";
 const Cuda = "tests/Compiler/App.Cuda";
@@ -356,6 +354,21 @@ function checkDotnetEstimateAndPlaces(assert: AssertModule, host: PluginHost): v
     shape: "dotnet",
     kind: "dotnet",
   });
+  assert.deepStrictEqual(commandKeys(`dotnet build ${Cpu}`, Windows), {
+    normalized: `dotnet build ${Cpu}`,
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(commandKeys(`dotnet test ${Cpu} -c Release`, Windows), {
+    normalized: `dotnet test ${Cpu} -c Release`,
+    shape: "dotnet",
+    kind: "dotnet",
+  });
+  assert.deepStrictEqual(commandKeys("dotnet run --project tools/x", Windows), {
+    normalized: "dotnet run --project tools/x",
+    shape: "dotnet",
+    kind: "dotnet",
+  });
 
   // Moved from estimate-place-checks.ts (pathArguments)
   assert.deepStrictEqual(pathArguments("Push-Location tests; dotnet build Compiler/App.Cpu; node x.js", Main, host), [
@@ -593,11 +606,26 @@ function checkPrepareCommand(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(prepared.command, expected, input);
     assert.strictEqual(prepared.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:6");
     assert.strictEqual(prepared.note, "6 MSBuild nodes");
+    // RequestCores follows the grant with or without -m, build/test/run alike: nodes executing + cores granted <= 6
+    assert.strictEqual(prepared.env.MSBUILDCORELIMIT, "6", input);
+    assert.strictEqual(prepared.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100", input);
+  }
+  // A value the caller exported is kept; the other one is still set
+  const exported = { ...ctx, env: { MSBUILDCORELIMIT: "2" } };
+  const kept = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 6, nested: false }, exported);
+  assert.strictEqual(kept.env.MSBUILDCORELIMIT, undefined, "exported MSBUILDCORELIMIT is not overridden");
+  assert.strictEqual(kept.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
+  // Any command gets the bound, so a script that starts dotnet itself passes it on
+  for (const input of ["node scripts/human/test-stability.js --count 3", "echo hi"]) {
+    const other = host.prepareCommand(input, { jobId: 1, cpus: 6, nested: false }, ctx);
+    assert.strictEqual(other.env.MSBUILDCORELIMIT, "6", input);
+    assert.strictEqual(other.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100", input);
   }
   const zero = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 0, nested: false }, ctx);
   assert.strictEqual(zero.command, "dotnet build X");
   assert.strictEqual(zero.note, undefined);
   assert.strictEqual(zero.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, undefined);
+  assert.strictEqual(zero.env.MSBUILDCORELIMIT, undefined);
 }
 
 /** QueuedRun + FakeScheduler + FakeHost: request/adopt keys, MSBuild args/note, and JOB_QUEUE_PLUGINS=0 omission. */
@@ -641,6 +669,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("granted command starts", () => fakeHost.commands.length === 1);
       assert.strictEqual(fakeHost.commands[0]?.command, `dotnet build -m:3 ${Cpu} -c Release`);
       assert.strictEqual(fakeHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:3");
+      assert.strictEqual(fakeHost.commands[0]?.env.MSBUILDCORELIMIT, "3");
       assert.ok(
         notices.some((n) => n.includes("(weight 1, 3 MSBuild nodes)")),
         "grant line uses MSBuild nodes note",
@@ -701,6 +730,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("disabled command starts", () => noPlugHost.commands.length === 1);
       assert.strictEqual(noPlugHost.commands[0]?.command, command, "JOB_QUEUE_PLUGINS=0 leaves -m out");
       assert.strictEqual(noPlugHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, undefined);
+      assert.strictEqual(noPlugHost.commands[0]?.env.MSBUILDCORELIMIT, undefined);
       assert.ok(
         noPlugNotices.some((n) => n.includes("(weight 1, 3 cpus)")),
         "disabled grant line falls back to cpus",
@@ -743,6 +773,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("nested build starts", () => nestedHost.commands.length === 1);
       assert.strictEqual(nestedHost.commands[0]?.command, "dotnet build -m:4 P");
       assert.strictEqual(nestedHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:4");
+      assert.strictEqual(nestedHost.commands[0]?.env.MSBUILDCORELIMIT, "4");
       nestedHost.commands[0]?.end({ code: 0, signaled: false });
       assert.strictEqual(await pending, 0);
     } finally {
@@ -794,6 +825,11 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   assert.strictEqual(dotnetPlugin.shortName("just test", "just test"), undefined);
   assert.strictEqual(dotnetPlugin.shortName("dotnet", "dotnet"), undefined);
   assert.strictEqual(dotnetPlugin.shortName("-nodeReuse:false", "-nodeReuse:false"), undefined);
+  // Without plugins, core generic stripping keeps dotnet and -nodeReuse:false
+  assert.strictEqual(
+    shortCommand("CI=true dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu -nodeReuse:false > a.log"),
+    "dotnet test Kassyi.GSharp.Tests.Cpu -nodeReuse:false",
+  );
 
   assert.strictEqual(isDotnetTest("dotnet test X"), true);
   assert.strictEqual(isDotnetTest("dotnet build X"), false);
@@ -834,7 +870,7 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   }
 }
 
-export async function checkDotnetPlugin(assert: AssertModule): Promise<void> {
+export async function checks(assert: AssertModule): Promise<void> {
   const configWarnings: string[] = [];
   const loaded = loadConfig({
     mode: "status",

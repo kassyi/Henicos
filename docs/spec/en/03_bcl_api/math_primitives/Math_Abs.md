@@ -30,6 +30,7 @@ Returns the absolute value of a specified number.
 | [Abs(long)](#abs-long) | Returns the absolute value of a 64-bit signed integer. |
 | [Abs(short)](#abs-short) | Returns the absolute value of a 16-bit signed integer. |
 | [Abs(sbyte)](#abs-sbyte) | Returns the absolute value of an 8-bit signed integer. |
+| [Abs(nint)](#abs-nint) | Returns the absolute value of a native-sized signed integer. |
 
 ## Abs(float)
 
@@ -168,6 +169,31 @@ The absolute value of `value`.
 
 `OverflowException`<br>
 `value` is `sbyte.MinValue`. Every path throws it, the release CUDA build included, as for `Abs(int)`.
+
+<a id="abs-nint"></a>
+
+## Abs(nint)
+
+Returns the absolute value of a native-sized signed integer.
+
+```csharp
+public static nint Abs(nint value);
+```
+
+#### Parameters
+
+`value` <i>nint</i><br>
+A native-sized signed integer.
+
+#### Returns
+
+<i>nint</i><br>
+The absolute value of `value`.
+
+#### Exceptions
+
+`OverflowException`<br>
+`value` is `nint.MinValue`. Every path throws it, the release CUDA build included, as for `Abs(int)`.
 
 ## Examples
 

@@ -3,14 +3,19 @@
 // Wrapper and runner program rules for check-queued-command.js: Start-Process, Invoke-Expression, wsl, shell
 // wrappers (cmd /c, pwsh -Command, bash -c), and programs/variables that run another command in their arguments.
 //
-// Usage: require('./rules/wrappers.js').wrapperRules({ nestedReason, segmentReason }, project) returns
-// { shellWrappers, runners } where each entry is { matches(program, reader), reason(reader, program) }.
+// Usage: require('./rules/wrappers.js').wrapperRules({ nestedReason, segmentReason }, { runners, runnerTargets })
+// returns { shellWrappers, runners } where each entry is { matches(program, reader), reason(reader, program) }.
 
 const { createReader, programName } = require('../shell-reader.js');
 
-/** Builds the shell wrapper and runner rule handlers with injected callbacks and repository config. */
-function wrapperRules({ nestedReason, segmentReason }, project) {
-  const { runners, runnerTargets } = project;
+const DefaultRunners = ['valgrind', 'strace', 'ltrace', 'drmemory', 'perf', 'gdb', 'lldb', 'procdump'];
+const DefaultRunnerTargets = ['node'];
+
+/** Builds the shell wrapper and runner rule handlers with injected callbacks and runner lists. */
+function wrapperRules(
+  { nestedReason, segmentReason },
+  { runners = DefaultRunners, runnerTargets = DefaultRunnerTargets } = {},
+) {
   const startProcess = {
     matches: ({ name }) => name === 'start-process' || name === 'saps',
     reason: (reader, { list }) => nestedReason(reader.startProcessCommand(list), reader),
@@ -48,7 +53,7 @@ function wrapperRules({ nestedReason, segmentReason }, project) {
   };
 
   // A program that runs the command given in its arguments (a sanitizer, tracer or profiler, or a program held in a
-  // variable): compute-sanitizer --tool memcheck dotnet test, "$CS" --log-file x dotnet test
+  // variable): valgrind --tool memcheck buildtool test, "$RUNNER" --log-file x buildtool test
   const runner = {
     matches: ({ name, list }) => runners.includes(name) || /^["']?\$/.test(list[0]),
     reason: (reader, { list }) => {
@@ -70,4 +75,4 @@ function wrapperRules({ nestedReason, segmentReason }, project) {
   };
 }
 
-module.exports = { wrapperRules };
+module.exports = { DefaultRunners, DefaultRunnerTargets, wrapperRules };

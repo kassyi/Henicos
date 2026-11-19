@@ -32,7 +32,8 @@ internal static class CooperativeMegaKernelLauncher
         GpuBigUInt resultBuffer,
         int marginWords,
         int actualBits,
-        int iterations)
+        int iterations,
+        bool correctsToFloor)
     {
         var n = targetOperand.NumWords;
         var marginBits = marginWords * 32;
@@ -67,6 +68,7 @@ internal static class CooperativeMegaKernelLauncher
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
             iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
         ctx.CorrectionStatus = workspace.CorrectionStatusProxy;
+        ctx.Dimensions.SkipsFloorCorrection = !correctsToFloor;
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
@@ -95,7 +97,7 @@ internal static class CooperativeMegaKernelLauncher
             out var gridDim,
             out var sharedMemBytes);
 
-        // 2^(targetBits + 1), as wide as the product so that ExecuteSub reads no word past the end.
+        // 2^(targetBits + 1), at least as wide as the product so subtraction reads no word past the end.
         using var constant = CreateBitRunConstant(workspace, n + 2 * resultWords, lowestBit: targetBits + 1,
             bitCount: 1);
 

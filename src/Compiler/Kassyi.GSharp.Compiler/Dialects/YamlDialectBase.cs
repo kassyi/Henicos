@@ -299,10 +299,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
 
-        if (typeSymbol.IsSharedMemoryType() && typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
+        if (typeSymbol.IsSharedMemoryType())
         {
-            AppendType(ref context, namedType.TypeArguments[0]);
-            context.Emitter.Writer.Append("*");
+            SharedMemoryStorageType.Append(ref context, typeSymbol);
         }
         else if (isArray)
         {

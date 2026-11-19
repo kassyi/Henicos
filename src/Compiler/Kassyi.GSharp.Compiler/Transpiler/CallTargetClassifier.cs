@@ -9,15 +9,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// intrinsic that the dialect declares it does not implement is a warning (GSH0054) and a runtime failure.
 /// An invocation that binds to no method is decided by <see cref="ClassifyUntyped"/>.
 /// </summary>
-/// <remarks>
-/// [WHY] A closed list, as Roslyn binds every name before it generates code and ComputeSharp accepts only intrinsics
-/// and methods with source: the standard call emission writes the C# name of the callee, which no dialect defines for a
-/// method it does not map, and the native build would fail without a location in the user's source. The transpiler
-/// fails the calls that reach the standard emission from this plan, and the analyzer (<c>CallTargetRule</c>) reports
-/// GSH0109 from the same plan for the project's dialect, so the decision exists once. The rules that write a call
-/// before the standard emission are classified here as well, by the test each rule claims its calls with, so that the
-/// analyzer, which sees the calls as written, does not report them.
-/// </remarks>
+/// <remarks>[WHY] A closed list; see <see cref="ClassifyMethod"/> and <see cref="Classify"/>.</remarks>
 internal static class CallTargetClassifier
 {
     /// <summary>The reason given for a static method without the attribute.</summary>
@@ -50,17 +42,22 @@ internal static class CallTargetClassifier
         "); make it a static [GpuDeviceFunction] method that takes the struct as a parameter";
 
     /// <summary>
-    /// What <paramref name="call"/> of <paramref name="called"/> calls in <paramref name="dialect"/>: an invocation, or
-    /// a method group that device code names (<see cref="IsMethodGroup"/>), in the tree of <paramref name="model"/> or
-    /// a lowered copy of it.
+    /// Classifies a call from symbol and tree information alone, returning <see langword="null"/> when syntax-specific
+    /// rules (<see cref="Classify"/>) are needed.
     /// </summary>
-    public static CallTargetPlan Classify(IMethodSymbol called, SyntaxNode call, SemanticModel model,
+    /// <remarks>
+    /// [WHY] A closed list, as Roslyn binds every name before it generates code and ComputeSharp accepts only
+    /// intrinsics and methods with source: the standard call emission writes the C# name of the callee, which no
+    /// dialect defines for a method it does not map, and the native build would fail without a location in the user's
+    /// source. The transpiler fails the calls that reach the standard emission from this plan, and the analyzer
+    /// (<c>CallTargetRule</c>) reports GSH0109 from the same plan for the project's dialect, so the decision exists
+    /// once. The rules that write a call before the standard emission are classified here as well, by the test each
+    /// rule claims its calls with, so that the analyzer, which sees the calls as written, does not report them.
+    /// </remarks>
+    internal static CallTargetPlan? ClassifyMethod(IMethodSymbol called, SyntaxTree? userTree, Compilation compilation,
         ITranspilerDialect dialect)
     {
-        // [WHY] A call copied into a lowered tree (an inlined iterator or foreach body, a state machine) is decided as
-        // well, on the file it was written in, which its original-span annotation names; a call that lowering
-        // synthesized has no written call to report
-        if (RemovedCalls.GetUserTree(call, model) is not { } userTree)
+        if (userTree is null)
         {
             return new CallTargetPlan(CallTargetKind.Synthesized);
         }
@@ -81,7 +78,7 @@ internal static class CallTargetClassifier
             return new CallTargetPlan(CallTargetKind.Removed);
         }
 
-        if (GetMappedKind(called, method, model.Compilation, dialect) is { } mapped)
+        if (GetMappedKind(called, method, compilation, dialect) is { } mapped)
         {
             // [WHY] The native API YAML declares the intrinsics a dialect cannot reproduce (mbarrier, WMMA on the CPU):
             // the dialect's prelude does not define them, so the call becomes a runtime failure
@@ -90,6 +87,27 @@ internal static class CallTargetClassifier
                 : new CallTargetPlan(mapped);
         }
 
+        return null;
+    }
+
+    /// <summary>
+    /// What <paramref name="call"/> of <paramref name="called"/> calls in <paramref name="dialect"/>: an invocation, or
+    /// a method group that device code names (<see cref="IsMethodGroup"/>), in the tree of <paramref name="model"/> or
+    /// a lowered copy of it.
+    /// </summary>
+    public static CallTargetPlan Classify(IMethodSymbol called, SyntaxNode call, SemanticModel model,
+        ITranspilerDialect dialect)
+    {
+        // [WHY] A call copied into a lowered tree (an inlined iterator or foreach body, a state machine) is decided as
+        // well, on the file it was written in, which its original-span annotation names; a call that lowering
+        // synthesized has no written call to report
+        var userTree = RemovedCalls.GetUserTree(call, model);
+        if (ClassifyMethod(called, userTree, model.Compilation, dialect) is { } plan)
+        {
+            return plan;
+        }
+
+        var method = (called.ReducedFrom ?? called).OriginalDefinition;
         if (GpuMacroClassifier.Classify(method) is { Kind: not GpuMacroKind.None } macro)
         {
             return MacroCallTarget.Classify(macro, method, call);
@@ -111,6 +129,37 @@ internal static class CallTargetClassifier
         }
 
         return Unmapped(method, dialect, GetAlternativeDetail(method, model.Compilation, dialect));
+    }
+
+    /// <summary>
+    /// Whether standard call emission converts primitive arguments of <paramref name="symbol"/> to their parameter
+    /// types under <paramref name="dialect"/>.
+    /// </summary>
+    internal static bool ConvertsArguments(IMethodSymbol symbol, ITranspilerDialect dialect) =>
+        dialect.TryMapIntrinsic(symbol, out _) &&
+        !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
+        symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
+
+    /// <summary>
+    /// Which category of <c>TranspilerRuleRegistry.InvocationRules</c> claims a call of <paramref name="called"/> (a
+    /// superset of the rules that match syntax).
+    /// </summary>
+    internal static InvocationRuleClaim ClaimOf(IMethodSymbol called, bool isMemberAccessCall, Compilation compilation)
+    {
+        if (BclIntrinsicMapBuilder.GetOrBuildMap(compilation).ContainsKey(called.OriginalDefinition))
+        {
+            return InvocationRuleClaim.BclIntrinsicMap;
+        }
+
+        var method = (called.ReducedFrom ?? called).OriginalDefinition;
+        if (GpuMacroClassifier.Classify(method).Kind != GpuMacroKind.None ||
+            MathAbsTranspilerRule.Claims(method) ||
+            IsClaimedBySymbol(called, method, isMemberAccessCall))
+        {
+            return InvocationRuleClaim.Other;
+        }
+
+        return InvocationRuleClaim.None;
     }
 
     /// <summary>
@@ -154,6 +203,15 @@ internal static class CallTargetClassifier
             : UnboundCall;
         return new CallTargetPlan(CallTargetKind.Unbound, Detail: detail);
     }
+
+    /// <summary>
+    /// Whether <paramref name="reference"/> (a method name or its enclosing member access) is the target of an
+    /// invocation expression (<c>F(...)</c> or <c>T.F(...)</c>).
+    /// </summary>
+    public static bool IsCalledReference(ExpressionSyntax reference) =>
+        (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
+        (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
+         access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
 
     /// <summary>
     /// Whether <paramref name="node"/> names a method without calling it (<c>U.F</c>, <c>F</c>), outside
@@ -221,9 +279,13 @@ internal static class CallTargetClassifier
     // The calls that a rule of the transpiler writes before the standard emission (TranspilerRuleRegistry), each by
     // the test the rule claims its calls with
     private static bool IsClaimedByRule(IMethodSymbol called, IMethodSymbol method, SyntaxNode call) =>
+        IsClaimedBySymbol(called, method,
+            call is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax });
+
+    private static bool IsClaimedBySymbol(IMethodSymbol called, IMethodSymbol method, bool isMemberAccessCall) =>
         StackLinqHelper.IsStackLinqMethod(method) ||
         SpanWriteClassifier.ClassifyMethod(called) != SpanMemberKind.None ||
-        (call is InvocationExpressionSyntax invocation && NullableGetValueOrDefaultRule.Claims(invocation, method));
+        NullableGetValueOrDefaultRule.Claims(method, isMemberAccessCall);
 
     private static string GetUnemittedReason(IMethodSymbol method)
     {

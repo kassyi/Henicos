@@ -117,6 +117,25 @@ internal sealed class ErrorSiteTable
     }
 
     /// <summary>
+    /// Resolves the enclosing source method name for <paramref name="location"/> within
+    /// <paramref name="compilation"/>, unwrapping anonymous and local functions to their enclosing member.
+    /// </summary>
+    // [WHY] A member function of a struct (such as Dispose of a using or a constructor) is emitted once per kernel that
+    // uses it into one guarded definition of the module, so its site must be the same entry for every kernel: named
+    // after the kernel, two kernels would give one site ID two entries (GSH0103).
+    public static string? GetSourceMemberName(Location location, Compilation compilation)
+    {
+        if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
+        {
+            return null;
+        }
+
+        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start)
+            .GetDeclaringMember();
+        return symbol is IMethodSymbol method ? method.Name : null;
+    }
+
+    /// <summary>
     /// Creates an <see cref="ErrorSiteEntry"/> from a syntax node and semantic model, at the location
     /// <see cref="SemanticModelExtensions.GetReportLocation"/> gives.
     /// </summary>
@@ -125,8 +144,14 @@ internal sealed class ErrorSiteTable
         SemanticModel? semanticModel,
         string memberName,
         string defaultMessage,
-        string trapKind = "") =>
-        CreateSite(semanticModel?.GetReportLocation(node) ?? Location.None, memberName, defaultMessage, trapKind);
+        string trapKind = "")
+    {
+        var location = semanticModel?.GetReportLocation(node) ?? Location.None;
+        var sourceMemberName = semanticModel is not null
+            ? GetSourceMemberName(location, semanticModel.Compilation) ?? memberName
+            : memberName;
+        return CreateSite(location, sourceMemberName, defaultMessage, trapKind);
+    }
 
     /// <summary>
     /// Aggregates error sites across all kernels in a module, deduplicating identical entries
@@ -169,4 +194,43 @@ internal sealed class ErrorSiteTable
     /// </summary>
     public static void AppendTrapSiteCall(SourceWriter writer, string errorCodeEnumMember, uint siteId) =>
         writer.Append($"{GSharpInternalNames.Prelude.TrapSite}(GSharpErrorCode::{errorCodeEnumMember}, {siteId}u)");
+
+    /// <summary>
+    /// Merges <paramref name="additions"/> into <paramref name="existing"/>, preserving order and deduplicating by
+    /// <see cref="ErrorSiteEntry.SiteId"/>.
+    /// </summary>
+    public static EquatableArray<ErrorSiteEntry> MergeSites(
+        EquatableArray<ErrorSiteEntry> existing,
+        EquatableArray<ErrorSiteEntry> additions)
+    {
+        if (additions.IsDefaultOrEmpty)
+        {
+            return existing;
+        }
+
+        if (existing.IsDefaultOrEmpty)
+        {
+            return additions;
+        }
+
+        var seen = new HashSet<uint>();
+        var builder = ImmutableArray.CreateBuilder<ErrorSiteEntry>(existing.Length + additions.Length);
+        foreach (var site in existing)
+        {
+            if (seen.Add(site.SiteId))
+            {
+                builder.Add(site);
+            }
+        }
+
+        foreach (var site in additions)
+        {
+            if (seen.Add(site.SiteId))
+            {
+                builder.Add(site);
+            }
+        }
+
+        return builder.ToImmutable().AsEquatableArray();
+    }
 }

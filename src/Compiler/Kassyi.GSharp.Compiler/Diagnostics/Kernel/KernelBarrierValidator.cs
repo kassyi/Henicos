@@ -14,7 +14,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// <para>
 /// The checks are classes by responsibility: the constructs checked or collected node by node
 /// (<see cref="KernelConstructChecks"/>), where a barrier stands (<see cref="BarrierDivergenceChecks"/>), what must not
-/// cross a barrier (<see cref="CrossBarrierChecks"/>) and the shape of a device iterator (<see cref="DeviceIteratorChecks"/>).
+/// cross a barrier (<see cref="CrossBarrierChecks"/>), the shape of a device iterator
+/// (<see cref="DeviceIteratorChecks"/>) and the jumps that the CPU state machine cannot lower
+/// (<see cref="ReconvergenceJumpChecks"/>, <see cref="ChainedLabelJumpChecks"/>).
 /// The <c>ISyntaxValidationRule&lt;T&gt;</c> registry is not used for the prohibitions: it runs on kernels only, while
 /// this validator also runs on device functions that suspend.
 /// </para>
@@ -49,14 +51,18 @@ internal readonly ref struct KernelBarrierValidator(
         // _scan.Barriers
         ReconvergenceJumpChecks.Validate(_scan);
 
-        // 5. Barriers that only some of the threads reach (GSH0037), on the control flow graph
+        // 5. Gotos to the inner label of chained labels from another state of the CPU state machine (GSH0121), from the
+        // lowering's own list; before the barrier early return for the same reason as step 4
+        ChainedLabelJumpChecks.Validate(_scan);
+
+        // 6. Barriers that only some of the threads reach (GSH0037), on the control flow graph
         BarrierDivergenceChecks.ValidateDivergentBarriers(_scan);
         if (_scan.Barriers.Count == 0)
         {
             return;
         }
 
-        // 6. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
+        // 7. The rules about barriers in local functions (GSH0045) and jumps across them (GSH0040)
         CrossBarrierChecks.ValidateRecursiveLocalFunctions(_scan);
         CrossBarrierChecks.ValidateCrossBarrierGotos(_scan);
     }

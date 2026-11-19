@@ -25,4 +25,9 @@ public struct DimensionContext
     public int TargetBits;
     /// <summary>The total number of bits.</summary>
     public int NumBits;
+    /// <summary>
+    /// Whether the inverse square root kernel skips the correction of its Newton-Raphson result to the exact floor and
+    /// leaves a result a few units below it. The default (<see langword="false"/>) gives the exact floor.
+    /// </summary>
+    public bool SkipsFloorCorrection;
 }

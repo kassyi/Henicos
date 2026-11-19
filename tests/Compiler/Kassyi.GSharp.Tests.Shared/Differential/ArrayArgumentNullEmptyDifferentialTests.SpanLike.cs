@@ -29,13 +29,24 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
                 yield return Create(nameof(K.MemoryKernel), valueName, read,
                     (o, s) => K.LaunchMemoryKernel(
                         new Memory<int>(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
-                if (read == R.Length)
-                {
-                    yield return Create(nameof(K.SegmentKernel), valueName, read,
-                        (o, s) => K.LaunchSegmentKernel(
-                            Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
-                }
             }
+
+            foreach (var read in (R[])[R.Length, R.ForEach])
+            {
+                yield return Create(nameof(K.SegmentKernel), valueName, read,
+                    (o, s) => K.LaunchSegmentKernel(
+                        Segment(Array()), read, o, gridDimX: s.GridX, blockDimX: s.BlockX));
+            }
+
+            yield return Create(nameof(K.SegmentForEachBarrierKernel), valueName, R.ForEach,
+                (o, s) => K.LaunchSegmentForEachBarrierKernel(
+                    Segment(Array()), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => SegmentForEachModel(Segment(Array()), o));
+
+            yield return Create(nameof(K.ImmutableForEachBarrierKernel), valueName, R.ForEach,
+                (o, s) => K.LaunchImmutableForEachBarrierKernel(
+                    Immutable(Array()), o, gridDimX: s.GridX, blockDimX: s.BlockX),
+                o => ImmutableForEachModel(Immutable(Array()), o));
 
             foreach (var read in (R[])[R.IsNull, R.Length, R.Element, R.ForEach, R.IsEmpty, R.IsDefault,
                          R.IsDefaultOrEmpty, R.DefaultLiteral])
@@ -118,6 +129,28 @@ public sealed partial class ArrayArgumentNullEmptyDifferentialTests
             yield return Create(nameof(K.TwoNullableMemoryKernel), "Second" + valueName, R.Length,
                 (o, s) => K.LaunchTwoNullableMemoryKernel(
                     null, create(), o, gridDimX: s.GridX, blockDimX: s.BlockX));
+        }
+    }
+
+    // The body of SegmentForEachBarrierKernel for its one thread without the barrier, which the C# execution cannot
+    // run: a default segment throws InvalidOperationException when the loop starts
+    private static void SegmentForEachModel(ArraySegment<int> g, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in g)
+        {
+            o[0] += v + 1;
+        }
+    }
+
+    // The body of ImmutableForEachBarrierKernel for its one thread without the barrier: a default ImmutableArray<T>
+    // throws NullReferenceException when the loop starts
+    private static void ImmutableForEachModel(ImmutableArray<int> g, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in g)
+        {
+            o[0] += v + 1;
         }
     }
 

@@ -16,7 +16,10 @@ internal sealed class VectorDivByUInt32Expression(
     {
         if (divisor == 0)
         {
-            throw new DivideByZeroException();
+            // Under a scope the zero divisor of element 0 is recorded and no element is computed: the output is zero
+            PendingThrows.RecordOrThrow(0, new DivideByZeroException());
+            RecordedTail.Clear(workspace, destination, 0, evalCount);
+            return;
         }
 
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);

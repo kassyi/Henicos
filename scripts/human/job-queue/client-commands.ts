@@ -26,6 +26,7 @@ function formatJob(job: StatusJob, now: number): string {
   const flags = [
     job.gpu ? " gpu" : "",
     job.gpuTurn ? " gpu-turn" : "",
+    job.share === "shared" ? " shared" : "",
     job.memoryMb ? ` ${gigabytes(job.memoryMb)}GB` : "",
     job.orphan ? " client-lost" : "",
     job.pin != null ? " pinned" : "",

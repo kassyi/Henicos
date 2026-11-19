@@ -57,6 +57,13 @@ public const string Source = @"#include <cmath>
 #else
 #define __GSHARP_COLD
 #endif
+#if defined(_MSC_VER)
+#define GSHARP_EXPORT_INLINE inline
+#elif defined(__GNUC__) || defined(__clang__)
+#define GSHARP_EXPORT_INLINE inline __attribute__((used))
+#else
+#define GSHARP_EXPORT_INLINE inline
+#endif
 #define __shared__
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
@@ -444,6 +451,8 @@ struct Kassyi_GSharp_Core_SharedMemory {
 T* data;
 inline T& operator[](int index) { return data[index]; }
 inline const T& operator[](int index) const { return data[index]; }
+// The frame of a state machine keeps a SharedMemory<T> local, which a device function result or a copy assigns
+inline Kassyi_GSharp_Core_SharedMemory<T>& operator=(T* pointer) { data = pointer; return *this; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
@@ -508,6 +517,13 @@ __forceinline__ int __popc(uint32_t value) { return (int)__popcnt(value); }
 __forceinline__ int __popcll(uint64_t value) { return (int)__popcnt64(value); }
 __forceinline__ int __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)(31 - index) : 32; }
 __forceinline__ int __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)(63 - index) : 64; }
+// BitOperations.RoundUpToPowerOf2: 0 for 0 and for values above the largest power of two, as .NET (see Prelude.cu)
+__forceinline__ uint32_t __gsharp_round_up_pow2_32(uint32_t value) {
+int shift = 32 - __gsharp_lzc_32(value - 1u); return shift < 32 ? 1u << shift : 0u;
+}
+__forceinline__ uint64_t __gsharp_round_up_pow2_64(uint64_t value) {
+int shift = 64 - __gsharp_lzc_64(value - 1ull); return shift < 64 ? 1ull << shift : 0ull;
+}
 __forceinline__ int __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? (int)index : 32; }
 __forceinline__ int __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? (int)index : 64; }
 __forceinline__ int __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)index : 0; }
@@ -789,6 +805,27 @@ s.hi = (long long)((unsigned long long)a.hi + (unsigned long long)b.hi + (s.lo <
 return s;
 }
 
+// Math.Max / Math.Min / Math.Sign of the integer types other than int. The C# overload returns the narrow type:
+// `var m = Math.Max(b1, b2)` is a byte, and `ref m` must be a pointer to one. CUDA's max(int, int) would give an int.
+// The arguments are already converted to the parameter type, so T is deduced from both.
+template <typename T> __device__ __forceinline__ T __gsharp_max_int(T a, T b) { return b > a ? b : a; }
+template <typename T> __device__ __forceinline__ T __gsharp_min_int(T a, T b) { return b < a ? b : a; }
+template <typename T> __device__ __forceinline__ int __gsharp_sign_int(T a) { return (int)(a > 0) - (int)(a < 0); }
+
+// BitOperations.IsPow2: the signed forms test v > 0 first and subtract in the unsigned type: MinValue - 1 is undefined
+// in C++. The nint form receives the unsigned long long cast that every native-sized BitOperations call gets
+// (BclIntrinsicMapBuilder), converted back to long long, which keeps the bits.
+__device__ __forceinline__ bool __gsharp_is_pow2_i32(int v) {
+return v > 0 && ((unsigned int)v & ((unsigned int)v - 1u)) == 0u;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u32(unsigned int v) { return v != 0u && (v & (v - 1u)) == 0u; }
+__device__ __forceinline__ bool __gsharp_is_pow2_i64(long long v) {
+return v > 0 && ((unsigned long long)v & ((unsigned long long)v - 1ull)) == 0ull;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u64(unsigned long long v) {
+return v != 0ull && (v & (v - 1ull)) == 0ull;
+}
+
 // --- Runtime Error Channel (CPU Dialect) ---
 inline thread_local uint3 threadIdx;
 inline thread_local uint3 blockIdx;
@@ -895,7 +932,7 @@ message = text;
 inline thread_local GSharpErrorSlot __gsharp_host_last_error;
 inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
 
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error(const char** outMessage) {
 int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
 if (c != 0) {
 if (outMessage != nullptr) {
@@ -906,7 +943,7 @@ __gsharp_host_last_error.Reset();
 return c;
 }
 
-extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error_details(
 const char** outMessage,
 uint32_t* outSiteId,
 uint32_t* outThreadLinear,
@@ -1081,6 +1118,18 @@ __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 return static_cast<A&&>(array);
 }
 
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// (""The underlying array is null."") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_segment_ref(A&& segment, S site)
+{
+if (segment.data == nullptr)
+{
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, site);
+}
+return static_cast<A&&>(segment);
+}
+
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
 // as the C# method throws ArgumentNullException (""source""). The place is as for __gsharp_array_ref
 template <typename A, typename S>
@@ -1140,8 +1189,8 @@ inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
 // unspecified value. Every build tests the divisor, the release CUDA build included (semantics charter §2, §4); the
 // failing thread stops (the native step ends; a CUDA thread records the error and exits on sm_70 and later).
 // MinValue / -1 and MinValue % -1 are implementation-defined in an unchecked C# context (§12.10.3); G# follows the GPU,
-// which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, so the native build tests
-// -1 as well; nvcc's division gives that result as it is.
+// which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, and nvcc treats the
+// division as undefined behavior and folds a constant MinValue / -1 to 0, so every build tests -1 before it divides.
 // The transpiler calls these only where the divisor may be 0 (or -1, for a dividend that may be MinValue). The place is
 // the site of the kernel's error site table (unsigned int) or, in a device function, a message that names it.
 // [WHY] On CUDA the failure is written inline (__gsharp_inline_trap, as for a null array read): a call of the noinline
@@ -1158,33 +1207,25 @@ do { if ((divisor) == 0) { __gsharp_trap_abort(GSharpErrorCode::DivideByZero, si
 template <typename S>
 __device__ __forceinline__ int __gsharp_div_i32(int a, int b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return __gsharp_neg_i32(a); }
-#endif
 return a / b;
 }
 template <typename S>
 __device__ __forceinline__ int __gsharp_rem_i32(int a, int b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return 0; }
-#endif
 return a % b;
 }
 template <typename S>
 __device__ __forceinline__ long long __gsharp_div_i64(long long a, long long b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return __gsharp_neg_i64(a); }
-#endif
 return a / b;
 }
 template <typename S>
 __device__ __forceinline__ long long __gsharp_rem_i64(long long a, long long b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return 0; }
-#endif
 return a % b;
 }
 template <typename S>
@@ -1245,7 +1286,9 @@ return static_cast<signed char>(a < 0 ? -a : a);
 #undef __GSHARP_DIVISOR_CHECK
 
 // --- Thread & Block State ---
-extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
+extern ""C"" __declspec(dllexport) GSHARP_EXPORT_INLINE void __gsharp_set_thread_idx(
+uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz,
+uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
 threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
 blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
 blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;

@@ -11,6 +11,11 @@ internal sealed partial class ManagedExecutionRewriter
             return special;
         }
 
+        if (ConditionalAccessWriter.TryVisitStatement(node) is { } conditional)
+        {
+            return conditional;
+        }
+
         // c = a + b; with an operator macro becomes the call of its target (#711)
         if (node.Expression is AssignmentExpressionSyntax assignment &&
             ManagedRewriteClassifier.TryGetOperatorMacro(assignment, semanticModel, out var macro) &&
@@ -452,8 +457,8 @@ internal sealed partial class ManagedExecutionRewriter
             return LoweringSyntax.Goto(singleThreadEnd).WithTriviaFrom(node);
         }
 
-        // A managed version returns as the user's method does
-        if (bodyKind == ManagedBodyKind.ManagedVersion)
+        // A managed version or stack-form body returns as the user's method does
+        if (bodyKind is ManagedBodyKind.ManagedVersion or ManagedBodyKind.StackBody)
         {
             return base.VisitReturnStatement(node);
         }

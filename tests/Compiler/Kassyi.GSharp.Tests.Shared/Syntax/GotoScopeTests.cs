@@ -174,4 +174,19 @@ public class GotoScopeTests : TranspilerTestBase
             expectedFirst
         );
     }
+
+    [SkippableTheory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(0, 10)]
+    [InlineData(1, 4)]
+    public void Goto_NativeOverSharedMemoryAlias_SplitsThePointerDeclaration(int flag, int expectedFirst)
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        GotoScopeScenarios.Run(
+            s_runNative,
+            static (data, f) => GotoScopeKernels.LaunchGotoOverSharedMemoryAliasKernel(data, f, blockDimX: 1),
+            flag,
+            expectedFirst
+        );
+    }
 }

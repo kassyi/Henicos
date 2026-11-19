@@ -128,14 +128,16 @@ internal sealed class LocalFunctionOrder
         WriteGroup(_statements, group, ref context);
     }
 
-    // auto <impl> = [&](auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
-    // auto <name> = [&](<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
+    // auto <impl> = <capture>(auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
+    // auto <name> = <capture>(<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
     private static void WriteGroup(IReadOnlyList<StatementSyntax> statements, IReadOnlyList<int> group,
         ref TranspileContext context)
     {
+        var groupPlan = CreateGroupCapturePlan(statements, group);
         foreach (var member in group)
         {
-            WriteImplementation((LocalFunctionStatementSyntax)statements[member], group, statements, ref context);
+            WriteImplementation((LocalFunctionStatementSyntax)statements[member], group, statements, in groupPlan,
+                ref context);
         }
 
         foreach (var member in group)
@@ -145,15 +147,38 @@ internal sealed class LocalFunctionOrder
         }
     }
 
+    private static LambdaCapturePlan CreateGroupCapturePlan(IReadOnlyList<StatementSyntax> statements,
+        IReadOnlyList<int> group)
+    {
+        var capturesContext = false;
+        var capturesRoot = false;
+        foreach (var member in group)
+        {
+            var function = (LocalFunctionStatementSyntax)statements[member];
+            var memberPlan = LambdaCapture.Create(function.Body, function.ExpressionBody?.Expression);
+            capturesContext |= memberPlan.CapturesContext;
+            capturesRoot |= memberPlan.CapturesRoot;
+            if (capturesContext && capturesRoot)
+            {
+                break;
+            }
+        }
+
+        return new LambdaCapturePlan(capturesContext, capturesRoot);
+    }
+
+    // auto <impl> = <capture>(auto& <self a>, auto& <self b>, <parameters>) -> <return type> { <forwarders> <body> };
     private static void WriteImplementation(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
-        IReadOnlyList<StatementSyntax> statements, ref TranspileContext context)
+        IReadOnlyList<StatementSyntax> statements, in LambdaCapturePlan groupPlan, ref TranspileContext context)
     {
         var writer = context.Emitter.Writer;
         var method = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(function);
         var returnType = method?.ReturnType;
         writer.Append("auto ");
         AppendGroupName(function, useSelves: false, ref context);
-        writer.Append(" = [&](");
+        writer.Append(" = ");
+        LambdaCapture.Append(writer, groupPlan);
+        writer.Append('(');
         foreach (var other in group)
         {
             writer.Append("auto& ");
@@ -180,6 +205,7 @@ internal sealed class LocalFunctionOrder
         writer.AppendLine(";");
     }
 
+    // auto <name> = <capture>(<parameters>) -> <return type> { return <impl>(<impls>, <arguments>); };
     private static void WriteForwarder(LocalFunctionStatementSyntax function, IReadOnlyList<int> group,
         IReadOnlyList<StatementSyntax> statements, bool useSelves, ref TranspileContext context)
     {
@@ -188,7 +214,12 @@ internal sealed class LocalFunctionOrder
         var returnType = method?.ReturnType;
         writer.Append("auto ");
         CppNameResolver.AppendDeclaredName(function, function.Identifier, ref context);
-        writer.Append(" = [&](");
+        writer.Append(" = ");
+        // [WHY] On state-machine CPU dialects, a delegate created from the forwarder can outlive the state function
+        // where the stack-local implementation lambdas live. Because the forwarder body only forwards parameters to
+        // <impl>/<self>, capturing by value ([=]) copies the closure objects without referencing stack locals.
+        writer.Append(context.Emitter.Dialect.EmulatesThreadsWithStateMachine() ? "[=]" : "[&]");
+        writer.Append('(');
         AppendParameters(function, ref context);
         writer.Append(") -> ");
         RefLocals.AppendReturnType(method, ref context);

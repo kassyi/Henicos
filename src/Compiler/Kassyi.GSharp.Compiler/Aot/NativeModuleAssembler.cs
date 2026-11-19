@@ -9,9 +9,30 @@ namespace Kassyi.GSharp.Compiler.Aot;
 /// </summary>
 internal static class NativeModuleAssembler
 {
+    /// <summary>The device functions without repeats, in their first order (one result per function and dialect).</summary>
+    public static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
+        deviceMethods
+            .AsStackEnumerable()
+            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
+        return distinct;
+    }
+
     /// <summary>The prelude that precedes the device code in the dialect's native module.</summary>
     public static string GetPreludeSource(ITranspilerDialect dialect) =>
         dialect.IsCuda ? GSharpPreludeResources.Cuda : GSharpPreludeResources.Cpp;
+
+    /// <summary>
+    /// The prelude that precedes the device code in the dialect's native module, with the native stack runtime header
+    /// appended when the module runs its GPU threads on their own stacks
+    /// (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
+    /// </summary>
+    public static string GetPreludeSource(in GeneratorConfig config) =>
+        config.RunsOnNativeStacks
+            ? GSharpPreludeResources.Cpp + GSharpPreludeResources.CppStackThreads
+            : GetPreludeSource(config.CreateDialect());
 
     /// <summary>
     /// The device functions as forward declarations followed by their bodies. On the CPU dialects a frame embeds the
@@ -130,12 +151,57 @@ internal static class NativeModuleAssembler
         string kernelsSource)
     {
         using var body = new SourceWriter();
-        foreach (var inc in requiredIncludes)
+        AppendModulePreamble(in body, requiredIncludes, preludeSource, deviceSource);
+        body.Append(kernelsSource);
+        return body.ToString();
+    }
+
+    /// <summary>The native module body assembled directly from per-kernel sources in module order.</summary>
+    public static string AssembleBody(HashSet<string> requiredIncludes, string preludeSource, string deviceSource,
+        IReadOnlyList<string> kernelSources)
+    {
+        using var body = new SourceWriter();
+        AppendModulePreamble(in body, requiredIncludes, preludeSource, deviceSource);
+        foreach (var kernelSource in kernelSources)
         {
-            body.AppendLine($"#include {inc}");
+            body.AppendLine(kernelSource);
         }
 
-        body.Append(preludeSource).Append(deviceSource).Append(kernelsSource);
         return body.ToString();
+    }
+
+    /// <summary>The shared header of a split CPU module: includes, prelude, and shared device code.</summary>
+    public static string AssembleHeader(HashSet<string> requiredIncludes, string preludeSource, string deviceSource)
+    {
+        using var header = new SourceWriter();
+        AppendModulePreamble(in header, requiredIncludes, preludeSource, deviceSource);
+        return header.ToString();
+    }
+
+    /// <summary>
+    /// One translation unit of a split CPU module: the shared header include followed by its kernels.
+    /// </summary>
+    public static string AssembleUnit(string headerFileName, IReadOnlyList<string> kernelSources,
+        ImmutableArray<int> kernelIndices)
+    {
+        using var unit = new SourceWriter();
+        unit.AppendLine($"#include \"{headerFileName}\"");
+        foreach (var index in kernelIndices)
+        {
+            unit.AppendLine(kernelSources[index]);
+        }
+
+        return unit.ToString();
+    }
+
+    private static void AppendModulePreamble(in SourceWriter writer, HashSet<string> requiredIncludes,
+        string preludeSource, string deviceSource)
+    {
+        foreach (var inc in requiredIncludes)
+        {
+            writer.AppendLine($"#include {inc}");
+        }
+
+        writer.Append(preludeSource).Append(deviceSource);
     }
 }
