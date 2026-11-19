@@ -52,7 +52,7 @@ test-managed-stack *args="":
 # Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
-        --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
+        --filter "Category=Differential&Category!=Stress&Category!=Benchmark&Category!=GpuTrap" {{blame_crash}} {{args}}
 
 # Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
 # one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check
