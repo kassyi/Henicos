@@ -1038,6 +1038,9 @@ public class WarpActiveMaskDifferentialTests
                 output, 0, blockDimX: 32),
             Enumerable.Range(0, 32).Select(static t => t ^ 1).ToArray());
 
+    // The CPU paths join the lanes that jump to case 1 with those that enter it from the switch (m1 = 0xD34D34D3). CUDA
+    // keeps them apart there: m1 is 0x41041041 for the lanes that jumped and 0x92492492 for the others, each a subset of
+    // the classic value that holds the calling lane; every other entry is the same on every path
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void ActiveMask_SkippedJoinGotoCase_LeavesSkippedJoinOnOuterJump() =>
