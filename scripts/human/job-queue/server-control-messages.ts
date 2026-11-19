@@ -3,12 +3,11 @@
 
 import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
-import { pickSuffixMatch } from "./job-id.ts";
+import { formatJobId, pickSuffixMatch } from "./job-id.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
-import { formatJobId } from "./job-id.ts";
 
 function status(connection: Connection): void {
   const server = connection.server;
@@ -41,9 +40,12 @@ function resolve(connection: Connection, message: Incoming): void {
     connection.reply({ type: "error", code: "bad-digits", message: "resolve needs one to four digits" });
     return;
   }
-  const live = server.scheduler.running
-    .map((job) => ({ id: job.id, state: "running" }))
-    .concat(server.scheduler.waiting.map((job) => ({ id: job.id, state: "waiting" })));
+  // Every record counts as live, a provisionally lost one too (its client may still report how it ended, and wait
+  // keeps waiting for it); the outcomes are the jobs that ended for good
+  const live = [...server.records.values()].map((job) => ({
+    id: job.id,
+    state: job.provisional !== null ? "lost unless its client reports" : job.phase,
+  }));
   const picked = pickSuffixMatch(digits, live, server.outcomes.keys());
   connection.reply(
     "error" in picked

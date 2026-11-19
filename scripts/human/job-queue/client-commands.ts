@@ -72,18 +72,38 @@ function printReplyError(reply: Incoming): void {
  * --json keeps clean) and ends the process with `failCode` when no job matches. An older scheduler does not know
  * "resolve": the digits then count as the full id, as before.
  */
-export async function resolveJobRef(port: number, ref: JobRef, failCode = 1): Promise<number> {
+export async function resolveJobRef(
+  endpoint: Endpoint,
+  ref: JobRef,
+  failCode = 1,
+  startScheduler = false,
+): Promise<number> {
   if (ref.kind === "exact") {
     return ref.id;
   }
-  const reply = await request(port, { type: "resolve", digits: ref.digits });
+  const message: ClientMessage = { type: "resolve", digits: ref.digits };
+  let reply: Incoming | null = null;
+  if (startScheduler) {
+    // wait and run --after start the scheduler as they do with a full number (it restores the outcomes it saved), and
+    // ask the next one when it goes away (a restart)
+    const launcher = new SchedulerLauncher(endpoint);
+    for (let attempt = 0; attempt < 5 && reply === null; attempt++) {
+      reply = await exchange(await launcher.connectOrStart(), message);
+      if (reply === null) {
+        await delay(800);
+      }
+    }
+  } else {
+    reply = await request(endpoint.port, message);
+  }
   if (reply === null) {
     prefix(`no scheduler running; j${ref.digits} cannot be resolved (give the full job number)`);
-    process.exit(failCode);
+    process.exit(1);
   }
   if (reply.type === "resolved") {
     const id = numberField(reply, "id");
-    if (id > 9999) {
+    // Whenever the digits are not the whole id: a wrong match is noticed (873 that stood for 9873 included)
+    if (id !== Number(ref.digits)) {
       prefix(`${formatJobId(id)} = job ${id}`);
     }
     return id;
@@ -110,7 +130,7 @@ export async function status(port: number, id: number, json: boolean): Promise<v
     const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === id);
     if (reply === null || job === undefined) {
       process.stdout.write(
-        json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job ${formatJobId(id)} (ended, or never queued)\n`,
+        json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job ${id} (ended, or never queued)\n`,
       );
       process.exitCode = 1;
       return;
@@ -178,7 +198,7 @@ export async function cancel(port: number, id: number | "all"): Promise<void> {
   }
   const cancelled = reply.cancelled as number[];
   if (cancelled.length === 0) {
-    process.stdout.write(id === "all" ? "no jobs to cancel\n" : `no job ${formatJobId(id)}\n`);
+    process.stdout.write(id === "all" ? "no jobs to cancel\n" : `no job ${id}\n`);
     process.exitCode = id === "all" ? 0 : 1;
     return;
   }

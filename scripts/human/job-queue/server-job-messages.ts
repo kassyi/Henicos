@@ -137,7 +137,7 @@ function request(connection: Connection, message: Incoming): void {
     connection.reply({
       type: "error",
       code: "unknown-job",
-      message: `--after: no job ${formatJobId(after)} (never queued, or ended too long ago)`,
+      message: `--after: no job ${after} (never queued, or ended too long ago)`,
     });
     return;
   }

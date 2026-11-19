@@ -49,7 +49,7 @@ function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
 }
 
 /**
- * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
+ * What a waiting job waits for, in words a person reads without the docs: "after j0821" (its --after job), "GPU busy"
  * (another job has the GPU), "GPU memory" (a shared turn waits for the probe of the free GPU memory), "CPU full"
  * (every slot in use), "mem full" (the memory pool of the test runs), or
  * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
@@ -216,7 +216,7 @@ export function describeProgress(job: ScreenJob, now: number): string {
   return `${times}waits: ${job.reason}, ${job.ahead} ahead`;
 }
 
-/** The progress in a few cells, for a terminal too narrow for the timeline: "72% ~14:36", "14m +4m", "after #821". */
+/** The progress in a few cells, for a terminal too narrow for the timeline: "72% ~14:36", "14m +4m", "after j0821". */
 export function shortProgress(job: ScreenJob, now: number): string {
   if (job.state === "running") {
     const elapsed = now - (job.grantedAt ?? now);
@@ -317,7 +317,7 @@ function bar(used: number, capacity: number, cells: number): string {
 }
 
 /**
- * The resources of the header: "GPU #12 #15 +2" is the turns that run on the resource and the jobs that wait for it.
+ * The resources of the header: "GPU j0012 j0015 +2" is the turns that run on the resource and the jobs that wait for it.
  * GPU is always shown; another resource only while a job uses it or waits for it.
  */
 function resourceParts(resources: ResourceStatus[], jobs: ScreenJob[], line: ScreenLine): void {
@@ -485,7 +485,7 @@ const LateLegend = "  red = longer than usual";
 const SelectHint = "  ↑↓ select a job";
 
 /**
- * The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 #965", then what a red bar
+ * The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 j0965", then what a red bar
  * means while one is drawn (the legend is otherwise only in the help), else how to select a job.
  */
 function summaryLine(jobs: ScreenJob[], columns: number, now: number): ScreenLine {

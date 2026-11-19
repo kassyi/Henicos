@@ -885,7 +885,7 @@ async function selfTest() {
         res9a.stderr,
         new RegExp(
           `\\[res-lock\\] the command failed while it shared the device with: ` +
-            `#42 other-shared-cmd \\(pid ${process.pid}\\), an older lock holder \\(pid ${process.pid}\\)`,
+            `j0042 other-shared-cmd \\(pid ${process.pid}\\), an older lock holder \\(pid ${process.pid}\\)`,
         ),
       );
       const reportLines = res9a.stderr

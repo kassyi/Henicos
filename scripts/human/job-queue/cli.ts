@@ -59,7 +59,8 @@ const Usage = [
   "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
   "An <id> is the full number, or the last four digits as the queue shows them: 8739, j8739 or 18739 (the digits name",
-  "the newest job that ends so; two live jobs that do, and the scheduler asks for the full number).",
+  "the running or waiting job that ends so, else the newest that ended; two running or waiting jobs that do, and the",
+  "scheduler asks for the full number).",
   "",
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
   "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
@@ -407,14 +408,16 @@ export async function main(argv: string[]): Promise<void> {
   try {
     // The last digits of an id are resolved by the scheduler, which knows the jobs; wait ends 2 for an unknown job
     const failCode = options.mode === "wait" ? UsageExitCode : 1;
+    // wait and run start the scheduler when none listens, as they do for a full number
+    const start = options.mode === "wait" || options.mode === "run";
     if (options.jobRef !== null) {
-      options.jobId = await resolveJobRef(options.port, options.jobRef, failCode);
+      options.jobId = await resolveJobRef(options, options.jobRef, failCode, start);
     }
     if (options.beforeRef !== null) {
-      options.moveBefore = await resolveJobRef(options.port, options.beforeRef, failCode);
+      options.moveBefore = await resolveJobRef(options, options.beforeRef, failCode);
     }
     if (options.afterRef !== null) {
-      options.after = await resolveJobRef(options.port, options.afterRef, failCode);
+      options.after = await resolveJobRef(options, options.afterRef, failCode, start);
     }
     switch (options.mode) {
       case "run":

@@ -50,7 +50,7 @@ export function sampleReply(): StatusReply {
     used: 4,
     memoryCapacity: 32000,
     memoryUsed: 6000,
-    // Two shared GPU turns may run at a time; #812 holds one and nothing is exclusive, so #821 waits for the probe
+    // Two shared GPU turns may run at a time; j0812 holds one and nothing is exclusive, so j0821 waits for the probe
     resources: [
       {
         name: "gpu",

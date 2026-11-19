@@ -505,7 +505,7 @@ export class JobServer {
       this.reply(socket, {
         type: "error",
         code: "unknown-job",
-        message: `no job ${formatJobId(id)} (never queued, or ended too long ago)`,
+        message: `no job ${id} (never queued, or ended too long ago)`,
       });
     }
   }

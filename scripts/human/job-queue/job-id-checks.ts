@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
+import { resolveJobRef } from "./client-commands.ts";
 import { formatJobId, matchesSuffix, parseJobRef, pickSuffixMatch } from "./job-id.ts";
 import { JobServer } from "./server.ts";
 import { connectRaw, registration, removeDirectory } from "./self-test-support.ts";
@@ -88,12 +89,66 @@ async function checkResolveMessage(assert: AssertModule): Promise<void> {
     const granted = await running.until("granted");
     const id = Number(granted?.id);
     assert.strictEqual((await ask(String(id).padStart(4, "0")))?.id, id, "a live job");
+    // A provisionally lost record is still a job a person may name (wait keeps waiting for it)
+    server.freeSlots(server.records.get(id) as NonNullable<ReturnType<typeof server.records.get>>, "a check");
+    assert.strictEqual((await ask(String(id).padStart(4, "0")))?.id, id, "a provisionally lost job");
     running.close();
+
+    // The client says what the digits stood for whenever they are not the whole id, on stderr only
+    server.outcomes.set(9873, "succeeded");
+    const endpoint = { port, stateDir: directory, configPath: "" } as unknown as Parameters<typeof resolveJobRef>[0];
+    const said = await stderrOf(async () => {
+      assert.strictEqual(await resolveJobRef(endpoint, { kind: "suffix", digits: "873" }), 9873);
+      assert.strictEqual(await resolveJobRef(endpoint, { kind: "suffix", digits: "8739" }), 28739);
+      assert.strictEqual(await resolveJobRef(endpoint, { kind: "suffix", digits: "73" }), 9873, "the newest ended");
+    });
+    assert.deepStrictEqual(said.match(/j\d{4} = job \d+/g), [
+      "j9873 = job 9873",
+      "j8739 = job 28739",
+      "j9873 = job 9873",
+    ]);
   } finally {
     server.stopping = true;
     server.server.close();
     removeDirectory(directory);
   }
+  // An older scheduler does not know resolve: the digits count as the full id, with a note
+  const older = net.createServer((socket) => {
+    socket.on("data", () =>
+      socket.end(`${JSON.stringify({ type: "error", message: "unknown message type resolve" })}\n`),
+    );
+  });
+  await new Promise<void>((resolve) => older.listen(0, "127.0.0.1", resolve));
+  try {
+    const olderPort = (older.address() as net.AddressInfo).port;
+    const endpoint = { port: olderPort, stateDir: os.tmpdir(), configPath: "" } as unknown as Parameters<
+      typeof resolveJobRef
+    >[0];
+    let id = 0;
+    const said = await stderrOf(async () => {
+      id = await resolveJobRef(endpoint, { kind: "suffix", digits: "0042" });
+    });
+    assert.strictEqual(id, 42, "an older scheduler: the digits as the full id");
+    assert.match(said, /scheduler is older/);
+  } finally {
+    older.close();
+  }
+}
+
+/** What `body` writes to stderr, kept off the console. */
+async function stderrOf(body: () => Promise<void>): Promise<string> {
+  const write = process.stderr.write;
+  let text = "";
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    text += String(chunk);
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    await body();
+  } finally {
+    process.stderr.write = write;
+  }
+  return text;
 }
 
 export const JobIdChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
