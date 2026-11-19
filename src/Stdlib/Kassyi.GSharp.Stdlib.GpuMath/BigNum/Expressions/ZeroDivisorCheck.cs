@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// <remarks>
 /// The kernel writes <c>~index</c> with an atomic max into one word cleared to 0, so 0 means no zero divisor and the
 /// largest complement is the lowest index. An element past a device count (after a <c>Where</c>) is not an element of
-/// the vector, and its divisor is ignored.
+/// the vector, and its divisor is ignored. Under a <see cref="PendingThrows"/> scope (<c>Any</c> and <c>All</c>), the
+/// exception is recorded at the index of its element instead of thrown.
 /// </remarks>
 internal static class ZeroDivisorCheck
 {
@@ -27,7 +28,11 @@ internal static class ZeroDivisorCheck
     {
         if (count.Read(workspace) > 0)
         {
-            throw new DivideByZeroException();
+            var ex = new DivideByZeroException();
+            if (!PendingThrows.TryRecord(0, ex))
+            {
+                throw ex;
+            }
         }
     }
 
@@ -52,7 +57,11 @@ internal static class ZeroDivisorCheck
         var mark = workspace.Provider.ReadWord(word.DevicePointer, 0, workspace.Stream);
         if (mark != 0u && ~mark < (uint)count.Read(workspace))
         {
-            throw new DivideByZeroException();
+            var ex = new DivideByZeroException();
+            if (!PendingThrows.TryRecord((int)~mark, ex))
+            {
+                throw ex;
+            }
         }
     }
 }

@@ -16,7 +16,13 @@ internal sealed class VectorDivByUInt32Expression(
     {
         if (divisor == 0)
         {
-            throw new DivideByZeroException();
+            var ex = new DivideByZeroException();
+            if (PendingThrows.TryRecord(0, ex))
+            {
+                return;
+            }
+
+            throw ex;
         }
 
         var srcSigns = ArrayPool<uint>.Shared.Rent(evalCount);

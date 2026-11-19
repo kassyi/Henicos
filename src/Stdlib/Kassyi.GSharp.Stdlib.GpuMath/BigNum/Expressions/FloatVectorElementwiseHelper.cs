@@ -40,17 +40,27 @@ internal static class FloatVectorElementwiseHelper
             workspace.Provider.CopyDeviceToHost(srcExps, source.Exponents.DevicePointer, count, workspace.Stream);
             workspace.Provider.CopyDeviceToHost(srcSigns, source.Signs.DevicePointer, count, workspace.Stream);
 
-            for (var i = 0; i < count; i++)
+            var i = 0;
+            for (; i < count; i++)
             {
                 var srcSig = source.Significands.GetElement(i);
                 var dstSig = destination.Significands.GetElement(i);
                 var operand = new GpuFloatOperand(srcSig.Handle, unchecked((int)srcExps[i]), srcSigns[i] != 0);
 
-                var res = operation(ref execContext, arithmetic, in operand, dstSig.Handle);
-                dstExps[i] = unchecked((uint)res.Exponent);
-                dstSigns[i] = res.IsNegative ? 1u : 0u;
+                try
+                {
+                    var res = operation(ref execContext, arithmetic, in operand, dstSig.Handle);
+                    dstExps[i] = unchecked((uint)res.Exponent);
+                    dstSigns[i] = res.IsNegative ? 1u : 0u;
+                }
+                catch (Exception ex) when (PendingThrows.IsActive && PendingThrows.IsElementException(ex))
+                {
+                    PendingThrows.TryRecord(i, ex);
+                    break;
+                }
             }
 
+            ClearAfterRecorded(workspace, destination, dstExps, dstSigns, i, count);
             workspace.Provider.CopyHostToDevice(destination.Exponents.DevicePointer, dstExps, count, workspace.Stream);
             workspace.Provider.CopyHostToDevice(destination.Signs.DevicePointer, dstSigns, count, workspace.Stream);
         }
@@ -92,7 +102,8 @@ internal static class FloatVectorElementwiseHelper
             workspace.Provider.CopyDeviceToHost(rightExps, right.Exponents.DevicePointer, count, workspace.Stream);
             workspace.Provider.CopyDeviceToHost(rightSigns, right.Signs.DevicePointer, count, workspace.Stream);
 
-            for (var i = 0; i < count; i++)
+            var i = 0;
+            for (; i < count; i++)
             {
                 var leftSig = left.Significands.GetElement(i);
                 var rightSig = right.Significands.GetElement(i);
@@ -101,11 +112,20 @@ internal static class FloatVectorElementwiseHelper
                 var leftOp = new GpuFloatOperand(leftSig.Handle, unchecked((int)leftExps[i]), leftSigns[i] != 0);
                 var rightOp = new GpuFloatOperand(rightSig.Handle, unchecked((int)rightExps[i]), rightSigns[i] != 0);
 
-                var res = operation(ref execContext, arithmetic, in leftOp, in rightOp, dstSig.Handle);
-                dstExps[i] = unchecked((uint)res.Exponent);
-                dstSigns[i] = res.IsNegative ? 1u : 0u;
+                try
+                {
+                    var res = operation(ref execContext, arithmetic, in leftOp, in rightOp, dstSig.Handle);
+                    dstExps[i] = unchecked((uint)res.Exponent);
+                    dstSigns[i] = res.IsNegative ? 1u : 0u;
+                }
+                catch (Exception ex) when (PendingThrows.IsActive && PendingThrows.IsElementException(ex))
+                {
+                    PendingThrows.TryRecord(i, ex);
+                    break;
+                }
             }
 
+            ClearAfterRecorded(workspace, destination, dstExps, dstSigns, i, count);
             workspace.Provider.CopyHostToDevice(destination.Exponents.DevicePointer, dstExps, count, workspace.Stream);
             workspace.Provider.CopyHostToDevice(destination.Signs.DevicePointer, dstSigns, count, workspace.Stream);
         }
@@ -118,5 +138,21 @@ internal static class FloatVectorElementwiseHelper
             ArrayPool<uint>.Shared.Return(dstExps);
             ArrayPool<uint>.Shared.Return(dstSigns);
         }
+    }
+
+    // After an element exception is recorded at stopIndex, the elements from it on are not computed: they are zero, so
+    // that the nodes after this one read defined values
+    private static void ClearAfterRecorded(GpuWorkspace workspace, GpuBigFloatArrayView destination, uint[] dstExps,
+        uint[] dstSigns, int stopIndex, int count)
+    {
+        if (stopIndex == count)
+        {
+            return;
+        }
+
+        Array.Clear(dstExps, stopIndex, count - stopIndex);
+        Array.Clear(dstSigns, stopIndex, count - stopIndex);
+        var tail = destination.Significands.Slice(stopIndex, count - stopIndex);
+        workspace.Provider.ClearMemoryAsync(tail.DevicePointer, tail.TotalWords, workspace.Stream);
     }
 }

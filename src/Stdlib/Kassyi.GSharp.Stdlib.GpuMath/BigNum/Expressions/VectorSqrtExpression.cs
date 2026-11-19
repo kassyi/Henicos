@@ -17,16 +17,29 @@ internal sealed class VectorSqrtExpression(
             workspace.Provider.CopyDeviceToHost(
                 srcSigns, source.Signs.DevicePointer, evalCount, workspace.Stream);
 
-            for (var i = 0; i < evalCount; i++)
+            var i = 0;
+            for (; i < evalCount; i++)
             {
                 var srcElem = source.Values.GetElement(i);
                 if (srcSigns[i] != 0 && !srcElem.IsZero())
                 {
-                    throw new InvalidOperationException("Cannot compute square root of a negative integer.");
+                    var ex = new InvalidOperationException("Cannot compute square root of a negative integer.");
+                    if (PendingThrows.TryRecord(i, ex))
+                    {
+                        break;
+                    }
+
+                    throw ex;
                 }
 
                 var dstElem = destination.Values.GetElement(i);
                 GpuBigIntDivRem.Sqrt(srcElem, dstElem);
+            }
+
+            if (i < evalCount)
+            {
+                var tail = destination.Values.Slice(i, evalCount - i);
+                workspace.Provider.ClearMemoryAsync(tail.DevicePointer, tail.TotalWords, workspace.Stream);
             }
 
             workspace.Provider.ClearMemoryAsync(destination.Signs.DevicePointer, evalCount, workspace.Stream);
