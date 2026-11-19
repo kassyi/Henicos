@@ -2,7 +2,8 @@
 #
 # The watchdog of Kassyi.GSharp.Tests.Infrastructure (MemoryBudget) fails the tests that run when the peak memory of
 # the test host passes the budget, and a final check per assembly fails when the peak of the whole run passed it.
-# The peak is the peak private memory (commit charge) on Windows and the peak resident memory (VmHWM) on Linux.
+# The peak is the peak private memory (commit charge) on Windows and the largest sample of the private resident
+# memory (RssAnon + RssShmem) on Linux; mapped files are not counted.
 #
 # Format: '<test project name>: <MB>[, stress <MB>]', one line per test project, at column 0. The first value holds
 # for a run without Stress and Benchmark tests (just test); the stress value takes over when the first Stress or
@@ -12,14 +13,17 @@
 # Each value is 1.2 times the largest peak of that profile over three runs each of just test (Windows) and the CI
 # filter (Windows and Linux), rounded up to 64 MB. How to measure and update: .agents/rules/test-execution.md.
 # The stress budgets of Tests.Cpu and Tests.Cuda are set by one 2 GiB buffer test (about 4 GB of the peak).
+# Two values still come from the Linux VmHWM measured before Linux counted private memory only: FuzzDiff.Tests
+# (1420 MB on the Ubuntu CI runner, which local runs do not reach) and the stress budget of Tests.Cpu (Linux 5591 MB;
+# the Windows peak alone gives 6592 MB). Measure them again before lowering them.
 
 Henicos.Benchmarks.Tests: 576
-Kassyi.GSharp.Compiler.Generators.Tests: 192
+Kassyi.GSharp.Compiler.Generators.Tests: 64
 Kassyi.GSharp.Stdlib.GpuMath.Tests: 1536
 Kassyi.GSharp.Tests.Cpu: 2880, stress 6720
 Kassyi.GSharp.Tests.Cuda: 2496, stress 6784
 Kassyi.GSharp.Tests.Infrastructure.Tests: 320
 Kassyi.GSharp.Tests.Integration: 128
-Kassyi.GSharp.Tools.CollectEnv.Tests: 192
+Kassyi.GSharp.Tools.CollectEnv.Tests: 64
 Kassyi.GSharp.Tools.FuzzDiff.Tests: 1728
 Kassyi.ZeroAlloc.Linq.Tests: 128

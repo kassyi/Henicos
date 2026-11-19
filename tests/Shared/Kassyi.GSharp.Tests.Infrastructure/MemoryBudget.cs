@@ -80,8 +80,8 @@ public static class MemoryBudget
             var watchdog = new MemoryWatchdog(
                 assemblyName,
                 budget.Megabytes * BytesPerMegabyte,
-                ProcessMemory.PeakMetricName,
-                ProcessMemory.ReadPeakBytes,
+                ProcessMemory.MetricName,
+                ProcessMemory.ReadBytes,
                 ProcessMemory.ReadGcHeapBytes,
                 () => MemoryDump.Collect(assemblyName, "breach"),
                 MemoryDump.Timeout + TimeSpan.FromSeconds(10)
@@ -219,7 +219,7 @@ public static class MemoryBudget
             (watchdog.BudgetBytes / BytesPerMegabyte).ToString(CultureInfo.InvariantCulture),
             watchdog.TestsStarted.ToString(CultureInfo.InvariantCulture),
             watchdog.Profile,
-            ProcessMemory.PeakMetricName
+            ProcessMemory.MetricName
         );
         File.AppendAllText(Path.Combine(directory, s_assemblyName + ".tsv"), line + Environment.NewLine);
 

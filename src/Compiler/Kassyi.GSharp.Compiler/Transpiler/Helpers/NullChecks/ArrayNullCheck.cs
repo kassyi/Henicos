@@ -28,8 +28,8 @@ internal static class ArrayNullCheck
     /// <summary>The text of the error, followed by the place of the receiver (<see cref="SourcePlace"/>).</summary>
     public const string MessagePrefix = SiteMessage + PlaceSeparator;
 
-    // The trap kind of the site ID, which tells the site apart from another trap at the same place
-    private const string TrapKind = "ArrayNull";
+    /// <summary>The trap kind of the site ID, which tells the site apart from another trap at the same place.</summary>
+    internal const string TrapKind = "ArrayNull";
 
     // The trap kind of the check of the array a StackLinq query starts from
     private const string LinqSourceTrapKind = "LinqSourceNull";
@@ -66,8 +66,13 @@ internal static class ArrayNullCheck
         }
 
         // A host static member, which GSH0065 reports
-        return semanticModel.GetSymbol(expression) is not IFieldSymbol { IsStatic: true };
+        return !IsHostStaticField(semanticModel.GetSymbol(expression));
     }
+
+    /// <summary>
+    /// Whether <paramref name="symbol"/> is a static field (a host static member, which GSH0065 reports).
+    /// </summary>
+    internal static bool IsHostStaticField(ISymbol? symbol) => symbol is IFieldSymbol { IsStatic: true };
 
     /// <summary>
     /// Writes <paramref name="receiver"/> for a read: <c>__gsharp_array_ref(&lt;receiver&gt;, "&lt;message&gt;")</c> when
