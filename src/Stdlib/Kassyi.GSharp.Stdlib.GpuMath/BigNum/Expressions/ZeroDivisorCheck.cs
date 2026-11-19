@@ -23,13 +23,20 @@ internal static class ZeroDivisorCheck
     /// Throws for a zero scalar divisor when the vector has at least one element: reads the count, one synchronization
     /// of the workspace stream when it is on the device. A vector with no element divides nothing.
     /// </summary>
-    /// <exception cref="DivideByZeroException">The count is positive.</exception>
-    public static void ThrowIfAnyElement(GpuWorkspace workspace, DeviceElementCount count)
+    /// <returns>
+    /// <see langword="true"/> when the exception was recorded at element 0 under a <see cref="PendingThrows"/> scope:
+    /// the caller then sets its output to zero (<see cref="RecordedTail"/>).
+    /// </returns>
+    /// <exception cref="DivideByZeroException">The count is positive, outside a scope.</exception>
+    public static bool ThrowIfAnyElement(GpuWorkspace workspace, DeviceElementCount count)
     {
-        if (count.Read(workspace) > 0)
+        if (count.Read(workspace) == 0)
         {
-            PendingThrows.RecordOrThrow(0, new DivideByZeroException());
+            return false;
         }
+
+        PendingThrows.RecordOrThrow(0, new DivideByZeroException());
+        return true;
     }
 
     /// <summary>Lends the word the kernel writes, cleared on the workspace stream.</summary>

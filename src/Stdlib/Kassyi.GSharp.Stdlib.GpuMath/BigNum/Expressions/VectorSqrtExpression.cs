@@ -19,7 +19,8 @@ internal sealed class VectorSqrtExpression(
             workspace.Provider.CopyDeviceToHost(
                 srcSigns, source.Signs.DevicePointer, evalCount, workspace.Stream);
 
-            for (var i = 0; i < evalCount; i++)
+            var i = 0;
+            for (; i < evalCount; i++)
             {
                 var srcElem = source.Values.GetElement(i);
                 if (srcSigns[i] != 0 && !srcElem.IsZero())
@@ -33,6 +34,7 @@ internal sealed class VectorSqrtExpression(
             }
 
             workspace.Provider.ClearMemoryAsync(destination.Signs.DevicePointer, evalCount, workspace.Stream);
+            RecordedTail.Clear(workspace, destination, i, evalCount);
         }
         finally
         {

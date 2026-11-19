@@ -123,6 +123,25 @@ public partial class GpuBigIntVectorLinqExtensionsTests
 
     [Fact]
     [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void Any_SquareRootTieAfterFirstElement_Throws()
+    {
+        BigInteger[] s = [4, -1];
+        using var arrS = CreateArray(s);
+        using var zero = CreateScalar(0);
+
+        // sqrt(4) is not 0; element 1 throws, and its output, set to zero after the record, decides IsEqualTo(0):
+        // D = T = 1. C# runs the projection of an element before Any reads it, so it throws.
+        // mutant: BoolVectorQuantifier.Evaluate `(uint)pending.MinIndex <= decidedIndex` -> `<` (returns true)
+        var expected = Outcome(() => s.Select(static x => IsqrtContract(x) == 0).Any(static x => x));
+        Assert.Equal(typeof(InvalidOperationException), expected.Error);
+
+        using var any = arrS.AsVectorizedEnumerable().SelectSqrt().IsEqualTo(zero).Any();
+        Assert.Equal(expected, Outcome(() => any.Evaluate(_context)));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
     public void Any_TwoThrowersAtDifferentIndices_ThrowsLowerIndex()
     {

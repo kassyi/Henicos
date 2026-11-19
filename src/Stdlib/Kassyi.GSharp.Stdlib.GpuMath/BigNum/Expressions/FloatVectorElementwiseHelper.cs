@@ -32,7 +32,8 @@ internal static class FloatVectorElementwiseHelper
         var execContext = GpuWorkspaceArithmetic.CreateContext(workspace);
         using var src = HostWords.Read(workspace, source, count);
         using var dst = HostWords.Rent(count);
-        for (var i = 0; i < count; i++)
+        var i = 0;
+        for (; i < count; i++)
         {
             var operand = src.Operand(source, i);
             var target = destination.Significands.GetElement(i).Handle;
@@ -49,6 +50,7 @@ internal static class FloatVectorElementwiseHelper
         }
 
         dst.Write(workspace, destination, count);
+        RecordedTail.Clear(workspace, destination, i, count);
     }
 
     public static void ExecuteBinary(
@@ -69,7 +71,8 @@ internal static class FloatVectorElementwiseHelper
         using var lhs = HostWords.Read(workspace, left, count);
         using var rhs = HostWords.Read(workspace, right, count);
         using var dst = HostWords.Rent(count);
-        for (var i = 0; i < count; i++)
+        var i = 0;
+        for (; i < count; i++)
         {
             var leftOp = lhs.Operand(left, i);
             var rightOp = rhs.Operand(right, i);
@@ -87,11 +90,12 @@ internal static class FloatVectorElementwiseHelper
         }
 
         dst.Write(workspace, destination, count);
+        RecordedTail.Clear(workspace, destination, i, count);
     }
 
     // Under a PendingThrows scope (Any / All), the exception of an element value is recorded and the loop stops: the
-    // elements from it on are not computed (PendingThrows.RecordOrThrow says why their values do not matter). Any
-    // other exception, or one outside a scope, propagates. The filter only reads: the record is made in the handler.
+    // elements from it on are not computed, and RecordedTail sets them to zero after the write-back. Any other
+    // exception, or one outside a scope, propagates. The filter only reads: the record is made in the handler.
     private static bool IsDeferred(Exception exception) =>
         PendingThrows.IsActive && PendingThrows.IsElementException(exception);
 

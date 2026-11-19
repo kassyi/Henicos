@@ -87,10 +87,11 @@ internal sealed class PendingThrows
     /// <param name="index">The element index, from the start of the evaluated window.</param>
     /// <param name="exception">The exception the element throws.</param>
     /// <remarks>
-    /// After a record the caller stops computing: its output from <paramref name="index"/> on keeps whatever the buffer
-    /// held. Those values cannot change the answer of <c>Any</c> / <c>All</c>: the flags before the recorded index come
-    /// from computed values, any deciding index at or after it throws the record, and an exception that a later node
-    /// raises on them is replaced by the record.
+    /// After a record the caller stops computing and sets its output from <paramref name="index"/> on to zero
+    /// (<see cref="RecordedTail"/>), so that later host operations do not run on what the buffer held. Those values
+    /// cannot change the answer of <c>Any</c> / <c>All</c> either way: the flags before the recorded index come from
+    /// computed values, any deciding index at or after it throws the record, and an exception that a later node raises
+    /// on them is replaced by the record.
     /// </remarks>
     public static void RecordOrThrow(int index, Exception exception)
     {
