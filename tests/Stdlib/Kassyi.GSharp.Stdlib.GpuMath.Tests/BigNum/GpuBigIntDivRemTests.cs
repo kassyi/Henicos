@@ -1248,7 +1248,8 @@ public class GpuBigIntDivRemTests : IDisposable
     {
         // s * s <= a < (s + 1) * (s + 1) defines floor(sqrt(a)) without a reference implementation.
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:237
-        //         `ShiftAndResize(scaledRoot, -halfShift, resultBuffer)` -> `ShiftAndResize(scaledRoot, 0, resultBuffer)`
+        //         `ShiftAndResize(scaledRoot, -halfShift, resultBuffer)` ->
+        //         `ShiftAndResize(scaledRoot, 0, resultBuffer)`
         // input: Sqrt SmallestTwoWord, EvenLeadingZeros, OddLeadingZeros
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:208 `(uint)Math.Sqrt(val)`
         //         -> `(uint)Math.Sqrt(val) + 1`
