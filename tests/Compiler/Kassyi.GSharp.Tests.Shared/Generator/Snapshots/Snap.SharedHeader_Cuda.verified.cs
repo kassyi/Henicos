@@ -5,7 +5,12 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaPrelude
 {
-public const string Source = @"#include <cooperative_groups.h>
+public const string Source = @"#if !defined(__CUDACC_VER_MAJOR__)
+#error ""The G# CUDA prelude must be compiled by nvcc (__CUDACC_VER_MAJOR__ is not defined).""
+#elif __CUDACC_VER_MAJOR__ < 13
+#error ""G# needs the CUDA Toolkit 13.0 or later (nvcc __CUDACC_VER_MAJOR__ is below 13). Install a newer nvcc.""
+#endif
+#include <cooperative_groups.h>
 #include <mma.h>
 #include <math_constants.h>
 namespace cg = cooperative_groups;
