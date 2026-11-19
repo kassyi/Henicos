@@ -155,6 +155,43 @@ public class MathAbsAndFloatConversionDifferentialTests
         OracleIsLaunch = true,
     };
 
+    internal static readonly DifferentialCase s_mathAbsIntPtr = new(
+        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsIntPtrKernel)))
+    {
+        Shape = LaunchShapes.Linear(DefaultRows, 32),
+        Seeds = [0, 1],
+        OracleExceptions = OracleExceptionMode.MatchOracle,
+        Inputs = static (rng, shape) =>
+        {
+            int rows = shape.Rows;
+            long[] safeVals =
+            [
+                0, 1, -1, 2, -2, -128, -(1L << 31), 1L << 31, -4294967296L, long.MinValue + 1, long.MaxValue,
+            ];
+            var vals = new long[rows];
+            for (int k = 0; k < rows; k++)
+            {
+                vals[k] = safeVals[k % safeVals.Length];
+            }
+
+            if (rng.Seed == 1)
+            {
+                vals[7] = long.MinValue;
+            }
+
+            return new DiffBuffers()
+                .In("vals", vals, readOnly: true)
+                .Out<long>("dst", rows, ["abs_nint"], OutputPolicy.Exact);
+        },
+        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchMathAbsIntPtrKernel(
+            b.Get<long>("vals"),
+            b.Get<long>("dst"),
+            s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
+        OracleIsLaunch = true,
+    };
+
     internal static readonly DifferentialCase s_mathAbsSingle = new(
         KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.MathAbsSingleKernel)))
     {
@@ -286,6 +323,12 @@ public class MathAbsAndFloatConversionDifferentialTests
     [SkippableFact]
     public void MathAbs_SByte_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_mathAbsSByte);
+
+    // mutant: MathAbsTranspilerRule.GetHelper drop `or SpecialType.System_IntPtr` (nint is cut to 8 bits)
+    // input: seed 0 -128, 2^31 and long.MaxValue; seed 1 long.MinValue at row 7 (OverflowException on every path)
+    [SkippableFact]
+    public void MathAbs_IntPtr_MatchesTheOracleOnEveryPath() =>
+        DifferentialRunner.Run(s_mathAbsIntPtr);
 
     [SkippableFact]
     public void MathAbs_Single_MatchesTheOracleOnEveryPath() =>

@@ -168,6 +168,27 @@ s.hi = (long long)((unsigned long long)a.hi + (unsigned long long)b.hi + (s.lo <
 return s;
 }
 
+// Math.Max / Math.Min / Math.Sign of the integer types other than int. The C# overload returns the narrow type:
+// `var m = Math.Max(b1, b2)` is a byte, and `ref m` must be a pointer to one. CUDA's max(int, int) would give an int.
+// The arguments are already converted to the parameter type, so T is deduced from both.
+template <typename T> __device__ __forceinline__ T __gsharp_max_int(T a, T b) { return b > a ? b : a; }
+template <typename T> __device__ __forceinline__ T __gsharp_min_int(T a, T b) { return b < a ? b : a; }
+template <typename T> __device__ __forceinline__ int __gsharp_sign_int(T a) { return (int)(a > 0) - (int)(a < 0); }
+
+// BitOperations.IsPow2: the signed forms test v > 0 first and subtract in the unsigned type: MinValue - 1 is undefined
+// in C++. The nint form receives the unsigned long long cast that every native-sized BitOperations call gets
+// (BclIntrinsicMapBuilder), converted back to long long, which keeps the bits.
+__device__ __forceinline__ bool __gsharp_is_pow2_i32(int v) {
+return v > 0 && ((unsigned int)v & ((unsigned int)v - 1u)) == 0u;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u32(unsigned int v) { return v != 0u && (v & (v - 1u)) == 0u; }
+__device__ __forceinline__ bool __gsharp_is_pow2_i64(long long v) {
+return v > 0 && ((unsigned long long)v & ((unsigned long long)v - 1ull)) == 0ull;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u64(unsigned long long v) {
+return v != 0ull && (v & (v - 1ull)) == 0ull;
+}
+
 
 // --- Runtime Error / Trap ---
 enum class GSharpErrorCode : int {
@@ -1012,6 +1033,10 @@ __forceinline__ __device__ int __gsharp_clamp(int value, int min_val, int max_va
 __forceinline__ __device__ unsigned int __gsharp_clamp(unsigned int value, unsigned int min_val, unsigned int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ float __gsharp_clamp(float value, float min_val, float max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ double __gsharp_clamp(double value, double min_val, double max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+// Math.Clamp of the other integer types: the C# overload returns the narrow type, as __gsharp_max_int does.
+template <typename T> __forceinline__ __device__ T __gsharp_clamp(T value, T min_val, T max_val) {
+return value < min_val ? min_val : (value > max_val ? max_val : value);
+}
 // Math.Max / Math.Min (IEEE 754:2019 maximum / minimum, as .NET): NaN if either input is NaN, +0 > -0.
 // PTX max.NaN.f32 / min.NaN.f32 are exactly that (sm_80+); max / min .f32 and .f64 already order +0 > -0 (PTX ISA, max).
 // a + b is NaN when either is NaN. The asm is not volatile, so common subexpressions still fold.
@@ -1148,6 +1173,19 @@ return value ? __clz(value) : 32;
 
 __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
 return value ? __clzll(value) : 64;
+}
+
+// BitOperations.RoundUpToPowerOf2: the power of two at or above value; 0 for 0 and for values above the largest power
+// of two, as .NET. __clz(0) is 32, so 1 gives 1 << 0; a shift of the full width (0, or above 2^31) is outside C++, so
+// it is selected away instead of written.
+__device__ __forceinline__ unsigned int __gsharp_round_up_pow2_32(unsigned int value) {
+int shift = 32 - __clz(value - 1u);
+return shift < 32 ? 1u << shift : 0u;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_round_up_pow2_64(unsigned long long value) {
+int shift = 64 - __clzll(value - 1ull);
+return shift < 64 ? 1ull << shift : 0ull;
 }
 
 __device__ __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {

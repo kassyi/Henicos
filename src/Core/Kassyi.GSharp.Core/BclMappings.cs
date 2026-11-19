@@ -50,6 +50,25 @@ using Kassyi.GSharp.Core;
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.UInt32"], "__gsharp_tzc_32")]
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.UInt64"], "__gsharp_tzc_64")]
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.UIntPtr"], "__gsharp_tzc_64")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.Int32"], "__gsharp_tzc_32")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.Int64"], "__gsharp_tzc_64")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.IntPtr"], "__gsharp_tzc_64")]
+
+// IsPow2
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.Int32"], "__gsharp_is_pow2_i32")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.UInt32"], "__gsharp_is_pow2_u32")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.Int64"], "__gsharp_is_pow2_i64")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.IntPtr"], "__gsharp_is_pow2_i64")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.UInt64"], "__gsharp_is_pow2_u64")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "IsPow2", ["System.UIntPtr"], "__gsharp_is_pow2_u64")]
+
+// RoundUpToPowerOf2
+[assembly: BclIntrinsicMap(
+    "System.Numerics.BitOperations", "RoundUpToPowerOf2", ["System.UInt32"], "__gsharp_round_up_pow2_32")]
+[assembly: BclIntrinsicMap(
+    "System.Numerics.BitOperations", "RoundUpToPowerOf2", ["System.UInt64"], "__gsharp_round_up_pow2_64")]
+[assembly: BclIntrinsicMap(
+    "System.Numerics.BitOperations", "RoundUpToPowerOf2", ["System.UIntPtr"], "__gsharp_round_up_pow2_64")]
 
 // Log2
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "Log2", ["System.UInt32"], "__gsharp_log2_32")]

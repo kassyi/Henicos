@@ -113,3 +113,24 @@ __device__ __forceinline__ __gsharp_wide_sum __gsharp_wide_combine(__gsharp_wide
     s.hi = (long long)((unsigned long long)a.hi + (unsigned long long)b.hi + (s.lo < a.lo ? 1ull : 0ull));
     return s;
 }
+
+// Math.Max / Math.Min / Math.Sign of the integer types other than int. The C# overload returns the narrow type:
+// `var m = Math.Max(b1, b2)` is a byte, and `ref m` must be a pointer to one. CUDA's max(int, int) would give an int.
+// The arguments are already converted to the parameter type, so T is deduced from both.
+template <typename T> __device__ __forceinline__ T __gsharp_max_int(T a, T b) { return b > a ? b : a; }
+template <typename T> __device__ __forceinline__ T __gsharp_min_int(T a, T b) { return b < a ? b : a; }
+template <typename T> __device__ __forceinline__ int __gsharp_sign_int(T a) { return (int)(a > 0) - (int)(a < 0); }
+
+// BitOperations.IsPow2: the signed forms test v > 0 first and subtract in the unsigned type: MinValue - 1 is undefined
+// in C++. The nint form receives the unsigned long long cast that every native-sized BitOperations call gets
+// (BclIntrinsicMapBuilder), converted back to long long, which keeps the bits.
+__device__ __forceinline__ bool __gsharp_is_pow2_i32(int v) {
+    return v > 0 && ((unsigned int)v & ((unsigned int)v - 1u)) == 0u;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u32(unsigned int v) { return v != 0u && (v & (v - 1u)) == 0u; }
+__device__ __forceinline__ bool __gsharp_is_pow2_i64(long long v) {
+    return v > 0 && ((unsigned long long)v & ((unsigned long long)v - 1ull)) == 0ull;
+}
+__device__ __forceinline__ bool __gsharp_is_pow2_u64(unsigned long long v) {
+    return v != 0ull && (v & (v - 1ull)) == 0ull;
+}
