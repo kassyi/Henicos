@@ -43,8 +43,10 @@ Every build and test command goes through the job queue: [job-queue.md](job-queu
 
 Every test assembly has a memory budget for its whole test host in `tests/memory-budgets.yml`. The watchdog of
 `Kassyi.GSharp.Tests.Infrastructure` (`MemoryBudget`) runs in every test host and samples the peak memory of the process
-every 250 ms and at the start and end of every test: the peak private memory (commit charge) on Windows, the peak
-resident memory (`VmHWM`) on Linux. Native allocations count.
+every 250 ms and at the start and end of every test: the peak private memory (commit charge) on Windows, the private
+resident memory (`RssAnon` + `RssShmem`; `RssShmem` holds the JIT's code under W^X) on Linux, whose peak is the
+largest sample. Native allocations count; mapped files (the runtime and the loaded assemblies) do not, on either
+system.
 
 - **Two budgets per assembly**: `<test project name>: <MB>[, stress <MB>]`, one line per test project at column 0
   (`MemoryBudgetFileTests` fails when a test project has no line or a line names no test project). The first value
@@ -54,8 +56,8 @@ resident memory (`VmHWM`) on Linux. Native allocations count.
   select a budget.
 - **Breach**: every test that was running when the peak passed the budget fails with `MemoryBudgetExceededException`.
   The message gives the peak, the budget and its profile, the running tests (one of them caused the growth), the five
-  tests that raised the peak most (growth of the high-water mark between their start and end; approximate while tests
-  run in parallel) and the memory snapshot taken at the breach.
+  tests that raised the peak most (growth of the peak, on Linux the largest sample, between their start and end;
+  approximate while tests run in parallel) and the memory snapshot taken at the breach.
 - **Snapshot at the breach**: `dotnet-gcdump collect` of the test host plus its `dotnet-gcdump report` (types by size),
   run one-shot through `dotnet dnx` at a pinned version, into `tmp/test-memory/<assembly>-<time>-<pid>/`.
   `GSHARP_TEST_MEMORY_DUMP=full` writes a full dump (`dotnet-dump collect --type Full`) instead; `none` writes nothing.
