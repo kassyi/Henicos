@@ -167,7 +167,7 @@ internal static class IteratorInliner
     {
         var semanticModel = context.SemanticModel;
         var compilation = semanticModel.Compilation;
-        var unwrappedExpression = IteratorTypeResolver.UnwrapParentheses(site.AnnotatedForEach.Expression);
+        var unwrappedExpression = site.AnnotatedForEach.Expression.UnwrapParentheses();
         if (unwrappedExpression is IdentifierNameSyntax localIdentifier)
         {
             var localSymbol = semanticModel.GetSymbol(localIdentifier)

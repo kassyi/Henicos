@@ -359,6 +359,24 @@
 - {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.IndexerKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.UnaryOperatorKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/ParallelDependentCallForms.cu.cs", method: "ParallelFormsKernels.UnaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.ConditionalParamFieldInitKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.CopiedLocalReadOnlyFieldStructKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.CopiedWritableStructFieldKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.DefaultConstructedStructWithOmittedReadOnlyFieldKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.ExplicitCtorWithObjectInitializerKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.ExplicitCtorWithObjectInitializerReadOnlyFieldKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.ExplicitParameterlessCtorWithObjectInitializerKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.InvalidateParentStructSiblingInitKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.LocalReadOnlyFieldStructCopyReassignedWritableKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.NestedExplicitCtorWithObjectInitializerKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.NestedStructAliasKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteAliases.cu.cs", method: "ReadOnlyArrayWriteAliasKernels.ReinitializedReadOnlyFieldStructKernel", reason: "known, an initializer writes the new value", count: 3}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteCycles.cu.cs", method: "ReadOnlyArrayWriteCycleKernels.LongStructCopyChainKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteLimits.cu.cs", method: "ReadOnlyAliasOpHolder.op_Addition", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteLimits.cu.cs", method: "ReadOnlyArrayWriteLimitKernels.StructCompoundAssignmentKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteUnreadSources.cu.cs", method: "ReadOnlyArrayWriteUnreadSourceKernels.GetHolder", reason: "known, an initializer writes the new value", count: 2}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteUnreadSources.cu.cs", method: "ReadOnlyArrayWriteUnreadSourceKernels.MakeAttrInner", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/ReadOnlyArrayWriteUnreadSources.cu.cs", method: "ReadOnlyArrayWriteUnreadSourceKernels.MakeHolder", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/ReadOnlyArrayWrites.cu.cs", method: "ReadOnlyArrayWriteKernels.StructAliasKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/SharedMemoryWithoutCount.cu.cs", method: "SharedMemoryWithoutCountKernels.AcceptedKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/StackLinqLocalLayout.cs", method: "StackLinqLocalKernels.LocalQueriesKernel", reason: "known, a by-value extension receiver is not written", count: 4}

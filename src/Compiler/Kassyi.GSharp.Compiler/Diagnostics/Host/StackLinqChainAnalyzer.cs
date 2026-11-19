@@ -49,7 +49,7 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
 
         while (currentExpression is not null)
         {
-            currentExpression = StripParentheses(currentExpression);
+            currentExpression = currentExpression.UnwrapParentheses();
             if (currentExpression is not InvocationExpressionSyntax currentInvocation)
             {
                 break;
@@ -135,16 +135,6 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static ExpressionSyntax StripParentheses(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 
     private static ExpressionSyntax StripParenthesesUp(ExpressionSyntax expression)

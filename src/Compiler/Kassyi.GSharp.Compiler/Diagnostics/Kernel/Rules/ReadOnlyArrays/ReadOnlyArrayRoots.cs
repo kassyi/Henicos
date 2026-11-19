@@ -21,27 +21,34 @@ internal sealed class ReadOnlyArrayRoots(
     SemanticModel model,
     IParameterSymbol? checkedParameter,
     bool followsAttributes,
-    Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>> sources)
+    AliasSources sources)
 {
     // The variables whose every source is a read-only array, as far as the fixed point has got
     private readonly HashSet<AliasKey> _readOnlyVariables = new();
 
-    /// <summary>Solves which variables hold only read-only arrays; call once before <see cref="RootOf"/>.</summary>
+    /// <summary>
+    /// Solves which variables hold only read-only arrays; call once before <see cref="RootOf(ExpressionSyntax)"/>.
+    /// </summary>
     public void Solve()
     {
-        foreach (var key in sources.Keys)
+        foreach (var key in sources.Entries.Keys)
         {
-            _readOnlyVariables.Add(key);
+            // A parameter (or a field of one), or a slot given a value that is not read, also holds what its
+            // declaration says; unless that is a read-only array, the body assignments are not its only values.
+            if (!HoldsUnreadValue(key) || RootOfSymbol(key.Last) != null)
+            {
+                _readOnlyVariables.Add(key);
+            }
         }
 
         bool changed;
         do
         {
             changed = false;
-            foreach (var pair in sources)
+            foreach (var pair in sources.Entries)
             {
                 if (_readOnlyVariables.Contains(pair.Key) &&
-                    !pair.Value.AsStackEnumerable().All(this, static (source, self) => self.RootOf(source) != null))
+                    !pair.Value.AsStackEnumerable().All(this, static (source, self) => self.RootOf(source, 0) != null))
                 {
                     _readOnlyVariables.Remove(pair.Key);
                     changed = true;
@@ -85,6 +92,8 @@ internal sealed class ReadOnlyArrayRoots(
                 return RootOf(cast.Expression, depth + 1);
             case PostfixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.SuppressNullableWarningExpression } bang:
                 return RootOf(bang.Operand, depth + 1);
+            case RefExpressionSyntax reference:
+                return RootOf(reference.Expression, depth + 1);
             case ConditionalExpressionSyntax conditional:
                 return RootOf(conditional.WhenTrue, depth + 1) is { } root &&
                        RootOf(conditional.WhenFalse, depth + 1) != null
@@ -102,20 +111,44 @@ internal sealed class ReadOnlyArrayRoots(
         }
     }
 
-    // A variable that is given values is read-only when all of them are; otherwise the attribute decides
-    private ISymbol? RootOfVariable(ExpressionSyntax expression, int depth)
+    private ISymbol? RootOf(AliasSource source, int depth) =>
+        source.Expression is { } expression
+            ? RootOf(expression, depth)
+            : source.Key is { } key
+                ? RootOfKey(key, depth)
+                : null;
+
+    // A variable that is given values is read-only when all of them are; a parameter (or a field of one) or a slot
+    // given an unread value falls back to its declaration attribute.
+    private ISymbol? RootOfVariable(ExpressionSyntax expression, int depth) =>
+        AliasKey.Of(expression, model) is { } key
+            ? RootOfKey(key, depth)
+            : RootOfSymbol(model.GetSymbol(expression));
+
+    private ISymbol? RootOfKey(AliasKey key, int depth)
     {
-        if (AliasKey.Of(expression, model) is { } key && sources.TryGetValue(key, out var given))
+        if (depth > 64)
+        {
+            return null;
+        }
+
+        // The walk ends at the depth limit when the sources form a cycle (a swap, var t = a; a = t;) or a chain longer
+        // than the limit; the fixed point of Solve has already proved every source read-only, so the slot stands in
+        if (sources.Entries.TryGetValue(key, out var given))
         {
             return !_readOnlyVariables.Contains(key)
                 ? null
-                : given.Length > 0 && RootOf(given[0], depth + 1) is { } root
-                    ? root
-                    : key.Member ?? key.Variable;
+                : given.Length > 0
+                    ? RootOf(given[0], depth + 1) ?? key.Last
+                    : RootOfSymbol(key.Last);
         }
 
-        return RootOfSymbol(model.GetSymbol(expression));
+        // A local that is given nothing holds null (no array); a slot given an unread value holds what it declares
+        return HoldsUnreadValue(key) ? RootOfSymbol(key.Last) : null;
     }
+
+    private bool HoldsUnreadValue(AliasKey key) =>
+        key.Variable is IParameterSymbol || sources.HoldsUnreadValue(key);
 
     private ISymbol? RootOfSymbol(ISymbol? symbol)
     {

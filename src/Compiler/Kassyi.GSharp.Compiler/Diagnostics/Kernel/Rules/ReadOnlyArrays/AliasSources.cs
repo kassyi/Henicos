@@ -1,67 +1,150 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules.ReadOnlyArrays;
 
 /// <summary>
-/// Everything a variable that can hold an array is given in a method body (<see cref="AliasKey"/>): its initializer,
-/// the right side of each simple assignment, and the members of an object initializer. A variable that is also
-/// assigned compound-wise, passed by <c>ref</c> or <c>out</c>, or deconstructed into has a source that cannot be read,
-/// so it is left out. A struct that is assigned as a whole or passed by <c>ref</c> or <c>out</c> loses its fields the
-/// same way.
+/// What each variable that can hold an array (<see cref="AliasKey"/>) is given in a method body. The readable values
+/// are its initializer, the right side of each simple assignment or tuple-literal deconstruction, the members of an
+/// object initializer, and the fields of a struct of the same type that is copied into it. A variable or struct that is
+/// also given a value whose content is not read (an array element, a call, a property, a compound assignment, a
+/// <c>ref</c> or <c>out</c> argument, a mutable <c>ref</c> or an address) holds what its declaration says on top of
+/// those. A struct reset to its default value gives its fields <see langword="null"/>, which is neither.
 /// </summary>
 internal sealed class AliasSources
 {
     private readonly SemanticModel _model;
-    private readonly Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>.Builder> _sources = new();
-    private readonly HashSet<AliasKey> _unreadable = new();
-    private readonly HashSet<ISymbol> _structsChanged = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<AliasKey, ImmutableArray<AliasSource>.Builder> _sources = new();
+
+    // The variables and structs given a value whose content is not read
+    private readonly HashSet<AliasKey> _unread = new();
 
     private AliasSources(SemanticModel model)
     {
         _model = model;
     }
 
+    internal SemanticModel Model => _model;
+
+    /// <summary>The readable sources recorded for each variable.</summary>
+    public Dictionary<AliasKey, ImmutableArray<AliasSource>> Entries { get; } = new();
+
     /// <summary>Reads the sources of every variable of <paramref name="body"/>.</summary>
-    public static Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>> Collect(SyntaxNode body, SemanticModel model)
+    public static AliasSources Collect(SyntaxNode body, SemanticModel model)
     {
         var collector = new AliasSources(model);
         foreach (var node in body.DescendantNodes())
         {
-            switch (node)
-            {
-                case VariableDeclaratorSyntax { Initializer.Value: { } value } declarator:
-                    collector.AddInitializer(declarator, value);
-                    break;
-                case AssignmentExpressionSyntax assignment:
-                    collector.AddAssignment(assignment);
-                    break;
-                case ArgumentSyntax
-                {
-                    RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword
-                } argument:
-                    collector.MarkChanged(argument.Expression);
-                    break;
-            }
+            collector.Visit(node);
         }
 
-        return collector.Build();
+        foreach (var pair in collector._sources)
+        {
+            collector.Entries[pair.Key] = pair.Value.ToImmutable();
+        }
+
+        return collector;
     }
 
-    // var x = <value>;  or  var w = new S { Data = <value> };
-    private void AddInitializer(VariableDeclaratorSyntax declarator, ExpressionSyntax value)
+    /// <summary>
+    /// Whether <paramref name="key"/>, or a struct that holds it, was given a value whose content is not read.
+    /// </summary>
+    public bool HoldsUnreadValue(AliasKey key) =>
+        _unread
+            .AsStackEnumerable()
+            .Any(key, static (unread, target) => unread.Equals(target) || unread.IsProperPrefixOf(target));
+
+    internal void Add(AliasKey key, AliasSource source)
     {
-        if (_model.GetDeclaredSymbol(declarator) is not ILocalSymbol local)
+        if (!_sources.TryGetValue(key, out var list))
+        {
+            _sources[key] = list = ImmutableArray.CreateBuilder<AliasSource>();
+        }
+
+        list.Add(source);
+    }
+
+    // x = <value>;  w.Inner.Data = <value>;  var w = new S { Data = <value> };  w = other;
+    internal void AddValue(AliasKey key, ExpressionSyntax value)
+    {
+        if (IsArrayLike(key.Last))
+        {
+            // x = x gives x nothing new; recorded, it would be a cycle that ReadOnlyArrayRoots takes as read-only
+            if (AliasKey.Of(value, _model) is not { } sourceArrayKey || !key.Equals(sourceArrayKey))
+            {
+                Add(key, AliasSource.FromExpression(value));
+            }
+
+            return;
+        }
+
+        if (!IsStruct(key.Last))
         {
             return;
         }
 
-        if (local.Type.TryGetArrayLikeElementType(out _))
+        value = value.UnwrapParentheses();
+        if (ObjectInitializerOf(value) is { } initializer)
         {
-            Add(new AliasKey(local, null), value);
+            AddObjectInitializer(key, initializer, !IsDefaultStructConstruction(value));
+            return;
         }
 
-        AddObjectInitializer(local, value);
+        if (AliasStructCopySources.TryAdd(this, key, value) || IsDefaultStructValue(value))
+        {
+            return;
+        }
+
+        _unread.Add(key);
     }
 
-    // x = <value>;  w.Data = <value>;  x += ...;  (a, b) = ...;
+    internal void MarkUnread(AliasKey key) => _unread.Add(key);
+
+    private static InitializerExpressionSyntax? ObjectInitializerOf(ExpressionSyntax value) =>
+        value.UnwrapParentheses() is BaseObjectCreationExpressionSyntax
+        {
+            Initializer: { RawKind: (int)SyntaxKind.ObjectInitializerExpression } initializer
+        }
+            ? initializer
+            : null;
+
+    private static bool IsArrayLike(ISymbol symbol) =>
+        AliasStructCopySources.TypeOf(symbol) is { } type && type.TryGetArrayLikeElementType(out _);
+
+    private static bool IsStruct(ISymbol symbol) =>
+        AliasStructCopySources.TypeOf(symbol) is { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None };
+
+    private void Visit(SyntaxNode node)
+    {
+        switch (node)
+        {
+            case VariableDeclaratorSyntax { Initializer.Value: { } value } declarator:
+                AddInitializer(declarator, value);
+                break;
+            case AssignmentExpressionSyntax assignment:
+                AddAssignment(assignment);
+                break;
+            case ArgumentSyntax
+            {
+                RefKindKeyword.RawKind: (int)SyntaxKind.RefKeyword or (int)SyntaxKind.OutKeyword
+            } argument:
+                AliasDeconstructionSources.MarkTargetUnread(this, argument.Expression);
+                break;
+            case RefExpressionSyntax reference when !IsReadOnlyRef(reference):
+                AliasDeconstructionSources.MarkTargetUnread(this, reference.Expression);
+                break;
+            case PrefixUnaryExpressionSyntax addressOf when addressOf.IsKind(SyntaxKind.AddressOfExpression):
+                AliasDeconstructionSources.MarkTargetUnread(this, addressOf.Operand);
+                break;
+        }
+    }
+
+    private void AddInitializer(VariableDeclaratorSyntax declarator, ExpressionSyntax value)
+    {
+        if (_model.GetDeclaredSymbol(declarator) is ILocalSymbol local)
+        {
+            AddValue(AliasKey.ForVariable(local), value);
+        }
+    }
+
+    // x = <value>;  x += ...;  (a, b) = ...;
     private void AddAssignment(AssignmentExpressionSyntax assignment)
     {
         if (assignment.Parent is InitializerExpressionSyntax)
@@ -71,14 +154,7 @@ internal sealed class AliasSources
 
         if (assignment.Left is TupleExpressionSyntax or DeclarationExpressionSyntax)
         {
-            foreach (var inner in assignment.Left.DescendantNodesAndSelf())
-            {
-                if (inner is IdentifierNameSyntax)
-                {
-                    MarkChanged((ExpressionSyntax)inner);
-                }
-            }
-
+            AliasDeconstructionSources.AddDeconstruction(this, assignment.Left, assignment.Right);
             return;
         }
 
@@ -87,96 +163,98 @@ internal sealed class AliasSources
             return;
         }
 
-        if (!assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
+        if (assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
         {
-            _unreadable.Add(key);
-            return;
+            AddValue(key, assignment.Right);
         }
-
-        if (key.Member == null && IsObjectCreation(assignment.Right))
+        else
         {
-            // w = new S { Data = <value> } gives the fields of w their sources
-            AddObjectInitializer(key.Variable, assignment.Right);
-            return;
+            MarkUnread(key);
         }
-
-        if (key.Member == null && !IsArrayLike(key.Variable))
-        {
-            // Any other value of a struct replaces its fields
-            _structsChanged.Add(key.Variable);
-            return;
-        }
-
-        Add(key, assignment.Right);
     }
 
-    private static bool IsObjectCreation(ExpressionSyntax value) =>
-        value is ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax;
-
-    private static bool IsArrayLike(ISymbol variable) => variable switch
+    // ref readonly var x = ref w.Inner; and x = ref w.Inner; for a ref readonly local cannot write through the alias
+    private bool IsReadOnlyRef(RefExpressionSyntax reference)
     {
-        ILocalSymbol local => local.Type.TryGetArrayLikeElementType(out _),
-        IParameterSymbol parameter => parameter.Type.TryGetArrayLikeElementType(out _),
-        _ => false
-    };
-
-    private void AddObjectInitializer(ISymbol variable, ExpressionSyntax value)
-    {
-        var initializer = value switch
+        SyntaxNode current = reference;
+        while (current.Parent is ParenthesizedExpressionSyntax ||
+               (current.Parent is ConditionalExpressionSyntax conditional && conditional.Condition != current))
         {
-            ObjectCreationExpressionSyntax creation => creation.Initializer,
-            ImplicitObjectCreationExpressionSyntax implicitCreation => implicitCreation.Initializer,
-            _ => null
-        };
-        if (initializer == null)
-        {
-            return;
+            current = current.Parent;
         }
 
+        return current.Parent switch
+        {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator } =>
+                _model.GetDeclaredSymbol(declarator) is ILocalSymbol { RefKind: RefKind.RefReadOnly },
+            AssignmentExpressionSyntax assignment =>
+                _model.GetSymbol(assignment.Left) is ILocalSymbol { RefKind: RefKind.RefReadOnly },
+            _ => false
+        };
+    }
+
+    private bool IsDefaultStructConstruction(ExpressionSyntax value) =>
+        value.UnwrapParentheses() is BaseObjectCreationExpressionSyntax creation &&
+        (creation.ArgumentList is null || creation.ArgumentList.Arguments.Count == 0) &&
+        _model.GetSymbol(creation) is IMethodSymbol
+        {
+            IsImplicitlyDeclared: true,
+            ContainingType.IsValueType: true
+        };
+
+    private bool IsDefaultStructValue(ExpressionSyntax value)
+    {
+        value = value.UnwrapParentheses();
+        return value switch
+        {
+            DefaultExpressionSyntax => true,
+            LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.DefaultLiteralExpression) => true,
+            BaseObjectCreationExpressionSyntax { Initializer: null } creation => IsDefaultStructConstruction(creation),
+            _ => false
+        };
+    }
+
+    // new S(...) { A = x, Inner = { B = y } }: the named fields get their values; with a constructor other than the
+    // implicit one, the fields the initializer does not name hold what the constructor gave them
+    private void AddObjectInitializer(AliasKey prefix, InitializerExpressionSyntax initializer, bool unnamedUnread)
+    {
+        HashSet<IFieldSymbol>? named = null;
         foreach (var member in initializer.Expressions)
         {
-            if (member is AssignmentExpressionSyntax { Left: IdentifierNameSyntax name } assigned &&
-                _model.GetSymbol(name) is IFieldSymbol { IsStatic: false } field)
+            if (member is not AssignmentExpressionSyntax { Left: IdentifierNameSyntax name } assigned ||
+                _model.GetSymbol(name) is not IFieldSymbol { IsStatic: false } field)
             {
-                Add(new AliasKey(variable, field), assigned.Right);
+                continue;
             }
-        }
-    }
 
-    // A variable passed by ref or out, or deconstructed into: any value can end up in it
-    private void MarkChanged(ExpressionSyntax expression)
-    {
-        if (AliasKey.Of(expression, _model) is not { } key)
-        {
-            return;
-        }
-
-        _unreadable.Add(key);
-        _structsChanged.Add(key.Variable);
-    }
-
-    private void Add(AliasKey key, ExpressionSyntax source)
-    {
-        if (!_sources.TryGetValue(key, out var list))
-        {
-            _sources[key] = list = ImmutableArray.CreateBuilder<ExpressionSyntax>();
-        }
-
-        list.Add(source);
-    }
-
-    private Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>> Build()
-    {
-        var result = new Dictionary<AliasKey, ImmutableArray<ExpressionSyntax>>();
-        foreach (var pair in _sources)
-        {
-            var lostItsStruct = pair.Key.Member != null && _structsChanged.Contains(pair.Key.Variable);
-            if (!_unreadable.Contains(pair.Key) && !lostItsStruct)
+            (named ??= new HashSet<IFieldSymbol>(SymbolEqualityComparer.Default)).Add(field);
+            var memberKey = prefix.Append(field);
+            if (assigned.Right.UnwrapParentheses() is InitializerExpressionSyntax nested &&
+                nested.IsKind(SyntaxKind.ObjectInitializerExpression))
             {
-                result[pair.Key] = pair.Value.ToImmutable();
+                AddObjectInitializer(memberKey, nested, unnamedUnread);
+            }
+            else
+            {
+                AddValue(memberKey, assigned.Right);
             }
         }
 
-        return result;
+        if (unnamedUnread && AliasStructCopySources.TypeOf(prefix.Last) is { } type)
+        {
+            MarkUnnamedFieldsUnread(prefix, type, named);
+        }
+    }
+
+    private void MarkUnnamedFieldsUnread(AliasKey prefix, ITypeSymbol type, HashSet<IFieldSymbol>? named)
+    {
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } field &&
+                (named is null || !named.Contains(field)))
+            {
+                _unread.Add(prefix.Append(field));
+            }
+        }
     }
 }

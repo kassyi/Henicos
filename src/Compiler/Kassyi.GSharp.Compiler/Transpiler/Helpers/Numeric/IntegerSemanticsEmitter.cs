@@ -45,7 +45,7 @@ internal static class IntegerSemanticsEmitter
 
         using (context.Emitter.Writer.Parentheses())
         {
-            AppendOperand(Unparenthesize(syntax), ref context);
+            AppendOperand(syntax.UnwrapParentheses(), ref context);
             context.Emitter.Writer.Append($"&{mask}");
         }
     }
@@ -103,9 +103,9 @@ internal static class IntegerSemanticsEmitter
         context.Emitter.Writer.Append(helper);
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Visitor.Visit(Unparenthesize(left));
+            context.Visitor.Visit(left.UnwrapParentheses());
             context.Emitter.Writer.Append(',');
-            context.Visitor.Visit(Unparenthesize(right));
+            context.Visitor.Visit(right.UnwrapParentheses());
             DivisorCheck.AppendSiteArgument(context.Emitter.Writer, site);
         }
     }
@@ -116,22 +116,8 @@ internal static class IntegerSemanticsEmitter
         context.Emitter.Writer.Append(helper);
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Visitor.Visit(Unparenthesize(operand));
+            context.Visitor.Visit(operand.UnwrapParentheses());
         }
-    }
-
-    /// <summary>
-    /// <paramref name="syntax"/> without the parentheses around it: an argument of a call needs none of its own
-    /// (<c>(i+1)*2</c> is <c>__gsharp_mul_i32(__gsharp_add_i32(i,1),2)</c>), and <c>ref (i)</c> names <c>i</c>.
-    /// </summary>
-    internal static ExpressionSyntax Unparenthesize(ExpressionSyntax syntax)
-    {
-        while (syntax is ParenthesizedExpressionSyntax parenthesized)
-        {
-            syntax = parenthesized.Expression;
-        }
-
-        return syntax;
     }
 
     // How the value of a step or a compound assignment is used: not at all, the new value, or the old value of a
@@ -331,7 +317,7 @@ internal static class IntegerSemanticsEmitter
         writer.Append(plan.Helper);
         using (writer.Parentheses())
         {
-            context.Visitor.Visit(Unparenthesize(target));
+            context.Visitor.Visit(target.UnwrapParentheses());
             writer.Append(',');
             if (value == null)
             {
@@ -339,7 +325,7 @@ internal static class IntegerSemanticsEmitter
             }
             else
             {
-                context.Visitor.Visit(Unparenthesize(value));
+                context.Visitor.Visit(value.UnwrapParentheses());
             }
 
             DivisorCheck.AppendSiteArgument(writer, plan.Site);

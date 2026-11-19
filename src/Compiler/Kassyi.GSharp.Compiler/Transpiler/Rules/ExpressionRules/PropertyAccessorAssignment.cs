@@ -115,7 +115,7 @@ internal static class PropertyAccessorAssignment
         var storedProperty = PropertyAccessorCall.WritesBackingField(target, ref context)
             ? PropertyAccessorCall.GetTargetProperty(target, model)
             : null;
-        target = IntegerSemanticsEmitter.Unparenthesize(target);
+        target = target.UnwrapParentheses();
         var receiver = target is MemberAccessExpressionSyntax { Expression: var expression } &&
                        !ExpressionEffects.OfLocation(expression, model).IsEmpty
             ? expression
