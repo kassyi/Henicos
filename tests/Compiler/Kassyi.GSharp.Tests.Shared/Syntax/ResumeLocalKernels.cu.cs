@@ -259,6 +259,70 @@ public static partial class ResumeLocalKernels
         result[tid] += 100;
     }
 
+    // A lambda over a local across a barrier: result[t] = t + 1 (the value passes on main too; the snapshot checks it)
+    [GpuKernel]
+    public static void LambdaCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        Func<int> f = () => v;
+        Gpu.SyncThreads();
+        result[tid] = f();
+    }
+
+    // A local function over a local across a barrier: result[t] = t + 1 (the snapshot, not the value, checks it)
+    [GpuKernel]
+    public static void LocalFunctionCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int Get() => v;
+        Func<int> f = Get;
+        Gpu.SyncThreads();
+        result[tid] = f();
+    }
+
+    // A self-recursive local function converted to a delegate that captures a local variable across a barrier:
+    // result[t] = 2 + 1 + (t + 1) = t + 4
+    [GpuKernel]
+    public static void RecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int SumTo(int n) => n <= 0 ? v : n + SumTo(n - 1);
+        Func<int, int> f = SumTo;
+        Gpu.SyncThreads();
+        result[tid] = f(2);
+    }
+
+    // Mutually recursive local functions where both capture a local variable across a barrier:
+    // result[t] = t + 1
+    [GpuKernel]
+    public static void MutuallyRecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int A(int n) => n <= 0 ? v : B(n - 1);
+        int B(int n) => n <= 0 ? v : A(n - 1);
+        Func<int, int> f = A;
+        Gpu.SyncThreads();
+        result[tid] = f(2);
+    }
+
+    // Mutually recursive local functions where only one captures a local variable across a barrier:
+    // result[t] = t + 1
+    [GpuKernel]
+    public static void AsymmetricMutuallyRecursiveLocalFuncCapturedIntKernel(int[] result)
+    {
+        int tid = ThreadIndex.X;
+        int v = tid + 1;
+        int A(int n) => n <= 0 ? 0 : B(n - 1);
+        int B(int n) => n <= 0 ? v : A(n - 1);
+        Func<int, int> f = A;
+        Gpu.SyncThreads();
+        result[tid] = f(1);
+    }
+
     // A read-only span initialized with a collection expression of constants before a barrier: a = {7, 3}
     [GpuKernel]
     public static void ReadOnlyCollectionSpanKernel(int[] a)

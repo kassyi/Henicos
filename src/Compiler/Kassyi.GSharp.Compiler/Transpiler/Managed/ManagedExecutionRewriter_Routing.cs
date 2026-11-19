@@ -11,24 +11,24 @@ internal sealed partial class ManagedExecutionRewriter
     // [UnsafeAccessor] stub (ManagedAccessorSet), which reaches its managed version when it has one
     private ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee)
     {
-        var routed = IsRouted(callee);
+        var prefix = GetTargetPrefix(callee);
         if (accessors.IsAccessible(callee))
         {
-            return SpellCallee(callee, typeArguments: null, routed);
+            return SpellCallee(callee, typeArguments: null, prefix);
         }
 
-        return accessors.Spell(callee, ManagedRouting.GetAccessorName(callee, routed));
+        return accessors.Spell(callee, ManagedRouting.GetAccessorName(callee, prefix));
     }
 
-    private bool IsRouted(IMethodSymbol method) =>
-        ManagedRouting.IsRouted(method, semanticModel.Compilation);
+    private string? GetTargetPrefix(IMethodSymbol method) =>
+        ManagedRouting.GetTargetPrefix(method, semanticModel.Compilation, bodyKind);
 
-    // global::<containing type>.__gsharp_managed_<function path>[<type arguments>] when routed, otherwise
+    // global::<containing type>.<prefix><function path>[<type arguments>] when prefixed, otherwise
     // global::<containing type>.<name>[<type arguments>]
     private static ExpressionSyntax SpellCallee(IMethodSymbol callee, TypeArgumentListSyntax? typeArguments,
-        bool routed)
+        string? prefix)
     {
-        var identifier = SyntaxFactory.Identifier(ManagedRouting.GetMemberName(callee, routed));
+        var identifier = SyntaxFactory.Identifier(ManagedRouting.GetMemberName(callee, prefix));
         SimpleNameSyntax name = typeArguments is null
             ? SyntaxFactory.IdentifierName(identifier)
             : SyntaxFactory.GenericName(identifier, typeArguments);
@@ -39,16 +39,16 @@ internal sealed partial class ManagedExecutionRewriter
         );
     }
 
-    // A simple name (F, F<int>) that calls or names a device function with a managed version becomes the managed
-    // version; any other name is qualified (ManagedNameQualifier). The name of a member access is routed with the
-    // member access (TryRouteMemberAccess)
+    // A simple name (F, F<int>) that calls or names a routed device function becomes its target form; any other name
+    // is qualified (ManagedNameQualifier). The name of a member access is routed with the member access
+    // (TryRouteMemberAccess)
     private SyntaxNode? RouteOrQualify(SimpleNameSyntax node, SyntaxNode? visited)
     {
         if (node.Parent is not MemberAccessExpressionSyntax { Name: var memberName } || memberName != node)
         {
-            if (TryGetRoutedMethod(node, out var method))
+            if (TryGetRoutedMethod(node, out var method, out var prefix))
             {
-                return SpellCallee(method, (visited as GenericNameSyntax)?.TypeArgumentList, routed: true)
+                return SpellCallee(method, (visited as GenericNameSyntax)?.TypeArgumentList, prefix)
                     .WithTriviaFrom(node);
             }
         }
@@ -56,9 +56,9 @@ internal sealed partial class ManagedExecutionRewriter
         return ManagedNameQualifier.QualifyName(node, visited, semanticModel);
     }
 
-    // T.F or T.F<int> that calls or names a device function with a managed version; a reduced extension method group
-    // x.F or x.F<int> that names one (__gsharp_bind(x, global::T.__gsharp_managed_F), #940); null otherwise. A reduced
-    // extension call x.F(a) is routed with the static call it becomes (RouteExtensionCall)
+    // T.F or T.F<int> that calls or names a routed device function; a reduced extension method group x.F or x.F<int>
+    // that names one (__gsharp_bind(x, global::T.<prefix>F), #940); null otherwise. A reduced extension call x.F(a) is
+    // routed with the static call it becomes (RouteExtensionCall)
     private ExpressionSyntax? TryRouteMemberAccess(MemberAccessExpressionSyntax node, SyntaxNode? visited)
     {
         if (!node.IsKind(SyntaxKind.SimpleMemberAccessExpression))
@@ -68,17 +68,17 @@ internal sealed partial class ManagedExecutionRewriter
 
         var name = (visited as MemberAccessExpressionSyntax)?.Name ?? node.Name;
         var typeArguments = (name as GenericNameSyntax)?.TypeArgumentList;
-        if (TryGetRoutedMethod(node, out var method))
+        if (TryGetRoutedMethod(node, out var method, out var prefix))
         {
-            return SpellCallee(method, typeArguments, routed: true).WithTriviaFrom(node);
+            return SpellCallee(method, typeArguments, prefix).WithTriviaFrom(node);
         }
 
         if ((node.Parent is not InvocationExpressionSyntax parentInvocation || parentInvocation.Expression != node) &&
             semanticModel.GetSymbol(node) is IMethodSymbol symbol &&
-            ManagedRouting.GetBoundExtension(symbol, semanticModel.Compilation) is { } extension)
+            ManagedRouting.GetBoundExtension(symbol, semanticModel.Compilation, bodyKind) is var (extension, extPrefix))
         {
             var receiver = (visited as MemberAccessExpressionSyntax)?.Expression ?? node.Expression;
-            return SpellBindCall(receiver, symbol, extension, typeArguments).WithTriviaFrom(node);
+            return SpellBindCall(receiver, symbol, extension, extPrefix, typeArguments).WithTriviaFrom(node);
         }
 
         return null;
@@ -89,6 +89,7 @@ internal sealed partial class ManagedExecutionRewriter
         ExpressionSyntax receiver,
         IMethodSymbol reduced,
         IMethodSymbol extension,
+        string prefix,
         TypeArgumentListSyntax? typeArguments)
     {
         var typeArgumentsList = ManagedRouting.GetBindTypeArguments(reduced, extension);
@@ -105,7 +106,7 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         writer.Append('>');
-        var callee = SpellCallee(extension, typeArguments, routed: true);
+        var callee = SpellCallee(extension, typeArguments, prefix);
         var arguments = SyntaxFactory.SeparatedList<ArgumentSyntax>()
             .Add(SyntaxFactory.Argument(receiver.WithoutTrivia()))
             .Add(SyntaxFactory.Argument(callee));
@@ -115,12 +116,13 @@ internal sealed partial class ManagedExecutionRewriter
     }
 
     // The static call global::N.C.F(x, a) that ManagedNameQualifier made of the reduced extension call x.F(a), with the
-    // managed version as its callee when F has one
+    // target form as its callee when F is routed
     private ExpressionSyntax RouteExtensionCall(InvocationExpressionSyntax node, ExpressionSyntax rewritten)
     {
         if (rewritten is not InvocationExpressionSyntax call ||
             semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
-            ManagedRouting.GetRoutedExtensionCall(symbol, semanticModel.Compilation) is not { } extension)
+            ManagedRouting.GetRoutedExtensionCall(symbol, semanticModel.Compilation, bodyKind) is not
+                var (extension, prefix))
         {
             return rewritten;
         }
@@ -128,20 +130,24 @@ internal sealed partial class ManagedExecutionRewriter
         var typeArguments = (call.Expression as QualifiedNameSyntax)?.Right is GenericNameSyntax generic
             ? generic.TypeArgumentList
             : null;
-        return call.WithExpression(SpellCallee(extension, typeArguments, routed: true));
+        return call.WithExpression(SpellCallee(extension, typeArguments, prefix));
     }
 
     // A reduced extension method is routed with its call only (RouteExtensionCall)
-    private bool TryGetRoutedMethod(ExpressionSyntax node, [NotNullWhen(true)] out IMethodSymbol? method)
+    private bool TryGetRoutedMethod(ExpressionSyntax node, [NotNullWhen(true)] out IMethodSymbol? method,
+        [NotNullWhen(true)] out string? prefix)
     {
         method = null;
+        prefix = null;
         if (semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
-            !ManagedRouting.IsRoutedReference(symbol, semanticModel.Compilation))
+            ManagedRouting.GetRoutedReferencePrefix(symbol, semanticModel.Compilation, bodyKind) is not
+                { } targetPrefix)
         {
             return false;
         }
 
         method = symbol;
+        prefix = targetPrefix;
         return true;
     }
 }

@@ -16,9 +16,23 @@ internal static class CallTargetEmitter
     /// not implement.
     /// </summary>
     /// <returns>Whether it wrote the call.</returns>
-    public static bool TryReplaceCall(SyntaxNode node, IMethodSymbol called, ref TranspileContext context)
+    public static bool TryReplaceCall(SyntaxNode node, IMethodSymbol called, ref TranspileContext context) =>
+        TryReplaceCall(
+            node,
+            called,
+            CallTargetClassifier.Classify(called, node, context.Query.SemanticModel, context.Emitter.Dialect),
+            ref context
+        );
+
+    /// <summary>
+    /// Writes <paramref name="node"/> as <paramref name="plan"/>, the decision of <see cref="CallTargetClassifier"/>
+    /// already made for the call (on the node of the user's source of a call that has no node of its own in a lowered
+    /// tree), when its target cannot be named.
+    /// </summary>
+    /// <returns>Whether it wrote the call.</returns>
+    public static bool TryReplaceCall(SyntaxNode node, IMethodSymbol called, CallTargetPlan plan,
+        ref TranspileContext context)
     {
-        var plan = CallTargetClassifier.Classify(called, node, context.Query.SemanticModel, context.Emitter.Dialect);
         if (plan.Kind != CallTargetKind.UnsupportedIntrinsic)
         {
             return TryFail(node, plan, ref context);

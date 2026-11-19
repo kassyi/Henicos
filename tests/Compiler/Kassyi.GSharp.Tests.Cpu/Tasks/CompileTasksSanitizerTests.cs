@@ -33,8 +33,15 @@ public class CompileTasksSanitizerTests
 
         Assert.True(task.Execute());
         Assert.Single(task.OutputDlls);
-        var invocation = Assert.Single(ctx.Runner.Invocations, i => i.FileName == compiler && i.Arguments.Contains("-shared"));
-        Assert.Contains(expectedFlags, invocation.Arguments);
+        var compileInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == compiler && i.Arguments.Contains(" -c ") ||
+                 (i.FileName == compiler && i.Arguments.StartsWith("-c ", StringComparison.Ordinal)));
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == compiler && i.Arguments.Contains("-shared"));
+        Assert.Contains(expectedFlags, compileInvocation.Arguments);
+        Assert.Contains(expectedFlags, linkInvocation.Arguments);
     }
 
     [Theory]
@@ -53,8 +60,14 @@ public class CompileTasksSanitizerTests
         task.GSharpNativeSanitizers = sanitizers;
 
         Assert.True(task.Execute());
-        var invocation = Assert.Single(ctx.Runner.Invocations, i => i.FileName == "g++" && i.Arguments.Contains("-shared"));
-        Assert.DoesNotContain("-fsanitize", invocation.Arguments);
+        var compileInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == "g++" && i.Arguments.StartsWith("-c ", StringComparison.Ordinal));
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName == "g++" && i.Arguments.Contains("-shared"));
+        Assert.DoesNotContain("-fsanitize", compileInvocation.Arguments);
+        Assert.DoesNotContain("-fsanitize", linkInvocation.Arguments);
     }
 
     [Theory]
@@ -74,9 +87,16 @@ public class CompileTasksSanitizerTests
 
         Assert.True(task.Execute());
         Assert.Single(task.OutputDlls);
-        var invocation = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe"));
-        Assert.Contains("/fsanitize=address", invocation.Arguments);
-        Assert.Contains("/Zi", invocation.Arguments);
+        var compileInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/LD "));
+        Assert.Contains("/fsanitize=address", compileInvocation.Arguments);
+        Assert.Contains("/Zi", compileInvocation.Arguments);
+        Assert.Contains("/Fd:", compileInvocation.Arguments);
+        Assert.Contains("/fsanitize=address", linkInvocation.Arguments);
     }
 
     [Theory]
@@ -95,8 +115,14 @@ public class CompileTasksSanitizerTests
         task.GSharpNativeSanitizers = sanitizers;
 
         Assert.True(task.Execute());
-        var invocation = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe"));
-        Assert.DoesNotContain("/fsanitize", invocation.Arguments);
+        var compileInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/LD "));
+        Assert.DoesNotContain("/fsanitize", compileInvocation.Arguments);
+        Assert.DoesNotContain("/fsanitize", linkInvocation.Arguments);
     }
 
     [Theory]
@@ -124,15 +150,22 @@ public class CompileTasksSanitizerTests
                  w.Contains("MSVC", StringComparison.OrdinalIgnoreCase) &&
                  w.Contains("AddressSanitizer", StringComparison.OrdinalIgnoreCase));
 
-        var invocation = Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe"));
+        var compileInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/LD "));
         if (expectAddressFlag)
         {
-            Assert.Contains("/fsanitize=address", invocation.Arguments);
-            Assert.Contains("/Zi", invocation.Arguments);
+            Assert.Contains("/fsanitize=address", compileInvocation.Arguments);
+            Assert.Contains("/Zi", compileInvocation.Arguments);
+            Assert.Contains("/fsanitize=address", linkInvocation.Arguments);
         }
         else
         {
-            Assert.DoesNotContain("/fsanitize", invocation.Arguments);
+            Assert.DoesNotContain("/fsanitize", compileInvocation.Arguments);
+            Assert.DoesNotContain("/fsanitize", linkInvocation.Arguments);
         }
     }
 
@@ -184,5 +217,80 @@ public class CompileTasksSanitizerTests
         Assert.Contains("address", error, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("undefined", error, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(ctx.Runner.Invocations, i => i.FileName == "g++" && i.Arguments.Contains("-shared"));
+        Assert.DoesNotContain(
+            ctx.Runner.Invocations,
+            i => i.FileName == "g++" && i.Arguments.StartsWith("-c ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void CompileCppToNativeTask_MsvcToolchain_MultiUnitAddressSanitizer_UsesDistinctPerUnitPdb()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Module.g.cpp", "// unit 0");
+        ctx.CreateDummySource("Module.1.g.cpp", "// unit 1");
+        ctx.CreateDummySource("Module.2.g.cpp", "// unit 2");
+
+        var task = ctx.CreateCppTask(
+            ["Module.g.cpp", "Module.1.g.cpp", "Module.2.g.cpp"],
+            ctx.CreateMsvcToolchain());
+        task.GSharpNativeSanitizers = "address";
+
+        Assert.True(task.Execute());
+        Assert.Single(task.OutputDlls);
+
+        var compileInvocations = ctx.Runner.Invocations
+            .Where(i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "))
+            .ToArray();
+        Assert.Equal(3, compileInvocations.Length);
+
+        var pdbPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var invocation in compileInvocations)
+        {
+            Assert.Contains("/fsanitize=address", invocation.Arguments);
+            Assert.Contains("/Zi", invocation.Arguments);
+            var fdIndex = invocation.Arguments.IndexOf("/Fd:\"", StringComparison.Ordinal);
+            Assert.True(fdIndex >= 0);
+            var span = invocation.Arguments.AsSpan(fdIndex + 5);
+            var endQuote = span.IndexOf('"');
+            Assert.True(endQuote > 0);
+            Assert.True(pdbPaths.Add(span.Slice(0, endQuote).ToString()));
+        }
+
+        Assert.Equal(3, pdbPaths.Count);
+        var linkInvocation = Assert.Single(
+            ctx.Runner.Invocations,
+            i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/LD "));
+        Assert.Contains("/fsanitize=address", linkInvocation.Arguments);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_MsvcToolchain_MultiTargetAddressSanitizer_IsolatesArchIntermediates()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Module.g.cpp", "// unit 0");
+        ctx.CreateDummySource("Module.1.g.cpp", "// unit 1");
+
+        var objRoot = Path.Combine(ctx.TempDir, "objs");
+        var task = ctx.CreateCppTask(
+            ["Module.g.cpp", "Module.1.g.cpp"],
+            ctx.CreateMsvcToolchain(),
+            objRoot);
+        task.GSharpMultiTarget = true;
+        task.GSharpNativeSanitizers = "address";
+
+        Assert.True(task.Execute());
+        Assert.Equal(2, task.OutputDlls.Length);
+        Assert.True(File.Exists(Path.Combine(objRoot, "x64", "Module.obj")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "x64", "Module.1.obj")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "arm64", "Module.obj")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "arm64", "Module.1.obj")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "x64", "Module.vc.pdb")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "arm64", "Module.vc.pdb")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "x64", "Module.1.vc.pdb")));
+        Assert.True(File.Exists(Path.Combine(objRoot, "arm64", "Module.1.vc.pdb")));
     }
 }

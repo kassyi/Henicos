@@ -4,12 +4,21 @@ import type * as Assert from "node:assert";
 import type { ReadStep } from "./command-reader.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import type { ShellName } from "./constants.ts";
-import type { ScreenLine } from "./screen-line.ts";
+import type { LegendEntry, ScreenLine } from "./screen-line.ts";
 
-export { bare, rawWords, segmentParts, segmentsOf, variablePrefix } from "./command-reader.ts";
+export {
+  bare,
+  rawWords,
+  readCommand,
+  readCommandLine,
+  segmentParts,
+  segmentsOf,
+  variablePrefix,
+} from "./command-reader.ts";
+export { isTrivialStep, programOf } from "./estimate-key.ts";
 export { errorCode, errorMessage } from "./history.ts";
 export { dropShortWords } from "./short-name.ts";
-export type { CommandKeys, PathPlace, ReadStep, ScreenLine, ShellName };
+export type { CommandKeys, LegendEntry, PathPlace, ReadStep, ScreenLine, ShellName };
 export type AssertModule = typeof Assert;
 
 /** Plugin API version; the core accepts only plugins matching this version. */
@@ -100,12 +109,13 @@ export interface ViewPanel {
   read(): unknown | null;
   render(data: unknown, jobs: readonly PanelJob[], columns: number, rows: number, now: number): ScreenLine[];
   summary(data: unknown): string;
-  help(data: unknown): { heading?: string; mark?: string; text: string }[];
+  help(data: unknown): LegendEntry[];
 }
 
 export interface PanelJob {
   readonly id: number;
   readonly worktree: string;
+  readonly cwd?: string;
   readonly session?: string;
 }
 

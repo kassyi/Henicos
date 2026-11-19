@@ -47,6 +47,13 @@ __forceinline__ int __popc(uint32_t value) { return (int)__popcnt(value); }
 __forceinline__ int __popcll(uint64_t value) { return (int)__popcnt64(value); }
 __forceinline__ int __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)(31 - index) : 32; }
 __forceinline__ int __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? (int)(63 - index) : 64; }
+// BitOperations.RoundUpToPowerOf2: 0 for 0 and for values above the largest power of two, as .NET (see Prelude.cu)
+__forceinline__ uint32_t __gsharp_round_up_pow2_32(uint32_t value) {
+    int shift = 32 - __gsharp_lzc_32(value - 1u); return shift < 32 ? 1u << shift : 0u;
+}
+__forceinline__ uint64_t __gsharp_round_up_pow2_64(uint64_t value) {
+    int shift = 64 - __gsharp_lzc_64(value - 1ull); return shift < 64 ? 1ull << shift : 0ull;
+}
 __forceinline__ int __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? (int)index : 32; }
 __forceinline__ int __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? (int)index : 64; }
 __forceinline__ int __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? (int)index : 0; }

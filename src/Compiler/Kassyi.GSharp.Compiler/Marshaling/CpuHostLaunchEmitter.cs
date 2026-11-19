@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
@@ -24,14 +25,17 @@ internal static class CpuHostLaunchEmitter
     /// launcher (<see cref="TypedPointerLaunchEmitter"/>), as the CUDA dialect emits them.
     /// </summary>
     public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel,
-        LauncherAccessibilities accessibilities, string moduleName, in TargetLimits targetLimits)
+        LauncherAccessibilities accessibilities, string moduleName, in TargetLimits targetLimits,
+        ManagedBarrierModel managedBarrierModel = ManagedBarrierModel.StateMachine)
     {
+        var useStack = managedBarrierModel == ManagedBarrierModel.Stack && kernel.Host.SupportsManagedStack;
+        var managedSource = useStack ? kernel.ManagedStackSource : kernel.ManagedCSharpSource;
         // No copy for a kernel that runs as the user's method or not at all on the managed path (GSH0119)
-        writer.AppendLineIf(kernel.ManagedCSharpSource.Length > 0, kernel.ManagedCSharpSource);
+        writer.AppendLineIf(managedSource.Length > 0, managedSource);
         WrapperEmitter.WriteLayoutCheckedField(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);
         var arguments = CpuNativeArgumentPlan.Create(kernel.Host);
         WriteCpuDelegateDeclaration(writer, kernel, arguments);
-        WriteLaunchMethodCpu(writer, kernel, arguments, accessibilities.Launcher, moduleName, targetLimits);
+        WriteLaunchMethodCpu(writer, kernel, arguments, accessibilities.Launcher, moduleName, targetLimits, useStack);
         CpuPointerLaunchEmitter.Write(writer, kernel, accessibilities.Pointer, moduleName, targetLimits);
         if (kernel.IsOverloaded)
         {
@@ -41,7 +45,7 @@ internal static class CpuHostLaunchEmitter
 
     private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel,
         in CpuNativeArgumentPlan arguments, Accessibility accessibility, string moduleName,
-        in TargetLimits targetLimits)
+        in TargetLimits targetLimits, bool useStack)
     {
         using var suppression = writer.WarningSuppressed(ManagedPointerWarning.Id);
         WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false, accessibility);
@@ -60,7 +64,7 @@ internal static class CpuHostLaunchEmitter
             AliasGroupEmitter.WriteCpuHeldRelease(writer, sharing.Aliases);
 
             WriteDllPath(writer, moduleName);
-            ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host);
+            ManagedFallbackEmitter.WriteManagedExecutionFallback(writer, kernel.Host, useStack);
 
             // [WHY] Only the native launcher reads the host bytes as the C++ layout; the managed fallback uses the values
             WrapperEmitter.WriteLayoutGuards(writer, kernel.Host.CpuLayoutGuards, kernel.MemberKey);

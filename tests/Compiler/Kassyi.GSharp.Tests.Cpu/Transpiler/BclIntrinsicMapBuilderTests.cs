@@ -25,8 +25,23 @@ public class BclIntrinsicMapBuilderTests
                  {
                      nameof(BitOperations.RotateLeft), nameof(BitOperations.RotateRight),
                      nameof(BitOperations.LeadingZeroCount), nameof(BitOperations.TrailingZeroCount),
-                     nameof(BitOperations.Log2), nameof(BitOperations.PopCount)
+                     nameof(BitOperations.Log2), nameof(BitOperations.PopCount),
+                     nameof(BitOperations.IsPow2), nameof(BitOperations.RoundUpToPowerOf2)
                  })
+        {
+            foreach (var platform in new[] { Platform.X86, Platform.Arm, Platform.X64, Platform.AnyCpu })
+            {
+                data.Add(method, platform);
+            }
+        }
+
+        return data;
+    }
+
+    public static TheoryData<string, Platform> SignedNativeSizedOperations()
+    {
+        var data = new TheoryData<string, Platform>();
+        foreach (var method in new[] { nameof(BitOperations.TrailingZeroCount), nameof(BitOperations.IsPow2) })
         {
             foreach (var platform in new[] { Platform.X86, Platform.Arm, Platform.X64, Platform.AnyCpu })
             {
@@ -53,6 +68,27 @@ public class BclIntrinsicMapBuilderTests
 
         Assert.True(map.TryGetValue(nativeSized, out var actual), $"{methodName}(nuint) has no mapping.");
         Assert.True(map.TryGetValue(fixedSize, out var expected), $"{methodName}({fixedSize.Parameters[0].Type}) has no mapping.");
+        Assert.Equal(expected.CudaIntrinsicName, actual.CudaIntrinsicName);
+        Assert.Equal("unsigned long long int", actual.CastFirstArgumentTo);
+    }
+
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SignedNativeSizedOperations))]
+    public void SignedNativeSizedOverload_MapsLikeTheInt64OverloadOnEveryPlatform(string methodName, Platform platform)
+    {
+        var baseCompilation = RoslynTestUtility.BaseCompilation;
+        var compilation = baseCompilation.WithOptions(baseCompilation.Options.WithPlatform(platform));
+        var map = BclIntrinsicMapBuilder.GetOrBuildMap(compilation);
+
+        var nativeSized = FindOverload(compilation, methodName, SpecialType.System_IntPtr);
+        var fixedSize = FindOverload(compilation, methodName, SpecialType.System_Int64);
+
+        Assert.True(map.TryGetValue(nativeSized, out var actual), $"{methodName}(nint) has no mapping.");
+        Assert.True(
+            map.TryGetValue(fixedSize, out var expected),
+            $"{methodName}({fixedSize.Parameters[0].Type}) has no mapping.");
         Assert.Equal(expected.CudaIntrinsicName, actual.CudaIntrinsicName);
         Assert.Equal("unsigned long long int", actual.CastFirstArgumentTo);
     }
@@ -88,9 +124,9 @@ public class BclIntrinsicMapBuilderTests
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(Platform.X64, "unsigned long long int")]
-    [InlineData(Platform.X86, "unsigned long long int")]
-    public void UserAssemblyMappings_MapOnlyTheMatchingOverloads(Platform platform, string nativeSizedCast)
+    [InlineData(Platform.X64)]
+    [InlineData(Platform.X86)]
+    public void UserAssemblyMappings_MapOnlyTheMatchingOverloads(Platform platform)
     {
         var source = RoslynTestUtility.ReadTestCase("Transpiler/BclIntrinsicMap/UserMappings.cs");
         var compilation = RoslynTestUtility.CreateCompilation(source);
@@ -108,11 +144,6 @@ public class BclIntrinsicMapBuilderTests
         Assert.Equal(
             [
                 (FindMethod(compilation, typeof(Math), nameof(Math.Abs), SpecialType.System_Double), "user_fabs", null),
-                (
-                    FindMethod(compilation, typeof(BitOperations), nameof(BitOperations.IsPow2), SpecialType.System_IntPtr),
-                    "user_ispow2_nint",
-                    nativeSizedCast
-                ),
                 (FindMethod(compilation, typeof(Math), nameof(Math.Round), SpecialType.System_Double), "user_round", null)
             ],
             userMappings,

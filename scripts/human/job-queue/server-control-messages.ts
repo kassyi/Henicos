@@ -4,6 +4,7 @@
 import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
+import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
 
@@ -24,6 +25,7 @@ function status(connection: Connection): void {
     memoryUsed: scheduler.memoryUsed,
     paused: scheduler.paused,
     ...(scheduler.paused ? { pausedAt: scheduler.pausedAt } : {}),
+    resources: scheduler.resourceStates().map((state) => describeResource(state, scheduler.running)),
     running: scheduler.running.map(view),
     waiting: scheduler.waiting.map(view),
   });
@@ -174,6 +176,7 @@ function stop(connection: Connection): void {
   const scheduler = server.scheduler;
   server.log("stop requested");
   server.stopping = true;
+  server.probes.stopAll();
   send(socket, { type: "stopping", running: scheduler.running.length, waiting: scheduler.waiting.length });
   // Deliver what was sent to the clients (a cancel just before the stop) before leaving: end every connection and exit
   // when the clients have closed their side too, or after a second. Exiting once our data is only flushed is not

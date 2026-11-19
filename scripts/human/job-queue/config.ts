@@ -200,6 +200,23 @@ function validatePools(raw: unknown, warn: (message: string) => void): PoolsConf
   return pools;
 }
 
+/** The most slots a resource without a lock may have. */
+export const MaxResourceSlots = 8;
+
+/**
+ * Why `slots` cannot be the shared slots of the `gpu` resource (`serve --gpu-slots`), or null: from 1 up to the seats
+ * of its lock, or MaxResourceSlots without one.
+ */
+export function gpuSlotsProblem(slots: number, config: QueueConfig): string | null {
+  const seats = config.resources?.gpu?.lock?.seats.length;
+  const max = seats ?? MaxResourceSlots;
+  if (Number.isInteger(slots) && slots >= 1 && slots <= max) {
+    return null;
+  }
+  const why = seats === undefined ? "" : ` (its lock has ${seats} seat${seats === 1 ? "" : "s"})`;
+  return `--gpu-slots needs a whole number from 1 to ${max}${why}.`;
+}
+
 function validateResource(name: string, raw: unknown, warn: (message: string) => void): ResourceConfig {
   if (!ResourceNamePattern.test(name)) {
     throw new Error(`invalid config resource name "${name}"`);
@@ -222,7 +239,7 @@ function validateResource(name: string, raw: unknown, warn: (message: string) =>
     }
     resource.lock = { seats: [...raw.lock.seats] };
   }
-  const maxSlots = resource.lock !== undefined ? resource.lock.seats.length : 8;
+  const maxSlots = resource.lock !== undefined ? resource.lock.seats.length : MaxResourceSlots;
   if (raw.slots !== undefined) {
     if (typeof raw.slots !== "number" || !Number.isInteger(raw.slots) || raw.slots < 1 || raw.slots > maxSlots) {
       throw new Error(`config resources.${name}.slots must be an integer between 1 and ${maxSlots}`);

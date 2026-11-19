@@ -58,7 +58,7 @@ internal sealed class IteratorConsumptionRule :
             return;
         }
 
-        var top = IteratorTypeResolver.UnwrapParentheses(node);
+        var top = node.UnwrapParentheses();
         if (IsDirectForEachOrLocalInitializer(top) || IsHandledByEnclosingRule(top))
         {
             return;
@@ -78,7 +78,7 @@ internal sealed class IteratorConsumptionRule :
             return;
         }
 
-        var top = IteratorTypeResolver.UnwrapParentheses(node);
+        var top = node.UnwrapParentheses();
         if ((top.Parent is ForEachStatementSyntax forEach && forEach.Expression == top) ||
             IsHandledByEnclosingRule(top))
         {
@@ -99,7 +99,7 @@ internal sealed class IteratorConsumptionRule :
             return;
         }
 
-        if (IteratorTypeResolver.UnwrapParentheses(node).Parent is ConditionalExpressionSyntax)
+        if (node.UnwrapParentheses().Parent is ConditionalExpressionSyntax)
         {
             return;
         }
@@ -161,7 +161,7 @@ internal sealed class IteratorConsumptionRule :
             return;
         }
 
-        var value = IteratorTypeResolver.UnwrapParentheses(node.Initializer.Value);
+        var value = node.Initializer.Value.UnwrapParentheses();
         if (IteratorTypeResolver.IsIteratorCandidateInvocation(value, context.SemanticModel) ||
             IteratorTypeResolver.TryResolveExternalIteratorSource(value, context.SemanticModel, out _) ||
             IsAlreadyReportedInitializer(value, context.SemanticModel))

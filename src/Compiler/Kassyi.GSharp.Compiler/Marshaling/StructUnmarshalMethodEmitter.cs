@@ -49,44 +49,52 @@ internal static class StructUnmarshalMethodEmitter
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member, ITranspilerDialect dialect)
     {
-        if (NativeStructEmitter.IsOmittedFromShadow(member) ||
-            StructBlockCopyEmitter.TryWriteBlockCopy(writer, member, toNative: false, dialect))
+        if (NativeStructEmitter.IsOmittedFromShadow(member))
         {
             return;
         }
 
-        if (member.Type.IsArrayLikeType())
+        var kind = NativeStructEmitter.ClassifyField(member, dialect);
+        switch (kind)
         {
-            var name = member.Name.ToCSharpIdentifier();
-            WriteUnmarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
+            case NativeFieldKind.FixedBuffer:
+                StructBlockCopyEmitter.WriteBlockCopy(writer, member, toNative: false, dialect);
+                break;
+            case NativeFieldKind.ArrayProxy:
+                WriteUnmarshalArrayProxy(writer, member, dialect);
+                break;
+            case NativeFieldKind.UserStruct:
+                WriteUnmarshalUserStruct(writer, member);
+                break;
+            case NativeFieldKind.DirectValue:
+                StructBlockCopyEmitter.WriteDirectCopy(writer, member, toNative: false);
+                break;
+            case NativeFieldKind.FixedBytesFallback:
+                StructBlockCopyEmitter.WriteFixedBytesCopy(writer, member, toNative: false);
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"The native field kind {kind} of '{member.Name}' has no unmarshal code.");
         }
-        else if (HostShadowStructs.UsesShadow(member.Type, dialect))
-        {
-            writer.AppendUnmarshalMethodName(member.Type);
-            using (writer.Parentheses())
-            {
-                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, hStream");
-            }
+    }
 
-            writer.AppendLine(";");
-        }
-        else
+    private static void WriteUnmarshalArrayProxy(SourceWriter writer, StructAbiMember member,
+        ITranspilerDialect dialect)
+    {
+        var name = member.Name.ToCSharpIdentifier();
+        WriteUnmarshalArrayLikeMember(writer, $"host.{name}", $"native.{name}", member.Type, dialect);
+    }
+
+    private static void WriteUnmarshalUserStruct(SourceWriter writer, StructAbiMember member)
+    {
+        var name = member.Name.ToCSharpIdentifier();
+        writer.AppendUnmarshalMethodName(member.Type);
+        using (writer.Parentheses())
         {
-            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
-            {
-                writer.AppendLine($"host.{member.Name.ToCSharpIdentifier()} = native.{member.Name.ToCSharpIdentifier()};");
-            }
-            else
-            {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name.ToCSharpIdentifier()})");
-                using (writer.Scope())
-                {
-                    writer.Append($"host.{member.Name.ToCSharpIdentifier()} = *((");
-                    writer.AppendFullyQualifiedCsharpName(member.Type);
-                    writer.AppendLine("*)pField);");
-                }
-            }
+            writer.Append($"ref host.{name}, ref native.{name}, hStream");
         }
+
+        writer.AppendLine(";");
     }
 
     // An array field, or the view of another array-like field (Memory<T>, ArraySegment<T>, ..., #1267)

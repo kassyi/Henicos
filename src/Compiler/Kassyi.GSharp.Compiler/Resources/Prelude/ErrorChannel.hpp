@@ -104,7 +104,7 @@ private:
 inline thread_local GSharpErrorSlot __gsharp_host_last_error;
 inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
 
-extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error(const char** outMessage) {
     int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
     if (c != 0) {
         if (outMessage != nullptr) {
@@ -115,7 +115,7 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char*
     return c;
 }
 
-extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error_details(
     const char** outMessage,
     uint32_t* outSiteId,
     uint32_t* outThreadLinear,
@@ -288,6 +288,18 @@ inline A __gsharp_array_ref(A&& array, S site)
         __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
     }
     return static_cast<A&&>(array);
+}
+
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// ("The underlying array is null.") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_segment_ref(A&& segment, S site)
+{
+    if (segment.data == nullptr)
+    {
+        __gsharp_trap_abort(GSharpErrorCode::InvalidOperation, site);
+    }
+    return static_cast<A&&>(segment);
 }
 
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails

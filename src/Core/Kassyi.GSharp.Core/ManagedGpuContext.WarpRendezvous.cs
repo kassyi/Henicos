@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Core;
 // meet. The native CPU prelude (WarpAndHints.hpp) implements the same.
 public static partial class ManagedGpuContext
 {
-    private struct WarpRecord
+    internal struct WarpRecord
     {
         public ulong Value;
         public uint Path;
@@ -22,65 +22,23 @@ public static partial class ManagedGpuContext
         public string? Location;
     }
 
-    private readonly record struct WarpInstance(uint Path, int Site, uint Visit);
+    internal readonly record struct WarpInstance(uint Path, int Site, uint Visit);
 
-    private readonly record struct WarpRegion(uint Path, int Site);
+    internal readonly record struct WarpRegion(uint Path, int Site);
 
     private const int WarpRecordSlots = 2;
-
-    // The last two values each thread of the block published, which slot it writes next, whether it waits at a warp
-    // collective and whether it has exited
-    [ThreadStatic]
-    private static WarpRecord[]? s_warpRecords;
-
-    [ThreadStatic]
-    private static int[]? s_warpRecordNext;
-
-    [ThreadStatic]
-    private static bool[]? s_warpWaiting;
-
-    [ThreadStatic]
-    private static bool[]? s_warpExited;
-
-    // The launcher's round of the block
-    [ThreadStatic]
-    private static int s_warpRound;
-
-    // The thread-dependent branches and loops of methods that reach Warp.ActiveMask() that each thread of the block is
-    // inside, innermost last (#844): WarpRegionCapacity entries per thread; and whether it waits where the innermost
-    // one ends, since which round and where. Allocated by the first kernel that enters one
-    [ThreadStatic]
-    private static WarpRegion[]? s_warpRegions;
-
-    [ThreadStatic]
-    private static int[]? s_warpRegionDepth;
-
-    [ThreadStatic]
-    private static bool[]? s_warpReconverging;
-
-    [ThreadStatic]
-    private static int[]? s_warpReconvergeRound;
-
-    [ThreadStatic]
-    private static string?[]? s_warpReconvergeLocation;
-
-    // The round in which the waiting lanes of each warp of the block were last decided, and whether each thread goes on
-    [ThreadStatic]
-    private static int[]? s_warpDecidedRound;
-
-    [ThreadStatic]
-    private static bool[]? s_warpMayPass;
 
     // The branches a thread can be inside at once (the native kernel context keeps as many)
     private const int WarpRegionCapacity = 16;
 
-    private static WarpRecord[] WarpRecords => s_warpRecords ??= new WarpRecord[WarpRecordSlots * MaxThreadsPerBlock];
+    private static WarpRecord[] WarpRecords =>
+        BlockState.WarpRecords ??= new WarpRecord[WarpRecordSlots * MaxThreadsPerBlock];
 
-    private static int[] WarpRecordNext => s_warpRecordNext ??= new int[MaxThreadsPerBlock];
+    private static int[] WarpRecordNext => BlockState.WarpRecordNext ??= new int[MaxThreadsPerBlock];
 
-    private static bool[] WarpWaiting => s_warpWaiting ??= new bool[MaxThreadsPerBlock];
+    private static bool[] WarpWaiting => BlockState.WarpWaiting ??= new bool[MaxThreadsPerBlock];
 
-    private static bool[] WarpExited => s_warpExited ??= new bool[MaxThreadsPerBlock];
+    private static bool[] WarpExited => BlockState.WarpExited ??= new bool[MaxThreadsPerBlock];
 
     /// <summary>
     /// Forgets the warp collectives of the threads at the start of a block. The launcher then marks the threads of the
@@ -91,14 +49,15 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void ResetWarpExchange()
     {
+        var state = BlockState;
         Array.Clear(WarpRecords);
         Array.Clear(WarpRecordNext);
         Array.Clear(WarpWaiting);
         Array.Clear(WarpExited);
-        s_warpRound = 0;
-        if (s_warpRegionDepth != null)
+        state.WarpRound = 0;
+        if (state.WarpRegionDepth != null)
         {
-            Array.Clear(s_warpRegionDepth);
+            Array.Clear(state.WarpRegionDepth);
             Array.Clear(WarpReconverging);
             Array.Clear(WarpDecidedRound);
         }
@@ -126,12 +85,13 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static bool WarpCanRun(int threadIndex, int round)
     {
-        s_warpRound = round;
-        if (s_warpReconverging != null)
+        var state = BlockState;
+        state.WarpRound = round;
+        if (state.WarpReconverging != null)
         {
             // A lane that waits where a branch ends goes on once the lanes that entered it with it have arrived (#844)
             DecideReconvergence(threadIndex, round);
-            if (s_warpReconverging[threadIndex])
+            if (state.WarpReconverging[threadIndex])
             {
                 return WarpMayPass[threadIndex];
             }
@@ -151,6 +111,7 @@ public static partial class ManagedGpuContext
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static InvalidOperationException WarpStall(int threadsPerBlock)
     {
+        var state = BlockState;
         for (var tid = 0; tid < threadsPerBlock; tid++)
         {
             if (WarpExited[tid] || !WarpWaiting[tid])
@@ -167,7 +128,7 @@ public static partial class ManagedGpuContext
             var wait = WarpRecords[GetWaitSlot(tid)];
             var first = BitOperations.TrailingZeroCount(missing);
             var other = (tid & ~31) + first;
-            var where = s_warpReconverging != null && s_warpReconverging[other]
+            var where = state.WarpReconverging != null && state.WarpReconverging[other]
                 ? $"waits for the other lanes where the branch or call at {WarpReconvergeLocation[other]} ends"
                 : WarpWaiting[other]
                     ? $"waits at {WarpRecords[GetWaitSlot(other)].Name} at {WarpRecords[GetWaitSlot(other)].Location}"
@@ -209,7 +170,7 @@ public static partial class ManagedGpuContext
             Path = frame.WarpPath,
             Site = site,
             Visit = frame.AdvanceWarpVisit(site),
-            Round = s_warpRound,
+            Round = BlockState.WarpRound,
             Mask = mask,
             Name = name,
             Location = location
@@ -343,7 +304,7 @@ public static partial class ManagedGpuContext
         var tid = LinearThreadId;
         WarpReconverging[tid] = true;
         WarpMayPass[tid] = false;
-        WarpReconvergeRound[tid] = s_warpRound;
+        WarpReconvergeRound[tid] = BlockState.WarpRound;
         WarpReconvergeLocation[tid] = location;
     }
 
@@ -364,19 +325,20 @@ public static partial class ManagedGpuContext
     }
 
     private static WarpRegion[] WarpRegions =>
-        s_warpRegions ??= new WarpRegion[WarpRegionCapacity * MaxThreadsPerBlock];
+        BlockState.WarpRegions ??= new WarpRegion[WarpRegionCapacity * MaxThreadsPerBlock];
 
-    private static int[] WarpRegionDepth => s_warpRegionDepth ??= new int[MaxThreadsPerBlock];
+    private static int[] WarpRegionDepth => BlockState.WarpRegionDepth ??= new int[MaxThreadsPerBlock];
 
-    private static bool[] WarpReconverging => s_warpReconverging ??= new bool[MaxThreadsPerBlock];
+    private static bool[] WarpReconverging => BlockState.WarpReconverging ??= new bool[MaxThreadsPerBlock];
 
-    private static int[] WarpReconvergeRound => s_warpReconvergeRound ??= new int[MaxThreadsPerBlock];
+    private static int[] WarpReconvergeRound => BlockState.WarpReconvergeRound ??= new int[MaxThreadsPerBlock];
 
-    private static string?[] WarpReconvergeLocation => s_warpReconvergeLocation ??= new string?[MaxThreadsPerBlock];
+    private static string?[] WarpReconvergeLocation =>
+        BlockState.WarpReconvergeLocation ??= new string?[MaxThreadsPerBlock];
 
-    private static int[] WarpDecidedRound => s_warpDecidedRound ??= new int[MaxThreadsPerBlock / 32];
+    private static int[] WarpDecidedRound => BlockState.WarpDecidedRound ??= new int[MaxThreadsPerBlock / 32];
 
-    private static bool[] WarpMayPass => s_warpMayPass ??= new bool[MaxThreadsPerBlock];
+    private static bool[] WarpMayPass => BlockState.WarpMayPass ??= new bool[MaxThreadsPerBlock];
 
     // [WHY] Which waiting lanes of a warp go on is decided once per round, before any lane of the warp takes its step
     // (the first call for the warp in the round): a lane that leaves the branch by a jump earlier in the same round

@@ -10,12 +10,24 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
-internal class MockBuildEngine : IBuildEngine
+internal class MockBuildEngine : IBuildEngine9
 {
+    private readonly object _sync = new();
+
     public bool ContinueOnError => false;
     public int LineNumberOfTaskNode => 0;
     public int ColumnNumberOfTaskNode => 0;
     public string ProjectFileOfTaskNode => "";
+    public bool IsRunningMultipleNodes => true;
+
+    public bool AllowFailureWithoutError { get; set; }
+    public int AvailableCores { get; set; } = 4;
+    public int RequestedCores { get; private set; }
+    public int GrantedCores { get; private set; }
+    public int ReleasedCores { get; private set; }
+    public int HeldCores { get; private set; }
+    public int RequestCoreCalls { get; private set; }
+    public int ReleaseCoreCalls { get; private set; }
 
     public List<string> LoggedErrors { get; } = new();
     public List<string> LoggedErrorCodes { get; } = new();
@@ -26,25 +38,142 @@ internal class MockBuildEngine : IBuildEngine
     public virtual bool BuildProjectFile(string projectFileName, string[] targetNames,
         IDictionary globalProperties, IDictionary targetOutputs) => true;
 
+    public virtual bool BuildProjectFile(string projectFileName, string[] targetNames,
+        IDictionary globalProperties, IDictionary targetOutputs, string toolsVersion) => true;
+
+    public virtual BuildEngineResult BuildProjectFilesInParallel(string[] projectFileNames, string[] targetNames,
+        IDictionary[] globalProperties, IList<string>[] removeGlobalProperties, string[] toolsVersion,
+        bool returnTargetOutputs) => new(true, []);
+
+    public virtual bool BuildProjectFilesInParallel(string[] projectFileNames, string[] targetNames,
+        IDictionary[] globalProperties, IDictionary[] targetOutputsPerProject, string[] toolsVersion,
+        bool useResultsCache, bool unloadProjectsOnCompletion) => true;
+
+    public virtual void Yield()
+    {
+    }
+
+    public virtual void Reacquire()
+    {
+    }
+
+    public virtual void RegisterTaskObject(object key, object obj, RegisteredTaskObjectLifetime lifetime,
+        bool allowEarlyCollection)
+    {
+    }
+
+    // MSBuild IBuildEngine4+ contract allows null when no object is registered; test harness never registers objects.
+    public virtual object GetRegisteredTaskObject(object key, RegisteredTaskObjectLifetime lifetime) => null!;
+
+    // MSBuild IBuildEngine4+ contract allows null when no object is registered; test harness never registers objects.
+    public virtual object UnregisterTaskObject(object key, RegisteredTaskObjectLifetime lifetime) => null!;
+
+    public virtual void LogTelemetry(string eventName, IDictionary<string, string> properties)
+    {
+    }
+
+    public virtual IReadOnlyDictionary<string, string> GetGlobalProperties() =>
+        new Dictionary<string, string>();
+
+    public virtual bool ShouldTreatWarningAsError(string warningCode) => false;
+
+    public virtual int RequestCores(int requestedCores)
+    {
+        lock (_sync)
+        {
+            RequestCoreCalls++;
+            RequestedCores += requestedCores;
+            var grant = Math.Max(0, Math.Min(requestedCores, AvailableCores - HeldCores));
+            GrantedCores += grant;
+            HeldCores += grant;
+            return grant;
+        }
+    }
+
+    public virtual void ReleaseCores(int coresToRelease)
+    {
+        lock (_sync)
+        {
+            ReleaseCoreCalls++;
+            ReleasedCores += coresToRelease;
+            HeldCores = Math.Max(0, HeldCores - coresToRelease);
+        }
+    }
+
     public virtual void LogCustomEvent(CustomBuildEventArgs e)
     {
     }
 
     public virtual void LogErrorEvent(BuildErrorEventArgs e)
     {
-        if (e.Message != null) LoggedErrors.Add(e.Message);
-        if (e.Code != null) LoggedErrorCodes.Add(e.Code);
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedErrors.Add(e.Message);
+            if (e.Code != null) LoggedErrorCodes.Add(e.Code);
+        }
     }
 
     public virtual void LogMessageEvent(BuildMessageEventArgs e)
     {
-        if (e.Message != null) LoggedMessages.Add(e.Message);
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedMessages.Add(e.Message);
+        }
     }
 
     public virtual void LogWarningEvent(BuildWarningEventArgs e)
     {
-        if (e.Message != null) LoggedWarnings.Add(e.Message);
-        if (e.Code != null) LoggedWarningCodes.Add(e.Code);
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedWarnings.Add(e.Message);
+            if (e.Code != null) LoggedWarningCodes.Add(e.Code);
+        }
+    }
+}
+
+internal sealed class LegacyMockBuildEngine : IBuildEngine
+{
+    private readonly object _sync = new();
+
+    public bool ContinueOnError => false;
+    public int LineNumberOfTaskNode => 0;
+    public int ColumnNumberOfTaskNode => 0;
+    public string ProjectFileOfTaskNode => "";
+    public bool IsRunningMultipleNodes => true;
+
+    public List<string> LoggedErrors { get; } = new();
+    public List<string> LoggedWarnings { get; } = new();
+    public List<string> LoggedMessages { get; } = new();
+
+    public bool BuildProjectFile(string projectFileName, string[] targetNames,
+        IDictionary globalProperties, IDictionary targetOutputs) => true;
+
+    public void LogCustomEvent(CustomBuildEventArgs e)
+    {
+    }
+
+    public void LogErrorEvent(BuildErrorEventArgs e)
+    {
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedErrors.Add(e.Message);
+        }
+    }
+
+    public void LogMessageEvent(BuildMessageEventArgs e)
+    {
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedMessages.Add(e.Message);
+        }
+    }
+
+    public void LogWarningEvent(BuildWarningEventArgs e)
+    {
+        lock (_sync)
+        {
+            if (e.Message != null) LoggedWarnings.Add(e.Message);
+        }
     }
 }
 
@@ -88,6 +217,12 @@ internal sealed class CompileTaskTestContext : IDisposable
     public string CreateDummySource(string fileName, string content = "dummy")
     {
         var p = Path.Combine(TempDir, fileName);
+        var dir = Path.GetDirectoryName(p);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
         File.WriteAllText(p, content);
         return p;
     }
@@ -130,13 +265,15 @@ internal sealed class CompileTaskTestContext : IDisposable
 
     public CompileCppToNativeTask CreateCppTask(
         string[] sourceFiles,
-        INativeToolchain? toolchain = null)
+        INativeToolchain? toolchain = null,
+        string? objectDirectory = null)
     {
         return new CompileCppToNativeTask
         {
             BuildEngine = BuildEngine,
             CppSources = CreateTaskItems(sourceFiles),
             OutputDirectory = TempDir,
+            ObjectDirectory = objectDirectory ?? string.Empty,
             ProcessRunner = Runner,
             Toolchain = toolchain ?? CreateMsvcToolchain(disableCache: true),
             MockCompilation = false,
@@ -180,7 +317,10 @@ internal sealed class CompileTaskTestContext : IDisposable
 
 internal sealed class MockProcessRunner : IProcessRunner
 {
+    private readonly object _sync = new();
     private readonly string _mockVsPath;
+    private int _activeCount;
+    private int _peakConcurrency;
 
     public MockProcessRunner(string tempDir)
     {
@@ -192,6 +332,7 @@ internal sealed class MockProcessRunner : IProcessRunner
 
     public List<ProcessStartInfo> Invocations { get; } = new();
     public List<CancellationToken> ObservedTokens { get; } = new();
+    public int PeakConcurrency => Volatile.Read(ref _peakConcurrency);
     public Action<ProcessStartInfo, CancellationToken>? OnRun { get; set; }
     public int NextExitCode { get; set; } = 0;
     public string NextStandardOutput { get; set; } = "";
@@ -208,69 +349,162 @@ internal sealed class MockProcessRunner : IProcessRunner
 
     public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
-        Invocations.Add(startInfo);
-        ObservedTokens.Add(cancellationToken);
-        OnRun?.Invoke(startInfo, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        if (startInfo.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase))
+        lock (_sync)
         {
-            if (OverrideVswhere) return new ProcessResult(1, "", "Not found");
-            return new ProcessResult(0, VswhereOutput ?? _mockVsPath, "");
+            Invocations.Add(startInfo);
+            ObservedTokens.Add(cancellationToken);
         }
 
-        if (startInfo.FileName.EndsWith("cmd.exe", StringComparison.OrdinalIgnoreCase))
+        var current = Interlocked.Increment(ref _activeCount);
+        UpdatePeakConcurrency(current);
+        try
         {
-            return new ProcessResult(CmdExitCode, CmdExitCode == 0 ? CmdStandardOutput : "",
-                CmdExitCode != 0 ? "error" : "");
-        }
+            OnRun?.Invoke(startInfo, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
 
-        if (startInfo.Arguments.Contains("--version"))
-        {
-            return new ProcessResult(
-                VersionCheckExitCode,
-                VersionCheckExitCode == 0 ? VersionCheckOutput : "",
-                VersionCheckExitCode != 0 ? "compiler not found" : "");
-        }
-
-        if (NextException != null)
-        {
-            throw NextException;
-        }
-
-        if (SimulateCompilationOutput &&
-            (startInfo.FileName.Contains("nvcc") ||
-             startInfo.FileName.Contains("cl.exe") ||
-             startInfo.FileName.Contains("g++") ||
-             startInfo.FileName.Contains("clang++") ||
-             startInfo.FileName.Contains("c++")))
-        {
-            var argsStr = startInfo.Arguments;
-            var outFile = "";
-            if (argsStr.Contains("-o "))
+            if (startInfo.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase))
             {
-                outFile = argsStr.Split("-o ")[1].Split(" ")[0].Trim('"');
-            }
-            else if (argsStr.Contains("/Fe:"))
-            {
-                outFile = argsStr.Split("/Fe:")[1].Split(" ")[0].Trim('"');
+                if (OverrideVswhere) return new ProcessResult(1, "", "Not found");
+                return new ProcessResult(0, VswhereOutput ?? _mockVsPath, "");
             }
 
-            if (!string.IsNullOrEmpty(outFile) && outFile.EndsWith(".gfatbin"))
+            if (startInfo.FileName.EndsWith("cmd.exe", StringComparison.OrdinalIgnoreCase))
             {
-                File.WriteAllText(outFile, "Mock Fatbin Content from MockProcessRunner");
+                return new ProcessResult(CmdExitCode, CmdExitCode == 0 ? CmdStandardOutput : "",
+                    CmdExitCode != 0 ? "error" : "");
             }
-            else if (!string.IsNullOrEmpty(outFile) && outFile.EndsWith(".dll"))
-            {
-                File.WriteAllText(outFile, "Mock DLL Content from MockProcessRunner");
-            }
-        }
 
-        return new ProcessResult(NextExitCode, NextStandardOutput, NextStandardError);
+            if (startInfo.Arguments.Contains("--version"))
+            {
+                return new ProcessResult(
+                    VersionCheckExitCode,
+                    VersionCheckExitCode == 0 ? VersionCheckOutput : "",
+                    VersionCheckExitCode != 0 ? "compiler not found" : "");
+            }
+
+            if (NextException != null)
+            {
+                throw NextException;
+            }
+
+            if (NextExitCode == 0 && SimulateCompilationOutput && IsCompilerExecutable(startInfo.FileName))
+            {
+                WriteSimulatedOutputs(startInfo.Arguments);
+            }
+
+            return new ProcessResult(NextExitCode, NextStandardOutput, NextStandardError);
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _activeCount);
+        }
     }
 
     public Task<ProcessResult> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Run(startInfo, cancellationToken));
+    }
+
+    private void UpdatePeakConcurrency(int observed)
+    {
+        while (true)
+        {
+            var prev = Volatile.Read(ref _peakConcurrency);
+            if (observed <= prev)
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _peakConcurrency, observed, prev) == prev)
+            {
+                return;
+            }
+        }
+    }
+
+    private static bool IsCompilerExecutable(string fileName) =>
+        fileName.Contains("nvcc") ||
+        fileName.Contains("cl.exe") ||
+        fileName.Contains("g++") ||
+        fileName.Contains("clang++") ||
+        fileName.Contains("c++");
+
+    private static void WriteSimulatedOutputs(string args)
+    {
+        if (TryExtractFlagPath(args, "-o ", out var outFile) ||
+            TryExtractFlagPath(args, "/Fe:", out outFile) ||
+            TryExtractFlagPath(args, "/Fo:", out outFile))
+        {
+            WriteMockArtifact(outFile);
+        }
+
+        if (TryExtractFlagPath(args, "/Fd:", out var pdbFile) &&
+            pdbFile.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase))
+        {
+            WriteMockArtifact(pdbFile);
+        }
+    }
+
+    private static void WriteMockArtifact(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return;
+        }
+
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        if (path.EndsWith(".gfatbin", StringComparison.OrdinalIgnoreCase))
+        {
+            File.WriteAllText(path, "Mock Fatbin Content from MockProcessRunner");
+        }
+        else if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+        {
+            File.WriteAllText(path, "Mock DLL Content from MockProcessRunner");
+        }
+        else if (path.EndsWith(".obj", StringComparison.OrdinalIgnoreCase) ||
+                 path.EndsWith(".o", StringComparison.OrdinalIgnoreCase))
+        {
+            File.WriteAllText(path, "Mock Object Content from MockProcessRunner");
+        }
+        else if (path.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase))
+        {
+            File.WriteAllText(path, "Mock PDB Content from MockProcessRunner");
+        }
+    }
+
+    private static bool TryExtractFlagPath(string args, string prefix, out string path)
+    {
+        var idx = args.IndexOf(prefix, StringComparison.Ordinal);
+        if (idx < 0)
+        {
+            path = string.Empty;
+            return false;
+        }
+
+        var span = args.AsSpan(idx + prefix.Length).TrimStart();
+        if (span.Length == 0)
+        {
+            path = string.Empty;
+            return false;
+        }
+
+        if (span[0] == '"')
+        {
+            var rest = span.Slice(1);
+            var endQuote = rest.IndexOf('"');
+            path = (endQuote >= 0 ? rest.Slice(0, endQuote) : rest).ToString();
+            return path.Length > 0;
+        }
+
+        var endSpace = span.IndexOf(' ');
+        path = (endSpace >= 0 ? span.Slice(0, endSpace) : span).ToString();
+        return path.Length > 0;
     }
 }
 

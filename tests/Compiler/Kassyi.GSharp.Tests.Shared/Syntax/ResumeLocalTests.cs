@@ -116,6 +116,31 @@ public class ResumeLocalTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void Lambda_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LambdaCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalFunction_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.LocalFunctionCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void RecursiveLocalFunction_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.RecursiveLocalFuncCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void MutuallyRecursiveLocalFunction_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.MutuallyRecursiveLocalFuncCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void AsymmetricMutuallyRecursiveLocalFunction_CapturingVariableAcrossBarrier_EvaluatesCorrectly() =>
+        ResumeLocalScenarios.AsymmetricMutuallyRecursiveLocalFuncCapturedInt(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void ReadOnlyCollectionSpan_UsedOnlyBeforeBarrier_KeepsItsValues() =>
         ResumeLocalScenarios.ReadOnlyCollectionSpan(s_runNative);
 

@@ -38,7 +38,10 @@ public partial class PreludeInternalNamesTests
     [MemberData(nameof(PreludeDeclaredNames))]
     public void Prelude_DeclaresInternalName(string path, string identifier)
     {
-        Assert.True(ContainsIdentifier(GSharpPreludeResources.Cpp, identifier) || ContainsIdentifier(GSharpPreludeResources.Cuda, identifier),
+        Assert.True(
+            ContainsIdentifier(GSharpPreludeResources.Cpp, identifier) ||
+            ContainsIdentifier(GSharpPreludeResources.CppStackThreads, identifier) ||
+            ContainsIdentifier(GSharpPreludeResources.Cuda, identifier),
             $"No prelude declares '{identifier}' ({path}); update Resources/Prelude or InternalNames.yml.");
     }
 

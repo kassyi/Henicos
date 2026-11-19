@@ -192,7 +192,7 @@ internal static class WrapperEmitter
             else
             {
                 CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, accessibilities, moduleName,
-                    config.TargetLimits);
+                    config.TargetLimits, config.ManagedBarrierModel);
             }
         }
     }

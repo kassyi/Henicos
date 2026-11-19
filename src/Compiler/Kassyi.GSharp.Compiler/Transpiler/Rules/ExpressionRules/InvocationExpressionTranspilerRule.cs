@@ -16,7 +16,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <summary>
     /// Reports <see cref="SuspendingExtensionCall"/> and returns <see langword="true"/> when <paramref name="extension"/>
     /// reaches a barrier: a suspending call passes its frame after the arguments of the static call (lowering, both
-    /// dialects alike), which the reduced form does not have.
+    /// dialects alike), which the reduced form does not have. Only a call is decided here (GSH0003); a reduced
+    /// extension method group without a call is GSH0062 (<c>SuspendingCallReference.FailIfReferencedWithoutCall</c>).
     /// </summary>
     internal static bool FailIfSuspendingExtension(SyntaxNode node, IMethodSymbol extension, ref TranspileContext context)
     {
@@ -51,6 +52,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 return;
             }
 
+            // Before the custom rules, which write the warp intrinsics
+            StructMemberSuspendingCall.FailIfInStructMember(node, symbol, ref context);
             if (TryTranspileCustomInvocation(node, symbol, ref context))
             {
                 return;

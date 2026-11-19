@@ -8,13 +8,14 @@ import * as path from "node:path";
 import { EntryScript } from "./constants.ts";
 import { loadConfig } from "./config.ts";
 import { PluginHost } from "./plugin-host.ts";
-import type { StatusReply } from "./protocol.ts";
+import type { ResourceStatus, StatusJob, StatusReply } from "./protocol.ts";
 import {
   FlashMs,
   displayWidth,
   fit,
   helpLines,
   initialViewState,
+  panelJobs,
   renderScreen,
   screenJobs,
   shortCommand,
@@ -24,9 +25,9 @@ import {
   type ViewState,
 } from "./view.ts";
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
-import { CellWidth, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
-import { Minute, Now, job, sampleReply } from "./view-sample.ts";
-import { checkChats } from "./self-test-chats.ts";
+import { Campbell, CellWidth, LineHeight, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
+import { Minute, Now, job, samplePanel, sampleReply } from "./view-sample.ts";
+import { chatLegend } from "./plugins/agents/view-chats.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
@@ -49,7 +50,7 @@ function checkLayout(plugins: ShortNameProvider): void {
     "run left, rest right",
   );
   assert.match(lines[0] ?? "", /CPU ■■■■□□□□ 4\/8 {2}MEM ■□□□□□□ 19% {2}GPU #812 \+1/);
-  assert.match(lines[2] ?? "", /^▸812G test-category Runtime/, "running jobs first, the GPU holder flagged");
+  assert.match(lines[2] ?? "", /^▸812g test-category Runtime/, "running jobs first, the shared GPU turn flagged g");
   assert.ok((lines[2] ?? "").includes("█") && (lines[2] ?? "").includes("▓"), "run so far and the expected rest");
   assert.ok((lines[4] ?? "").includes("?"), "a job without history shows no expected rest");
   assert.ok((lines[6] ?? "").includes("⋯") && (lines[6] ?? "").includes("▒"), "waits for the GPU, then runs");
@@ -256,6 +257,7 @@ function checkGpuPairsAndReasons(): void {
   const other = job(902, { state: "running", command: "node b.js Y", grantedAt: Now - Minute, endAt: Now + Minute });
   const reply: StatusReply = {
     ...sampleReply(),
+    resources: undefined, // an older scheduler: the holder pairs by command, the header counts the GPU jobs
     capacity: 3,
     used: 3,
     running: [turn, holder, other],
@@ -315,6 +317,115 @@ function checkGpuPairsAndReasons(): void {
   assert.deepStrictEqual(
     unpaired.map((j) => j.id),
     [900, 901, 910, 911],
+  );
+}
+
+/** A shared turn is drawn `g`, an exclusive one `G`; the header lists the turns of each resource; the wait is named. */
+export function checkSharedView(): void {
+  const turn = (id: number, share: "shared" | undefined, extra: Partial<StatusJob> = {}): StatusJob =>
+    job(id, {
+      state: "running",
+      gpuTurn: true,
+      weight: 0,
+      command: `node t.js ${id}`,
+      grantedAt: Now - Minute,
+      endAt: Now + Minute,
+      ...(share !== undefined ? { share } : {}),
+      ...extra,
+    });
+  const resource = (shared: number[], exclusive: number[], slots = 2) => ({ name: "gpu", slots, shared, exclusive });
+  const reply = (running: StatusJob[], waiting: StatusJob[], resources?: ResourceStatus[]): StatusReply => ({
+    ...sampleReply(),
+    running,
+    waiting,
+    resources, // undefined for an older scheduler, whatever the sample has
+  });
+  const waitingTurn = (id: number, share: "shared" | undefined) =>
+    job(id, {
+      gpuTurn: true,
+      ...(share !== undefined ? { share } : {}),
+      startAt: Now + Minute,
+      endAt: Now + 2 * Minute,
+    });
+  const reasonOf = (r: StatusReply, id: number): string | undefined => screenJobs(r).find((j) => j.id === id)?.reason;
+  const screen = (r: StatusReply): string[] =>
+    renderScreen(r, initialViewState(), { columns: 80, rows: 10, now: Now }, false);
+
+  // The marks and the header: a shared turn is g, an exclusive one G; the turns of the resource are listed
+  const both = reply(
+    [turn(900, "shared"), turn(901, "shared")],
+    [waitingTurn(910, "shared")],
+    [resource([900, 901], [])],
+  );
+  const lines = screen(both);
+  assert.match(lines[0] ?? "", /GPU #900 #901 \+1/, "every running turn of the resource, then the waiting ones");
+  assert.ok(
+    lines.some((line) => /^[ ▸]900g /.test(line)),
+    `a shared turn is g: ${lines.join("|")}`,
+  );
+  const exclusive = reply([turn(902, undefined)], [], [resource([], [902])]);
+  assert.ok(
+    screen(exclusive).some((line) => /^[ ▸]902G /.test(line)),
+    "an exclusive turn is G",
+  );
+  assert.match(screen(exclusive)[0] ?? "", /GPU #902(?! #)/);
+  // Without `resources` (an older scheduler): the header and the mark as before
+  const older = reply([turn(900, "shared")], [waitingTurn(910, "shared")]);
+  assert.match(screen(older)[0] ?? "", /GPU #900 \+1/);
+  // What a waiting turn waits for: memory (the probe) only when a shared turn could take the free slot
+  assert.strictEqual(reasonOf(both, 910), "GPU busy", "both slots are taken");
+  const room = reply([turn(900, "shared")], [waitingTurn(910, "shared")], [resource([900], [])]);
+  assert.strictEqual(reasonOf(room, 910), "GPU memory", "a slot is free: the probe decides");
+  const held = reply([turn(900, "shared")], [waitingTurn(910, "shared")], [resource([900], [77])]);
+  assert.strictEqual(reasonOf(held, 910), "GPU busy", "an exclusive user holds the GPU");
+  const exclusiveWaits = reply([turn(900, "shared")], [waitingTurn(910, undefined)], [resource([900], [])]);
+  assert.strictEqual(reasonOf(exclusiveWaits, 910), "GPU busy", "an exclusive turn waits for the shared one");
+  assert.strictEqual(reasonOf(older, 910), "GPU busy", "no resources: as before");
+  // Only the first waiting turn of the resource lacks the probe: the ones behind it wait for that turn
+  const behindExclusive = reply(
+    [turn(900, "shared")],
+    [waitingTurn(910, undefined), waitingTurn(911, "shared")],
+    [resource([900], [])],
+  );
+  assert.strictEqual(reasonOf(behindExclusive, 911), "GPU busy", "a shared turn behind an exclusive head");
+  const behindShared = reply(
+    [turn(900, "shared")],
+    [waitingTurn(910, "shared"), waitingTurn(911, "shared")],
+    [resource([900], [], 3)],
+  );
+  assert.deepStrictEqual([reasonOf(behindShared, 910), reasonOf(behindShared, 911)], ["GPU memory", "GPU busy"]);
+  // The legend names it
+  const legend = helpLines(100).map((line) => line.text);
+  assert.ok(
+    legend.some((line) => /GPU memory +a shared turn waits for the probe/.test(line)),
+    "GPU memory is explained",
+  );
+  assert.ok(
+    legend.some((line) => /g +a shared GPU turn/.test(line)),
+    "g is explained",
+  );
+  // A holder is paired with its turn by the turn id, whatever its command
+  const holder = job(901, { state: "running", gpu: true, weight: 2, command: "node other.js", turn: 900 });
+  const paired = screenJobs(reply([turn(900, "shared"), holder], [], [resource([900], [])]));
+  assert.deepStrictEqual(
+    paired.map((j) => [j.id, j.holderId, j.share]),
+    [[900, 901, "shared"]],
+    "one line, with the share of the turn",
+  );
+  // Without a turn id the command and the directory pair them, as before; another turn's holder never does
+  const bare = job(901, { state: "running", gpu: true, command: "node t.js 900" });
+  assert.deepStrictEqual(
+    screenJobs(reply([turn(900, undefined), bare], [])).map((j) => [j.id, j.holderId]),
+    [[900, 901]],
+  );
+  const foreign = { ...bare, turn: 555 };
+  assert.deepStrictEqual(
+    screenJobs(reply([turn(900, undefined), foreign], [])).map((j) => [j.id, j.holderId]),
+    [
+      [900, null],
+      [901, null],
+    ],
+    "a holder of another turn is not this turn's",
   );
 }
 
@@ -414,7 +525,8 @@ function checkPauseKey(): void {
 /** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
 function checkHelp(): void {
   const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
-  const wide = plainText(helpLines(100));
+  const chatPart = chatLegend(null); // the legend the agents plugin adds
+  const wide = plainText(helpLines(100, chatPart));
   assert.match(wide[0] ?? "", /^ Keys +Timeline/, "both columns on one screen");
   assert.ok(
     wide.some((line) => /^ c +cancel it \(y\/n\) +█ +past its usual run time/.test(line)),
@@ -425,7 +537,7 @@ function checkHelp(): void {
     "the wait reasons are listed",
   );
   wide.forEach((line) => assert.ok(displayWidth(line) <= 100, `fits 100 columns: ${line}`));
-  const narrow = plainText(helpLines(70));
+  const narrow = plainText(helpLines(70, chatPart));
   const blank = narrow.findIndex((line) => line.trim() === "");
   assert.ok(blank > 0 && narrow.slice(0, blank).some((line) => /^ q +quit/.test(line)), "the keys first");
   assert.match(narrow[blank + 1] ?? "", /^ Timeline/, "then the legend");
@@ -434,15 +546,15 @@ function checkHelp(): void {
   const reply = sampleReply();
   const small = { columns: 70, rows: 13, now: Now };
   const state = { ...initialViewState(), help: 1 };
-  const first = plain(renderScreen(reply, state, small, false));
+  const first = plain(renderScreen(reply, state, small, false, samplePanel(null)));
   assert.strictEqual(state.helpPages, Math.ceil(narrow.length / 9));
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
-  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
+  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false, samplePanel(null)));
   assert.ok(
     last.some((line) => /#n +a job it queued/.test(line)),
     "the last page ends the legend",
   );
-  const colored = helpLines(100).map((line) => line.render(true));
+  const colored = helpLines(100, chatPart).map((line) => line.render(true));
   assert.ok(
     colored.some((line) => line.includes("\x1b[31m█\x1b[0m")),
     "the late sample is red, as on the timeline",
@@ -458,6 +570,93 @@ function checkHelp(): void {
   assert.ok(colored[1]?.includes("\x1b[1m ↑↓ j k"), "the keys are bold");
 }
 
+/** The look of the screenshots: the Windows Terminal defaults, blocks as merged shapes, shades as dots, selection. */
+function checkTerminalLook(): void {
+  const esc = "\x1b";
+  assert.deepStrictEqual(
+    Campbell.join(" "),
+    "#0c0c0c #c50f1f #13a10e #c19c00 #0037da #881798 #3a96dd #cccccc #767676 #e74856 #16c60c #f9f1a5 #3b78ff #b4009e #61d6d6 #f2f2f2",
+    "the Campbell scheme of Windows Terminal",
+  );
+  const colors = terminalSvg([`${esc}[31mr${esc}[0m ${esc}[36mc${esc}[0m ${esc}[1;32mg${esc}[0m`], 10);
+  assert.ok(colors.includes('<rect width="100%" height="100%" rx="6" fill="#0c0c0c"/>'), "the Campbell background");
+  assert.ok(colors.includes('fill="#c50f1f"') && colors.includes('fill="#3a96dd"'), "red and cyan of Campbell");
+  assert.ok(colors.includes('fill="#16c60c"'), "bold green is the bright green");
+  assert.ok(colors.includes(`font-family="'Cascadia Mono', 'Cascadia Code', Consolas,`), "Cascadia Mono comes first");
+
+  // A run of full blocks is one rectangle of the cell height; the rows below touch it
+  const bars = terminalSvg([`${esc}[32m████████${esc}[0m`, `${esc}[32m████████${esc}[0m`], 10);
+  const rects = [
+    ...bars.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="#13a10e"/g),
+  ];
+  assert.strictEqual(rects.length, 2, "one rectangle per row of blocks");
+  assert.strictEqual(Number(rects[0]?.[3]), Number((8 * CellWidth).toFixed(1)), "as wide as the eight cells");
+  assert.strictEqual(Number(rects[0]?.[4]), LineHeight, "as high as a cell");
+  assert.strictEqual(Number(rects[0]?.[2]) + LineHeight, Number(rects[1]?.[2]), "the next row starts where it ends");
+  assert.ok(!bars.includes("<tspan"), "no glyphs for blocks");
+
+  // Shades are dot patterns of one, two and three dots in four, not glyphs
+  const shades = terminalSvg([`${esc}[33m░▒▓${esc}[0m`], 10);
+  const tiles = [...shades.matchAll(/<pattern [^>]*>(.*?)<\/pattern>/g)].map(
+    (m) => (m[1]?.match(/<rect /g) ?? []).length,
+  );
+  assert.deepStrictEqual(tiles, [1, 2, 3], "the dots of the light, medium and dark shade");
+  assert.ok(shades.includes('fill="#c19c00"') && !shades.includes("<tspan"), "dots in the foreground color");
+
+  // A selected job: the id and command in reverse video, the bar in its own color on a dim highlight
+  const line = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 812 },
+    { columns: 70, rows: 13, now: Now },
+    true,
+  )[2] as string;
+  assert.ok(line.includes(`${esc}[7;1m812${esc}[0m`), "the id is in reverse video");
+  assert.ok(line.includes(`${esc}[7mjust test-category`), "the command is in reverse video");
+  assert.ok(line.includes(`${esc}[48;5;237;32m█${esc}[0m`), "the bar keeps its green on the highlight");
+  assert.ok(!line.includes(`${esc}[7;32m█`), "the bar is not reversed");
+  assert.ok(line.endsWith(`${esc}[48;5;237m ${esc}[0m`), "the rest of the line is the dim highlight");
+  // A selected job that waits: the dim cells of its timeline (⋯ and the now column) stay on the highlight, and the
+  // last reversed part is the command, so that nothing of the timeline is reversed
+  for (const id of [820, 822]) {
+    const waiting = renderScreen(
+      sampleReply(),
+      { ...initialViewState(), selectedId: id },
+      { columns: 120, rows: 17, now: Now },
+      true,
+    ).find((l) => l.includes(`${esc}[7m${id}`)) as string;
+    const reversed = [...waiting.matchAll(/\[7(?:;[\d;]*)?m([^]*)\[0m/g)].map((m) => m[1] ?? "");
+    assert.ok(
+      reversed.length > 0 && !reversed.slice(-1)[0]?.includes("│"),
+      `#${id}: the last reversed part is a column`,
+    );
+    assert.ok(
+      reversed.every((text) => text.trim() !== "" && !/[│⋯█▒▓┃]/.test(text)),
+      `#${id}: no timeline cell reversed`,
+    );
+    assert.ok(waiting.includes(`${esc}[48;5;237;2m`), `#${id}: dim timeline cells on the highlight`);
+  }
+  // The first timeline cell is not always blank: at 50 columns the bar of #815 starts in it, and stays unreversed
+  const firstCell = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 50, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(firstCell.includes(`${esc}[48;5;237;31m█`), "#815: the first timeline cell keeps its red");
+  assert.ok(!firstCell.includes(`${esc}[7;31m█`), "#815: the first timeline cell is not reversed");
+  // Without a timeline (a narrow screen) the progress text of a late job is reversed like the other columns
+  const narrowSelected = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 40, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(!narrowSelected.includes(`${esc}[48;5;237;31m`), "no highlight on the progress text of a narrow line");
+  assert.ok(narrowSelected.includes(`${esc}[7;31m`), "the late progress text is reversed");
+  const selected = terminalSvg([line], 70);
+  assert.ok(selected.includes('fill="#13a10e"') && selected.includes('fill="#3a3a3a"'), "green bar, grey highlight");
+}
+
 /** The SVG of the screenshots: text escaped, wide characters on their cells, and the files of the README written. */
 function checkScreenshots(plugins: ShortNameProvider): void {
   const svg = terminalSvg(["a<b&c>d", "[1;33m日本[0mx [7msel[0m"], 10);
@@ -466,8 +665,9 @@ function checkScreenshots(plugins: ShortNameProvider): void {
   const x = (column: number): string => `x="${Number((Padding + column * CellWidth).toFixed(1))}"`;
   assert.ok(svg.includes(`<tspan ${x(0)}`) && svg.includes(`<tspan ${x(2)}`), "each wide character on its own cells");
   assert.ok(svg.includes(`<tspan ${x(4)}`) && svg.includes(">x</tspan>"), "the text after two wide ones at column 4");
-  assert.ok(svg.includes('font-weight="bold"') && svg.includes('fill="#f5f543"'), "bold yellow");
+  assert.ok(svg.includes('fill="#f9f1a5"') && !svg.includes("font-weight"), "bold yellow is the bright yellow");
   assert.ok(svg.includes(`<rect ${x(6)}`), "reverse video draws its background");
+  checkTerminalLook();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-screenshots-"));
   try {
     const files = writeScreenshots(dir, plugins);
@@ -485,6 +685,28 @@ function checkScreenshots(plugins: ShortNameProvider): void {
   }
 }
 
+/** The jobs handed to the panel: the worktree, or the directory when an older scheduler sends no worktree. */
+function checkPanelJobs(): void {
+  const jobs = screenJobs({
+    ...sampleReply(),
+    running: [],
+    waiting: [
+      job(1, { cwd: "here/sub", worktree: "here" }),
+      job(2, { cwd: "older/sub", worktree: undefined, session: "chat-b" }),
+    ],
+  });
+  assert.deepStrictEqual(
+    panelJobs(jobs)
+      .filter((panelJob) => panelJob.id <= 2)
+      .map((panelJob) => [panelJob.id, panelJob.worktree, panelJob.cwd, panelJob.session]),
+    [
+      [1, "here", "here/sub", undefined],
+      [2, "older/sub", "older/sub", "chat-b"],
+    ],
+    "an older scheduler's job falls back to its directory",
+  );
+}
+
 export async function checkView(): Promise<void> {
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
   const plugins = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
@@ -498,6 +720,7 @@ export async function checkView(): Promise<void> {
   checkLayout(plugins);
   checkKeys();
   checkGpuPairsAndReasons();
-  checkChats();
+  checkSharedView();
+  checkPanelJobs();
   checkScreenshots(plugins);
 }

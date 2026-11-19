@@ -9,7 +9,7 @@ internal static class NvccVersion
     public const string TooOldErrorCode = "GS0006";
 
     /// <summary>The oldest CUDA Toolkit major release that G# builds with.</summary>
-    public const int MinimumMajor = 13;
+    public const int MinimumMajor = NvccMinimum.MajorRelease;
 
     private const string ReleaseMarker = "release ";
 

@@ -324,6 +324,68 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
     }
 
+    // The CPU paths hoist a split in the initializer of a creation with a collection initializer to the start of the
+    // statement, before the values, Add calls and constructor that C# evaluates first, also in an object initializer
+    // around or inside the collection; CUDA does not split. Until the CPU paths run one stack per GPU thread (#2105)
+    // such a split is reported, and a split that is the first value of its creation (a member value or an element
+    // creation included, after constants only) is not
+    private const string CollectionInitializerKernels =
+        "Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs";
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SuspendingCallInCollectionInitializer_ValueBeforeTheCall_ReportsGSH0062()
+    {
+        var actual = await RunAsync(CollectionInitializerKernels, "Cpu");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 83, 41, 83, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 84, 51, 84, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 85, 47, 85, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 86, 68, 86, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 87, 47, 87, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 88, 42, 88, 77),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 89, 74, 89, 86),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 90, 85, 90, 97),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 91, 71, 91, 83),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 92, 72, 92, 84)
+            ],
+            actual);
+
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer(CollectionInitializerKernels, s_analyzer)
+            .WithDialect("Cpu")
+            .GetDiagnosticsAsync();
+        Assert.All(diagnostics, static d => Assert.Contains(
+            "in the initializer of a creation with a collection initializer, where C# evaluates another value",
+            d.GetMessage(CultureInfo.InvariantCulture),
+            StringComparison.Ordinal));
+    }
+
+    // A call of a device function that reaches a barrier is reported for every target; a warp shuffle written in
+    // place only where the CPU paths are built
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task SuspendingCallInCollectionInitializer_CudaDialect_ReportsDeviceFunctionCallsOnly()
+    {
+        var actual = await RunAsync(CollectionInitializerKernels, "Cuda");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 83, 41, 83, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 84, 51, 84, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 85, 47, 85, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 86, 68, 86, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 87, 47, 87, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 89, 74, 89, 86),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 90, 85, 90, 97),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 91, 71, 91, 83),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 92, 72, 92, 84)
+            ],
+            actual);
+    }
+
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
     // an in parameter without the keyword (#788 review), nor a ref conditional, with or without the keyword and in
     // parentheses, nor an element of an inline array that a call returns (#1585; #927 is to keep the reference
@@ -633,6 +695,33 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Empty(run.Output.GetDiagnostics()
             .Where(static d => d.Severity == DiagnosticSeverity.Error)
             .Select(static d => d.ToString()));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SuspendingCallContext_LambdaAndLocalFunction_ReportsGSH0062OnlyThere(string dialect)
+    {
+        const string testCase = "Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs";
+        var actual = await RunAsync(testCase, dialect);
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 23, 26, 23, 33),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 31, 21, 31, 28)
+            ],
+            actual);
+
+        var messages = (await GeneratorTestRunner
+                .TestAnalyzer(testCase, s_analyzer)
+                .WithDialect(dialect)
+                .GetDiagnosticsAsync())
+            .OrderBy(static d => d.Location.SourceSpan.Start)
+            .Select(static d => d.GetMessage(CultureInfo.InvariantCulture))
+            .ToArray();
+        Assert.Contains("in a lambda or anonymous method", messages[0], StringComparison.Ordinal);
+        Assert.Contains("in a local function", messages[1], StringComparison.Ordinal);
     }
 
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(

@@ -23,9 +23,36 @@ Count the number of trailing zero bits in an integer.
 
 | Name | Description |
 | --- | --- |
+| [TrailingZeroCount(int)](#trailingzerocount-int) | Count the number of trailing zero bits in an integer. (32-bit signed) |
 | [TrailingZeroCount(uint)](#trailingzerocount-uint) | Count the number of trailing zero bits in an integer. (32-bit) |
+| [TrailingZeroCount(long)](#trailingzerocount-long) | Count the number of trailing zero bits in an integer. (64-bit signed) |
+| [TrailingZeroCount(nint)](#trailingzerocount-nint) | Count the number of trailing zero bits in an integer. (pointer-sized signed) |
 | [TrailingZeroCount(ulong)](#trailingzerocount-ulong) | Count the number of trailing zero bits in an integer. (64-bit) |
-| [TrailingZeroCount(nuint)](#trailingzerocount-nuint) | Count the number of trailing zero bits in an integer. (pointer-sized; host only, GSH0003 in a kernel) |
+| [TrailingZeroCount(nuint)](#trailingzerocount-nuint) | Count the number of trailing zero bits in an integer. (pointer-sized) |
+
+<a id="trailingzerocount-int"></a>
+
+## TrailingZeroCount(int)
+
+Count the number of trailing zero bits in an integer. (32-bit signed)
+
+```csharp
+public static int TrailingZeroCount(int value);
+```
+
+#### Parameters
+
+`value` <i>int</i><br>
+The 32-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `32` if `value` is `0`.
 
 ## TrailingZeroCount(uint)
 
@@ -86,8 +113,53 @@ public static int TrailingZeroCount(nuint value);
 `value` <i>nuint</i><br>
 The pointer-sized unsigned integer.
 
-> [!WARNING]
-> **Not supported in kernels yet.** A call of this overload in GPU code is reported as [GSH0003](../diagnostics/GSH0003.md) until #983 (nint and nuint constants and casts in kernels build wrong or not at all) is fixed; a kernel calls the `ulong` overload instead. On the host it is the .NET method.
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+<a id="trailingzerocount-long"></a>
+
+## TrailingZeroCount(long)
+
+Count the number of trailing zero bits in an integer. (64-bit signed)
+
+```csharp
+public static int TrailingZeroCount(long value);
+```
+
+#### Parameters
+
+`value` <i>long</i><br>
+The 64-bit signed integer.
+
+#### Returns
+
+<i>int</i><br>
+The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
+
+<a id="trailingzerocount-nint"></a>
+
+## TrailingZeroCount(nint)
+
+Count the number of trailing zero bits in an integer. (pointer-sized signed)
+
+```csharp
+public static int TrailingZeroCount(nint value);
+```
+
+#### Parameters
+
+`value` <i>nint</i><br>
+The pointer-sized signed integer.
 
 #### Returns
 

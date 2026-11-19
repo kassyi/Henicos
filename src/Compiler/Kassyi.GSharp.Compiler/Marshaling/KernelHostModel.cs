@@ -26,6 +26,9 @@ internal readonly record struct KernelHostModel
     /// <summary>The managed fallback's state machine method.</summary>
     public string StateMachineName { get; init; }
 
+    /// <summary>The managed stack model's unlowered method.</summary>
+    public string StackFormName { get; init; }
+
     /// <summary>The CPU export of the launcher.</summary>
     public string LaunchExportName { get; init; }
 
@@ -97,6 +100,13 @@ internal readonly record struct KernelHostModel
     /// (GSH0119); <see langword="null"/> otherwise.
     /// </summary>
     public string? ManagedUnavailableReason { get; init; }
+
+    /// <summary>
+    /// Whether the kernel can run on one OS stack per GPU thread under the managed stack model; set only under
+    /// <c>GSharpManagedBarrierModel=Stack</c>, when its stack form is attached
+    /// (<see cref="ManagedStackFormCollector"/>).
+    /// </summary>
+    public bool SupportsManagedStack { get; init; }
 
     /// <summary>The kernel in a run-time error of the managed path (<see cref="KernelHostNames.GetMessageName"/>).</summary>
     public string MessageName { get; init; }
@@ -185,6 +195,7 @@ internal readonly record struct KernelHostModel
             KernelName = GlobalCppNames.GetKernelName(kernel),
             ContextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, kernel),
             StateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, kernel),
+            StackFormName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.StackModel.MethodPrefix, kernel),
             LaunchExportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, kernel),
             LauncherAccessibility = GeneratedMemberAccessibility.OfSignature(kernel).ChooseIn(kernel.ContainingType),
             WarmupRelayName =
@@ -319,7 +330,7 @@ internal readonly record struct KernelHostModel
         }
 
         var named = (INamedTypeSymbol)type;
-        if (!visited.Add(named))
+        if (GrowingGenericStructs.IsLargerConstruction(named, visited) || !visited.Add(named))
         {
             return;
         }
@@ -377,4 +388,10 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// <summary>The managed state machines of the device functions of one class that may suspend.</summary>
 /// <param name="Class">The class that the state machines go into.</param>
 /// <param name="Sources">The state machines, in declaration order.</param>
-internal readonly record struct DeviceStateMachineGroup(HostClassHeader Class, EquatableArray<string> Sources);
+/// <param name="StackSources">
+/// The managed stack forms of eligible suspending device functions, in declaration order.
+/// </param>
+internal readonly record struct DeviceStateMachineGroup(
+    HostClassHeader Class,
+    EquatableArray<string> Sources,
+    EquatableArray<string> StackSources = default);

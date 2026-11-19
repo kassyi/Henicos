@@ -18,12 +18,12 @@ namespace UnmappedCallTest
         // Methods of other assemblies that no dialect implements: GSH0109 at each call
         [GpuKernel]
         [SkipSnapshotConsistency("Diagnostics case")]
-        public static void UnmappedKernel(float[] f, int[] i, long[] l, short[] s)
+        public static void UnmappedKernel(float[] f, int[] i, long[] l, short[] s, double[] d)
         {
             int t = ThreadIndex.X;
             f[t] = float.Clamp(f[t], 0f, 1f);
             i[t] = int.Max(i[t], 3);
-            l[t] = Math.Max(l[t], 3L);
+            d[t] = Math.Round(d[t], 1);
             f[t] = MathF.Cbrt(f[t]);
             i[t] = int.Abs(i[t]);
             s[t] = short.Abs(s[t]);

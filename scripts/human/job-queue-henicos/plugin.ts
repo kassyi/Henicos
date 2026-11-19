@@ -1,4 +1,5 @@
-// Repository plugin for Henicos: test classification, memory budgets, --gpu checks/hints, and short command labels.
+// Repository plugin for Henicos: test classification, memory budgets, the GPU share of a --gpu run (share-rules.ts),
+// --gpu checks/hints, and short command labels.
 
 import {
   PluginApiVersion,
@@ -10,6 +11,7 @@ import {
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
+import { shareOf } from "./share-rules.ts";
 
 const DefaultBudgetsFile = "tests/memory-budgets.yml";
 const DefaultTestsDir = "tests";
@@ -70,9 +72,11 @@ const plugin = {
     return undefined;
   },
 
-  classify(command: string, _resource: ResourceRequest | null, context: ClientContext): Classification | undefined {
+  classify(command: string, resource: ResourceRequest | null, context: ClientContext): Classification | undefined {
+    // Asked only for a --gpu run (share-rules.ts); a run that does not ask for the GPU has no share
+    const share = resource?.name === "gpu" ? shareOf(command, context) : undefined;
     if (!isHenicosTest(command)) {
-      return undefined;
+      return share !== undefined ? { share } : undefined;
     }
     const budgets = resolveBudgets(
       context.worktree,
@@ -81,7 +85,7 @@ const plugin = {
       context.log,
     );
     const memoryMb = testMemoryMb(command, true, budgets, (cmd) => selectsCategory(cmd, ["Stress", "Benchmark"]));
-    return { test: true, memoryMb };
+    return share !== undefined ? { test: true, memoryMb, share } : { test: true, memoryMb };
   },
 
   shortName(_command: string, short: string): string | undefined {
