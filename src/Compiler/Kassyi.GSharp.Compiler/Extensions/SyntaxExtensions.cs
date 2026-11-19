@@ -37,4 +37,17 @@ internal static class SyntaxExtensions
     }
 
 #pragma warning restore RS1034
+
+    /// <summary>
+    /// Strips outer <see cref="ParenthesizedExpressionSyntax"/> wrappers from <paramref name="expression"/>.
+    /// </summary>
+    public static ExpressionSyntax UnwrapParentheses(this ExpressionSyntax expression)
+    {
+        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            expression = parenthesized.Expression;
+        }
+
+        return expression;
+    }
 }

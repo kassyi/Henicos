@@ -111,12 +111,26 @@ internal static class JumpedOverDeclarations
         }
     }
 
-    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct
-    private static bool HasCppDefaultConstructor(ITypeSymbol? type) =>
-        type is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsRefLikeType: false, SpecialType: SpecialType.None } named &&
-        named
-            .GetMembers()
-            .AsStackEnumerable()
-            .Any(static member => member is IFieldSymbol { IsStatic: false, IsConst: false } field &&
-                                  (field.Type.IsArrayLikeType() || HasCppDefaultConstructor(field.Type)));
+    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct. A struct
+    // already on the path holds itself (CS0523), and the walk stops there
+    private static bool HasCppDefaultConstructor(ITypeSymbol? type, StructPath? path = null)
+    {
+        if (type is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Struct, IsRefLikeType: false, SpecialType: SpecialType.None
+            } named)
+        {
+            return false;
+        }
+
+        using var step = StructPath.Enter(path, named);
+        return !step.IsCycle &&
+               named
+                   .GetMembers()
+                   .AsStackEnumerable()
+                   .Any(step.Path, static (member, structPath) =>
+                       member is IFieldSymbol { IsStatic: false, IsConst: false } field &&
+                       (field.Type.IsArrayLikeType() || HasCppDefaultConstructor(field.Type, structPath))
+                   );
+    }
 }

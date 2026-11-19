@@ -234,25 +234,48 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>
-    /// Writes <paramref name="expression"/> through the check when lowering marked it
-    /// (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>, the source of a lowered <c>foreach</c>), with the
-    /// place the annotation carries.
+    /// Writes <paramref name="expression"/> through the check when lowering marked it, the source of a lowered
+    /// <c>foreach</c>: the null check of an array (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>) or
+    /// the check of a default segment (<see cref="LoweringAnnotations.SegmentCheckAnnotationKind"/>), with the place
+    /// the annotation carries.
     /// </summary>
     /// <returns><see langword="false"/>, writing nothing, when the expression carries no such annotation.</returns>
-    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context)
+    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context) =>
+        TryAppendMarkedCheck(expression, s_arrayNullCheck, ref context) ||
+        TryAppendMarkedCheck(expression, s_segmentCheck, ref context);
+
+    // A check that lowering puts on the source of a foreach: the annotation kind that marks the source, the Prelude
+    // helper the source goes through, and the text and trap kind of its error site
+    private readonly record struct AnnotatedCheck(string Kind, string Helper, string Message, string TrapKind);
+
+    private static readonly AnnotatedCheck s_arrayNullCheck = new(
+        LoweringAnnotations.ArrayNullCheckAnnotationKind,
+        GSharpInternalNames.Prelude.ArrayRef,
+        SiteMessage,
+        TrapKind);
+
+    private static readonly AnnotatedCheck s_segmentCheck = new(
+        LoweringAnnotations.SegmentCheckAnnotationKind,
+        GSharpInternalNames.Prelude.SegmentRef,
+        SegmentCheck.SiteMessage,
+        SegmentCheck.TrapKind);
+
+    private static bool TryAppendMarkedCheck(ExpressionSyntax expression, in AnnotatedCheck check,
+        ref TranspileContext context)
     {
-        if (!expression.HasAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        if (!expression.HasAnnotations(check.Kind))
         {
             return false;
         }
 
-        foreach (var annotation in expression.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        foreach (var annotation in expression.GetAnnotations(check.Kind))
         {
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
-                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                var receiver = expression.WithoutAnnotations(check.Kind);
+                var site = PlanSite(receiver, place, check.Message, check.TrapKind, ref context);
+                AppendHelperCall(check.Helper, receiver, site, ref context);
                 return true;
             }
         }

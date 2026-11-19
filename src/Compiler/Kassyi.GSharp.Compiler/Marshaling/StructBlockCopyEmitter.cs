@@ -47,7 +47,7 @@ internal static class StructBlockCopyEmitter
     // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host). An inline array
     // whose element lays out differently on the device, or holds arrays, is copied element by element instead
     // (host[k] is the element, whatever the field's accessibility).
-    internal static bool TryWriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative,
+    internal static void WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative,
         ITranspilerDialect dialect)
     {
         var name = member.Name.ToCSharpIdentifier();
@@ -69,7 +69,7 @@ internal static class StructBlockCopyEmitter
                     }
                 }
 
-                return true;
+                break;
             case StructAbiMemberKind.FixedBuffer:
                 // C# allows a fixed buffer only of a primitive type, so the element always has a keyword
                 var element = member.Type.SpecialType.GetCsharpKeyword() ?? "byte";
@@ -84,9 +84,29 @@ internal static class StructBlockCopyEmitter
                     }
                 }
 
-                return true;
+                break;
             default:
-                return false;
+                throw new InvalidOperationException($"The member '{member.Name}' is not a block copy.");
+        }
+    }
+
+    // A primitive or an enum: the shadow field has the host field's type
+    internal static void WriteDirectCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    {
+        var name = member.Name.ToCSharpIdentifier();
+        writer.AppendLine(toNative ? $"native.{name} = host.{name};" : $"host.{name} = native.{name};");
+    }
+
+    // The shadow holds the value as a byte buffer: copy it through a pointer to the host type
+    internal static void WriteFixedBytesCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    {
+        var name = member.Name.ToCSharpIdentifier();
+        writer.AppendLine($"fixed (byte* pField = native.{name})");
+        using (writer.Scope())
+        {
+            writer.Append(toNative ? "*((" : $"host.{name} = *((");
+            writer.AppendFullyQualifiedCsharpName(member.Type);
+            writer.AppendLine(toNative ? $"*)pField) = host.{name};" : "*)pField);");
         }
     }
 

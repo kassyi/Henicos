@@ -138,19 +138,20 @@ internal static class DynamicSharedMemoryEmitter
     /// beyond any <c>sharedMemBytes</c>. <c>__gsharp_dsmem_place</c> compares that size with <c>sharedMemBytes</c>
     /// before it adds the offset, which could otherwise wrap past 2^64 to a small end, and traps.
     /// </remarks>
-    public static void WritePlacement(VariableDeclaratorSyntax declarator, BaseObjectCreationExpressionSyntax creation,
+    internal static void WritePlacement(SharedMemoryName name, BaseObjectCreationExpressionSyntax creation,
         ExpressionSyntax count, ITypeSymbol elementType, ref TranspileContext context)
     {
         if (context.Emitter.DynamicSharedMemorySlotScope is not { } slotScope)
         {
-            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declarator, DynamicSharedMemoryAnalysis.ReachedWithoutTable);
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, (SyntaxNode?)name.Declarator ?? creation,
+                DynamicSharedMemoryAnalysis.ReachedWithoutTable);
             return;
         }
 
         var siteKey = SharedMemorySiteKey.ToCppLiteral(SharedMemorySiteKey.Compute(context.Query.SemanticModel, creation));
         context.Emitter.Dialect.AppendType(ref context, elementType);
         context.Emitter.Writer.Append("* ");
-        CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+        name.Append(ref context);
         context.Emitter.Writer.Append(" = ");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -158,10 +159,12 @@ internal static class DynamicSharedMemoryEmitter
             context.Emitter.Writer.Append('*');
         }
 
-        context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.DynamicSharedMemoryPlace}<{slotScope}Slot<{siteKey}>>");
+        context.Emitter.Writer.Append(
+            $"{GSharpInternalNames.Prelude.DynamicSharedMemoryPlace}<{slotScope}Slot<{siteKey}>>");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append($"{GSharpInternalNames.DynamicSharedMemory.Table}, (unsigned long long)(long long)");
+            context.Emitter.Writer.Append(
+                $"{GSharpInternalNames.DynamicSharedMemory.Table}, (unsigned long long)(long long)");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Visitor.Visit(count);

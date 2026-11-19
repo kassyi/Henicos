@@ -242,13 +242,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
 
     private static ITypeSymbol? GetSynthesizedSourceType(CastExpressionSyntax node, SemanticModel model)
     {
-        var expr = node.Expression;
-        while (expr is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expr = parenthesized.Expression;
-        }
-
-        return model.GetTypeSymbol(expr) ??
+        return model.GetTypeSymbol(node.Expression.UnwrapParentheses()) ??
                (model.GetSafeOperation(node) is IForEachLoopOperation { Collection.Type: { } collectionType } &&
                 collectionType.TryGetArrayLikeElementType(out var elementType)
                    ? elementType

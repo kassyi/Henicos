@@ -257,6 +257,41 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
         });
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Allocate_OnFreshThreadAfterInitOnCaller_ThrowsInvalidOperation()
+    {
+        RunOnFreshThread(() =>
+        {
+            try
+            {
+                ManagedThreadContext.Set(new GpuThreadContext(0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1));
+                ManagedGpuContext.InitializeGrid(1);
+                ManagedGpuContext.AllocateSharedMemory<int>(800UL, 4)[0] = 42;
+
+                RunOnFreshThread(() =>
+                {
+                    try
+                    {
+                        ManagedThreadContext.Set(new GpuThreadContext(0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1));
+                        var ex = Assert.Throws<InvalidOperationException>(() =>
+                            ManagedGpuContext.AllocateSharedMemory<int>(800UL, 4));
+                        Assert.Contains("Grid not initialized", ex.Message, StringComparison.Ordinal);
+                    }
+                    finally
+                    {
+                        ManagedThreadContext.Clear();
+                    }
+                });
+            }
+            finally
+            {
+                ManagedGpuContext.EndGrid();
+                ManagedThreadContext.Clear();
+            }
+        });
+    }
+
     private static void WriteByRef(ref int target, int value) => target = value;
 
     private static void WithBlock(Action body) => RunOnFreshThread(() =>

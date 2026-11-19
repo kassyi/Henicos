@@ -22,16 +22,18 @@ import type { RunOptions } from "./client.ts";
 import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
-import type { PluginHost } from "./plugin-host.ts";
+import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import {
   numberField,
   onMessages,
   send,
+  shareField,
   wireVersion,
   type ClientMessage,
   type Incoming,
   type Placement,
 } from "./protocol.ts";
+import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
 
@@ -61,6 +63,11 @@ export class QueuedRun {
   private keys: CommandKeys | null = null;
   /** Precomputed memory budget when plugins are active and !gpuTurn; resolved once at the first registration. */
   private memoryMb: number | null = null;
+  /**
+   * The share a GPU turn asks for when plugins are active, classified once at the first registration: "shared" only
+   * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
+   */
+  private share: ShareMode | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -211,10 +218,12 @@ export class QueuedRun {
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
     if (this.gpuTurn) {
-      prefix(
-        `the GPU turn of #${jobId} came after ${Math.round((Date.now() - this.queuedAt) / 1000)}s; taking the GPU lock`,
-      );
-      const result = await this.host.runUnderGpuLock(placement.weight, jobId, (c) => this.started(c));
+      // Shared only when this turn asked for "shared" and the scheduler echoes exactly that: an older scheduler, or
+      // one that counts the turn as exclusive, sends no echo, and the lock is then taken exclusively
+      const mode: ShareMode = this.share === "shared" && shareField(granted) === "shared" ? "shared" : "exclusive";
+      const waited = Math.round((Date.now() - this.queuedAt) / 1000);
+      prefix(`the GPU turn of #${jobId} came after ${waited}s; taking the GPU lock (${mode})`);
+      const result = await this.host.runUnderGpuLock(placement.weight, jobId, mode, (c) => this.started(c));
       const end = commandEnd(result, this.cancelRequested);
       this.finish(end.exitCode, end.completed, end.cancelled);
       return;
@@ -378,7 +387,7 @@ export class QueuedRun {
       this.registered = false;
       this.state = "running";
       void this.host
-        .runUnderGpuLock(this.placement.weight, 0, (c) => (this.child = c))
+        .runUnderGpuLock(this.placement.weight, 0, "exclusive", (c) => (this.child = c))
         .then(({ code }) => this.host.exit(code));
       return;
     }
@@ -445,21 +454,34 @@ export class QueuedRun {
     const keys = hasPlugins
       ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
       : undefined;
+    const context = (plugins: PluginHost): BaseClientContext => ({
+      cwd,
+      worktree,
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(options.shell).name,
+      env: process.env,
+      log: prefix,
+    });
     let memoryMb: number | undefined;
     if (hasPlugins && !this.gpuTurn) {
       if (this.memoryMb === null) {
-        const classified = (this.plugins as PluginHost).classify(options.command, null, {
-          cwd,
-          worktree,
-          configRoot: (this.plugins as PluginHost).configRoot,
-          shell: CommandShell.resolve(options.shell).name,
-          env: process.env,
-          log: prefix,
-        });
+        const plugins = this.plugins as PluginHost;
+        const classified = plugins.classify(options.command, null, context(plugins));
         const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
         this.memoryMb = classified.memoryMb ?? fallback;
       }
       memoryMb = this.memoryMb;
+    }
+    // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
+    let share: ShareMode | undefined;
+    if (hasPlugins && this.gpuTurn) {
+      if (this.share === null) {
+        const plugins = this.plugins as PluginHost;
+        const resource = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
+        const classified = plugins.classify(options.command, resource, context(plugins));
+        this.share = classified.share === "shared" ? "shared" : "exclusive";
+      }
+      share = this.share;
     }
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
@@ -473,8 +495,10 @@ export class QueuedRun {
       ...(Object.keys(places).length > 0 ? { places } : {}),
       ...(keys !== undefined ? { keys } : {}),
       ...(memoryMb !== undefined ? { memoryMb } : {}),
-      // The chat that queued it, so that the live view can show its jobs on its row
-      session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
+      ...(this.gpuTurn ? { resource: "gpu" } : {}),
+      ...(share !== undefined ? { share } : {}),
+      // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
+      session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart

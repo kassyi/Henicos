@@ -3,6 +3,7 @@
 import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
+import { isResourceName, type ShareMode } from "./resources.ts";
 
 export const MaxMemoryMb = 2 ** 20;
 export const MaxKeyLength = 2000;
@@ -43,6 +44,10 @@ export interface JobRequest {
   memoryMb?: number;
   /** Estimate fallback keys computed by the client (absent from older clients). */
   keys?: CommandKeys;
+  /** The turn resource of a --gpu run or a holder (a name of resources.ts; absent from older clients: "gpu"). */
+  resource?: string;
+  /** "shared": the turn may run beside other shared turns; anything else, and absent, is exclusive. */
+  share?: ShareMode;
 }
 
 export type ClientMessage =
@@ -104,6 +109,11 @@ export interface JobView {
   gpuTurn: boolean;
   /** The memory budget it takes from the pool, in MB (absent from older schedulers). */
   memoryMb?: number;
+  /** The turn resource it uses and how it shares it (absent from older schedulers, and when none was asked). */
+  resource?: string;
+  share?: "shared";
+  /** For a GPU holder: the id of the --gpu run whose turn started it (absent when it has none). */
+  turn?: number;
 }
 
 /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -119,6 +129,18 @@ export interface Outlook {
 
 export type StatusJob = JobView & Outlook;
 
+/** One turn resource as status shows it. */
+export interface ResourceStatus {
+  name: string;
+  slots: number;
+  /** The ids of the shared turns that run. */
+  shared: number[];
+  /** The ids of the jobs that use it exclusively: exclusive turns, and holders no running turn started. */
+  exclusive: number[];
+  /** The last probe; absent when none ran. */
+  probe?: { ok: boolean; value: number | null; at: number; why?: string };
+}
+
 export interface StatusReply {
   type: "status";
   pid: number;
@@ -133,6 +155,8 @@ export interface StatusReply {
   paused?: boolean;
   /** When it was paused, ms since the epoch; present while paused. */
   pausedAt?: number;
+  /** The turn resources and who uses them (absent from older schedulers). */
+  resources?: ResourceStatus[];
   running: StatusJob[];
   waiting: StatusJob[];
 }
@@ -149,8 +173,11 @@ export type ServerMessage =
   /** The queue was paused while the job waits (sent once to each waiting client). */
   | { type: "paused"; at: number }
   | ({ type: "waiting"; id: number; used: number; capacity: number } & Outlook)
-  /** protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). */
-  | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number }
+  /**
+   * protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). share:
+   * "shared" only when the turn was asked to share and the scheduler counts it as shared (an older one never says it).
+   */
+  | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number; share?: "shared" }
   | { type: "adopted"; id: number; protocol?: number }
   | { type: "cancelled"; id: number; reason?: string }
   | ({ type: "updated"; id: number } & Placement)
@@ -301,4 +328,14 @@ export function memoryMbField(message: Incoming): number | undefined {
 export function keysField(message: Incoming): CommandKeys | undefined {
   const value = message.keys;
   return isCommandKeys(value) ? { normalized: value.normalized, shape: value.shape, kind: value.kind } : undefined;
+}
+
+/** The `resource` of a JobRequest; undefined when missing or not shaped like a resource name. */
+export function resourceField(message: Incoming): string | undefined {
+  return isResourceName(message.resource) ? message.resource : undefined;
+}
+
+/** The `share` of a JobRequest: "shared" for exactly that string, undefined (exclusive) for anything else. */
+export function shareField(message: Incoming): "shared" | undefined {
+  return message.share === "shared" ? "shared" : undefined;
 }

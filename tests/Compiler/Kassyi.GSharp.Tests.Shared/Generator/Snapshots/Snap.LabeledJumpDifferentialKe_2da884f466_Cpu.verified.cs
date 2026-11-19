@@ -8080,7 +8080,7 @@ __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.
 __gsharp_ctx->__gsharp_id_4_x=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_xs, __gsharp_ctx->__gsharp_id_3_tid, 353855670u)&0x3FF;
 __gsharp_ctx->__gsharp_id_5_s=0;
 __gsharp_id_6_outer:;
-__gsharp_ctx->__gsharp_foreach_src_0=__gsharp_ctx->__gsharp_id_1_items;
+__gsharp_ctx->__gsharp_foreach_src_0=__gsharp_array_ref(__gsharp_ctx->__gsharp_id_1_items, 2100430926u);
 __gsharp_ctx->__gsharp_foreach_i_0=0;
 goto __gsharp_switch_1_state_1;
 }

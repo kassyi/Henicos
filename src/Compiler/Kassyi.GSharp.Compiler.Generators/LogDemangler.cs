@@ -87,6 +87,15 @@ public static class LogDemangler
 
     private static bool IsHelp(string arg) => arg is "help" or "--help" or "-h" or "-?" or "/?";
 
+    internal static string DemangleText(string text, string symbolsPath = "")
+    {
+        var symbolMap = LoadSymbolMap(symbolsPath);
+        using var input = new StringReader(text);
+        using var output = new StringWriter();
+        DecodeLines(input, output, symbolMap);
+        return output.ToString();
+    }
+
     private static void DecodeLines(TextReader input, TextWriter output, IReadOnlyDictionary<string, string> symbolMap)
     {
         while (input.ReadLine() is { } line)
@@ -101,12 +110,13 @@ public static class LogDemangler
         foreach (var symbolFile in FindSymbolFiles(explicitPath))
         {
             var content = File.ReadAllText(symbolFile, Encoding.UTF8);
-            if (content.Length == 0)
+            var companionHash = ReadCompanionHash(symbolFile);
+            if (content.Length == 0 && companionHash is null)
             {
                 continue;
             }
 
-            foreach (var entry in GSharpNameEncoding.ParseSymbolFile(content, ReadCompanionHash(symbolFile)))
+            foreach (var entry in GSharpNameEncoding.ParseSymbolFile(content, companionHash))
             {
                 map[entry.Key] = entry.Value;
             }
@@ -134,25 +144,28 @@ public static class LogDemangler
         if (Directory.Exists(explicitPath))
         {
             files.AddRange(Directory.EnumerateFiles(explicitPath, "*" + SymbolFileSuffix, SearchOption.AllDirectories));
+            return files;
         }
-        else if (!File.Exists(explicitPath))
+
+        if (!File.Exists(explicitPath))
         {
             throw new FileNotFoundException($"Symbols path not found: {explicitPath}");
         }
-        else if (explicitPath.EndsWith(SymbolFileSuffix, StringComparison.OrdinalIgnoreCase))
+
+        if (explicitPath.EndsWith(SymbolFileSuffix, StringComparison.OrdinalIgnoreCase))
         {
             files.Add(explicitPath);
-        }
-        else if (File.Exists(explicitPath + SymbolFileSuffix))
-        {
-            files.Add(explicitPath + SymbolFileSuffix);
-        }
-        else
-        {
-            throw new InvalidOperationException($"Unsupported symbols path or missing companion .gsym.json: {explicitPath}");
+            return files;
         }
 
-        return files;
+        if (File.Exists(explicitPath + SymbolFileSuffix))
+        {
+            files.Add(explicitPath + SymbolFileSuffix);
+            return files;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported symbols path or missing companion .gsym.json: {explicitPath}");
     }
 
     /// <summary>The <c>// gsharp-symbols:</c> hash on line 1 of the artifact next to <paramref name="symbolFile"/>, if any.</summary>

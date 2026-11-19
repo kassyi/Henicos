@@ -94,8 +94,8 @@ public class CallTargetClassifierTests
     [InlineData(nameof(CallTargetCases.CallsIntMax), "Max", "int.Max(int, int)", "; use Math.Max(int, int) instead")]
     [InlineData(nameof(CallTargetCases.CallsFloatClamp), "Clamp", "float.Clamp(float, float, float)",
         "; use Math.Clamp(float, float, float) instead")]
-    [InlineData(nameof(CallTargetCases.CallsLongMax), "Max", "Math.Max(long, long)",
-        "; the dialect implements Math.Max(double, double), Math.Max(float, float), Math.Max(int, int)")]
+    [InlineData(nameof(CallTargetCases.CallsDoubleRoundWithDigits), "Round", "Math.Round(double, int)",
+        "; the dialect implements Math.Round(double)")]
     [InlineData(nameof(CallTargetCases.CallsCbrt), "Cbrt", "MathF.Cbrt(float)", "")]
     [InlineData(nameof(CallTargetCases.CallsImmutableClear), "Clear", "ImmutableArray<T>.Clear()", "")]
     [Scenario(TestScenario.SadPath)]
@@ -301,7 +301,7 @@ public static class CallTargetCases
 
     public static float CallsFloatClamp(float a) => float.Clamp(a, 0f, 1f);
 
-    public static long CallsLongMax(long a) => Math.Max(a, 3L);
+    public static double CallsDoubleRoundWithDigits(double a) => Math.Round(a, 1);
 
     public static float CallsCbrt(float a) => MathF.Cbrt(a);
 

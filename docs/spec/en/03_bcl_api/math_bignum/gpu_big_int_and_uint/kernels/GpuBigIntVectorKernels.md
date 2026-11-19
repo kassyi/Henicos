@@ -376,6 +376,8 @@ public struct DivModWords
 | [DeviceVectorFloatSumReductionChunk(VectorFloatReductionChunkContext)](#devicevectorfloatsumreductionchunkvectorfloatreductionchunkcontext) | A GPU device function (`[GpuDeviceFunction]`) that sums a chunk of floating-point elements with radix alignment and normalization. |
 | [VectorAnyTrueKernel(VectorBoolReductionContext)](#vectoranytruekernelvectorboolreductioncontext) | A GPU kernel (`[GpuKernel]`) that sets `ctx.Result[0] = 1u` if any active predicate flag in `ctx.Flags` is non-zero. |
 | [VectorAllTrueKernel(VectorBoolReductionContext)](#vectoralltruekernelvectorboolreductioncontext) | A GPU kernel (`[GpuKernel]`) that sets `ctx.Result[0] = 0u` if any active predicate flag in `ctx.Flags` is zero. |
+| [VectorAnyTrueMinIndexKernel(VectorBoolReductionContext)](#vectoranytrueminindexkernelvectorboolreductioncontext) | A GPU kernel (`[GpuKernel]`) that writes the lowest index of an active non-zero flag in `ctx.Flags` into `ctx.Result[0]` with an atomic minimum. |
+| [VectorAllTrueMinIndexKernel(VectorBoolReductionContext)](#vectoralltrueminindexkernelvectorboolreductioncontext) | A GPU kernel (`[GpuKernel]`) that writes the lowest index of an active zero flag in `ctx.Flags` into `ctx.Result[0]` with an atomic minimum. |
 | [WriteElementCountKernel(ElementCountWriteContext)](#writeelementcountkernelelementcountwritecontext) | A GPU kernel (`[GpuKernel]`) that resolves `ctx.Count` on the device and writes the active count as a multi-word integer into `ctx.Destination`. |
 | [CopyCountedElementsKernel(CountedCopyContext)](#copycountedelementskernelcountedcopycontext) | A GPU kernel (`[GpuKernel]`) that copies the active elements (`ResolveCount(ctx.Count)`) from `ctx.Source` (offset by `ctx.Count.Skip`) into `ctx.Destination`. |
 
@@ -1002,6 +1004,24 @@ Checks active predicate flags in `ctx.Flags` (up to `ResolveCount(ctx.Count)`) a
 ```csharp
 [GpuKernel]
 public static void VectorAllTrueKernel(VectorBoolReductionContext ctx);
+```
+
+## VectorAnyTrueMinIndexKernel(VectorBoolReductionContext)
+
+Writes the lowest index of an active predicate flag in `ctx.Flags` (up to `ResolveCount(ctx.Count)`) that is non-zero into `ctx.Result[0]` with `Gpu.AtomicMin`. The caller sets `ctx.Result[0]` to `uint.MaxValue` first, which stays when no flag is set. `Any` uses it for a chain that can throw, to compare the deciding element with the first element that throws.
+
+```csharp
+[GpuKernel]
+public static void VectorAnyTrueMinIndexKernel(VectorBoolReductionContext ctx);
+```
+
+## VectorAllTrueMinIndexKernel(VectorBoolReductionContext)
+
+Writes the lowest index of an active predicate flag in `ctx.Flags` (up to `ResolveCount(ctx.Count)`) that is zero into `ctx.Result[0]` with `Gpu.AtomicMin`. The caller sets `ctx.Result[0]` to `uint.MaxValue` first, which stays when every flag is set. `All` uses it for a chain that can throw, as `VectorAnyTrueMinIndexKernel` does for `Any`.
+
+```csharp
+[GpuKernel]
+public static void VectorAllTrueMinIndexKernel(VectorBoolReductionContext ctx);
 ```
 
 ## WriteElementCountKernel(ElementCountWriteContext)

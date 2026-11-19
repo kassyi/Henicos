@@ -54,7 +54,11 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         // A zero divisor over no element divides and writes nothing; over an element it throws
         if (evalCount > 0 && DividesByZero(workspace, operands))
         {
-            ZeroDivisorCheck.ThrowIfAnyElement(workspace, vecResult.Count);
+            if (ZeroDivisorCheck.ThrowIfAnyElement(workspace, vecResult.Count))
+            {
+                RecordedTail.Clear(workspace, output.Destination, 0, evalCount);
+            }
+
             return new FloatVectorEvaluation(output.Close(workspace, DeviceElementCount.Static(0)), vecResult.Count,
                 _cache.Lease);
         }

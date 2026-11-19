@@ -17,6 +17,7 @@
     <CompilerVisibleProperty Include="GSharpEmitSource" />
     <CompilerVisibleProperty Include="GSharpExportDeviceCode" />
     <CompilerVisibleProperty Include="GSharpCheckedBuild" />
+    <CompilerVisibleProperty Include="GSharpNativeBarrierModel" />
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
@@ -25,6 +26,7 @@
     <CompilerVisibleProperty Include="GSharpCombinedFatbinName" />
     <!-- The generator takes the launch limits of the target GPUs from the architectures nvcc compiles for -->
     <CompilerVisibleProperty Include="GSharpTargetArchitectures" />
+    <CompilerVisibleProperty Include="GSharpManagedBarrierModel" />
     <!-- Opt-in marker for YAML native API definitions: <AdditionalFiles Include="*.yml" GSharpApi="true" /> -->
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
   </ItemGroup>
@@ -82,9 +84,19 @@
                   Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels.artifacts')" />
       <!-- The symbol file next to each source, read by the demangler -->
       <FileWrites Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Identity).gsym.json')" />
-      <!-- The partition plan file when present -->
-      <_GSharpPartitionPlanFiles Include="$(IntermediateOutputPath)*.partition.json" />
-      <FileWrites Include="@(_GSharpPartitionPlanFiles)" Condition="Exists('%(_GSharpPartitionPlanFiles.Identity)')" />
+      <!-- Split CPU module header and its symbol file when present -->
+      <_GSharpHeaderCandidates Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Filename).hpp')"
+                               Condition="'%(_GSharpAotArtifactNames.Extension)' == '.cpp'" />
+      <FileWrites Include="@(_GSharpHeaderCandidates)"
+                  Condition="Exists('%(_GSharpHeaderCandidates.Identity)')" />
+      <FileWrites Include="@(_GSharpHeaderCandidates->'%(Identity).gsym.json')"
+                  Condition="Exists('%(_GSharpHeaderCandidates.Identity).gsym.json')" />
+      <!-- The active module partition plan file when present: X.g.cpp -> X.g -> X.partition.json -->
+      <_GSharpPartitionPlanStems Include="@(_GSharpAotArtifactNames->'$(IntermediateOutputPath)%(Filename)')" />
+      <_GSharpPartitionPlanCandidates
+          Include="@(_GSharpPartitionPlanStems->'%(RelativeDir)%(Filename).partition.json')" />
+      <FileWrites Include="@(_GSharpPartitionPlanCandidates)"
+                  Condition="Exists('%(_GSharpPartitionPlanCandidates.Identity)')" />
     </ItemGroup>
   </Target>
 
@@ -102,6 +114,13 @@
   <Target Name="GSharpValidateCudaArchitectures" BeforeTargets="GSharpCompileCuda"
           Condition="'$(GSharpTargetArchitectures)' != ''">
     <ValidateCudaArchitecturesTask TargetArchitectures="$(GSharpTargetArchitectures)" />
+  </Target>
+
+  <Target Name="GSharpValidateNativeBarrierModel" BeforeTargets="CoreCompile"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(GSharpNativeBarrierModel)' != ''
+                     and '$(GSharpNativeBarrierModel)' != 'StateMachine'
+                     and '$(GSharpNativeBarrierModel)' != 'Stack'">
+    <Error Text="GSharpNativeBarrierModel value '$(GSharpNativeBarrierModel)' is invalid. Supported values are 'StateMachine' and 'Stack'." />
   </Target>
 
   <!-- Define the target to compile CUDA sources -->
@@ -151,20 +170,22 @@
                          Condition="'%(_GSharpAotArtifactNames.Extension)' == '.cpp'" />
     </ItemGroup>
 
-    <!-- Run MSVC via the custom task -->
+    <!-- Compile and link CPU C++ translation units via the custom task -->
     <CompileCppToNativeTask 
         Condition="'@(_GSharpCppSources)' != '' And '$(GSharpSkipCpuCompilation)' != 'true' And ('$(GSHARP_TEST_NO_CPU)' != '1' Or '$(GSharpMockCompilation)' == 'true')"
         MockCompilation="$(GSharpMockCompilation)"
         CppSources="@(_GSharpCppSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
+        ObjectDirectory="$(IntermediateOutputPath)GSharpNativeObjs"
         GSharpMultiTarget="$(GSharpMultiTarget)"
         GSharpNativeSanitizers="$(GSharpNativeSanitizers)" >
       <Output TaskParameter="OutputDlls" ItemName="_GSharpCompiledDlls" />
+      <Output TaskParameter="OutputIntermediateFiles" ItemName="_GSharpCompiledIntermediates" />
     </CompileCppToNativeTask>
 
     <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
-      <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls)" />
+      <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls);@(_GSharpCompiledIntermediates)" />
       <FileWrites Include="@(_GSharpCompiledDlls->'%(RootDir)%(Directory)%(Filename).pdb')"
                   Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')" />
     </ItemGroup>

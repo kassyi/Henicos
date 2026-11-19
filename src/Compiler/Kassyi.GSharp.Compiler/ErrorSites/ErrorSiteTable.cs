@@ -130,12 +130,8 @@ internal sealed class ErrorSiteTable
             return null;
         }
 
-        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
+        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start)
+            .GetDeclaringMember();
         return symbol is IMethodSymbol method ? method.Name : null;
     }
 
@@ -198,4 +194,43 @@ internal sealed class ErrorSiteTable
     /// </summary>
     public static void AppendTrapSiteCall(SourceWriter writer, string errorCodeEnumMember, uint siteId) =>
         writer.Append($"{GSharpInternalNames.Prelude.TrapSite}(GSharpErrorCode::{errorCodeEnumMember}, {siteId}u)");
+
+    /// <summary>
+    /// Merges <paramref name="additions"/> into <paramref name="existing"/>, preserving order and deduplicating by
+    /// <see cref="ErrorSiteEntry.SiteId"/>.
+    /// </summary>
+    public static EquatableArray<ErrorSiteEntry> MergeSites(
+        EquatableArray<ErrorSiteEntry> existing,
+        EquatableArray<ErrorSiteEntry> additions)
+    {
+        if (additions.IsDefaultOrEmpty)
+        {
+            return existing;
+        }
+
+        if (existing.IsDefaultOrEmpty)
+        {
+            return additions;
+        }
+
+        var seen = new HashSet<uint>();
+        var builder = ImmutableArray.CreateBuilder<ErrorSiteEntry>(existing.Length + additions.Length);
+        foreach (var site in existing)
+        {
+            if (seen.Add(site.SiteId))
+            {
+                builder.Add(site);
+            }
+        }
+
+        foreach (var site in additions)
+        {
+            if (seen.Add(site.SiteId))
+            {
+                builder.Add(site);
+            }
+        }
+
+        return builder.ToImmutable().AsEquatableArray();
+    }
 }

@@ -13,8 +13,8 @@ public class UnmappedCallDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/UnmappedCall.cs";
 
-    // float.Clamp, int.Max, Math.Max(long, long), MathF.Cbrt, int.Abs and short.Abs (lines 24 to 29) and Vector3.Dot
-    // (line 37): the whole call, once, from the analyzer
+    // float.Clamp, int.Max, Math.Round(double, int), MathF.Cbrt, int.Abs and short.Abs (lines 24 to 29) and
+    // Vector3.Dot (line 37): the whole call, once, from the analyzer
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -27,7 +27,7 @@ public class UnmappedCallDiagnosticsTests
             [
                 (Analyzer, 24, 20, 24, 45),
                 (Analyzer, 25, 20, 25, 36),
-                (Analyzer, 26, 20, 26, 38),
+                (Analyzer, 26, 20, 26, 39),
                 (Analyzer, 27, 20, 27, 36),
                 (Analyzer, 28, 20, 28, 33),
                 (Analyzer, 29, 20, 29, 35),
@@ -41,8 +41,7 @@ public class UnmappedCallDiagnosticsTests
     [InlineData("Cpu", "'float.Clamp(float, float, float)'", "; use Math.Clamp(float, float, float) instead")]
     [InlineData("Cpu", "'int.Max(int, int)'", "; use Math.Max(int, int) instead")]
     [InlineData("Cpu", "'int.Abs(int)'", "; use Math.Abs(int) instead")]
-    [InlineData("Cpu", "'Math.Max(long, long)'",
-        "; the dialect implements Math.Max(double, double), Math.Max(float, float), Math.Max(int, int)")]
+    [InlineData("Cpu", "'Math.Round(double, int)'", "; the dialect implements Math.Round(double)")]
     [InlineData("Cpu", "'short.Abs(short)'", "; use Math.Abs(short) instead")]
     [InlineData("Cpu", "'MathF.Cbrt(float)'", "cannot be called from GPU code")]
     [InlineData("Cuda", "'int.Max(int, int)'", "; use Math.Max(int, int) instead")]

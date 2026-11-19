@@ -26,7 +26,16 @@ Returns the larger of two specified numbers.
 | --- | --- |
 | [Max(float, float)](#max-float-float) | Returns the larger of two specified numbers. |
 | [Max(double, double)](#max-double-double) | Returns the larger of two specified numbers. |
+| [Max(sbyte, sbyte)](#max-integer) | Returns the larger of two 8-bit signed integers. |
+| [Max(byte, byte)](#max-integer) | Returns the larger of two 8-bit unsigned integers. |
+| [Max(short, short)](#max-integer) | Returns the larger of two 16-bit signed integers. |
+| [Max(ushort, ushort)](#max-integer) | Returns the larger of two 16-bit unsigned integers. |
 | [Max(int, int)](#max-int-int) | Returns the larger of two 32-bit signed integers. |
+| [Max(uint, uint)](#max-integer) | Returns the larger of two 32-bit unsigned integers. |
+| [Max(long, long)](#max-integer) | Returns the larger of two 64-bit signed integers. |
+| [Max(ulong, ulong)](#max-integer) | Returns the larger of two 64-bit unsigned integers. |
+| [Max(nint, nint)](#max-integer) | Returns the larger of two native-sized signed integers. |
+| [Max(nuint, nuint)](#max-integer) | Returns the larger of two native-sized unsigned integers. |
 
 ## Max(float, float)
 
@@ -100,6 +109,32 @@ The second 32-bit signed integer.
 
 <i>int</i><br>
 The larger of `val1` and `val2`.
+
+#### Exceptions
+
+None. Does not throw exceptions.
+
+<a id="max-integer"></a>
+
+## Max(T, T) (Other Integer Types)
+
+Returns the larger of two values for `sbyte`, `byte`, `short`, `ushort`, `uint`, `long`, `ulong`, `nint`, and `nuint`.
+
+```csharp
+public static sbyte Max(sbyte val1, sbyte val2);
+public static byte Max(byte val1, byte val2);
+public static short Max(short val1, short val2);
+public static ushort Max(ushort val1, ushort val2);
+public static uint Max(uint val1, uint val2);
+public static long Max(long val1, long val2);
+public static ulong Max(ulong val1, ulong val2);
+public static nint Max(nint val1, nint val2);
+public static nuint Max(nuint val1, nuint val2);
+```
+
+#### Returns
+
+The larger of `val1` and `val2`, preserving the operand type (`__gsharp_max_int`).
 
 #### Exceptions
 

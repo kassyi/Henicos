@@ -1,27 +1,27 @@
 // status --watch: the live view of the queue in the terminal. Asks the scheduler for its status every second, draws
 // the screen of view.ts on the alternate screen, and acts on keys (select, cancel, move, set-weight). It never starts a
-// scheduler; while none runs it shows "no scheduler" and keeps asking. Every 2 s it also reads the agent chats
-// (listChats() of chat-status.js) for the chat panel; when that script cannot be loaded, the panel is left out.
+// scheduler; while none runs it shows "no scheduler" and keeps asking. Every 2 s it also reads the lower panel of the
+// plugins (the agents plugin: the chats of chat-status.js); when no plugin gives a panel, it is left out.
 
-import { createRequire } from "node:module";
-import * as path from "node:path";
 import { request } from "./client-connect.ts";
 import { usageError } from "./client.ts";
+import type { PluginHost } from "./plugin-host.ts";
+import type { ViewPanel } from "./plugin-api.ts";
 import type { ClientMessage, Incoming, StatusReply } from "./protocol.ts";
+import { CommandShell } from "./shell.ts";
+import { resolveWorktree } from "./system.ts";
 import {
   FlashMs,
   initialViewState,
   renderScreen,
   screenJobs,
   selectedJob,
-  type ShortNameProvider,
   type Style,
   type ViewState,
 } from "./view.ts";
-import type { ChatRecord, ChatView, SummaryState } from "./view-chats.ts";
 
 const RefreshMs = 1000;
-const ChatRefreshMs = 2000;
+const PanelRefreshMs = 2000;
 /** What m, w and s do, for the message on a running job. */
 const Verbs: Record<string, string> = { m: "move", w: "change its slots", s: "start" };
 const MessageMs = 4000;
@@ -105,7 +105,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
     case "r":
       return { state, action: "refresh" };
     case "a":
-      return { state: { ...state, chatsHidden: !state.chatsHidden } };
+      return { state: { ...state, panelHidden: !state.panelHidden } };
     case " ": {
       // Like the space bar of a video player: no question, since both ways are harmless and undone by pressing it again
       if (reply === null) {
@@ -189,48 +189,7 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
   return { text: JSON.stringify(reply), style: "warn" };
 }
 
-interface ChatStatusModule {
-  listChats: () => ChatRecord[];
-  readMainCheckout: (root: string) => string | null;
-  /** Absent from an older chat-status.js. */
-  summaryStatus?: () => SummaryState;
-}
-
-/**
- * A reader of the chats for the panel: null when chat-status.js cannot be loaded (an older checkout). A failed read
- * shows no panel until the next one.
- */
-export function chatReader(): (() => ChatView | null) | null {
-  let module: ChatStatusModule;
-  try {
-    module = createRequire(import.meta.url)("../chat-status.js") as ChatStatusModule;
-  } catch {
-    return null; // no chat-status.js beside the queue: the view works without the panel
-  }
-  const root = path.resolve(import.meta.dirname, "..", "..", "..");
-  let mainCheckout: string | null = null;
-  try {
-    mainCheckout = module.readMainCheckout(root);
-  } catch {
-    mainCheckout = null; // "main" is then shown as the last part of its path
-  }
-  // Read once: whether the help says that summaries are on, and how to turn them on
-  let summaries: SummaryState | null = null;
-  try {
-    summaries = module.summaryStatus?.() ?? null;
-  } catch {
-    summaries = null; // the help then leaves the line out
-  }
-  return () => {
-    try {
-      return { chats: module.listChats(), mainCheckout, ignoreCase: process.platform === "win32", summaries };
-    } catch {
-      return null; // a directory that cannot be read: no panel this time
-    }
-  };
-}
-
-export async function watch(port: number, plugins?: ShortNameProvider): Promise<void> {
+export async function watch(port: number, plugins?: PluginHost): Promise<void> {
   const input = process.stdin;
   const output = process.stdout;
   if (!input.isTTY || !output.isTTY) {
@@ -239,24 +198,32 @@ export async function watch(port: number, plugins?: ShortNameProvider): Promise<
   const color = process.env.NO_COLOR === undefined && output.hasColors();
   let reply: StatusReply | null = null;
   let state = initialViewState();
-  const readChats = chatReader();
-  let chats: ChatView | null = null;
-  let chatsReadAt = 0;
+  const cwd = process.cwd();
+  const panel: ViewPanel | undefined = plugins?.panel({
+    cwd,
+    worktree: resolveWorktree(cwd),
+    configRoot: plugins.configRoot,
+    shell: CommandShell.resolve("").name,
+    env: process.env,
+    log: () => {}, // the alternate screen is no place for a log line
+  });
+  let panelData: unknown = null;
+  let panelReadAt = 0;
   let stopped = false;
   let wake: (() => void) | null = null;
 
   const draw = (): void => {
     const now = Date.now();
-    if (readChats !== null && now - chatsReadAt >= ChatRefreshMs) {
-      chats = readChats();
-      chatsReadAt = now;
+    if (panel !== undefined && now - panelReadAt >= PanelRefreshMs) {
+      panelData = panel.read();
+      panelReadAt = now;
     }
     const lines = renderScreen(
       reply,
       state,
       { columns: output.columns, rows: output.rows, now },
       color,
-      chats,
+      panel === undefined ? null : { view: panel, data: panelData },
       plugins,
     );
     output.write(`\x1b[H${lines.join("\x1b[K\r\n")}\x1b[K\x1b[J`);
