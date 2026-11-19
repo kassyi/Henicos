@@ -19,8 +19,7 @@ internal static class IrExpressionBuilder
         context.CancellationToken.ThrowIfCancellationRequested();
         if (OpaqueReasonOf(operation) is { } reason)
         {
-            return IrExpression.WithParentheses(Opaque(operation, reason, category, context),
-                IrSpelling.ParenthesesAround(operation));
+            return AttachSpelling(Opaque(operation, reason, category, context), operation);
         }
 
         // OpaqueReasonOf leaves only operations with a type
@@ -28,7 +27,13 @@ internal static class IrExpressionBuilder
         var source = context.SourceOf(operation);
         var node = BuildReference(operation, type, category, source, context) ??
                    BuildComputation(operation, type, category, source, context);
-        return IrExpression.WithParentheses(node, IrSpelling.ParenthesesAround(operation));
+        return AttachSpelling(node, operation);
+    }
+
+    private static IrExpression AttachSpelling(IrExpression node, IOperation operation)
+    {
+        IrSpelling.Measure(operation, out var parentheses, out var outerSpan, out var nullForgiving);
+        return IrExpression.WithSpelling(node, parentheses, outerSpan, nullForgiving);
     }
 
     // The first reason in the order of IrOpaqueReason that the kind of operation alone decides

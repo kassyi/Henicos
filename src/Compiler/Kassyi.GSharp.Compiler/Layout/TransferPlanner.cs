@@ -55,7 +55,7 @@ internal static class TransferPlanner
         {
             // [WHY] A struct cannot contain itself by value (CS0523), only through an array; the plan is a tree, so the
             // inner occurrence refers back to the enclosing plan by name
-            if (!inProgress.Add(structType))
+            if (GrowingGenericStructs.IsLargerConstruction(structType, inProgress) || !inProgress.Add(structType))
             {
                 return new TransferPlan.StructRef(
                     structType.GetFullyQualifiedCsharpName(),

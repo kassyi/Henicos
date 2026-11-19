@@ -50,15 +50,25 @@ internal static class NonNullProof
         };
     }
 
+    /// <summary>
+    /// Whether <paramref name="method"/> is <c>Gpu.NotNull</c>, which throws instead of returning null.
+    /// </summary>
+    internal static bool IsNotNullMethod(IMethodSymbol method) =>
+        GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull;
+
     // Gpu.NotNull(a): the call throws instead of returning null
     private static bool IsNotNullCall(InvocationExpressionSyntax invocation, SemanticModel model) =>
-        model.GetSymbol(invocation) is IMethodSymbol method &&
-        GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull;
+        model.GetSymbol(invocation) is IMethodSymbol method && IsNotNullMethod(method);
+
+    /// <summary>Whether <paramref name="field"/> is an instance non-nullable array field of a struct.</summary>
+    internal static bool IsProvenFieldSymbol(IFieldSymbol field) =>
+        field is { IsStatic: false, ContainingType.IsValueType: true } &&
+        IsNonNullableArray(field.Type, field.NullableAnnotation);
 
     // s.Data: a non-nullable array field of a proven struct
     private static bool IsProvenField(MemberAccessExpressionSyntax access, SemanticModel model) =>
-        model.GetSymbol(access) is IFieldSymbol { IsStatic: false, ContainingType.IsValueType: true } field &&
-        IsNonNullableArray(field.Type, field.NullableAnnotation) &&
+        model.GetSymbol(access) is IFieldSymbol field &&
+        IsProvenFieldSymbol(field) &&
         IsProvenStruct(access.Expression, model);
 
     // A non-nullable array parameter that the launch or the call checked, or an unwritten local with a proven
@@ -84,7 +94,8 @@ internal static class NonNullProof
         switch (expression)
         {
             case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
-                return model.GetSymbol(access) is IFieldSymbol { IsStatic: false, ContainingType.IsValueType: true, Type.IsValueType: true } &&
+                return model.GetSymbol(access) is IFieldSymbol field &&
+                       IsProvenStructFieldSymbol(field) &&
                        IsProvenStruct(access.Expression, model);
             case IdentifierNameSyntax identifier:
                 return model.GetSymbol(identifier) switch
@@ -100,6 +111,10 @@ internal static class NonNullProof
                 return false;
         }
     }
+
+    /// <summary>Whether <paramref name="field"/> is an instance struct field of a struct.</summary>
+    internal static bool IsProvenStructFieldSymbol(IFieldSymbol field) =>
+        field is { IsStatic: false, ContainingType.IsValueType: true, Type.IsValueType: true };
 
     /// <summary>The GSH0003 text for a method group of a device function whose calls check their arguments.</summary>
     public const string PassedAsDelegate =
@@ -141,6 +156,7 @@ internal static class NonNullProof
     {
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } structType ||
             structType.ContainingNamespace.IsSystemOrNumerics() ||
+            GrowingGenericStructs.IsLargerConstruction(structType, visiting) ||
             !visiting.Add(structType))
         {
             return;
@@ -194,13 +210,19 @@ internal static class NonNullProof
         return false;
     }
 
-    // A by-value parameter that nothing in its method writes, of a device function whose calls all check it: an emitted
-    // device function that is not an extension method (a method group of one with such a parameter is rejected; a
-    // suspending call checks its arguments in the lowered resume call too)
-    private static bool IsCheckedParameter(IParameterSymbol parameter, Compilation compilation)
+    /// <summary>
+    /// Whether <paramref name="parameter"/> is a by-value parameter without a default value of an emitted device
+    /// function that nothing in its method writes.
+    /// </summary>
+    internal static bool IsCheckedParameter(IParameterSymbol parameter, Compilation compilation)
     {
         // A parameter with a default value takes it when the call omits the argument, unchecked
-        if (parameter is not { RefKind: RefKind.None, HasExplicitDefaultValue: false, ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true } method })
+        if (parameter is not
+            {
+                RefKind: RefKind.None,
+                HasExplicitDefaultValue: false,
+                ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: true } method
+            })
         {
             return false;
         }
@@ -211,6 +233,12 @@ internal static class NonNullProof
                !VariableWrites.IsWritten(parameter, compilation);
     }
 
+    /// <summary>
+    /// Whether <paramref name="local"/> is a by-value non-const local that nothing in its method writes.
+    /// </summary>
+    internal static bool IsUnwrittenLocalSymbol(ILocalSymbol local, Compilation compilation) =>
+        local is { IsRef: false, IsConst: false } && !VariableWrites.IsWritten(local, compilation);
+
     // A local that nothing writes after its declaration, with the initializer it was declared with
     private static bool IsUnwrittenLocal(ILocalSymbol local, Compilation compilation,
         [NotNullWhen(true)] out ExpressionSyntax? initializer, [NotNullWhen(true)] out SemanticModel? initializerModel)
@@ -220,7 +248,7 @@ internal static class NonNullProof
         if (local is not { IsRef: false, IsConst: false } ||
             local.DeclaringSyntaxReferences is not [var reference] ||
             reference.GetSyntax() is not VariableDeclaratorSyntax { Initializer.Value: { } value } ||
-            VariableWrites.IsWritten(local, compilation))
+            !IsUnwrittenLocalSymbol(local, compilation))
         {
             return false;
         }

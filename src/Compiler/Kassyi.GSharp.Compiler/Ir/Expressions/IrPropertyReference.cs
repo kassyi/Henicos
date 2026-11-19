@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>
@@ -28,4 +30,11 @@ internal sealed class IrPropertyReference(IrExpression? receiver, IPropertySymbo
         receiver == Receiver && arguments == Arguments
             ? this
             : KeepSpelling(new IrPropertyReference(receiver, Property, arguments, Category, ConstantValue, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrMemberDecision Decided => GetDecision<IrMemberDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrPropertyReference WithDecision(IrMemberDecision decision) =>
+        IrExpression.WithDecision<IrPropertyReference>(this, decision);
 }

@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Kassyi.GSharp.Compiler.Generators.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
   </ItemGroup>
 
@@ -22,6 +26,7 @@
     <Compile Include="..\Kassyi.GSharp.Compiler\XmlDocEscaping.cs" Link="XmlDocEscaping.cs" />
     <!-- The demangle mode decodes with the same rules the compiler encodes with. -->
     <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />
+    <Compile Include="..\..\Shared\Naming\SymbolFileReader.cs" Link="Naming\SymbolFileReader.cs" />
     <Compile Include="..\..\Shared\Naming\GlobalNamePath.cs" Link="Naming\GlobalNamePath.cs" />
     <Compile Include="..\..\Shared\Naming\GlobalNameSegment.cs" Link="Naming\GlobalNameSegment.cs" />
     <Compile Include="..\..\Shared\Hashing\Fnv1A64.cs" Link="Hashing\Fnv1A64.cs" />

@@ -11,6 +11,7 @@ using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
 using Kassyi.GSharp.Compiler.Ir.Statements;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
@@ -508,6 +509,55 @@ public class IrSpellingTests
             inner.Category, binary.Source).WithParentheses(binary.Parentheses);
         Assert.Equal(2, seq.Parentheses);
         Assert.Equal(0, seq.Value.Parentheses);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Build_NullForgivingAndParentheses_RecordsOuterSpellingSpanAndParentheses()
+    {
+        const string Source = """
+            #nullable enable
+            public static class OuterSpelling
+            {
+                public static void Cases(int[]? a, int[] b, int i, int[] r)
+                {
+                    r[0] = a![i];
+                    r[1] = (a ?? b)![i];
+                    r[2] = (a!)[i];
+                    r[3] = ((a ?? b))[i];
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(Source);
+        var built = IrBuilder.TryBuild(IrTestCases.FindMethod(compilation, "OuterSpelling", "Cases"), compilation,
+            CancellationToken.None);
+        Assert.NotNull(built);
+
+        (string Text, int Parentheses)[] expected =
+        [
+            ("a!", 0),
+            ("(a ?? b)!", 1),
+            ("(a!)", 0),
+            ("((a ?? b))", 2)
+        ];
+        for (var k = 0; k < expected.Length; k++)
+        {
+            var stmt = Assert.IsType<IrExpressionStatement>(built.Body.Statements[k]);
+            var assign = Assert.IsType<IrAssignment>(stmt.Expression);
+            var element = Assert.IsType<IrElementReference>(assign.Value);
+            var receiver = element.Receiver;
+            var location = receiver.SpellingSource.ToLocation(compilation);
+            Assert.Equal(expected[k].Text, location.SourceTree?.GetText().ToString(location.SourceSpan));
+            Assert.Equal(expected[k].Parentheses, receiver.Parentheses);
+
+            var updated = element.Update(receiver.WithParentheses(receiver.Parentheses + 1), element.Index);
+            var withSpan = IrExpression.WithSpelling(element, 1, new TextSpan(0, 1));
+            var rebuilt = withSpan.Update(element.Receiver, element.Index.WithParentheses(1));
+            Assert.Equal(new TextSpan(0, 1), rebuilt.SpellingSpan);
+            Assert.Equal(expected[k].Text,
+                updated.Receiver.SpellingSource.ToLocation(compilation).SourceTree?.GetText()
+                    .ToString(updated.Receiver.SpellingSpan));
+        }
     }
 
     [Fact]

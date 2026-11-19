@@ -53,6 +53,11 @@ internal static class ManagedNameQualifier
     /// variable of the parameter type, and without a modifier otherwise (a value, a field of a value, another type),
     /// where <c>in</c> would not compile (CS8156, CS1612) and C# copies the value into a temporary in both forms.
     /// </para>
+    /// <para>
+    /// A call on a binding of a null-conditional access (<c>q?[i].M()</c>, <c>s?.M()</c>) keeps the binding, or for a
+    /// call on the receiver itself <see cref="ManagedConditionalAccess.CreateReceiverMarker"/>, as its first argument;
+    /// <see cref="ManagedConditionalAccess"/> then reads them from the receiver in a pattern variable.
+    /// </para>
     /// </remarks>
     public static ExpressionSyntax? TryRewriteInvocation(InvocationExpressionSyntax node,
         CSharpSyntaxVisitor<SyntaxNode?> visitor, SemanticModel semanticModel)
@@ -65,16 +70,55 @@ internal static class ManagedNameQualifier
                 .WithTriviaFrom(node);
         }
 
-        if (node.Expression is not MemberAccessExpressionSyntax access ||
-            semanticModel.GetSymbol(node) is not IMethodSymbol { ReducedFrom: { Parameters.Length: > 0 } extension } ||
-            semanticModel.GetOriginalNode(node) is not InvocationExpressionSyntax)
+        if (!TryGetExtensionCall(node, semanticModel, out var receiver, out var name, out var extension))
         {
             return null;
         }
 
-        var receiverParameter = extension.Parameters[0];
+        var receiverArgument = CreateReceiverArgument(node, receiver, extension.Parameters[0], visitor, semanticModel);
+        var visitedName = visitor.Visit(name) as SimpleNameSyntax ?? name;
+        var arguments = visitor.Visit(node.ArgumentList) as ArgumentListSyntax ?? node.ArgumentList;
+
+        // global::<namespace>.<class>.<name>(<receiver>, <arguments>)
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.QualifiedName(
+                SyntaxFactory.ParseName(extension.ContainingType.GetFullyQualifiedCsharpName()),
+                visitedName.WithoutTrivia()
+            ),
+            arguments.WithArguments(arguments.Arguments.Insert(0, receiverArgument))
+        ).WithTriviaFrom(node);
+    }
+
+    // An extension method call in its reduced form: x.Ext(a) (receiver x), or ?.Ext(a) on the receiver of a
+    // null-conditional access (receiver null)
+    private static bool TryGetExtensionCall(InvocationExpressionSyntax node, SemanticModel semanticModel,
+        out ExpressionSyntax? receiver, [NotNullWhen(true)] out SimpleNameSyntax? name,
+        [NotNullWhen(true)] out IMethodSymbol? extension)
+    {
+        (receiver, name) = node.Expression switch
+        {
+            MemberAccessExpressionSyntax access => (access.Expression, access.Name),
+            MemberBindingExpressionSyntax binding => ((ExpressionSyntax?)null, binding.Name),
+            _ => (null, null)
+        };
+        extension = name != null &&
+                    semanticModel.GetSymbol(node) is IMethodSymbol { ReducedFrom: { Parameters.Length: > 0 } reduced }
+            ? reduced
+            : null;
+        return name != null && extension != null &&
+               semanticModel.GetOriginalNode(node) is InvocationExpressionSyntax;
+    }
+
+    // The receiver as the first argument of the static call, with ref or in as the parameter needs; the receiver of a
+    // null-conditional access is the pattern variable of ManagedConditionalAccess, a variable of the value's type
+    private static ArgumentSyntax CreateReceiverArgument(InvocationExpressionSyntax node, ExpressionSyntax? receiver,
+        IParameterSymbol receiverParameter, CSharpSyntaxVisitor<SyntaxNode?> visitor, SemanticModel semanticModel)
+    {
+        var parameterType = receiverParameter.Type;
         var isVariable = ManagedCallForms.ReceiverNeedsVariableTest(receiverParameter.RefKind) &&
-            IsVariableOfType(access.Expression, receiverParameter.Type, semanticModel);
+                         (receiver == null
+                             ? ManagedConditionalAccess.GetValueType(node, semanticModel).IsEqualTo(parameterType)
+                             : IsVariableOfType(receiver, parameterType, semanticModel));
         var receiverModifier = ManagedCallForms.GetReceiverModifier(receiverParameter.RefKind, isVariable) switch
         {
             ManagedArgumentModifier.Ref => SyntaxKind.RefKeyword,
@@ -83,24 +127,13 @@ internal static class ManagedNameQualifier
             _ => throw new InvalidOperationException()
         };
 
-        var receiver = visitor.Visit(access.Expression) as ExpressionSyntax ?? access.Expression;
-        var name = visitor.Visit(access.Name) as SimpleNameSyntax ?? access.Name;
-        var arguments = visitor.Visit(node.ArgumentList) as ArgumentListSyntax ?? node.ArgumentList;
-
-        var receiverArgument = SyntaxFactory.Argument(receiver.WithoutTrivia());
-        if (receiverModifier != SyntaxKind.None)
-        {
-            receiverArgument = receiverArgument.WithRefKindKeyword(SyntaxFactory.Token(receiverModifier));
-        }
-
-        // global::<namespace>.<class>.<name>(<receiver>, <arguments>)
-        return SyntaxFactory.InvocationExpression(
-            SyntaxFactory.QualifiedName(
-                SyntaxFactory.ParseName(extension.ContainingType.GetFullyQualifiedCsharpName()),
-                name.WithoutTrivia()
-            ),
-            arguments.WithArguments(arguments.Arguments.Insert(0, receiverArgument))
-        ).WithTriviaFrom(node);
+        var visited = receiver == null
+            ? ManagedConditionalAccess.CreateReceiverMarker()
+            : visitor.Visit(receiver) as ExpressionSyntax ?? receiver;
+        var argument = SyntaxFactory.Argument(visited.WithoutTrivia());
+        return receiverModifier == SyntaxKind.None
+            ? argument
+            : argument.WithRefKindKeyword(SyntaxFactory.Token(receiverModifier));
     }
 
     /// <summary>
@@ -259,6 +292,31 @@ internal static class ManagedNameQualifier
 
     private sealed class Rewriter(SemanticModel semanticModel) : CSharpSyntaxRewriter
     {
+        private ManagedConditionalAccessWriter? _conditionalAccessWriter;
+
+        // The same form of a null-conditional access that calls an extension method on a binding as the managed
+        // rewriter writes, so that a body without other rewrites qualifies to the same text
+        private ManagedConditionalAccessWriter ConditionalAccessWriter =>
+            _conditionalAccessWriter ??= new ManagedConditionalAccessWriter(semanticModel, Visit);
+
+        public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>
+            ConditionalAccessWriter.TryVisitAccess(node) ?? base.VisitConditionalAccessExpression(node);
+
+        public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node) =>
+            ConditionalAccessWriter.TryVisitStatement(node) ?? base.VisitExpressionStatement(node);
+
+        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitLocalFunctionStatement((LocalFunctionStatementSyntax)callable));
+
+        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitSimpleLambdaExpression((SimpleLambdaExpressionSyntax)callable));
+
+        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitParenthesizedLambdaExpression((ParenthesizedLambdaExpressionSyntax)callable));
+
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
             QualifyName(node, base.VisitIdentifierName(node), semanticModel);
 

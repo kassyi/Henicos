@@ -606,11 +606,26 @@ function checkPrepareCommand(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(prepared.command, expected, input);
     assert.strictEqual(prepared.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:6");
     assert.strictEqual(prepared.note, "6 MSBuild nodes");
+    // RequestCores follows the grant with or without -m, build/test/run alike: nodes executing + cores granted <= 6
+    assert.strictEqual(prepared.env.MSBUILDCORELIMIT, "6", input);
+    assert.strictEqual(prepared.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100", input);
+  }
+  // A value the caller exported is kept; the other one is still set
+  const exported = { ...ctx, env: { MSBUILDCORELIMIT: "2" } };
+  const kept = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 6, nested: false }, exported);
+  assert.strictEqual(kept.env.MSBUILDCORELIMIT, undefined, "exported MSBUILDCORELIMIT is not overridden");
+  assert.strictEqual(kept.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
+  // Any command gets the bound, so a script that starts dotnet itself passes it on
+  for (const input of ["node scripts/human/test-stability.js --count 3", "echo hi"]) {
+    const other = host.prepareCommand(input, { jobId: 1, cpus: 6, nested: false }, ctx);
+    assert.strictEqual(other.env.MSBUILDCORELIMIT, "6", input);
+    assert.strictEqual(other.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100", input);
   }
   const zero = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 0, nested: false }, ctx);
   assert.strictEqual(zero.command, "dotnet build X");
   assert.strictEqual(zero.note, undefined);
   assert.strictEqual(zero.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, undefined);
+  assert.strictEqual(zero.env.MSBUILDCORELIMIT, undefined);
 }
 
 /** QueuedRun + FakeScheduler + FakeHost: request/adopt keys, MSBuild args/note, and JOB_QUEUE_PLUGINS=0 omission. */
@@ -654,6 +669,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("granted command starts", () => fakeHost.commands.length === 1);
       assert.strictEqual(fakeHost.commands[0]?.command, `dotnet build -m:3 ${Cpu} -c Release`);
       assert.strictEqual(fakeHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:3");
+      assert.strictEqual(fakeHost.commands[0]?.env.MSBUILDCORELIMIT, "3");
       assert.ok(
         notices.some((n) => n.includes("(weight 1, 3 MSBuild nodes)")),
         "grant line uses MSBuild nodes note",
@@ -714,6 +730,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("disabled command starts", () => noPlugHost.commands.length === 1);
       assert.strictEqual(noPlugHost.commands[0]?.command, command, "JOB_QUEUE_PLUGINS=0 leaves -m out");
       assert.strictEqual(noPlugHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, undefined);
+      assert.strictEqual(noPlugHost.commands[0]?.env.MSBUILDCORELIMIT, undefined);
       assert.ok(
         noPlugNotices.some((n) => n.includes("(weight 1, 3 cpus)")),
         "disabled grant line falls back to cpus",
@@ -756,6 +773,7 @@ async function checkQueuedRunKeysAndEscape(assert: AssertModule, host: PluginHos
       await until("nested build starts", () => nestedHost.commands.length === 1);
       assert.strictEqual(nestedHost.commands[0]?.command, "dotnet build -m:4 P");
       assert.strictEqual(nestedHost.commands[0]?.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:4");
+      assert.strictEqual(nestedHost.commands[0]?.env.MSBUILDCORELIMIT, "4");
       nestedHost.commands[0]?.end({ code: 0, signaled: false });
       assert.strictEqual(await pending, 0);
     } finally {

@@ -37,9 +37,12 @@ __declspec(dllimport) int __stdcall IsThreadAFiber(void);
 #include <unistd.h>
 extern "C" void __gsharp_stack_switch(void** save, void* load);
 extern "C" void __gsharp_stack_trampoline();
-// System V x86-64: callee-saved rbx rbp r12-r15, mxcsr and the x87 control word
+// System V x86-64: callee-saved rbx rbp r12-r15, mxcsr and the x87 control word. Every translation unit of a split
+// module includes this header, so both functions sit in one COMDAT group, which the linker keeps once, as it does for
+// an inline function.
 __asm__(
-    ".text\n.globl __gsharp_stack_switch\n.hidden __gsharp_stack_switch\n"
+    ".pushsection .text.__gsharp_stack_switch,\"axG\",@progbits,__gsharp_stack_switch,comdat\n"
+    ".globl __gsharp_stack_switch\n.hidden __gsharp_stack_switch\n"
     ".type __gsharp_stack_switch,@function\n__gsharp_stack_switch:\n"
     "  pushq %rbp\n  pushq %rbx\n  pushq %r12\n  pushq %r13\n  pushq %r14\n  pushq %r15\n"
     "  subq $8, %rsp\n  stmxcsr (%rsp)\n  fnstcw 4(%rsp)\n"
@@ -49,7 +52,8 @@ __asm__(
     ".size __gsharp_stack_switch,.-__gsharp_stack_switch\n"
     ".globl __gsharp_stack_trampoline\n.hidden __gsharp_stack_trampoline\n"
     ".type __gsharp_stack_trampoline,@function\n__gsharp_stack_trampoline:\n"
-    "  movq %r13, %rdi\n  callq *%r12\n  ud2\n.size __gsharp_stack_trampoline,.-__gsharp_stack_trampoline\n");
+    "  movq %r13, %rdi\n  callq *%r12\n  ud2\n.size __gsharp_stack_trampoline,.-__gsharp_stack_trampoline\n"
+    ".popsection\n");
 #else
 #error "GSharpNativeBarrierModel=Stack supports Windows and x86-64 Linux only"
 #endif

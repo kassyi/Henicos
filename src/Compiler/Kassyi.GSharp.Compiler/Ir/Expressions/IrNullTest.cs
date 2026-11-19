@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>
@@ -21,4 +23,11 @@ internal sealed class IrNullTest(IrExpression operand, bool isNegated, ITypeSymb
     /// <summary>This node with the given children; this node itself when they are the same.</summary>
     public IrNullTest Update(IrExpression operand) =>
         operand == Operand ? this : KeepSpelling(new IrNullTest(operand, IsNegated, Type, Category, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrNullTestDecision Decided => GetDecision<IrNullTestDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrNullTest WithDecision(IrNullTestDecision decision) =>
+        IrExpression.WithDecision<IrNullTest>(this, decision);
 }

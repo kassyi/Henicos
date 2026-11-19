@@ -497,8 +497,8 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
-      // The chat that queued it, so that the live view can show its jobs on its row
-      session: process.env.CLAUDE_CODE_SESSION_ID || process.env.ANTIGRAVITY_CONVERSATION_ID || undefined,
+      // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
+      session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,
       queuedAt: this.queuedAt,
       id: this.jobId, // keeps the job id across a scheduler restart
