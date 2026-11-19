@@ -327,6 +327,31 @@ namespace App
         public static T AbsOfAbsPlusB<T>(T a, T b) where T : INumberBase<T> => T.Abs(T.Abs(a) + b);
 
         public static T AbsOfMax<T>(T a, T b) where T : INumber<T> => T.Abs(T.Max(a, b));
+
+        public static T CheckedNegateMinValue<T>() where T : IUnaryNegationOperators<T, T>, IMinMaxValue<T> =>
+            checked(-T.MinValue);
+
+        public static T NegateMinValue<T>() where T : IUnaryNegationOperators<T, T>, IMinMaxValue<T> => -T.MinValue;
+
+        public static T CheckedNegateParenthesizedMinValue<T>()
+            where T : IUnaryNegationOperators<T, T>, IMinMaxValue<T> => checked(-(T.MinValue));
+
+        public static T CheckedNegateUncheckedMinValue<T>() where T : IUnaryNegationOperators<T, T>, IMinMaxValue<T> =>
+            checked(-unchecked(T.MinValue));
+
+        public static T CheckedNegateOne<T>() where T : IUnaryNegationOperators<T, T>, INumberBase<T> => checked(-T.One);
+
+        public static T MinValueOverNegatedOne<T>()
+            where T : IDivisionOperators<T, T, T>, IUnaryNegationOperators<T, T>, IMinMaxValue<T>, INumberBase<T> =>
+            T.MinValue / -T.One;
+
+        public static T CheckedMinValueTimesNegatedOne<T>()
+            where T : IMultiplyOperators<T, T, T>, IUnaryNegationOperators<T, T>, IMinMaxValue<T>, INumberBase<T> =>
+            checked(T.MinValue * -T.One);
+
+        public static T CheckedNegatedMaxValueMinusTwo<T>()
+            where T : ISubtractionOperators<T, T, T>, IUnaryNegationOperators<T, T>, IMinMaxValue<T>, INumberBase<T> =>
+            checked(-T.MaxValue - T.One - T.One);
     }
 
     public static partial class Outer<T> where T : unmanaged

@@ -405,14 +405,22 @@ internal static class GenericCopyPlanner
         private static bool IsCalled(MemberAccessExpressionSyntax access) =>
             access.Parent is InvocationExpressionSyntax invocation && invocation.Expression == access;
 
-        // An operator on two constants is folded at compile time, where the copy needs the run-time exception of the
-        // declaration for a division by zero or an overflow: such an operand is written so that C# cannot fold it
+        // An operator on constants is folded at compile time, where the copy needs the run-time result of the
+        // declaration: the exception of a division by zero or an overflow, or the wrapped value of an unchecked
+        // negation (C# reports an overflow of a constant expression outside an explicit unchecked context). Such an
+        // operand is written so that C# cannot fold it
         private bool IsOperandOfConstantOperation(MemberAccessExpressionSyntax access)
         {
             SyntaxNode operand = access;
-            while (operand.Parent is ParenthesizedExpressionSyntax parenthesized)
+            while (operand.Parent is ParenthesizedExpressionSyntax or CheckedExpressionSyntax)
             {
-                operand = parenthesized;
+                operand = operand.Parent;
+            }
+
+            // -c overflows for MinValue and for an unsigned c other than 0
+            if (operand.Parent is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.UnaryMinusExpression })
+            {
+                return true;
             }
 
             if (operand.Parent is not BinaryExpressionSyntax binary ||

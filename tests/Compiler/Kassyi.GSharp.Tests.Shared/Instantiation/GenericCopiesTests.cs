@@ -134,6 +134,24 @@ public class GenericCopiesTests
     [InlineData("AbsOfMaxValue", "System.UInt32")]
     [InlineData("AbsOfAbsPlusB", "System.Byte")]
     [InlineData("AbsOfMax", "System.Char")]
+    [InlineData("CheckedNegateMinValue", "System.SByte")]
+    [InlineData("CheckedNegateMinValue", "System.Int16")]
+    [InlineData("CheckedNegateMinValue", "System.Int32")]
+    [InlineData("CheckedNegateMinValue", "System.Int64")]
+    [InlineData("CheckedNegateMinValue", "System.IntPtr")]
+    [InlineData("NegateMinValue", "System.Int32")]
+    [InlineData("NegateMinValue", "System.Int64")]
+    [InlineData("CheckedNegateParenthesizedMinValue", "System.Int32")]
+    [InlineData("CheckedNegateUncheckedMinValue", "System.Int32")]
+    [InlineData("CheckedNegateOne", "System.Byte")]
+    [InlineData("CheckedNegateOne", "System.Char")]
+    [InlineData("CheckedNegateOne", "System.UInt32")]
+    [InlineData("CheckedNegateOne", "System.UInt64")]
+    [InlineData("CheckedNegateOne", "System.UIntPtr")]
+    [InlineData("MinValueOverNegatedOne", "System.Int32")]
+    [InlineData("MinValueOverNegatedOne", "System.Int64")]
+    [InlineData("CheckedMinValueTimesNegatedOne", "System.Int32")]
+    [InlineData("CheckedNegatedMaxValueMinusTwo", "System.Int32")]
     public void Create_SupportedForm_GivesACopyThatCompiles(string method, string typeArgument)
     {
         var (copy, set) = CreateCopy(method, typeArgument);
@@ -367,6 +385,11 @@ public class GenericCopiesTests
         { "AbsOfSum", "System.Byte" },
         { "AbsOfAbsPlusB", "System.Byte" },
         { "AbsOfMax", "System.Char" },
+        { "CheckedNegateMinValue", "System.SByte" },
+        { "CheckedNegateMinValue", "System.Int16" },
+        { "NegateMinValue", "System.SByte" },
+        { "CheckedNegateOne", "System.Byte" },
+        { "CheckedNegateOne", "System.Char" },
     };
 
     // The same with the integer types of 32 bits or more: the corners of each width
@@ -400,6 +423,16 @@ public class GenericCopiesTests
         { "ShiftRightUnsigned", "System.Int64" },
         { "AbsOfAbs", "System.UInt64" },
         { "AbsOfNegation", "System.UInt32" },
+        { "CheckedNegateMinValue", "System.Int32" },
+        { "CheckedNegateMinValue", "System.Int64" },
+        { "NegateMinValue", "System.Int32" },
+        { "NegateMinValue", "System.Int64" },
+        { "CheckedNegateOne", "System.UInt32" },
+        { "CheckedNegateOne", "System.UInt64" },
+        { "MinValueOverNegatedOne", "System.Int32" },
+        { "CheckedMinValueTimesNegatedOne", "System.Int32" },
+        { "CheckedNegatedMaxValueMinusTwo", "System.Int32" },
+        { "CheckedNegateUncheckedMinValue", "System.Int32" },
     };
 
     // The same with the floating point types and decimal: NaN, infinities, signed zero, the corners
