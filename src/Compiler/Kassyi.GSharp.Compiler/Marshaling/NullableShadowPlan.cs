@@ -97,10 +97,13 @@ internal sealed record NullableShadowPlan(
         var device = TypeLayoutCalculator.GetDeviceLayout(nullableType, dialect);
         var valueLayout = TypeLayoutCalculator.GetDeviceLayout(value, dialect);
         var isArray = value.IsArrayLikeType();
-        var form = isArray ? NullableValueForm.ArrayView
-            : TypeLayoutCalculator.IsUserStruct(value) ? NullableValueForm.Shadow
-            : value.SpecialType != SpecialType.None || value.TypeKind == TypeKind.Enum ? NullableValueForm.Named
-            : NullableValueForm.Bytes;
+        var form = NativeStructEmitter.ClassifyType(value, dialect) switch
+        {
+            NativeFieldKind.ArrayProxy => NullableValueForm.ArrayView,
+            NativeFieldKind.UserStruct => NullableValueForm.Shadow,
+            NativeFieldKind.DirectValue => NullableValueForm.Named,
+            _ => NullableValueForm.Bytes,
+        };
         var isShadow = form == NullableValueForm.Shadow;
         return new NullableShadowPlan(
             nullableType.GetFullyQualifiedCsharpName(),
