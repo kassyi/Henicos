@@ -1,0 +1,176 @@
+using Microsoft.CodeAnalysis.Operations;
+
+namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.NullChecks;
+
+/// <summary>
+/// What the receiver of a null-conditional access is, which decides how its non-null test is written.
+/// </summary>
+internal enum ConditionalReceiverKind
+{
+    /// <summary>An array or span-like value: null when its <c>data</c> pointer is <c>nullptr</c>.</summary>
+    ArrayLike,
+
+    /// <summary>A C++ stack array: never null, so the access is written as it is.</summary>
+    NeverNull,
+
+    /// <summary>A <c>Nullable&lt;S&gt;</c>: tested by <c>HasValue</c>, accessed through <c>Value</c>.</summary>
+    Nullable,
+
+    /// <summary>A receiver the transpiler cannot test for null (reported at the <c>?.</c>).</summary>
+    Unsupported
+}
+
+/// <summary>How the value of a null-conditional access is written.</summary>
+internal enum ConditionalResultForm
+{
+    /// <summary>The access has a value type <c>T</c>: the result is a <c>Nullable&lt;T&gt;</c>.</summary>
+    Lifted,
+
+    /// <summary>
+    /// The access is already nullable or an array: the result is the access or the null representation.
+    /// </summary>
+    Passthrough,
+
+    /// <summary>The result is not used (a call that returns <see langword="void" />, a statement).</summary>
+    Statement
+}
+
+/// <summary>
+/// The decision how a <c>a?.b</c> is written: its receiver kind, result form and result type, and the GSH0003 text
+/// (<paramref name="Problem"/>) when the receiver kind is <see cref="ConditionalReceiverKind.Unsupported"/>.
+/// </summary>
+internal readonly record struct ConditionalAccessPlan(
+    ConditionalReceiverKind Receiver,
+    ConditionalResultForm Form,
+    ITypeSymbol? ResultType,
+    string? Problem = null);
+
+/// <summary>
+/// The null-conditional access <c>a?.b</c>, <c>a?[i]</c> and <c>a?.M()</c>: the receiver is evaluated once into a
+/// temporary, the access is written for the receiver's value when it is not null, and the result is the access lifted
+/// to a nullable (or an array / nullable result as it is), or null.
+/// </summary>
+internal static class ConditionalAccess
+{
+    /// <summary>The GSH0003 text of a null-conditional access whose receiver cannot be tested for null.</summary>
+    public const string UnsupportedReceiver = "?. on a receiver that is neither an array nor a Nullable<T>";
+
+    /// <summary>The GSH0003 text of <c>p?[i]</c> on a <c>Nullable&lt;T&gt;</c>.</summary>
+    public const string NullableElementAccess = "?[] on a Nullable<T> receiver";
+
+    /// <summary>The GSH0003 text of <c>?.</c> or <c>?[]</c> on a <c>Nullable&lt;T&gt;</c> of an array view.</summary>
+    public const string NullableArrayView = "?. on a Nullable<T> of an array view";
+
+    /// <summary>Decides how <paramref name="node"/> is written.</summary>
+    /// <exception cref="InvalidOperationException">
+    /// The type of the receiver or of the access did not resolve.
+    /// </exception>
+    public static ConditionalAccessPlan Plan(ConditionalAccessExpressionSyntax node, SemanticModel model)
+    {
+        var receiverType = model.GetTypeSymbol(node.Expression) ?? throw Unresolved("receiver", node.Expression);
+        var (kind, problem) = GetReceiverKind(node, receiverType, model);
+
+        // The operation, not the syntax: the type of the binding [1] of a lowered a?[1] is not found by its span,
+        // which an argument list shares
+        var accessType = (model.GetSafeOperation(node) as IConditionalAccessOperation)?.WhenNotNull.Type ??
+                         model.GetTypeSymbol(node.WhenNotNull) ??
+                         throw Unresolved("access", node.WhenNotNull);
+        if (accessType.SpecialType == SpecialType.System_Void || node.Parent is ExpressionStatementSyntax)
+        {
+            return new ConditionalAccessPlan(kind, ConditionalResultForm.Statement, null, problem);
+        }
+
+        var resultType = model.GetTypeSymbol(node) ?? throw Unresolved("access", node);
+        var form = accessType.IsArrayLikeType() || NullRepresentation.IsNullComparable(accessType)
+            ? ConditionalResultForm.Passthrough
+            : ConditionalResultForm.Lifted;
+        return new ConditionalAccessPlan(kind, form, resultType, problem);
+    }
+
+    private static InvalidOperationException Unresolved(string part, SyntaxNode node) =>
+        new($"The type of the {part} '{node}' did not resolve.");
+
+    // The receiver kind, and the GSH0003 text when the receiver cannot be tested for null or its value cannot be read
+    private static (ConditionalReceiverKind Kind, string? Problem) GetReceiverKind(
+        ConditionalAccessExpressionSyntax node, ITypeSymbol receiverType, SemanticModel model)
+    {
+        if (receiverType.IsArrayLikeType())
+        {
+            return StackArrayLocals.IsStackArrayReference(node.Expression, model)
+                ? (ConditionalReceiverKind.NeverNull, null)
+                : (ConditionalReceiverKind.ArrayLike, null);
+        }
+
+        if (receiverType is not INamedTypeSymbol
+            {
+                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var valueType]
+            })
+        {
+            return (ConditionalReceiverKind.Unsupported, UnsupportedReceiver);
+        }
+
+        // The value of the receiver is written without its type, so a member that the receiver's type maps (an array
+        // view's Count or Length) or an indexer of the value cannot be written
+        if (valueType.IsArrayLikeType())
+        {
+            return (ConditionalReceiverKind.Unsupported, NullableArrayView);
+        }
+
+        return FirstBinding(node) is ElementBindingExpressionSyntax
+            ? (ConditionalReceiverKind.Unsupported, NullableElementAccess)
+            : (ConditionalReceiverKind.Nullable, null);
+    }
+
+    // The binding that reads the receiver of node: the first one in document order, since WhenNotNull starts with it
+    // and the bindings of a nested access come after it
+    private static SyntaxNode? FirstBinding(ConditionalAccessExpressionSyntax node) =>
+        node.WhenNotNull
+            .DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .FirstOrDefault(static n => n is MemberBindingExpressionSyntax or ElementBindingExpressionSyntax);
+
+    /// <summary>
+    /// The receiver of a <see cref="ConditionalReceiverKind.NeverNull"/> access (a stack array), read as written.
+    /// </summary>
+    public static ExpressionSyntax NeverNullReceiver(ConditionalAccessExpressionSyntax node, Compilation compilation) =>
+        AnnotateSource(node.Expression, compilation);
+
+    /// <summary>
+    /// <paramref name="access"/> (the <see cref="ConditionalAccessExpressionSyntax.WhenNotNull" /> of a
+    /// null-conditional access) with its member and element bindings read from <paramref name="receiver" />. A nested
+    /// null-conditional access keeps its own bindings; only its receiver is rewritten.
+    /// </summary>
+    /// <remarks>
+    /// Every node carries the original-span annotation of the node it replaces, so the semantic queries of the rules
+    /// for <c>x.b</c>, <c>x[i]</c> and <c>x.M()</c> resolve to the binding they stand for.
+    /// </remarks>
+    public static ExpressionSyntax BindReceiver(ExpressionSyntax access, ExpressionSyntax receiver,
+        Compilation compilation) =>
+        new BindingReplacer(receiver).Visit(AnnotateSource(access, compilation)) as ExpressionSyntax ??
+        throw new InvalidOperationException($"The bindings of '{access}' did not rewrite to an expression.");
+
+    // A node of the compilation gets the original-span annotation of its own position. A node of a lowered tree
+    // already carries the span of the node it stands for, and the nodes lowering built have none on purpose: a span
+    // of their position in the lowered tree would resolve to an unrelated node of the source
+    private static ExpressionSyntax AnnotateSource(ExpressionSyntax node, Compilation compilation) =>
+        compilation.ContainsSyntaxTree(node.SyntaxTree)
+            ? LoweringAnnotations.AnnotateOriginalSpans(node, compilation)
+            : node;
+
+    private sealed class BindingReplacer(ExpressionSyntax receiver) : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitMemberBindingExpression(MemberBindingExpressionSyntax node) =>
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, receiver, node.Name)
+                .WithOriginalSpanFrom(node);
+
+        public override SyntaxNode? VisitElementBindingExpression(ElementBindingExpressionSyntax node) =>
+            SyntaxFactory.ElementAccessExpression(receiver, node.ArgumentList)
+                .WithOriginalSpanFrom(node);
+
+        // The bindings of WhenNotNull belong to the inner access; only its receiver reads the outer one
+        public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>
+            node.WithExpression(Visit(node.Expression) as ExpressionSyntax ??
+                                throw new InvalidOperationException(
+                                    $"The receiver of '{node}' did not rewrite to an expression."));
+    }
+}

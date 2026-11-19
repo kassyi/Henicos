@@ -68,6 +68,11 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
   side, then the setter, and the value is the one C# defines; with a user-defined or lifted operator, or with `??=`, it
   is [GSH0003](../03_bcl_api/diagnostics/GSH0003.md).
 * **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported with zero-allocation branching.
+* **Null-Conditional Access:** `a?.b`, `a?[i]` and the null-conditional assignment (`a?[i] = v`, `a?[i] += v`) on an
+  array and on a `Nullable<T>` of a struct. The receiver is evaluated once; the access, its index and arguments and the
+  right side of an assignment are evaluated only when it is not null. `?[]` on a `Nullable<T>` and `?.` on a
+  `Nullable<T>` of an array view are [GSH0003](../03_bcl_api/diagnostics/GSH0003.md). A call that suspends at a
+  barrier inside the access is [GSH0062](../03_bcl_api/diagnostics/GSH0062.md).
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
 * **Order of evaluation:** As in C#, operands and arguments are evaluated from left to right, and an assignment finds
