@@ -340,12 +340,22 @@ internal static class ManagedCSharpTranspiler
     }
 
     // The source of the state machine body: the lowered body rewritten for managed execution, or only a throw when the
-    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own
+    // body holds a ref local (LoweredStateMachine.HeldRefLocals), which is an error of its own, or the body is not
+    // written when it holds a goto to an inner chained label from another state (GSH0121)
     private static string CreateBody(LoweredStateMachine lowered,
         Dictionary<DeclarationKey, ManagedContextField> unhoistedLocals,
         Dictionary<DeclarationKey, string> renamedLocals,
         SemanticModel semanticModel, string methodName, bool zeroFill, ManagedExecutionRewriter rewriter)
     {
+        // [WHY] Such a goto would stay a C# goto into another case block (CS0159). The analyzer and the generator report
+        // it as an error (GSH0121, or GSH0040 across a barrier; ChainedLabelJumpChecks.FindReported), so the build
+        // never runs this method: the declarations stay for the launcher and the callers, and the
+        // body that the managed path cannot express is left out (no throw in place of the jump)
+        if (!lowered.GotosToChainedLabelsAcrossStates.IsEmpty)
+        {
+            return string.Empty;
+        }
+
         if (lowered.HeldRefLocals is [var heldRefLocal, ..])
         {
             return ManagedContextFields.CreateHeldRefLocalThrow(methodName, heldRefLocal.Declarator);
