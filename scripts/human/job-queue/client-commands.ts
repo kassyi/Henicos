@@ -12,7 +12,7 @@ import {
   type StatusReply,
 } from "./protocol.ts";
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
-import { prefix, resolveStateDirectory } from "./system.ts";
+import { prefix, resolveStateDirectory, worktreeKey } from "./system.ts";
 import * as path from "node:path";
 import { formatJobId, type JobRef } from "./job-id.ts";
 
@@ -164,13 +164,35 @@ export async function resolveJobRef(
   return process.exit(failCode);
 }
 
-export async function status(port: number, id: number, json: boolean): Promise<void> {
+/**
+ * True when the job was queued from the worktree `here` (a worktreeKey): its worktree, or for a job of an older client
+ * (which sends none) its directory, is `here` or lies inside it.
+ */
+export function isJobHere(job: StatusJob, here: string): boolean {
+  const own = worktreeKey(job.worktree ?? job.cwd);
+  const relative = path.relative(here, own);
+  return job.worktree != null
+    ? own === here
+    : relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+/** status: every job, one job (`id`), or with `here` (status --here) the jobs of that worktree only. */
+export async function status(port: number, id: number, json: boolean, here: string | null = null): Promise<void> {
   const raw = await request(port, { type: "status" });
   if (raw !== null && raw.type !== "status") {
     printReplyError(raw);
     return;
   }
-  const reply = raw as StatusReply | null;
+  const all = raw as StatusReply | null;
+  // A filter only: the header keeps the scheduler's totals
+  const reply =
+    all === null || here === null
+      ? all
+      : {
+          ...all,
+          running: all.running.filter((job) => isJobHere(job, here)),
+          waiting: all.waiting.filter((job) => isJobHere(job, here)),
+        };
   if (id > 0) {
     // One job: its state, place and expected times; exit 1 when the scheduler does not know it (ended or never queued)
     const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === id);
@@ -212,9 +234,10 @@ export async function status(port: number, id: number, json: boolean): Promise<v
         "starts below count from a resume now",
     );
   }
-  lines.push(`running (${reply.running.length}):`);
+  const where = here !== null ? ` in ${here}` : "";
+  lines.push(`running${where} (${reply.running.length}):`);
   reply.running.forEach((job) => lines.push(formatJob(job, now)));
-  lines.push(`waiting (${reply.waiting.length}):`);
+  lines.push(`waiting${where} (${reply.waiting.length}):`);
   reply.waiting.forEach((job) => lines.push(formatJob(job, now)));
   process.stdout.write(`${lines.join("\n")}\n`);
 }

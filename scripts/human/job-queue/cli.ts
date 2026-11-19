@@ -35,7 +35,7 @@ import {
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
-import { prefix } from "./system.ts";
+import { prefix, resolveWorktree } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
@@ -43,7 +43,7 @@ const Usage = [
   "Usage:",
   "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--after <id> [--keep-if-failed]]",
   '                                       [--shell <name>] [--timeout-minutes <n>] -- "<command>"',
-  "  node scripts/human/job-queue.js status [<id>] [--json | --watch | --accuracy]",
+  "  node scripts/human/job-queue.js status [<id>] [--here] [--json | --watch | --accuracy]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
   "  node scripts/human/job-queue.js cancel-all",
@@ -76,6 +76,7 @@ const Usage = [
   "                                   --gpu, once for the turn at the GPU and once more for the GPU lock.",
   "status      Lists the running and waiting jobs with their ids, the jobs ahead and the expected start and end;",
   "            with <id>, only that job (exit 1 when it ended or is unknown); --json prints the same as JSON.",
+  "            --here lists only the jobs of the worktree of the current directory (with --json too).",
   "            --accuracy prints how close the expected run times were, per source (own runs, similar commands).",
   "            --watch shows the queue live in the terminal, one line per job with its timeline: arrows select a job,",
   "            c cancels it, s starts, m moves and w re-weights a waiting one, Space pauses or resumes the queue,",
@@ -137,6 +138,8 @@ interface Options extends RunOptions {
   commandFromEnv: boolean;
   json: boolean;
   watch: boolean;
+  /** status --here: only the jobs of the caller's worktree. */
+  here: boolean;
   accuracy: boolean;
   untilIdle: boolean;
   /** serve --gpu-slots: the shared slots of the GPU resource; 0 for the configuration's. */
@@ -198,6 +201,7 @@ export function parseArgs(argv: string[]): Options {
     gpuSlots: 0,
     json: false,
     watch: false,
+    here: false,
     accuracy: false,
     untilIdle: false,
     jobRef: null,
@@ -286,6 +290,9 @@ export function parseArgs(argv: string[]): Options {
       case "--watch":
         options.watch = true;
         break;
+      case "--here":
+        options.here = true;
+        break;
       case "--accuracy":
         options.accuracy = true;
         break;
@@ -350,6 +357,9 @@ export function parseArgs(argv: string[]): Options {
   }
   if (options.watch && (options.mode !== "status" || options.json || options.jobRef !== null)) {
     usageError("--watch goes with status alone (no <id>, no --json).");
+  }
+  if (options.here && (options.mode !== "status" || options.watch || options.accuracy || options.jobRef !== null)) {
+    usageError("--here goes with status alone (no <id>, no --watch, no --accuracy).");
   }
   if (options.accuracy && (options.mode !== "status" || options.watch || options.jobRef !== null)) {
     usageError("--accuracy goes with status alone (no <id>, no --watch).");
@@ -431,7 +441,7 @@ export async function main(argv: string[]): Promise<void> {
           ? accuracy(options.json)
           : options.watch
             ? watch(options.port, plugins)
-            : status(options.port, options.jobId, options.json));
+            : status(options.port, options.jobId, options.json, options.here ? resolveWorktree(process.cwd()) : null));
         break;
       case "wait":
         await wait(options, options.jobId, options.json);

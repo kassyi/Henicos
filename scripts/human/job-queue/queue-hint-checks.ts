@@ -6,7 +6,10 @@ import * as fs from "node:fs";
 import type * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
-import { describeOutlook, describeWaitFor } from "./client-commands.ts";
+import { parseArgs } from "./cli.ts";
+import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
+import type { StatusJob } from "./protocol.ts";
+import { worktreeKey } from "./system.ts";
 import type { ResourceSpec } from "./resources.ts";
 import { Scheduler, type SchedulerJob } from "./scheduler.ts";
 import { job, times } from "./scheduler-checks.ts";
@@ -156,9 +159,30 @@ async function checkWaitForMessages(assert: AssertModule): Promise<void> {
   });
 }
 
+/** status --here: a job of the worktree, by its worktree, or for an older client by its directory inside it. */
+function checkHere(assert: AssertModule): void {
+  const root = process.platform === "win32" ? "X:__dummy__" : "/__dummy__";
+  const here = worktreeKey(path.join(root, "repo"));
+  const at = (worktree: string | undefined, cwd: string): StatusJob =>
+    ({ worktree: worktree === undefined ? undefined : worktreeKey(worktree), cwd }) as unknown as StatusJob;
+  const inside = path.join(root, "repo", "src");
+  assert.strictEqual(isJobHere(at(path.join(root, "repo"), inside), here), true, "its worktree");
+  assert.strictEqual(
+    isJobHere(at(path.join(root, "repo", "tmp", "worktree", "x"), inside), here),
+    false,
+    "a worktree inside",
+  );
+  assert.strictEqual(isJobHere(at(path.join(root, "repo2"), path.join(root, "repo2")), here), false, "a sibling");
+  assert.strictEqual(isJobHere(at(undefined, inside), here), true, "an older client: its directory is inside");
+  assert.strictEqual(isJobHere(at(undefined, path.join(root, "repo2")), here), false, "not a prefix match");
+  const parsed = parseArgs(["status", "--here", "--json"]);
+  assert.deepStrictEqual([parsed.here, parsed.json], [true, true], "--here goes with --json");
+}
+
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkWaitFor,
   checkDescribeWaitFor,
   checkLatestEnd,
   checkWaitForMessages,
+  checkHere,
 };
