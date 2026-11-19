@@ -127,8 +127,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed, and a
     // warp shuffle anywhere else is not a split point, so a lane would read another lane's value before that lane wrote
-    // it, or the shuffle would run where C# does not evaluate it (#1274). Unattributed struct constructors and property
-    // accessors are not turned into state machines either.
+    // it, or the shuffle would run where C# does not evaluate it (#1274). Unattributed struct constructors,
+    // field and property initializers, property accessors and conversion operators are not turned into state machines
+    // either.
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
@@ -149,27 +150,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // [WHY] A shuffle takes its arguments by value, so only where it stands matters. CUDA runs the shuffle where it
-        // stands, so a project built only for CUDA, which has no CPU path, accepts it there.
-        var intrinsic = SyncIntrinsicClassifier.Classify(callee);
-        if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
-        {
-            if (!BuildsCpuPaths(context.Options))
-            {
-                return;
-            }
-
-            if (shuffleContext != null)
-            {
-                context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
-                    invocation.GetLocation(), callee.Name, shuffleContext,
-                    GetWarpCallee(intrinsic.Shuffle));
-            }
-
-            return;
-        }
-
-        if (!SuspensionAnalysis.IsSuspendingFunction(callee, context.SemanticModel.Compilation))
+        if (TryReportWarpShuffleContext(context, invocation, callee, shuffleContext) ||
+            !SuspensionAnalysis.IsSuspendingFunction(callee, context.SemanticModel.Compilation))
         {
             return;
         }
@@ -203,6 +185,27 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         return (
             SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: false) ?? initializerContext,
             SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: true) ?? initializerContext);
+    }
+
+    // [WHY] A shuffle takes its arguments by value, so only where it stands matters. CUDA runs the shuffle where it
+    // stands, so a project built only for CUDA, which has no CPU path, accepts it there.
+    private static bool TryReportWarpShuffleContext(SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation, IMethodSymbol callee, string? shuffleContext)
+    {
+        var intrinsic = SyncIntrinsicClassifier.Classify(callee);
+        if (intrinsic.Kind != SyncIntrinsicKind.WarpShuffle)
+        {
+            return false;
+        }
+
+        if (shuffleContext != null && BuildsCpuPaths(context.Options))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
+                invocation.GetLocation(), callee.Name, shuffleContext,
+                GetWarpCallee(intrinsic.Shuffle));
+        }
+
+        return true;
     }
 
     // Whether the project builds the native C++ and managed paths: every dialect but CUDA
@@ -246,34 +249,40 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 SpilledArguments.ClassifyByReference(argument, model) == ByReferencePassing.ReselectedLocation
             );
 
-    private static bool IsInGpuMethod(ISymbol? symbol)
+    // Lambdas and local functions belong to the member that declares them
+    private static ISymbol? GetDeclaringMember(ISymbol? symbol)
     {
-        // Lambdas and local functions belong to the method that declares them
         while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
         {
             symbol = symbol.ContainingSymbol;
         }
 
-        return symbol is IMethodSymbol && GpuExecutionSpace.IsGpuFunction(symbol);
+        return symbol;
     }
+
+    private static bool IsInGpuMethod(ISymbol? symbol) =>
+        GetDeclaringMember(symbol) is IMethodSymbol declaring && GpuExecutionSpace.IsGpuFunction(declaring);
 
     private static string? FindUnsupportedMember(ISymbol? containing)
     {
-        // Lambdas and local functions belong to the member that declares them
-        while (containing is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            containing = containing.ContainingSymbol;
-        }
-
-        if (containing is not IMethodSymbol { ContainingType.IsValueType: true } method)
+        var member = GetDeclaringMember(containing);
+        if (member?.ContainingType is not { IsValueType: true })
         {
             return null;
         }
 
-        return method.MethodKind switch
+        return member switch
         {
-            MethodKind.Constructor or MethodKind.StaticConstructor => "in a constructor",
-            MethodKind.PropertyGet or MethodKind.PropertySet => "in a property accessor",
+            // [WHY] Another unattributed method is GSH0107 at its call, a user-defined operator GSH0060 at its use
+            IMethodSymbol method when !GpuExecutionSpace.IsGpuFunction(method) => method.MethodKind switch
+            {
+                MethodKind.Constructor or MethodKind.StaticConstructor => "in a constructor",
+                MethodKind.PropertyGet or MethodKind.PropertySet => "in a property accessor",
+                MethodKind.Conversion => "in a conversion operator",
+                _ => null
+            },
+            // A field or property initializer runs as part of the constructor
+            IFieldSymbol or IPropertySymbol => "in a constructor",
             _ => null
         };
     }

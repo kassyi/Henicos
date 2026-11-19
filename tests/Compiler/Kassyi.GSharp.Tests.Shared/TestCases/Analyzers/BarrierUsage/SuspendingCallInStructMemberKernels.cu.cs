@@ -63,6 +63,37 @@ public static partial class SuspendingCallInStructMemberKernels
         }
     }
 
+    public struct InitializerHolder
+    {
+        // GSH0062: suspending call in a struct field initializer
+        public int Fld = TaggedRotate(2);
+
+        // GSH0062: suspending call in a struct property initializer
+        public int Init { get; init; } = TaggedRotate(1);
+
+        public InitializerHolder() { }
+    }
+
+    public struct ConversionHolder
+    {
+        public int Value;
+
+        // GSH0062: suspending call in a struct user-defined conversion
+        public static implicit operator int(ConversionHolder h) => TaggedRotate(h.Value);
+    }
+
+    public record struct RecordHolder(int A)
+    {
+        // GSH0062: suspending call in a record struct field initializer
+        public int B = TaggedRotate(3);
+    }
+
+    public struct PrimaryHolder(int t)
+    {
+        // GSH0062: suspending call in a primary-constructor struct field initializer
+        public int V = TaggedRotate(t);
+    }
+
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]
     public static void ConstructorCallKernel(int[] output)
@@ -80,5 +111,17 @@ public static partial class SuspendingCallInStructMemberKernels
         var h = new Holder(5);
         h.Tag = 7;
         output[ThreadIndex.X] = h.Rotated;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Sad Path")]
+    public static void InitializerAndConversionKernel(int[] output)
+    {
+        var init = new InitializerHolder();
+        ConversionHolder conv = new() { Value = 4 };
+        int converted = conv;
+        var rec = new RecordHolder(1);
+        var prim = new PrimaryHolder(5);
+        output[ThreadIndex.X] = init.Fld + init.Init + converted + rec.B + prim.V;
     }
 }

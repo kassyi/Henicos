@@ -421,8 +421,9 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.DoesNotContain(actual, static d => d.Id == GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id);
     }
 
-    // An unattributed struct constructor or property accessor does not lower to a state machine, so calling a
-    // suspending device function there (or in a lambda inside it) reports GSH0062 on both dialects
+    // An unattributed struct constructor, initializer, conversion operator or property accessor does not lower to a
+    // state machine, so calling a suspending device function there (or in a lambda inside it) reports GSH0062 on both
+    // dialects
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
@@ -438,7 +439,12 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 32, 21, 32, 38),
                 (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 38, 42, 38, 57),
                 (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 43, 31, 43, 50),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 50, 25, 50, 44)
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 50, 25, 50, 44),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 69, 26, 69, 41),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 72, 42, 72, 57),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 82, 68, 82, 89),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 88, 24, 88, 39),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 94, 24, 94, 39)
             ],
             actual);
 
@@ -449,10 +455,28 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             .OrderBy(static d => d.Location.SourceSpan.Start)
             .Select(static d => d.GetMessage(CultureInfo.InvariantCulture))
             .ToArray();
+        Assert.Equal(9, messages.Length);
         Assert.Contains("in a constructor", messages[0], StringComparison.Ordinal);
         Assert.Contains("in a lambda or anonymous method", messages[1], StringComparison.Ordinal);
         Assert.Contains("in a property accessor", messages[2], StringComparison.Ordinal);
         Assert.Contains("in a property accessor", messages[3], StringComparison.Ordinal);
+        Assert.Contains("in a constructor", messages[4], StringComparison.Ordinal);
+        Assert.Contains("in a constructor", messages[5], StringComparison.Ordinal);
+        Assert.Contains("in a conversion operator", messages[6], StringComparison.Ordinal);
+        Assert.Contains("in a constructor", messages[7], StringComparison.Ordinal);
+        Assert.Contains("in a constructor", messages[8], StringComparison.Ordinal);
+    }
+
+    // Guard: suspending calls in reference-type (class) members are host code, so GSH0062 is not reported
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Cuda")]
+    [InlineData("Cpu")]
+    public async Task SuspendingCallInHostClass_ConstructorAndMembers_HasNoDiagnostics(string dialect)
+    {
+        const string TestCase = "Analyzers/BarrierUsage/SuspendingCallInHostClassKernels.cu.cs";
+        Assert.Empty(await RunAsync(TestCase, dialect));
     }
 
     [Fact]
