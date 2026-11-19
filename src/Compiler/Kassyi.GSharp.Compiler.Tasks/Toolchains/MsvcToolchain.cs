@@ -6,14 +6,8 @@ namespace Kassyi.GSharp.Compiler.Tasks.Toolchains;
 /// </summary>
 public sealed class MsvcToolchain : INativeToolchain
 {
-    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
-        new(StringComparer.OrdinalIgnoreCase);
-
     private readonly IProcessRunner _processRunner;
-    private readonly bool _disableCache;
-    private readonly string? _vswherePathOverride;
-    private readonly ConcurrentDictionary<string, Dictionary<string, string>> _resolvedEnvs =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly MsvcEnvironmentResolver _environment;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MsvcToolchain"/> class.
@@ -27,8 +21,7 @@ public sealed class MsvcToolchain : INativeToolchain
         string? vswherePathOverride = null)
     {
         _processRunner = processRunner;
-        _disableCache = disableCache;
-        _vswherePathOverride = vswherePathOverride;
+        _environment = new MsvcEnvironmentResolver(processRunner, disableCache, vswherePathOverride);
     }
 
     /// <inheritdoc />
@@ -45,7 +38,7 @@ public sealed class MsvcToolchain : INativeToolchain
     {
         foreach (var arch in architectures)
         {
-            var vcvarsArch = ToVcvarsArchitecture(arch);
+            var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(arch);
             var env = GetVcvarsEnvironment(vcvarsArch, cancellationToken);
             if (env == null)
             {
@@ -54,7 +47,7 @@ public sealed class MsvcToolchain : INativeToolchain
                 return ToolchainPreparationResult.Failed;
             }
 
-            _resolvedEnvs[vcvarsArch] = env;
+            _environment.Remember(vcvarsArch, env);
         }
 
         return ToolchainPreparationResult.Ready;
@@ -63,13 +56,7 @@ public sealed class MsvcToolchain : INativeToolchain
     /// <inheritdoc />
     public Dictionary<string, string>? GetEnvironmentVariables(string architecture)
     {
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var env))
-        {
-            return env;
-        }
-
-        return GetVcvarsEnvironment(vcvarsArch);
+        return _environment.GetEnvironment(MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture));
     }
 
     /// <summary>
@@ -82,14 +69,7 @@ public sealed class MsvcToolchain : INativeToolchain
         string vcvarsArch,
         CancellationToken cancellationToken = default)
     {
-        if (_disableCache)
-        {
-            return ResolveVcvarsEnvironment(vcvarsArch, cancellationToken);
-        }
-
-        return s_vcvarsCache.GetOrAdd(
-            vcvarsArch,
-            arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch, cancellationToken))).Value;
+        return _environment.GetVcvarsEnvironment(vcvarsArch, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -97,10 +77,10 @@ public sealed class MsvcToolchain : INativeToolchain
         string architecture,
         CancellationToken cancellationToken = default)
     {
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
-        var env = ResolveCompileEnvironment(vcvarsArch, cancellationToken);
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
+        var env = _environment.ResolveCompileEnvironment(vcvarsArch, cancellationToken);
         var clPath = NativeToolchainHelper.FindExecutableInPath("cl.exe", env);
-        return new CompilerIdentity(clPath, ReadMsvcVersion(clPath, env));
+        return new CompilerIdentity(clPath, MsvcEnvironmentResolver.ReadMsvcVersion(clPath, env));
     }
 
     /// <inheritdoc />
@@ -133,7 +113,7 @@ public sealed class MsvcToolchain : INativeToolchain
         NativeSanitizers sanitizers = NativeSanitizers.None,
         string? pdbPath = null)
     {
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
         NativeToolchainHelper.EnsureParentDirectory(objPath);
         var clArgs = BuildCompileObjectArguments(sourcePath, objPath, architecture, sanitizers, pdbPath);
 
@@ -162,7 +142,7 @@ public sealed class MsvcToolchain : INativeToolchain
             return false;
         }
 
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
         NativeToolchainHelper.EnsureParentDirectory(outputPath);
 
         var joinedObjs = NativeToolchainHelper.JoinQuotedPaths(objPaths);
@@ -203,7 +183,8 @@ public sealed class MsvcToolchain : INativeToolchain
         TaskLoggingHelper log,
         CancellationToken cancellationToken)
     {
-        var startInfo = CreateClStartInfo(clArgs, ResolveCompileEnvironment(vcvarsArch, cancellationToken));
+        var startInfo = CreateClStartInfo(
+            clArgs, _environment.ResolveCompileEnvironment(vcvarsArch, cancellationToken));
 
         try
         {
@@ -234,59 +215,6 @@ public sealed class MsvcToolchain : INativeToolchain
             log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
             return false;
         }
-    }
-
-    // The resolved vcvarsall environment of the architecture, or null when it cannot be resolved.
-    private Dictionary<string, string>? ResolveCompileEnvironment(
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var resolved))
-        {
-            return resolved;
-        }
-
-        resolved = GetVcvarsEnvironment(vcvarsArch, cancellationToken);
-        if (resolved is not null)
-        {
-            _resolvedEnvs[vcvarsArch] = resolved;
-        }
-
-        return resolved;
-    }
-
-    private static string ReadMsvcVersion(string clPath, Dictionary<string, string>? env)
-    {
-        if (File.Exists(clPath))
-        {
-            try
-            {
-                var info = FileVersionInfo.GetVersionInfo(clPath);
-                if (!string.IsNullOrWhiteSpace(info.ProductVersion))
-                {
-                    return info.ProductVersion.AsSpan().Trim().ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(info.FileVersion))
-                {
-                    return info.FileVersion.AsSpan().Trim().ToString();
-                }
-            }
-            // smell-scan: ignore swallowed-exception -- 0-byte fake cl.exe in tests; fall back to VCToolsVersion
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
-            {
-                // Fall back to VCToolsVersion below.
-            }
-        }
-
-        if (env is not null &&
-            env.TryGetValue("VCToolsVersion", out var vcTools) &&
-            !string.IsNullOrWhiteSpace(vcTools))
-        {
-            return vcTools.AsSpan().Trim().ToString();
-        }
-
-        return "unknown";
     }
 
     private static ProcessStartInfo CreateClStartInfo(string clArgs, Dictionary<string, string>? env)
@@ -358,108 +286,4 @@ public sealed class MsvcToolchain : INativeToolchain
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
     internal const string UndefinedSanitizerUnsupportedWarning =
         "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.";
-
-    private static string ToVcvarsArchitecture(string arch) => arch switch
-    {
-        "x64" => "x64",
-        "arm64" => "x64_arm64",
-        _ => arch
-    };
-
-    private Dictionary<string, string>? ResolveVcvarsEnvironment(
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        var vswhere = LocateVswhere();
-        if (vswhere == null)
-        {
-            return null;
-        }
-
-        var installationPath = QueryInstallationPath(vswhere, cancellationToken);
-        if (string.IsNullOrEmpty(installationPath))
-        {
-            return null;
-        }
-
-        var vcvarsPath = Path.Combine(installationPath, "VC", "Auxiliary", "Build", "vcvarsall.bat");
-        if (!File.Exists(vcvarsPath))
-        {
-            return null;
-        }
-
-        return RunVcvars(vcvarsPath, vcvarsArch, cancellationToken);
-    }
-
-    private string? LocateVswhere()
-    {
-        if (_vswherePathOverride is { Length: > 0 })
-        {
-            return _vswherePathOverride;
-        }
-
-        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-        var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
-        return File.Exists(vswhere) ? vswhere : null;
-    }
-
-    // The vswhere query below is repeated by tools/collect-env/ToolchainProbe.cs (Msvc); keep both in sync.
-    private string? QueryInstallationPath(string vswhere, CancellationToken cancellationToken)
-    {
-        var vswhereStartInfo = new ProcessStartInfo
-        {
-            FileName = vswhere,
-            Arguments = "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
-                "-property installationPath",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var vswhereResult = _processRunner.Run(vswhereStartInfo, cancellationToken);
-        return vswhereResult.ExitCode == 0 ? vswhereResult.StandardOutput.AsSpan().Trim().ToString() : null;
-    }
-
-    // Runs vcvarsall.bat in cmd.exe and reads the environment it leaves (the output of `set`).
-    private Dictionary<string, string>? RunVcvars(
-        string vcvarsPath,
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        var envStartInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"set VSCMD_SKIP_SENDTELEMETRY=1 && call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var envResult = _processRunner.Run(envStartInfo, cancellationToken);
-        return envResult.ExitCode == 0 ? ParseEnvironment(envResult.StandardOutput) : null;
-    }
-
-    private static Dictionary<string, string> ParseEnvironment(string setOutput)
-    {
-        var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        using var reader = new StringReader(setOutput);
-        while (reader.ReadLine() is { } line)
-        {
-            var eqIndex = line.IndexOf('=');
-            if (eqIndex > 0)
-            {
-                envVars[line[..eqIndex]] = line[(eqIndex + 1)..];
-            }
-        }
-
-        return envVars;
-    }
 }
