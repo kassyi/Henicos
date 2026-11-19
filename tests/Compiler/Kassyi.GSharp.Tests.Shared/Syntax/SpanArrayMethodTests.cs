@@ -156,6 +156,8 @@ public partial class SpanArrayMethodTests : SpanKernelPathTestBase
     {
         Skip.If(IsCudaDialect && !DiffPaths.IsCudaCheckedBuild,
             "The release CUDA build does not check this range; the checked build does and keeps the context usable.");
+        // Before Record.Exception below, which would take the skip of Run for the exception of the launch
+        Skip.If(managed && IsCudaDialect, "The managed path runs on the CPU test assembly.");
         var a = new int[length];
         var oracle = Record.Exception(() => Array.Reverse(new int[length], index, count));
         Assert.IsType(pastEnd ? typeof(ArgumentException) : typeof(ArgumentOutOfRangeException), oracle);

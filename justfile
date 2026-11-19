@@ -11,6 +11,9 @@ blame_crash := "--blame-crash --blame-crash-dump-type mini"
 # the queue already granted (an agent's job-queue.js run -- "just test") the command runs at once, in that job.
 queue := "node scripts/human/job-queue.js run"
 
+# The filter of a normal run: no Stress, Benchmark or GpuTrap tests
+normal_tests := "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"
+
 # Run normal tests excluding heavy stress and benchmark tests and the tests that raise a real GPU fault (GpuTrap)
 test *args="":
     {{queue}} --gpu -- dotnet test --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap" \
@@ -54,6 +57,14 @@ test-managed-stack *args="":
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
         --filter "Category=Differential&Category!=Stress" {{blame_crash}} {{args}}
+
+# Tests.Cuda built checked (C#'s checks in the device code), in an output folder of its own; a filter narrows the run
+# further (dotnet test takes one --filter, so it is joined to the fixed one): `just test-checked "FullyQualifiedName~X"`
+test-checked filter="" *args="":
+    {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \
+        -p:GSharpCheckedBuild=true -p:GSharpOutputVariant=checked \
+        --filter "{{normal_tests}}{{ if filter == "" { "" } else { "&(" + filter + ")" } }}" \
+        {{blame_crash}} {{args}}
 
 # Tests that raise a real GPU fault (a CUDA trap of a cooperative launch or an mbarrier wait), each in a child process,
 # one at a time pause_ms apart, plus the CUDA fault seeds of the differential tests that CUDA does not check

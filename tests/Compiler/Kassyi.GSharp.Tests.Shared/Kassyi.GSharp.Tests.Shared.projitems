@@ -16,4 +16,12 @@
       LogicalName="Kassyi.GSharp.Tests.Shared.Differential.KnownDivergences.yaml"
     />
   </ItemGroup>
+  <!-- DiffPaths.IsCudaCheckedBuild reads this, so the checked-only CUDA cells run in a GSharpCheckedBuild=true build
+       (`just test-checked`). An empty property is written as false: an empty value would drop the constructor
+       argument. Items are evaluated after every property, so a default set later in the targets still counts. -->
+  <ItemGroup>
+    <AssemblyMetadata Include="GSharpCheckedBuild" Value="$(GSharpCheckedBuild)"
+      Condition="'$(GSharpCheckedBuild)' != ''" />
+    <AssemblyMetadata Include="GSharpCheckedBuild" Value="false" Condition="'$(GSharpCheckedBuild)' == ''" />
+  </ItemGroup>
 </Project>

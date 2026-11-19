@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Tests.Shared.Differential;
 using Kassyi.GSharp.Tests.Shared.Runtime;
 
 namespace Kassyi.GSharp.Tests.Cuda;
@@ -31,6 +32,11 @@ public sealed class LaunchEpochTests
     // The grid of the graph barrier tests
     private const int GraphBlocks = 4;
     private const int GraphThreads = 128;
+
+    // The checked build synchronizes the stream after every launch and reads the record of the launch there, so a Ptr
+    // launch leaves no record to a later synchronization
+    private const string RecordLeftToLaterSynchronization =
+        "Only the release build's Ptr launcher leaves its record to a later synchronization.";
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -127,6 +133,7 @@ public sealed class LaunchEpochTests
     public void DeviceError_FailingLaunchOnOneOfTwoStreams_OnlyItsStreamThrows()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, RecordLeftToLaterSynchronization);
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var failingStream = new CudaStream();
         using var healthyStream = new CudaStream();
@@ -176,6 +183,7 @@ public sealed class LaunchEpochTests
     public void Launcher_UnconsumedRecordOfEarlierLaunch_ThrowsWhenItReusesTheRecord()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, RecordLeftToLaterSynchronization);
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
 
@@ -221,6 +229,7 @@ public sealed class LaunchEpochTests
     public Task GridBarrier_RecordConsumedBeforeWaitersLook_WaitersStillLeave()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, RecordLeftToLaterSynchronization);
         return AssertWaitersLeaveAfterRecordConsumedAsync(captured: false);
     }
 
@@ -259,6 +268,7 @@ public sealed class LaunchEpochTests
     public Task SharedEpoch_TwoFailingLaunchesBeforeSynchronization_OneErrorAndUsableContext()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, RecordLeftToLaterSynchronization);
         var keys = new int[GraphBlocks * GraphThreads];
         Array.Fill(keys, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
         return Task.Run(() =>
