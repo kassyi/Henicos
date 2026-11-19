@@ -31,10 +31,10 @@ internal readonly ref struct StructVisits
 
     /// <summary>
     /// Marks <paramref name="type"/> as visited; false when the search has already looked into it, or when it is a
-    /// larger construction of a generic struct that holds itself (<see cref="SelfHoldingGenericStructs"/>).
+    /// larger construction of a generic struct that holds itself (<see cref="GrowingGenericStructs"/>).
     /// </summary>
     public bool TryVisit(ITypeSymbol type) =>
-        !SelfHoldingGenericStructs.IsLargerConstruction(type, _visited) && _visited.Add(type);
+        !GrowingGenericStructs.IsLargerConstruction(type, _visited) && _visited.Add(type);
 
     public void Dispose()
     {

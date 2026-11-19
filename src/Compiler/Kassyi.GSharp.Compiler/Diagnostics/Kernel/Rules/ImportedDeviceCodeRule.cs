@@ -139,7 +139,7 @@ internal sealed class ImportedDeviceCodeRule : ISyntaxValidationRule<InvocationE
         }
 
         if (type is not INamedTypeSymbol named ||
-            SelfHoldingGenericStructs.IsLargerConstruction(named, visited) ||
+            GrowingGenericStructs.IsLargerConstruction(named, visited) ||
             !visited.Add(named))
         {
             return default;

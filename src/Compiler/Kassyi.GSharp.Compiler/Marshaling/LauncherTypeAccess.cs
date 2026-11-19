@@ -11,8 +11,6 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal static class LauncherTypeAccess
 {
-    private const int MaxDepth = 16;
-
     /// <summary>
     /// The first field, in a parameter or the return value of <paramref name="kernel"/>, whose type the kernel's class
     /// cannot access, or <see langword="null"/>.
@@ -46,22 +44,24 @@ internal static class LauncherTypeAccess
         }
 
         using var visits = StructVisits.Start();
-        return FindInStruct(structType, launcherClass, compilation, depth: 0, visits);
+        return FindInStruct(structType, launcherClass, compilation, visits);
     }
 
-    // [WHY] A struct searched once finds nothing the second time (visits), so several fields of one struct type stay
-    // linear; the depth bound stops a generic struct whose arrays name ever larger constructions of itself
+    // [WHY] Each struct is searched once (visits), also a struct that holds itself (CS0523) or arrays of itself
+    // several times; a larger construction of a generic struct that names itself stops there
+    // (GrowingGenericStructs), so the search ends without a depth bound, which would cut off what lies below a
+    // struct first met deep in the tree
     private static InaccessibleFieldType? FindInStruct(INamedTypeSymbol structType, INamedTypeSymbol launcherClass,
-        Compilation compilation, int depth, StructVisits visits)
+        Compilation compilation, StructVisits visits)
     {
-        if (depth > MaxDepth || !visits.TryVisit(structType))
+        if (!visits.TryVisit(structType))
         {
             return null;
         }
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            if (FindInMember(member, launcherClass, compilation, depth, visits) is { } found)
+            if (FindInMember(member, launcherClass, compilation, visits) is { } found)
             {
                 return found;
             }
@@ -72,7 +72,7 @@ internal static class LauncherTypeAccess
 
     // The member's own type (after its array-like elements), or a field of it when it is a nested user struct
     private static InaccessibleFieldType? FindInMember(StructAbiMember member, INamedTypeSymbol launcherClass,
-        Compilation compilation, int depth, StructVisits visits)
+        Compilation compilation, StructVisits visits)
     {
         // GSH0078 reports a member the shadow struct leaves out
         if (NativeStructEmitter.IsOmittedFromShadow(member))
@@ -87,7 +87,7 @@ internal static class LauncherTypeAccess
         }
 
         return type is INamedTypeSymbol nested && TypeLayoutCalculator.IsUserStruct(nested) &&
-               FindInStruct(nested, launcherClass, compilation, depth + 1, visits) is { } inner
+               FindInStruct(nested, launcherClass, compilation, visits) is { } inner
             ? inner with { FieldPath = member.Name + "." + inner.FieldPath }
             : null;
     }

@@ -137,6 +137,77 @@ public class CyclicStructLayoutTests
             dialect,
             [("CS0523", 11, 24, 11, 29)]);
 
+    // A<T> holds B<A<A<T>>>, whose field is A<A<T>>: the construction grows through the type argument of B
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public Task Run_GenericStructThatGrowsThroughATypeArgument_ReportsOnlyCs0523(string dialect) =>
+        AssertOnlyCSharpErrorsAsync(
+            CyclicStructs + "TypeArgumentCycle.cu.cs",
+            dialect,
+            [("CS0523", 16, 27, 16, 32)]);
+
+    // A<T> holds A<A<T>>?: the construction grows through Nullable<T>
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public Task Run_GenericStructThatGrowsThroughANullable_ReportsOnlyCs0523(string dialect) =>
+        AssertOnlyCSharpErrorsAsync(
+            CyclicStructs + "NullableArgumentCycle.cu.cs",
+            dialect,
+            [("CS0523", 11, 25, 11, 30)]);
+
+    // Valid C#: N<int> holds arrays of N<int[]>, N<int[]> arrays of N<int[][]>, ...: the searches through array
+    // elements stop at the second construction of N, and the array gets what any array of such a struct gets
+    [Theory(Timeout = 120_000)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_GenericStructThatGrowsThroughArrays_WarnsOnlyForTheArray(string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + "ArrayGrowthGeneric.cu.cs", dialect);
+
+        Assert.Empty(errors);
+        Assert.Equal(
+            dialect == "Cuda"
+                ? [(Analyzer, "GSH0080", 16, 51, 16, 59), (Analyzer, "GSH0081", 16, 51, 16, 59)]
+                : [(Analyzer, "GSH0080", 16, 51, 16, 59)],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+    }
+
+    // Valid C#: a struct first met deep in one field and again near the root in another is searched in full; main
+    // reported these before the searches marked structs as searched, and still does
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_MultidimensionalArrayFirstMetDeep_ReportsGsh0003(string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + "DeepChainMultidimensional.cu.cs", dialect);
+
+        Assert.Empty(errors);
+        Assert.Equal(
+            [(Analyzer, "GSH0003", 113, 36, 113, 40)],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_ReservedNameFirstMetDeep_ReportsGsh0055(string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + "DeepChainReservedName.cu.cs", dialect);
+
+        Assert.Empty(errors);
+        Assert.Equal(
+            [(Analyzer, "GSH0055", 71, 41, 71, 45)],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.Contains(".Inner.__bad'", reported[0].Message, StringComparison.Ordinal);
+    }
+
     // The arm of the union's own type is the cycle, not an arm whose host and device layouts differ (GSH0078): the
     // parameter and the local get nothing, and the array the GSH0080 of any array of a cyclic struct
     [Theory]

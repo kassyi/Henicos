@@ -186,7 +186,7 @@ internal static class SymbolExtensions
     private static bool HoldsAsField(ITypeSymbol holder, ITypeSymbol field, HashSet<ITypeSymbol> entered)
     {
         if (holder is not INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } named ||
-            SelfHoldingGenericStructs.IsLargerConstruction(named, entered) ||
+            GrowingGenericStructs.IsLargerConstruction(named, entered) ||
             !entered.Add(holder))
         {
             return false;

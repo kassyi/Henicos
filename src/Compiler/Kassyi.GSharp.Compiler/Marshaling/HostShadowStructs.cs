@@ -106,7 +106,7 @@ internal static class HostShadowStructs
         }
 
         if (!TypeLayoutCalculator.IsUserStruct(type) ||
-            SelfHoldingGenericStructs.IsLargerConstruction(type, types) ||
+            GrowingGenericStructs.IsLargerConstruction(type, types) ||
             !types.Add((INamedTypeSymbol)type))
         {
             return;

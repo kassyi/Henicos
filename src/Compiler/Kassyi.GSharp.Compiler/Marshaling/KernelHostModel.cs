@@ -330,7 +330,7 @@ internal readonly record struct KernelHostModel
         }
 
         var named = (INamedTypeSymbol)type;
-        if (SelfHoldingGenericStructs.IsLargerConstruction(named, visited) || !visited.Add(named))
+        if (GrowingGenericStructs.IsLargerConstruction(named, visited) || !visited.Add(named))
         {
             return;
         }

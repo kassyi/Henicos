@@ -19,7 +19,7 @@ internal static class StructOrdering
             return;
         }
 
-        if (SelfHoldingGenericStructs.IsLargerConstruction(namedStruct, context.Query.UsedStructs) ||
+        if (GrowingGenericStructs.IsLargerConstruction(namedStruct, context.Query.UsedStructs) ||
             !context.Query.UsedStructs.Add(namedStruct))
         {
             return;

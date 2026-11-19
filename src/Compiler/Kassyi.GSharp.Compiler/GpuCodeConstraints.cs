@@ -346,19 +346,15 @@ internal static class GpuCodeConstraints
     public static bool ContainsMultidimensionalArray(ITypeSymbol type)
     {
         using var visits = StructVisits.Start();
-        return ContainsMultidimensionalArray(type, depth: 0, visits);
+        return ContainsMultidimensionalArray(type, visits);
     }
 
-    // [WHY] Each struct is searched once (visits), so several fields of one struct type stay linear; the depth bound
-    // stops a generic struct whose arrays name ever larger constructions of itself (N<T> { N<T[]>[] Kids; })
-    private static bool ContainsMultidimensionalArray(ITypeSymbol type, int depth, StructVisits visits)
+    // [WHY] Each struct is searched once (visits), also a struct that holds itself (CS0523) or arrays of itself
+    // several times; a larger construction of a generic struct that names itself stops there
+    // (GrowingGenericStructs), so the search ends without a depth bound, which would cut off what lies below a
+    // struct first met deep in the tree
+    private static bool ContainsMultidimensionalArray(ITypeSymbol type, StructVisits visits)
     {
-        const int MaxDepth = 16;
-        if (depth > MaxDepth)
-        {
-            return false;
-        }
-
         var unwrapped = type.UnwrapNullableArrayLike() ?? type;
         if (unwrapped is IArrayTypeSymbol { Rank: > 1 })
         {
@@ -367,7 +363,7 @@ internal static class GpuCodeConstraints
 
         if (unwrapped.TryGetArrayLikeElementType(out var elementType))
         {
-            return ContainsMultidimensionalArray(elementType, depth + 1, visits);
+            return ContainsMultidimensionalArray(elementType, visits);
         }
 
         if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Struct } structType &&
@@ -376,7 +372,7 @@ internal static class GpuCodeConstraints
         {
             foreach (var member in StructAbiMembers.Get(structType))
             {
-                if (ContainsMultidimensionalArray(member.Type, depth + 1, visits))
+                if (ContainsMultidimensionalArray(member.Type, visits))
                 {
                     return true;
                 }
