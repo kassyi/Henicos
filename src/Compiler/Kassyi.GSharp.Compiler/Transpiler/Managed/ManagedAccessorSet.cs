@@ -18,12 +18,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Each stub is a private nested class of the type that holds the body, generic over the type parameters of the
 /// target's declaring types (the runtime matches them by position, <c>!0</c>, <c>!1</c>, ...), with the extern accessor
 /// and a method <c>Invoke</c> that passes the arguments on:
+/// (<c>__gsharp_stackaccessor_</c> in a stack form)
 /// <c>private static class __gsharp_accessor_&lt;body&gt;_&lt;n&gt;&lt;T&gt; { [UnsafeAccessor(...)] private static extern R Target(object? _, ...); internal static R Invoke(...) =&gt; Target(null, ...); }</c>.
 /// A backing field stub takes the struct by <c>in</c> and returns its field by reference:
 /// <c>[UnsafeAccessor(UnsafeAccessorKind.Field, Name = "&lt;P&gt;k__BackingField")] private static extern ref F Target(ref S _); internal static ref F Invoke(in S p0) =&gt; ref Target(ref Unsafe.AsRef(in p0));</c>.
 /// </para>
 /// </remarks>
-internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compilation)
+internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compilation, bool isStackForm = false)
 {
     private const string AttributeNamespace = "global::System.Runtime.CompilerServices.";
 
@@ -75,8 +76,11 @@ internal sealed class ManagedAccessorSet(IMethodSymbol caller, Compilation compi
     {
         if (!_holders.TryGetValue(definition, out var holder))
         {
-            holder = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.ManagedVersion.AccessorPrefix, caller) +
-                     "_" + _stubs.Count.ToString(CultureInfo.InvariantCulture);
+            var prefix = isStackForm
+                ? GSharpInternalNames.StackModel.AccessorPrefix
+                : GSharpInternalNames.ManagedVersion.AccessorPrefix;
+            holder = GlobalCppNames.GetKernelDerivedName(prefix, caller) + "_" +
+                     _stubs.Count.ToString(CultureInfo.InvariantCulture);
             _holders.Add(definition, holder);
             _stubs.Add((definition, targetName, holder));
         }

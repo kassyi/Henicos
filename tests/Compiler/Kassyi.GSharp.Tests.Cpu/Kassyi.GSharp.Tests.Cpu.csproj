@@ -19,6 +19,10 @@
     <RootNamespace>Kassyi.GSharp.Tests</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(GSharpManagedBarrierModel)' == 'Stack'">
+    <DefineConstants>$(DefineConstants);GSHARP_MANAGED_STACK</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />

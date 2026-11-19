@@ -26,6 +26,7 @@
     <CompilerVisibleProperty Include="GSharpCombinedFatbinName" />
     <!-- The generator takes the launch limits of the target GPUs from the architectures nvcc compiles for -->
     <CompilerVisibleProperty Include="GSharpTargetArchitectures" />
+    <CompilerVisibleProperty Include="GSharpManagedBarrierModel" />
     <!-- Opt-in marker for YAML native API definitions: <AdditionalFiles Include="*.yml" GSharpApi="true" /> -->
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
   </ItemGroup>

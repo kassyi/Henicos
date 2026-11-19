@@ -77,6 +77,37 @@ internal readonly record struct CSharpExecutionPlan
         return plan;
     }
 
+    /// <summary>
+    /// Whether <paramref name="parameter"/> can be passed to a GPU thread under the managed stack model.
+    /// </summary>
+    internal static bool SupportsStackArgument(IParameterSymbol parameter) =>
+        PlanArgument(KernelParameterShape.Classify(parameter)) is not null;
+
+    /// <summary>
+    /// The plan of the launcher of <paramref name="kernel"/> under the managed stack model: ignores
+    /// <see cref="KernelHostModel.CSharpExecutionObstacle"/> because block barriers run on each GPU thread's stack.
+    /// </summary>
+    public static CSharpExecutionPlan CreateForStack(in KernelHostModel kernel)
+    {
+        var plan = new CSharpExecutionPlan
+        {
+            MessageName = kernel.MessageName,
+            Method = kernel.ClassQualifiedName + "." + kernel.StackFormName,
+            Arguments = ImmutableArray<CSharpArgument>.Empty,
+            ReturnTypeName = kernel.ReturnTypeName
+        };
+
+        var reason = kernel.IsStatic
+            ? null
+            : "it is an instance method, and the launcher has no object for it";
+        if (reason is null && TryPlanArguments(kernel, out var arguments, out reason))
+        {
+            return plan with { Arguments = arguments };
+        }
+
+        return plan with { CannotRunReason = reason };
+    }
+
     // Why the launcher cannot run the kernel as C#, before its arguments are looked at
     private static string? GetCannotRunReason(in KernelHostModel kernel, bool isDevicePtr) => true switch
     {

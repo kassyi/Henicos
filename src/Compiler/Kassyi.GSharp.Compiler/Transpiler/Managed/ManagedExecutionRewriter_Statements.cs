@@ -452,8 +452,8 @@ internal sealed partial class ManagedExecutionRewriter
             return LoweringSyntax.Goto(singleThreadEnd).WithTriviaFrom(node);
         }
 
-        // A managed version returns as the user's method does
-        if (bodyKind == ManagedBodyKind.ManagedVersion)
+        // A managed version or stack-form body returns as the user's method does
+        if (bodyKind is ManagedBodyKind.ManagedVersion or ManagedBodyKind.StackBody)
         {
             return base.VisitReturnStatement(node);
         }

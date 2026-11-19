@@ -42,6 +42,13 @@ test-native-stack *args="":
         --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark" \
         {{blame_crash}} {{args}}
 
+# Run managed barrier/stack-model tests under GSharpManagedBarrierModel=Stack (no GPU)
+test-managed-stack *args="":
+    {{queue}} -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
+        -p:GSharpOutputVariant=managed-stack -p:GSharpManagedBarrierModel=Stack \
+        --filter "FullyQualifiedName~StackModelTests|FullyQualifiedName~DeviceFunctionBarrierManagedTests|FullyQualifiedName~DeviceFunctionBarrierEdgeCaseManagedTests|FullyQualifiedName~ResumeLocalManagedTests|FullyQualifiedName~SuspendingValueParameterManagedTests|FullyQualifiedName~KernelValueParameterManagedTests|FullyQualifiedName~SuspendingCallArgumentTests|FullyQualifiedName~SwitchSuspensionManagedTests|FullyQualifiedName~LocalFunctionAcrossStatesManagedTests|FullyQualifiedName~EvaluationOrderSplitManagedTests|FullyQualifiedName~SharedMemoryRegionManagedTests|FullyQualifiedName~DeviceDynamicSharedMemoryManagedTests|FullyQualifiedName~ManagedExecutionTests|FullyQualifiedName~BlockBarrierStepTests|FullyQualifiedName~GridSyncManagedTests" \
+        {{blame_crash}} {{args}}
+
 # Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \

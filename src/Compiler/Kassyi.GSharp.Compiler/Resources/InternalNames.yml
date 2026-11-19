@@ -86,6 +86,21 @@ ManagedVersion:
     # (__gsharp_bind(receiver, global::Type.__gsharp_managed_F), #940).
     Bind: { Value: __gsharp_bind, Managed: ManagedGpuContext.Bind.cs }
 
+StackModel:
+  Summary: >-
+    The managed stack model: a kernel or device function that reaches a block barrier gets a stack form, its body as
+    written, which each GPU thread runs on a stack of its own.
+  Names:
+    # Followed by the body of the function's name (GlobalCppNames.GetKernelDerivedName).
+    MethodPrefix: __gsharp_stackmodel_
+    # The nested class that holds the [UnsafeAccessor] stub through which a stack form calls a target it cannot name
+    # (ManagedAccessorSet): followed by the body of the function's name and a counter
+    # (__gsharp_stackaccessor_<path>_<n>). A prefix of its own, so that the stubs of a function's stack form and of its
+    # managed version never share a name.
+    AccessorPrefix: __gsharp_stackaccessor_
+    # The block barrier of a stack form: the GPU thread waits in it until the scheduler runs it again.
+    BlockBarrier: { Value: __gsharp_stack_block_barrier, Managed: ManagedGpuContext.Stack.cs }
+
 DynamicSharedMemory:
   Summary: >-
     The placement of dynamic SharedMemory<T> declarations (CUDA). A kernel that reaches one owns a per-thread table of

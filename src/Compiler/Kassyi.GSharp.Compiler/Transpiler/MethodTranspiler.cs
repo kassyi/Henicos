@@ -325,6 +325,13 @@ public static class MethodTranspiler
     internal static string GenerateManagedVersionSource(in MethodEmissionPlan plan) =>
         ManagedCSharpTranspiler.GenerateManagedVersion(in plan);
 
+    /// <summary>
+    /// Transpiles a kernel or suspending device function that reaches only block barriers into its unlowered managed
+    /// stack form.
+    /// </summary>
+    internal static string GenerateManagedStackSource(in MethodEmissionPlan plan) =>
+        ManagedCSharpTranspiler.GenerateStackForm(in plan);
+
     // A kernel context also holds the values the thread published at warp collectives; a device function frame
     // reaches them through the root. Both hold their copied parameters, and the visit counts of the warp collectives
     // of their body.
