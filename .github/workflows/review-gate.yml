@@ -8,11 +8,15 @@ name: Review gate
 # The result is written as a commit status through the API instead of as the job's own check: a run started by a
 # comment or a label is not attached to the pull request's head commit. Every run reads the current state of the pull
 # request, so the last run decides. A manual run checks every open pull request.
+#
+# Every trigger runs the workflow of the default branch, so a pull request cannot change the gate it is judged by:
+# pull_request_target instead of pull_request (nothing is checked out), and no pull_request_review trigger (that event
+# runs the pull request's own workflow). A review is still counted; the label added after it starts the run. The
+# ruleset accepts the status only from GitHub Actions, so a status written by hand does not pass either. A status
+# belongs to a commit, so two open pull requests with the same head commit share one result.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened, synchronize, labeled, unlabeled]
-  pull_request_review:
-    types: [submitted, dismissed]
   issue_comment:
     types: [created, deleted]
   workflow_dispatch:
@@ -41,6 +45,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          # A person with access to the repository, not a bot and not an outside commenter on the public repository.
+          people='.user.type != "Bot" and (.author_association == "OWNER" or .author_association == "MEMBER" or .author_association == "COLLABORATOR")'
+
           check() {
             local pr="$1"
             local head labels comments reviews state description
@@ -49,10 +56,10 @@ jobs:
               --jq '[.[] | select(.name == "agent-reviewed" or .name == "human-reviewed")] | length' \
               | awk '{ s += $1 } END { print s + 0 }')
             comments=$(gh api --paginate "repos/$REPO/issues/$pr/comments" \
-              --jq '[.[] | select(.user.type != "Bot")] | length' \
+              --jq "[.[] | select($people)] | length" \
               | awk '{ s += $1 } END { print s + 0 }')
             reviews=$(gh api --paginate "repos/$REPO/pulls/$pr/reviews" \
-              --jq '[.[] | select(.user.type != "Bot" and .state != "PENDING")] | length' \
+              --jq "[.[] | select($people and .state != \"PENDING\" and .state != \"DISMISSED\")] | length" \
               | awk '{ s += $1 } END { print s + 0 }')
 
             if [ "$labels" -eq 0 ]; then
