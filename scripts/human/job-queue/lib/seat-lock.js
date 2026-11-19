@@ -6,6 +6,12 @@
 // owner.txt (human-readable diagnostic summary). Exclusive callers must hold all configured seats (acquiring seat 0
 // first and releasing it immediately if seat 1 cannot be taken). Shared callers hold any single seat when no
 // exclusive owner (including legacy single-seat owners without a `mode` field) is present on the other seat.
+//
+// An exclusive caller that cannot take both seats leaves an intent directory (`<seat 0>.exclusive-wait`, with an
+// owner.json it refreshes on every attempt) and removes it once it holds both seats or releases. While a live intent
+// exists, shared callers take no new seat, so shared holders that keep overlapping cannot keep an exclusive waiter out
+// forever. An intent whose owner died on this host, or that was not refreshed for IntentStaleMs, is ignored and
+// replaced. Callers of an older checkout do not know the intent and still take seats.
 
 const assert = require('node:assert');
 const { spawnSync } = require('node:child_process');
@@ -16,6 +22,8 @@ const { isGone, queryWindowsProcessesSync, commandProcesses } = require('./proce
 
 let graveyardCounter = 0;
 const TakeoverGraceMs = 2000;
+/** An exclusive intent not refreshed for this long is ignored (a waiter refreshes it on every attempt). */
+const IntentStaleMs = 5 * 60 * 1000;
 const RmRetryOptions = { recursive: true, force: true, maxRetries: 5, retryDelay: 20 };
 
 /**
@@ -113,6 +121,11 @@ function formatSeatOwners(seatPaths) {
     if (fs.existsSync(seatPaths[i])) {
       lines.push(`seat ${i} (${seatPaths[i]}): ${readSeatOwnerText(seatPaths[i])}`);
     }
+  }
+  if (seatPaths.length === 2 && isLiveIntent(intentPathOf(seatPaths[0]), Date.now())) {
+    const record = readSeatOwner(intentPathOf(seatPaths[0]));
+    const who = record !== null ? `pid ${record.pid} ${String(record.command)}` : '(owner.json not written yet)';
+    lines.push(`waiting for both seats, ahead of shared callers: ${who}`);
   }
   return lines.length > 0 ? lines.join('\n') : '(no seat directory currently exists)';
 }
@@ -214,6 +227,37 @@ function inspectSeat(seatPath) {
   }
   const record = readSeatOwner(seatPath);
   return { exists: true, record, mode: seatOwnerMode(record) };
+}
+
+/**
+ * The intent directory of an exclusive caller that waits for both seats.
+ * @param {string} seat0Path
+ * @returns {string}
+ */
+function intentPathOf(seat0Path) {
+  return `${path.resolve(seat0Path)}.exclusive-wait`;
+}
+
+/**
+ * True when an exclusive intent exists whose owner is not known dead on this host and that was refreshed within
+ * IntentStaleMs (by its record's `updatedAt`, or by the directory's mtime while the record is not written yet).
+ * @param {string} intentPath
+ * @param {number} now
+ * @returns {boolean}
+ */
+function isLiveIntent(intentPath, now) {
+  let dirStat;
+  try {
+    dirStat = fs.statSync(intentPath);
+  } catch {
+    return false;
+  }
+  const record = readSeatOwner(intentPath);
+  if (record !== null && isDeadLocalOwner(record)) {
+    return false;
+  }
+  const updatedAt = record !== null && Number.isFinite(record.updatedAt) ? record.updatedAt : dirStat.mtimeMs;
+  return now - updatedAt < IntentStaleMs;
 }
 
 /**
@@ -404,6 +448,71 @@ function createSeatLock(seatPaths, commandText, options = {}) {
 
   /** @type {Map<number, { path: string, record: Record<string, unknown> }>} */
   const ownedSeats = new Map();
+  const intentPath = resolvedSeatPaths.length === 2 ? intentPathOf(resolvedSeatPaths[0]) : null;
+  let ownsIntent = false;
+
+  function writeIntentRecord() {
+    const record = {
+      pid: process.pid,
+      host: os.hostname(),
+      platform: process.platform,
+      startedAt: new Date().toISOString(),
+      updatedAt: Date.now(),
+      cwd: process.cwd(),
+      command: normalizedCommand,
+      commandProcess: null,
+      mode: 'exclusive',
+      stage: 'acquiring',
+      turn,
+    };
+    fs.writeFileSync(path.join(intentPath, 'owner.json'), JSON.stringify(record));
+  }
+
+  /**
+   * Leaves or refreshes this caller's intent for both seats. Another live intent is left alone (it goes first; this
+   * caller takes over once it is gone); a dead or stale one is replaced. A lost directory is created again.
+   */
+  function announceIntent() {
+    if (ownsIntent) {
+      try {
+        writeIntentRecord();
+        return;
+      } catch (error) {
+        if (!error || error.code !== 'ENOENT') {
+          throw error;
+        }
+        ownsIntent = false;
+      }
+    }
+    if (isLiveIntent(intentPath, Date.now())) {
+      return;
+    }
+    if (fs.existsSync(intentPath)) {
+      releaseDirectory(intentPath, prefix);
+    }
+    try {
+      fs.mkdirSync(intentPath);
+    } catch (error) {
+      if ((error && error.code === 'EEXIST') || isWindowsContendedError(error, intentPath)) {
+        return;
+      }
+      throw error;
+    }
+    ownsIntent = true;
+    try {
+      writeIntentRecord();
+    } catch (error) {
+      withdrawIntent();
+      throw error;
+    }
+  }
+
+  function withdrawIntent() {
+    if (ownsIntent) {
+      ownsIntent = false;
+      releaseDirectory(intentPath, prefix);
+    }
+  }
 
   function releaseSeat(seatIndex) {
     const entry = ownedSeats.get(seatIndex);
@@ -456,6 +565,9 @@ function createSeatLock(seatPaths, commandText, options = {}) {
   }
 
   function trySharedRound() {
+    if (isLiveIntent(intentPath, Date.now())) {
+      return { acquired: false, seat: null, seatsHeld: [] };
+    }
     for (let k = 0; k < 2; k++) {
       const other = 1 - k;
       const otherInfo = inspectSeat(resolvedSeatPaths[other]);
@@ -504,30 +616,13 @@ function createSeatLock(seatPaths, commandText, options = {}) {
     }
 
     if (mode === 'exclusive') {
-      let staleTaken = false;
-      let gotSeat0 = acquireSeat(0);
-      if (!gotSeat0 && takeOverStaleSeat(resolvedSeatPaths[0], prefix)) {
-        staleTaken = true;
-        gotSeat0 = acquireSeat(0);
+      const result = tryExclusive();
+      if (result.acquired) {
+        withdrawIntent();
+      } else {
+        announceIntent();
       }
-      if (!gotSeat0) {
-        return { acquired: false, staleTaken, seat: null, seatsHeld: [] };
-      }
-      try {
-        let gotSeat1 = acquireSeat(1);
-        if (!gotSeat1 && takeOverStaleSeat(resolvedSeatPaths[1], prefix)) {
-          staleTaken = true;
-          gotSeat1 = acquireSeat(1);
-        }
-        if (!gotSeat1) {
-          releaseSeat(0);
-          return { acquired: false, staleTaken, seat: null, seatsHeld: [] };
-        }
-        return { acquired: true, staleTaken, seat: 0, seatsHeld: [resolvedSeatPaths[0], resolvedSeatPaths[1]] };
-      } catch (error) {
-        releaseSeat(0);
-        throw error;
-      }
+      return result;
     }
 
     let round = trySharedRound();
@@ -541,6 +636,37 @@ function createSeatLock(seatPaths, commandText, options = {}) {
       round = trySharedRound();
     }
     return { acquired: round.acquired, staleTaken, seat: round.seat, seatsHeld: round.seatsHeld };
+  }
+
+  /**
+   * One exclusive pass over both seats: seat 0 first, released again when seat 1 cannot be taken.
+   * @returns {{ acquired: boolean, staleTaken: boolean, seat: number | null, seatsHeld: string[] }}
+   */
+  function tryExclusive() {
+    let staleTaken = false;
+    let gotSeat0 = acquireSeat(0);
+    if (!gotSeat0 && takeOverStaleSeat(resolvedSeatPaths[0], prefix)) {
+      staleTaken = true;
+      gotSeat0 = acquireSeat(0);
+    }
+    if (!gotSeat0) {
+      return { acquired: false, staleTaken, seat: null, seatsHeld: [] };
+    }
+    try {
+      let gotSeat1 = acquireSeat(1);
+      if (!gotSeat1 && takeOverStaleSeat(resolvedSeatPaths[1], prefix)) {
+        staleTaken = true;
+        gotSeat1 = acquireSeat(1);
+      }
+      if (!gotSeat1) {
+        releaseSeat(0);
+        return { acquired: false, staleTaken, seat: null, seatsHeld: [] };
+      }
+      return { acquired: true, staleTaken, seat: 0, seatsHeld: [resolvedSeatPaths[0], resolvedSeatPaths[1]] };
+    } catch (error) {
+      releaseSeat(0);
+      throw error;
+    }
   }
 
   /**
@@ -589,9 +715,10 @@ function createSeatLock(seatPaths, commandText, options = {}) {
   }
 
   /**
-   * Releases all seats created by this instance. Idempotent.
+   * Releases all seats created by this instance and its intent (a waiter that gives up). Idempotent.
    */
   function releaseLock() {
+    withdrawIntent();
     for (const seatIndex of [...ownedSeats.keys()]) {
       releaseSeat(seatIndex);
     }
@@ -982,6 +1109,67 @@ function selfTest() {
     assert.strictEqual(readSeatOwner(seat0).pid, deadPid);
     fs.rmSync(takeoverDir, RmRetryOptions);
     fs.rmSync(seat0, RmRetryOptions);
+  });
+
+  // Check 8: an exclusive waiter's intent stops new shared seats, so overlapping shared holders cannot starve it;
+  // the intent goes once it holds both seats or gives up, and a dead or stale intent stops nobody.
+  withTempSeats((seat0, seat1) => {
+    const intent = intentPathOf(seat0);
+    const s1 = createSeatLock([seat0, seat1], 'node -e "s1"', { mode: 'shared' });
+    const s2 = createSeatLock([seat0, seat1], 'node -e "s2"', { mode: 'shared' });
+    const excl = createSeatLock([seat0, seat1], 'node -e "excl"', { mode: 'exclusive' });
+    assert.strictEqual(s1.tryAcquire().seat, 0);
+    assert.strictEqual(excl.tryAcquire().acquired, false, 'seat 0 is held');
+    assert.strictEqual(readSeatOwner(intent).pid, process.pid, 'the waiter left its intent');
+    assert.ok(formatSeatOwners([seat0, seat1]).includes('waiting for both seats'), 'the wait message names it');
+    assert.strictEqual(s2.tryAcquire().acquired, false, 'a shared caller does not take the free seat 1');
+    assert.strictEqual(fs.existsSync(seat1), false);
+    s1.releaseLock();
+    assert.strictEqual(excl.tryAcquire().acquired, true, 'the waiter gets both seats');
+    assert.strictEqual(fs.existsSync(intent), false, 'and its intent is gone');
+    excl.releaseLock();
+    assert.strictEqual(s2.tryAcquire().acquired, true, 'shared callers take seats again');
+    const quitter = createSeatLock([seat0, seat1], 'node -e "quitter"', { mode: 'exclusive' });
+    assert.strictEqual(quitter.tryAcquire().acquired, false);
+    assert.strictEqual(fs.existsSync(intent), true);
+    quitter.releaseLock();
+    assert.strictEqual(fs.existsSync(intent), false, 'a waiter that gives up takes its intent along');
+    s2.releaseLock();
+
+    const late = createSeatLock([seat0, seat1], 'node -e "late"', { mode: 'shared' });
+    const writeIntent = (record) => {
+      fs.mkdirSync(intent, { recursive: true });
+      fs.writeFileSync(path.join(intent, 'owner.json'), JSON.stringify(record));
+    };
+    const base = { host: os.hostname(), platform: process.platform, mode: 'exclusive', stage: 'acquiring' };
+    writeIntent({ ...base, pid: findDeadPid(), updatedAt: Date.now() });
+    assert.strictEqual(late.tryAcquire().acquired, true, 'the intent of a dead waiter stops nobody');
+    late.releaseLock();
+    writeIntent({ ...base, pid: process.pid, updatedAt: Date.now() - IntentStaleMs - 1000 });
+    assert.strictEqual(late.tryAcquire().acquired, true, 'nor does one not refreshed for IntentStaleMs');
+    late.releaseLock();
+    writeIntent({ ...base, pid: process.pid, updatedAt: Date.now() });
+    assert.strictEqual(late.tryAcquire().acquired, false, 'a live one does');
+    const next = createSeatLock([seat0, seat1], 'node -e "next"', { mode: 'exclusive' });
+    assert.strictEqual(next.tryAcquire().acquired, true, 'another exclusive caller is not stopped by it');
+    assert.strictEqual(readSeatOwner(intent).pid, process.pid, 'and leaves the other intent alone');
+    next.releaseLock();
+    assert.strictEqual(fs.existsSync(intent), true, 'releasing does not remove an intent it does not own');
+    writeIntent({ ...base, pid: process.pid, updatedAt: Date.now(), command: 'first' });
+    const second = createSeatLock([seat0, seat1], 'node -e "second"', { mode: 'exclusive' });
+    fs.mkdirSync(seat1);
+    assert.strictEqual(second.tryAcquire().acquired, false);
+    assert.strictEqual(readSeatOwner(intent).command, 'first', 'a second waiter leaves a live intent to the first');
+    second.releaseLock();
+    fs.rmSync(seat1, RmRetryOptions);
+    fs.rmSync(intent, RmRetryOptions);
+    writeIntent({ ...base, pid: findDeadPid(), updatedAt: Date.now() });
+    const heir = createSeatLock([seat0, seat1], 'node -e "heir"', { mode: 'exclusive' });
+    fs.mkdirSync(seat1);
+    assert.strictEqual(heir.tryAcquire().acquired, false);
+    assert.strictEqual(readSeatOwner(intent).pid, process.pid, 'a waiter replaces a dead intent with its own');
+    heir.releaseLock();
+    fs.rmSync(seat1, RmRetryOptions);
   });
 }
 
