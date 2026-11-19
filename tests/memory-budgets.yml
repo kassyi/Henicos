@@ -2,7 +2,8 @@
 #
 # The watchdog of Kassyi.GSharp.Tests.Infrastructure (MemoryBudget) fails the tests that run when the peak memory of
 # the test host passes the budget, and a final check per assembly fails when the peak of the whole run passed it.
-# The peak is the peak private memory (commit charge) on Windows and the peak resident memory (VmHWM) on Linux.
+# The peak is the peak private memory (commit charge) on Windows and the largest sample of the private resident
+# memory (RssAnon + RssShmem) on Linux; mapped files are not counted.
 #
 # Format: '<test project name>: <MB>[, stress <MB>]', one line per test project, at column 0. The first value holds
 # for a run without Stress and Benchmark tests (just test); the stress value takes over when the first Stress or

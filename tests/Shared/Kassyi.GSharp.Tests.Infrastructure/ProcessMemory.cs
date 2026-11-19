@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
-/// Reads the memory high-water mark of the current process, native allocations included, for the test memory budget.
+/// Reads the private memory of the current process, native allocations included, for the test memory budget.
 /// </summary>
 /// <remarks>
 /// The metric differs per operating system because no portable API gives the peak private memory:
@@ -14,32 +14,40 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 ///   <item><description>Windows: the peak commit charge of the process (<c>PeakPagefileUsage</c> of
 ///   <c>GetProcessMemoryInfo</c>), which counts every private allocation (GC heap, native heap, privately loaded
 ///   metadata) whether or not it was touched.</description></item>
-///   <item><description>Linux: the peak resident set size (<c>VmHWM</c> of <c>/proc/self/status</c>), which counts the
-///   pages that were touched, including mapped files such as loaded assemblies.</description></item>
+///   <item><description>Linux: the private resident memory, <c>RssAnon</c> plus <c>RssShmem</c> of
+///   <c>/proc/self/status</c>. <c>RssShmem</c> holds the code the JIT writes, which the runtime maps twice through
+///   shared memory (W^X); with <c>DOTNET_EnableWriteXorExecute=0</c> the same pages move to <c>RssAnon</c>. Mapped
+///   files (the runtime and the loaded assemblies, about 60 MB) are not counted: no test controls them and they differ
+///   between machines, and Windows does not count them either.</description></item>
 ///   <item><description>Other systems: <see cref="Process.PeakWorkingSet64"/>.</description></item>
 /// </list>
-/// Both counters are maintained by the kernel, so a peak reached between two samples is still seen by the next one.
+/// The Windows counter is a peak kept by the kernel, so a peak reached between two samples is still seen by the next
+/// one. Linux keeps no high-water mark of the private memory: <see cref="ReadBytes"/> returns its current value, and the
+/// watchdog keeps the maximum of its samples (every 250 ms and at the start and end of every test), so a spike shorter
+/// than a sample can be missed.
 /// </remarks>
 public static class ProcessMemory
 {
     private const string LinuxStatusPath = "/proc/self/status";
-    private const string LinuxPeakField = "VmHWM:";
+    private const string LinuxAnonymousField = "RssAnon:";
+    private const string LinuxSharedField = "RssShmem:";
 
     /// <summary>
-    /// Gets the name of the metric that <see cref="ReadPeakBytes"/> returns on this operating system.
+    /// Gets the name of the metric that <see cref="ReadBytes"/> returns on this operating system.
     /// </summary>
-    public static string PeakMetricName { get; } =
+    public static string MetricName { get; } =
         RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "peak private memory (PeakPagefileUsage)"
-        : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "peak resident memory (VmHWM)"
+        : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "private resident memory (RssAnon + RssShmem)"
         : "peak working set";
 
     /// <summary>
-    /// Reads the memory high-water mark of the current process.
+    /// Reads the memory the test budget counts: the peak private memory on Windows, the current private resident memory
+    /// on Linux (the watchdog keeps the maximum of its samples), the peak working set elsewhere.
     /// </summary>
-    /// <returns>The peak in bytes.</returns>
-    /// <exception cref="IOException"><c>/proc/self/status</c> could not be read or has no <c>VmHWM</c> line
-    /// (Linux).</exception>
-    public static long ReadPeakBytes()
+    /// <returns>The memory in bytes.</returns>
+    /// <exception cref="IOException"><c>/proc/self/status</c> could not be read or lacks an <c>RssAnon</c> or
+    /// <c>RssShmem</c> line (Linux).</exception>
+    public static long ReadBytes()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -48,7 +56,7 @@ public static class ProcessMemory
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return ReadLinuxPeakResident(File.ReadAllText(LinuxStatusPath));
+            return ReadLinuxPrivateResident(File.ReadAllText(LinuxStatusPath));
         }
 
         using var process = Process.GetCurrentProcess();
@@ -94,13 +102,14 @@ public static class ProcessMemory
     public static long ReadGcHeapBytes() => GC.GetTotalMemory(forceFullCollection: false);
 
     /// <summary>
-    /// Parses the <c>VmHWM</c> line of the text of <c>/proc/self/status</c>.
+    /// Parses the <c>RssAnon</c> and <c>RssShmem</c> lines of the text of <c>/proc/self/status</c>.
     /// </summary>
     /// <param name="status">The content of <c>/proc/self/status</c>.</param>
-    /// <returns>The peak resident set size in bytes.</returns>
-    /// <exception cref="IOException">The text has no valid <c>VmHWM</c> line.</exception>
-    public static long ReadLinuxPeakResident(string status) =>
-        ReadStatusKibibytes(status, LinuxPeakField, LinuxStatusPath) * 1024;
+    /// <returns>The private resident memory, <c>RssAnon</c> plus <c>RssShmem</c>, in bytes.</returns>
+    /// <exception cref="IOException">The text lacks a valid <c>RssAnon</c> or <c>RssShmem</c> line.</exception>
+    public static long ReadLinuxPrivateResident(string status) =>
+        (ReadStatusKibibytes(status, LinuxAnonymousField, LinuxStatusPath)
+            + ReadStatusKibibytes(status, LinuxSharedField, LinuxStatusPath)) * 1024;
 
     // Reads "<field>	  123456 kB" from /proc/self/status or /proc/meminfo
     private static long ReadStatusKibibytes(string text, string field, string path)
