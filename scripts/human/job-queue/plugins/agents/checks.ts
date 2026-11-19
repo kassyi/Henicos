@@ -67,10 +67,16 @@ function checkPanel(assert: AssertModule): void {
     fs.writeFileSync(path.join(folder, "broken.js"), "throw new Error('not a module');");
     assert.strictEqual(plugin.panel(context({}, { chatStatus: "broken.js" }, folder)), undefined, "a throwing module");
     const chats = sampleChats();
-    // A chat-status.js in CommonJS, as the real one: the records of the sample, the main checkout and no summaries
+    // A chat-status.js in CommonJS, as the real one: the records of the sample, the main checkout and no summaries.
+    // The sample goes to a JSON file that the module reads, so no data is written into code.
+    fs.writeFileSync(
+      path.join(folder, "status-sample.json"),
+      JSON.stringify({ chats: chats.chats, mainCheckout: chats.mainCheckout }),
+    );
     const module = [
-      `exports.listChats = () => ${JSON.stringify(chats.chats)};`,
-      `exports.readMainCheckout = (root) => { exports.mainCheckoutOf = root; return ${JSON.stringify(chats.mainCheckout)}; };`,
+      'const sample = require("./status-sample.json");',
+      "exports.listChats = () => sample.chats;",
+      "exports.readMainCheckout = (root) => { exports.mainCheckoutOf = root; return sample.mainCheckout; };",
       "exports.summaryStatus = () => ({ on: true });",
     ];
     fs.writeFileSync(path.join(folder, "status.js"), module.join(os.EOL));
