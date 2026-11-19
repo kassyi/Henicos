@@ -14,6 +14,7 @@ import {
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
 import { prefix, resolveStateDirectory } from "./system.ts";
 import * as path from "node:path";
+import { formatJobId, type JobRef } from "./job-id.ts";
 
 function gigabytes(mb: number): string {
   return (mb / 1024).toFixed(1);
@@ -30,13 +31,13 @@ function formatJob(job: StatusJob, now: number): string {
     job.memoryMb ? ` ${gigabytes(job.memoryMb)}GB` : "",
     job.orphan ? " client-lost" : "",
     job.pin != null ? " pinned" : "",
-    job.before != null ? ` before #${job.before}` : "",
-    job.after != null ? ` after #${job.after}${job.keepIfFailed ? " (even if it fails)" : ""}` : "",
+    job.before != null ? ` before ${formatJobId(job.before)}` : "",
+    job.after != null ? ` after ${formatJobId(job.after)}${job.keepIfFailed ? " (even if it fails)" : ""}` : "",
   ].join("");
   const outlook = describeOutlook(job, now);
-  const blocked = job.blockedBy != null ? `waits for #${job.blockedBy} to end; ` : "";
+  const blocked = job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end; ` : "";
   const detail = outlook || blocked ? `\n      ${blocked}${outlook}` : "";
-  return `  #${job.id} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
+  return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 
 /** "2 ahead, start ~20:31 (in 6m), end ~20:35 (in 10m)" for a waiting job, "end ~20:35 (in 4m)" for a running one. */
@@ -65,6 +66,38 @@ function printReplyError(reply: Incoming): void {
   process.exitCode = 1;
 }
 
+/**
+ * The full id a person's reference names: a full number as it is, the last digits through the scheduler (resolve),
+ * which knows the jobs that run, wait or ended. Says what the digits stood for on stderr (never on stdout, which
+ * --json keeps clean) and ends the process with `failCode` when no job matches. An older scheduler does not know
+ * "resolve": the digits then count as the full id, as before.
+ */
+export async function resolveJobRef(port: number, ref: JobRef, failCode = 1): Promise<number> {
+  if (ref.kind === "exact") {
+    return ref.id;
+  }
+  const reply = await request(port, { type: "resolve", digits: ref.digits });
+  if (reply === null) {
+    prefix(`no scheduler running; j${ref.digits} cannot be resolved (give the full job number)`);
+    process.exit(failCode);
+  }
+  if (reply.type === "resolved") {
+    const id = numberField(reply, "id");
+    if (id > 9999) {
+      prefix(`${formatJobId(id)} = job ${id}`);
+    }
+    return id;
+  }
+  if (isOlderSchedulerReply(reply)) {
+    prefix(
+      `the scheduler is older and cannot resolve j${ref.digits}; taking ${Number(ref.digits)} as the full job number`,
+    );
+    return Number(ref.digits);
+  }
+  prefix(typeof reply.message === "string" ? reply.message : JSON.stringify(reply));
+  return process.exit(failCode);
+}
+
 export async function status(port: number, id: number, json: boolean): Promise<void> {
   const raw = await request(port, { type: "status" });
   if (raw !== null && raw.type !== "status") {
@@ -77,12 +110,16 @@ export async function status(port: number, id: number, json: boolean): Promise<v
     const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === id);
     if (reply === null || job === undefined) {
       process.stdout.write(
-        json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job #${id} (ended, or never queued)\n`,
+        json ? `${JSON.stringify({ id, state: "unknown" })}\n` : `no job ${formatJobId(id)} (ended, or never queued)\n`,
       );
       process.exitCode = 1;
       return;
     }
-    process.stdout.write(json ? `${JSON.stringify({ now: reply.now, ...job })}\n` : `${formatJob(job, reply.now)}\n`);
+    process.stdout.write(
+      json
+        ? `${JSON.stringify({ now: reply.now, ...job })}\n`
+        : `${formatJobId(job.id)} = job ${job.id}\n${formatJob(job, reply.now)}\n`,
+    );
     return;
   }
   if (reply === null) {
@@ -141,11 +178,11 @@ export async function cancel(port: number, id: number | "all"): Promise<void> {
   }
   const cancelled = reply.cancelled as number[];
   if (cancelled.length === 0) {
-    process.stdout.write(id === "all" ? "no jobs to cancel\n" : `no job #${id}\n`);
+    process.stdout.write(id === "all" ? "no jobs to cancel\n" : `no job ${formatJobId(id)}\n`);
     process.exitCode = id === "all" ? 0 : 1;
     return;
   }
-  process.stdout.write(`cancelled ${cancelled.map((one) => `#${one}`).join(" ")}\n`);
+  process.stdout.write(`cancelled ${cancelled.map((one) => `${formatJobId(one)}`).join(" ")}\n`);
 }
 
 /** move and set-weight: print the job's new place, or the scheduler's refusal (exit 1). */
@@ -165,7 +202,9 @@ export async function place(
   }
   const position = numberField(reply, "position");
   process.stdout.write(
-    position > 0 ? `#${String(reply.id)} is now at position ${position}\n` : `#${String(reply.id)} was granted\n`,
+    position > 0
+      ? `${formatJobId(numberField(reply, "id"))} is now at position ${position}\n`
+      : `${formatJobId(numberField(reply, "id"))} was granted\n`,
   );
 }
 
@@ -186,7 +225,7 @@ export async function startNow(port: number, id: number): Promise<void> {
     printReplyError(reply);
     return;
   }
-  process.stdout.write(`#${String(reply.id)} started over the pool\n`);
+  process.stdout.write(`${formatJobId(numberField(reply, "id"))} started over the pool\n`);
 }
 
 /** The scheduler's refusal of a message it does not know, with the hint to stop the older scheduler. */
@@ -273,7 +312,7 @@ export async function wait(endpoint: Endpoint, id: number, json: boolean): Promi
     const reply = await exchange(socket, { type: "await", id });
     if (reply !== null && reply.type === "ended") {
       const outcome = String(reply.outcome) as Outcome;
-      process.stdout.write(json ? `${JSON.stringify({ id, outcome })}\n` : `#${id} ${outcome}\n`);
+      process.stdout.write(json ? `${JSON.stringify({ id, outcome })}\n` : `${formatJobId(id)} ${outcome}\n`);
       process.exit(exitCodes[outcome] ?? 1);
     }
     if (reply !== null && reply.type === "error") {

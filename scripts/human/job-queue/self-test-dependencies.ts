@@ -8,6 +8,7 @@ import { GpuLockHeldVariable, EntryScript, JobVariable, StartupGraceMs } from ".
 import { request } from "./client-connect.ts";
 import { type Incoming, type StatusJob } from "./protocol.ts";
 import { ProcessTable } from "./system.ts";
+import { formatJobId } from "./job-id.ts";
 import { delay, type Client, registration, type QueueFixture, type RawClient } from "./self-test-support.ts";
 
 export async function checkPlacementAndDependencies(fixture: QueueFixture, port: number): Promise<void> {
@@ -67,6 +68,19 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   );
   assert.deepStrictEqual(await waitingIds(), [y.id, z.id, x.id], "the order survives a restart");
   assert.strictEqual((await jobWith(port, waitingCommands[0] as string)).weight, 2, "the weight survives a restart");
+  // A job is named by the end of its id (the id is shown as j and four digits): cancel it, then wait for its outcome
+  const zSuffix = formatJobId(z.id);
+  const cancelledBySuffix = cli("cancel", zSuffix.slice(1));
+  assert.strictEqual(cancelledBySuffix.status, 0, `cancel by the digits: ${cancelledBySuffix.stderr}`);
+  assert.strictEqual(cancelledBySuffix.stdout.trim(), `cancelled ${zSuffix}`);
+  const waitedBySuffix = cli("wait", zSuffix);
+  assert.deepStrictEqual(
+    [waitedBySuffix.status, waitedBySuffix.stdout.trim()],
+    [4, `${zSuffix} cancelled`],
+    "wait j<digits> reads the outcome of the ended job",
+  );
+  const noSuffix = cli("wait", "j9998");
+  assert.deepStrictEqual([noSuffix.status, noSuffix.stderr.includes("no job ends with 9998")], [2, true]);
   await request(port, { type: "cancel", all: true });
   assert.deepStrictEqual(await Promise.all([holder.done, ...waiters.map((w) => w.done)]), [4, 4, 4, 4]);
   await usedWithin(port, 0, 5000);

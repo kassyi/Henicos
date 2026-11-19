@@ -19,6 +19,7 @@ import {
   type ResourceState,
   type ShareMode,
 } from "./resources.ts";
+import { formatJobId } from "./job-id.ts";
 
 /** The run times of a command's earlier runs: the median and the longest. */
 export interface Estimate {
@@ -334,7 +335,7 @@ export class Scheduler<J extends SchedulerJob> {
     const seen = new Set<J>();
     for (let next: J | undefined = target; next !== undefined && next.before !== null && !seen.has(next); ) {
       if (next.before === job.id) {
-        return `#${target.id} already goes before #${job.id}`;
+        return `${formatJobId(target.id)} already goes before ${formatJobId(job.id)}`;
       }
       seen.add(next);
       next = this.waiting.find((other) => other.id === (next as J).before);

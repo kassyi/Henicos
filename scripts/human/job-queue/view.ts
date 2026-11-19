@@ -8,6 +8,7 @@ import type { PanelJob, ViewPanel } from "./plugin-api.ts";
 import { type LegendEntry, type Style, ScreenLine, displayWidth, duration, fit } from "./screen-line.ts";
 import { FlashMs, overlayFlash } from "./view-flash.ts";
 import { type Prompt, type ViewState, initialViewState } from "./view-state.ts";
+import { formatJobId } from "./job-id.ts";
 
 export { type Style, ScreenLine, displayWidth, fit, FlashMs, type Prompt, type ViewState, initialViewState };
 
@@ -55,7 +56,7 @@ function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
   if (job.blockedBy != null) {
-    return `after #${job.blockedBy}`;
+    return `after ${formatJobId(job.blockedBy)}`;
   }
   if (reply.paused === true) {
     return "paused";
@@ -335,7 +336,7 @@ function resourceParts(resources: ResourceStatus[], jobs: ScreenJob[], line: Scr
     if (ids.length === 0) {
       line.add("-", "dim");
     }
-    ids.forEach((id, index) => line.add(`${index > 0 ? " " : ""}#${id}`, "gpu"));
+    ids.forEach((id, index) => line.add(`${index > 0 ? " " : ""}${formatJobId(id)}`, "gpu"));
     if (waiting > 0) {
       line.add(` +${waiting}`, "dim");
     }
@@ -367,7 +368,7 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
   } else {
     const holder = jobs.find((job) => job.state === "running" && job.gpu);
     const turns = jobs.filter((job) => job.state === "waiting" && (job.gpu || job.gpuTurn)).length;
-    line.add("  GPU ").add(holder ? `#${holder.id}` : "-", holder ? "gpu" : "dim");
+    line.add("  GPU ").add(holder ? `${formatJobId(holder.id)}` : "-", holder ? "gpu" : "dim");
     if (turns > 0) {
       line.add(` +${turns}`, "dim");
     }
@@ -408,7 +409,7 @@ const HelpLegend: LegendEntry[] = [
   { sample: "GPU memory", style: "warn", text: "a shared turn waits for the probe" },
   { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
-  { sample: "after #n", style: "warn", text: "until job n has ended" },
+  { sample: "after jnnnn", style: "warn", text: "until job n has ended" },
   { heading: "GPU turn (mark before the command)" },
   { sample: "G", style: "gpu", text: "an exclusive GPU turn" },
   { sample: "g", style: "gpu", text: "a shared GPU turn" },
@@ -418,6 +419,8 @@ const HelpLegend: LegendEntry[] = [
 const TallRows = 16;
 /** The job rows the chats leave on a tall screen, at least, and at least half of the list (fewer with fewer jobs). */
 const MinJobRows = 4;
+/** The id column: j and four digits. */
+const JobIdWidth = 5;
 
 /** The keys column fits in this many cells; the legend column starts after it. */
 const HelpKeysWidth = 46;
@@ -468,13 +471,13 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
   const job = jobs.find((j) => j.id === prompt.id);
   switch (prompt.kind) {
     case "cancel":
-      return `cancel #${prompt.id}${job?.state === "running" ? " (stops its command)" : ""}? y/n`;
+      return `cancel ${formatJobId(prompt.id)}${job?.state === "running" ? " (stops its command)" : ""}? y/n`;
     case "start":
-      return `start #${prompt.id} now, over the pool (it waits: ${job?.reason ?? "?"})? y/n`;
+      return `start ${formatJobId(prompt.id)} now, over the pool (it waits: ${job?.reason ?? "?"})? y/n`;
     case "move":
-      return `move #${prompt.id}: f first, r reset, or id + Enter to go before it: ${prompt.digits}_  (Esc)`;
+      return `move ${formatJobId(prompt.id)}: f first, r reset, or the end of an id + Enter to go before it: ${prompt.digits}_  (Esc)`;
     case "weight":
-      return `slots of #${prompt.id} (now ${job?.weight ?? "?"}): ${prompt.digits}_ + Enter  (Esc)`;
+      return `slots of ${formatJobId(prompt.id)} (now ${job?.weight ?? "?"}): ${prompt.digits}_ + Enter  (Esc)`;
   }
 }
 
@@ -495,7 +498,7 @@ function summaryLine(jobs: ScreenJob[], columns: number, now: number): ScreenLin
   const next = running.filter((job) => finite(job.endAt)).sort((a, b) => (a.endAt ?? 0) - (b.endAt ?? 0))[0];
   return line
     .add(` ${running.length} running, ${jobs.length - running.length} waiting`)
-    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} #${next.id}` : "")
+    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} ${formatJobId(next.id)}` : "")
     .add(late ? LateLegend : SelectHint, late ? "late" : "dim")
     .padTo();
 }
@@ -510,13 +513,13 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     job.memoryMb ? `${(job.memoryMb / 1024).toFixed(1)}GB` : "",
     job.gpu ? "gpu" : "",
     job.pin != null ? "pinned" : "",
-    job.before != null ? `before #${job.before}` : "",
-    job.after != null ? `after #${job.after}` : "",
+    job.before != null ? `before ${formatJobId(job.before)}` : "",
+    job.after != null ? `after ${formatJobId(job.after)}` : "",
     job.orphan ? "client-away" : "",
-    job.holderId !== null ? `runs as #${job.holderId}` : "",
+    job.holderId !== null ? `runs as ${formatJobId(job.holderId)}` : "",
   ].filter((f) => f !== "");
   return line
-    .add(` #${job.id} `, "bold")
+    .add(` ${formatJobId(job.id)} `, "bold")
     .add(describeProgress(job, now), isLate(job, now) ? "late" : "")
     .add(`  ${flags.join(" ")}  `, "dim")
     .add(job.command)
@@ -536,7 +539,7 @@ function jobLine(
   const commandWidth = window === null ? Math.max(8, columns - idWidth - 25) : Math.min(22, columns - idWidth - 14);
   const line = new ScreenLine(columns)
     .add(selected ? "▸" : " ", "bold")
-    .add(String(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
+    .add(formatJobId(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
     .add(job.gpu ? (job.share === "shared" ? "g" : "G") : " ", "gpu")
     .add(" ")
     .add(fit(shortCommand(job.command, plugins), commandWidth), job.state === "running" ? "" : "dim")
@@ -603,11 +606,11 @@ export function renderScreen(
     read === null || state.panelHidden ? [] : read.view.render(read.data, panelJobs(jobs), columns, room, now);
   const panelShown = panelRows.length < rows - 4 ? panelRows : []; // the job list keeps at least one row
   const listRows = rows - 4 - panelShown.length;
-  const idWidth = Math.max(3, ...jobs.map((job) => String(job.id).length));
+  const idWidth = JobIdWidth;
   const left = 1 + idWidth + 1 + 1 + Math.min(22, columns - idWidth - 14) + 1;
   const cells = columns - left;
   const window = cells >= 12 ? timeWindow(jobs, now, cells) : null;
-  const axis = new ScreenLine(columns).add(" #".padEnd(left), "dim");
+  const axis = new ScreenLine(columns).add(" id".padEnd(left), "dim");
   if (window !== null && jobs.length > 0) {
     axis.add(axisLine(window, now), "dim");
   }

@@ -44,6 +44,7 @@ import { commandProcesses, DetachedObserver } from "./server-observe.ts";
 import { describeProbe, ProbeRunner } from "./server-probe.ts";
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory, worktreeKey } from "./system.ts";
+import { formatJobId } from "./job-id.ts";
 
 export interface ServeOptions {
   slots: number;
@@ -239,7 +240,7 @@ export class JobServer {
       const shared = job.gpuTurn === true && job.share === "shared" ? " shared" : "";
       const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${shared}`;
       const flags = `${gpu}${job.backfilled ? " backfilled" : ""}`;
-      this.log(`grant #${job.id} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
+      this.log(`grant ${formatJobId(job.id)} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
       this.tell(job, this.grantMessage(job));
     }
     this.notifyWaiting();
@@ -342,7 +343,7 @@ export class JobServer {
    * connections that wait for it. It grants nothing: settle does, once per event.
    */
   finish(job: ServerJob, outcome: Outcome, why: string): void {
-    this.log(`end #${job.id}: ${outcome} (${why}${outcome === "failed" ? this.sharedWith(job) : ""})`);
+    this.log(`end ${formatJobId(job.id)}: ${outcome} (${why}${outcome === "failed" ? this.sharedWith(job) : ""})`);
     if (this.records.get(job.id) === job) {
       this.records.delete(job.id);
     }
@@ -385,7 +386,7 @@ export class JobServer {
       return "";
     }
     const others = usageOf(this.scheduler.running, resourceOf(job)).sharedTurns.filter((turn) => turn !== job);
-    return others.length > 0 ? `; shared with ${others.map((turn) => `#${turn.id}`).join(", ")}` : "";
+    return others.length > 0 ? `; shared with ${others.map((turn) => `${formatJobId(turn.id)}`).join(", ")}` : "";
   }
 
   /**
@@ -393,7 +394,7 @@ export class JobServer {
    * keep the record as provisionally lost (not an outcome: dependents and wait keep waiting).
    */
   freeSlots(job: ServerJob, why: string): void {
-    this.log(`#${job.id}: ${why}; lost unless its client reports`);
+    this.log(`${formatJobId(job.id)}: ${why}; lost unless its client reports`);
     this.scheduler.detach(job);
     job.phase = "ended";
     job.provisional = "lost";
@@ -423,12 +424,12 @@ export class JobServer {
         const after = job.after;
         if (!this.outcomes.has(after) && Date.now() >= scheduler.holdUntil && this.find(after) === undefined) {
           // Not here, not ended, not expected back (a state file that was lost, an outcome dropped as too old)
-          this.log(`#${after} is unknown; counting it as lost for #${job.id}`);
+          this.log(`${formatJobId(after)} is unknown; counting it as lost for ${formatJobId(job.id)}`);
           this.recordOutcome(after, "lost");
         }
         const outcome = this.outcomes.get(after);
         if (outcome !== undefined && outcome !== "succeeded" && !job.keepIfFailed) {
-          this.cancelJob(job, `#${after} ${outcome}`);
+          this.cancelJob(job, `${formatJobId(after)} ${outcome}`);
           changed = true;
         }
       }
@@ -460,7 +461,7 @@ export class JobServer {
 
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */
   cancelJob(job: ServerJob, reason: string): void {
-    this.log(`cancel #${job.id} (${reason}): ${job.command}`);
+    this.log(`cancel ${formatJobId(job.id)} (${reason}): ${job.command}`);
     this.tell(job, { type: "cancelled", id: job.id, reason });
     if (job.phase === "running" && job.connection !== null && !job.connection.socket.destroyed) {
       // The client stops its command and then closes: keep the slot until then, so that the next job does not start
@@ -504,7 +505,7 @@ export class JobServer {
       this.reply(socket, {
         type: "error",
         code: "unknown-job",
-        message: `no job #${id} (never queued, or ended too long ago)`,
+        message: `no job ${formatJobId(id)} (never queued, or ended too long ago)`,
       });
     }
   }

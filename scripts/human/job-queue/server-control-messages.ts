@@ -3,10 +3,12 @@
 
 import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
+import { pickSuffixMatch } from "./job-id.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
+import { formatJobId } from "./job-id.ts";
 
 function status(connection: Connection): void {
   const server = connection.server;
@@ -31,6 +33,25 @@ function status(connection: Connection): void {
   });
 }
 
+/** resolve: the full id behind the last digits of a job id (see pickSuffixMatch), for the commands that take an id. */
+function resolve(connection: Connection, message: Incoming): void {
+  const server = connection.server;
+  const digits = message.digits;
+  if (typeof digits !== "string" || !/^\d{1,4}$/.test(digits)) {
+    connection.reply({ type: "error", code: "bad-digits", message: "resolve needs one to four digits" });
+    return;
+  }
+  const live = server.scheduler.running
+    .map((job) => ({ id: job.id, state: "running" }))
+    .concat(server.scheduler.waiting.map((job) => ({ id: job.id, state: "waiting" })));
+  const picked = pickSuffixMatch(digits, live, server.outcomes.keys());
+  connection.reply(
+    "error" in picked
+      ? { type: "error", code: "unknown-job", message: picked.error }
+      : { type: "resolved", id: picked.id },
+  );
+}
+
 function cancel(connection: Connection, message: Incoming): void {
   const scheduler = connection.server.scheduler;
   const all = scheduler.running.concat(scheduler.waiting);
@@ -45,7 +66,7 @@ function placeJob(server: JobServer, message: Incoming): ServerMessage {
   const id = idField(message, "id") ?? 0;
   const job = scheduler.waiting.find((other) => other.id === id);
   if (job === undefined) {
-    return { type: "error", code: "not-waiting", message: `no waiting job #${id}` };
+    return { type: "error", code: "not-waiting", message: `no waiting job ${formatJobId(id)}` };
   }
   if (message.first === true) {
     scheduler.pinFirst(job);
@@ -54,12 +75,13 @@ function placeJob(server: JobServer, message: Incoming): ServerMessage {
   } else {
     const targetId = idField(message, "before") ?? 0;
     const target = scheduler.waiting.find((other) => other.id === targetId);
-    const refusal = target === undefined ? `no waiting job #${targetId}` : scheduler.placeBefore(job, target);
+    const refusal =
+      target === undefined ? `no waiting job ${formatJobId(targetId)}` : scheduler.placeBefore(job, target);
     if (refusal !== null) {
       return { type: "error", code: "not-placed", message: refusal };
     }
   }
-  server.log(`move #${job.id}: pin ${job.pin}, before ${job.before}`);
+  server.log(`move ${formatJobId(job.id)}: pin ${job.pin}, before ${job.before}`);
   return server.placed(job);
 }
 
@@ -71,17 +93,21 @@ function reweigh(server: JobServer, message: Incoming): ServerMessage {
   const id = idField(message, "id") ?? 0;
   const job = server.scheduler.waiting.find((other) => other.id === id);
   if (job === undefined) {
-    return { type: "error", code: "not-waiting", message: `no waiting job #${id} (a running job keeps its weight)` };
+    return {
+      type: "error",
+      code: "not-waiting",
+      message: `no waiting job ${formatJobId(id)} (a running job keeps its weight)`,
+    };
   }
   if (job.gpuTurn) {
     return {
       type: "error",
       code: "not-placed",
-      message: `#${id} waits for the GPU and takes no slots (its command registers its own)`,
+      message: `${formatJobId(id)} waits for the GPU and takes no slots (its command registers its own)`,
     };
   }
   job.weight = server.scheduler.clampWeight(numberField(message, "weight", 1));
-  server.log(`weight #${job.id}: ${job.weight}`);
+  server.log(`weight ${formatJobId(job.id)}: ${job.weight}`);
   return server.placed(job);
 }
 
@@ -97,13 +123,13 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
   const id = idField(message, "id") ?? 0;
   const job = server.find(id);
   if (job === undefined || job.phase !== "waiting") {
-    return { type: "error", code: "not-waiting", message: `no waiting job #${id}` };
+    return { type: "error", code: "not-waiting", message: `no waiting job ${formatJobId(id)}` };
   }
   if (job.gpuTurn) {
     return {
       type: "error",
       code: "not-started",
-      message: `#${id} waits for the GPU, which runs one job at a time; move ${id} --first puts it next`,
+      message: `${formatJobId(id)} waits for the GPU, which runs one job at a time; move ${formatJobId(id)} --first puts it next`,
     };
   }
   if (job.detached) {
@@ -111,15 +137,19 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       type: "error",
       code: "not-started",
       message:
-        `the client of #${id} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
+        `the client of ${formatJobId(id)} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
         "the grant; start it once its client is back",
     };
   }
   if (server.scheduler.awaitsPredecessor(job)) {
-    return { type: "error", code: "not-started", message: `#${id} waits for #${String(job.after)} to end` };
+    return {
+      type: "error",
+      code: "not-started",
+      message: `${formatJobId(id)} waits for ${formatJobId(job.after ?? 0)} to end`,
+    };
   }
   job.startNow = true;
-  server.log(`start #${job.id} over the pools`);
+  server.log(`start ${formatJobId(job.id)} over the pools`);
   // Granted by the settle that follows every message (Connection), like a move
   return { type: "start-result", id: job.id };
 }
@@ -210,6 +240,7 @@ function stop(connection: Connection): void {
 
 export const ControlMessages: Readonly<Record<string, MessageHandler>> = {
   status,
+  resolve,
   cancel,
   move,
   "set-weight": setWeight,

@@ -12,6 +12,7 @@ import {
   type ClientIdentity,
   type CommandEnd,
 } from "./server-job-state.ts";
+import { formatJobId } from "./job-id.ts";
 
 /** How the command ended, as "done" and "report" say it. */
 function endOf(message: Incoming): CommandEnd {
@@ -46,7 +47,7 @@ function register(connection: Connection, message: Incoming, type: "request" | "
   const plan = planRegistration(type, record, final, identityOf(message));
   switch (plan.kind) {
     case "refuse-cancelled":
-      server.log(`${type} #${String(wanted)}: cancelled while its client was away`);
+      server.log(`${type} ${formatJobId(wanted ?? 0)}: cancelled while its client was away`);
       connection.reply({ type: "cancelled", id: wanted ?? 0, reason: "cancelled while its client was away" });
       return null;
     case "rebind":
@@ -91,7 +92,7 @@ function rebind(
     job.phase = "running";
     scheduler.adopt(job);
   }
-  server.log(`re-bind #${job.id} (${job.phase}) pid ${job.pid}: ${job.command}`);
+  server.log(`re-bind ${formatJobId(job.id)} (${job.phase}) pid ${job.pid}: ${job.command}`);
   if (job.phase === "waiting") {
     job.lastPosition = -1;
     send(socket, server.queuedMessage(job));
@@ -125,7 +126,7 @@ function request(connection: Connection, message: Incoming): void {
     connection.reply({
       type: "error",
       code: "unknown-job",
-      message: `--after: #${after} was not queued before #${created.id}`,
+      message: `--after: ${formatJobId(after)} was not queued before ${formatJobId(created.id)}`,
     });
     return;
   }
@@ -136,7 +137,7 @@ function request(connection: Connection, message: Incoming): void {
     connection.reply({
       type: "error",
       code: "unknown-job",
-      message: `--after: no job #${after} (never queued, or ended too long ago)`,
+      message: `--after: no job ${formatJobId(after)} (never queued, or ended too long ago)`,
     });
     return;
   }
@@ -144,8 +145,8 @@ function request(connection: Connection, message: Incoming): void {
   server.records.set(job.id, job);
   server.bind(job, connection);
   server.log(
-    `queue #${job.id} weight ${job.weight}${job.gpu ? " gpu" : ""}` +
-      `${after !== null ? ` after #${after}` : ""} pid ${job.pid}: ${job.command}`,
+    `queue ${formatJobId(job.id)} weight ${job.weight}${job.gpu ? " gpu" : ""}` +
+      `${after !== null ? ` after ${formatJobId(after)}` : ""} pid ${job.pid}: ${job.command}`,
   );
   scheduler.add(job);
   // The id first, so that the caller can ask about its job (status <id>) whatever happens next; settle grants
@@ -169,7 +170,9 @@ function adopt(connection: Connection, message: Incoming): void {
   server.records.set(job.id, job);
   server.bind(job, connection);
   server.scheduler.adopt(job);
-  server.log(`adopt #${job.id} weight ${job.weight} pid ${job.pid} command ${job.commandPid}: ${job.command}`);
+  server.log(
+    `adopt ${formatJobId(job.id)} weight ${job.weight} pid ${job.pid} command ${job.commandPid}: ${job.command}`,
+  );
   send(socket, { type: "adopted", id: job.id, protocol: ProtocolVersion });
   server.idleSince = Date.now();
 }
@@ -219,10 +222,10 @@ function report(connection: Connection, message: Incoming): void {
   const reporter = { pid: numberField(message, "pid"), queuedAt: numberField(message, "queuedAt") };
   const step = id === null ? "ignore" : planReport(record, server.outcomes.get(id), reporter, endOf(message));
   if (step === "ignore") {
-    server.log(`report #${String(id)} ignored`);
+    server.log(id === null ? "report ignored" : `report ${formatJobId(id)} ignored`);
   } else if (record === undefined) {
     if (id !== null) {
-      server.log(`report #${id}: ${step.end}`);
+      server.log(`report ${formatJobId(id)}: ${step.end}`);
       server.recordOutcome(id, step.end);
     }
   } else {

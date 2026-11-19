@@ -11,6 +11,7 @@ import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
+import { JobIdChecks } from "./job-id-checks.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { ResourceChecks } from "./resource-checks.ts";
@@ -101,6 +102,7 @@ export async function selfTest(): Promise<void> {
   syncBuiltinESMExports();
   try {
     for (const [name, check] of Object.entries({
+      ...JobIdChecks,
       ...FairnessChecks,
       ...SchedulerChecks,
       ...ResourceChecks,
@@ -193,14 +195,14 @@ export async function selfTest(): Promise<void> {
       let text = "";
       asking.stderr.on("data", (data: Buffer) => {
         text += data.toString();
-        const match = /queued #(\d+): (\d+) ahead, expected start/.exec(text);
+        const match = /queued j(\d+): (\d+) ahead, expected start/.exec(text);
         if (match) {
           resolve(Number(match[1]));
         }
       });
       asking.on("close", () => resolve(0));
     });
-    assert.ok(queuedId > 0, 'run prints "queued #<id>: <n> ahead, expected start ..." while it waits');
+    assert.ok(queuedId > 0, 'run prints "queued j<nnnn>: <n> ahead, expected start ..." while it waits');
     const one = spawnSync(
       process.execPath,
       [EntryScript, "status", String(queuedId), "--json", "--port", String(port)],

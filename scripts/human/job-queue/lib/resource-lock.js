@@ -23,6 +23,11 @@ const OverlapPollIntervalMs = 2000;
 const NoticeIntervalMs = 300000;
 const FastWaitWindowMs = 10000;
 
+/** A job id as people read it: j and the last four digits. A copy of formatJobId in ../job-id.ts, which a .js file cannot import. */
+function formatJobId(id) {
+  return `j${String(id % 10000).padStart(4, '0')}`;
+}
+
 class UsageError extends Error {
   constructor(message) {
     super(message);
@@ -347,7 +352,7 @@ function writeSharedFailureReport(observedHolders, prefix, displayName, olderHol
         ? holder.command.replace(/\s+/g, ' ').trim()
         : '(unknown)';
     if (Number.isInteger(holder.turn) && holder.turn > 0) {
-      items.push(`#${holder.turn} ${cmd} (pid ${holder.pid})`);
+      items.push(`${formatJobId(holder.turn)} ${cmd} (pid ${holder.pid})`);
     } else {
       items.push(`${cmd} (pid ${holder.pid})`);
     }
