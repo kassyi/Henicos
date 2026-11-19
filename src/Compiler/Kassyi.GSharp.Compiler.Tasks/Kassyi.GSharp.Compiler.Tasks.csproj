@@ -26,6 +26,7 @@
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyStatus.cs" Link="Cryptography\Ed25519PublicKeyStatus.cs" />
     <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />
+    <Compile Include="..\..\Shared\Naming\SymbolFileReader.cs" Link="Naming\SymbolFileReader.cs" />
     <Compile Include="..\..\Shared\Naming\GlobalNamePath.cs" Link="Naming\GlobalNamePath.cs" />
     <Compile Include="..\..\Shared\Naming\GlobalNameSegment.cs" Link="Naming\GlobalNameSegment.cs" />
     <Compile Include="..\..\Shared\Hashing\Fnv1A64.cs" Link="Hashing\Fnv1A64.cs" />

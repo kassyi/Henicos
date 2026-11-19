@@ -120,6 +120,37 @@ public class GSharpNameEncodingTests
         Assert.Contains("Symbol file hash '0123456789abcdef' does not match source hash 'fedcba9876543210'.", ex.Message);
     }
 
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ParseSymbolFile_HeaderlessFileWithExpectedHash_ThrowsInvalidOperationException()
+    {
+        // The per-line "symbols" value matches the expected hash, but only the header counts.
+        const string GsymContent = """
+            {"cpp":"__gsharp_id_0_data","kind":"id","cs":"data","symbols":"0123456789abcdef","dialect":"Cuda"}
+            """;
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            GSharpNameEncoding.ParseSymbolFile(GsymContent, expectedHash: "0123456789abcdef"));
+
+        Assert.Contains("missing a matching 'gsharp_symbols' hash header", ex.Message);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void ParseErrorSitesFromSymbolFile_HeaderlessFileWithExpectedHash_ThrowsInvalidOperationException()
+    {
+        const string GsymContent = """
+            {"error_site":"1","file":"A.cs","line":"2","column":"3","member":"M","message":"m","symbols":"0123456789abcdef"}
+            """;
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            GSharpNameEncoding.ParseErrorSitesFromSymbolFile(GsymContent, expectedHash: "0123456789abcdef"));
+
+        Assert.Contains("missing a matching 'gsharp_symbols' hash header", ex.Message);
+    }
+
     // The module context class and the module field name the module escaped injectively, and the demangle tool turns
     // them back into the module name, for every character an assembly or module name may hold
     [Theory]
