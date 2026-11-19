@@ -236,17 +236,6 @@ internal static class ManagedCSharpTranspiler
             isStackForm: bodyKind == ManagedBodyKind.StackBody);
         var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors);
 
-        // <node> without Stryker's switches when the compilation is mutated (#1191), rewritten for managed execution
-        T RewriteBody<T>(T node) where T : SyntaxNode =>
-            rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
-            ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
-
-        // A void expression body that is a null-conditional access calling an extension method on a binding is a block
-        // body: its access is written as a statement on the receiver in a pattern variable (ManagedConditionalAccess)
-        var accessBody = declaration.ExpressionBody is { } arrow
-            ? rewriter.TryRewriteBody(MutantSwitchRemover.Remove(arrow, semanticModel))
-            : null;
-
         // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
         // directives), without attributes (the version is not a device function) and without 'this'
@@ -259,13 +248,8 @@ internal static class ManagedCSharpTranspiler
                 GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol)))
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
             .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
-            .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel))
-            .WithBody(accessBody ?? (declaration.Body is { } body ? RewriteBody(body) : null))
-            .WithExpressionBody(accessBody == null && declaration.ExpressionBody is { } expressionBody
-                ? RewriteBody(expressionBody)
-                : null)
-            .WithSemicolonToken(accessBody == null ? declaration.SemicolonToken : default)
-            .WithoutTrivia();
+            .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel));
+        method = WriteBody(method, declaration, rewriter, semanticModel).WithoutTrivia();
 
         using var writer = new SourceWriter();
         writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
@@ -274,6 +258,28 @@ internal static class ManagedCSharpTranspiler
         accessors.WriteTo(writer);
         ManagedWarningRestore.Append(writer, ManagedWarningRestore.Create(plan.Declaration));
         return writer.ToString();
+    }
+
+    // The body of the copy: the user's body or expression body rewritten for managed execution, without Stryker's
+    // switches when the compilation is mutated (#1191). A void expression body that is a null-conditional access
+    // calling an extension method on a binding is a block body: its access is written as a statement on the receiver
+    // in a pattern variable (ManagedConditionalAccess)
+    private static MethodDeclarationSyntax WriteBody(MethodDeclarationSyntax method,
+        MethodDeclarationSyntax declaration, ManagedExecutionRewriter rewriter, SemanticModel semanticModel)
+    {
+        if (declaration.ExpressionBody is { } arrow &&
+            rewriter.TryRewriteBody(MutantSwitchRemover.Remove(arrow, semanticModel)) is { } accessBody)
+        {
+            return method.WithExpressionBody(null).WithSemicolonToken(default).WithBody(accessBody);
+        }
+
+        return method
+            .WithBody(declaration.Body is { } body ? Rewrite(body) : null)
+            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody ? Rewrite(expressionBody) : null);
+
+        T Rewrite<T>(T node) where T : SyntaxNode =>
+            rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
+            ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
     }
 
     // The user's accessibility, static, and unsafe when the version needs it (the partial declaration that holds it is

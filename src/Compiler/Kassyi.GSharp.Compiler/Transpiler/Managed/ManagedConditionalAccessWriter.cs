@@ -76,16 +76,7 @@ internal sealed class ManagedConditionalAccessWriter(SemanticModel semanticModel
             var visited = visitCallable(node);
             var statement = _bodyStatement ??
                             throw new InvalidOperationException($"The body of '{node}' did not rewrite.");
-            var block = SyntaxFactory.Block(statement);
-            return visited switch
-            {
-                LocalFunctionStatementSyntax function => function
-                    .WithExpressionBody(null)
-                    .WithSemicolonToken(default)
-                    .WithBody(block),
-                AnonymousFunctionExpressionSyntax lambda => lambda.WithExpressionBody(null).WithBlock(block),
-                _ => throw new InvalidOperationException($"'{node}' did not rewrite to a callable.")
-            };
+            return WithBlockBody(visited, SyntaxFactory.Block(statement));
         }
         finally
         {
@@ -93,6 +84,18 @@ internal sealed class ManagedConditionalAccessWriter(SemanticModel semanticModel
             _bodyStatement = null;
         }
     }
+
+    // The visited local function or lambda with block in place of its expression body
+    private static SyntaxNode WithBlockBody(SyntaxNode? visited, BlockSyntax block) =>
+        visited switch
+        {
+            LocalFunctionStatementSyntax function => function
+                .WithExpressionBody(null)
+                .WithSemicolonToken(default)
+                .WithBody(block),
+            AnonymousFunctionExpressionSyntax lambda => lambda.WithExpressionBody(null).WithBlock(block),
+            _ => throw new InvalidOperationException($"'{visited}' did not rewrite to a callable.")
+        };
 
     // A WhenNotNull that is an access needing its own variable is a statement as well (h?.Data?.M() becomes
     // if (h is { } t0) { if (t0.Data is { } t1) { M(t1); } }): a call that returns void has no value to write
