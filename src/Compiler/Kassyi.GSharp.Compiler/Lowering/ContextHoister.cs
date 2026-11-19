@@ -56,6 +56,16 @@ public class ContextHoister(
     private HashSet<DeclarationKey>? _capturedByMovedFunctions;
 
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
+    private readonly HashSet<DeclarationKey> _liftedConstantKeys = [];
+    private readonly ImmutableArray<LocalDeclarationStatementSyntax>.Builder _liftedConstants =
+        ImmutableArray.CreateBuilder<LocalDeclarationStatementSyntax>();
+
+    /// <summary>
+    /// The const declarations of a body with split points, taken out of their states in the order written, for
+    /// <see cref="StateMachineLowerer.LiftedConstants"/>. The consts of local functions and lambdas stay in place.
+    /// </summary>
+    internal ImmutableArray<LocalDeclarationStatementSyntax> LiftedConstants => _liftedConstants.ToImmutable();
+
     private readonly HashSet<string> _copiedParameters = [];
 
     // Marks the block of the statements that a split declaration became, which SpliceStatements removes again
@@ -73,10 +83,12 @@ public class ContextHoister(
     {
         _hoistedVariables.Clear();
         _copiedParameters.Clear();
+        _liftedConstantKeys.Clear();
+        _liftedConstants.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
         HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _capturedByMovedFunctions,
-            _hoistedVariables, hoistedDecls, _refLocalsNotLiveAcrossSplit);
+            _hoistedVariables, hoistedDecls, _refLocalsNotLiveAcrossSplit, _liftedConstantKeys);
         if (!HasSplitPoint)
         {
             return (block, hoistedDecls);
@@ -97,6 +109,16 @@ public class ContextHoister(
     // statement list (SpliceStatements), since a block around them would end the scope of the remaining declarators.
     public override SyntaxNode? VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
     {
+        // [WHY] The declaration moves in front of the state switch (StateMachineLowerer.LiftedConstants); a const
+        // declaration has one key per declarator, and all of them are lifted together. Its initializer reads only
+        // constants, so it has no context access to rewrite
+        if (node.IsConst &&
+            _liftedConstantKeys.Contains(LoweringIdentity.ForDeclaration(node.Declaration.Variables[0], semanticModel)))
+        {
+            _liftedConstants.Add(node);
+            return null;
+        }
+
         var variables = node.Declaration.Variables;
         var visitedVariables = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>(variables.Count);
         foreach (var variable in variables)

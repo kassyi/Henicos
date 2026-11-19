@@ -4,8 +4,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
 /// Lowers flat C# AST statements into a switch-based state machine separated by thread barriers. With
-/// <see cref="MovedLocalFunctions"/>, a body that has split points gets its local functions in front of the
-/// <c>switch</c>, where every state sees them.
+/// <see cref="LiftedConstants"/> and <see cref="MovedLocalFunctions"/>, a body that has split points gets its const
+/// declarations and its local functions in front of the <c>switch</c>, where every state sees them.
 /// </summary>
 /// <param name="isDeviceFunction">
 /// Whether the body belongs to a device function. Its end completes the call (a plain <c>return</c>, which the emitters
@@ -32,6 +32,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
     /// (<see cref="HoistedVariableAnalysis"/>).
     /// </summary>
     internal HashSet<DeclarationKey> MovedLocalFunctions { get; init; } = [];
+
+    /// <summary>
+    /// The const declarations of the body that <see cref="Lower"/> writes in front of the <c>switch</c>, in the order
+    /// written and before the local functions, which may read them. A const has no run-time state, so one declaration
+    /// there keeps it a constant in every state (<see cref="ContextHoister.LiftedConstants"/>). Empty for a body
+    /// without a split point.
+    /// </summary>
+    internal ImmutableArray<LocalDeclarationStatementSyntax> LiftedConstants { get; init; } = [];
 
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -60,6 +68,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? s
         var labelsReachedFromSwitch = FindLabelsReachedFromSwitch(block, plan.LabelStates);
         var sections = new SectionBuilder();
         var functions = ImmutableArray.CreateBuilder<StatementSyntax>();
+        functions.AddRange(LiftedConstants);
         foreach (var written in block.Statements)
         {
             var stmt = written;
