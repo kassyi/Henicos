@@ -4787,9 +4787,11 @@
 - {file: "TestCases/Layout/CyclicStructs/NestedGenericConstruction.cu.cs", method: "NestedGenericConstruction.NestedConstructionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NullableArgumentCycle.cu.cs", method: "NullableArgumentCycle.NullableArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NullableCyclicStruct.cu.cs", method: "NullableCyclicStruct.NullableKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/NullableSwapCycle.cu.cs", method: "NullableSwapCycle.SwapKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/SecondConstructionInaccessible.cu.cs", method: "SecondConstructionInaccessible.SecondConstructionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/SecondConstructionMultidimensional.cu.cs", method: "SecondConstructionMultidimensional.SecondConstructionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/SecondConstructionReservedName.cu.cs", method: "SecondConstructionReservedName.SecondConstructionKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/SwapWrapCycle.cu.cs", method: "SwapWrapCycle.SwapKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/TypeArgumentCycle.cu.cs", method: "TypeArgumentCycle.TypeArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/WideCyclicStructs.cu.cs", method: "WideCyclicStructs.FourKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/WideCyclicStructs.cu.cs", method: "WideCyclicStructs.ThreeKernel", status: "Compared", count: 1}

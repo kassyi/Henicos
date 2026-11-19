@@ -165,6 +165,54 @@ public class CyclicStructLayoutTests
             reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
     }
 
+    // A<T, U> holds A<U, Wrap<T>>: below A<int, long> the walk meets A<long, Wrap<int>>, another construction, so the
+    // GSH0080 reason names the definition A<T, U>, as CS0523 does, not a construction it did not meet twice
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_CycleThroughSwappedTypeArguments_NamesTheDefinitionInTheReason(string dialect)
+    {
+        const string Swap = "Kassyi.GSharp.Tests.TestCases.Layout.CyclicStructs.SwapWrapCycle";
+        var (errors, reported) = await RunAsync(CyclicStructs + "SwapWrapCycle.cu.cs", dialect);
+
+        Assert.Equal([("CS0523", 16, 30, 16, 31)], errors);
+        Assert.Equal(
+            [(Analyzer, "GSH0058", 14, 19, 14, 20), (Analyzer, "GSH0080", 21, 55, 21, 69)],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.EndsWith(
+            "(field 'F' of type '" + Swap + ".A<long, " + Swap + ".Wrap<int>>': '" + Swap +
+            ".A<T, U>' holds itself by value (CS0523)).",
+            reported[1].Message,
+            StringComparison.Ordinal);
+    }
+
+    // The shadows of Nullable<A<long, Wrap<int>>> and of the next Nullable construction share one AotContexts name;
+    // GSH0058 points at the declaration of A, since Nullable<T> has none in the user's source
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_CycleThroughASwappedNullable_ReportsTheNameCollisionAtTheValueDeclaration(string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + "NullableSwapCycle.cu.cs", dialect);
+
+        Assert.Equal([("CS0523", 16, 31, 16, 32)], errors);
+        Assert.Equal(
+            [
+                (Analyzer, "GSH0058", 14, 19, 14, 20),
+                (Analyzer, "GSH0058", 14, 19, 14, 20),
+                (Analyzer, "GSH0080", 21, 55, 21, 69)
+            ],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.Contains(
+            reported,
+            static d => d.Message.Contains(
+                "'AotContexts.__gsharp_nullable_of_NullableSwapCycle_A'",
+                StringComparison.Ordinal));
+        Assert.Contains(reported, static d => d.Message.Contains("'AotContexts.A'", StringComparison.Ordinal));
+    }
+
     // A<T> holds A<A<T>>?: the construction grows through Nullable<T>
     [Theory]
     [Scenario(TestScenario.SadPath)]
