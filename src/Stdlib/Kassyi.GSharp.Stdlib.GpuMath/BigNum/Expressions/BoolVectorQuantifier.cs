@@ -12,7 +12,22 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 /// </remarks>
 internal static class BoolVectorQuantifier
 {
-    public static bool Evaluate(GpuWorkspace workspace, IGpuBoolVectorExpression source, bool all)
+    /// <summary>
+    /// Gets whether Any / All of <paramref name="source"/> record the element exceptions instead of throwing them: the
+    /// chain can throw, and its indices are the indices of the flags (<see cref="CanDefer"/>). Fixed when the
+    /// quantifier is built, as the expression does not change after that.
+    /// </summary>
+    /// <param name="source">The flags.</param>
+    /// <returns><see langword="true"/> to evaluate under a <see cref="PendingThrows"/> scope.</returns>
+    public static bool Defers(IGpuBoolVectorExpression source) => VectorEffects.MayThrow(source) && CanDefer(source);
+
+    /// <summary>Evaluates Any (<paramref name="all"/> false) or All of <paramref name="source"/>.</summary>
+    /// <param name="workspace">The workspace.</param>
+    /// <param name="source">The flags.</param>
+    /// <param name="all">Whether the quantifier is All.</param>
+    /// <param name="defers">The value of <see cref="Defers"/> for <paramref name="source"/>.</param>
+    /// <returns>The result, as System.Linq.</returns>
+    public static bool Evaluate(GpuWorkspace workspace, IGpuBoolVectorExpression source, bool all, bool defers)
     {
         DeviceCounted.ThrowIfCpuFallback(workspace);
         if (source.Capacity == 0)
@@ -25,7 +40,7 @@ internal static class BoolVectorQuantifier
             return Reduce(workspace, source, all, decidingIndex: false) != 0;
         }
 
-        if (!CanDefer(source))
+        if (!defers)
         {
             // An enclosing scope must not take the exceptions of a chain that throws them itself
             using var _ = PendingThrows.Suspend();
@@ -107,15 +122,7 @@ internal static class BoolVectorQuantifier
                 case VectorWhereExpression or FloatVectorWhereExpression:
                     return false;
                 case IVectorOperator op:
-                    for (var i = op.OperandCount - 1; i >= 0; i--)
-                    {
-                        var operand = op.GetOperand(i);
-                        if (visited.Add(operand))
-                        {
-                            pending.Push(operand);
-                        }
-                    }
-
+                    PushOperands(op, visited, pending);
                     break;
                 case GpuBigIntVectorLeafExpression or GpuBigFloatVectorLeafExpression:
                     break;
@@ -125,6 +132,18 @@ internal static class BoolVectorQuantifier
         }
 
         return true;
+    }
+
+    private static void PushOperands(IVectorOperator op, HashSet<object> visited, Stack<object> pending)
+    {
+        for (var i = op.OperandCount - 1; i >= 0; i--)
+        {
+            var operand = op.GetOperand(i);
+            if (visited.Add(operand))
+            {
+                pending.Push(operand);
+            }
+        }
     }
 
     // A vector with no capacity has no element: nothing is launched, and nothing is evaluated unless the evaluation
