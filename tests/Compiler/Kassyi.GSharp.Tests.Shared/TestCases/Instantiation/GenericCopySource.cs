@@ -315,6 +315,15 @@ namespace App
         public static int CallStaticGen<T>(double d) where T : IStaticGen => T.Create(d);
 
         public static int CallInstGen<T>(T x, double d) where T : IInstGen => x.Pick(d);
+
+        // Waits at a barrier: the lowering of its copy keeps 'kept' across the wait, in a frame field of the copy's type
+        [Kassyi.GSharp.Core.GpuDeviceFunction]
+        public static T AfterSync<T>(T value) where T : unmanaged
+        {
+            T kept = value;
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            return kept;
+        }
     }
 
     public static partial class Outer<T> where T : unmanaged

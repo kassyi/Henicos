@@ -1,5 +1,6 @@
 #nullable enable
 
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Lowering;
 using Microsoft.CodeAnalysis.Text;
@@ -224,7 +225,8 @@ public class GenericCopiesTests
         Assert.Equal("T", ModelOf(set, literal).GetConstantValue(literal).Value);
     }
 
-    // Diagnostics on a copy are reported at the user's source, so every node needs the original span
+    // Diagnostics on a copy are reported at the user's source, so every node needs the place it came from; it is not the
+    // original-span annotation, which the lowering would read the generic declaration's semantics through
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData("CallsExt", "App.Odd")]
@@ -235,7 +237,7 @@ public class GenericCopiesTests
     [InlineData("CompoundDivide", "System.SByte")]
     [InlineData("MaxMagnitude", "System.Char")]
     [InlineData("Locals", "System.Int32")]
-    public void Create_EveryNodeOfTheCopy_CarriesAnOriginalSpanInsideTheDeclaration(string method, string typeArgument)
+    public void Create_EveryNodeOfTheCopy_CarriesACopyOriginInsideTheDeclaration(string method, string typeArgument)
     {
         var (copy, _) = CreateCopy(method, typeArgument);
         var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration);
@@ -243,12 +245,81 @@ public class GenericCopiesTests
 
         foreach (var node in declaration.DescendantNodesAndSelf())
         {
-            var annotation = Assert.Single(node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+            Assert.False(node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind), $"{node.Kind()}");
+            var annotation = Assert.Single(node.GetAnnotations(GenericCopyEmitter.CopyOriginAnnotationKind));
             Assert.True(LoweringAnnotations.TryParseOriginalSpanData(
                 annotation.Data, out var start, out var length, out _, out _));
             Assert.True(original.Contains(new TextSpan(start, length)),
                 $"{node.Kind()} points outside the declaration");
         }
+    }
+
+    // A diagnostic about a node of the copy is reported where the user wrote the node: in the tree of the user's
+    // compilation, at the node of the declaration with the same node number
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Sum", "System.Int32")]
+    [InlineData("Locals", "System.Int32")]
+    [InlineData("CheckedNegate", "System.SByte")]
+    public void Create_Copy_ReportLocationIsTheDeclarationNode(string method, string typeArgument)
+    {
+        var compilation = CreateCompilation();
+        var type = compilation.GetTypeByMetadataName(typeArgument) ??
+                   throw new InvalidOperationException($"No type '{typeArgument}'.");
+        var (copy, set) = CreateCopy(compilation, method, type);
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration);
+        var userTree = compilation.SyntaxTrees.Single();
+        var userNodes = CopyNodeIndex.List(userTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(m => m.Identifier.ValueText == method && m.TypeParameterList is not null));
+        var model = ModelOf(set, declaration);
+
+        var checkedNodes = 0;
+        foreach (var node in declaration.DescendantNodes().OfType<ExpressionSyntax>())
+        {
+            if (!CopyNodeIndex.TryGet(node, out var index))
+            {
+                continue;
+            }
+
+            var location = model.GetReportLocation(node);
+            Assert.Same(userTree, location.SourceTree);
+            Assert.Equal(userNodes[index].Span, location.SourceSpan);
+            checkedNodes++;
+        }
+
+        Assert.True(checkedNodes > 0);
+    }
+
+    // The copy of a function that waits at a barrier is lowered from its own symbols: the frame field that keeps 'kept'
+    // across the wait has the type argument as its type, its local and its parameter are those of the copy (with the
+    // annotation of the declaration they were T and the declaration's parameter: GSH0048, or a parameter left where a
+    // frame field belongs), and the lowered nodes still report at the declaration
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Create_CopyThatReachesABarrier_LowersWithTheTypesOfTheCopy()
+    {
+        var compilation = CreateCompilation();
+        var (copy, set) = CreateCopy(compilation, "AfterSync", compilation.GetSpecialType(SpecialType.System_Int32));
+        Assert.True(copy.IsFaithful, Describe(copy));
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration);
+        var model = ModelOf(set, declaration);
+
+        var plan = MethodEmissionPlan.Create(declaration, model, isKernel: false);
+
+        var lowered = Assert.IsType<LoweredStateMachine>(plan.Lowered);
+        var kept = Assert.Single(
+            lowered.ContextFields,
+            f => f.Identifier.ValueText.Contains("kept", StringComparison.Ordinal));
+        Assert.Equal(SpecialType.System_Int32, HoistedFieldTypeResolver.Resolve(kept, model, "AfterSync").SpecialType);
+        // The lowered nodes resolve to the copy, not to the generic declaration: its local and its parameter
+        var local = Assert.IsAssignableFrom<ILocalSymbol>(model.GetDeclaredSymbol<ISymbol>(kept));
+        Assert.Equal(SpecialType.System_Int32, local.Type.SpecialType);
+        var value = lowered.LoweredBody.DescendantNodes().OfType<IdentifierNameSyntax>()
+            .First(static name => name.Identifier.ValueText == "value");
+        Assert.Equal(copy.Symbol?.Parameters[0], model.GetSymbol(value), SymbolEqualityComparer.Default);
+        var location = model.GetReportLocation(kept);
+        Assert.Same(compilation.SyntaxTrees.Single(), location.SourceTree);
+        Assert.True(DeclarationSpan("AfterSync").Contains(location.SourceSpan), location.ToString());
     }
 
     // The emitted copy computes what the generic method computes, for every input of the small types: the narrowing
