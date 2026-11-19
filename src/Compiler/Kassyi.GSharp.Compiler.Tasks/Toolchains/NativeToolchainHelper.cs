@@ -118,7 +118,8 @@ internal static class NativeToolchainHelper
 
     /// <summary>
     /// The values of <paramref name="names"/> as <c>NAME=value</c> joined by tabs, read from <paramref name="env"/>
-    /// (the environment the compiler is started with) or, without one, from this process; an unset variable is empty.
+    /// (the variables set over this process's environment when the compiler starts); a name that
+    /// <paramref name="env"/> lacks, or every name without it, is read from this process. An unset variable is empty.
     /// </summary>
     public static string DescribeEnvironment(Dictionary<string, string>? env, params string[] names)
     {
