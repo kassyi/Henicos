@@ -120,7 +120,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         }
 
         var pathComparer = Toolchain.IsWindows ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        if (!TryGroupSourcesByModule(sources, pathComparer, out var modules, out var totalUnits))
+        var modules = NativeModuleGrouper.Group(sources, pathComparer, Log);
+        if (modules is null)
         {
             return false;
         }
@@ -130,10 +131,10 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             return ExecuteMockCompilation(modules);
         }
 
-        return ExecuteNativeCompilationAndLink(totalUnits, modules, pathComparer);
+        return ExecuteNativeCompilationAndLink(modules, pathComparer);
     }
 
-    private bool ExecuteMockCompilation(ModuleGroup[] modules)
+    private bool ExecuteMockCompilation(NativeModuleGroup[] modules)
     {
         var dllItems = new ITaskItem[modules.Length * _architectures.Length];
         var index = 0;
@@ -153,97 +154,35 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return true;
     }
 
-    private bool ExecuteNativeCompilationAndLink(
-        int totalUnits,
-        ModuleGroup[] modules,
-        StringComparer pathComparer)
+    private bool ExecuteNativeCompilationAndLink(NativeModuleGroup[] modules, StringComparer pathComparer)
     {
-        var baseObjDir = string.IsNullOrWhiteSpace(ObjectDirectory)
-            ? Path.Combine(OutputDirectory, "objs")
-            : ObjectDirectory;
-        var objExt = Toolchain.IsWindows ? ".obj" : ".o";
-        var usePerUnitVcPdb = Toolchain.IsWindows && (_sanitizers & NativeSanitizers.Address) != 0;
+        var settings = new NativeUnitBuildSettings(
+            string.IsNullOrWhiteSpace(ObjectDirectory) ? Path.Combine(OutputDirectory, "objs") : ObjectDirectory,
+            OutputDirectory,
+            Toolchain.IsWindows ? ".obj" : ".o",
+            Toolchain.IsWindows && (_sanitizers & NativeSanitizers.Address) != 0,
+            _sanitizers,
+            pathComparer);
+        var plan = NativeUnitBuildPlanner.Plan(modules, _architectures, settings, Toolchain, Log, CancellationToken);
 
-        var pendingWorks = new CompileUnitWork[totalUnits * _architectures.Length];
-        var pendingCount = 0;
-        var linkTargets = new LinkTarget[modules.Length * _architectures.Length];
-        var linkIndex = 0;
         var intermediateBag = new ConcurrentBag<ITaskItem>();
-        var skippedCount = 0;
-
-        foreach (var arch in _architectures)
+        foreach (var artifacts in plan.UpToDateUnits)
         {
-            var archObjDir = Path.Combine(baseObjDir, arch);
-            Directory.CreateDirectory(archObjDir);
-            var compilerIdentity = Toolchain.GetCompilerIdentity(arch, CancellationToken);
-
-            foreach (var module in modules)
-            {
-                var headerHashes = new Dictionary<string, string>(pathComparer);
-                var unitObjPaths = new string[module.Units.Length];
-
-                for (var i = 0; i < module.Units.Length; i++)
-                {
-                    var unit = module.Units[i];
-                    var objPath = Path.Combine(archObjDir, $"{unit.UnitStem}{objExt}");
-                    var recordPath = objPath + CppObjectCommandRecord.FileExtension;
-                    string? vcPdbPath = usePerUnitVcPdb
-                        ? Path.Combine(archObjDir, $"{unit.UnitStem}.vc.pdb")
-                        : null;
-                    unitObjPaths[i] = objPath;
-
-                    var headerPath = CppObjectCommandRecord.GetModuleHeaderPath(unit.SourcePath, module.ModuleStem);
-                    if (!headerHashes.TryGetValue(headerPath, out var headerHash))
-                    {
-                        headerHash = CppObjectCommandRecord.ComputeFileSha256Hex(
-                            headerPath,
-                            CppObjectCommandRecord.MissingHeaderSentinel);
-                        headerHashes[headerPath] = headerHash;
-                    }
-
-                    var compileArgs = Toolchain.BuildCompileObjectArguments(
-                        unit.SourcePath, objPath, arch, _sanitizers, vcPdbPath);
-                    var unitHash = CppObjectCommandRecord.ComputeFileSha256Hex(
-                        unit.SourcePath,
-                        CppObjectCommandRecord.MissingUnitSentinel);
-                    var record = CppObjectCommandRecord.Build(
-                        arch, compilerIdentity, compileArgs, unitHash, headerHash);
-
-                    if (NativeToolchainHelper.HasNonEmptyFile(objPath) &&
-                        File.Exists(unit.SourcePath) &&
-                        CommandRecordFile.IsCurrent(
-                            Log, recordPath, record, CppObjectCommandRecord.RecordDescription))
-                    {
-                        skippedCount++;
-                        AddIntermediateItems(intermediateBag, objPath, recordPath, vcPdbPath);
-                        continue;
-                    }
-
-                    pendingWorks[pendingCount++] = new CompileUnitWork(
-                        unit.SourcePath, objPath, recordPath, vcPdbPath, arch, record);
-                }
-
-                linkTargets[linkIndex++] = new LinkTarget(
-                    arch,
-                    unitObjPaths,
-                    Path.Combine(OutputDirectory, $"{module.ModuleStem}_{arch}.dll"));
-            }
+            AddIntermediateItems(intermediateBag, artifacts);
         }
 
-        if (!CompilePendingUnits(pendingWorks, pendingCount, skippedCount, intermediateBag))
+        if (!CompilePendingUnits(plan, intermediateBag))
         {
             return false;
         }
 
-        return LinkAndSignModules(linkTargets, intermediateBag);
+        return LinkAndSignModules(plan.LinkTargets, intermediateBag);
     }
 
-    private bool CompilePendingUnits(
-        CompileUnitWork[] pendingWorks,
-        int pendingCount,
-        int skippedCount,
-        ConcurrentBag<ITaskItem> intermediateBag)
+    private bool CompilePendingUnits(NativeUnitBuildPlan plan, ConcurrentBag<ITaskItem> intermediateBag)
     {
+        var pendingCount = plan.PendingUnits.Length;
+        var skippedCount = plan.UpToDateUnits.Length;
         if (pendingCount == 0)
         {
             Log.LogMessage(
@@ -276,47 +215,17 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 CancellationToken = CancellationToken
             };
 
-            Parallel.ForEach(new ArraySegment<CompileUnitWork>(pendingWorks, 0, pendingCount), options, work =>
+            Parallel.ForEach(plan.PendingUnits, options, work =>
             {
                 if (Volatile.Read(ref hasErrors) != 0)
                 {
                     return;
                 }
 
-                CancellationToken.ThrowIfCancellationRequested();
-
-                if (!CommandRecordFile.TryDelete(Log, work.RecordPath, CppObjectCommandRecord.RecordDescription))
+                if (!CompileUnit(work, intermediateBag))
                 {
                     Interlocked.Exchange(ref hasErrors, 1);
-                    return;
                 }
-
-                var sw = Stopwatch.StartNew();
-                if (!Toolchain.TryCompileToObject(
-                        work.SourcePath,
-                        work.ObjPath,
-                        work.Arch,
-                        Log,
-                        CancellationToken,
-                        _sanitizers,
-                        work.VcPdbPath))
-                {
-                    Interlocked.Exchange(ref hasErrors, 1);
-                    return;
-                }
-
-                sw.Stop();
-                if (!CommandRecordFile.TryWrite(
-                        Log, work.RecordPath, work.RecordContent, CppObjectCommandRecord.RecordDescription))
-                {
-                    Interlocked.Exchange(ref hasErrors, 1);
-                    return;
-                }
-
-                Log.LogMessage(
-                    MessageImportance.High,
-                    $"Compiled {Path.GetFileName(work.SourcePath)} ({work.Arch}) in {sw.ElapsedMilliseconds} ms.");
-                AddIntermediateItems(intermediateBag, work.ObjPath, work.RecordPath, work.VcPdbPath);
             });
         }
         finally
@@ -330,7 +239,44 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return Volatile.Read(ref hasErrors) == 0;
     }
 
-    private bool LinkAndSignModules(LinkTarget[] linkTargets, ConcurrentBag<ITaskItem> intermediateBag)
+    private bool CompileUnit(NativeUnitCompileWork work, ConcurrentBag<ITaskItem> intermediateBag)
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+
+        var artifacts = work.Artifacts;
+        if (!CommandRecordFile.TryDelete(Log, artifacts.RecordPath, CppObjectCommandRecord.RecordDescription))
+        {
+            return false;
+        }
+
+        var sw = Stopwatch.StartNew();
+        if (!Toolchain.TryCompileToObject(
+                work.SourcePath,
+                artifacts.ObjPath,
+                work.Arch,
+                Log,
+                CancellationToken,
+                _sanitizers,
+                artifacts.VcPdbPath))
+        {
+            return false;
+        }
+
+        sw.Stop();
+        if (!CommandRecordFile.TryWrite(
+                Log, artifacts.RecordPath, work.RecordContent, CppObjectCommandRecord.RecordDescription))
+        {
+            return false;
+        }
+
+        Log.LogMessage(
+            MessageImportance.High,
+            $"Compiled {Path.GetFileName(work.SourcePath)} ({work.Arch}) in {sw.ElapsedMilliseconds} ms.");
+        AddIntermediateItems(intermediateBag, artifacts);
+        return true;
+    }
+
+    private bool LinkAndSignModules(NativeLinkTarget[] linkTargets, ConcurrentBag<ITaskItem> intermediateBag)
     {
         var dllItems = new ITaskItem[linkTargets.Length];
 
@@ -370,17 +316,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return true;
     }
 
-    private static void AddIntermediateItems(
-        ConcurrentBag<ITaskItem> intermediateBag,
-        string objPath,
-        string recordPath,
-        string? vcPdbPath)
+    private static void AddIntermediateItems(ConcurrentBag<ITaskItem> intermediateBag, NativeUnitArtifacts artifacts)
     {
-        intermediateBag.Add(new TaskItem(objPath));
-        intermediateBag.Add(new TaskItem(recordPath));
-        if (vcPdbPath is not null && File.Exists(vcPdbPath))
+        intermediateBag.Add(new TaskItem(artifacts.ObjPath));
+        intermediateBag.Add(new TaskItem(artifacts.RecordPath));
+        if (artifacts.VcPdbPath is not null && File.Exists(artifacts.VcPdbPath))
         {
-            intermediateBag.Add(new TaskItem(vcPdbPath));
+            intermediateBag.Add(new TaskItem(artifacts.VcPdbPath));
         }
     }
 
@@ -391,109 +333,9 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return item;
     }
 
-    private bool TryGroupSourcesByModule(
-        ITaskItem[] sources,
-        StringComparer pathComparer,
-        out ModuleGroup[] modules,
-        out int totalUnits)
-    {
-        var parsed = new (string SourcePath, string ModuleStem, string UnitStem)[sources.Length];
-        var parsedCount = 0;
-        var seenSources = new HashSet<string>(pathComparer);
-        var unitSourcesByStem = new Dictionary<string, string>(pathComparer);
-        var moduleIndices = new Dictionary<string, int>(pathComparer);
-        var moduleStems = new string[sources.Length];
-        var unitCounts = new int[sources.Length];
-        var moduleCount = 0;
-
-        for (var i = 0; i < sources.Length; i++)
-        {
-            var rawPath = sources[i].GetMetadata("FullPath");
-            var candidatePath = !string.IsNullOrEmpty(rawPath) ? rawPath : sources[i].ItemSpec;
-            if (string.IsNullOrWhiteSpace(candidatePath))
-            {
-                Log.LogError("Invalid C++ source entry: source path cannot be empty.");
-                modules = [];
-                totalUnits = 0;
-                return false;
-            }
-
-            var sourcePath = Path.GetFullPath(candidatePath);
-            if (!seenSources.Add(sourcePath))
-            {
-                continue;
-            }
-
-            var (moduleStem, unitStem) = ArtifactHelper.GetNativeModuleAndUnitStem(sourcePath);
-            if (string.IsNullOrEmpty(moduleStem) || string.IsNullOrEmpty(unitStem))
-            {
-                Log.LogError($"Invalid C++ source path '{sourcePath}': expected a non-empty file stem.");
-                modules = [];
-                totalUnits = 0;
-                return false;
-            }
-
-            if (unitSourcesByStem.TryGetValue(unitStem, out var existingSource))
-            {
-                Log.LogError(
-                    $"Multiple C++ sources resolve to the same object unit stem '{unitStem}': " +
-                    $"'{existingSource}' and '{sourcePath}'.");
-                modules = [];
-                totalUnits = 0;
-                return false;
-            }
-
-            unitSourcesByStem[unitStem] = sourcePath;
-            parsed[parsedCount++] = (sourcePath, moduleStem, unitStem);
-
-            if (!moduleIndices.TryGetValue(moduleStem, out var moduleIndex))
-            {
-                moduleIndex = moduleCount++;
-                moduleIndices[moduleStem] = moduleIndex;
-                moduleStems[moduleIndex] = moduleStem;
-            }
-
-            unitCounts[moduleIndex]++;
-        }
-
-        modules = new ModuleGroup[moduleCount];
-        for (var i = 0; i < moduleCount; i++)
-        {
-            modules[i] = new ModuleGroup(moduleStems[i], new UnitSource[unitCounts[i]]);
-            unitCounts[i] = 0;
-        }
-
-        for (var i = 0; i < parsedCount; i++)
-        {
-            var entry = parsed[i];
-            var moduleIndex = moduleIndices[entry.ModuleStem];
-            modules[moduleIndex].Units[unitCounts[moduleIndex]++] = new UnitSource(entry.SourcePath, entry.UnitStem);
-        }
-
-        totalUnits = parsedCount;
-        return true;
-    }
-
     /// <summary>Gets the architecture name (<c>x64</c> or <c>arm64</c>) of the process that runs the build.</summary>
     internal static string HostArchitecture =>
         RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x64";
 
     private string[] GetTargetArchitectures() => GSharpMultiTarget ? ["x64", "arm64"] : [HostArchitecture];
-
-    private readonly record struct UnitSource(string SourcePath, string UnitStem);
-
-    private readonly record struct ModuleGroup(string ModuleStem, UnitSource[] Units);
-
-    private readonly record struct CompileUnitWork(
-        string SourcePath,
-        string ObjPath,
-        string RecordPath,
-        string? VcPdbPath,
-        string Arch,
-        string RecordContent);
-
-    private readonly record struct LinkTarget(
-        string Arch,
-        string[] UnitObjectPaths,
-        string OutputDllPath);
 }
