@@ -6,9 +6,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks>
 /// <see cref="Create"/> is the only place that decides whether a device function suspends and the only place that decides
 /// to lower a method, so every output sees the same decision and the method is lowered at most once. The lowering runs
-/// when an output first needs the state machine, so a caller that emits only for hardware threads (the analyzer,
-/// <see cref="TranspilerFailureCheck"/>) never lowers. A plan lives within one generator transform or analyzer callback; it
-/// is not part of the incremental pipeline models.
+/// when an output first needs the state machine, so a caller that emits only for hardware threads
+/// (<see cref="TranspilerFailureCheck"/>) never lowers; <see cref="ChainedLabelJumpChecks"/> reads
+/// <see cref="Lowered"/> only for a method with chained labels (GSH0121). A plan lives within one generator transform
+/// or analyzer callback; it is not part of the incremental pipeline models.
 /// </remarks>
 internal readonly struct MethodEmissionPlan
 {
@@ -28,15 +29,19 @@ internal readonly struct MethodEmissionPlan
         TwoFormsPlan = twoFormsPlan;
     }
 
-    // Shared by the copies of the plan (it is passed by value), so the method is lowered once
+    // Shared by the copies of the plan (it is passed by value), so the method is lowered once for each form
     // The owner is the symbol of the declaration, kernel or device function, whose written parameters live in the frame
     private sealed class DeferredLowering(MethodDeclarationSyntax declaration, SemanticModel semanticModel,
         IMethodSymbol owner, bool isDeviceFunction)
     {
         private LoweredStateMachine? _lowered;
+        private StackLoweredBody? _stackBody;
 
         public LoweredStateMachine Value =>
             _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, owner, isDeviceFunction);
+
+        public StackLoweredBody StackBody =>
+            _stackBody ??= AstLoweringPipeline.LowerForStack(declaration, semanticModel, owner, isDeviceFunction);
     }
 
     public MethodDeclarationSyntax Declaration { get; }
@@ -56,6 +61,15 @@ internal readonly struct MethodEmissionPlan
     /// first time.
     /// </summary>
     public LoweredStateMachine? Lowered => _lowering?.Value;
+
+    /// <summary>
+    /// The body for the CPU stack models, with the reconvergence regions of a method that reaches
+    /// <c>Warp.ActiveMask()</c> where <see cref="Lowered"/> puts them
+    /// (<see cref="AstLoweringPipeline.LowerForStack"/>), for the same methods as <see cref="Lowered"/>.
+    /// Reading it lowers the method for the stacks the first time, apart from <see cref="Lowered"/>, so an output
+    /// that reads only one of them pays for one lowering.
+    /// </summary>
+    public StackLoweredBody? StackBody => _lowering?.StackBody;
 
     /// <summary>The method has <c>[GpuKernel]</c>.</summary>
     public bool IsGpuKernelEntry { get; }

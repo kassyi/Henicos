@@ -123,6 +123,10 @@ Lowering:
     # the C# order of evaluation, so they share the group
     SequenceTempPrefix: __gsharp_seq_
     ConditionTempPrefix: __gsharp_cond_temp_
+    # The receiver of a null-conditional access that the managed copy writes as a pattern variable, so that an extension
+    # method called on one of its bindings is the static call the semantic model chose:
+    # r is { } <name> ? M(<name>[i]) : ...
+    ConditionalReceiverPrefix: __gsharp_cond_receiver_
     # The governing value of a switch statement that lowering flattens because a section holds a split point
     # (SwitchStatementFlattener); its labels are __gsharp_SwitchSection_<id>_<section> and __gsharp_SwitchEnd_<id>
     SwitchTempPrefix: __gsharp_switch_temp_
@@ -677,8 +681,8 @@ StackWarp:
     MatchAllSync: __gsharp_stack_warp_match_all_sync
     SyncWarp: __gsharp_stack_warp_syncwarp
     ActiveMask: __gsharp_stack_warp_active_mask
-    # The reconvergence regions of a function that reaches Warp.ActiveMask(): enter and leave a thread-dependent branch,
-    # and arrive where it ends, wait for the lanes that entered it, and pass
+    # The reconvergence regions of a method that reaches Warp.ActiveMask() (ReconvergenceInserter): enter, leave by a
+    # jump, and arrive at the end, wait for the other lanes and pass it, in one call
     RegionEnter: __gsharp_stack_warp_region_enter
     RegionLeave: __gsharp_stack_warp_region_leave
     Reconverge: __gsharp_stack_warp_reconverge

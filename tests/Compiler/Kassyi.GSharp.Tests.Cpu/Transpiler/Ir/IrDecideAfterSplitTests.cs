@@ -23,9 +23,8 @@ public class IrDecideAfterSplitTests
     public void Decide_StateMachine_KeepsTheShapeAndDecidesEveryNode()
     {
         var compilation = IrTestCases.Compile(LinearCases);
-        var machine = BuildMachine(compilation, "WhileBarrier");
-        var decided = IrDecisions.Decide(machine,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine)));
+        var (built, machine) = BuildMachine(compilation, "WhileBarrier");
+        var decided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
 
         Assert.Equal(machine.States.Length, decided.States.Length);
         for (var i = 0; i < machine.States.Length; i++)
@@ -44,9 +43,8 @@ public class IrDecideAfterSplitTests
     public void Decide_ConditionOfAWhile_IsDecided()
     {
         var compilation = IrTestCases.Compile(LinearCases);
-        var machine = BuildMachine(compilation, "WhileBarrier");
-        var decided = IrDecisions.Decide(machine,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine)));
+        var (built, machine) = BuildMachine(compilation, "WhileBarrier");
+        var decided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
 
         var conditionalJump = decided.States
             .SelectMany(static s => s.Statements)
@@ -62,8 +60,8 @@ public class IrDecideAfterSplitTests
     public void Decide_AfterThePass_DoesNotTouchTheInput()
     {
         var compilation = IrTestCases.Compile(LinearCases);
-        var machine = BuildMachine(compilation, "WhileBarrier");
-        var context = new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine));
+        var (built, machine) = BuildMachine(compilation, "WhileBarrier");
+        var context = IrDecisionTestContext.Create(compilation, machine, built);
 
         var first = IrDecisions.Decide(machine, context);
         var second = IrDecisions.Decide(machine, context);
@@ -86,14 +84,6 @@ public class IrDecideAfterSplitTests
         }
     }
 
-    private static IrStateMachine BuildMachine(Compilation compilation, string methodName)
-    {
-        var built = IrTestCases.Build(LinearCases, LinearCasesType, methodName);
-        var classified = IrClassifier.Classify(built, compilation);
-        var lowered = IrSplitLowering.Apply(classified, compilation, out var failure);
-        Assert.NotNull(lowered);
-        Assert.Equal(IrSplitLoweringFailureKind.None, failure.Kind);
-        var linear = IrLinearizer.Linearize(lowered, compilation);
-        return IrStateMachineBuilder.Build(linear, isDeviceFunction: false, built.Body.Source, compilation);
-    }
+    private static (IrMethod Built, IrStateMachine Machine) BuildMachine(Compilation compilation, string methodName) =>
+        IrDecisionTestContext.BuildSplitMachine(compilation, LinearCases, LinearCasesType, methodName);
 }

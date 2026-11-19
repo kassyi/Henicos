@@ -19,13 +19,13 @@ internal static class StackArrayLocals
     }
 
     /// <summary>
-    /// The element count of the stack array that <paramref name="expression"/> names: the constant size of its
+    /// The element count of the stack array <paramref name="local"/>: the constant size of its
     /// <c>stackalloc</c> / <c>new T[N]</c>, or the length of its initializer.
     /// </summary>
-    public static bool TryGetLength(ExpressionSyntax expression, SemanticModel semanticModel, out int length)
+    internal static bool TryGetLength(ILocalSymbol local, Compilation compilation, out int length)
     {
         length = 0;
-        if (!IsStackArrayReference(expression, semanticModel, out var declarator) ||
+        if (!IsStackArray(local, out var declarator) ||
             declarator.Initializer is not { } initializer ||
             !InitializationSyntaxExtractor.TryGetArrayInitialization(initializer.Value, out var count, out var size,
                 out _))
@@ -39,13 +39,26 @@ internal static class StackArrayLocals
             return true;
         }
 
-        if (size != null && semanticModel.GetSafeConstantValue(size) is { HasValue: true, Value: int constant })
+        if (size != null &&
+            compilation.GetCachedSemanticModel(declarator.SyntaxTree).GetSafeConstantValue(size) is
+                { HasValue: true, Value: int constant })
         {
             length = constant;
             return true;
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The element count of the stack array that <paramref name="expression"/> names: the constant size of its
+    /// <c>stackalloc</c> / <c>new T[N]</c>, or the length of its initializer.
+    /// </summary>
+    public static bool TryGetLength(ExpressionSyntax expression, SemanticModel semanticModel, out int length)
+    {
+        length = 0;
+        return TryGetStackArrayLocal(expression, semanticModel, out var local) &&
+               TryGetLength(local, semanticModel.Compilation, out length);
     }
 
     /// <summary>
@@ -69,22 +82,31 @@ internal static class StackArrayLocals
     }
 
     /// <summary>
+    /// Whether <paramref name="local"/> is a stack array local that is a C++ array, which a span needs a view for.
+    /// An empty span local is already a <c>GSharpArray&lt;T&gt;</c>.
+    /// </summary>
+    internal static bool NeedsView(ILocalSymbol local, Compilation compilation) =>
+        IsStackArray(local, out _) &&
+        !(TryGetLength(local, compilation, out var length) && length == 0);
+
+    /// <summary>
     /// Whether <paramref name="expression"/> names a stack array local that is a C++ array, which a span needs
     /// <see cref="AppendView"/> for. An empty span local is already a <c>GSharpArray&lt;T&gt;</c>
     /// (<c>VariableDeclarationTranspilerRule</c>), so it is written as it is.
     /// </summary>
     public static bool NeedsView(ExpressionSyntax expression, SemanticModel semanticModel) =>
-        IsStackArrayReference(expression, semanticModel) &&
-        !(TryGetLength(expression, semanticModel, out var length) && length == 0);
+        TryGetStackArrayLocal(expression, semanticModel, out var local) &&
+        NeedsView(local, semanticModel.Compilation);
 
     /// <summary>
     /// Whether <paramref name="expression"/> (parentheses and <c>Gpu.NotNull</c> aside) names a stack array local.
     /// </summary>
     public static bool IsStackArrayReference(ExpressionSyntax expression, SemanticModel semanticModel) =>
-        IsStackArrayReference(expression, semanticModel, out _);
+        TryGetStackArrayLocal(expression, semanticModel, out var local) &&
+        IsStackArray(local, out _);
 
-    private static bool IsStackArrayReference(ExpressionSyntax expression, SemanticModel semanticModel,
-        [NotNullWhen(true)] out VariableDeclaratorSyntax? declarator)
+    private static bool TryGetStackArrayLocal(ExpressionSyntax expression, SemanticModel semanticModel,
+        [NotNullWhen(true)] out ILocalSymbol? local)
     {
         // Parentheses and Gpu.NotNull(a), which returns its argument, name the same stack array
         while (true)
@@ -95,7 +117,7 @@ internal static class StackArrayLocals
             }
             else if (expression is InvocationExpressionSyntax { ArgumentList.Arguments: [{ } only] } call &&
                      semanticModel.GetSymbol(call) is IMethodSymbol method &&
-                     GpuMacroClassifier.Classify(method).Kind == GpuMacroKind.NotNull)
+                     NonNullProof.IsNotNullMethod(method))
             {
                 expression = only.Expression;
             }
@@ -105,8 +127,9 @@ internal static class StackArrayLocals
             }
         }
 
-        declarator = null;
-        return expression is IdentifierNameSyntax &&
-               IsStackArray(semanticModel.GetSymbol(expression) as ILocalSymbol, out declarator);
+        local = expression is IdentifierNameSyntax
+            ? semanticModel.GetSymbol(expression) as ILocalSymbol
+            : null;
+        return local != null;
     }
 }

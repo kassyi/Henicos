@@ -323,4 +323,16 @@ public static class ReconvergenceCases
             goto top;
         }
     }
+
+    // Warp.ActiveMask() in the right operand of &&: only the odd lanes evaluate it, a thread-dependent branch once the
+    // operand is a statement, so the lanes meet again before Mark(20)
+    [GpuKernel]
+    public static void ActiveMaskInAndAlsoKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        bool odd = (t & 1) == 1 && Warp.ActiveMask() != 0u;
+        Mark(20);
+        r[t] = odd ? 1u : 0u;
+        r[t + 32] = Warp.ActiveMask();
+    }
 }
