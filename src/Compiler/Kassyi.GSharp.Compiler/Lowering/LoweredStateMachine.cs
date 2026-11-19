@@ -44,4 +44,13 @@ public sealed record LoweredStateMachine(
     /// </summary>
     public ImmutableArray<VariableDeclaratorSyntax> SpansAcrossStates { get; init; } =
         ImmutableArray<VariableDeclaratorSyntax>.Empty;
+
+    /// <summary>
+    /// The gotos to an inner label of chained labels from another state (<see cref="StatePlan"/>), which
+    /// <see cref="StateMachineLowerer"/> leaves as gotos into another case block. The analyzer and the generator report
+    /// each one, as GSH0121 or, across a barrier, GSH0040 (<see cref="ChainedLabelJumpChecks.FindReported"/>); the
+    /// managed output of such a body is not written (no throw, no goto).
+    /// </summary>
+    public ImmutableArray<ChainedLabelGoto> GotosToChainedLabelsAcrossStates { get; init; } =
+        ImmutableArray<ChainedLabelGoto>.Empty;
 }

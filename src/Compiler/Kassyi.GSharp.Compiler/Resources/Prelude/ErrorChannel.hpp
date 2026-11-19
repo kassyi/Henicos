@@ -104,7 +104,7 @@ private:
 inline thread_local GSharpErrorSlot __gsharp_host_last_error;
 inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
 
-extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error(const char** outMessage) {
     int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
     if (c != 0) {
         if (outMessage != nullptr) {
@@ -115,7 +115,7 @@ extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char*
     return c;
 }
 
-extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error_details(
+extern "C" __declspec(dllexport) GSHARP_EXPORT_INLINE int32_t __gsharp_consume_last_error_details(
     const char** outMessage,
     uint32_t* outSiteId,
     uint32_t* outThreadLinear,

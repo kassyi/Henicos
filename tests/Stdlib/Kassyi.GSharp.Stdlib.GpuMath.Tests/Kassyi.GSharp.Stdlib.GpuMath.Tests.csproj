@@ -37,5 +37,6 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="BigNum\TestData\InverseSqrtDoublingGolden.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

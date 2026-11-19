@@ -42,11 +42,12 @@ test-native-stack *args="":
         --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark" \
         {{blame_crash}} {{args}}
 
-# Run managed barrier/stack-model tests under GSharpManagedBarrierModel=Stack (no GPU)
+# Build Tests.Cpu with one OS thread per GPU thread on the managed path (GSharpManagedBarrierModel=Stack) into
+# bin/<os>-managed-stack and obj/<os>-managed-stack, and run its Differential and Execution tests (no GPU)
 test-managed-stack *args="":
     {{queue}} -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
         -p:GSharpOutputVariant=managed-stack -p:GSharpManagedBarrierModel=Stack \
-        --filter "FullyQualifiedName~StackModelTests|FullyQualifiedName~DeviceFunctionBarrierManagedTests|FullyQualifiedName~DeviceFunctionBarrierEdgeCaseManagedTests|FullyQualifiedName~ResumeLocalManagedTests|FullyQualifiedName~SuspendingValueParameterManagedTests|FullyQualifiedName~KernelValueParameterManagedTests|FullyQualifiedName~SuspendingCallArgumentTests|FullyQualifiedName~SwitchSuspensionManagedTests|FullyQualifiedName~LocalFunctionAcrossStatesManagedTests|FullyQualifiedName~EvaluationOrderSplitManagedTests|FullyQualifiedName~SharedMemoryRegionManagedTests|FullyQualifiedName~DeviceDynamicSharedMemoryManagedTests|FullyQualifiedName~ManagedExecutionTests|FullyQualifiedName~BlockBarrierStepTests|FullyQualifiedName~GridSyncManagedTests" \
+        --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark" \
         {{blame_crash}} {{args}}
 
 # Differential tests: C# oracle vs CUDA

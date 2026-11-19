@@ -294,17 +294,17 @@ internal static class IrStateMachineBuilder
 
         public override IrExpression VisitExpression(IrExpression expression) => expression switch
         {
-            IrConstant constant => IrExpression.WithParentheses(
+            IrConstant constant => IrExpression.WithSpelling(
                 new IrConstant(constant.Value, constant.Origin, constant.Type, constant.Source,
                     constant.LiteralText),
-                constant.Parentheses),
-            IrVariableReference reference => IrExpression.WithParentheses(
+                constant.Parentheses, constant.SpellingSpan, constant.SpellingHasNullForgiving),
+            IrVariableReference reference => IrExpression.WithSpelling(
                 new IrVariableReference(reference.Variable, reference.IsDeclaration, reference.Category,
                     reference.ConstantValue, reference.Source),
-                reference.Parentheses),
-            IrFieldReference { Receiver: null } field => IrExpression.WithParentheses(
+                reference.Parentheses, reference.SpellingSpan, reference.SpellingHasNullForgiving),
+            IrFieldReference { Receiver: null } field => IrExpression.WithSpelling(
                 new IrFieldReference(null, field.Field, field.Category, field.ConstantValue, field.Source),
-                field.Parentheses),
+                field.Parentheses, field.SpellingSpan, field.SpellingHasNullForgiving),
             IrDefaultValue or IrDiscard or IrInitializedObject or IrCall or IrOpaqueExpression or IrSequence
                 or IrRuntimeCall => throw new InvalidOperationException(
                     $"Cannot clone expression of kind {expression.GetType().Name} in a warp collective argument."),

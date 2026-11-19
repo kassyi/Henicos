@@ -37,34 +37,38 @@ public class MemoryBudgetInfrastructureTests
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void LinuxStatus_PeakResidentIsReadInBytes()
+    public void LinuxStatus_PrivateResidentIsAnonymousPlusSharedInBytes()
     {
-        const string Status = "Name:\ttesthost\nVmPeak:\t 9999999 kB\nVmHWM:\t  123456 kB\nVmRSS:\t  100000 kB\n";
+        // The mapped files (RssFile) and the kernel's peaks (VmHWM, VmPeak) are not counted
+        const string Status =
+            "Name:\ttesthost\nVmPeak:\t 9999999 kB\nVmHWM:\t  123456 kB\nVmRSS:\t  100000 kB\n"
+            + "RssAnon:\t   30000 kB\nRssFile:\t   60000 kB\nRssShmem:\t   10000 kB\n";
 
-        long peak = ProcessMemory.ReadLinuxPeakResident(Status);
+        long bytes = ProcessMemory.ReadLinuxPrivateResident(Status);
 
-        Assert.Equal(123456L * 1024, peak);
+        Assert.Equal((30000L + 10000L) * 1024, bytes);
     }
 
-    [Fact]
+    [Theory]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.SadPath)]
-    public void LinuxStatus_WithoutPeakLine_Throws()
+    [InlineData("Name:\ttesthost\nRssShmem:\t 1 kB\n")]
+    [InlineData("Name:\ttesthost\nRssAnon:\t 1 kB\n")]
+    [InlineData("Name:\ttesthost\nRssAnon:\t x kB\nRssShmem:\t 1 kB\n")]
+    public void LinuxStatus_WithoutAValidField_Throws(string status)
     {
-        const string Status = "Name:\ttesthost\nVmRSS:\t 1 kB\n";
-
-        Assert.Throws<IOException>(static () => ProcessMemory.ReadLinuxPeakResident(Status));
+        Assert.Throws<IOException>(() => ProcessMemory.ReadLinuxPrivateResident(status));
     }
 
     [Fact]
     [TestTarget(ExecutionTarget.CpuExecution)]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
-    public void ReadPeakBytes_CountsTouchedNativeMemory()
+    public void ReadBytes_CountsTouchedNativeMemory()
     {
         const long Bytes = 64L * 1024 * 1024;
-        long before = ProcessMemory.ReadPeakBytes();
+        long before = ProcessMemory.ReadBytes();
 
         IntPtr block = Marshal.AllocHGlobal((nint)(before + Bytes));
         try
@@ -74,7 +78,7 @@ public class MemoryBudgetInfrastructureTests
                 Marshal.WriteByte((nint)block + (nint)offset, 1);
             }
 
-            long after = ProcessMemory.ReadPeakBytes();
+            long after = ProcessMemory.ReadBytes();
 
             Assert.True(after >= before + Bytes, $"peak before {before}, after {after}");
         }

@@ -2,8 +2,7 @@
 // below the jobs on a tall screen, one summary line on a short one, and the chat part of the help legend. Pure, like
 // view.ts: watch.ts reads the chats and passes them in, so that the self-test draws the panel from fixed records.
 
-import type { ScreenJob } from "./view.ts";
-import { ScreenLine, type Style, displayWidth, duration, fit, fitEnd } from "./screen-line.ts";
+import { ScreenLine, type LegendEntry, displayWidth, duration, fit, fitEnd } from "../../screen-line.ts";
 
 /** A chat as listChats() of chat-status.js returns it (the fields the panel reads). */
 export interface ChatRecord {
@@ -50,6 +49,14 @@ export interface ChatView {
   ignoreCase: boolean;
   /** The state of the summaries for the help; absent when chat-status.js could not tell. */
   summaries?: SummaryState | null;
+}
+
+/** The fields of a job the panel reads: a PanelJob, or a job of the status (its worktree is optional there). */
+export interface JobRef {
+  id: number;
+  worktree?: string;
+  cwd?: string;
+  session?: string;
 }
 
 /** A path as a key: forward slashes, no trailing slash, one letter case when `ignoreCase`. */
@@ -134,12 +141,12 @@ const isMain = (chat: ChatRecord, view: ChatView): boolean =>
  * client or scheduler) counts for the chats of its worktree, except in the main checkout, where every chat would get
  * every such job.
  */
-export function chatJobs(chat: ChatRecord, view: ChatView, jobs: readonly ScreenJob[]): number[] {
+export function chatJobs(chat: ChatRecord, view: ChatView, jobs: readonly JobRef[]): number[] {
   const key = isMain(chat, view) ? "" : pathKey(directoryOf(chat), view.ignoreCase);
-  const linked = (job: ScreenJob): boolean =>
+  const linked = (job: JobRef): boolean =>
     job.session
       ? job.session === chat.session
-      : key !== "" && pathKey(job.worktree ?? job.cwd, view.ignoreCase) === key;
+      : key !== "" && pathKey(job.worktree ?? job.cwd ?? "", view.ignoreCase) === key;
   return jobs.filter(linked).map((job) => job.id);
 }
 
@@ -186,7 +193,7 @@ const agentName = (agent: string): string => (agent === "antigravity" ? "agy" : 
 export function chatRow(
   chat: ChatRecord,
   view: ChatView,
-  jobs: readonly ScreenJob[],
+  jobs: readonly JobRef[],
   columns: number,
   labelWidth: number,
   now: number,
@@ -267,7 +274,7 @@ export function chatSummary(waiting: readonly ChatRecord[], view: ChatView, colu
 export function chatLines(
   waiting: readonly ChatRecord[],
   view: ChatView,
-  jobs: readonly ScreenJob[],
+  jobs: readonly JobRef[],
   columns: number,
   room: number,
   now: number,
@@ -287,9 +294,6 @@ export function chatLines(
   }
   return lines;
 }
-
-/** A line of the help legend: a heading, or a sample drawn in its screen style and what it means. */
-export type LegendEntry = { heading: string } | { sample: string; style: Style; text: string };
 
 /** The chat part of the help legend, with the state of the summaries when chat-status.js told it. */
 export function chatLegend(view: ChatView | null): LegendEntry[] {
