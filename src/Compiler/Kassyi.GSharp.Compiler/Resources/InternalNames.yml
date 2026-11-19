@@ -168,6 +168,10 @@ Lowering:
     # (__gsharp_localfn_<ordinal>_<name>); the state machine writes the local functions of the body in front of its
     # switch, where sibling scopes of the source meet. The C++ output names local functions by symbol instead
     ManagedLocalFunctionPrefix: __gsharp_localfn_
+    # A const of a split body whose name another declaration of the body also has, in the managed output
+    # (__gsharp_const_<ordinal>_<name>); the state machine writes the consts of the body in front of its switch, where
+    # sibling scopes of the source meet. The C++ output names locals by symbol instead
+    ManagedConstPrefix: __gsharp_const_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).

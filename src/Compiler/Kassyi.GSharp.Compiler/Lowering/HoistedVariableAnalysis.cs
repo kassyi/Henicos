@@ -9,8 +9,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 internal static class HoistedVariableAnalysis
 {
     /// <summary>
-    /// Adds the key of every hoisted declaration of <paramref name="block"/> to <paramref name="hoistedKeys"/> and the
-    /// declarators themselves, in the order written, to <paramref name="hoistedDeclarators"/>.
+    /// Finds the hoisted declarations of <paramref name="block"/> and the const declarators that go in front of its
+    /// state switch instead (<see cref="HoistAnalysis"/>).
     /// </summary>
     /// <param name="block">The body to analyze.</param>
     /// <param name="semanticModel">The semantic model of the method's syntax tree, or <see langword="null"/>.</param>
@@ -19,20 +19,16 @@ internal static class HoistedVariableAnalysis
     /// The keys that the local functions written in front of the <c>switch</c> reference
     /// (<see cref="MovedLocalFunctions.Captured"/>), or <see langword="null"/> when none moves.
     /// </param>
-    /// <param name="hoistedKeys">Receives the key of every hoisted declaration.</param>
-    /// <param name="hoistedDeclarators">Receives the hoisted declarators.</param>
     /// <param name="refLocalsNotLiveAcrossSplit">
     /// The <c>ref</c> locals that are not live after any split point (<see cref="RefLocalLiveness"/>): a barrier in
     /// their scope does not hoist them.
     /// </param>
-    /// <returns>Whether the block has a split point; without one nothing is hoisted.</returns>
-    public static bool Analyze(
+    /// <returns>The hoisted declarations and the lifted consts; without a split point, nothing.</returns>
+    public static HoistAnalysis Analyze(
         BlockSyntax block,
         SemanticModel? semanticModel,
         StatePlan? plan,
         HashSet<DeclarationKey>? capturedByMovedFunctions,
-        HashSet<DeclarationKey> hoistedKeys,
-        ImmutableArray<VariableDeclaratorSyntax>.Builder hoistedDeclarators,
         HashSet<ISymbol>? refLocalsNotLiveAcrossSplit = null)
     {
         // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
@@ -40,8 +36,11 @@ internal static class HoistedVariableAnalysis
         analyzer.Visit(block);
         if (analyzer.BarrierSpans.Count == 0)
         {
-            return false;
+            return HoistAnalysis.WithoutSplitPoint;
         }
+
+        var hoistedKeys = new HashSet<DeclarationKey>();
+        var liftedConstants = new HashSet<DeclarationKey>();
 
         var boundaries = FindStateBoundaries(block, analyzer.BarrierSpans, semanticModel, plan);
         var variableCount = analyzer.Variables.Count;
@@ -50,6 +49,19 @@ internal static class HoistedVariableAnalysis
         {
             var (decl, scopeEnd) = analyzer.Variables[v];
             keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
+            // [WHY] A const has no run-time state: StateMachineLowerer declares every const of a split body in front of
+            // its switch, where every state sees it, instead of a context field, which is not a constant (#955). All of
+            // them go there, so that a lifted const initializer always finds the consts it reads
+            if (IsConstDeclarator(decl))
+            {
+                if (IsBodyLocal(decl))
+                {
+                    liftedConstants.Add(keys[v]);
+                }
+
+                continue;
+            }
+
             if (MustHoist(decl, scopeEnd, keys[v], boundaries, refLocalsNotLiveAcrossSplit) ||
                 (capturedByMovedFunctions?.Contains(keys[v]) == true && IsBodyLocal(decl)))
             {
@@ -61,6 +73,7 @@ internal static class HoistedVariableAnalysis
         // sibling local of the same name that does not cross one stays a local. Without a semantic model the key is the
         // name, and every declaration of a hoisted name moves into the context, which keeps the name-keyed rewrite
         // consistent.
+        var hoistedDeclarators = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
         for (var v = 0; v < variableCount; v++)
         {
             if (hoistedKeys.Contains(keys[v]))
@@ -69,7 +82,7 @@ internal static class HoistedVariableAnalysis
             }
         }
 
-        return true;
+        return new HoistAnalysis(true, hoistedDeclarators.ToImmutable(), hoistedKeys, liftedConstants);
     }
 
     // The starts of the barriers and of the labels that start a state, and the last references when there are labels
@@ -117,6 +130,10 @@ internal static class HoistedVariableAnalysis
                (boundaries.LastReferenceStarts is { } lastReferenceStarts &&
                 IsUsedAfterSplitLabel(boundaries.SplitLabelStarts, lastReferenceStarts, key, declEnd, scopeEnd));
     }
+
+    // Decided by the syntax alone, so that a lowering without a semantic model lifts the same declarations
+    private static bool IsConstDeclarator(VariableDeclaratorSyntax decl) =>
+        decl.Parent?.Parent is LocalDeclarationStatementSyntax { IsConst: true };
 
     // Whether the declaration belongs to the body itself: a local of a local function or a lambda stays in it
     private static bool IsBodyLocal(VariableDeclaratorSyntax decl) =>
@@ -229,7 +246,7 @@ internal static class HoistedVariableAnalysis
             NameColonSyntax => true,
             NameEqualsSyntax => true,
             AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment => assignment.Left == node,
-            GotoStatementSyntax => true,
+            GotoStatementSyntax { RawKind: (int)SyntaxKind.GotoStatement } => true,
             _ => false
         };
 
