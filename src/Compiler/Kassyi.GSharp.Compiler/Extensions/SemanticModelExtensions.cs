@@ -141,6 +141,44 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// The element of the collection initializer in the user's source that <paramref name="element"/> (an element of a
+    /// collection or complex element initializer, also of a lowered tree) stands for, with the semantic model of its
+    /// tree; false when the initializer is unmapped.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Lowering may replace the element itself with a temporary that maps to no node of the source: a call
+    /// hoisted out of it (WarpInstructionRewriter), a ?: or &amp;&amp; lowered into statements
+    /// (ConditionalEvaluationRewriter). The initializer around it keeps its original span and its elements one for one,
+    /// so the element is found by its index there, as CallerInfoArgument reads an argument through the call.
+    /// </remarks>
+    public static bool TryGetOriginalInitializerElement(this SemanticModel semanticModel, ExpressionSyntax element,
+        [NotNullWhen(true)] out ExpressionSyntax? originalElement, out SemanticModel originalModel)
+    {
+        originalElement = null;
+        if (element.Parent is not InitializerExpressionSyntax initializer ||
+            !semanticModel.TryGetOriginalNode(initializer, out var original, out originalModel) ||
+            original is not InitializerExpressionSyntax { Expressions: var originalElements } ||
+            originalElements.Count != initializer.Expressions.Count)
+        {
+            originalModel = semanticModel;
+            return false;
+        }
+
+        originalElement = originalElements[initializer.Expressions.IndexOf(element)];
+        return true;
+    }
+
+    /// <summary>
+    /// The <c>Add</c> method that C# calls for <paramref name="element"/>, an element of a collection initializer, also
+    /// for an element of a lowered tree (<see cref="TryGetOriginalInitializerElement"/>); null when it binds to none.
+    /// </summary>
+    public static IMethodSymbol? GetCollectionInitializerAdd(this SemanticModel semanticModel,
+        ExpressionSyntax element) =>
+        semanticModel.TryGetOriginalInitializerElement(element, out var original, out var originalModel)
+            ? originalModel.GetCollectionInitializerSymbolInfo(original).Symbol as IMethodSymbol
+            : null;
+
+    /// <summary>
     /// Gets the original location for the specified syntax node, or null if unmapped.
     /// </summary>
     public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node)

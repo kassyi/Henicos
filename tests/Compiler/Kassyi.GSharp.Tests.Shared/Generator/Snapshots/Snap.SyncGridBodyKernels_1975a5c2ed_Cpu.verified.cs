@@ -5459,7 +5459,6 @@ int __gsharp_id_7_w;
 int __gsharp_id_8_x;
 int __gsharp_id_9_y;
 int __gsharp_id_11_z;
-int __gsharp_id_10_k;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<int> __gsharp_in___gsharp_id_1_b, GSharpArray<int> __gsharp_in___gsharp_id_2_c, GSharpArray<int> __gsharp_in___gsharp_id_3_counter, int __gsharp_in___gsharp_id_4_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Transpiler__SyncGridBodyKernels__DeclarationAfterReturnKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -5473,6 +5472,7 @@ __gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
 __gsharp_ctx->__gsharp_id_3_counter=__gsharp_in___gsharp_id_3_counter;
 __gsharp_ctx->__gsharp_id_4_n=__gsharp_in___gsharp_id_4_n;
 }
+int __gsharp_id_10_k = 5;
 switch(__gsharp_state)
 {
 case 0:
@@ -5532,7 +5532,6 @@ return;
 case 5:
 __gsharp_switch_1_state_5:
 {
-__gsharp_ctx->__gsharp_id_10_k=5;
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=6;
 return;
@@ -5553,7 +5552,7 @@ __gsharp_switch_1_state_7:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),__gsharp_ctx->__gsharp_id_10_k);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),__gsharp_id_10_k);
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=8;
@@ -5704,7 +5703,6 @@ public int w;
 public int x;
 public int y;
 public int z;
-public int k;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 return next;
@@ -5720,6 +5718,7 @@ __gsharp_ctx.counter = __gsharp_in_counter;
 __gsharp_ctx.n = __gsharp_in_n;
 }
 {
+const int k = 5;
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -5783,7 +5782,6 @@ return;
 
 case 5:
 {
-__gsharp_ctx.k = 5;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;
 __gsharp_ctx.__gsharp_state = 6;
 return;
@@ -5805,7 +5803,7 @@ case 7:
 {
 if (!__gsharp_ctx.__gsharp_sg_done_0)
 {
-__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.v + __gsharp_ctx.y + __gsharp_ctx.k;
+__gsharp_ctx.b[__gsharp_ctx.tid] = __gsharp_ctx.v + __gsharp_ctx.y + k;
 }
 
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = true;

@@ -309,11 +309,11 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         writer.Append(remainder);
         using (writer.Parentheses())
         {
-            ArithmeticConversions.AppendOperand(operation.LeftOperand, IntegerSemanticsEmitter.Unparenthesize(node.Left),
+            ArithmeticConversions.AppendOperand(operation.LeftOperand, node.Left.UnwrapParentheses(),
                 type, ref context);
             writer.Append(',');
             ArithmeticConversions.AppendOperand(operation.RightOperand,
-                IntegerSemanticsEmitter.Unparenthesize(node.Right), type, ref context);
+                node.Right.UnwrapParentheses(), type, ref context);
         }
     }
 

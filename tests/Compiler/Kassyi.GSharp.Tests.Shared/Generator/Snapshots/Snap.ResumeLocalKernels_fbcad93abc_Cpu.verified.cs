@@ -1548,7 +1548,6 @@ __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__Cons
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_a;
-int __gsharp_id_1_Size;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -1559,12 +1558,12 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 }
 int __gsharp_id_2_s[4];
+int __gsharp_id_1_Size = 4;
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_Size=4;
 for(auto __gsharp_resume_fill = 0;__gsharp_resume_fill<4;__gsharp_resume_fill++)
 {
 __gsharp_id_2_s[__gsharp_resume_fill]={};
@@ -1669,7 +1668,6 @@ public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocal
 public int __gsharp_state;
 public uint __gsharp_warp_path;
 public int[] a;
-public int Size;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 return next;
@@ -1683,19 +1681,19 @@ if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.a = __gsharp_in_a;
 }
 {
+const int Size = 4;
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.Size = 4;
 {
 s = __gsharp_resume_storage_s;
 for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)
 __gsharp_resume_storage_s[__gsharp_resume_fill] = default;
 }
 
-s[__gsharp_ctx.Size - 1] = 1;
-__gsharp_ctx.a[0] = s[__gsharp_ctx.Size - 1];
+s[Size - 1] = 1;
+__gsharp_ctx.a[0] = s[Size - 1];
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 1;
 return;
@@ -3947,7 +3945,6 @@ __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__Cons
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 GSharpArray<int> __gsharp_id_0_a;
-int __gsharp_id_1_Half;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeLengthKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeLengthKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -3958,12 +3955,12 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 }
 int __gsharp_id_2_s[4];
+int __gsharp_id_1_Half = 2;
 switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->__gsharp_id_1_Half=2;
 for(auto __gsharp_resume_fill = 0;__gsharp_resume_fill<4;__gsharp_resume_fill++)
 {
 __gsharp_id_2_s[__gsharp_resume_fill]={};
@@ -4067,7 +4064,6 @@ public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocal
 public int __gsharp_state;
 public uint __gsharp_warp_path;
 public int[] a;
-public int Half;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
 return next;
@@ -4081,11 +4077,11 @@ if (__gsharp_ctx.__gsharp_state == 0) {
 __gsharp_ctx.a = __gsharp_in_a;
 }
 {
+const int Half = 2;
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_ctx.Half = 2;
 {
 s = __gsharp_resume_storage_s;
 for (int __gsharp_resume_fill = 0; __gsharp_resume_fill < 4; __gsharp_resume_fill++)

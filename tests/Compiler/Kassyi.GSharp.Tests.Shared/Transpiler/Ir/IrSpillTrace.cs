@@ -1,5 +1,6 @@
 #nullable enable
 using Kassyi.GSharp.Compiler;
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Ir;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Splitting;
@@ -113,7 +114,7 @@ internal static class IrSpillTrace
                 TempDeclaration(only) is ({ } checkName, { } location) &&
                 checkName.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
             {
-                tokens.Add(Leaf("check", OriginalSpan(IteratorTypeResolver.UnwrapParentheses(location)), text));
+                tokens.Add(Leaf("check", OriginalSpan(location.UnwrapParentheses()), text));
                 continue;
             }
 
@@ -121,7 +122,7 @@ internal static class IrSpillTrace
             {
                 if (name.StartsWith(GSharpInternalNames.Lowering.ArgumentTempPrefix, StringComparison.Ordinal))
                 {
-                    tokens.Add(Leaf("spill", OriginalSpan(IteratorTypeResolver.UnwrapParentheses(initializer)), text));
+                    tokens.Add(Leaf("spill", OriginalSpan(initializer.UnwrapParentheses()), text));
                 }
                 else
                 {

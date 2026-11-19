@@ -701,7 +701,6 @@ int __gsharp_id_3_local;
 int __gsharp_id_4_lane;
 int __gsharp_id_5_v;
 int __gsharp_id_6_o;
-unsigned int __gsharp_id_7_FullMask;
 bool __gsharp_id_8_allPredicate;
 bool __gsharp_id_9_anyPredicate;
 bool __gsharp_arg_temp_0;
@@ -740,6 +739,7 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_input=__gsharp_in___gsharp_id_0_input;
 __gsharp_ctx->__gsharp_id_1_output=__gsharp_in___gsharp_id_1_output;
 }
+unsigned int __gsharp_id_7_FullMask = 0xFFFFFFFFu;
 switch(__gsharp_state)
 {
 case 0:
@@ -750,36 +750,35 @@ __gsharp_ctx->__gsharp_id_3_local=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Dif
 __gsharp_ctx->__gsharp_id_4_lane=__gsharp_ctx->__gsharp_id_3_local&31;
 __gsharp_ctx->__gsharp_id_5_v=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_input, __gsharp_ctx->__gsharp_id_2_gid, 257973195u);
 __gsharp_ctx->__gsharp_id_6_o=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_2_gid,17);
-__gsharp_ctx->__gsharp_id_7_FullMask=0xFFFFFFFFu;
 __gsharp_ctx->__gsharp_id_8_allPredicate=(__gsharp_ctx->__gsharp_id_5_v&1)==0||((__gsharp_ctx->__gsharp_id_3_local>>5)&1)==0;
 __gsharp_ctx->__gsharp_id_9_anyPredicate=(__gsharp_ctx->__gsharp_id_5_v&15)==0&&((__gsharp_ctx->__gsharp_id_3_local>>5)&1)==0;
 __gsharp_ctx->__gsharp_arg_temp_0=(__gsharp_ctx->__gsharp_id_5_v&1)!=0;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_0,""Warp.BallotSync"",""WarpCollectiveDifferentialKernels.cs(82,25)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_0,""Warp.BallotSync"",""WarpCollectiveDifferentialKernels.cs(82,25)"");
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_ballot_read_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_0,""WarpCollectiveDifferentialKernels.cs(82,25)"");
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_ballot_read_sync(__gsharp_root,__gsharp_ctx,0,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_0,""WarpCollectiveDifferentialKernels.cs(82,25)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_ctx->__gsharp_id_6_o+0, 1515035576u)=__gsharp_ctx->__gsharp_warp_temp_1;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_8_allPredicate,""Warp.AllSync"",""WarpCollectiveDifferentialKernels.cs(83,25)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,1,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_8_allPredicate,""Warp.AllSync"",""WarpCollectiveDifferentialKernels.cs(83,25)"");
 __gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_all_read_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_8_allPredicate,""WarpCollectiveDifferentialKernels.cs(83,25)"");
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_all_read_sync(__gsharp_root,__gsharp_ctx,1,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_8_allPredicate,""WarpCollectiveDifferentialKernels.cs(83,25)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,1), 852532226u)=(__gsharp_ctx->__gsharp_warp_temp_2?1u:0u);
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_9_anyPredicate,""Warp.AnySync"",""WarpCollectiveDifferentialKernels.cs(84,25)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,2,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_9_anyPredicate,""Warp.AnySync"",""WarpCollectiveDifferentialKernels.cs(84,25)"");
 __gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_any_read_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_9_anyPredicate,""WarpCollectiveDifferentialKernels.cs(84,25)"");
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_any_read_sync(__gsharp_root,__gsharp_ctx,2,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_9_anyPredicate,""WarpCollectiveDifferentialKernels.cs(84,25)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,2), 1355887588u)=(__gsharp_ctx->__gsharp_warp_temp_3?1u:0u);
 __gsharp_ctx->__gsharp_id_10_halfMask=(__gsharp_ctx->__gsharp_id_4_lane<16?0x0000FFFFu:0xFFFF0000u);
 if(!(__gsharp_ctx->__gsharp_id_4_lane<16))
@@ -853,89 +852,89 @@ goto __gsharp_switch_1_state_11;
 case 11:
 __gsharp_switch_1_state_11:
 {
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,9,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceAddSync"",""WarpCollectiveDifferentialKernels.cs(100,31)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,9,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceAddSync"",""WarpCollectiveDifferentialKernels.cs(100,31)"");
 __gsharp_state=12;
 return;
 }
 case 12:
 __gsharp_switch_1_state_12:
 {
-__gsharp_ctx->__gsharp_warp_temp_12=__gsharp_warp_reduce_add_read_sync(__gsharp_root,__gsharp_ctx,9,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(100,31)"");
+__gsharp_ctx->__gsharp_warp_temp_12=__gsharp_warp_reduce_add_read_sync(__gsharp_root,__gsharp_ctx,9,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(100,31)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,6), 1890267132u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_12;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,10,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceMinSync"",""WarpCollectiveDifferentialKernels.cs(101,31)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,10,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceMinSync"",""WarpCollectiveDifferentialKernels.cs(101,31)"");
 __gsharp_state=13;
 return;
 }
 case 13:
 __gsharp_switch_1_state_13:
 {
-__gsharp_ctx->__gsharp_warp_temp_13=__gsharp_warp_reduce_min_read_sync(__gsharp_root,__gsharp_ctx,10,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(101,31)"");
+__gsharp_ctx->__gsharp_warp_temp_13=__gsharp_warp_reduce_min_read_sync(__gsharp_root,__gsharp_ctx,10,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(101,31)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,7), 793499688u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_13;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,11,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceMaxSync"",""WarpCollectiveDifferentialKernels.cs(102,31)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,11,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceMaxSync"",""WarpCollectiveDifferentialKernels.cs(102,31)"");
 __gsharp_state=14;
 return;
 }
 case 14:
 __gsharp_switch_1_state_14:
 {
-__gsharp_ctx->__gsharp_warp_temp_14=__gsharp_warp_reduce_max_read_sync(__gsharp_root,__gsharp_ctx,11,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(102,31)"");
+__gsharp_ctx->__gsharp_warp_temp_14=__gsharp_warp_reduce_max_read_sync(__gsharp_root,__gsharp_ctx,11,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(102,31)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,8), 685355360u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_14;
 __gsharp_ctx->__gsharp_arg_temp_15=__gsharp_ctx->__gsharp_id_5_v|0x10;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,12,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_15,""Warp.ReduceAndSync"",""WarpCollectiveDifferentialKernels.cs(103,31)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,12,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_15,""Warp.ReduceAndSync"",""WarpCollectiveDifferentialKernels.cs(103,31)"");
 __gsharp_state=15;
 return;
 }
 case 15:
 __gsharp_switch_1_state_15:
 {
-__gsharp_ctx->__gsharp_warp_temp_16=__gsharp_warp_reduce_and_read_sync(__gsharp_root,__gsharp_ctx,12,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_15,""WarpCollectiveDifferentialKernels.cs(103,31)"");
+__gsharp_ctx->__gsharp_warp_temp_16=__gsharp_warp_reduce_and_read_sync(__gsharp_root,__gsharp_ctx,12,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_15,""WarpCollectiveDifferentialKernels.cs(103,31)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,9), 1750297356u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_16;
 __gsharp_ctx->__gsharp_arg_temp_17=__gsharp_ctx->__gsharp_id_5_v&0x0F0F0F0F;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,13,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_17,""Warp.ReduceOrSync"",""WarpCollectiveDifferentialKernels.cs(104,32)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,13,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_17,""Warp.ReduceOrSync"",""WarpCollectiveDifferentialKernels.cs(104,32)"");
 __gsharp_state=16;
 return;
 }
 case 16:
 __gsharp_switch_1_state_16:
 {
-__gsharp_ctx->__gsharp_warp_temp_18=__gsharp_warp_reduce_or_read_sync(__gsharp_root,__gsharp_ctx,13,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_17,""WarpCollectiveDifferentialKernels.cs(104,32)"");
+__gsharp_ctx->__gsharp_warp_temp_18=__gsharp_warp_reduce_or_read_sync(__gsharp_root,__gsharp_ctx,13,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_arg_temp_17,""WarpCollectiveDifferentialKernels.cs(104,32)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,10), 572188156u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_18;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,14,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceXorSync"",""WarpCollectiveDifferentialKernels.cs(105,32)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,14,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceXorSync"",""WarpCollectiveDifferentialKernels.cs(105,32)"");
 __gsharp_state=17;
 return;
 }
 case 17:
 __gsharp_switch_1_state_17:
 {
-__gsharp_ctx->__gsharp_warp_temp_19=__gsharp_warp_reduce_xor_read_sync(__gsharp_root,__gsharp_ctx,14,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(105,32)"");
+__gsharp_ctx->__gsharp_warp_temp_19=__gsharp_warp_reduce_xor_read_sync(__gsharp_root,__gsharp_ctx,14,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_5_v,""WarpCollectiveDifferentialKernels.cs(105,32)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,11), 1470370912u)=(unsigned int)__gsharp_ctx->__gsharp_warp_temp_19;
 __gsharp_ctx->__gsharp_id_11_u=(unsigned int)__gsharp_ctx->__gsharp_id_5_v;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,15,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceAddSync"",""WarpCollectiveDifferentialKernels.cs(108,26)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,15,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceAddSync"",""WarpCollectiveDifferentialKernels.cs(108,26)"");
 __gsharp_state=18;
 return;
 }
 case 18:
 __gsharp_switch_1_state_18:
 {
-__gsharp_ctx->__gsharp_warp_temp_20=__gsharp_warp_reduce_add_read_sync(__gsharp_root,__gsharp_ctx,15,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(108,26)"");
+__gsharp_ctx->__gsharp_warp_temp_20=__gsharp_warp_reduce_add_read_sync(__gsharp_root,__gsharp_ctx,15,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(108,26)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,12), 993984652u)=__gsharp_ctx->__gsharp_warp_temp_20;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,16,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceMinSync"",""WarpCollectiveDifferentialKernels.cs(109,26)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,16,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceMinSync"",""WarpCollectiveDifferentialKernels.cs(109,26)"");
 __gsharp_state=19;
 return;
 }
 case 19:
 __gsharp_switch_1_state_19:
 {
-__gsharp_ctx->__gsharp_warp_temp_21=__gsharp_warp_reduce_min_read_sync(__gsharp_root,__gsharp_ctx,16,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(109,26)"");
+__gsharp_ctx->__gsharp_warp_temp_21=__gsharp_warp_reduce_min_read_sync(__gsharp_root,__gsharp_ctx,16,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(109,26)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,13), 435701832u)=__gsharp_ctx->__gsharp_warp_temp_21;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,17,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceMaxSync"",""WarpCollectiveDifferentialKernels.cs(110,26)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,17,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""Warp.ReduceMaxSync"",""WarpCollectiveDifferentialKernels.cs(110,26)"");
 __gsharp_state=20;
 return;
 }
 case 20:
 __gsharp_switch_1_state_20:
 {
-__gsharp_ctx->__gsharp_warp_temp_22=__gsharp_warp_reduce_max_read_sync(__gsharp_root,__gsharp_ctx,17,__gsharp_ctx->__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(110,26)"");
+__gsharp_ctx->__gsharp_warp_temp_22=__gsharp_warp_reduce_max_read_sync(__gsharp_root,__gsharp_ctx,17,__gsharp_id_7_FullMask,__gsharp_ctx->__gsharp_id_11_u,""WarpCollectiveDifferentialKernels.cs(110,26)"");
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_output, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_o,14), 383666380u)=__gsharp_ctx->__gsharp_warp_temp_22;
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,18,__gsharp_ctx->__gsharp_id_10_halfMask,__gsharp_ctx->__gsharp_id_5_v,""Warp.ReduceAddSync"",""WarpCollectiveDifferentialKernels.cs(112,32)"");
 __gsharp_state=21;
@@ -1062,7 +1061,6 @@ public int local;
 public int lane;
 public int v;
 public int o;
-public uint FullMask;
 public bool allPredicate;
 public bool anyPredicate;
 public bool __gsharp_arg_temp_0;
@@ -1107,6 +1105,7 @@ __gsharp_ctx.input = __gsharp_in_input;
 __gsharp_ctx.output = __gsharp_in_output;
 }
 {
+const uint FullMask = 0xFFFFFFFFu;
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -1116,36 +1115,35 @@ __gsharp_ctx.local = global::Kassyi.GSharp.Tests.Shared.Differential.WarpCollect
 __gsharp_ctx.lane = __gsharp_ctx.local & 31;
 __gsharp_ctx.v = __gsharp_ctx.input[__gsharp_ctx.gid];
 __gsharp_ctx.o = __gsharp_ctx.gid * 17;
-__gsharp_ctx.FullMask = 0xFFFFFFFFu;
 __gsharp_ctx.allPredicate = (__gsharp_ctx.v & 1) == 0 || ((__gsharp_ctx.local >> 5) & 1) == 0;
 __gsharp_ctx.anyPredicate = (__gsharp_ctx.v & 15) == 0 && ((__gsharp_ctx.local >> 5) & 1) == 0;
 __gsharp_ctx.__gsharp_arg_temp_0 = (__gsharp_ctx.v & 1) != 0;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.BallotSync", "WarpCollectiveDifferentialKernels.cs(82,25)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, FullMask, __gsharp_ctx.__gsharp_arg_temp_0, "Warp.BallotSync", "WarpCollectiveDifferentialKernels.cs(82,25)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(82,25)");
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_ballot_read_sync(0, ref __gsharp_ctx, 0, FullMask, __gsharp_ctx.__gsharp_arg_temp_0, "WarpCollectiveDifferentialKernels.cs(82,25)");
 __gsharp_ctx.output[__gsharp_ctx.o + 0] = __gsharp_ctx.__gsharp_warp_temp_1;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 1, __gsharp_ctx.FullMask, __gsharp_ctx.allPredicate, "Warp.AllSync", "WarpCollectiveDifferentialKernels.cs(83,25)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 1, FullMask, __gsharp_ctx.allPredicate, "Warp.AllSync", "WarpCollectiveDifferentialKernels.cs(83,25)");
 __gsharp_ctx.__gsharp_state = 2;
 return;
 }
 
 case 2:
 {
-__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_all_read_sync(0, ref __gsharp_ctx, 1, __gsharp_ctx.FullMask, __gsharp_ctx.allPredicate, "WarpCollectiveDifferentialKernels.cs(83,25)");
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_all_read_sync(0, ref __gsharp_ctx, 1, FullMask, __gsharp_ctx.allPredicate, "WarpCollectiveDifferentialKernels.cs(83,25)");
 __gsharp_ctx.output[__gsharp_ctx.o + 1] = __gsharp_ctx.__gsharp_warp_temp_2 ? 1u : 0u;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 2, __gsharp_ctx.FullMask, __gsharp_ctx.anyPredicate, "Warp.AnySync", "WarpCollectiveDifferentialKernels.cs(84,25)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 2, FullMask, __gsharp_ctx.anyPredicate, "Warp.AnySync", "WarpCollectiveDifferentialKernels.cs(84,25)");
 __gsharp_ctx.__gsharp_state = 3;
 return;
 }
 
 case 3:
 {
-__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_any_read_sync(0, ref __gsharp_ctx, 2, __gsharp_ctx.FullMask, __gsharp_ctx.anyPredicate, "WarpCollectiveDifferentialKernels.cs(84,25)");
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_any_read_sync(0, ref __gsharp_ctx, 2, FullMask, __gsharp_ctx.anyPredicate, "WarpCollectiveDifferentialKernels.cs(84,25)");
 __gsharp_ctx.output[__gsharp_ctx.o + 2] = __gsharp_ctx.__gsharp_warp_temp_3 ? 1u : 0u;
 __gsharp_ctx.halfMask = __gsharp_ctx.lane < 16 ? 0x0000FFFFu : 0xFFFF0000u;
 if (!(__gsharp_ctx.lane < 16))
@@ -1217,89 +1215,89 @@ goto case 11;
 
 case 11:
 {
-__gsharp_warp_publish(0, ref __gsharp_ctx, 9, __gsharp_ctx.FullMask, __gsharp_ctx.v, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(100,31)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 9, FullMask, __gsharp_ctx.v, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(100,31)");
 __gsharp_ctx.__gsharp_state = 12;
 return;
 }
 
 case 12:
 {
-__gsharp_ctx.__gsharp_warp_temp_12 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 9, __gsharp_ctx.FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(100,31)");
+__gsharp_ctx.__gsharp_warp_temp_12 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 9, FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(100,31)");
 __gsharp_ctx.output[__gsharp_ctx.o + 6] = (uint)__gsharp_ctx.__gsharp_warp_temp_12;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 10, __gsharp_ctx.FullMask, __gsharp_ctx.v, "Warp.ReduceMinSync", "WarpCollectiveDifferentialKernels.cs(101,31)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 10, FullMask, __gsharp_ctx.v, "Warp.ReduceMinSync", "WarpCollectiveDifferentialKernels.cs(101,31)");
 __gsharp_ctx.__gsharp_state = 13;
 return;
 }
 
 case 13:
 {
-__gsharp_ctx.__gsharp_warp_temp_13 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 10, __gsharp_ctx.FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(101,31)");
+__gsharp_ctx.__gsharp_warp_temp_13 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 10, FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(101,31)");
 __gsharp_ctx.output[__gsharp_ctx.o + 7] = (uint)__gsharp_ctx.__gsharp_warp_temp_13;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 11, __gsharp_ctx.FullMask, __gsharp_ctx.v, "Warp.ReduceMaxSync", "WarpCollectiveDifferentialKernels.cs(102,31)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 11, FullMask, __gsharp_ctx.v, "Warp.ReduceMaxSync", "WarpCollectiveDifferentialKernels.cs(102,31)");
 __gsharp_ctx.__gsharp_state = 14;
 return;
 }
 
 case 14:
 {
-__gsharp_ctx.__gsharp_warp_temp_14 = __gsharp_warp_reduce_max_read_sync(0, ref __gsharp_ctx, 11, __gsharp_ctx.FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(102,31)");
+__gsharp_ctx.__gsharp_warp_temp_14 = __gsharp_warp_reduce_max_read_sync(0, ref __gsharp_ctx, 11, FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(102,31)");
 __gsharp_ctx.output[__gsharp_ctx.o + 8] = (uint)__gsharp_ctx.__gsharp_warp_temp_14;
 __gsharp_ctx.__gsharp_arg_temp_15 = __gsharp_ctx.v | 0x10;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 12, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_15, "Warp.ReduceAndSync", "WarpCollectiveDifferentialKernels.cs(103,31)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 12, FullMask, __gsharp_ctx.__gsharp_arg_temp_15, "Warp.ReduceAndSync", "WarpCollectiveDifferentialKernels.cs(103,31)");
 __gsharp_ctx.__gsharp_state = 15;
 return;
 }
 
 case 15:
 {
-__gsharp_ctx.__gsharp_warp_temp_16 = __gsharp_warp_reduce_and_read_sync(0, ref __gsharp_ctx, 12, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_15, "WarpCollectiveDifferentialKernels.cs(103,31)");
+__gsharp_ctx.__gsharp_warp_temp_16 = __gsharp_warp_reduce_and_read_sync(0, ref __gsharp_ctx, 12, FullMask, __gsharp_ctx.__gsharp_arg_temp_15, "WarpCollectiveDifferentialKernels.cs(103,31)");
 __gsharp_ctx.output[__gsharp_ctx.o + 9] = (uint)__gsharp_ctx.__gsharp_warp_temp_16;
 __gsharp_ctx.__gsharp_arg_temp_17 = __gsharp_ctx.v & 0x0F0F0F0F;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 13, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_17, "Warp.ReduceOrSync", "WarpCollectiveDifferentialKernels.cs(104,32)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 13, FullMask, __gsharp_ctx.__gsharp_arg_temp_17, "Warp.ReduceOrSync", "WarpCollectiveDifferentialKernels.cs(104,32)");
 __gsharp_ctx.__gsharp_state = 16;
 return;
 }
 
 case 16:
 {
-__gsharp_ctx.__gsharp_warp_temp_18 = __gsharp_warp_reduce_or_read_sync(0, ref __gsharp_ctx, 13, __gsharp_ctx.FullMask, __gsharp_ctx.__gsharp_arg_temp_17, "WarpCollectiveDifferentialKernels.cs(104,32)");
+__gsharp_ctx.__gsharp_warp_temp_18 = __gsharp_warp_reduce_or_read_sync(0, ref __gsharp_ctx, 13, FullMask, __gsharp_ctx.__gsharp_arg_temp_17, "WarpCollectiveDifferentialKernels.cs(104,32)");
 __gsharp_ctx.output[__gsharp_ctx.o + 10] = (uint)__gsharp_ctx.__gsharp_warp_temp_18;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 14, __gsharp_ctx.FullMask, __gsharp_ctx.v, "Warp.ReduceXorSync", "WarpCollectiveDifferentialKernels.cs(105,32)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 14, FullMask, __gsharp_ctx.v, "Warp.ReduceXorSync", "WarpCollectiveDifferentialKernels.cs(105,32)");
 __gsharp_ctx.__gsharp_state = 17;
 return;
 }
 
 case 17:
 {
-__gsharp_ctx.__gsharp_warp_temp_19 = __gsharp_warp_reduce_xor_read_sync(0, ref __gsharp_ctx, 14, __gsharp_ctx.FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(105,32)");
+__gsharp_ctx.__gsharp_warp_temp_19 = __gsharp_warp_reduce_xor_read_sync(0, ref __gsharp_ctx, 14, FullMask, __gsharp_ctx.v, "WarpCollectiveDifferentialKernels.cs(105,32)");
 __gsharp_ctx.output[__gsharp_ctx.o + 11] = (uint)__gsharp_ctx.__gsharp_warp_temp_19;
 __gsharp_ctx.u = (uint)__gsharp_ctx.v;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 15, __gsharp_ctx.FullMask, __gsharp_ctx.u, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(108,26)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 15, FullMask, __gsharp_ctx.u, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(108,26)");
 __gsharp_ctx.__gsharp_state = 18;
 return;
 }
 
 case 18:
 {
-__gsharp_ctx.__gsharp_warp_temp_20 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 15, __gsharp_ctx.FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(108,26)");
+__gsharp_ctx.__gsharp_warp_temp_20 = __gsharp_warp_reduce_add_read_sync(0, ref __gsharp_ctx, 15, FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(108,26)");
 __gsharp_ctx.output[__gsharp_ctx.o + 12] = __gsharp_ctx.__gsharp_warp_temp_20;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 16, __gsharp_ctx.FullMask, __gsharp_ctx.u, "Warp.ReduceMinSync", "WarpCollectiveDifferentialKernels.cs(109,26)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 16, FullMask, __gsharp_ctx.u, "Warp.ReduceMinSync", "WarpCollectiveDifferentialKernels.cs(109,26)");
 __gsharp_ctx.__gsharp_state = 19;
 return;
 }
 
 case 19:
 {
-__gsharp_ctx.__gsharp_warp_temp_21 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 16, __gsharp_ctx.FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(109,26)");
+__gsharp_ctx.__gsharp_warp_temp_21 = __gsharp_warp_reduce_min_read_sync(0, ref __gsharp_ctx, 16, FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(109,26)");
 __gsharp_ctx.output[__gsharp_ctx.o + 13] = __gsharp_ctx.__gsharp_warp_temp_21;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 17, __gsharp_ctx.FullMask, __gsharp_ctx.u, "Warp.ReduceMaxSync", "WarpCollectiveDifferentialKernels.cs(110,26)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 17, FullMask, __gsharp_ctx.u, "Warp.ReduceMaxSync", "WarpCollectiveDifferentialKernels.cs(110,26)");
 __gsharp_ctx.__gsharp_state = 20;
 return;
 }
 
 case 20:
 {
-__gsharp_ctx.__gsharp_warp_temp_22 = __gsharp_warp_reduce_max_read_sync(0, ref __gsharp_ctx, 17, __gsharp_ctx.FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(110,26)");
+__gsharp_ctx.__gsharp_warp_temp_22 = __gsharp_warp_reduce_max_read_sync(0, ref __gsharp_ctx, 17, FullMask, __gsharp_ctx.u, "WarpCollectiveDifferentialKernels.cs(110,26)");
 __gsharp_ctx.output[__gsharp_ctx.o + 14] = __gsharp_ctx.__gsharp_warp_temp_22;
 __gsharp_warp_publish(0, ref __gsharp_ctx, 18, __gsharp_ctx.halfMask, __gsharp_ctx.v, "Warp.ReduceAddSync", "WarpCollectiveDifferentialKernels.cs(112,32)");
 __gsharp_ctx.__gsharp_state = 21;

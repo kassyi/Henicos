@@ -259,4 +259,24 @@ public static partial class GotoScopeKernels
     skip:
         data[1] = 7;
     }
+
+    // An alias of a shared memory local is a plain pointer declaration, which C++ also forbids jumping over
+    [GpuKernel]
+    public static void GotoOverSharedMemoryAliasKernel(int[] data, int flag)
+    {
+        var shared = new SharedMemory<int>(4);
+        if (flag == 0)
+        {
+            goto skip;
+        }
+
+        {
+            var alias = shared;
+            alias[0] = flag + 3;
+            data[0] = alias[0];
+        }
+
+    skip:
+        data[1] = 7;
+    }
 }

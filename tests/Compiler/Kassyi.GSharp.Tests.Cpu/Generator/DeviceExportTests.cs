@@ -162,12 +162,11 @@ public class DeviceExportTests
         var names = File.ReadAllText(RepositoryPaths.Combine("src", "Compiler", "Kassyi.GSharp.Compiler", "Resources",
             "InternalNames.yml"));
         var hash = new Fnv1A64();
-        foreach (var c in GSharpPreludeResources.Cuda + GSharpPreludeResources.Cpp + names)
+        var preludes = GSharpPreludeResources.Cuda + GSharpPreludeResources.Cpp +
+                       GSharpPreludeResources.CppStackThreads + names;
+        foreach (var c in preludes.Where(static c => c != '\r'))
         {
-            if (c != '\r')
-            {
-                hash.Append(c);
-            }
+            hash.Append(c);
         }
 
         var sources = hash.Value.ToString("x16", CultureInfo.InvariantCulture);

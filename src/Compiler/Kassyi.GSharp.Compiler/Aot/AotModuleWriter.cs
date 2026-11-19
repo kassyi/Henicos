@@ -49,7 +49,7 @@ internal static class AotModuleWriter
 
     private static string BuildPreludeSource(GeneratorConfig config)
     {
-        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(in config);
         if (config.IsCuda && config.IsCheckedBuild)
         {
             preludeSource = "#define GSHARP_CHECKED 1\n" + preludeSource;

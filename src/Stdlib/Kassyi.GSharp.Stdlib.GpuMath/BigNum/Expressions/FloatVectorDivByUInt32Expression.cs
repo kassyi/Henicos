@@ -24,7 +24,10 @@ internal sealed class FloatVectorDivByUInt32Expression(
         // C# divides only the elements, so a zero divisor over none divides nothing, as System.Linq
         if (divisor == 0)
         {
-            throw new DivideByZeroException();
+            // Under a scope the zero divisor of element 0 is recorded and no element is computed: the output is zero
+            PendingThrows.RecordOrThrow(0, new DivideByZeroException());
+            RecordedTail.Clear(workspace, destination, 0, count);
+            return;
         }
 
         using var divisorWord = workspace.RentTemp(1);

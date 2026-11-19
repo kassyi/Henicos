@@ -4568,7 +4568,6 @@ long long __gsharp_id_7_fTag;
 int __gsharp_id_8_uniformZero;
 int __gsharp_id_9_fRes;
 int __gsharp_id_10_iRes;
-int __gsharp_id_11_FlatBase;
 int __gsharp_id_12_sharedAcrossFlat;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchFlattenedFloatAndGotoKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_a, GSharpArray<float> __gsharp_in___gsharp_id_1_fa, GSharpArray<int> __gsharp_in___gsharp_id_2_dst, int __gsharp_in___gsharp_id_3_n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Differential__SwitchDifferentialKernels__SwitchFlattenedFloatAndGotoKernel* __gsharp_ctx){
@@ -4582,6 +4581,7 @@ __gsharp_ctx->__gsharp_id_1_fa=__gsharp_in___gsharp_id_1_fa;
 __gsharp_ctx->__gsharp_id_2_dst=__gsharp_in___gsharp_id_2_dst;
 __gsharp_ctx->__gsharp_id_3_n=__gsharp_in___gsharp_id_3_n;
 }
+int __gsharp_id_11_FlatBase = 40;
 switch(__gsharp_state)
 {
 case 0:
@@ -4730,7 +4730,6 @@ case 9:
 __gsharp_switch_1_state_9:
 {
 __gsharp_ctx->__gsharp_id_10_iRes=0;
-__gsharp_ctx->__gsharp_id_11_FlatBase=40;
 auto __gsharp_switch_temp_1 = __gsharp_ctx->__gsharp_id_8_uniformZero;
 if(__gsharp_switch_temp_1==0)
 {
@@ -4750,7 +4749,7 @@ goto __gsharp_switch_1_state_10;
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_ctx->__gsharp_id_12_sharedAcrossFlat=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_11_FlatBase,__gsharp_ctx->__gsharp_id_5_v&0xF);
+__gsharp_ctx->__gsharp_id_12_sharedAcrossFlat=__gsharp_add_i32(__gsharp_id_11_FlatBase,__gsharp_ctx->__gsharp_id_5_v&0xF);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=11;
 return;
@@ -4785,7 +4784,7 @@ goto __gsharp_switch_1_state_13;
 case 13:
 __gsharp_switch_1_state_13:
 {
-__gsharp_ctx->__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_10_iRes,__gsharp_ctx->__gsharp_id_11_FlatBase);
+__gsharp_ctx->__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_10_iRes,__gsharp_id_11_FlatBase);
 goto __gsharp_switch_1_state_15;
 goto __gsharp_switch_1_state_14;
 }
@@ -4902,7 +4901,6 @@ public long fTag;
 public int uniformZero;
 public int fRes;
 public int iRes;
-public int FlatBase;
 public int sharedAcrossFlat;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
@@ -4918,6 +4916,7 @@ __gsharp_ctx.dst = __gsharp_in_dst;
 __gsharp_ctx.n = __gsharp_in_n;
 }
 {
+const int FlatBase = 40;
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
@@ -5064,7 +5063,6 @@ goto case 9;
 case 9:
 {
 __gsharp_ctx.iRes = 0;
-__gsharp_ctx.FlatBase = 40;
 {
 int __gsharp_switch_temp_1 = __gsharp_ctx.uniformZero;
 if (__gsharp_switch_temp_1 == 0)
@@ -5081,7 +5079,7 @@ goto case 10;
 
 case 10:
 {
-__gsharp_ctx.sharedAcrossFlat = __gsharp_ctx.FlatBase + (__gsharp_ctx.v & 0xF);
+__gsharp_ctx.sharedAcrossFlat = FlatBase + (__gsharp_ctx.v & 0xF);
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 11;
 return;
@@ -5111,7 +5109,7 @@ goto case 12;
 
 case 12:
 {
-__gsharp_ctx.sharedAcrossFlat = __gsharp_ctx.FlatBase * 2 + (__gsharp_ctx.v & 0xF);
+__gsharp_ctx.sharedAcrossFlat = FlatBase * 2 + (__gsharp_ctx.v & 0xF);
 __gsharp_ctx.iRes = __gsharp_ctx.sharedAcrossFlat;
 goto case 13;
 goto case 13;
@@ -5119,14 +5117,14 @@ goto case 13;
 
 case 13:
 {
-__gsharp_ctx.iRes += __gsharp_ctx.FlatBase;
+__gsharp_ctx.iRes += FlatBase;
 goto case 15;
 goto case 14;
 }
 
 case 14:
 {
-__gsharp_ctx.iRes = -__gsharp_ctx.FlatBase;
+__gsharp_ctx.iRes = -FlatBase;
 goto case 15;
 goto case 15;
 }

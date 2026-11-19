@@ -49,9 +49,9 @@ public class BclIntrinsicMappedMembersDiagnosticsTests
 
     // Kernel, then the range of its one GSH0109: the whole call
     [Theory]
-    [InlineData("Cpu", "UnmappedBitOperationsKernel", 31, 19, 31, 59)]
+    [InlineData("Cpu", "UnmappedBitOperationsKernel", 31, 19, 31, 52)]
     [InlineData("Cpu", "UnmappedInterlockedOverloadKernel", 39, 9, 39, 43)]
-    [InlineData("Cuda", "UnmappedBitOperationsKernel", 31, 19, 31, 59)]
+    [InlineData("Cuda", "UnmappedBitOperationsKernel", 31, 19, 31, 52)]
     [InlineData("Cuda", "UnmappedInterlockedOverloadKernel", 39, 9, 39, 43)]
     [Scenario(TestScenario.SadPath)]
     public async Task Gsh0109_UnmappedMember_ReportsOneAtTheCall(string dialect, string kernel, int startLine,

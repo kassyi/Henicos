@@ -4,10 +4,24 @@
   "stateDir": "tmp/job-queue",
   "sharedRoot": "git-main-checkout",
   "plugins": [
-    { "name": "./scripts/human/job-queue-henicos" },
+    {
+      "name": "./scripts/human/job-queue-henicos",
+      "options": {
+        "exclusiveCategories": ["Stress", "Benchmark", "GpuTrap"],
+        "exclusiveEnv": ["GSHARP_CUDA_TRAP_TESTS"],
+        "sharedRecipes": ["test", "test-coverage"]
+      }
+    },
     { "name": "dotnet" },
-    { "name": "just" },
-    { "name": "nvidia-gpu" }
+    {
+      "name": "just",
+      "options": {
+        "hookRecipes": "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
+        "hookDryRunRecipes": "^(mutate|long-checks)$"
+      }
+    },
+    { "name": "nvidia-gpu" },
+    { "name": "agents" }
   ],
   "pools": {
     "coresPerSlot": 3,
@@ -18,6 +32,12 @@
   "resources": {
     "gpu": {
       "slots": 1,
+      "probe": {
+        "argv": ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+        "min": 3072,
+        "timeoutMs": 3000,
+        "settleMs": 15000
+      },
       "lock": {
         "seats": ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"]
       },

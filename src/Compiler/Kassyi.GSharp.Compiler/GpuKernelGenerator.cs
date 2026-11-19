@@ -64,35 +64,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// </summary>
     public const string DeviceImportTableTrackingName = "GpuDeviceImports";
 
-    /// <summary>
-    /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
-    /// states the reasons in place of that dialect's output.
-    /// </summary>
-    private sealed class FailureCollector
-    {
-        private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
-
-        // The text is what the generated source states, so a failure found by both the signature and the body is one
-        public void Fail(TranspileFailure failure)
-        {
-            var reason = failure.Format();
-            if (!_failures.Contains(reason))
-            {
-                _failures.Add(reason);
-            }
-        }
-
-        /// <summary>
-        /// <paramref name="source"/> when nothing failed; otherwise one <c>#error</c> per reason, so that a failure the
-        /// analyzer misses still stops the native build. The analyzer reports the same failures as diagnostics.
-        /// </summary>
-        public string Apply(string source) =>
-            _failures.Count == 0 ? source : NativeModuleAssembler.FormatTranspileFailures(_failures);
-
-        /// <summary>Whether anything failed.</summary>
-        public bool HasFailures => _failures.Count > 0;
-    }
-
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
     {
         var root = methodDeclaration.SyntaxTree.GetRoot();
@@ -163,9 +134,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 // The launch limits of the GPUs the fatbin may run on, from the same setting nvcc compiles for
                 options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
                 var targetLimits = GpuArchitectureLimits.Resolve(architectures);
+                var managedBarrierModel = ManagedBarrierModels.Read(options.GlobalOptions);
 
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
-                    targetLimits);
+                    targetLimits)
+                {
+                    ManagedBarrierModel = managedBarrierModel,
+                    NativeBarrierModel = NativeBarrierModels.Read(options.GlobalOptions)
+                };
             });
 
         // The wrappers take only the module name from the compilation, so this value compares equal across edits and
@@ -191,22 +167,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .Select(static (input, _) => DeviceImportAssembler.Collect(input.Left, input.Right))
             .WithTrackingName(DeviceImportTableTrackingName);
 
+        var runsOnNativeStacks = NativeStackPipeline.Switch(configProvider);
+
         // ForAttributeWithMetadataName resolves the attribute through the symbol, so an alias of it is found as well; the
         // predicate only checks the node kind
-        var kernelMethods = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                KnownAttributes.GpuKernelMetadataName,
-                predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, cancellationToken) => TranspileKernel(ctx, cancellationToken))
+        var kernelMethods = NativeStackPipeline.Translate(
+                context.SyntaxProvider.ForAttributeWithMetadataName(
+                    KnownAttributes.GpuKernelMetadataName,
+                    predicate: static (node, _) => node is MethodDeclarationSyntax,
+                    transform: NativeStackPipeline.Capture),
+                runsOnNativeStacks,
+                TranspileKernel)
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
-        var deviceMethods = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                KnownAttributes.GpuDeviceFunctionMetadataName,
-                predicate: static (node, _) => node is MethodDeclarationSyntax,
-                transform: static (ctx, _) => TranspileDeviceMethod(ctx))
+        var deviceMethods = NativeStackPipeline.Translate(
+                context.SyntaxProvider.ForAttributeWithMetadataName(
+                    KnownAttributes.GpuDeviceFunctionMetadataName,
+                    predicate: static (node, _) => node is MethodDeclarationSyntax,
+                    transform: NativeStackPipeline.Capture),
+                runsOnNativeStacks,
+                static (ctx, _) => TranspileDeviceMethod(ctx))
             .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
@@ -249,7 +231,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
             .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
                 GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
-        var kernelModule = allKernels.Combine(configProvider.Select(static (config, _) => config.EmitSource))
+        var stackForms = ManagedStackPipeline.Forms(context.CompilationProvider, configProvider);
+        var kernelsWithStackForms = ManagedStackPipeline.AttachToKernels(allKernels, stackForms);
+        var kernelModule = kernelsWithStackForms.Combine(configProvider.Select(static (config, _) => config.EmitSource))
             .Combine(allDevices).Combine(importedCode)
             .Select(static (input, _) => KernelModuleModel.Create(input.Left.Left.Left, input.Left.Left.Right,
                 CollectThrowSites(input.Left.Right, input.Right)));
@@ -261,8 +245,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // reference StackLinq; equal across edits that keep the references
         var referencesStackLinq = context.CompilationProvider
             .Select(static (compilation, _) => ReferencesAssembly(compilation, WrapperEmitter.StackLinqAssemblyName));
-        var stateMachines = allDevices
-            .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
+        var stateMachines = allDevices.Combine(stackForms)
+            .SelectMany(static (input, _) =>
+                DeviceStateMachineGroups.Create(GetDistinctDeviceMethods(input.Left), input.Right.Devices));
+        ManagedStackPipeline.RegisterFailures(context, stackForms);
 
         context.RegisterSourceOutput(
             allDevices.Combine(importedCode).Combine(configProvider).Combine(hasKernels)
@@ -355,7 +341,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context,
+    private static TranspiledKernelResult? TranspileKernel(NativeStackContext context,
         CancellationToken cancellationToken)
     {
         // A kernel that KernelDeclarationAnalyzer rejects (GSH0111, GSH0112) or whose return type cannot be the element
@@ -401,8 +387,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 : string.Empty;
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
-            var kernelErrorSites = errorSites.Entries.AsEquatableArray();
             var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
+            var cppText = NativeStackTranslator.ForKernel(context, in plan, cppSource, requiredIncludesCpp, errorSites);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -410,19 +396,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     header,
                     host,
                     cudaSource,
-                    cppSource,
+                    cppText.Source,
                     managedCSharpSource,
                     ToIncludes(requiredIncludesCuda),
-                    ToIncludes(requiredIncludesCpp),
+                    cppText.Includes,
                     "",
                     structExports,
-                    kernelErrorSites,
+                    cppText.ErrorSites,
                     heldRefLocalSites
                 );
             }
 
             cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
+            cppSource = "// gsharp:suppress GS0001\n" + cppText.Source;
 
             return new TranspiledKernelResult(
                 header,
@@ -431,10 +417,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSource,
                 managedCSharpSource,
                 ToIncludes(requiredIncludesCuda),
-                ToIncludes(requiredIncludesCpp),
+                cppText.Includes,
                 "",
                 structExports,
-                kernelErrorSites,
+                cppText.ErrorSites,
                 heldRefLocalSites
             );
         }
@@ -463,7 +449,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return (declaration, model);
     }
 
-    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context)
+    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(NativeStackContext context)
     {
         // A partial method without an implementing declaration has no body, and C# removes its calls
         if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
@@ -499,24 +485,22 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
                 out var requiredIncludesCpp, cppStructs, throwSites: throwSites);
             var functionSites = throwSites.Entries.AsEquatableArray();
-            var cudaBody = cudaFailures.Apply(cudaSource);
-            var cppBody = cppFailures.Apply(cppSource);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
+            var compilation = context.SemanticModel.Compilation;
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
             if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && bodyDeclaration.GetBodyNode() is { } body)
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
-                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
-                             context.SemanticModel.Compilation))
+                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
                 {
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
                 }
 
                 // Left out when it could not compile (ManagedStateMachineAvailability); the record says so
-                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, context.SemanticModel.Compilation))
+                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, compilation))
                 {
                     managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
                 }
@@ -529,7 +513,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
-            var compilation = context.SemanticModel.Compilation;
             // A frame narrower than external callers is run from other assemblies through its entries, which have the
             // accessibility of the function (#1884, #1991, #1845)
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
@@ -571,15 +554,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 structExports = default;
             }
 
+            var cpp = NativeStackTranslator.ForDeviceFunction(context, in plan, methodDeclaration,
+                new DeviceCppText(cppSignature, cppFailures.Apply(cppSource), requiredIncludesCpp, functionSites));
+
             return new TranspiledDeviceMethodResult(
                 HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
                 methodSymbol.Name,
                 cudaSignature,
-                cudaBody,
-                cppSignature,
-                cppBody,
+                cudaFailures.Apply(cudaSource),
+                cpp.Signature,
+                cpp.Body,
                 ToIncludes(requiredIncludesCuda),
-                ToIncludes(requiredIncludesCpp),
+                ToIncludes(cpp.Includes),
                 "",
                 frameName,
                 frames,
@@ -587,7 +573,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 export,
                 structExports,
                 HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel),
-                functionSites);
+                cpp.ErrorSites);
         }
         catch (InsufficientExecutionStackException)
         {
@@ -872,7 +858,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // The device code of other assemblies comes first; the JIT path compiles the same text as the AOT artifact
         var commonDeviceSource = imports.Source +
                                  NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, config.IsCuda);
-        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(in config);
 
         using var preludeWriter = new SourceWriter();
         preludeWriter.AppendGeneratedFileHeader(enableNullable: false);
@@ -937,8 +923,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
+        if (ManagedStackPipeline.DeviceSources(group, config) is not { } sources)
+        {
+            return;
+        }
+
         context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources, referencesStackLinq),
+            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, sources, referencesStackLinq),
                 Encoding.UTF8));
     }
 
@@ -974,38 +965,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         return sites.ToImmutable().AsEquatableArray();
-    }
-
-    // Keyed by the hint name, which identifies the class (#472)
-    private static ImmutableArray<DeviceStateMachineGroup> GroupDeviceStateMachines(
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
-    {
-        var sourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
-        {
-            if (method.ManagedCSharpSource.Length == 0)
-            {
-                continue;
-            }
-
-            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var sources))
-            {
-                sources = ImmutableArray.CreateBuilder<string>();
-                sourcesByClass[method.Class.HintName] = sources;
-                classOrder.Add(method.Class);
-            }
-
-            sources.Add(method.ManagedCSharpSource);
-        }
-
-        var groups = ImmutableArray.CreateBuilder<DeviceStateMachineGroup>(classOrder.Count);
-        classOrder
-            .AsStackEnumerable()
-            .Select(sourcesByClass, static (header, sources) =>
-                new DeviceStateMachineGroup(header, sources[header.HintName].ToImmutable().AsEquatableArray()))
-            .AddTo(groups);
-        return groups.MoveToImmutable();
     }
 
     // The device code of other assemblies that the kernels and device functions of the module reach
@@ -1087,7 +1046,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static EquatableArray<string> ToIncludes(HashSet<string> includes)
+    internal static EquatableArray<string> ToIncludes(HashSet<string> includes)
     {
         var builder = ImmutableArray.CreateBuilder<string>(includes.Count);
         includes

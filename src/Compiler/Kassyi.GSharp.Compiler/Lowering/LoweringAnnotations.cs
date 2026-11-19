@@ -110,7 +110,7 @@ public static class LoweringAnnotations
 
     /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> array/span source receiver
-    /// (<c>__gsharp_foreach_src_&lt;id&gt;</c>) so <c>.Length</c> emits as <c>.length</c>.
+    /// (<c>__gsharp_foreach_src_&lt;id&gt;</c>) so <c>.Length</c> (<c>.Count</c> of a segment) emits as <c>.length</c>.
     /// </summary>
     public const string ForEachArraySourceAnnotationKind = "GSharpForEachArraySource";
 
@@ -120,6 +120,13 @@ public static class LoweringAnnotations
     /// a lowered <c>foreach</c>, which C# checks once at the loop entry.
     /// </summary>
     public const string ArrayNullCheckAnnotationKind = "GSharpArrayNullCheck";
+
+    /// <summary>
+    /// Annotation kind of the source of a lowered <c>foreach</c> over an <c>ArraySegment&lt;T&gt;</c>, which the
+    /// transpiler writes through the check of a default segment (<c>InvalidOperationException</c>); its data is the
+    /// place of the user's expression.
+    /// </summary>
+    public const string SegmentCheckAnnotationKind = "GSharpSegmentCheck";
 
     /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> loop index declarator

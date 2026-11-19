@@ -856,6 +856,10 @@ __forceinline__ __device__ int __gsharp_clamp(int value, int min_val, int max_va
 __forceinline__ __device__ unsigned int __gsharp_clamp(unsigned int value, unsigned int min_val, unsigned int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ float __gsharp_clamp(float value, float min_val, float max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ double __gsharp_clamp(double value, double min_val, double max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+// Math.Clamp of the other integer types: the C# overload returns the narrow type, as __gsharp_max_int does.
+template <typename T> __forceinline__ __device__ T __gsharp_clamp(T value, T min_val, T max_val) {
+    return value < min_val ? min_val : (value > max_val ? max_val : value);
+}
 // Math.Max / Math.Min (IEEE 754:2019 maximum / minimum, as .NET): NaN if either input is NaN, +0 > -0.
 // PTX max.NaN.f32 / min.NaN.f32 are exactly that (sm_80+); max / min .f32 and .f64 already order +0 > -0 (PTX ISA, max).
 // a + b is NaN when either is NaN. The asm is not volatile, so common subexpressions still fold.
@@ -994,6 +998,19 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
+// BitOperations.RoundUpToPowerOf2: the power of two at or above value; 0 for 0 and for values above the largest power
+// of two, as .NET. __clz(0) is 32, so 1 gives 1 << 0; a shift of the full width (0, or above 2^31) is outside C++, so
+// it is selected away instead of written.
+__device__ __forceinline__ unsigned int __gsharp_round_up_pow2_32(unsigned int value) {
+    int shift = 32 - __clz(value - 1u);
+    return shift < 32 ? 1u << shift : 0u;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_round_up_pow2_64(unsigned long long value) {
+    int shift = 64 - __clzll(value - 1ull);
+    return shift < 64 ? 1ull << shift : 0ull;
+}
+
 __device__ __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
     unsigned int res;
     asm("bfe.u32 %0, %1, %2, %3;" : "=r"(res) : "r"(a), "r"(pos), "r"(len));
@@ -1091,6 +1108,17 @@ __device__ __forceinline__ A __gsharp_array_ref(A&& array, S site)
         __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
     }
     return static_cast<A&&>(array);
+}
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// ("The underlying array is null.") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_segment_ref(A&& segment, S site)
+{
+    if (segment.data == nullptr)
+    {
+        __gsharp_inline_trap(GSharpErrorCode::InvalidOperation, __gsharp_inline_site(site));
+    }
+    return static_cast<A&&>(segment);
 }
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
 // as the C# method throws ArgumentNullException ("source"). The place is as for __gsharp_array_ref

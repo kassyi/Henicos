@@ -10,5 +10,11 @@ internal enum ManagedBodyKind
     SuspendingDeviceFunction,
 
     /// <summary>The user's body of a device function that does not suspend, copied into its managed version (#711).</summary>
-    ManagedVersion
+    ManagedVersion,
+
+    /// <summary>
+    /// The user's body of a kernel or a device function that reaches a block barrier, copied as written for the stack
+    /// model.
+    /// </summary>
+    StackBody
 }

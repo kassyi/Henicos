@@ -167,6 +167,11 @@ export class Scheduler<J extends SchedulerJob> {
     return state;
   }
 
+  /** Every turn resource, the configured ones first. */
+  resourceStates(): ResourceState[] {
+    return [...this.resources.values()];
+  }
+
   /** Keeps the result of a probe of the resource; the grant rule reads it (turnVerdict). */
   recordProbe(name: string, result: ProbeResult): void {
     this.stateOf(name).probe = result;

@@ -111,11 +111,7 @@ internal static class MemberEffects
     /// </summary>
     public static bool IsGetterCall(ExpressionSyntax expression, SemanticModel model)
     {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
+        expression = expression.UnwrapParentheses();
         return expression is IdentifierNameSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax &&
                model.GetSymbol(expression) is IPropertySymbol property &&
                (IsUserAccessorProperty(property) || property is { IsIndexer: true, RefKind: RefKind.None });

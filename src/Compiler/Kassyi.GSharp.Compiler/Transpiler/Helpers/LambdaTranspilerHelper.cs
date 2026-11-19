@@ -22,6 +22,8 @@ internal static class LambdaTranspilerHelper
             {
                 using (context.Emitter.Writer.Scope())
                 {
+                    // A SharedMemory<T> created inside the expression is declared before the return, as for a method
+                    StatementPrelude.Emit(expressionBody, ref context);
                     context.Emitter.Writer.AppendIf(!isVoidExpression, "return ");
                     context.Visitor.Visit(expressionBody);
                     context.Emitter.Writer.AppendLine(";");
