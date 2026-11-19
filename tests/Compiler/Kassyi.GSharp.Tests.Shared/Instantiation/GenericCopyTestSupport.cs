@@ -94,5 +94,23 @@ internal static class GenericCopyTestSupport
     internal static CSharpCompilation CreateCompilation() =>
         RoslynTestUtility.CreateCompilation(s_source)
             .WithAssemblyName("GenericCopiesTests")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true));
+
+    internal static TNode Single<TNode>(GenericCopy copy) where TNode : SyntaxNode =>
+        Assert.Single(Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration)
+            .DescendantNodes()
+            .OfType<TNode>());
+
+    internal static ISymbol? SymbolOf(GenericCopySet set, SyntaxNode node) =>
+        ModelOf(set, node).GetSymbolInfo(node).Symbol;
+
+    internal static SemanticModel ModelOf(GenericCopySet set, SyntaxNode node) =>
+        set.Compilation.GetSemanticModel(node.SyntaxTree);
+
+    internal static TextSpan DeclarationSpan(string method)
+    {
+        var tree = CreateCompilation().SyntaxTrees.Single();
+        return tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(m => m.Identifier.ValueText == method).Span;
+    }
 }

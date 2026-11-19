@@ -78,6 +78,7 @@ internal static class GenericCopies
                 rewritten.AddMembers(byType[original].ToArray()));
             var replaced = tree.WithRootAndOptions(root, tree.Options);
             replacedTrees[tree] = replaced;
+            GenericCopyOrigins.Register(replaced, tree);
             derived = derived.ReplaceSyntaxTree(tree, replaced);
         }
 
@@ -111,7 +112,8 @@ internal static class GenericCopies
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
         var nodes = CopyNodeIndex.List(declaration);
         var map = new InstanceSymbolMap(instance, compilation);
-        var annotated = CopyNodeIndex.Annotate(LoweringAnnotations.AnnotateOriginalSpans(declaration, compilation));
+        var annotated = CopyNodeIndex.Annotate(
+            LoweringAnnotations.AnnotateSpans(declaration, compilation, GenericCopyEmitter.CopyOriginAnnotationKind));
         var marker = new SyntaxAnnotation(GenericCopyEmitter.CopyAnnotationKind);
         var name = GenericInstanceNames.GetCopyName(instance);
         var copy = GenericCopyEmitter.Emit(annotated, plan, name, marker);
