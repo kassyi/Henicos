@@ -68,9 +68,12 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
   value of `int`, `long`, `short` and `sbyte` throws `OverflowException` on every path in the same way, release CUDA
   included.
   `MinValue / -1` and `MinValue % -1`, which C# leaves implementation-defined in an unchecked context, give the GPU
-  result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
-  function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
-  would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
+  result, `MinValue` and `0`, on every path: the native CPU build and the CUDA build test for `-1` before dividing,
+  and the managed path calls a G# function for a division that may reach that case, in a kernel and in a device
+  function alike, where the C# operator would throw `OverflowException`. When the compiler cannot prove that the
+  dividend is not `MinValue` or the divisor is not `-1`, that `b == -1` branch adds one comparison before the
+  division on the GPU; it sets the `MinValue / -1` result (`MinValue` and `0`) and is not an error check (not a
+  fourth check in §6.3). The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
   it. The managed path throws it too in two forms that keep the C# operator (a type that holds device functions must be
   `partial`, class or struct, GSH0036: the rewritten copy of a function is written into a partial declaration of its
   types):

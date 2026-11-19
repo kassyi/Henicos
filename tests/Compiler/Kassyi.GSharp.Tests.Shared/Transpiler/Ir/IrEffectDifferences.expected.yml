@@ -182,6 +182,12 @@
 - {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/FlowCaptureWriteKernels.cu.cs", method: "FlowCaptureWriteKernels.InitializerKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/FlowSensitiveUniformityKernels.cu.cs", method: "FlowSensitiveUniformityKernels.InterlockedRefLocalKernel", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyLaneKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.BlockBodyUniformKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CapturedLaneKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.CountMatches", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.LaneInLambdaKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/LambdaOperandKernels.cu.cs", method: "LambdaOperandKernels.UniformLambdaKernel", reason: "known, a by-value extension receiver is not written", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BinaryOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.BlockGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.CompoundOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
@@ -193,6 +199,7 @@
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformConstructorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs", method: "SuspendingCallContextKernels.DirectAndCleanKernel", reason: "known, a nameof is a constant", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, a field of a struct temporary reads no memory", count: 2}
 - {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldOuter.AddToOwnFields", reason: "known, the location of this reads nothing", count: 3}
@@ -284,6 +291,10 @@
 - {file: "TestCases/Diagnostics/AssignmentFormsUnsupported.cu.cs", method: "AssignmentFormsUnsupportedKernels.DeconstructNonTupleKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "Acc.op_Addition", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.CompoundKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Box.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Diagnostics/CrossAssembly/HandWrittenConversionRecord.cs", method: "Meters.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs", method: "DynamicSharedMemoryWithoutTableKernels.ComputedPropertyKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/ExtensionCallDiagnostics.cs", method: "ExtensionCallKernels.IndependentReceiverKernel", reason: "known, a by-value extension receiver is not written", count: 1}
 - {file: "TestCases/Diagnostics/FieldKeywordPropertyUnsupported.cu.cs", method: "FieldKeywordMacroHolder.set_P", reason: "known, an initializer writes the new value", count: 1}
@@ -351,6 +362,7 @@
 - {file: "TestCases/Diagnostics/ReadOnlyArrayWrites.cu.cs", method: "ReadOnlyArrayWriteKernels.StructAliasKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/SharedMemoryWithoutCount.cu.cs", method: "SharedMemoryWithoutCountKernels.AcceptedKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/StackLinqLocalLayout.cs", method: "StackLinqLocalKernels.LocalQueriesKernel", reason: "known, a by-value extension receiver is not written", count: 4}
+- {file: "TestCases/Diagnostics/SuspendingMethodGroup.cs", method: "SuspendingMethodGroupKernels.ValidCallsKernel", reason: "known, a nameof is a constant", count: 1}
 - {file: "TestCases/Diagnostics/TypeTestForms.cu.cs", method: "TypeTestKernels.ArrayAndNullableTestKernel", reason: "known, an is null pattern throws nothing", count: 1}
 - {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "Counter.op_Decrement", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/UnmappedOperator.cs", method: "Counter.op_Increment", reason: "known, an initializer writes the new value", count: 1}

@@ -2,6 +2,7 @@
 // short command labels, and pure dotnet helpers exposed via `api`.
 
 import {
+  dropShortWords,
   PluginApiVersion,
   type Classification,
   type ClientContext,
@@ -45,39 +46,10 @@ function programOf(word: string): string {
 }
 
 function dotnetShortName(_command: string, short: string): string | undefined {
-  const words: string[] = [];
-  let atStart = true;
-  for (const word of short.trim().split(/\s+/)) {
-    if (word === "") {
-      continue;
-    }
-    const separator = /^(&&|\|\||;|\|)$/.test(word) || word.endsWith(";");
-    const token = word.endsWith(";") && word.length > 1 ? word.slice(0, -1) : word;
-    if (token === "-nodeReuse:false") {
-      // dropped
-    } else if (atStart && /^dotnet(\.exe)?$/i.test(token)) {
-      // dropped at step start
-    } else if (!/^(&&|\|\||;|\|)$/.test(word)) {
-      words.push(token);
-      atStart = false;
-    } else if (words.length > 0 && !/^(&&|\|\||;|\|)$/.test(words[words.length - 1] ?? "")) {
-      words.push(word);
-    }
-    if (separator) {
-      atStart = true;
-      if (word.length > 1 && words.length > 0 && !/^(&&|\|\||;|\|)$/.test(words[words.length - 1] ?? "")) {
-        words.push(";");
-      }
-    }
-  }
-  while (words.length > 0 && /^(&&|\|\||;|\|)$/.test(words[words.length - 1] ?? "")) {
-    words.pop();
-  }
-  if (words.length === 0) {
-    return undefined;
-  }
-  const next = words.join(" ");
-  return next === short.trim() ? undefined : next;
+  return dropShortWords(
+    short,
+    (word, atStart) => word === "-nodeReuse:false" || (atStart && /^dotnet(\.exe)?$/i.test(word)),
+  );
 }
 
 const plugin = {

@@ -39,29 +39,109 @@ export async function checkServerMemoryMb(assert: AssertModule): Promise<void> {
     await c1.until("done-ok");
     c1.close();
 
-    // Without memoryMb (old client message) -> current computed value
+    // Without memoryMb (old client message) on non-matching command -> 0
     const c2 = await connectRaw(port);
     clients.push(c2);
     c2.send(registration("node -e 2", 1, process.pid));
     const g2 = await c2.until("granted");
     assert.ok(g2 !== null);
-    assert.strictEqual(
-      server.find(Number(g2.id))?.memoryMb,
-      server.machine.testMemoryMb("node -e 2"),
-      "without memoryMb falls back to machine.testMemoryMb",
-    );
+    assert.strictEqual(server.find(Number(g2.id))?.memoryMb, 0, "non-matching legacy command gets 0 MB");
     c2.send({ type: "done", completed: true, exitCode: 0 });
     await c2.until("done-ok");
     c2.close();
 
-    // Out-of-range / wrong-type memoryMb -> fallback
+    // Out-of-range / wrong-type memoryMb -> fallback (0 for non-matching command)
     const c3 = await connectRaw(port);
     clients.push(c3);
     c3.send({ ...registration("node -e 3", 1, process.pid), memoryMb: 1e12 });
     const g3 = await c3.until("granted");
     assert.ok(g3 !== null);
-    assert.strictEqual(server.find(Number(g3.id))?.memoryMb, server.machine.testMemoryMb("node -e 3"));
+    assert.strictEqual(server.find(Number(g3.id))?.memoryMb, 0);
     c3.close();
+  } finally {
+    server.stopping = true;
+    for (const c of clients) {
+      c.close();
+    }
+    for (const job of server.records.values()) {
+      job.connection?.socket.destroy();
+    }
+    await new Promise<void>((resolve) => server.server.close(() => resolve()));
+    removeDirectory(dir);
+  }
+}
+
+/**
+ * Legacy-clients intake rule: missing memoryMb matches legacyClients.testPattern -> testMemoryMb (0 when non-matching
+ * or gpuTurn); explicit numeric memoryMb (including 0) always wins over legacyClients.
+ */
+export async function checkLegacyClientsMemoryMb(assert: AssertModule): Promise<void> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-legacy-mem-"));
+  const cfgPath = path.join(dir, "job-queue.config.json");
+  fs.writeFileSync(
+    cfgPath,
+    JSON.stringify({
+      version: 1,
+      entry: "scripts/human/job-queue.js",
+      plugins: [],
+      legacyClients: {
+        testPattern: String.raw`\brun-tests\b|\bsuite-runner\b`,
+        testMemoryMb: 2880,
+      },
+    }),
+  );
+  const server = new JobServer({
+    slots: 2,
+    memoryMb: 1e9,
+    policy: "fifo",
+    port: 0,
+    stateDir: dir,
+    configPath: cfgPath,
+    log: () => {},
+  });
+  server.scheduler.holdUntil = 0;
+  await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
+  const port = (server.server.address() as net.AddressInfo).port;
+  const clients: RawClient[] = [];
+  try {
+    const submitAndReadMemory = async (msg: Record<string, unknown>): Promise<number | undefined> => {
+      const c = await connectRaw(port);
+      clients.push(c);
+      c.send(msg);
+      const g = await c.until("granted");
+      assert.ok(g !== null, `expected granted for ${String(msg.command)}`);
+      const mem = server.find(Number(g.id))?.memoryMb;
+      c.send({ type: "done", completed: true, exitCode: 0 });
+      await c.until("done-ok");
+      c.close();
+      return mem;
+    };
+
+    assert.strictEqual(
+      await submitAndReadMemory(registration("run-tests Foo", 1, process.pid)),
+      2880,
+      "missing memoryMb matching legacyClients.testPattern gets testMemoryMb",
+    );
+    assert.strictEqual(
+      await submitAndReadMemory(registration("suite-runner", 1, process.pid)),
+      2880,
+      "second test command matching legacyClients.testPattern gets testMemoryMb",
+    );
+    assert.strictEqual(
+      await submitAndReadMemory(registration("build Foo", 1, process.pid)),
+      0,
+      "missing memoryMb not matching testPattern gets 0",
+    );
+    assert.strictEqual(
+      await submitAndReadMemory({ ...registration("run-tests Foo", 1, process.pid), gpuTurn: true }),
+      0,
+      "gpuTurn without memoryMb stays 0 even when command matches testPattern",
+    );
+    assert.strictEqual(
+      await submitAndReadMemory({ ...registration("run-tests Foo", 1, process.pid), memoryMb: 0 }),
+      0,
+      "explicit memoryMb: 0 overrides legacyClients",
+    );
   } finally {
     server.stopping = true;
     for (const c of clients) {
@@ -168,6 +248,7 @@ export async function checkVersionSkewAndServeConfig(assert: AssertModule): Prom
       version: 1,
       entry: "scripts/human/job-queue.js",
       plugins: [{ name: "./does-not-exist-plugin" }],
+      pools: { coresPerSlot: 1, minimumSlots: 7, memoryShare: 0.25 },
       resources: { gpu: { slots: 1 } },
     }),
   );
@@ -189,6 +270,17 @@ export async function checkVersionSkewAndServeConfig(assert: AssertModule): Prom
       false,
       "scheduler never loads plugin code",
     );
+    const defaultPooled = new JobServer({
+      slots: 0,
+      memoryMb: 0,
+      policy: "fifo",
+      port: 0,
+      stateDir: dir,
+      configPath: cfgPath,
+      log: () => {},
+    });
+    assert.ok(defaultPooled.scheduler.capacity >= 7, "JobServer applies config.pools when slots === 0");
+    assert.ok(defaultPooled.scheduler.memoryCapacity > 0, "JobServer applies config.pools when memoryMb === 0");
 
     // Fake RunHost against an old-protocol scheduler returning granted without new fields, and error code: "version"
     let mode: "granted" | "version-error" = "granted";

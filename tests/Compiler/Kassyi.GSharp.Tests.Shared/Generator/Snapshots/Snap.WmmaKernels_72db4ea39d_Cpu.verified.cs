@@ -9,7 +9,7 @@ internal static class GSharpSharedCpuDeviceCode
 public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB);
 
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB){
-__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&(*__gsharp_id_0_acc)),static_cast<void>(&(*__gsharp_id_1_fragA)),static_cast<void>(&(*__gsharp_id_2_fragB)),static_cast<void>(&(*__gsharp_id_0_acc)),__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect""));
 }
 
 ";
@@ -76,11 +76,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_5_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_6_acc = {};
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&__gsharp_id_4_fragA),static_cast<void>(&__gsharp_array_at(__gsharp_id_0_a, 0, 980170635u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_5_fragB),static_cast<void>(&__gsharp_array_at(__gsharp_id_1_b, 0, 1131662095u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_6_acc),static_cast<void>(&__gsharp_array_at(__gsharp_id_2_c, 0, 1821998591u)),static_cast<void>(16),static_cast<void>(0),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(&__gsharp_id_6_acc,&__gsharp_id_4_fragA,&__gsharp_id_5_fragB);
-__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&__gsharp_array_at(__gsharp_id_3_d, 0, 1088015033u)),static_cast<void>(&__gsharp_id_6_acc),static_cast<void>(16),static_cast<void>(0),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
 __gsharp_state=-1;
 return;
 }
@@ -409,11 +409,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_col_major> __gsharp_id_5_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_6_acc = {};
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&__gsharp_id_4_fragA),static_cast<void>(&__gsharp_array_at(__gsharp_id_0_a, 0, 100041115u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_5_fragB),static_cast<void>(&__gsharp_array_at(__gsharp_id_1_bColMajor, 0, 754848782u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_6_acc),static_cast<void>(&__gsharp_array_at(__gsharp_id_2_c, 0, 101211043u)),static_cast<void>(16),static_cast<void>(0),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_6_acc),static_cast<void>(&__gsharp_id_4_fragA),static_cast<void>(&__gsharp_id_5_fragB),static_cast<void>(&__gsharp_id_6_acc),__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_array_at(__gsharp_id_3_d, 0, 1561533553u)),static_cast<void>(&__gsharp_id_6_acc),static_cast<void>(16),static_cast<void>(0),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
 __gsharp_state=-1;
 return;
 }
@@ -742,11 +742,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_3_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major> __gsharp_id_4_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void> __gsharp_id_5_acc = {};
-__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(0),__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_3_fragA),static_cast<void>(&__gsharp_array_at(__gsharp_id_0_a, 0, 335436671u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_4_fragB),static_cast<void>(&__gsharp_array_at(__gsharp_id_1_b, 0, 1201801559u)),static_cast<void>(16),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(&__gsharp_id_3_fragA),static_cast<void>(&__gsharp_id_4_fragB),static_cast<void>(&__gsharp_id_5_acc),__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_array_at(__gsharp_id_2_dColMajor, 0, 342955806u)),static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(16),static_cast<void>(1),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
 __gsharp_state=-1;
 return;
 }
@@ -1068,11 +1068,11 @@ __gsharp_switch_1_state_0:
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 8, 8, 4, double, __gsharp_wmma_row_major> __gsharp_id_3_fragA = {};
 __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 8, 8, 4, double, __gsharp_wmma_row_major> __gsharp_id_4_fragB = {};
 __gsharp_wmma_fragment<__gsharp_wmma_accumulator, 8, 8, 4, double, void> __gsharp_id_5_acc = {};
-__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect"");
-__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect"");
+(static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(0.0),__gsharp_unsupported(""Wmma.Fill is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_3_fragA),static_cast<void>(&__gsharp_array_at(__gsharp_id_0_a, 0, 1289247603u)),static_cast<void>(4),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_4_fragB),static_cast<void>(&__gsharp_array_at(__gsharp_id_1_b, 0, 581573939u)),static_cast<void>(8),__gsharp_unsupported(""Wmma.Load is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(&__gsharp_id_3_fragA),static_cast<void>(&__gsharp_id_4_fragB),static_cast<void>(&__gsharp_id_5_acc),__gsharp_unsupported(""Wmma.MultiplyAccumulate is not implemented by the StandardCppDialect dialect""));
+(static_cast<void>(&__gsharp_array_at(__gsharp_id_2_d, 0, 440575153u)),static_cast<void>(&__gsharp_id_5_acc),static_cast<void>(8),static_cast<void>(0),__gsharp_unsupported(""Wmma.Store is not implemented by the StandardCppDialect dialect""));
 __gsharp_state=-1;
 return;
 }

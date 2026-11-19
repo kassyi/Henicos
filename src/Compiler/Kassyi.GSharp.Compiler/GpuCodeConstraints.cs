@@ -80,12 +80,31 @@ internal static class GpuCodeConstraints
         _ => false
     };
 
-    /// <summary>The GSH0003 text for the type object, Delegate or MulticastDelegate in a body.</summary>
+    /// <summary>
+    /// The GSH0003 text for the type <see cref="object"/>, <see cref="Delegate"/> or
+    /// <see cref="MulticastDelegate"/>.
+    /// </summary>
     public const string HeapObjectType =
         "type object, Delegate or MulticastDelegate (a reference to a heap object, which device code cannot hold)";
 
     /// <summary>Whether <paramref name="type"/> is <see cref="object"/>, which device code cannot hold (GSH0003).</summary>
     public static bool IsObject(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_Object };
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is <see cref="object"/>, <see cref="Delegate"/>,
+    /// <see cref="MulticastDelegate"/>, or a one-dimensional array of those types (GSH0003).
+    /// </summary>
+    public static bool IsHeapObjectType(ITypeSymbol? type) => type switch
+    {
+        {
+            SpecialType:
+                SpecialType.System_Object or
+                SpecialType.System_Delegate or
+                SpecialType.System_MulticastDelegate
+        } => true,
+        IArrayTypeSymbol { Rank: 1 } array => IsHeapObjectType(array.ElementType),
+        _ => false
+    };
 
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };

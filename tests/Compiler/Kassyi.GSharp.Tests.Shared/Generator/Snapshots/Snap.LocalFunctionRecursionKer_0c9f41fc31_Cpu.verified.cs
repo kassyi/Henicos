@@ -67,7 +67,7 @@ int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_step = 2;
 auto __gsharp_lf_impl___gsharp_id_4_Sum = [&](auto& __gsharp_lf_self___gsharp_id_4_Sum, int __gsharp_id_5_n) -> int
 {
-auto __gsharp_id_4_Sum = [&](int __gsharp_id_5_n) -> int
+auto __gsharp_id_4_Sum = [=](int __gsharp_id_5_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_4_Sum(__gsharp_lf_self___gsharp_id_4_Sum, __gsharp_id_5_n);
 }
@@ -77,7 +77,7 @@ return (__gsharp_id_5_n<=0?__gsharp_id_1_bonus:__gsharp_add_i32(__gsharp_mul_i32
 }
 }
 ;
-auto __gsharp_id_4_Sum = [&](int __gsharp_id_5_n) -> int
+auto __gsharp_id_4_Sum = [=](int __gsharp_id_5_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_4_Sum(__gsharp_lf_impl___gsharp_id_4_Sum, __gsharp_id_5_n);
 }
@@ -390,12 +390,12 @@ int __gsharp_id_1_tid = (int)threadIdx.x;
 int __gsharp_id_2_calls = 0;
 auto __gsharp_lf_impl___gsharp_id_4_IsEven = [&](auto& __gsharp_lf_self___gsharp_id_4_IsEven, auto& __gsharp_lf_self___gsharp_id_6_IsOdd, int __gsharp_id_5_n) -> int
 {
-auto __gsharp_id_4_IsEven = [&](int __gsharp_id_5_n) -> int
+auto __gsharp_id_4_IsEven = [=](int __gsharp_id_5_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_4_IsEven(__gsharp_lf_self___gsharp_id_4_IsEven, __gsharp_lf_self___gsharp_id_6_IsOdd, __gsharp_id_5_n);
 }
 ;
-auto __gsharp_id_6_IsOdd = [&](int __gsharp_id_7_n) -> int
+auto __gsharp_id_6_IsOdd = [=](int __gsharp_id_7_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_6_IsOdd(__gsharp_lf_self___gsharp_id_4_IsEven, __gsharp_lf_self___gsharp_id_6_IsOdd, __gsharp_id_7_n);
 }
@@ -408,12 +408,12 @@ return (__gsharp_id_5_n==0?1:__gsharp_id_6_IsOdd(__gsharp_sub_i32(__gsharp_id_5_
 ;
 auto __gsharp_lf_impl___gsharp_id_6_IsOdd = [&](auto& __gsharp_lf_self___gsharp_id_4_IsEven, auto& __gsharp_lf_self___gsharp_id_6_IsOdd, int __gsharp_id_7_n) -> int
 {
-auto __gsharp_id_4_IsEven = [&](int __gsharp_id_5_n) -> int
+auto __gsharp_id_4_IsEven = [=](int __gsharp_id_5_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_4_IsEven(__gsharp_lf_self___gsharp_id_4_IsEven, __gsharp_lf_self___gsharp_id_6_IsOdd, __gsharp_id_5_n);
 }
 ;
-auto __gsharp_id_6_IsOdd = [&](int __gsharp_id_7_n) -> int
+auto __gsharp_id_6_IsOdd = [=](int __gsharp_id_7_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_6_IsOdd(__gsharp_lf_self___gsharp_id_4_IsEven, __gsharp_lf_self___gsharp_id_6_IsOdd, __gsharp_id_7_n);
 }
@@ -424,12 +424,12 @@ return (__gsharp_id_7_n==0?0:__gsharp_id_4_IsEven(__gsharp_sub_i32(__gsharp_id_7
 }
 }
 ;
-auto __gsharp_id_4_IsEven = [&](int __gsharp_id_5_n) -> int
+auto __gsharp_id_4_IsEven = [=](int __gsharp_id_5_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_4_IsEven(__gsharp_lf_impl___gsharp_id_4_IsEven, __gsharp_lf_impl___gsharp_id_6_IsOdd, __gsharp_id_5_n);
 }
 ;
-auto __gsharp_id_6_IsOdd = [&](int __gsharp_id_7_n) -> int
+auto __gsharp_id_6_IsOdd = [=](int __gsharp_id_7_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_6_IsOdd(__gsharp_lf_impl___gsharp_id_4_IsEven, __gsharp_lf_impl___gsharp_id_6_IsOdd, __gsharp_id_7_n);
 }
@@ -753,7 +753,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_lf_impl___gsharp_id_2_Fill = [&](auto& __gsharp_lf_self___gsharp_id_2_Fill, int __gsharp_id_3_n, int __gsharp_id_4_depth) -> void
 {
-auto __gsharp_id_2_Fill = [&](int __gsharp_id_3_n, int __gsharp_id_4_depth) -> void
+auto __gsharp_id_2_Fill = [=](int __gsharp_id_3_n, int __gsharp_id_4_depth) -> void
 {
 __gsharp_lf_self___gsharp_id_2_Fill(__gsharp_lf_self___gsharp_id_2_Fill, __gsharp_id_3_n, __gsharp_id_4_depth);
 }
@@ -768,7 +768,7 @@ __gsharp_id_2_Fill(__gsharp_sub_i32(__gsharp_id_3_n,1),__gsharp_add_i32(__gsharp
 }
 }
 ;
-auto __gsharp_id_2_Fill = [&](int __gsharp_id_3_n, int __gsharp_id_4_depth) -> void
+auto __gsharp_id_2_Fill = [=](int __gsharp_id_3_n, int __gsharp_id_4_depth) -> void
 {
 __gsharp_lf_impl___gsharp_id_2_Fill(__gsharp_lf_impl___gsharp_id_2_Fill, __gsharp_id_3_n, __gsharp_id_4_depth);
 }
@@ -1092,7 +1092,7 @@ return __gsharp_add_i32(__gsharp_id_5_x,3);
 ;
 auto __gsharp_lf_impl___gsharp_id_2_Count = [&](auto& __gsharp_lf_self___gsharp_id_2_Count, int __gsharp_id_3_n) -> int
 {
-auto __gsharp_id_2_Count = [&](int __gsharp_id_3_n) -> int
+auto __gsharp_id_2_Count = [=](int __gsharp_id_3_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_2_Count(__gsharp_lf_self___gsharp_id_2_Count, __gsharp_id_3_n);
 }
@@ -1102,7 +1102,7 @@ return (__gsharp_id_3_n<=0?0:__gsharp_id_4_Bump(__gsharp_id_2_Count(__gsharp_sub
 }
 }
 ;
-auto __gsharp_id_2_Count = [&](int __gsharp_id_3_n) -> int
+auto __gsharp_id_2_Count = [=](int __gsharp_id_3_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_2_Count(__gsharp_lf_impl___gsharp_id_2_Count, __gsharp_id_3_n);
 }
@@ -1413,7 +1413,7 @@ __gsharp_switch_1_state_0:
 int __gsharp_id_1_tid = (int)threadIdx.x;
 auto __gsharp_lf_impl___gsharp_id_3_Factorial = [&](auto& __gsharp_lf_self___gsharp_id_3_Factorial, int __gsharp_id_4_n) -> int
 {
-auto __gsharp_id_3_Factorial = [&](int __gsharp_id_4_n) -> int
+auto __gsharp_id_3_Factorial = [=](int __gsharp_id_4_n) -> int
 {
 return __gsharp_lf_self___gsharp_id_3_Factorial(__gsharp_lf_self___gsharp_id_3_Factorial, __gsharp_id_4_n);
 }
@@ -1423,7 +1423,7 @@ return (__gsharp_id_4_n<=1?1:__gsharp_mul_i32(__gsharp_id_4_n,__gsharp_id_3_Fact
 }
 }
 ;
-auto __gsharp_id_3_Factorial = [&](int __gsharp_id_4_n) -> int
+auto __gsharp_id_3_Factorial = [=](int __gsharp_id_4_n) -> int
 {
 return __gsharp_lf_impl___gsharp_id_3_Factorial(__gsharp_lf_impl___gsharp_id_3_Factorial, __gsharp_id_4_n);
 }

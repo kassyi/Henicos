@@ -1139,8 +1139,8 @@ inline ~__gsharp_sort_compare_scope() { __gsharp_sort_compare_depth--; }
 // unspecified value. Every build tests the divisor, the release CUDA build included (semantics charter §2, §4); the
 // failing thread stops (the native step ends; a CUDA thread records the error and exits on sm_70 and later).
 // MinValue / -1 and MinValue % -1 are implementation-defined in an unchecked C# context (§12.10.3); G# follows the GPU,
-// which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, so the native build tests
-// -1 as well; nvcc's division gives that result as it is.
+// which gives MinValue and 0 without an error. x86 idiv raises a hardware exception for them, and nvcc treats the
+// division as undefined behavior and folds a constant MinValue / -1 to 0, so every build tests -1 before it divides.
 // The transpiler calls these only where the divisor may be 0 (or -1, for a dividend that may be MinValue). The place is
 // the site of the kernel's error site table (unsigned int) or, in a device function, a message that names it.
 // [WHY] On CUDA the failure is written inline (__gsharp_inline_trap, as for a null array read): a call of the noinline
@@ -1157,33 +1157,25 @@ do { if ((divisor) == 0) { __gsharp_trap_abort(GSharpErrorCode::DivideByZero, si
 template <typename S>
 __device__ __forceinline__ int __gsharp_div_i32(int a, int b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return __gsharp_neg_i32(a); }
-#endif
 return a / b;
 }
 template <typename S>
 __device__ __forceinline__ int __gsharp_rem_i32(int a, int b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return 0; }
-#endif
 return a % b;
 }
 template <typename S>
 __device__ __forceinline__ long long __gsharp_div_i64(long long a, long long b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return __gsharp_neg_i64(a); }
-#endif
 return a / b;
 }
 template <typename S>
 __device__ __forceinline__ long long __gsharp_rem_i64(long long a, long long b, S site) {
 __GSHARP_DIVISOR_CHECK(b, site);
-#if !defined(__CUDACC__)
 if (b == -1) { return 0; }
-#endif
 return a % b;
 }
 template <typename S>
@@ -1821,7 +1813,7 @@ return missing;
 }
 
 // The thread-dependent branches and loops of a method that reaches Warp.ActiveMask() (#844). A lane enters one before
-// it (the entry is the frame's path, the number of the branch and how often the frame entered it) and leaves it where it
+// it (the entry is the frame's path and the number of the branch) and leaves it where it
 // ends, or by a jump out of it. Where it ends, the lane waits until no other lane of its warp is still inside the same
 // entry: the GPU runs the lanes of a warp that took different ways through a branch together again there, and
 // Warp.ActiveMask() returns the lanes that run together. ManagedGpuContext does the same.
@@ -1835,7 +1827,7 @@ __gsharp_trap(GSharpErrorCode::InvalidOperation,
 return;
 }
 __gsharp_root->__gsharp_warp_regions[__gsharp_root->__gsharp_warp_region_depth++] = {
-__gsharp_warp_path_of(__gsharp_root, __gsharp_ctx), site, ++__gsharp_ctx->__gsharp_warp_visits[site]};
+__gsharp_warp_path_of(__gsharp_root, __gsharp_ctx), site, 0u};
 }
 
 template<typename TRoot, typename TFrame>
@@ -1889,7 +1881,7 @@ continue;
 const TContext& other = contexts[laneTid];
 for (uint32_t depth = 0u; depth < other.__gsharp_warp_region_depth; depth++) {
 const __gsharp_warp_instance& entry = other.__gsharp_warp_regions[depth];
-if (entry.path != region.path || entry.site != region.site || entry.visit != region.visit) {
+if (entry.path != region.path || entry.site != region.site) {
 continue;
 }
 bool arrived = other.__gsharp_warp_reconverging && depth + 1u == other.__gsharp_warp_region_depth &&

@@ -113,11 +113,8 @@ internal static class NonNullProof
     public static void FailIfReferencedWithoutCall(ExpressionSyntax reference, IMethodSymbol method,
         ref TranspileContext context)
     {
-        var called =
-            (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
-            (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
-             access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
-        if (!called && !method.IsExtensionMethod &&
+        if (!CallTargetClassifier.IsCalledReference(reference) &&
+            !method.IsExtensionMethod &&
             CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect) && ChecksArguments(method))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, reference, PassedAsDelegate);

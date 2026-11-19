@@ -9,14 +9,14 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
 /// Kernels that read an array-like argument that may be null, empty or populated, one read per <c>mode</c>
-/// (<see cref="ArrayArgumentReads"/>): a launch passes the argument as C# does, so every path reads what the kernel's
+/// (<see cref="ArrayArgumentRead"/>): a launch passes the argument as C# does, so every path reads what the kernel's
 /// own C# reads.
 /// </summary>
 #pragma warning disable CS8602, CS8604 // C#: NullReferenceException on a null array, which the tests check
 public static partial class ArrayArgumentNullEmptyDifferentialKernels
 {
     [GpuKernel]
-    public static void NullableArrayKernel(int[]? a, int mode, int[] o)
+    public static void NullableArrayKernel(int[]? a, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -25,16 +25,16 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = (a is null ? 1 : 0) + (a == null ? 2 : 0);
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = a.Length;
                 break;
-            case ArrayArgumentReads.Element:
+            case ArrayArgumentRead.Element:
                 o[0] = a[0];
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in a)
                 {
@@ -42,41 +42,41 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 }
 
                 break;
-            case ArrayArgumentReads.AsSpanLength:
+            case ArrayArgumentRead.AsSpanLength:
                 o[0] = a.AsSpan().Length;
                 break;
-            case ArrayArgumentReads.SpanLength:
+            case ArrayArgumentRead.SpanLength:
                 o[0] = new Span<int>(a).Length;
                 break;
-            case ArrayArgumentReads.ToNonNullable:
+            case ArrayArgumentRead.ToNonNullable:
                 o[0] = NonNullableLength(a);
                 break;
-            case ArrayArgumentReads.InNullableFunction:
+            case ArrayArgumentRead.InNullableFunction:
                 o[0] = NullableLength(a);
                 break;
-            case ArrayArgumentReads.StackLinqSum:
+            case ArrayArgumentRead.StackLinqSum:
                 o[0] = a.AsStackEnumerable().Sum();
                 break;
-            case ArrayArgumentReads.StackLinqStoredSum:
+            case ArrayArgumentRead.StackLinqStoredSum:
             {
                 var sequence = a.AsStackEnumerable();
                 o[0] = sequence.Sum();
                 break;
             }
-            case ArrayArgumentReads.StackLinqIndexedSum:
+            case ArrayArgumentRead.StackLinqIndexedSum:
                 o[0] = a.AsStackEnumerable().Where((v, i) => i >= 0).Sum();
                 break;
-            case ArrayArgumentReads.StackLinqInDeviceFunction:
+            case ArrayArgumentRead.StackLinqInDeviceFunction:
                 o[0] = NullableStackLinqSum(a);
                 break;
-            case ArrayArgumentReads.StackLinqStaticSum:
+            case ArrayArgumentRead.StackLinqStaticSum:
                 o[0] = StackLinqExtensions.AsStackEnumerable(a).Sum();
                 break;
         }
     }
 
     [GpuKernel]
-    public static void NonNullableArrayKernel(int[] a, int mode, int[] o)
+    public static void NonNullableArrayKernel(int[] a, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -85,16 +85,16 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = (a is null ? 1 : 0) + (a == null ? 2 : 0);
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = a.Length;
                 break;
-            case ArrayArgumentReads.Element:
+            case ArrayArgumentRead.Element:
                 o[0] = a[0];
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in a)
                 {
@@ -102,16 +102,16 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 }
 
                 break;
-            case ArrayArgumentReads.AsSpanLength:
+            case ArrayArgumentRead.AsSpanLength:
                 o[0] = a.AsSpan().Length;
                 break;
-            case ArrayArgumentReads.SpanLength:
+            case ArrayArgumentRead.SpanLength:
                 o[0] = new Span<int>(a).Length;
                 break;
-            case ArrayArgumentReads.ToNonNullable:
+            case ArrayArgumentRead.ToNonNullable:
                 o[0] = NonNullableLength(a);
                 break;
-            case ArrayArgumentReads.InNullableFunction:
+            case ArrayArgumentRead.InNullableFunction:
                 o[0] = NullableLength(a);
                 break;
         }
@@ -119,7 +119,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
 #nullable disable
     [GpuKernel]
-    public static void ObliviousArrayKernel(int[] a, int mode, int[] o)
+    public static void ObliviousArrayKernel(int[] a, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -128,16 +128,16 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = (a is null ? 1 : 0) + (a == null ? 2 : 0);
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = a.Length;
                 break;
-            case ArrayArgumentReads.Element:
+            case ArrayArgumentRead.Element:
                 o[0] = a[0];
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in a)
                 {
@@ -145,16 +145,16 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 }
 
                 break;
-            case ArrayArgumentReads.AsSpanLength:
+            case ArrayArgumentRead.AsSpanLength:
                 o[0] = a.AsSpan().Length;
                 break;
-            case ArrayArgumentReads.SpanLength:
+            case ArrayArgumentRead.SpanLength:
                 o[0] = new Span<int>(a).Length;
                 break;
-            case ArrayArgumentReads.ToNonNullable:
+            case ArrayArgumentRead.ToNonNullable:
                 o[0] = NonNullableLength(a);
                 break;
-            case ArrayArgumentReads.InNullableFunction:
+            case ArrayArgumentRead.InNullableFunction:
                 o[0] = NullableLength(a);
                 break;
         }
@@ -163,7 +163,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
     // The elements differ in layout on the device, so the launchers convert them
     [GpuKernel]
-    public static void ConvertedArrayKernel([In] DiffDeepBag[]? a, int mode, int[] o)
+    public static void ConvertedArrayKernel([In] DiffDeepBag[]? a, ArrayArgumentRead mode, int[] o)
     {
         if (ThreadIndex.X != 0)
         {
@@ -172,13 +172,13 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = (a is null ? 1 : 0) + (a == null ? 2 : 0);
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = a.Length;
                 break;
-            case ArrayArgumentReads.ForEach:
+            case ArrayArgumentRead.ForEach:
                 o[0] = 100;
                 foreach (var v in a)
                 {
@@ -186,7 +186,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
                 }
 
                 break;
-            case ArrayArgumentReads.AsSpanLength:
+            case ArrayArgumentRead.AsSpanLength:
                 o[0] = a.AsSpan().Length;
                 break;
         }
@@ -194,7 +194,7 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
     // The reads after a barrier run in the state machine of the CPU paths
     [GpuKernel]
-    public static void NullableArrayAfterBarrierKernel(int[]? a, int mode, int[] o)
+    public static void NullableArrayAfterBarrierKernel(int[]? a, ArrayArgumentRead mode, int[] o)
     {
         Gpu.SyncThreads();
         if (ThreadIndex.X != 0)
@@ -204,13 +204,13 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 
         switch (mode)
         {
-            case ArrayArgumentReads.IsNull:
+            case ArrayArgumentRead.IsNull:
                 o[0] = a is null ? 1 : 0;
                 break;
-            case ArrayArgumentReads.Length:
+            case ArrayArgumentRead.Length:
                 o[0] = a.Length;
                 break;
-            case ArrayArgumentReads.InNullableFunction:
+            case ArrayArgumentRead.InNullableFunction:
                 o[0] = NullableLength(a);
                 break;
         }
@@ -231,62 +231,62 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
 /// <summary>
 /// The read of the argument that a kernel of <see cref="ArrayArgumentNullEmptyDifferentialKernels"/> makes.
 /// </summary>
-public static class ArrayArgumentReads
+public enum ArrayArgumentRead
 {
     /// <summary>
     /// <c>a is null</c> and <c>a == null</c>, or what tells a default span-like value from one over an array.
     /// </summary>
-    public const int IsNull = 0;
+    IsNull,
 
     /// <summary><c>Length</c> (<c>Count</c> of a segment).</summary>
-    public const int Length = 1;
+    Length,
 
     /// <summary><c>a[0]</c>.</summary>
-    public const int Element = 2;
+    Element,
 
     /// <summary><c>foreach</c>.</summary>
-    public const int ForEach = 3;
+    ForEach,
 
     /// <summary><c>a.AsSpan().Length</c>.</summary>
-    public const int AsSpanLength = 4;
+    AsSpanLength,
 
     /// <summary><c>new Span&lt;int&gt;(a).Length</c>.</summary>
-    public const int SpanLength = 5;
+    SpanLength,
 
     /// <summary>The array passed to a device function whose parameter is not nullable.</summary>
-    public const int ToNonNullable = 6;
+    ToNonNullable,
 
     /// <summary>The array read in a device function whose parameter is nullable.</summary>
-    public const int InNullableFunction = 7;
+    InNullableFunction,
 
     /// <summary><c>IsEmpty</c> of a <c>Memory&lt;T&gt;</c> or an <c>ImmutableArray&lt;T&gt;</c>.</summary>
-    public const int IsEmpty = 8;
+    IsEmpty,
 
     /// <summary><c>IsDefault</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
-    public const int IsDefault = 9;
+    IsDefault,
 
     /// <summary><c>IsDefaultOrEmpty</c> of an <c>ImmutableArray&lt;T&gt;</c>.</summary>
-    public const int IsDefaultOrEmpty = 10;
+    IsDefaultOrEmpty,
 
     /// <summary><c>a.AsStackEnumerable().Sum()</c>: StackLinq over an array.</summary>
-    public const int StackLinqSum = 11;
+    StackLinqSum,
 
     /// <summary>The same query from a sequence stored in a local, which is not fused into one loop.</summary>
-    public const int StackLinqStoredSum = 12;
+    StackLinqStoredSum,
 
     /// <summary>
     /// <c>a.AsStackEnumerable().Where((v, i) =&gt; i &gt;= 0).Sum()</c>: an indexed lambda, not fused.
     /// </summary>
-    public const int StackLinqIndexedSum = 13;
+    StackLinqIndexedSum,
 
     /// <summary>The same query in a device function, which has no error site table.</summary>
-    public const int StackLinqInDeviceFunction = 14;
+    StackLinqInDeviceFunction,
 
     /// <summary><c>StackLinqExtensions.AsStackEnumerable(a).Sum()</c>: the static form of the call.</summary>
-    public const int StackLinqStaticSum = 15;
+    StackLinqStaticSum,
 
     /// <summary>
     /// <c>IsDefault</c> and <c>IsDefaultOrEmpty</c> of a <c>default(ImmutableArray&lt;T&gt;)</c> literal.
     /// </summary>
-    public const int DefaultLiteral = 16;
+    DefaultLiteral,
 }
