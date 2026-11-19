@@ -192,22 +192,42 @@ internal static class GenericExpansion
                 if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
                     compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
                 {
-                    foreach (var node in operation.DescendantsAndSelf())
-                    {
-                        if (node is ITypeParameterObjectCreationOperation { Type: ITypeParameterSymbol parameter })
-                        {
-                            used.Add((parameter, TypeParameterUse.Created));
-                        }
-                        else if (DeviceFunctionReach.GetConstrainedReceiver(node) is { } receiver)
-                        {
-                            used.Add((receiver, TypeParameterUse.Reached));
-                        }
-                    }
+                    AddUses(operation, used);
                 }
             }
 
             return used.ToImmutable();
         });
+
+    // new Q(), a member of an interface reached through Q, and the Dispose of a using of a Q, in operation and the
+    // operations inside it
+    private static void AddUses(IOperation operation,
+        ImmutableArray<(ITypeParameterSymbol Parameter, TypeParameterUse Use)>.Builder used)
+    {
+        foreach (var node in operation.DescendantsAndSelf())
+        {
+            if (node is ITypeParameterObjectCreationOperation { Type: ITypeParameterSymbol created })
+            {
+                used.Add((created, TypeParameterUse.Created));
+            }
+            else if ((DeviceFunctionReach.GetConstrainedReceiver(node) ?? GetDisposed(node)) is { } reached)
+            {
+                used.Add((reached, TypeParameterUse.Reached));
+            }
+        }
+    }
+
+    // The type parameter whose Dispose a using of a value of it runs
+    private static ITypeParameterSymbol? GetDisposed(IOperation operation) => operation switch
+    {
+        IUsingOperation { Locals: [{ Type: ITypeParameterSymbol local }, ..] } => local,
+        IUsingOperation { Resources.Type: ITypeParameterSymbol resource } => resource,
+        IVariableDeclaratorOperation
+        {
+            Parent.Parent.Parent: IUsingDeclarationOperation, Symbol.Type: ITypeParameterSymbol declared
+        } => declared,
+        _ => null
+    };
 
     // The edges that leave parameter: those of the methods whose bodies can use it
     private static IEnumerable<ITypeParameterSymbol> GetSuccessors(ITypeParameterSymbol parameter,
@@ -323,8 +343,29 @@ internal static class GenericExpansion
         {
             lock (_gate)
             {
-                return GetComponent(from) == GetComponent(to);
+                try
+                {
+                    return GetComponent(from) == GetComponent(to);
+                }
+                catch (Exception)
+                {
+                    // [WHY] A search stopped half way leaves nodes on the stack without a component; later questions
+                    // would read that state as finished, so it is dropped and the next question starts afresh
+                    Reset();
+                    throw;
+                }
             }
+        }
+
+        private void Reset()
+        {
+            _component.Clear();
+            _index.Clear();
+            _lowLink.Clear();
+            _onStack.Clear();
+            _stack.Clear();
+            _nextIndex = 0;
+            _nextComponent = 0;
         }
 
         private int GetComponent(ITypeParameterSymbol parameter)

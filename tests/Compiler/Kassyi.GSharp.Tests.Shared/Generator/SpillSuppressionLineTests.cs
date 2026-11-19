@@ -80,10 +80,6 @@ public class SpillSuppressionLineTests
     [InlineData("ViaUsingExpression")]
     [InlineData("ViaFiniteGrowth")]
     [InlineData("ViaIndirectGrowth")]
-    [InlineData("ViaConstrainedGetter")]
-    [InlineData("ViaConstrainedSetter")]
-    [InlineData("ViaConstrainedIndexer")]
-    [InlineData("ViaConstrainedRef")]
     public void CudaModule_FunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
     {
         var module = s_cudaModule.Value;
@@ -131,6 +127,48 @@ public class SpillSuppressionLineTests
 
         Assert.Contains("int " + name + "(int", module, StringComparison.Ordinal);
         Assert.DoesNotContain(name, ReadSuppressionLine(module));
+    }
+
+    // An interface member reached through a constrained type parameter runs the type argument's implementation: the
+    // function it calls is not listed, and the line still lists Own, so the kernel did not fall back to unknown
+    // functions (which would list no function at all)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ViaConstrainedGetter")]
+    [InlineData("ViaConstrainedSetter")]
+    [InlineData("ViaConstrainedIndexer")]
+    [InlineData("ViaConstrainedRef")]
+    public void CudaModule_FunctionReachedThroughAConstrainedInterfaceMember_IsNotListedAndOwnStays(string function)
+    {
+        var module = s_cudaModule.Value;
+        var line = ReadSuppressionLine(module);
+
+        Assert.Contains("int __gsharp_fn_" + Prefix + function + "(int", module, StringComparison.Ordinal);
+        Assert.DoesNotContain("__gsharp_fn_" + Prefix + function, line);
+        Assert.Contains("__gsharp_fn_" + Prefix + "Own", line);
+    }
+
+    // A using of a value of a type parameter runs the type argument's Dispose (using (var r = new T()), using var,
+    // using (r)); the module does not define it yet, so the call graph of the walk is read
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("UsingLocalKernel")]
+    [InlineData("UsingDeclarationKernel")]
+    [InlineData("UsingResourceKernel")]
+    public void GetReachedFunctionNames_UsingOfATypeParameter_ReachesTheTypeArgumentsDispose(string kernelName)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionTypeParameterDispose.cu.cs"));
+        var declaration = compilation.SyntaxTrees
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes())
+            .OfType<MethodDeclarationSyntax>()
+            .Single(method => method.Identifier.ValueText == kernelName);
+        var kernel = Assert.IsAssignableFrom<IMethodSymbol>(
+            compilation.GetSemanticModel(declaration.SyntaxTree).GetDeclaredSymbol(declaration));
+
+        var names = DeviceFunctionReach.GetReachedFunctionNames(kernel, declaration, compilation);
+
+        Assert.Contains("__gsharp_fn_SpillSuppressionTypeParameterDispose__Kernels__ViaTypeParameterDispose", names);
     }
 
     // A kernel without the pragma reaches a default interface member through a type parameter, whose body the walk

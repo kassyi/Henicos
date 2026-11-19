@@ -227,58 +227,61 @@ internal static class DeviceFunctionReach
                 called.Add(typeArguments.Substitute(reference.Method));
                 break;
             case IUsingOperation usingOperation:
-                AddUsingDisposes(usingOperation, compilation, called);
+                AddUsingDisposes(usingOperation, typeArguments, compilation, called);
                 break;
             case IUsingDeclarationOperation declaration:
-                AddUsingDeclarationDisposes(declaration, compilation, called);
+                AddUsingDeclarationDisposes(declaration, typeArguments, compilation, called);
                 break;
             case ICollectionExpressionOperation { ConstructMethod: { } builder }:
                 called.Add(typeArguments.Substitute(builder));
                 break;
             case IVariableDeclaratorOperation declarator:
-                AddFixedPinnable(declarator, compilation, called);
+                AddFixedPinnable(declarator, typeArguments, compilation, called);
                 break;
             case IBinaryOperation binary:
-                AddMacroTarget(binary.OperatorMethod, compilation, called);
+                AddMacroTarget(binary.OperatorMethod, typeArguments, compilation, called);
                 AddTruthTest(binary, typeArguments, called);
                 break;
             case IUnaryOperation unary:
-                AddMacroTarget(unary.OperatorMethod, compilation, called);
+                AddMacroTarget(unary.OperatorMethod, typeArguments, compilation, called);
                 break;
         }
     }
 
     // using (var r = ...): the Dispose of each local; using (r): the Dispose of the resource's type
-    private static void AddUsingDisposes(IUsingOperation usingOperation, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called)
+    private static void AddUsingDisposes(IUsingOperation usingOperation, TypeArgumentMap typeArguments,
+        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
     {
         if (!usingOperation.Locals.IsEmpty)
         {
             usingOperation.Locals
                 .AsStackEnumerable()
-                .Do((compilation, called), static (local, state) => AddDispose(local.Type, state.compilation,
-                    state.called));
+                .Do((typeArguments, compilation, called), static (local, state) => AddDispose(local.Type,
+                    state.typeArguments, state.compilation, state.called));
         }
         else if (usingOperation.Resources is { } resource)
         {
-            AddDispose(resource.Type, compilation, called);
+            AddDispose(resource.Type, typeArguments, compilation, called);
         }
     }
 
     // using var r = ...: the Dispose of each declared variable
-    private static void AddUsingDeclarationDisposes(IUsingDeclarationOperation declaration, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called) =>
+    private static void AddUsingDeclarationDisposes(IUsingDeclarationOperation declaration,
+        TypeArgumentMap typeArguments, Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called) =>
         declaration.DeclarationGroup.Declarations
             .AsStackEnumerable()
             .SelectMany(static group => group.Declarators
                 .AsStackEnumerable()
-            ).Do((compilation, called), static (declarator, state) => AddDispose(declarator.Symbol.Type,
-                state.compilation, state.called));
+            ).Do((typeArguments, compilation, called), static (declarator, state) => AddDispose(
+                declarator.Symbol.Type, state.typeArguments, state.compilation, state.called));
 
-    private static void AddDispose(ITypeSymbol? type, Compilation compilation,
+    // The Dispose of type as the walk has replaced its type parameters (using (var r = new T()) runs the Dispose of
+    // the type argument)
+    private static void AddDispose(ITypeSymbol? type, TypeArgumentMap typeArguments, Compilation compilation,
         ImmutableArray<IMethodSymbol>.Builder called)
     {
-        if (type is INamedTypeSymbol named && UsingTranspiler.FindDisposeMethod(named, compilation) is { } dispose)
+        if (type is not null && typeArguments.Substitute(type) is INamedTypeSymbol named &&
+            UsingTranspiler.FindDisposeMethod(named, compilation) is { } dispose)
         {
             called.Add(dispose);
         }
@@ -286,8 +289,8 @@ internal static class DeviceFunctionReach
 
     // fixed (int* p = e): the GetPinnableReference that C# calls for e
     // [WHY] Roslyn does not make the operation of a fixed statement public: its declarators are read
-    private static void AddFixedPinnable(IVariableDeclaratorOperation declarator, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called)
+    private static void AddFixedPinnable(IVariableDeclaratorOperation declarator, TypeArgumentMap typeArguments,
+        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
     {
         if (declarator.Syntax is VariableDeclaratorSyntax
             {
@@ -296,7 +299,7 @@ internal static class DeviceFunctionReach
             PinnableReferenceMethod.Find(initializer, compilation.GetCachedSemanticModel(initializer.SyntaxTree)) is
                 { } pinnable)
         {
-            called.Add(pinnable);
+            called.Add(typeArguments.Substitute(pinnable.GetConstructedReducedFrom() ?? pinnable));
         }
     }
 
@@ -312,12 +315,13 @@ internal static class DeviceFunctionReach
         }
     }
 
-    private static void AddMacroTarget(IMethodSymbol? operatorMethod, Compilation compilation,
-        ImmutableArray<IMethodSymbol>.Builder called)
+    private static void AddMacroTarget(IMethodSymbol? operatorMethod, TypeArgumentMap typeArguments,
+        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
     {
-        if (OperatorMacroResolver.TryGetTarget(operatorMethod, compilation, out var target))
+        if (operatorMethod != null &&
+            OperatorMacroResolver.TryGetTarget(typeArguments.Substitute(operatorMethod), compilation, out var target))
         {
-            called.Add(target);
+            called.Add(typeArguments.Substitute(target));
         }
     }
 
