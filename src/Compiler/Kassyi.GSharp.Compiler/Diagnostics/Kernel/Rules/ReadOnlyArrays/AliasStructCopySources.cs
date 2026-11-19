@@ -9,7 +9,7 @@ internal static class AliasStructCopySources
     {
         if (AliasKey.Of(value, sources.Model) is not { } sourceKey ||
             TypeOf(destination.Last) is not
-                { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } targetType ||
+                INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } targetType ||
             targetType.TryGetArrayLikeElementType(out _) ||
             !SymbolEqualityComparer.Default.Equals(targetType, TypeOf(sourceKey.Last)))
         {
@@ -18,7 +18,7 @@ internal static class AliasStructCopySources
 
         if (!destination.Equals(sourceKey))
         {
-            AddStructCopy(sources, destination, sourceKey, targetType, 0);
+            AddStructCopy(sources, destination, sourceKey, targetType, path: null);
         }
 
         return true;
@@ -32,14 +32,17 @@ internal static class AliasStructCopySources
         _ => null
     };
 
+    // [WHY] The walk stops at a struct already on its path: a struct that holds itself (CS0523), also a generic one
+    // that holds a larger construction of itself, would otherwise be followed without end or k^depth times
     private static void AddStructCopy(
         AliasSources sources,
         AliasKey destination,
         AliasKey source,
-        ITypeSymbol type,
-        int depth)
+        INamedTypeSymbol type,
+        StructPath? path)
     {
-        if (depth > 64 || type.TypeKind != TypeKind.Struct || type.SpecialType != SpecialType.None)
+        using var step = StructPath.Enter(path, type);
+        if (step.IsCycle)
         {
             return;
         }
@@ -57,9 +60,9 @@ internal static class AliasStructCopySources
             {
                 sources.Add(destinationField, AliasSource.FromKey(sourceField));
             }
-            else if (field.Type is { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None })
+            else if (field.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct, SpecialType: SpecialType.None } nested)
             {
-                AddStructCopy(sources, destinationField, sourceField, field.Type, depth + 1);
+                AddStructCopy(sources, destinationField, sourceField, nested, step.Path);
             }
         }
     }
