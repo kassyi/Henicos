@@ -231,18 +231,12 @@ internal static class JumpRegionPlanner
         SyntaxList<StatementSyntax> statements,
         int start,
         int end,
-        Func<StatementSyntax, bool> holdsSplitPoint)
-    {
-        for (var s = start; s <= end; s++)
-        {
-            if (holdsSplitPoint(statements[s]))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+        Func<StatementSyntax, bool> holdsSplitPoint) =>
+        statements
+            .AsStackEnumerable()
+            .Skip(start)
+            .Take(end - start + 1)
+            .Any(holdsSplitPoint);
 
     private static bool HasForwardRangeForLabel(List<CandidateRange> adopted, int labelIndex) =>
         adopted
@@ -316,18 +310,10 @@ internal static class JumpRegionPlanner
         return changed;
     }
 
-    private static bool HasAnyLabel(SyntaxList<StatementSyntax> statements)
-    {
-        for (var i = 0; i < statements.Count; i++)
-        {
-            if (statements[i] is LabeledStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasAnyLabel(SyntaxList<StatementSyntax> statements) =>
+        statements
+            .AsStackEnumerable()
+            .Any(static statement => statement is LabeledStatementSyntax);
 
     private static void CollectGotos(StatementSyntax statement, List<GotoStatementSyntax> gotos)
     {

@@ -21,7 +21,7 @@ internal static class ReconvergenceJumpChecks
             return;
         }
 
-        foreach (var node in DescendantNodesInLoweredBody(scan.Method, scan.SemanticModel))
+        foreach (var node in RemovedCalls.DescendantNodesThatRun(scan.Method, scan.SemanticModel, IsSkippedNestedBody))
         {
             switch (node)
             {
@@ -42,36 +42,13 @@ internal static class ReconvergenceJumpChecks
             statement => HoldsSplitPoint(statement, model));
 
     private static bool HoldsSplitPoint(StatementSyntax statement, SemanticModel model) =>
-        DescendantNodesInLoweredBody(statement, model)
+        RemovedCalls.DescendantNodesThatRun(statement, model, IsSkippedNestedBody)
             .AsStackEnumerable()
             .Any(model, static (node, m) =>
                 node is InvocationExpressionSyntax inv &&
                 m.GetSymbol(inv) is IMethodSymbol callee &&
                 AstLoweringPipeline.ClassifySplitPoint(callee, m.Compilation) != null
             );
-
-    private static IEnumerable<SyntaxNode> DescendantNodesInLoweredBody(SyntaxNode root, SemanticModel model)
-    {
-        if (IsSkippedNestedBody(root, model))
-        {
-            yield break;
-        }
-
-        var pending = new Stack<SyntaxNode>();
-        PushChildren(pending, root);
-        while (pending.Count > 0)
-        {
-            var node = pending.Pop();
-            if (RemovedCalls.IsRemovedCall(node as ExpressionSyntax, model) ||
-                IsSkippedNestedBody(node, model))
-            {
-                continue;
-            }
-
-            yield return node;
-            PushChildren(pending, node);
-        }
-    }
 
     private static bool IsSkippedNestedBody(SyntaxNode node, SemanticModel model) =>
         node switch
@@ -81,17 +58,6 @@ internal static class ReconvergenceJumpChecks
                 is not (GpuMacroKind.ForUnroll or GpuMacroKind.GridStrideLoop or GpuMacroKind.SyncGrid),
             _ => false
         };
-
-    private static void PushChildren(Stack<SyntaxNode> pending, SyntaxNode node)
-    {
-        foreach (var child in node.ChildNodesAndTokens().Reverse())
-        {
-            if (child.AsNode() is { } childNode)
-            {
-                pending.Push(childNode);
-            }
-        }
-    }
 
     private static void ValidateSwitch(KernelBarrierScan scan, SwitchStatementSyntax switchStatement)
     {
