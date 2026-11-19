@@ -78,6 +78,26 @@ namespace SpillSuppressionTest
         }
     }
 
+    public ref struct DeclarationDisposer
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = Kernels.ViaUsingDeclaration(A);
+        }
+    }
+
+    public ref struct ExpressionDisposer
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = Kernels.ViaUsingExpression(A);
+        }
+    }
+
     [CollectionBuilder(typeof(Kernels), nameof(Kernels.CreateBag))]
     public struct Bag
     {
@@ -188,6 +208,8 @@ namespace SpillSuppressionTest
         [GpuDeviceFunction] public static int ViaBuilder(int x) => x + 14;
         [GpuDeviceFunction] public static int ViaPinnable(int x) => x + 15;
         [GpuDeviceFunction] public static int ViaNested(int x) => x + 16;
+        [GpuDeviceFunction] public static int ViaUsingDeclaration(int x) => x + 17;
+        [GpuDeviceFunction] public static int ViaUsingExpression(int x) => x + 18;
 
         // A device function whose own call of ViaNested is not an invocation (a property getter)
         [GpuDeviceFunction]
@@ -217,7 +239,7 @@ namespace SpillSuppressionTest
             d[2] = x + ViaGetter(d[1]) + ViaSetter(d[1]) + ViaIndexer(d[1]) + ViaConversion(d[1]) + ViaMacro(d[1]) +
                 ViaTruthTest(d[1]) + ViaConstructor(d[1]) + ViaInitializer(d[1]) + ViaGenericNew(d[1]) +
                 ViaLocal(d[1]) + ViaLambda(d[1]) + ViaMethodGroup(d[1]) + ViaDispose(d[1]) + ViaBuilder(d[1]) +
-                ViaPinnable(d[1]) + ViaNested(d[1]);
+                ViaPinnable(d[1]) + ViaNested(d[1]) + ViaUsingDeclaration(d[1]) + ViaUsingExpression(d[1]);
         }
 #pragma warning restore GS0001
 
@@ -342,6 +364,25 @@ namespace SpillSuppressionTest
         public static void UnmarkedUsingKernel(int[] d)
         {
             using (var resource = new Disposer { A = d[1] })
+            {
+                d[0] = resource.A;
+            }
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedUsingDeclarationKernel(int[] d)
+        {
+            using var resource = new DeclarationDisposer { A = d[1] };
+            d[0] = resource.A;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedUsingExpressionKernel(int[] d)
+        {
+            var resource = new ExpressionDisposer { A = d[1] };
+            using (resource)
             {
                 d[0] = resource.A;
             }

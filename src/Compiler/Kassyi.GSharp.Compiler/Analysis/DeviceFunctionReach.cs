@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Helpers.Calls;
 using Microsoft.CodeAnalysis.Operations;
@@ -24,7 +25,14 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// <c>Dispose</c>) is a C++ member, which ptxas names in a nested form that the build task never matches, and a local
 /// function or lambda counts as the function it is written in; their callees are followed all the same. A function of
 /// another assembly is named here; what it reaches in its own assembly is added from its record by
-/// <see cref="Aot.DeviceImportAssembler.ExtendReach"/>.
+/// <see cref="Aot.DeviceImportAssembler.ExtendReach"/>. A member of another assembly's struct that has no record of its
+/// own (an accessor, <c>Dispose</c>) is named by its struct's record, which stands for every member of the struct.
+/// </para>
+/// <para>
+/// A generic struct whose constructor constructs the same struct with a type argument that contains its own
+/// (<c>Deep&lt;T&gt;</c> creating <c>Deep&lt;Wrap&lt;T&gt;&gt;</c>) would give a new construction at every step:
+/// the walk stops at a construction whose type arguments contain those of a construction of the same definition
+/// that calls it. A program that does this cannot be emitted anyway (#2199).
 /// </para>
 /// </remarks>
 internal static class DeviceFunctionReach
@@ -41,31 +49,32 @@ internal static class DeviceFunctionReach
     {
         var names = new SortedSet<string>(StringComparer.Ordinal);
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-        var pending = new Stack<IMethodSymbol>();
+        var pending = new Stack<ReachStep>();
         var body = (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody;
         if (body != null)
         {
             CollectCallees([body], TypeArgumentMap.Of(kernel), compilation)
                 .AsStackEnumerable()
-                .Do(pending, static (callee, stack) => stack.Push(callee));
+                .Do(pending, static (callee, stack) => stack.Push(new ReachStep(callee, null)));
         }
 
         while (pending.Count > 0)
         {
-            var function = pending.Pop();
-            if (!visited.Add(function))
+            var step = pending.Pop();
+            if (visited.Contains(step.Function) || GrowsAnEnclosingConstruction(step))
             {
                 continue;
             }
 
-            if (GetEmittedName(DeviceFunctionEffects.GetDefinition(function)) is { } name)
+            visited.Add(step.Function);
+            if (GetEmittedName(step.Function, compilation) is { } name)
             {
                 names.Add(name);
             }
 
-            GetDirectCallees(function, compilation)
+            GetDirectCallees(step.Function, compilation)
                 .AsStackEnumerable()
-                .Do(pending, static (callee, stack) => stack.Push(callee));
+                .Do((pending, step), static (callee, state) => state.pending.Push(new ReachStep(callee, state.step)));
         }
 
         return names.ToImmutableArray().AsEquatableArray();
@@ -79,7 +88,7 @@ internal static class DeviceFunctionReach
                 : ImmutableArray<IMethodSymbol>.Empty);
 
     // The functions with code of their own that the bodies call: those of the compilation with a body, and the device
-    // functions and struct members of another assembly that recorded them
+    // functions and struct members of another assembly that recorded them or their struct
     private static ImmutableArray<IMethodSymbol> CollectCallees(IReadOnlyList<SyntaxNode> bodies,
         TypeArgumentMap typeArguments, Compilation compilation)
     {
@@ -99,7 +108,8 @@ internal static class DeviceFunctionReach
             var function = method.GetConstructedReducedFrom() ?? method;
             var definition = DeviceFunctionEffects.GetDefinition(function);
             if (DeviceFunctionBodies.TryGet(definition, compilation, out _) ||
-                (DeviceExportTable.IsOutside(definition, compilation) && DeviceExportTable.TryFind(definition, out _)))
+                (DeviceExportTable.IsOutside(definition, compilation) &&
+                 (DeviceExportTable.TryFind(definition, out _) || TryFindImportedStruct(function, out _))))
             {
                 callees.Add(function);
             }
@@ -134,54 +144,54 @@ internal static class DeviceFunctionReach
             case IMethodReferenceOperation reference:
                 called.Add(typeArguments.Substitute(reference.Method));
                 break;
-            case IUsingOperation { Locals.IsEmpty: false } usingOperation:
-                usingOperation.Locals
-                    .AsStackEnumerable()
-                    .Do((compilation, called), static (local, state) => AddDispose(local.Type, state.compilation,
-                        state.called));
-                break;
-            case IUsingOperation { Resources: { } resource }:
-                AddDispose(resource.Type, compilation, called);
+            case IUsingOperation usingOperation:
+                AddUsingDisposes(usingOperation, compilation, called);
                 break;
             case IUsingDeclarationOperation declaration:
-                declaration.DeclarationGroup.Declarations
-                    .AsStackEnumerable()
-                    .SelectMany(static group => group.Declarators
-                        .AsStackEnumerable()
-                    ).Do((compilation, called), static (declarator, state) => AddDispose(declarator.Symbol.Type,
-                        state.compilation, state.called));
+                AddUsingDeclarationDisposes(declaration, compilation, called);
                 break;
             case ICollectionExpressionOperation { ConstructMethod: { } builder }:
                 called.Add(typeArguments.Substitute(builder));
                 break;
-            // [WHY] Roslyn does not make the operation of a fixed statement public: its declarators are read
-            case IVariableDeclaratorOperation
-            {
-                Syntax: VariableDeclaratorSyntax { Parent.Parent: FixedStatementSyntax, Initializer.Value: { } value }
-            }:
-                AddPinnableReference(value, compilation, called);
-                break;
-            // The operator true / false that && and || test (the UnaryOperatorMethod of the operation, which Roslyn
-            // does not make public), found as the operator macro expansion finds it
-            case IBinaryOperation
-            {
-                OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr
-            } conditional:
-                AddMacroTarget(conditional.OperatorMethod, compilation, called);
-                if (OperatorMacroSyntax.FindTest(conditional) is { } test)
-                {
-                    called.Add(typeArguments.Substitute(test));
-                }
-
+            case IVariableDeclaratorOperation declarator:
+                AddFixedPinnable(declarator, compilation, called);
                 break;
             case IBinaryOperation binary:
                 AddMacroTarget(binary.OperatorMethod, compilation, called);
+                AddTruthTest(binary, typeArguments, called);
                 break;
             case IUnaryOperation unary:
                 AddMacroTarget(unary.OperatorMethod, compilation, called);
                 break;
         }
     }
+
+    // using (var r = ...): the Dispose of each local; using (r): the Dispose of the resource's type
+    private static void AddUsingDisposes(IUsingOperation usingOperation, Compilation compilation,
+        ImmutableArray<IMethodSymbol>.Builder called)
+    {
+        if (!usingOperation.Locals.IsEmpty)
+        {
+            usingOperation.Locals
+                .AsStackEnumerable()
+                .Do((compilation, called), static (local, state) => AddDispose(local.Type, state.compilation,
+                    state.called));
+        }
+        else if (usingOperation.Resources is { } resource)
+        {
+            AddDispose(resource.Type, compilation, called);
+        }
+    }
+
+    // using var r = ...: the Dispose of each declared variable
+    private static void AddUsingDeclarationDisposes(IUsingDeclarationOperation declaration, Compilation compilation,
+        ImmutableArray<IMethodSymbol>.Builder called) =>
+        declaration.DeclarationGroup.Declarations
+            .AsStackEnumerable()
+            .SelectMany(static group => group.Declarators
+                .AsStackEnumerable()
+            ).Do((compilation, called), static (declarator, state) => AddDispose(declarator.Symbol.Type,
+                state.compilation, state.called));
 
     private static void AddDispose(ITypeSymbol? type, Compilation compilation,
         ImmutableArray<IMethodSymbol>.Builder called)
@@ -192,13 +202,31 @@ internal static class DeviceFunctionReach
         }
     }
 
-    private static void AddPinnableReference(ExpressionSyntax initializer, Compilation compilation,
+    // fixed (int* p = e): the GetPinnableReference that C# calls for e
+    // [WHY] Roslyn does not make the operation of a fixed statement public: its declarators are read
+    private static void AddFixedPinnable(IVariableDeclaratorOperation declarator, Compilation compilation,
         ImmutableArray<IMethodSymbol>.Builder called)
     {
-        if (PinnableReferenceMethod.Find(initializer, compilation.GetCachedSemanticModel(initializer.SyntaxTree)) is
-            { } pinnable)
+        if (declarator.Syntax is VariableDeclaratorSyntax
+            {
+                Parent.Parent: FixedStatementSyntax, Initializer.Value: { } initializer
+            } &&
+            PinnableReferenceMethod.Find(initializer, compilation.GetCachedSemanticModel(initializer.SyntaxTree)) is
+                { } pinnable)
         {
             called.Add(pinnable);
+        }
+    }
+
+    // The operator true / false that && and || test (the UnaryOperatorMethod of the operation, which Roslyn does not
+    // make public), found as the operator macro expansion finds it
+    private static void AddTruthTest(IBinaryOperation binary, TypeArgumentMap typeArguments,
+        ImmutableArray<IMethodSymbol>.Builder called)
+    {
+        if (binary.OperatorKind is BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr &&
+            OperatorMacroSyntax.FindTest(binary) is { } test)
+        {
+            called.Add(typeArguments.Substitute(test));
         }
     }
 
@@ -212,20 +240,130 @@ internal static class DeviceFunctionReach
     }
 
     // The name ptxas gives the function when it is a C++ function of its own; null for a struct member, a local
-    // function, an operator macro (whose body never runs) or the parameterless constructor of a struct (default(T))
-    private static string? GetEmittedName(IMethodSymbol function) => function switch
+    // function, an operator macro (whose body never runs) or the parameterless constructor of a struct (default(T)).
+    // A member of another assembly's struct without a record of its own is named by the struct's record, through which
+    // DeviceImportAssembler.ExtendReach reaches what the struct's members call.
+    private static string? GetEmittedName(IMethodSymbol function, Compilation compilation)
     {
-        _ when IsDefaultStructConstructor(function) => null,
-        { MethodKind: MethodKind.Constructor } => GlobalCppNames.GetConstructorName(function),
-        { MethodKind: MethodKind.Conversion } => GlobalCppNames.GetFunctionName(function),
-        { MethodKind: MethodKind.UserDefinedOperator } when OperatorMacroSyntax.GetMacroAttribute(function) == null =>
-            GlobalCppNames.GetFunctionName(function),
-        { MethodKind: MethodKind.Ordinary, IsStatic: true } => GlobalCppNames.GetFunctionName(function),
-        _ => null
-    };
+        var definition = DeviceFunctionEffects.GetDefinition(function);
+        if (DeviceExportTable.IsOutside(definition, compilation) && !DeviceExportTable.TryFind(definition, out _) &&
+            TryFindImportedStruct(function, out var structRecord))
+        {
+            return structRecord.Record.Names.CppName;
+        }
+
+        return definition switch
+        {
+            _ when IsDefaultStructConstructor(definition) => null,
+            { MethodKind: MethodKind.Constructor } => GlobalCppNames.GetConstructorName(definition),
+            { MethodKind: MethodKind.Conversion } => GlobalCppNames.GetFunctionName(definition),
+            { MethodKind: MethodKind.UserDefinedOperator }
+                when OperatorMacroSyntax.GetMacroAttribute(definition) == null =>
+                GlobalCppNames.GetFunctionName(definition),
+            { MethodKind: MethodKind.Ordinary, IsStatic: true } => GlobalCppNames.GetFunctionName(definition),
+            _ => null
+        };
+    }
+
+    // The record of the struct of another assembly that declares function (as constructed)
+    private static bool TryFindImportedStruct(IMethodSymbol function, out ImportedDeviceRecord structRecord)
+    {
+        if (function.ContainingType is { TypeKind: TypeKind.Struct } type &&
+            DeviceExportTable.TryFind(type, out structRecord) &&
+            structRecord.Record.Kind == DeviceExportRecord.StructKind)
+        {
+            return true;
+        }
+
+        structRecord = default;
+        return false;
+    }
 
     // The implicit parameterless constructor of a struct is default(T) and runs nothing
     private static bool IsDefaultStructConstructor(IMethodSymbol function) =>
         function is { IsImplicitlyDeclared: true, Parameters.Length: 0, MethodKind: MethodKind.Constructor } &&
         function.ContainingType.IsValueType;
+
+    // One function of the walk and the step that called it
+    private sealed class ReachStep(IMethodSymbol function, ReachStep? caller)
+    {
+        public IMethodSymbol Function { get; } = function;
+
+        public ReachStep? Caller { get; } = caller;
+    }
+
+    // Whether the step's function is a construction of the same definition as a function that calls it, directly or
+    // through others, whose type arguments it contains position by position, one of them strictly: polymorphic
+    // recursion, which would give a new construction at every step (a construction reached by another path is walked)
+    private static bool GrowsAnEnclosingConstruction(ReachStep step)
+    {
+        var arguments = GetTypeArguments(step.Function);
+        if (arguments.Count == 0)
+        {
+            return false;
+        }
+
+        var definition = step.Function.OriginalDefinition;
+        for (var caller = step.Caller; caller != null; caller = caller.Caller)
+        {
+            if (caller.Function.OriginalDefinition.IsEqualTo(definition) &&
+                Contains(arguments, GetTypeArguments(caller.Function)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // The type arguments of the method and of each type that contains it, innermost first
+    private static List<ITypeSymbol> GetTypeArguments(IMethodSymbol function)
+    {
+        var arguments = new List<ITypeSymbol>(function.TypeArguments);
+        for (var type = function.ContainingType; type != null; type = type.ContainingType)
+        {
+            arguments.AddRange(type.TypeArguments);
+        }
+
+        return arguments;
+    }
+
+    // Whether each of grown contains the type at the same position of earlier, and one contains it strictly
+    private static bool Contains(List<ITypeSymbol> grown, List<ITypeSymbol> earlier)
+    {
+        if (grown.Count != earlier.Count)
+        {
+            return false;
+        }
+
+        var strictly = false;
+        for (var i = 0; i < grown.Count; i++)
+        {
+            if (grown[i].IsEqualTo(earlier[i]))
+            {
+                continue;
+            }
+
+            if (!ContainsStrictly(grown[i], earlier[i]))
+            {
+                return false;
+            }
+
+            strictly = true;
+        }
+
+        return strictly;
+    }
+
+    // Whether inner is a type argument, array element or pointed-at type of outer, at any depth
+    private static bool ContainsStrictly(ITypeSymbol outer, ITypeSymbol inner) => outer switch
+    {
+        INamedTypeSymbol named => named.TypeArguments
+            .AsStackEnumerable()
+            .Any(inner, static (argument, target) => argument.IsEqualTo(target) || ContainsStrictly(argument, target)),
+        IArrayTypeSymbol array => array.ElementType.IsEqualTo(inner) || ContainsStrictly(array.ElementType, inner),
+        IPointerTypeSymbol pointer =>
+            pointer.PointedAtType.IsEqualTo(inner) || ContainsStrictly(pointer.PointedAtType, inner),
+        _ => false
+    };
 }

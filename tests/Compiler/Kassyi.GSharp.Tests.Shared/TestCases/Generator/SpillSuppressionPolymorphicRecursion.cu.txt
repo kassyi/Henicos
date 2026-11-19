@@ -1,0 +1,38 @@
+using Kassyi.GSharp.Core;
+
+// A generic struct whose constructor constructs the same struct with a deeper type argument (polymorphic recursion):
+// every step is a new construction. Kept out of the *.cs test cases, which the IR tests compile and walk, because the
+// generator itself does not handle this form yet
+namespace PolymorphicRecursion
+{
+    public struct Wrap<T> where T : struct
+    {
+        public T Inner;
+    }
+
+    public struct Deep<T> where T : struct
+    {
+        public int N;
+
+        public Deep(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new Deep<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    public static partial class Kernels
+    {
+        [GpuDeviceFunction]
+        public static int Step(int x) => x + 1;
+
+        [GpuKernel]
+        public static void PolyKernel(int[] d)
+        {
+            d[0] = new Deep<int>(d[1]).N;
+        }
+    }
+}

@@ -10,8 +10,9 @@ namespace Kassyi.GSharp.Compiler.Aot;
 /// The error sites of the <c>throw</c> statements of the imported functions, which the module registers with its kernels.
 /// </param>
 /// <param name="Calls">
-/// The function names that each name of a placed record calls among the placed records (each name of a struct record
-/// stands for all of its members), for the spill warnings (<see cref="DeviceImportAssembler.ExtendReach"/>).
+/// The names that the name of each placed record refers to among the placed records, and each name a struct record
+/// defines with the struct's name (which stands for all of its members), for the spill warnings
+/// (<see cref="DeviceImportAssembler.IndexCalls"/>, <see cref="DeviceImportAssembler.ExtendReach"/>).
 /// </param>
 internal readonly record struct ImportedDeviceCode(
     string Source,

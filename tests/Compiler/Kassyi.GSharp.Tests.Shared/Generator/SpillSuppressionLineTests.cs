@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Analysis;
 using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Helpers;
 using Kassyi.GSharp.Compiler.Models;
@@ -21,6 +22,16 @@ public class SpillSuppressionLineTests
     // One generator run for every test of the CUDA module
     private static readonly Lazy<string> s_cudaModule = new(static () =>
         GenerateModule(RoslynTestUtility.CreateCompilation(s_source), "Cuda", ".g.cu", AssemblyName));
+
+    // The CUDA module of a consumer of a library built in memory, for the tests of the library's functions
+    private static readonly Lazy<string> s_libraryModule = new(static () =>
+    {
+        var library = DeviceLibraryBuilder.Build("SpillSuppressionLibrary", null,
+            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionLibrary.cs"));
+        var consumer = DeviceLibraryBuilder.CreateConsumer(
+            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionConsumer.cu.cs"), library);
+        return GenerateModule(consumer, "Cuda", ".g.cu", "DeviceImportConsumer");
+    });
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
@@ -65,6 +76,8 @@ public class SpillSuppressionLineTests
     [InlineData("ViaBuilder")]
     [InlineData("ViaPinnable")]
     [InlineData("ViaNested")]
+    [InlineData("ViaUsingDeclaration")]
+    [InlineData("ViaUsingExpression")]
     public void CudaModule_FunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
     {
         var module = s_cudaModule.Value;
@@ -77,15 +90,11 @@ public class SpillSuppressionLineTests
     // The library's G calls F; the consumer's call graph sees only G, so F would be listed (hidden) if the records of
     // the library were not followed. Only, reached from the marked kernel through the library's Relay, is listed
     [Fact]
-    [Scenario(TestScenario.Boundary)]
+    [Scenario(TestScenario.HappyPath)]
     public void CudaModule_FunctionReachedThroughAnotherAssembly_FollowsTheLibraryRecords()
     {
-        var library = DeviceLibraryBuilder.Build("SpillSuppressionLibrary", null,
-            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionLibrary.cs"));
-        var consumer = DeviceLibraryBuilder.CreateConsumer(
-            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionConsumer.cu.cs"), library);
+        var module = s_libraryModule.Value;
 
-        var module = GenerateModule(consumer, "Cuda", ".g.cu", "DeviceImportConsumer");
         var names = ReadSuppressionLine(module);
 
         Assert.Equal(
@@ -96,8 +105,46 @@ public class SpillSuppressionLineTests
             ],
             names
         );
-        Assert.Contains("__gsharp_fn_SpillSuppressionLibrary__Lib__F(int", module, StringComparison.Ordinal);
         Assert.All(names, name => Assert.Contains(name + "(", module, StringComparison.Ordinal));
+    }
+
+    // Each library function is called by the marked kernel directly and reached by one unmarked kernel in one way only:
+    // a library function (G -> F), a chain of two steps (G2 -> H -> F2), a library struct's getter, a library function
+    // that uses a library struct's getter and a library struct's constructor
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("F")]
+    [InlineData("F2")]
+    [InlineData("FGetter")]
+    [InlineData("FViaFn")]
+    [InlineData("FCtor")]
+    public void CudaModule_LibraryFunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
+    {
+        var module = s_libraryModule.Value;
+        var name = "__gsharp_fn_SpillSuppressionLibrary__Lib__" + function;
+
+        Assert.Contains("int " + name + "(int", module, StringComparison.Ordinal);
+        Assert.DoesNotContain(name, ReadSuppressionLine(module));
+    }
+
+    // Deep<T> constructs Deep<Wrap<T>>: every step is a new construction, so the walk has to stop on its own
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionPolymorphicRecursion.cu.txt"));
+        var declaration = compilation.SyntaxTrees
+            .SelectMany(static tree => tree.GetRoot().DescendantNodes())
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static method => method.Identifier.ValueText == "PolyKernel");
+        var kernel = Assert.IsAssignableFrom<IMethodSymbol>(
+            compilation.GetSemanticModel(declaration.SyntaxTree).GetDeclaredSymbol(declaration));
+
+        var names = await Task.Run(() => DeviceFunctionReach.GetReachedFunctionNames(kernel, declaration, compilation))
+            .WaitAsync(TimeSpan.FromSeconds(60));
+
+        Assert.Contains("__gsharp_fn_PolymorphicRecursion__Kernels__Step", names);
     }
 
     [Fact]

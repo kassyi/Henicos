@@ -76,9 +76,10 @@ internal static class AotModuleWriter
         ImportedDeviceCode imports)
     {
         var scopes = new List<KernelSpillScope>(kernelMethods.Length);
+        var callsByCaller = DeviceImportAssembler.IndexCalls(imports.Calls);
         kernelMethods
             .AsStackEnumerable()
-            .Select(imports.Calls, static (kernel, calls) => kernel.Spill with
+            .Select(callsByCaller, static (kernel, calls) => kernel.Spill with
             {
                 ReachedFunctions = DeviceImportAssembler.ExtendReach(kernel.Spill.ReachedFunctions, calls)
             }).AddTo(scopes);

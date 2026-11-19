@@ -1153,9 +1153,15 @@
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedMethodGroupKernel", node: "expression", reason: "UnsupportedShape", operation: "Invocation", syntax: "InvocationExpression", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedPinnableKernel", node: "statement", reason: "UnsupportedOperation", operation: "None", syntax: "FixedStatement", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedTruthTestKernel", node: "expression", reason: "UnsupportedShape", operation: "Binary", syntax: "LogicalAndExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingDeclarationKernel", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingExpressionKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.MarkedKernel", node: "expression", reason: "Invalid", operation: "Binary", syntax: "AddExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedChainKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedConstructorKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "SimpleMemberAccessExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedGetterKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "SimpleMemberAccessExpression", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedViaFunctionKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Sum", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "DefineKernels.IteratorKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generators/ConditionalCallIterators.cs", method: "CallIterators.Values", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}
