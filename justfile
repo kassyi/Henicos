@@ -34,6 +34,14 @@ test-differential-cpu *args="":
 test-sanitized *args="":
     {{queue}} -- node scripts/human/test-sanitized.js {{args}}
 
+# Build Tests.Cpu with one stack per GPU thread on the native path (GSharpNativeBarrierModel=Stack) into
+# bin/<os>-stack and obj/<os>-stack, and run its Differential and Execution tests
+test-native-stack *args="":
+    {{queue}} -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj \
+        -p:GSharpNativeBarrierModel=Stack -p:GSharpOutputVariant=stack \
+        --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark" \
+        {{blame_crash}} {{args}}
+
 # Differential tests: C# oracle vs CUDA
 test-differential-cuda *args="":
     {{queue}} --gpu -- dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj \

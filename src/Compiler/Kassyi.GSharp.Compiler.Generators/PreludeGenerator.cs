@@ -26,9 +26,11 @@ public static class PreludeGenerator
 
         var cudaPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cu", isCuda: true);
         var cppPrelude = LoadAndResolvePrelude(resourcesDir, "Prelude.cpp", isCuda: false);
+        var cppStackThreads = LoadAndResolvePrelude(resourcesDir, Path.Combine("Prelude", "StackThreads.hpp"),
+            isCuda: false);
 
         var internalNames = File.ReadAllText(Path.Combine(resourcesDir, "InternalNames.yml"), Encoding.UTF8);
-        var source = GenerateSource(cudaPrelude, cppPrelude, internalNames);
+        var source = GenerateSource(cudaPrelude, cppPrelude, cppStackThreads, internalNames);
         File.WriteAllText(Path.Combine(outputDir, "GSharpPreludeResources.g.cs"), source, Encoding.UTF8);
     }
 
@@ -232,7 +234,11 @@ public static class PreludeGenerator
         return text;
     }
 
-    private static string GenerateSource(string cudaPrelude, string cppPrelude, string internalNames)
+    private static string GenerateSource(
+        string cudaPrelude,
+        string cppPrelude,
+        string cppStackThreads,
+        string internalNames)
     {
         using var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -247,13 +253,15 @@ public static class PreludeGenerator
             writer.Line();
             writer.AppendLine($"public const string Cpp = {CSharpStringLiteral.Quote(cppPrelude)};");
             writer.Line();
+            writer.AppendLine($"public const string CppStackThreads = {CSharpStringLiteral.Quote(cppStackThreads)};");
+            writer.Line();
             writer.Line("/// <summary>");
             writer.Line(
-                "/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/> and " +
-                "<c>InternalNames.yml</c> (the spelling of the");
+                "/// The FNV-1a 64 hash of <see cref=\"Cuda\"/>, <see cref=\"Cpp\"/>, " +
+                "<see cref=\"CppStackThreads\"/> and <c>InternalNames.yml</c> (the spelling of the");
             writer.Line("/// generated names), without carriage returns.");
             writer.Line("/// </summary>");
-            var hash = ComputeHash(cudaPrelude, cppPrelude, internalNames);
+            var hash = ComputeHash(cudaPrelude, cppPrelude, cppStackThreads, internalNames);
             writer.AppendLine($"public const string Hash = \"{hash}\";");
         }
 
@@ -262,12 +270,14 @@ public static class PreludeGenerator
 
     // [WHY] A device code export records this hash with its record layout (GpuDeviceExportAttribute.PreludeHash),
     // and a consumer compares it with its own: an imported text calls the prelude's helpers and spells the generated
-    // names as InternalNames.yml does. Carriage returns are skipped, so a Windows checkout (CRLF) and a WSL one (LF)
-    // give the same hash.
-    private static string ComputeHash(string cudaPrelude, string cppPrelude, string internalNames)
+    // names as InternalNames.yml does. The stack threads header is part of the C++ prelude of a
+    // GSharpNativeBarrierModel=Stack build, so it counts as well. Carriage returns are skipped, so a Windows checkout
+    // (CRLF) and a WSL one (LF) give the same hash.
+    private static string ComputeHash(string cudaPrelude, string cppPrelude, string cppStackThreads,
+        string internalNames)
     {
         var hash = new Fnv1A64();
-        foreach (var c in cudaPrelude + cppPrelude + internalNames)
+        foreach (var c in cudaPrelude + cppPrelude + cppStackThreads + internalNames)
         {
             if (c != '\r')
             {

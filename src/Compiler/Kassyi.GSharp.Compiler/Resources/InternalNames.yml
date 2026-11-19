@@ -604,3 +604,18 @@ IntegerSemantics:
     RemainderPropertyStore: { Value: __gsharp_rem_property_store, Managed: ManagedGpuContext.IntegerDivision.cs }
     DividePropertyStoreOf: { Value: __gsharp_div_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
     RemainderPropertyStoreOf: { Value: __gsharp_rem_property_store_of, Managed: ManagedGpuContext.IntegerDivision.cs }
+
+NativeStack:
+  Summary: Per-thread native stacks (GSharpNativeBarrierModel=Stack).
+  Names:
+    Barrier: { Value: __gsharp_stack_barrier, Prelude: StackThreads.hpp }
+    Resume: { Value: __gsharp_stack_resume, Prelude: StackThreads.hpp }
+    BlockType: { Value: __gsharp_stack_block, Prelude: StackThreads.hpp }
+    PoolType: { Value: __gsharp_stack_pool, Prelude: StackThreads.hpp }
+    ThreadType: { Value: __gsharp_stack_thread, Prelude: StackThreads.hpp }
+    ThreadLimit: { Value: __gsharp_stack_thread_limit, Prelude: StackThreads.hpp }
+    CaptureFp: { Value: __gsharp_stack_capture_fp, Prelude: StackThreads.hpp }
+    Body: __gsharp_stack_body
+    Fp: __gsharp_stack_fp
+    Stacks: __gsharp_stack_stacks
+    Block: __gsharp_stack
