@@ -4975,6 +4975,7 @@
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.ForUnrollBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.GridStrideBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.SyncGridBodyKernel", status: "Fallback:OpaqueOperand", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ActiveMaskInAndAlsoKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BackwardGotoKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BackwardGotoNoSplitKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BreakKernel", status: "Reconvergence", count: 1}

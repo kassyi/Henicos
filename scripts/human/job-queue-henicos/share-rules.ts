@@ -94,9 +94,9 @@ function isSharedDotnetTest(words: readonly string[], categories: readonly strin
 }
 
 /**
- * The recipes of sharedRecipes are the justfile's test and test-coverage: each expands to `{{queue}} --gpu -- dotnet
- * test ... --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"`, a shared test run by the rule above
- * (test-differential-cuda does not: its filter leaves Benchmark and GpuTrap in). `just <recipe>` alone, with no just
+ * The recipes of sharedRecipes are the justfile's test, test-coverage and test-differential-cuda: each expands to
+ * `{{queue}} --gpu -- dotnet test ... --filter "...&Category!=Stress&Category!=Benchmark&Category!=GpuTrap"`, a shared
+ * test run by the rule above (the henicos checks read the justfile to keep it so). `just <recipe>` alone, with no just
  * option or assignment before the recipe; a --filter among its arguments must keep the categories out as well.
  */
 function isSharedRecipe(words: readonly string[], options: ShareOptions): boolean {
