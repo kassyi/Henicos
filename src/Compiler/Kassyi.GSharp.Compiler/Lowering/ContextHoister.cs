@@ -55,8 +55,8 @@ public class ContextHoister(
     // The keys that the local functions written in front of the switch reference (StateMachineLocalFunctions.Plan)
     private HashSet<DeclarationKey>? _capturedByMovedFunctions;
 
-    private readonly HashSet<DeclarationKey> _hoistedVariables = [];
-    private readonly HashSet<DeclarationKey> _liftedConstantKeys = [];
+    private HashSet<DeclarationKey> _hoistedVariables = [];
+    private HashSet<DeclarationKey> _liftedConstantKeys = [];
     private readonly ImmutableArray<LocalDeclarationStatementSyntax>.Builder _liftedConstants =
         ImmutableArray.CreateBuilder<LocalDeclarationStatementSyntax>();
 
@@ -81,17 +81,16 @@ public class ContextHoister(
     public (BlockSyntax RewrittenBlock, IReadOnlyList<VariableDeclaratorSyntax> HoistedVariables) Hoist(
         BlockSyntax block)
     {
-        _hoistedVariables.Clear();
         _copiedParameters.Clear();
-        _liftedConstantKeys.Clear();
         _liftedConstants.Clear();
-        var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
-
-        HasSplitPoint = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _capturedByMovedFunctions,
-            _hoistedVariables, hoistedDecls, _refLocalsNotLiveAcrossSplit, _liftedConstantKeys);
+        var analysis = HoistedVariableAnalysis.Analyze(block, semanticModel, _plan, _capturedByMovedFunctions,
+            _refLocalsNotLiveAcrossSplit);
+        HasSplitPoint = analysis.HasSplitPoint;
+        _hoistedVariables = analysis.HoistedKeys;
+        _liftedConstantKeys = analysis.LiftedConstants;
         if (!HasSplitPoint)
         {
-            return (block, hoistedDecls);
+            return (block, analysis.Hoisted);
         }
 
         if (copiedParameters != null)
@@ -100,7 +99,7 @@ public class ContextHoister(
         }
 
         var rewrittenBlock = (BlockSyntax)Visit(block);
-        return (rewrittenBlock, hoistedDecls);
+        return (rewrittenBlock, analysis.Hoisted);
     }
 
     // [WHY] The declarators run in the order written, so a hoisted declarator's assignment stays in front of a later

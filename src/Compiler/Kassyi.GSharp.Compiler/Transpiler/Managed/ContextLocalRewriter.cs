@@ -113,75 +113,77 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         var ordinals = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var statement in block.Statements)
         {
-            if (statement is LocalDeclarationStatementSyntax { IsConst: true } constant)
+            switch (statement)
             {
-                foreach (var declarator in constant.Declaration.Variables)
-                {
-                    var constName = declarator.Identifier.ValueText;
-                    if (counts[constName] < 2)
+                case LocalDeclarationStatementSyntax { IsConst: true } constant:
+                    foreach (var declarator in constant.Declaration.Variables)
                     {
-                        continue;
+                        Rename(declarator, declarator.Identifier, GSharpInternalNames.Lowering.ManagedConstPrefix);
                     }
 
-                    var constOrdinal = ordinals.TryGetValue(constName, out var previousConst) ? previousConst + 1 : 1;
-                    ordinals[constName] = constOrdinal;
-                    renames[LoweringIdentity.ForDeclaration(declarator, model)] =
-                        $"{GSharpInternalNames.Lowering.ManagedConstPrefix}{constOrdinal}_{constName}";
-                }
-
-                continue;
+                    break;
+                case LocalFunctionStatementSyntax function:
+                    Rename(function, function.Identifier, GSharpInternalNames.Lowering.ManagedLocalFunctionPrefix);
+                    break;
             }
-
-            if (statement is not LocalFunctionStatementSyntax function ||
-                counts[function.Identifier.ValueText] < 2)
-            {
-                continue;
-            }
-
-            var name = function.Identifier.ValueText;
-            var ordinal = ordinals.TryGetValue(name, out var previous) ? previous + 1 : 1;
-            ordinals[name] = ordinal;
-            renames[LoweringIdentity.ForDeclaration(function, model)] =
-                $"{GSharpInternalNames.Lowering.ManagedLocalFunctionPrefix}{ordinal}_{name}";
         }
 
         return renames;
+
+        // <prefix><ordinal>_<name> for a declaration whose name another declaration of the body also has
+        void Rename(SyntaxNode declaration, SyntaxToken identifier, string prefix)
+        {
+            var name = identifier.ValueText;
+            if (counts[name] < 2)
+            {
+                return;
+            }
+
+            var ordinal = ordinals.TryGetValue(name, out var previous) ? previous + 1 : 1;
+            ordinals[name] = ordinal;
+            renames[LoweringIdentity.ForDeclaration(declaration, model)] = $"{prefix}{ordinal}_{name}";
+        }
+    }
+
+    // The new name of a declaration (or of a reference to one, a simple name) that CreateFrontDeclarationRenames
+    // renamed, with the trivia of identifier; null when it keeps its name
+    private SyntaxToken? RenamedFront(SyntaxNode node, SyntaxToken identifier)
+    {
+        if (_frontDeclarationRenames.Count == 0)
+        {
+            return null;
+        }
+
+        var key = node is SimpleNameSyntax reference
+            ? LoweringIdentity.ForReference(reference, _semanticModel)
+            : LoweringIdentity.ForDeclaration(node, _semanticModel);
+        return _frontDeclarationRenames.TryGetValue(key, out var renamed)
+            ? SyntaxFactory.Identifier(renamed).WithTriviaFrom(identifier)
+            : null;
     }
 
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
     {
         var visited = (LocalFunctionStatementSyntax?)base.VisitLocalFunctionStatement(node) ?? node;
-        return _frontDeclarationRenames.Count > 0 &&
-               _frontDeclarationRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, _semanticModel),
-                   out var renamed)
-            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
-            : visited;
+        return RenamedFront(node, visited.Identifier) is { } renamed ? visited.WithIdentifier(renamed) : visited;
     }
 
     public override SyntaxNode? VisitVariableDeclarator(VariableDeclaratorSyntax node)
     {
         var visited = (VariableDeclaratorSyntax?)base.VisitVariableDeclarator(node) ?? node;
-        return _frontDeclarationRenames.Count > 0 &&
-               _frontDeclarationRenames.TryGetValue(LoweringIdentity.ForDeclaration(node, _semanticModel),
-                   out var renamed)
-            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
-            : visited;
+        return RenamedFront(node, visited.Identifier) is { } renamed ? visited.WithIdentifier(renamed) : visited;
     }
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
-        _frontDeclarationRenames.Count > 0 && !HoistedVariableAnalysis.IsNonValueIdentifierPosition(node) &&
-        _frontDeclarationRenames.TryGetValue(LoweringIdentity.ForReference(node, _semanticModel), out var renamed)
-            ? node.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(node.Identifier))
+        !HoistedVariableAnalysis.IsNonValueIdentifierPosition(node) &&
+        RenamedFront(node, node.Identifier) is { } renamed
+            ? node.WithIdentifier(renamed)
             : base.VisitIdentifierName(node);
 
     public override SyntaxNode? VisitGenericName(GenericNameSyntax node)
     {
         var visited = (GenericNameSyntax?)base.VisitGenericName(node) ?? node;
-        return _frontDeclarationRenames.Count > 0 &&
-               _frontDeclarationRenames.TryGetValue(LoweringIdentity.ForReference(node, _semanticModel),
-                   out var renamed)
-            ? visited.WithIdentifier(SyntaxFactory.Identifier(renamed).WithTriviaFrom(visited.Identifier))
-            : visited;
+        return RenamedFront(node, visited.Identifier) is { } renamed ? visited.WithIdentifier(renamed) : visited;
     }
 
     public override SyntaxNode? VisitLabeledStatement(LabeledStatementSyntax node)
