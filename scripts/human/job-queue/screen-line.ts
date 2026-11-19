@@ -15,6 +15,9 @@ const StyleCodes: Record<Exclude<Style, "">, string> = {
   now: "1;33",
 };
 
+/** The background of a selected line behind the timeline and the blanks (256-color dark grey). */
+const SelectedBackground = "48;5;237";
+
 /** East Asian wide and fullwidth characters take two cells in a terminal. */
 function charWidth(code: number): number {
   const wide =
@@ -91,6 +94,8 @@ export function fitEnd(text: string, width: number): string {
 /** One line of the screen: styled parts, clipped at the width of the terminal. */
 export class ScreenLine {
   readonly parts: { text: string; style: Style }[] = [];
+  /** The column where the timeline starts, or -1 for a line without one (see render). */
+  timelineStart = -1;
   width = 0;
   readonly limit: number;
 
@@ -169,14 +174,23 @@ export class ScreenLine {
     return this;
   }
 
-  /** The line with ANSI colors (when `color`), the whole line in reverse video when `selected`. */
+  /**
+   * The line with ANSI colors (when `color`). A selected line lays a dim highlight behind the timeline, which keeps the
+   * colors of its cells whatever their style, and behind the blanks; everything else (marker, id, flag, command and
+   * the progress text of a line without a timeline) is in reverse video.
+   */
   render(color: boolean, selected = false): string {
     if (!color) {
       return this.text;
     }
+    let column = 0;
     return this.parts
       .map(({ text, style }) => {
-        const codes = [selected ? "7" : "", style === "" ? "" : StyleCodes[style]].filter((c) => c !== "").join(";");
+        const inTimeline = this.timelineStart >= 0 && column >= this.timelineStart;
+        column += displayWidth(text);
+        const highlighted = selected && (inTimeline || text.trim() === "");
+        const marker = !selected ? "" : highlighted ? SelectedBackground : "7";
+        const codes = [marker, style === "" ? "" : StyleCodes[style]].filter((c) => c !== "").join(";");
         return codes === "" ? text : `\x1b[${codes}m${text}\x1b[0m`;
       })
       .join("");

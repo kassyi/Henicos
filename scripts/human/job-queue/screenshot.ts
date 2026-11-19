@@ -13,31 +13,65 @@ export const CellWidth = 8.4;
 export const LineHeight = 18;
 export const Padding = 12;
 const FontSize = 14;
-const Background = "#1e1e1e";
-const Foreground = "#cccccc";
+/** The Windows Terminal default: the Campbell scheme in Cascadia Mono. */
+export const Background = "#0c0c0c";
+export const Foreground = "#cccccc";
+const FontFamily =
+  "'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, SFMono-Regular, Menlo, 'DejaVu Sans Mono', monospace";
 
-/** The foreground colors of the SGR codes that screen-line.ts writes (the dark theme of VS Code's terminal). */
-const Colors: Record<string, string> = {
-  "31": "#f14c4c",
-  "32": "#0dbc79",
-  "33": "#e5e510",
-  "35": "#bc3fbc",
-  "36": "#11a8cd",
-};
-const BoldYellow = "#f5f543";
+/** The 16 ANSI colors of Campbell: black, red, green, yellow, blue, purple, cyan, white, then the bright ones. */
+export const Campbell = [
+  "#0c0c0c",
+  "#c50f1f",
+  "#13a10e",
+  "#c19c00",
+  "#0037da",
+  "#881798",
+  "#3a96dd",
+  "#cccccc",
+  "#767676",
+  "#e74856",
+  "#16c60c",
+  "#f9f1a5",
+  "#3b78ff",
+  "#b4009e",
+  "#61d6d6",
+  "#f2f2f2",
+];
+
+/** The color of an index of the 256-color palette: the 16 above, the 6x6x6 cube, then 24 greys. */
+function indexedColor(index: number): string {
+  if (index < 16) {
+    return Campbell[index] ?? Foreground;
+  }
+  const hex = (v: number): string => v.toString(16).padStart(2, "0");
+  if (index < 232) {
+    const level = (n: number): number => (n === 0 ? 0 : 55 + 40 * n);
+    const n = index - 16;
+    return `#${hex(level(Math.floor(n / 36)))}${hex(level(Math.floor(n / 6) % 6))}${hex(level(n % 6))}`;
+  }
+  const grey = 8 + 10 * (index - 232);
+  return `#${hex(grey)}${hex(grey)}${hex(grey)}`;
+}
 
 interface Sgr {
   bold: boolean;
   dim: boolean;
   reverse: boolean;
+  /** The foreground: the index (a single digit) of one of the eight dark colors, or a #color, "" for the default. */
   color: string;
+  /** The background color, "" for the default. */
+  background: string;
 }
 
-const Plain: Sgr = { bold: false, dim: false, reverse: false, color: "" };
+const Plain: Sgr = { bold: false, dim: false, reverse: false, color: "", background: "" };
 
 function applyCodes(sgr: Sgr, codes: string): Sgr {
   let next = { ...sgr };
-  for (const code of codes.split(";")) {
+  const list = codes.split(";");
+  for (let i = 0; i < list.length; i++) {
+    const code = list[i] ?? "";
+    const number = Number(code);
     if (code === "" || code === "0") {
       next = { ...Plain };
     } else if (code === "1") {
@@ -46,15 +80,34 @@ function applyCodes(sgr: Sgr, codes: string): Sgr {
       next.dim = true;
     } else if (code === "7") {
       next.reverse = true;
-    } else if (code in Colors) {
-      next.color = code;
+    } else if (number >= 30 && number <= 37) {
+      next.color = String(number - 30);
+    } else if (number >= 90 && number <= 97) {
+      next.color = Campbell[number - 90 + 8] ?? "";
+    } else if (number >= 40 && number <= 47) {
+      next.background = Campbell[number - 40] ?? "";
+    } else if (number >= 100 && number <= 107) {
+      next.background = Campbell[number - 100 + 8] ?? "";
+    } else if ((number === 38 || number === 48) && list[i + 1] === "5") {
+      const index = Number(list[i + 2]);
+      const color = index >= 0 && index <= 255 ? indexedColor(index) : "";
+      if (number === 38) {
+        next.color = color;
+      } else {
+        next.background = color;
+      }
+      i += 2;
     }
   }
   return next;
 }
 
 const sameSgr = (a: Sgr, b: Sgr): boolean =>
-  a.bold === b.bold && a.dim === b.dim && a.reverse === b.reverse && a.color === b.color;
+  a.bold === b.bold &&
+  a.dim === b.dim &&
+  a.reverse === b.reverse &&
+  a.color === b.color &&
+  a.background === b.background;
 
 /** The styled parts of one line of ANSI text, neighbours of the same style joined. */
 export function parseAnsi(line: string): { text: string; sgr: Sgr }[] {
@@ -78,14 +131,43 @@ export function parseAnsi(line: string): { text: string; sgr: Sgr }[] {
   return parts;
 }
 
+/**
+ * The colors a part is drawn in. Like Windows Terminal's default `intenseTextStyle` ("bright"), bold turns one of the
+ * eight dark colors into its bright twin and does not thicken the glyphs. Reverse video swaps the two.
+ */
+function paint(sgr: Sgr): { fill: string; ground: string } {
+  const index = sgr.color.length === 1 ? Number(sgr.color) : -1;
+  const color = index >= 0 ? (Campbell[sgr.bold ? index + 8 : index] ?? Foreground) : sgr.color || Foreground;
+  const ground = sgr.background || Background;
+  return sgr.reverse ? { fill: ground, ground: color } : { fill: color, ground };
+}
+
 export function escapeXml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** The block characters drawn as shapes: full block, upper and lower half, and the three shades (dot patterns). */
+const Blocks = "█▀▄░▒▓";
+/** The dots of a shade in its 4x4 pixel tile: the light shade one in four, the medium a checker, the dark three. */
+const ShadeDots: Record<string, [number, number][]> = {
+  "░": [[0, 0]],
+  "▒": [
+    [0, 0],
+    [2, 2],
+  ],
+  "▓": [
+    [0, 0],
+    [2, 2],
+    [2, 0],
+  ],
+};
+const DotSize = 2;
+const TileSize = 4;
+
 /**
  * A part cut into words: runs of narrow characters between spaces, and each wide character alone, each placed at its
  * own column, so that a font whose glyphs are not exactly one or two cells wide cannot shift the columns after them,
- * and no space is left for the SVG renderer to collapse.
+ * and no space is left for the SVG renderer to collapse. Block characters are left out: they are drawn as shapes.
  */
 function pieces(text: string, column: number): { text: string; column: number; cells: number }[] {
   const out: { text: string; column: number; cells: number }[] = [];
@@ -101,7 +183,7 @@ function pieces(text: string, column: number): { text: string; column: number; c
   };
   for (const char of text) {
     const width = displayWidth(char);
-    if (width === 2 || char === " ") {
+    if (width === 2 || char === " " || Blocks.includes(char)) {
       flush();
       if (width === 2) {
         out.push({ text: char, column: at, cells: 2 });
@@ -118,34 +200,73 @@ function pieces(text: string, column: number): { text: string; column: number; c
 
 const px = (value: number): string => String(Number(value.toFixed(1)));
 
+/** The runs of equal block characters of a part, as [char, first column, cells]. */
+function blockRuns(text: string, column: number): [string, number, number][] {
+  const runs: [string, number, number][] = [];
+  let at = column;
+  for (const char of text) {
+    const width = displayWidth(char);
+    const last = runs[runs.length - 1];
+    if (Blocks.includes(char)) {
+      if (last !== undefined && last[0] === char && last[1] + last[2] === at) {
+        last[2] += width;
+      } else {
+        runs.push([char, at, width]);
+      }
+    }
+    at += width;
+  }
+  return runs;
+}
+
 /** The lines of renderScreen(..., color = true) as an SVG of a terminal `columns` cells wide. */
 export function terminalSvg(lines: string[], columns: number): string {
   const width = columns * CellWidth + 2 * Padding;
   const height = lines.length * LineHeight + 2 * Padding;
   const rects: string[] = [];
+  const patterns: string[] = [];
   const texts: string[] = [];
   lines.forEach((line, row) => {
     const top = Padding + row * LineHeight;
     const spans: string[] = [];
     let column = 0;
     for (const { text, sgr } of parseAnsi(line)) {
-      const color = sgr.color === "33" && sgr.bold ? BoldYellow : (Colors[sgr.color] ?? Foreground);
+      const { fill, ground } = paint(sgr);
       const opacity = sgr.dim ? ' fill-opacity="0.6"' : "";
-      if (sgr.reverse) {
-        const x = Padding + column * CellWidth;
+      if (ground !== Background) {
         const w = displayWidth(text) * CellWidth;
         rects.push(
-          `<rect x="${px(x)}" y="${px(top)}" width="${px(w)}" height="${LineHeight}" fill="${color}"${opacity}/>`,
+          `<rect x="${px(Padding + column * CellWidth)}" y="${px(top)}" width="${px(w)}" height="${LineHeight}" fill="${ground}"/>`,
         );
+      }
+      // Blocks are shapes that fill their cells, so that rows and neighbours touch as in the terminal
+      for (const [char, first, cells] of blockRuns(text, column)) {
+        const left = px(Padding + first * CellWidth);
+        const size = `width="${px(cells * CellWidth)}"`;
+        if (char === "█") {
+          rects.push(`<rect x="${left}" y="${px(top)}" ${size} height="${LineHeight}" fill="${fill}"${opacity}/>`);
+        } else if (char === "▀" || char === "▄") {
+          const y = char === "▀" ? top : top + LineHeight / 2;
+          rects.push(`<rect x="${left}" y="${px(y)}" ${size} height="${LineHeight / 2}" fill="${fill}"${opacity}/>`);
+        } else {
+          const id = `shade${patterns.length}`;
+          const dots = (ShadeDots[char] ?? [])
+            .map(([dx, dy]) => `<rect x="${dx}" y="${dy}" width="${DotSize}" height="${DotSize}"/>`)
+            .join("");
+          patterns.push(
+            `<pattern id="${id}" x="${left}" y="${px(top)}" width="${TileSize}" height="${TileSize}" ` +
+              `patternUnits="userSpaceOnUse" fill="${fill}"${opacity}>${dots}</pattern>`,
+          );
+          rects.push(`<rect x="${left}" y="${px(top)}" ${size} height="${LineHeight}" fill="url(#${id})"/>`);
+        }
       }
       for (const piece of pieces(text, column)) {
         const attributes = [
           `x="${px(Padding + piece.column * CellWidth)}"`,
           `textLength="${px(piece.cells * CellWidth)}"`,
           'lengthAdjust="spacingAndGlyphs"',
-          `fill="${sgr.reverse ? Background : color}"`,
-          sgr.bold ? 'font-weight="bold"' : "",
-          sgr.dim && !sgr.reverse ? 'fill-opacity="0.6"' : "",
+          `fill="${fill}"`,
+          sgr.dim ? 'fill-opacity="0.6"' : "",
         ].filter((a) => a !== "");
         spans.push(`<tspan ${attributes.join(" ")}>${escapeXml(piece.text)}</tspan>`);
       }
@@ -158,10 +279,12 @@ export function terminalSvg(lines: string[], columns: number): string {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${px(width)}" height="${px(height)}" ` +
       `viewBox="0 0 ${px(width)} ${px(height)}">`,
+    ...(patterns.length > 0 ? ["<defs>", ...patterns, "</defs>"] : []),
     `<rect width="100%" height="100%" rx="6" fill="${Background}"/>`,
+    '<g shape-rendering="crispEdges">',
     ...rects,
-    `<g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace" ` +
-      `font-size="${FontSize}">`,
+    "</g>",
+    `<g font-family="${FontFamily}" font-size="${FontSize}">`,
     ...texts,
     "</g>",
     "</svg>",
