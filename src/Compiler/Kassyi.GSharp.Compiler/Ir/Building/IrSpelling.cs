@@ -3,6 +3,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Ir.Building;
 
@@ -15,20 +16,65 @@ internal static class IrSpelling
     /// <summary>The count of parentheses that directly enclosed <paramref name="operation"/> in the source.</summary>
     public static int ParenthesesAround(IOperation operation)
     {
-        if (operation.IsImplicit)
+        Measure(operation, out var parentheses, out _, out _);
+        return parentheses;
+    }
+
+    /// <summary>
+    /// Measures the leading parentheses count and outermost spelling span (including outer parentheses and
+    /// null-forgiving <c>!</c> operators) around <paramref name="operation"/>, and whether that spelling holds a
+    /// <c>!</c>.
+    /// </summary>
+    public static void Measure(IOperation operation, out int parentheses, out TextSpan? outerSpan,
+        out bool nullForgiving)
+    {
+        parentheses = 0;
+        nullForgiving = false;
+        if (!operation.IsImplicit)
         {
-            return 0;
+            outerSpan = OuterSpanAround(operation.Syntax, countParentheses: true, out parentheses, out nullForgiving);
+            return;
         }
 
-        var count = 0;
-        var syntax = operation.Syntax;
-        while (syntax.Parent is ParenthesizedExpressionSyntax parenthesized)
+        // [WHY] An implicit conversion (of any kind) has the syntax of the expression it converts, written with its
+        // parentheses and !; an error site at it reports that spelling. The parentheses stay with the operand
+        outerSpan = operation is IConversionOperation
+            ? OuterSpanAround(operation.Syntax, countParentheses: false, out _, out nullForgiving)
+            : null;
+    }
+
+    private static TextSpan? OuterSpanAround(SyntaxNode syntax, bool countParentheses, out int parentheses,
+        out bool nullForgiving)
+    {
+        parentheses = 0;
+        nullForgiving = false;
+        var start = syntax;
+        var counting = countParentheses;
+        while (true)
         {
-            count++;
-            syntax = parenthesized;
+            if (syntax.Parent is ParenthesizedExpressionSyntax parenthesized)
+            {
+                if (counting)
+                {
+                    parentheses++;
+                }
+
+                syntax = parenthesized;
+            }
+            else if (syntax.Parent is PostfixUnaryExpressionSyntax suppressed &&
+                     suppressed.IsKind(SyntaxKind.SuppressNullableWarningExpression))
+            {
+                counting = false;
+                nullForgiving = true;
+                syntax = suppressed;
+            }
+            else
+            {
+                break;
+            }
         }
 
-        return count;
+        return ReferenceEquals(syntax, start) ? null : syntax.Span;
     }
 
     /// <summary>
