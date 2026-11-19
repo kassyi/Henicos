@@ -26,7 +26,8 @@ public static partial class GpuBigIntSqrtKernels
 
         // The carry chunk of every product is one block of threads: ExecuteResolveNttCarriesBlocked gives each thread
         // of a block one word of a chunk, so a chunk smaller than the block overlaps the blocks and corrupts products
-        // longer than one chunk. The host launches 1024 threads and sizes the block-carry buffer for 1024-word chunks.
+        // longer than one chunk. The host picks a warp-multiple block size <= 1024 from
+        // CooperativeBlockSize.DefaultCandidates ([1024, 768, 512, 256]) and sizes the block-carry buffer to match.
         int chunkSize = BlockDimension.X;
 
         // main loop
@@ -40,17 +41,10 @@ public static partial class GpuBigIntSqrtKernels
             GpuBigIntDivRemKernels.ExecuteNttMultiplyMacro(core, ops.TargetOperand, xSquared, axSquared, n,
                 2 * n + 2 * dims.MarginWords, 3 * n + 2 * dims.MarginWords, chunkSize);
 
-            // 3. diff = constant3 - axSquared
-            Gpu.SingleThread(() =>
-            {
-                var subCtx = new GpuBigIntContext
-                {
-                    Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
-                    NumberOfWords = 3 * n + 2 * dims.MarginWords
-                };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, Gpu.NotNull(ops.Constant3),
-                    axSquared);
-            });
+            // 3. diff = constant3 - axSquared (block-parallel subtraction on block 0)
+            int subWords = 3 * n + 2 * dims.MarginWords;
+            GpuBigIntKernels.DeviceAddSubAlignedParallel(Gpu.NotNull(ops.Constant3), subWords, axSquared, subWords,
+                iterScratch.Diff, subWords, 0, 0, -1, true);
             Gpu.SyncGrid();
 
             // 4. nextXUnshifted = resultBuffer * diff

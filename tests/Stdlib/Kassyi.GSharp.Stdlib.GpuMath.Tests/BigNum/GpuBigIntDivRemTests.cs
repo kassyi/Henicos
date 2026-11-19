@@ -811,7 +811,10 @@ public class GpuBigIntDivRemTests : IDisposable
         "Random33Words",
         "Random1023Words",
         "Random1024Words",
-        "Random1025Words"
+        "Random1025Words",
+        // A power of two leaves the low 1099 words of each product zero, so the subtraction's "no borrow" state
+        // (carry-in 1) crosses every chunk boundary of the block-parallel subtraction.
+        "TopBitOnly1100Words"
     ];
 
     // Precondition (all callers in GpuMath): the operand is normalized (top bit of its top word set), and
@@ -836,11 +839,12 @@ public class GpuBigIntDivRemTests : IDisposable
             "Random1023Words" => (1023, 2 * 1023 * 32 + 512),
             "Random1024Words" => (1024, 2 * 1024 * 32 + 512),
             "Random1025Words" => (1025, 2 * 1025 * 32 + 512),
+            "TopBitOnly1100Words" => (1100, 2 * 1100 * 32 + 512),
             _ => throw new ArgumentOutOfRangeException(nameof(input), input, "Unknown Reciprocal input.")
         };
         var b = input switch
         {
-            "TopBitOnly4Words" => BigInteger.One << (numWords * 32 - 1),
+            "TopBitOnly4Words" or "TopBitOnly1100Words" => BigInteger.One << (numWords * 32 - 1),
             "AllOnes4Words" => (BigInteger.One << (numWords * 32)) - 1,
             "TopWordOnly4Words" => FromWords(RandomWords(seed: 503, 1, topBit: true)) << (3 * 32),
             _ => FromWords(RandomWords(seed: 500 + numWords, numWords, topBit: true))
@@ -903,7 +907,11 @@ public class GpuBigIntDivRemTests : IDisposable
         "SecondBitTop33WordsMargin16",
         "Random1023WordsMargin16",
         "Random1024WordsMargin16",
-        "SecondBitTop1025WordsMargin16"
+        "SecondBitTop1025WordsMargin16",
+        // A power of two leaves the low 1099 words of each product zero, so the subtraction's "no borrow" state
+        // (carry-in 1) crosses every chunk boundary of the block-parallel subtraction.
+        "PowerOfFour1100Words",
+        "TopBitOnly1100Words"
     ];
 
     // Precondition (Sqrt and GSharpKernelFloatProvider): the operand is normalized with an even shift, so its bit
@@ -929,6 +937,8 @@ public class GpuBigIntDivRemTests : IDisposable
             "Random1023WordsMargin16" => (1023, 16, FromWords(RandomWords(seed: 1623, 1023, topBit: true))),
             "Random1024WordsMargin16" => (1024, 16, FromWords(RandomWords(seed: 1624, 1024, topBit: true))),
             "SecondBitTop1025WordsMargin16" => (1025, 16, FromWords(RandomWords(seed: 1625, 1025, topBit: true)) >> 1),
+            "PowerOfFour1100Words" => (1100, 16, BigInteger.One << (1100 * 32 - 2)),
+            "TopBitOnly1100Words" => (1100, 16, BigInteger.One << (1100 * 32 - 1)),
             _ => throw new ArgumentOutOfRangeException(nameof(input), input, "Unknown InverseSqrt input.")
         };
 

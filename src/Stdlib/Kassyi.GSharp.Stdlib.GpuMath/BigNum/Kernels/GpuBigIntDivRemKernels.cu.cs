@@ -119,18 +119,10 @@ public static partial class GpuBigIntDivRemKernels
             ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
                 currentProduct, n, resultWords, n + resultWords, chunkSize);
 
-            // 2. diff = constant - currentProduct
-            Gpu.SyncGrid();
-            Gpu.SingleThread(() =>
-            {
-                var subCtx = new GpuBigIntContext
-                {
-                    Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
-                    NumberOfWords = n + resultWords
-                };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, constant,
-                    currentProduct);
-            });
+            // 2. diff = constant - currentProduct (block-parallel subtraction on block 0)
+            int subWords = n + resultWords;
+            GpuBigIntKernels.DeviceAddSubAlignedParallel(constant, subWords, currentProduct, subWords,
+                iterScratch.Diff, subWords, 0, 0, -1, true);
             Gpu.SyncGrid();
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)

@@ -36,8 +36,9 @@ internal static class DivisionCheckRule
 
     /// <summary>
     /// Whether the signed division or remainder in <paramref name="operatorType"/> (int or long) may divide the minimum
-    /// of the type by -1, whose GPU result (MinValue, and 0 for the remainder) G# gives where the CPU would not: x86
-    /// <c>idiv</c> raises a hardware exception and .NET throws <see cref="OverflowException"/> (the managed path
+    /// of the type by -1, whose GPU result (MinValue, and 0 for the remainder) G# gives where the CPU and
+    /// constant-folded CUDA would not: x86 <c>idiv</c> raises a hardware exception, <c>nvcc</c> folds constant
+    /// <c>MinValue / -1</c> as undefined behavior, and .NET throws <see cref="OverflowException"/> (the managed path
     /// rewrites such a division, <c>ManagedDivision</c>).
     /// </summary>
     public static bool MayDivideMinimumByMinusOne(SpecialType operatorType, IntegerRange dividend,

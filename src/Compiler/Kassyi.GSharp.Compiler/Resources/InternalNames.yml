@@ -565,7 +565,7 @@ IntegerSemantics:
     ConvertToInt64: { Value: __gsharp_to_i64, Prelude: IntegerSemantics.hpp }
     ConvertToUInt64: { Value: __gsharp_to_u64, Prelude: IntegerSemantics.hpp }
     # x / y and x % y where y may be 0 (DivideByZeroException on every build), or -1 for a
-    # dividend that may be MinValue (the GPU result, which x86 idiv would turn into a hardware exception)
+    # dividend that may be MinValue (the GPU result, which x86 idiv traps on and nvcc folds as UB)
     DivideInt32: { Value: __gsharp_div_i32, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     DivideInt64: { Value: __gsharp_div_i64, Prelude: IntegerDivision.hpp, Managed: ManagedGpuContext.IntegerDivision.cs }
     DivideUInt32: { Value: __gsharp_div_u32, Prelude: IntegerDivision.hpp }
