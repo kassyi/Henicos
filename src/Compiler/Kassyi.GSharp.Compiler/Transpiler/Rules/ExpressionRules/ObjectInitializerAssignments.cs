@@ -21,14 +21,22 @@ internal static class ObjectInitializerAssignments
     {
         foreach (var expression in initializer.Expressions)
         {
+            // An element of a collection initializer: C# calls Add on the collection being built
             if (expression is not AssignmentExpressionSyntax assignment)
             {
+                CollectionInitializerElements.AppendAdd(expression, initializer, ref context);
                 continue;
             }
 
             if (assignment.Right is InitializerExpressionSyntax nested)
             {
                 Append(nested, lineBreaks, ref context);
+                continue;
+            }
+
+            if (assignment.Left is ImplicitElementAccessSyntax &&
+                CollectionInitializerElements.TryFailIndexer(assignment, ref context))
+            {
                 continue;
             }
 
@@ -44,6 +52,25 @@ internal static class ObjectInitializerAssignments
             {
                 context.Emitter.Writer.Append(' ');
             }
+        }
+    }
+
+    /// <summary>
+    /// Writes the object or collection that <paramref name="initializer"/> initializes:
+    /// <c>__gsharp_tmp.&lt;outer member&gt;. ... .&lt;member&gt;</c>, or <c>__gsharp_tmp</c> for the outermost one.
+    /// </summary>
+    public static void AppendTarget(InitializerExpressionSyntax initializer, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append(GSharpInternalNames.Lowering.AggregateTemp);
+        if (initializer.Parent is AssignmentExpressionSyntax
+            {
+                Parent: InitializerExpressionSyntax outerInitializer
+            } outer &&
+            outer.Right == initializer)
+        {
+            context.Emitter.Writer.Append('.');
+            AppendPath(outer, outerInitializer, ref context);
+            context.Visitor.Visit(outer.Left);
         }
     }
 

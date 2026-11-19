@@ -131,10 +131,14 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
+        // A split that the CPU paths would hoist out of a collection initializer before what C# evaluates first (#2105)
+        var initializerContext = CollectionInitializerSplitContext.IsReordered(invocation, context.SemanticModel)
+            ? CollectionInitializerSplitContext.Context
+            : null;
         var unsupportedContext = SplitPointPlacement.FindUnsupportedContext(
-            invocation, context.SemanticModel, isWarpShuffle: false);
+            invocation, context.SemanticModel, isWarpShuffle: false) ?? initializerContext;
         var shuffleContext = SplitPointPlacement.FindUnsupportedContext(
-            invocation, context.SemanticModel, isWarpShuffle: true);
+            invocation, context.SemanticModel, isWarpShuffle: true) ?? initializerContext;
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
         if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
         {

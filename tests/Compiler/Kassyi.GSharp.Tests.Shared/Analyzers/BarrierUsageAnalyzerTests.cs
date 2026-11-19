@@ -324,6 +324,58 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
     }
 
+    // The CPU paths hoist a split in a collection initializer to the start of the statement, before the values, Add
+    // calls and constructor that C# evaluates first; CUDA does not split. Until the CPU paths run one stack per GPU
+    // thread (#2105) such a split is reported, and a split that is the first value of its creation is not
+    private const string CollectionInitializerKernels =
+        "Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs";
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SuspendingCallInCollectionInitializer_ValueBeforeTheCall_ReportsGSH0062()
+    {
+        var actual = await RunAsync(CollectionInitializerKernels, "Cpu");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 64, 41, 64, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 65, 51, 65, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 66, 47, 66, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 67, 68, 67, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 68, 47, 68, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 69, 42, 69, 77)
+            ],
+            actual);
+
+        var diagnostics = await GeneratorTestRunner
+            .TestAnalyzer(CollectionInitializerKernels, s_analyzer)
+            .WithDialect("Cpu")
+            .GetDiagnosticsAsync();
+        Assert.All(diagnostics, static d => Assert.Contains(
+            "in a collection initializer where C# evaluates another value",
+            d.GetMessage(CultureInfo.InvariantCulture),
+            StringComparison.Ordinal));
+    }
+
+    // A call of a device function that reaches a barrier is reported for every target; a warp shuffle written in
+    // place only where the CPU paths are built
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task SuspendingCallInCollectionInitializer_CudaDialect_ReportsDeviceFunctionCallsOnly()
+    {
+        var actual = await RunAsync(CollectionInitializerKernels, "Cuda");
+
+        Assert.Equal(
+            [
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 64, 41, 64, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 65, 51, 65, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 66, 47, 66, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 67, 68, 67, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 68, 47, 68, 59)
+            ],
+            actual);
+    }
+
     // A reference into the result of a call cannot be kept across a resume, also through a member access, parentheses or
     // an in parameter without the keyword (#788 review), nor a ref conditional, with or without the keyword and in
     // parentheses, nor an element of an inline array that a call returns (#1585; #927 is to keep the reference

@@ -615,6 +615,13 @@
 - {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoDifferentialKernels.Offset", status: "NoStateMachine", count: 1}
 - {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoDifferentialKernels.WideLine", status: "NoStateMachine", count: 1}
 - {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoExtensions.LineAfter", status: "NoStateMachine", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerBagExtensions.Add", status: "NoStateMachine", count: 4}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.CollectionInitializerAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.CollectionInitializerKernel", status: "Compared", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.CollectionInitializerSuspendingKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.MetersOf", status: "NoStateMachine", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.ShuffleElement", status: "Compared", count: 1}
+- {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.ShuffleMeters", status: "Compared", count: 1}
 - {file: "Differential/ConstantStringIndexDifferentialKernels.cu.cs", method: "ConstantStringIndexDifferentialKernels.ConstantIndexOutsideKernel", status: "Compared", count: 1}
 - {file: "Differential/ConstantStringIndexDifferentialKernels.cu.cs", method: "ConstantStringIndexDifferentialKernels.ForEachKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ConstantStringIndexDifferentialKernels.cu.cs", method: "ConstantStringIndexDifferentialKernels.StringIndexKernel", status: "Compared", count: 1}
@@ -3144,6 +3151,11 @@
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs", method: "SuspendingCallContextKernels.NoBarrier", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs", method: "SuspendingCallContextKernels.Step", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs", method: "SuspendingCallContextKernels.SyncGridLambdaKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs", method: "SplitBagExtensions.Add", status: "NoStateMachine", count: 2}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs", method: "SuspendingCallInCollectionInitializerKernels.Broadcast", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs", method: "SuspendingCallInCollectionInitializerKernels.FirstValueKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs", method: "SuspendingCallInCollectionInitializerKernels.LaterValueKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs", method: "SuspendingCallInCollectionInitializerKernels.Pair", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLambdaKernels.cu.cs", method: "SuspendingCallInLambdaKernels.Broadcast", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLambdaKernels.cu.cs", method: "SuspendingCallInLambdaKernels.LambdaKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallInLocalFunctionKernels.cu.cs", method: "SuspendingCallInLocalFunctionKernels.Broadcast", status: "Compared", count: 1}
@@ -3749,6 +3761,11 @@
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.UnionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.WithElementKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "Scaled3Builder.Create", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/CollectionInitializerSuspendingElement.cs", method: "SuspendingElementKernels.Exchange", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/CollectionInitializerSuspendingElement.cs", method: "SuspendingElementKernels.SuspendingElementKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Diagnostics/CollectionInitializerSuspendingElement.cs", method: "ValueBagExtensions.Add", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/CollectionInitializerUnsupported.cs", method: "BarrierBagExtensions.Add", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/CollectionInitializerUnsupported.cs", method: "CollectionInitializerKernels.UnsupportedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ComputedPropertyGetterFailure.cu.cs", method: "ComputedPropertyGetterFailureKernels.ReadTwiceKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ComputedPropertyGetterFailure.cu.cs", method: "ComputedPropertyGetterFailureKernels.UnsubstitutedTypeParameterKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ConstantStringElement.cu.cs", method: "ConstantStringElementKernels.ConstantStringElementKernel", status: "OpaqueStatement", count: 1}
