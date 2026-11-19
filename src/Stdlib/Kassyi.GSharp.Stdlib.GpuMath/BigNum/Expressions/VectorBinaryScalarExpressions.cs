@@ -107,7 +107,11 @@ internal abstract class VectorBinaryScalarExpressionBase(
             return false;
         }
 
-        ZeroDivisorCheck.ThrowIfAnyElement(workspace, count);
+        if (ZeroDivisorCheck.ThrowIfAnyElement(workspace, count))
+        {
+            RecordedTail.Clear(workspace, operands.Destination, 0, operands.Destination.Length);
+        }
+
         return true;
     }
 
