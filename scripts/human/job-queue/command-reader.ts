@@ -140,11 +140,15 @@ export function readCommand(command: string): ReadStep[] | null {
 
 /**
  * readCommand, and whether the line has a `|` outside quotes (a pipe, or the `||` of an or-list): readCommand leaves
- * the stage after a pipe out, so a caller that must see every program of the line checks `piped` as well.
+ * the stage after a pipe out, so a caller that must see every program of the line checks `piped` as well. `expands[i]`
+ * says whether step i has a `$` outside single quotes (a variable the shell expands, in bash and PowerShell alike),
+ * whose words are then not what runs.
  */
-export function readCommandLine(command: string): { steps: ReadStep[]; piped: boolean } | null {
+export function readCommandLine(command: string): { steps: ReadStep[]; piped: boolean; expands: boolean[] } | null {
   const steps: ReadStep[] = [];
+  const expands: boolean[] = [];
   let piped = false;
+  let expanding = false; // the step being read has a $ outside single quotes
   let words: string[] = [];
   let word = "";
   let inWord = false;
@@ -162,9 +166,11 @@ export function readCommandLine(command: string): { steps: ReadStep[]; piped: bo
     const step = stripStep(words);
     if (!filter && step.words.length > 0) {
       steps.push(step);
+      expands.push(expanding);
     }
     words = [];
     filter = nextIsFilter;
+    expanding = false;
   };
   for (let i = 0; i < command.length; i++) {
     const ch = command.charAt(i);
@@ -177,6 +183,7 @@ export function readCommandLine(command: string): { steps: ReadStep[]; piped: bo
       } else if (ch === "$" && next === "(" && quote === '"') {
         return null;
       } else {
+        expanding ||= ch === "$" && quote === '"';
         word += ch;
       }
     } else if (ch === '"' || ch === "'") {
@@ -208,6 +215,7 @@ export function readCommandLine(command: string): { steps: ReadStep[]; piped: bo
     } else if (ch === "<" || ch === "`" || ch === "(" || ch === ")" || (ch === "$" && next === "(")) {
       return null;
     } else {
+      expanding ||= ch === "$";
       word += ch;
       inWord = true;
     }
@@ -216,7 +224,7 @@ export function readCommandLine(command: string): { steps: ReadStep[]; piped: bo
     return null;
   }
   endStep(false);
-  return { steps, piped };
+  return { steps, piped, expands };
 }
 
 const AssignmentWord = /^[A-Za-z_]\w*=/;

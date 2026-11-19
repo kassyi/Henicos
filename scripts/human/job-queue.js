@@ -63,7 +63,7 @@
 // taking no slots), then takes the GPU lock (scripts/human/gpu-lock.js), under which the command asks for its CPU
 // slots and is granted at once, even over the capacity, so that a job that holds the GPU lock never waits for a slot.
 // The plugins classify whether the run may share the GPU with other shared runs (job-queue-henicos/share-rules.ts:
-// a filtered test run that selects no Stress, Benchmark or GpuTrap tests); the turn takes the lock with --mode shared
+// a test run whose filter excludes Stress, Benchmark and GpuTrap tests); the turn takes the lock with --mode shared
 // only when it asked to share and the scheduler's grant says so. --gpu-exclusive (implies --gpu) never shares.
 //
 // Shell: the command runs in the caller's shell: Git Bash on Windows when MSYSTEM or SHELL is set (the Claude Code Bash

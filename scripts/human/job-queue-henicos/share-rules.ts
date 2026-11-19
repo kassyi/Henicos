@@ -1,6 +1,6 @@
-// Whether a --gpu run of this repository may share the GPU with another shared run: only a filtered test run that
-// selects none of the categories that need the GPU alone (Stress, Benchmark, the real GPU faults of GpuTrap) and does
-// not turn the trap tests on. Anything this cannot read is exclusive.
+// Whether a --gpu run of this repository may share the GPU with another shared run: only a test run whose filter keeps
+// out every category that needs the GPU alone (Stress, Benchmark, the real GPU faults of GpuTrap) and that does not
+// turn the trap tests on. Anything this cannot read is exclusive.
 
 import {
   isTrivialStep,
@@ -38,35 +38,97 @@ export function shareOptions(options: Readonly<Record<string, unknown>>): ShareO
     : { exclusiveCategories, exclusiveEnv, sharedRecipes };
 }
 
-/** `dotnet test` of a project or solution (not a .dll or .exe passed directly) with a non-empty --filter. */
-function isFilteredDotnetTest(words: readonly string[]): boolean {
+/**
+ * The values of the --filter options of a step (`--filter v`, `--filter=v`; "" for a --filter without a value), or null
+ * when the step has another spelling of a filter (`--filter:v`, `/TestCaseFilter:v`) that this does not read.
+ */
+function filtersOf(words: readonly string[]): string[] | null {
+  const filters: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const word = (words[i] as string).toLowerCase();
+    if (word === "--filter") {
+      filters.push(words[i + 1] ?? "");
+      i++;
+    } else if (word.startsWith("--filter=")) {
+      filters.push((words[i] as string).slice("--filter=".length));
+    } else if (word.startsWith("--filter") || word.startsWith("/testcasefilter")) {
+      return null;
+    }
+  }
+  return filters;
+}
+
+/**
+ * A filter that keeps every exclusive category out: read in lower case and without blanks, it has no `|` (an or term
+ * could bring a category back) and, among its `&` terms, `category!=<name>` for each exclusive category. A filter that
+ * names tests alone (`FullyQualifiedName~Foo`) may still pick Stress or Benchmark tests, so it does not share.
+ */
+function excludesCategories(filter: string, categories: readonly string[]): boolean {
+  const text = filter.toLowerCase().replace(/\s+/g, "");
+  if (text.includes("|")) {
+    return false;
+  }
+  const terms = new Set(text.split("&"));
+  return categories.every((name) => terms.has(`category!=${name.toLowerCase()}`));
+}
+
+/** Every --filter of the step keeps the exclusive categories out (true for a step without one). */
+function filtersExclude(words: readonly string[], categories: readonly string[]): boolean {
+  const filters = filtersOf(words);
+  return filters !== null && filters.every((filter) => excludesCategories(filter, categories));
+}
+
+/**
+ * `dotnet test` of a project or solution (not a .dll or .exe passed directly) with a --filter that keeps the exclusive
+ * categories out: without one a test run also runs Stress and Benchmark, which need the GPU alone.
+ */
+function isSharedDotnetTest(words: readonly string[], categories: readonly string[]): boolean {
   if (programOf(words[0] ?? "") !== "dotnet" || words[1] !== "test") {
     return false;
   }
   const rest = words.slice(2);
-  if (rest.some((word) => /\.(dll|exe)$/i.test(word))) {
-    return false;
-  }
-  // Without a filter a test run also runs Stress and Benchmark, which need the GPU alone
-  return rest.some((word, i) => (word === "--filter" && (rest[i + 1] ?? "") !== "") || /^--filter=./.test(word));
+  return !rest.some((word) => /\.(dll|exe)$/i.test(word)) && rest.some((word) => /^--filter(=|$)/i.test(word))
+    ? filtersExclude(rest, categories)
+    : false;
 }
 
 /**
- * The recipes of sharedRecipes are the justfile's test, test-coverage and test-differential-cuda: each expands to
- * `{{queue}} --gpu -- dotnet test ... --filter "..."`, a filtered test run of the shared kind. `just <recipe>` alone,
- * with no just option or assignment before the recipe.
+ * The recipes of sharedRecipes are the justfile's test and test-coverage: each expands to `{{queue}} --gpu -- dotnet
+ * test ... --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"`, a shared test run by the rule above
+ * (test-differential-cuda does not: its filter leaves Benchmark and GpuTrap in). `just <recipe>` alone, with no just
+ * option or assignment before the recipe; a --filter among its arguments must keep the categories out as well.
  */
-function isSharedRecipe(words: readonly string[], recipes: readonly string[]): boolean {
-  return programOf(words[0] ?? "") === "just" && recipes.includes(words[1] ?? "");
+function isSharedRecipe(words: readonly string[], options: ShareOptions): boolean {
+  return (
+    programOf(words[0] ?? "") === "just" &&
+    options.sharedRecipes.includes(words[1] ?? "") &&
+    filtersExclude(words.slice(2), options.exclusiveCategories)
+  );
 }
 
 function isSharedStep(step: ReadStep, options: ShareOptions): boolean {
-  return isFilteredDotnetTest(step.words) || isSharedRecipe(step.words, options.sharedRecipes);
+  return isSharedDotnetTest(step.words, options.exclusiveCategories) || isSharedRecipe(step.words, options);
 }
 
-/** A set variable counts unless it is empty or "0". */
-function isSet(value: string | undefined): boolean {
-  return value !== undefined && value !== "" && value !== "0";
+/**
+ * A step of PowerShell that only assigns one value (`$env:A=1`, `$a = 'x'`). Any other step that starts with `$` runs
+ * something: a program held in a variable (bash), or a command whose output is assigned (`$a = dotnet test X`).
+ */
+function isPlainAssignment(words: readonly string[]): boolean {
+  return (words.length === 1 && words[0]?.includes("=") === true) || (words.length === 3 && words[1] === "=");
+}
+
+/** A step whose words are not what runs (a variable the shell expands), or that runs something a variable names. */
+function isHidden(step: ReadStep, expands: boolean): boolean {
+  return step.words[0]?.startsWith("$") === true ? !isPlainAssignment(step.words) : expands && !isTrivialStep(step);
+}
+
+/** A set variable counts unless it is empty or "0"; names compare in any case, as Windows reads them. */
+function isSet(env: Readonly<NodeJS.ProcessEnv>, name: string): boolean {
+  const wanted = name.toLowerCase();
+  return Object.entries(env).some(
+    ([key, value]) => key.toLowerCase() === wanted && value !== undefined && value !== "" && value !== "0",
+  );
 }
 
 /**
@@ -83,17 +145,35 @@ export function shareOf(command: string, context: ClientContext): ShareMode | un
   if (line === null || line.piped) {
     return "exclusive";
   }
-  // 2. Every step that does work is a filtered dotnet test or a shared recipe, and there is one
+  // 2. Every step that does work is a dotnet test whose filter keeps the exclusive categories out or a shared recipe,
+  // there is one, and none expands a variable ($ outside single quotes; %...% of cmd): its words are not what runs
   const work = line.steps.filter((step) => !isTrivialStep(step));
-  if (work.length === 0 || !work.every((step) => isSharedStep(step, options))) {
+  if (
+    work.length === 0 ||
+    line.steps.some((step, i) => isHidden(step, line.expands[i] === true)) ||
+    (context.shell === "cmd" && command.includes("%")) ||
+    !work.every((step) => isSharedStep(step, options))
+  ) {
     return "exclusive";
   }
-  // 3. No exclusive category selected (the same reading as the Stress budget of a test run)
-  if (selectsCategory(command, options.exclusiveCategories)) {
+  // 3. No exclusive category selected (the same reading as the Stress budget of a test run), in any case
+  const lower = command.toLowerCase();
+  if (
+    selectsCategory(
+      lower,
+      options.exclusiveCategories.map((name) => name.toLowerCase()),
+    )
+  ) {
     return "exclusive";
   }
-  // 4 and 5. No exclusive variable named in the command or set in the environment
-  if (options.exclusiveEnv.some((name) => command.includes(name) || isSet(context.env[name]))) {
+  // 4 and 5. No exclusive variable named in the command (its text, and its words without quotes) or set in the
+  // environment, in any case
+  const words = line.steps
+    .flatMap((step) => step.words)
+    .join(" ")
+    .toLowerCase();
+  const named = (name: string): boolean => lower.includes(name.toLowerCase()) || words.includes(name.toLowerCase());
+  if (options.exclusiveEnv.some((name) => named(name) || isSet(context.env, name))) {
     return "exclusive";
   }
   return "shared";

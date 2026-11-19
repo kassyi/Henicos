@@ -290,46 +290,95 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
 
 const Gpu = { name: "gpu", forcedExclusive: false };
 
+/** The filter of `just test`: it keeps every exclusive category out, so a test run with it may share. */
+const Kept = "Category!=Stress&Category!=Benchmark&Category!=GpuTrap";
+
 /**
- * The share of a --gpu command under the repository configuration: [command, expected]. Shared: a filtered dotnet test
- * that selects no exclusive category, and the shared recipes. Exclusive: anything unreadable, piped, unfiltered, not a
- * test, or that selects Stress, Benchmark or GpuTrap or names the trap variable.
+ * The share of a --gpu command under the repository configuration: [command, expected]. Shared: a dotnet test whose
+ * every filter negates each exclusive category (`Category!=` in any case and order, among other `&` terms, no `|`),
+ * and `just test` / `just test-coverage`, which expand to `dotnet test ... --filter "<Kept>"` in the justfile.
+ * Exclusive: anything unreadable, piped, unfiltered, not a test, with a variable the shell expands, that names tests
+ * alone or does not negate every category, or that names or sets the trap variable in any case.
  */
 const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   ["just test", "shared"],
   ["just test-coverage", "shared"],
-  ["just test-differential-cuda", "shared"],
+  ["just test-differential-cuda", "exclusive"], // its filter "Category=Differential&Category!=Stress" keeps two in
   ["just test-gpu-trap", "exclusive"],
   ["just test-stability", "exclusive"],
   ["just -f justfile test", "exclusive"],
-  ['dotnet test X --filter "Category!=Stress&Category!=Benchmark&Category!=GpuTrap"', "shared"],
+  ['just test --filter "FullyQualifiedName~Foo"', "exclusive"],
+  [`just test --filter "${Kept}&Name~Foo"`, "shared"],
+  [`dotnet test X --filter "${Kept}"`, "shared"],
+  [
+    'dotnet test X --filter "category != gputrap & Category!=STRESS&FullyQualifiedName~Foo&category!=benchmark"',
+    "shared",
+  ],
+  [`dotnet test X --filter "${Kept}&Category=Stress"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}&category=stress"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" --filter:"Name~Foo"`, "exclusive"],
   ['dotnet test X --filter "Category = GpuTrap"', "exclusive"],
   ['dotnet test X --filter "Category=GpuTrap"', "exclusive"],
   ['dotnet test X --filter "Category=Stress"', "exclusive"],
   ['dotnet test X --filter "Category=Benchmark"', "exclusive"],
-  ['dotnet test X --filter "Name~Foo" -e GSHARP_CUDA_TRAP_TESTS=1', "exclusive"],
-  ['GSHARP_CUDA_TRAP_TESTS=1 dotnet test X --filter "Name~Foo"', "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_TRAP_TESTS=1`, "exclusive"],
+  [`GSHARP_CUDA_TRAP_TESTS=1 dotnet test X --filter "${Kept}"`, "exclusive"],
   ["dotnet run --project X", "exclusive"],
-  ['dotnet test $(cat projects.txt) --filter "Name~Foo"', "exclusive"],
-  ['dotnet test X --filter "Name~Foo', "exclusive"],
-  ['dotnet test X --no-build --filter "Name~Foo"', "shared"],
-  ['dotnet build X && dotnet test X --no-build --filter "Name~Foo"', "exclusive"],
-  ['cd tests && dotnet test X --filter "Name~Foo"; echo done', "shared"],
-  ['Set-Location tests; dotnet test X --filter "Name~Foo"; Pop-Location', "shared"],
-  ['dotnet.exe test X --filter "Name~Foo"', "shared"],
-  ['dotnet test bin/Tests.dll --filter "Name~Foo"', "exclusive"],
-  ["dotnet test X --filter=Name~Foo", "shared"],
+  [`dotnet test $(cat projects.txt) --filter "${Kept}"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}`, "exclusive"],
+  [`dotnet test X --no-build --filter "${Kept}"`, "shared"],
+  [`dotnet build X && dotnet test X --no-build --filter "${Kept}"`, "exclusive"],
+  [`cd tests && dotnet test X --filter "${Kept}"; echo done`, "shared"],
+  [`Set-Location tests; dotnet test X --filter "${Kept}"; Pop-Location`, "shared"],
+  [`$env:DiffEngine_Disabled='true'; dotnet test X --filter "${Kept}"`, "shared"],
+  [`dotnet.exe test X --filter "${Kept}"`, "shared"],
+  [`dotnet test bin/Tests.dll --filter "${Kept}"`, "exclusive"],
+  [`dotnet test X --filter="${Kept}"`, "shared"],
+  [`dotnet test X --filter:"${Kept}"`, "exclusive"],
   ['dotnet test X --filter ""', "exclusive"],
+  ['dotnet test X --filter " "', "exclusive"],
   ["echo hello", "exclusive"],
-  ['node scripts/human/coverage-diff.js --run && dotnet test X --filter "Name~Foo"', "exclusive"],
+  [`node scripts/human/coverage-diff.js --run && dotnet test X --filter "${Kept}"`, "exclusive"],
   // Q2: without a filter a test run also runs Stress and Benchmark
   ["dotnet test X", "exclusive"],
   ["dotnet test X --no-build", "exclusive"],
-  ['DiffEngine_Disabled=true dotnet test X --filter "FullyQualifiedName~Foo"', "shared"],
-  // A pipe hides its later stages from readCommand; a | inside the quoted filter is no pipe
-  ['dotnet test X --filter "Name~Foo" | tee log', "exclusive"],
-  ['dotnet test X --filter "Name~Foo" || echo failed', "exclusive"],
-  ['dotnet test X --filter "Name~A|Name~B"', "shared"],
+  // A filter that names tests alone, or negates only some categories, may still pick Stress or Benchmark tests
+  ['DiffEngine_Disabled=true dotnet test X --filter "FullyQualifiedName~Foo"', "exclusive"],
+  ['dotnet test X --filter "FullyQualifiedName~PoolStressTests"', "exclusive"],
+  ['dotnet test X --filter "Name~PoolStressTests"', "exclusive"],
+  ['dotnet test X --filter "Category!=Slow"', "exclusive"],
+  ['dotnet test X --filter "Category!=Stress"', "exclusive"],
+  ['dotnet test X --filter "Category!=Stress&Category!=Benchmark"', "exclusive"],
+  ['dotnet test X --filter "Category~Stres"', "exclusive"],
+  ['dotnet test X --filter "category=stress"', "exclusive"],
+  [`dotnet test X --filter "${Kept}" --filter "Name~Foo"`, "exclusive"],
+  // A pipe hides its later stages from readCommand; a | inside the quoted filter is no pipe, but an or term
+  [`dotnet test X --filter "${Kept}" | tee log`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" || echo failed`, "exclusive"],
+  [`dotnet test X --filter "${Kept}&(Name~A|Name~B)"`, "exclusive"],
+  // A variable the shell expands: the words are not what runs
+  ['dotnet test X --filter "$FILTER"', "exclusive"],
+  ["dotnet test X --filter $FILTER", "exclusive"],
+  ['export F=Category=Stres; dotnet test X --filter "${F}s"', "exclusive"],
+  ["$f = Get-Content f.txt; dotnet test X --filter $f", "exclusive"],
+  [`dotnet test X --filter "${Kept}" $EXTRA`, "exclusive"],
+  [`dotnet test $P --filter "${Kept}"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e $V=1`, "exclusive"],
+  [`$DOTNET test X --filter "${Kept}"`, "exclusive"],
+  [`$out = dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`$DOTNET test X; dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`$out = dotnet test Y; dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e "V=$V"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e 'A=$B'`, "shared"],
+  ['dotnet test X --filter "Name~Foo" -e $V=1', "exclusive"],
+  ['dotnet test $P --filter "Name~Foo" $EXTRA', "exclusive"],
+  // The trap variable in any case, also split by quotes
+  [`gsharp_cuda_trap_tests=1 dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e gsharp_cuda_trap_tests=1`, "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e "GSHARP_CUDA_""TRAP_TESTS=1"`, "exclusive"],
+  ['gsharp_cuda_trap_tests=1 dotnet test X --filter "Name~Foo"', "exclusive"],
+  ['dotnet test X --filter "Name~Foo" -e gsharp_cuda_trap_tests=1', "exclusive"],
+  ['dotnet test X --filter "Name~Foo" -e "GSHARP_CUDA_""TRAP_TESTS=1"', "exclusive"],
 ];
 
 /** Checks 3 to 7 of the share rules: the table, the environment, the plugin options. */
@@ -341,20 +390,25 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     for (const [command, expected] of ShareTable) {
       assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
     }
-    const filtered = 'dotnet test X --filter "Name~Foo"';
+    const filtered = `dotnet test X --filter "${Kept}"`;
     assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
     assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
     assert.strictEqual(host.classify(filtered, { name: "gpu", forcedExclusive: true }, ctx).share, "exclusive");
 
-    const withEnv = (value: string) => ({ ...ctx, env: { GSHARP_CUDA_TRAP_TESTS: value } });
+    const withEnv = (value: string, name = "GSHARP_CUDA_TRAP_TESTS") => ({ ...ctx, env: { [name]: value } });
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("1")).share, "exclusive", "trap tests on in the env");
+    const lowerEnv = withEnv("1", "gsharp_cuda_trap_tests");
+    assert.strictEqual(host.classify(filtered, Gpu, lowerEnv).share, "exclusive", "Windows reads names in any case");
+    const cmd = { ...ctx, shell: "cmd" as const };
+    assert.strictEqual(host.classify(filtered, Gpu, cmd).share, "shared", "cmd without a variable");
+    assert.strictEqual(host.classify(`${filtered} %EXTRA%`, Gpu, cmd).share, "exclusive", "cmd expands %EXTRA%");
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("0")).share, "shared", "0 leaves them off");
     assert.strictEqual(host.classify(filtered, Gpu, withEnv("")).share, "shared", "empty leaves them off");
 
     const full = {
       exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
       exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-      sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+      sharedRecipes: ["test", "test-coverage"],
     };
     const shareWith = (options: Record<string, unknown> | undefined, command = filtered) =>
       new PluginHost([henicosPlugin], [options], wt, () => {}).classify(command, Gpu, ctx).share;
@@ -538,7 +592,7 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
         options: {
           exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
           exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-          sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
+          sharedRecipes: ["test", "test-coverage"],
         },
       },
       { name: "dotnet" },

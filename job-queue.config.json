@@ -9,7 +9,7 @@
       "options": {
         "exclusiveCategories": ["Stress", "Benchmark", "GpuTrap"],
         "exclusiveEnv": ["GSHARP_CUDA_TRAP_TESTS"],
-        "sharedRecipes": ["test", "test-coverage", "test-differential-cuda"]
+        "sharedRecipes": ["test", "test-coverage"]
       }
     },
     { "name": "dotnet" },
