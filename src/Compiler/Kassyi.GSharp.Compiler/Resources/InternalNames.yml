@@ -638,3 +638,15 @@ NativeStack:
     Fp: __gsharp_stack_fp
     Stacks: __gsharp_stack_stacks
     Block: __gsharp_stack
+
+StackWarp:
+  Summary: Warp collectives and reconvergence regions of a body that runs on a stack of its own (the CPU stack models).
+  Names:
+    # The place of the frame of the running function in the warp visits of its GPU thread, passed to every call that
+    # reaches a warp collective
+    Frame: __gsharp_warp_frame
+    # The reconvergence regions of a method that reaches Warp.ActiveMask() (ReconvergenceInserter): enter, leave by a
+    # jump, and arrive at the end, wait for the other lanes and pass it, in one call
+    RegionEnter: __gsharp_stack_warp_region_enter
+    RegionLeave: __gsharp_stack_warp_region_leave
+    Reconverge: __gsharp_stack_warp_reconverge

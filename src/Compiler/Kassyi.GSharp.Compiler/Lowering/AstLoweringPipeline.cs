@@ -21,9 +21,45 @@ public static class AstLoweringPipeline
     {
         var body = method.GetBodyNode()
                    ?? throw new InvalidOperationException("A method without a body cannot be lowered into a state machine.");
-        var returnsValue = method.ReturnType is not PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
-        return Lower(body, returnsValue, semanticModel, owner, isDeviceFunction);
+        return Lower(body, ReturnsValue(method), semanticModel, owner, isDeviceFunction);
     }
+
+    /// <summary>
+    /// The body of a method that reaches Warp.ActiveMask() for the CPU stack models: the same passes as the state machine up
+    /// to the reconvergence regions, so that the regions fall where the state machine puts them, and nothing that flattens
+    /// or splits the body.
+    /// </summary>
+    /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
+    /// <param name="semanticModel">A semantic model of the compilation.</param>
+    /// <param name="owner">The symbol of <paramref name="method"/>.</param>
+    /// <param name="isDeviceFunction">Whether <paramref name="method"/> is a device function rather than a kernel.</param>
+    internal static StackLoweredBody LowerForStack(MethodDeclarationSyntax method, SemanticModel semanticModel,
+        IMethodSymbol owner, bool isDeviceFunction)
+    {
+        var body = method.GetBodyNode()
+                   ?? throw new InvalidOperationException("A method without a body cannot be lowered for a stack.");
+        var bodyModel = ResolveBodyModel(body, semanticModel) ?? semanticModel;
+        var structuredBody = PrepareBody(body, ReturnsValue(method), bodyModel);
+        var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction, stackForm: true);
+        var names = new LoweringTempNames();
+        var structuredPasses = CreateStructuredPasses(new ConditionalEvaluationRewriter(names),
+            new WarpInstructionRewriter(bodyModel, names), reconvergence, CreateIrPass(bodyModel, owner, body, names));
+        foreach (var pass in structuredPasses)
+        {
+            structuredBody = pass.Rewrite(structuredBody);
+        }
+
+        return new StackLoweredBody(structuredBody, reconvergence?.RegionCount ?? 0);
+    }
+
+    private static bool ReturnsValue(MethodDeclarationSyntax method) =>
+        method.ReturnType is not PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
+
+    private static IrSplitLoweringPass? CreateIrPass(SemanticModel? bodyModel, IMethodSymbol? owner,
+        CSharpSyntaxNode body, LoweringTempNames names) =>
+        !s_withoutIrSplitLowering.Value && bodyModel != null && owner != null
+            ? new IrSplitLoweringPass(bodyModel, owner, body, names)
+            : null;
 
     /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
     /// <param name="body">The kernel or device function body.</param>
@@ -55,9 +91,7 @@ public static class AstLoweringPipeline
 
         var reconvergence = ReconvergenceInserter.TryCreate(bodyModel, owner, isDeviceFunction);
         var names = new LoweringTempNames();
-        var irPass = !s_withoutIrSplitLowering.Value && bodyModel != null && owner != null
-            ? new IrSplitLoweringPass(bodyModel, owner, body, names)
-            : null;
+        var irPass = CreateIrPass(bodyModel, owner, body, names);
         var hoistedBody = annotatedBody;
         foreach (var pass in CreatePasses(bodyModel, reconvergence, names, irPass))
         {
@@ -118,6 +152,26 @@ public static class AstLoweringPipeline
         var warpRewriter = new WarpInstructionRewriter(bodyModel, names);
         var branchRewriter = new BranchRewriter(bodyModel);
         var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(12);
+        passes.AddRange(CreateStructuredPasses(conditionalRewriter, warpRewriter, reconvergence, irPass));
+
+        // [WHY] After the reconvergence regions, which follow the structure of the source (a break to a loop leaves the
+        // regions up to its end, and the lanes meet where the break label is, after the loop), and before the passes that
+        // leave a labeled jump as it is (#1990)
+        passes.Add(new LabeledJumpRewriter());
+        passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
+            warpRewriter, branchRewriter);
+        return passes.ToImmutable();
+    }
+
+    // The passes that keep the structure of the source: the split pass of the IR, the first round of the two passes that
+    // turn the operands of &&, || and ?: and the warp collectives into statements, and the reconvergence regions, which
+    // are placed on what those passes leave. The state machine (CreatePasses) and the stack models (LowerForStack) both
+    // start with them, so the regions fall in the same places.
+    private static ImmutableArray<IBlockLoweringPass> CreateStructuredPasses(
+        ConditionalEvaluationRewriter conditionalRewriter, WarpInstructionRewriter warpRewriter,
+        ReconvergenceInserter? reconvergence, IrSplitLoweringPass? irPass)
+    {
+        var passes = ImmutableArray.CreateBuilder<IBlockLoweringPass>(4);
         if (irPass != null)
         {
             passes.Add(irPass);
@@ -130,12 +184,6 @@ public static class AstLoweringPipeline
             passes.Add(reconvergence);
         }
 
-        // [WHY] After the reconvergence regions, which follow the structure of the source (a break to a loop leaves the
-        // regions up to its end, and the lanes meet where the break label is, after the loop), and before the passes that
-        // leave a labeled jump as it is (#1990)
-        passes.Add(new LabeledJumpRewriter());
-        passes.AddRange(branchRewriter, new ForEachRewriter(bodyModel), new LoopRewriter(), conditionalRewriter,
-            warpRewriter, branchRewriter);
         return passes.ToImmutable();
     }
 
