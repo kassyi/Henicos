@@ -43,6 +43,7 @@ The HCT values are measured from the hex color (the HCT conversion of the npm pa
 | found-by:matrix | cream | FFD889 | 85 / 33 / 88 |
 | found-by:differential | mint | 95EDD8 | 180 / 38 / 88 |
 | found-by:review | lime | BBE183 | 130 / 45 / 85 |
+| found-by:operation | sky blue | B0DDFF | 240 / 30 / 86 |
 | dependencies, github_actions | gray | 969699 | 255 / 4 / 62 |
 
 ## 3. Adding a label
