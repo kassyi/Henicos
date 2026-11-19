@@ -26,6 +26,14 @@
 - {file: "Differential/CallerInfoDifferentialKernels.cu.cs", method: "CallerInfoDifferentialKernels.LineWithSum", reason: "known, a by-value extension receiver is not written", count: 1}
 - {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.MetersOf", reason: "known, an initializer writes the new value", count: 1}
 - {file: "Differential/CollectionInitializerDifferentialKernels.cu.cs", method: "CollectionInitializerDifferentialKernels.ShuffleMeters", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.BarrierPickPoint", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.ChainedConditionalAccessKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.ComputedMemberKernel", reason: "known, an initializer writes the new value", count: 3}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.ExtensionOnBindingKernel", reason: "known, an initializer writes the new value", count: 3}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.NestedExtensionCallKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.NullableStructConditionalAccessKernel", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.PickPoint", reason: "known, an initializer writes the new value", count: 2}
+- {file: "Differential/ConditionalAccessDifferentialKernels.cu.cs", method: "ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "Differential/ConstantStringIndexDifferentialKernels.cu.cs", method: "ConstantStringIndexDifferentialKernels.StringIndexKernel", reason: "known, a nameof is a constant", count: 2}
 - {file: "Differential/CrossAssemblyDifferentialKernels.cu.cs", method: "CrossAssemblyDifferentialKernels.CrossAssemblyExplicitPackedLayoutKernel", reason: "known, an initializer writes the new value", count: 4}
 - {file: "Differential/CrossAssemblyDifferentialKernels.cu.cs", method: "CrossAssemblyDifferentialKernels.CrossAssemblyFunctionsAndMacrosKernel", reason: "known, an initializer writes the new value", count: 2}
@@ -202,6 +210,8 @@
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformConstructorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformGetterKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/PropertyVarianceKernels.cu.cs", method: "PropertyVarianceKernels.UniformOperatorKernel", reason: "known, an operator macro is taken as writing memory", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallAfterConditionalAccessKernels.cu.cs", method: "SuspendingCallAfterConditionalAccessKernels.ChainKernel", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallAfterConditionalAccessKernels.cu.cs", method: "SuspendingCallAfterConditionalAccessKernels.PickPoint", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallContextKernels.cu.cs", method: "SuspendingCallContextKernels.DirectAndCleanKernel", reason: "known, a nameof is a constant", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, a field of a struct temporary reads no memory", count: 2}
 - {file: "TestCases/Analyzers/BarrierUsage/ValueFieldInArgumentKernels.cu.cs", method: "ValueFieldInArgumentKernels.ValueFieldInArgumentKernel", reason: "known, an initializer writes the new value", count: 1}
@@ -294,6 +304,7 @@
 - {file: "TestCases/Diagnostics/AssignmentFormsUnsupported.cu.cs", method: "AssignmentFormsUnsupportedKernels.DeconstructNonTupleKernel", reason: "known, an initializer writes the new value", count: 2}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "Acc.op_Addition", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CSharp14And15UnsupportedForms.cs", method: "CSharp14And15UnsupportedForms.CompoundKernel", reason: "known, an operator macro is taken as writing memory", count: 3}
+- {file: "TestCases/Diagnostics/ConditionalAccessUnsupported.cu.cs", method: "ConditionalAccessUnsupported.IndexerKernel", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Box.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Explicit", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Diagnostics/CrossAssembly/ConversionLibrary.cs", method: "Meters.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
@@ -432,6 +443,10 @@
 - {file: "TestCases/Ir/IrBuilderCases.cs", method: "Ir.MakeCell", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Ir/IrBuilderCases.cs", method: "Money.op_Addition", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/Ir/IrClassifierCases.cs", method: "Cases.DiscardOut", reason: "known, a discard is written by no one", count: 1}
+- {file: "TestCases/Ir/IrDecisionNullCallCases.cu.cs", method: "DefaultCallSites.ElementOfObj", reason: "known, the IR does not prove an array non-null yet", count: 1}
+- {file: "TestCases/Ir/IrDecisionSiteOracleCases.cu.cs", method: "OracleHolderWrap.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
+- {file: "TestCases/Ir/IrDecisionSiteOracleCases.cu.cs", method: "SiteOracleKernels.ConversionKernel", reason: "known, an implicit user-defined conversion throws at its operand", count: 2}
+- {file: "TestCases/Ir/IrDecisionSiteOracleCases.cu.cs", method: "StackLengthOracleKernels.StackLengthKernel", reason: "known, the IR does not prove an array non-null yet", count: 1}
 - {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Wrapped.op_Implicit", reason: "known, an initializer writes the new value", count: 1}
 - {file: "TestCases/MacroOperatorTranspilation.cu.cs", method: "TestKernels.MacroKernel", reason: "known, an implicit user-defined conversion throws at its operand", count: 3}
 - {file: "TestCases/MacroOperatorTranspilation.cu.cs", method: "TestKernels.MacroKernel", reason: "known, an operator macro is taken as writing memory", count: 3}

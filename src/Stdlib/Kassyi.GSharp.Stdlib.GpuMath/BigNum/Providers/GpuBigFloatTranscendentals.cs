@@ -328,7 +328,7 @@ internal static class GpuBigFloatTranscendentals
         {
             var product = i % 2 == 0 ? even : odd;
             GpuBigIntMath.Mul(q, q, product);
-            q = Slice(workspace, product, workingWords, workingWords + 1);
+            q = product.BorrowWords(workingWords, workingWords + 1);
         }
 
         // e^x = Q · 2^(k - W); Q < 2^(W+3) fits W + 32 bits without truncation.
@@ -448,7 +448,7 @@ internal static class GpuBigFloatTranscendentals
         using var quotient = workspace.RentTemp(words);
         using var product = workspace.RentTemp(2 * words);
         using var discardedRemainder = workspace.RentTemp(1);
-        var high = Slice(workspace, product, workingWords, words);
+        var high = product.BorrowWords(workingWords, words);
 
         // acc lives in `sum`; each step divides into `quotient` and adds the next lower power back into `sum`.
         var top = terms / blockSize * blockSize;
@@ -595,7 +595,7 @@ internal static class GpuBigFloatTranscendentals
         using var quotient = workspace.RentTemp(numeratorWords);
         using var remainder = workspace.RentTemp(ratio.Denominator.NumWords);
         GpuBigIntDivRem.DivRem(numerator, ratio.Denominator, quotient, remainder);
-        var y = Slice(workspace, quotient, 0, workingWords + 1);
+        var y = quotient.BorrowWords(0, workingWords + 1);
 
         // Z = floor(Y² · 2^(W - 2sh)) = z in W fraction bits (z <= 1/25).
         using var ySquared = workspace.RentTemp(2 * workingWords + 2);
@@ -633,7 +633,7 @@ internal static class GpuBigFloatTranscendentals
         using var discardedRemainder = workspace.RentTemp(1);
 
         DivideByUInt32Async(workspace, one, (uint)(2 * terms - 1), h, discardedRemainder);
-        var high = Slice(workspace, product, workingWords, words);
+        var high = product.BorrowWords(workingWords, words);
         for (var k = terms - 2; k >= 0; k--)
         {
             GpuBigIntMath.Mul(h, z, product);
@@ -654,7 +654,7 @@ internal static class GpuBigFloatTranscendentals
         using var coefficient = workspace.RentTemp(words);
         using var product = workspace.RentTemp(2 * words);
         using var discardedRemainder = workspace.RentTemp(1);
-        var high = Slice(workspace, product, workingWords, words);
+        var high = product.BorrowWords(workingWords, words);
 
         // The top block starts from its first term; every lower block from the top part of H · Z_m.
         var top = (terms - 1) / blockSize * blockSize;
@@ -742,10 +742,6 @@ internal static class GpuBigFloatTranscendentals
             dividend.ToProxy(), divisor, quotient.ToProxy(), discardedRemainder.ToProxy(),
             dividend.NumWords, gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
 
-    // A borrowed view of `words` words of `buffer` from word `offset`.
-    private static GpuBigUInt Slice(GpuWorkspace workspace, GpuBigUInt buffer, int offset, int words) =>
-        buffer.Handle.Slice(offset, words).AsBorrowedBigUInt(workspace);
-
     // |y| = Reduced / Denominator with the bit lengths b of the argument and bu of Reduced.
     private readonly struct ReducedRatio(GpuBigUInt reduced, GpuBigUInt denominator, int bitLength, int reducedBits)
     {
@@ -816,7 +812,7 @@ internal static class GpuBigFloatTranscendentals
                     var left = i % 2 == 0 ? _powers[i / 2] : _powers[i - 1];
                     var right = i % 2 == 0 ? _powers[i / 2] : _powers[1];
                     GpuBigIntMath.Mul(left, right, _owned[i]);
-                    _powers[i] = Slice(workspace, _owned[i], workingWords, words);
+                    _powers[i] = _owned[i].BorrowWords(workingWords, words);
                 }
             }
             catch

@@ -320,9 +320,8 @@ public class IrNumericDecisionTests
             .OfType<IrBinary>()
             .Single(static b => !b.Source.Synthesized);
 
-        var machine = BuildSplitMachine(compilation, "ShuffleOperandByte");
-        var postDecided = IrDecisions.Decide(machine,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine)));
+        var (built, machine) = BuildSplitMachine(compilation, "ShuffleOperandByte");
+        var postDecided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
         Assert.Empty(IrDecisionInvariants.Verify(postDecided));
         var postBinary = IrNodeChildren.DescendantsAndSelf(postDecided)
             .OfType<IrBinary>()
@@ -346,9 +345,8 @@ public class IrNumericDecisionTests
             .Where(static b => !b.Source.Synthesized)
             .ToArray();
 
-        var machine = BuildSplitMachine(compilation, "ShuffleOperandPromote");
-        var postDecided = IrDecisions.Decide(machine,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(machine)));
+        var (built, machine) = BuildSplitMachine(compilation, "ShuffleOperandPromote");
+        var postDecided = IrDecisions.Decide(machine, IrDecisionTestContext.Create(compilation, machine, built));
         Assert.Empty(IrDecisionInvariants.Verify(postDecided));
 
         foreach (var pre in preBinaries)
@@ -405,8 +403,7 @@ public class IrNumericDecisionTests
         var compilation = IrTestCases.Compile(TestCase);
         foreach (var built in IrTestCases.BuildAll(TestCase, TypeName))
         {
-            var decided = IrDecisions.Decide(built,
-                new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
+            var decided = IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
             Assert.Empty(IrDecisionInvariants.Verify(decided.Body));
         }
     }
@@ -462,20 +459,11 @@ public class IrNumericDecisionTests
     {
         var compilation = IrTestCases.Compile(TestCase);
         var built = IrTestCases.Build(TestCase, TypeName, name);
-        return IrDecisions.Decide(built,
-            new IrDecisionContext(compilation, IrTemporaryInitializers.Create(built.Body)));
+        return IrDecisions.Decide(built, IrDecisionTestContext.Create(compilation, built));
     }
 
-    private static IrStateMachine BuildSplitMachine(Compilation compilation, string name)
-    {
-        var built = IrTestCases.Build(TestCase, TypeName, name);
-        var classified = IrClassifier.Classify(built, compilation);
-        var lowered = IrSplitLowering.Apply(classified, compilation, out var failure);
-        Assert.NotNull(lowered);
-        Assert.Equal(IrSplitLoweringFailureKind.None, failure.Kind);
-        var linear = IrLinearizer.Linearize(lowered, compilation);
-        return IrStateMachineBuilder.Build(linear, isDeviceFunction: false, built.Body.Source, compilation);
-    }
+    private static (IrMethod Built, IrStateMachine Machine) BuildSplitMachine(Compilation compilation, string name) =>
+        IrDecisionTestContext.BuildSplitMachine(compilation, TestCase, TypeName, name);
 
     private static IrExpression AssignedValue(IrMethod method)
     {
