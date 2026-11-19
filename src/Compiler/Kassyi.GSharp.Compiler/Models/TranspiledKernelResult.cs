@@ -20,6 +20,10 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// The ref locals that the CPU state machine would keep in its frame and GSH0039 does not report; the generator reports
 /// GSH0003 at each on a CPU dialect build (#1640).
 /// </param>
+/// <param name="ManagedStackSource">
+/// The unlowered stack form of the kernel for the managed stack model, or empty; attached after the transpilation
+/// under <c>GSharpManagedBarrierModel=Stack</c> only (<see cref="Transpiler.ManagedStackFormCollector"/>).
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -31,7 +35,8 @@ internal readonly record struct TranspiledKernelResult(
     string InternalError,
     EquatableArray<DeviceExportRecord> StructExports = default,
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
-    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default)
+    EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
+    string ManagedStackSource = "")
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

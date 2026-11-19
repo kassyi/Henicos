@@ -65,6 +65,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
     public const string DeviceImportTableTrackingName = "GpuDeviceImports";
 
     /// <summary>
+    /// The tracking name of the step that makes the stack forms of the managed stack model. It reads the compilation
+    /// only under <c>GSharpManagedBarrierModel=Stack</c>; otherwise it returns nothing.
+    /// </summary>
+    public const string ManagedStackFormsTrackingName = "GpuManagedStackForms";
+
+    /// <summary>
+    /// The tracking name of the input of the output that lists the functions whose stack form could not be made; empty,
+    /// and cached, unless <c>GSharpManagedBarrierModel=Stack</c>.
+    /// </summary>
+    public const string ManagedStackFailuresTrackingName = "GpuManagedStackFailuresInput";
+
+    /// <summary>The generated file that lists the functions whose stack form could not be made.</summary>
+    internal const string ManagedStackFailuresHintName = "GSharp.ManagedStackFailures.g.cs";
+
+    /// <summary>
     /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
     /// states the reasons in place of that dialect's output.
     /// </summary>
@@ -163,9 +178,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 // The launch limits of the GPUs the fatbin may run on, from the same setting nvcc compiles for
                 options.GlobalOptions.TryGetValue("build_property.GSharpTargetArchitectures", out var architectures);
                 var targetLimits = GpuArchitectureLimits.Resolve(architectures);
+                var managedBarrierModel = ManagedBarrierModels.Read(options.GlobalOptions);
 
                 return new GeneratorConfig(dialect, emitSource, intermediatePath, exportDeviceCode, isCheckedBuild,
-                    targetLimits);
+                    targetLimits)
+                {
+                    ManagedBarrierModel = managedBarrierModel
+                };
             });
 
         // The wrappers take only the module name from the compilation, so this value compares equal across edits and
@@ -249,7 +268,16 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
             .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
                 GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
-        var kernelModule = allKernels.Combine(configProvider.Select(static (config, _) => config.EmitSource))
+        // [WHY] The stack forms are made only under GSharpManagedBarrierModel=Stack; under the default the step returns
+        // nothing without reading the compilation, so the default build neither makes them nor can fail on them
+        var stackForms = context.CompilationProvider
+            .Combine(configProvider.Select(static (config, _) => config.ManagedBarrierModel))
+            .Select(static (input, cancellationToken) =>
+                ManagedStackFormCollector.Collect(input.Left, input.Right, cancellationToken))
+            .WithTrackingName(ManagedStackFormsTrackingName);
+        var kernelsWithStackForms = allKernels.Combine(stackForms)
+            .Select(static (input, _) => ManagedStackFormCollector.Attach(input.Left, input.Right));
+        var kernelModule = kernelsWithStackForms.Combine(configProvider.Select(static (config, _) => config.EmitSource))
             .Combine(allDevices).Combine(importedCode)
             .Select(static (input, _) => KernelModuleModel.Create(input.Left.Left.Left, input.Left.Left.Right,
                 CollectThrowSites(input.Left.Right, input.Right)));
@@ -261,8 +289,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // reference StackLinq; equal across edits that keep the references
         var referencesStackLinq = context.CompilationProvider
             .Select(static (compilation, _) => ReferencesAssembly(compilation, WrapperEmitter.StackLinqAssemblyName));
-        var stateMachines = allDevices
-            .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
+        var stateMachines = allDevices.Combine(stackForms)
+            .SelectMany(static (input, _) => GroupDeviceStateMachines(input.Left, input.Right.Devices));
+        context.RegisterSourceOutput(
+            stackForms.Select(static (forms, _) => forms.Failures).WithTrackingName(ManagedStackFailuresTrackingName),
+            static (spc, failures) => EmitManagedStackFailures(spc, failures));
 
         context.RegisterSourceOutput(
             allDevices.Combine(importedCode).Combine(configProvider).Combine(hasKernels)
@@ -503,20 +534,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cppBody = cppFailures.Apply(cppSource);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
+            var compilation = context.SemanticModel.Compilation;
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
             if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && bodyDeclaration.GetBodyNode() is { } body)
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
-                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
-                             context.SemanticModel.Compilation))
+                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
                 {
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
                 }
 
                 // Left out when it could not compile (ManagedStateMachineAvailability); the record says so
-                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, context.SemanticModel.Compilation))
+                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, compilation))
                 {
                     managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
                 }
@@ -529,7 +560,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
-            var compilation = context.SemanticModel.Compilation;
             // A frame narrower than external callers is run from other assemblies through its entries, which have the
             // accessibility of the function (#1884, #1991, #1845)
             var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
@@ -937,9 +967,59 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
+        var includeStack = config.ManagedBarrierModel == ManagedBarrierModel.Stack &&
+                           !group.StackSources.IsDefaultOrEmpty;
+        if (group.Sources.IsDefaultOrEmpty && !includeStack)
+        {
+            return;
+        }
+
+        IEnumerable<string> sources = includeStack
+            ? ConcatSources(group.Sources, group.StackSources)
+            : group.Sources;
+
         context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources, referencesStackLinq),
+            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, sources, referencesStackLinq),
                 Encoding.UTF8));
+    }
+
+    // The functions that run as state machines under GSharpManagedBarrierModel=Stack because their stack form could not
+    // be made, one comment line each (ManagedStackFormCollector); nothing when every form was made
+    private static void EmitManagedStackFailures(SourceProductionContext context, EquatableArray<string> failures)
+    {
+        if (failures.IsDefaultOrEmpty)
+        {
+            return;
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendGeneratedFileHeader(enableNullable: false);
+        writer.AppendLine("// G#: these functions run as state machines: their stack form could not be made");
+        foreach (var failure in failures)
+        {
+            writer.Append("// ");
+            foreach (var c in failure)
+            {
+                writer.Append(c is '\r' or '\n' ? ' ' : c);
+            }
+
+            writer.AppendLine();
+        }
+
+        context.AddSource(ManagedStackFailuresHintName, SourceText.From(writer.ToString(), Encoding.UTF8));
+    }
+
+    private static IEnumerable<string> ConcatSources(EquatableArray<string> first, EquatableArray<string> second)
+    {
+        foreach (var source in first)
+        {
+            yield return source;
+        }
+
+        foreach (var source in second)
+        {
+            yield return source;
+        }
     }
 
     private static bool ReferencesAssembly(Compilation compilation, string assemblyName)
@@ -978,32 +1058,49 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     // Keyed by the hint name, which identifies the class (#472)
     private static ImmutableArray<DeviceStateMachineGroup> GroupDeviceStateMachines(
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
+        EquatableArray<ManagedStackDeviceForm> stackForms)
     {
         var sourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
+        var stackSourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
         var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
-        {
-            if (method.ManagedCSharpSource.Length == 0)
-            {
-                continue;
-            }
 
-            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var sources))
+        // The class's lists, created when the class first has a source
+        (ImmutableArray<string>.Builder Sources, ImmutableArray<string>.Builder StackSources) GetLists(
+            HostClassHeader header)
+        {
+            if (!sourcesByClass.TryGetValue(header.HintName, out var sources))
             {
                 sources = ImmutableArray.CreateBuilder<string>();
-                sourcesByClass[method.Class.HintName] = sources;
-                classOrder.Add(method.Class);
+                sourcesByClass[header.HintName] = sources;
+                stackSourcesByClass[header.HintName] = ImmutableArray.CreateBuilder<string>();
+                classOrder.Add(header);
             }
 
-            sources.Add(method.ManagedCSharpSource);
+            return (sources, stackSourcesByClass[header.HintName]);
+        }
+
+        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
+        {
+            if (method.ManagedCSharpSource.Length > 0)
+            {
+                GetLists(method.Class).Sources.Add(method.ManagedCSharpSource);
+            }
+        }
+
+        foreach (var form in stackForms)
+        {
+            GetLists(form.Class).StackSources.Add(form.Source);
         }
 
         var groups = ImmutableArray.CreateBuilder<DeviceStateMachineGroup>(classOrder.Count);
         classOrder
             .AsStackEnumerable()
-            .Select(sourcesByClass, static (header, sources) =>
-                new DeviceStateMachineGroup(header, sources[header.HintName].ToImmutable().AsEquatableArray()))
+            .Select((sourcesByClass, stackSourcesByClass), static (header, state) =>
+                new DeviceStateMachineGroup(
+                    header,
+                    state.sourcesByClass[header.HintName].ToImmutable().AsEquatableArray(),
+                    state.stackSourcesByClass[header.HintName].ToImmutable().AsEquatableArray()))
             .AddTo(groups);
         return groups.MoveToImmutable();
     }

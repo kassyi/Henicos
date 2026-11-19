@@ -10,6 +10,7 @@ internal static class CSharpExecutionEmitter
     private const string GpuExecutionType = "global::Kassyi.GSharp.Runtime.GpuExecution";
     private const string KernelExecutionType = "global::Kassyi.GSharp.Runtime.KernelExecution";
     private const string RunnerType = "global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner";
+    private const string StackRunnerType = "global::Kassyi.GSharp.Runtime.Aot.ManagedStackRunner";
     private const string ThreadParameter = GSharpInternalNames.Launcher.CSharpThread;
     private const string AutoResult = GSharpInternalNames.ReturnValue.Buffer;
     private const string Result = GSharpInternalNames.Launcher.CSharpResult;
@@ -60,8 +61,18 @@ internal static class CSharpExecutionEmitter
         }
 
         WriteCopies(writer, plan);
-        WritePinnedRun(writer, plan, asManagedFallback);
+        var run = asManagedFallback ? "RunAsManagedFallback" : "Run";
+        WritePinnedRun(writer, plan, $"{RunnerType}.{run}({LaunchDimensions}");
         writer.AppendLine(plan.ReturnsValue ? $"return {AutoResult};" : "return;");
+    }
+
+    /// <summary>
+    /// Writes the argument copies, fixed pins and <c>ManagedStackRunner.Run(...)</c> call of <paramref name="plan"/>.
+    /// </summary>
+    public static void WriteStackRun(SourceWriter writer, in CSharpExecutionPlan plan, string kernelNameLiteral)
+    {
+        WriteCopies(writer, plan);
+        WritePinnedRun(writer, plan, $"{StackRunnerType}.Run({LaunchDimensions}, sharedMemBytes, {kernelNameLiteral}");
     }
 
     // [<return type>[] __gsharp_csharp_result = __gsharp_auto_result;]
@@ -86,7 +97,7 @@ internal static class CSharpExecutionEmitter
     // [WHY] A lambda can capture neither a span nor a fixed local; it captures a copy of the pointer, which stays valid
     // while the caller waits in the fixed statement for the run to end. The pinned reference is null only for a span
     // over no array, so a span over an empty array stays one (fixed (T* p = <span>) would make it default)
-    private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan, bool asManagedFallback)
+    private static void WritePinnedRun(SourceWriter writer, in CSharpExecutionPlan plan, string runnerCall)
     {
         var pins = 0;
         foreach (var argument in plan.Arguments)
@@ -115,17 +126,14 @@ internal static class CSharpExecutionEmitter
                 }
             }
 
-            WriteRun(writer, plan, asManagedFallback);
+            WriteRun(writer, plan, runnerCall);
         }
     }
 
-    // CSharpKernelRunner.Run(gridDimX, ..., blockDimZ,
-    //     __gsharp_csharp_thread => [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
-    // (RunAsManagedFallback for the managed fallback)
-    private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan, bool asManagedFallback)
+    // <runnerCall>, __gsharp_csharp_thread => [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
+    private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan, string runnerCall)
     {
-        var run = asManagedFallback ? "RunAsManagedFallback" : "Run";
-        writer.Append($"{RunnerType}.{run}({LaunchDimensions}, {ThreadParameter} => ");
+        writer.Append($"{runnerCall}, {ThreadParameter} => ");
         writer.AppendIf(plan.ReturnsValue, $"{Result}[{ThreadParameter}] = ");
         writer.Append(plan.Method);
         using (writer.Parentheses())

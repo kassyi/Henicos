@@ -7,6 +7,16 @@ internal sealed partial class ManagedExecutionRewriter
     // __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
+        if (bodyKind == ManagedBodyKind.StackBody &&
+            semanticModel.GetSymbol(node) is IMethodSymbol method &&
+            SyncIntrinsicClassifier.Classify(method).Kind == SyncIntrinsicKind.BlockBarrier)
+        {
+            // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier()
+            return SyntaxFactory.InvocationExpression(
+                ManagedNames.CreateMemberAccess(GSharpInternalNames.StackModel.BlockBarrier)
+            ).WithTriviaFrom(node);
+        }
+
         if (node.Expression is not IdentifierNameSyntax
             {
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall

@@ -113,7 +113,8 @@ internal readonly record struct KernelClassModel(
                 kernel.CppSource,
                 kernel.ManagedCSharpSource,
                 kernel.InternalError,
-                kernelSites));
+                kernelSites,
+                kernel.ManagedStackSource));
 
             foreach (var s in kernel.Host.Structs)
             {

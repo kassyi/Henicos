@@ -155,6 +155,17 @@ jobs:
           --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
           --blame-crash --blame-crash-dump-type mini
 
+      - name: Run CPU Managed Stack Model Tests
+        if: matrix.suite == 'cpu'
+        env:
+          GSHARP_TEST_NO_CUDA: "1"
+        run: >-
+          dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
+          -c Release -p:GSharpOutputVariant=managed-stack -p:GSharpManagedBarrierModel=Stack
+          --filter "FullyQualifiedName~StackModelTests|FullyQualifiedName~DeviceFunctionBarrierManagedTests|FullyQualifiedName~DeviceFunctionBarrierEdgeCaseManagedTests|FullyQualifiedName~ResumeLocalManagedTests|FullyQualifiedName~SuspendingValueParameterManagedTests|FullyQualifiedName~KernelValueParameterManagedTests|FullyQualifiedName~SuspendingCallArgumentTests|FullyQualifiedName~SwitchSuspensionManagedTests|FullyQualifiedName~LocalFunctionAcrossStatesManagedTests|FullyQualifiedName~EvaluationOrderSplitManagedTests|FullyQualifiedName~SharedMemoryRegionManagedTests|FullyQualifiedName~DeviceDynamicSharedMemoryManagedTests|FullyQualifiedName~ManagedExecutionTests|FullyQualifiedName~BlockBarrierStepTests|FullyQualifiedName~GridSyncManagedTests"
+          --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+          --blame-crash --blame-crash-dump-type mini
+
       # Runs after the other test steps, also when one of them failed (the job still fails), but not without a build
       - name: Run MSBuild Integration Tests
         if: ${{ matrix.suite == 'rest' && !cancelled() && steps.build.outcome == 'success' }}

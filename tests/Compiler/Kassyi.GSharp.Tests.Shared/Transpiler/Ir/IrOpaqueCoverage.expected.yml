@@ -393,6 +393,8 @@
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.LocalsOnly", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.LoggingUsing", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.QuietUsing", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.PassesStackExtensionGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "InstanceEligibilityTarget.CallsInstanceDeviceFunction", node: "expression", reason: "UnsupportedShape", operation: "ObjectCreation", syntax: "ObjectCreationExpression", detail: "class", count: 1}
 - {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.DoubleSumSelector", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleLambdaExpression", count: 1}
 - {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.PassesExtensionMethodGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
 - {file: "TestCases/Analysis/ManagedVersionCases.cs", method: "Functions.PassesGenericExtensionMethodGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
@@ -1126,6 +1128,8 @@
 - {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", node: "expression", reason: "UnsupportedOperation", operation: "Tuple", syntax: "TupleExpression", count: 1}
 - {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", node: "expression", reason: "UnsupportedOperation", operation: "TypeOf", syntax: "TypeOfExpression", count: 2}
 - {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", node: "expression", reason: "UnsupportedShape", operation: "IsPattern", syntax: "IsPatternExpression", count: 1}
+- {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.Inner", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "IdentifierName", count: 1}
+- {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.PassesSuspendingGroupKernel", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "IdentifierName", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.IteratorKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.LoopKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.StackKernel", node: "expression", reason: "UnsupportedOperation", operation: "None", syntax: "ElementAccessExpression", count: 2}

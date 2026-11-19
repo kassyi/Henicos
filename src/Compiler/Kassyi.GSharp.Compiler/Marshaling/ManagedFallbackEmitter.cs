@@ -35,7 +35,8 @@ internal static class ManagedFallbackEmitter
     /// Emits <c>if (CpuKernelLoader.ShouldUseManagedExecution(dllPath)) { &lt;run the grid&gt;; return; }</c>, after the
     /// launcher has declared <c>dllPath</c>.
     /// </summary>
-    public static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel)
+    public static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel,
+        bool useStack = false)
     {
         writer.AppendLine(
             $"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution({DllPath}))");
@@ -50,6 +51,12 @@ internal static class ManagedFallbackEmitter
                     writer.AppendLine(
                         $"throw new global::System.NotSupportedException({Literal(kernel.ManagedUnavailableReason)});");
                     return;
+            }
+
+            if (useStack)
+            {
+                ManagedStackLaunchEmitter.Write(writer, kernel);
+                return;
             }
 
             WriteManagedContextAllocation(writer, kernel);
