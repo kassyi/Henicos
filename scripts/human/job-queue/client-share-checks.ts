@@ -16,11 +16,12 @@ import { FakeHost, FakeScheduler, quietly, until } from "./self-test-client.ts";
 
 type AssertModule = typeof Assert;
 
-/** A plugin that answers "shared" for every command that asks for the GPU, and nothing else. */
+/** A plugin that answers "shared" for every command that asks for the GPU, and names a chat session for every job. */
 const SharingPlugin: QueuePlugin = {
   name: "sharing",
   apiVersion: PluginApiVersion,
   classify: (_command, resource) => (resource?.name === "gpu" ? { share: "shared" } : undefined),
+  session: () => "chat-of-the-plugin",
 };
 
 function sharingHost(): PluginHost {
@@ -120,6 +121,11 @@ async function checkTurnShare(assert: AssertModule): Promise<void> {
       [plain.registration.type, plain.registration.resource, plain.registration.share],
       ["request", "gpu", "shared"],
       "the turn asks for the share its plugins classify, for the GPU",
+    );
+    assert.strictEqual(
+      plain.registration.session,
+      "chat-of-the-plugin",
+      "the registration carries the plugins' session",
     );
     assert.deepStrictEqual([plain.mode, plain.turn], ["exclusive", 30], "no echo: the lock is exclusive");
     const echoed = await lockModeAfterGrant(scheduler, 1, runOptions(), "shared");

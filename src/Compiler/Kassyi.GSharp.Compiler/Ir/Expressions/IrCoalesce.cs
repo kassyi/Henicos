@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>A null-coalescing expression <c>a ?? b</c>.</summary>
@@ -37,4 +39,11 @@ internal sealed class IrCoalesce(IrExpression value, IrExpression whenNull, IrCo
         uniformity == Uniformity
             ? this
             : KeepSpelling(new IrCoalesce(Value, WhenNull, ValueConversion, Type, Category, Source, uniformity));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrCoalesceDecision Decided => GetDecision<IrCoalesceDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrCoalesce WithDecision(IrCoalesceDecision decision) =>
+        IrExpression.WithDecision<IrCoalesce>(this, decision);
 }

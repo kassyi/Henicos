@@ -30,7 +30,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.DivergentDynamicSharedMemory, // GSH0077
             GSharpDiagnostics.LaunchDependentDivergentBarrier, // GSH0083
             GSharpDiagnostics.BarrierAfterDivergentExit, // GSH0084
-            GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle // GSH0120
+            GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle, // GSH0120
+            GSharpDiagnostics.GotoToChainedLabelAcrossStates // GSH0121
         );
 
     public override void Initialize(AnalysisContext context)
@@ -206,7 +207,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     // Whether the project builds the native C++ and managed paths: every dialect but CUDA
-    private static bool BuildsCpuPaths(AnalyzerOptions options) =>
+    internal static bool BuildsCpuPaths(AnalyzerOptions options) =>
         !TranspilerDialects.IsCuda(TranspilerDialects.GetName(options.AnalyzerConfigOptionsProvider.GlobalOptions));
 
     // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the

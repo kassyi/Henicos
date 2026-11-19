@@ -25,7 +25,12 @@ internal static class IrDecisionKinds
         IrConditional => typeof(IrConditionalDecision),
         IrConstant => typeof(IrConstantDecision),
 
-        IrCall or IrElementReference or IrPropertyReference or IrNullTest or IrCoalesce or IrAssignment => null,
+        IrElementReference => typeof(IrElementDecision),
+        IrAssignment => typeof(IrAssignmentDecision),
+        IrNullTest => typeof(IrNullTestDecision),
+        IrCoalesce => typeof(IrCoalesceDecision),
+        IrPropertyReference => typeof(IrMemberDecision),
+        IrCall => typeof(IrCallDecision),
         IrFieldReference => null,
         IrAddressOf or IrArrayCreation or IrStructCreation => null,
         IrLogical => null,

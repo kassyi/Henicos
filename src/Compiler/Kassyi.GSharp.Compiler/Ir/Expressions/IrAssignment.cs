@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Ir.Decisions;
+
 namespace Kassyi.GSharp.Compiler.Ir.Expressions;
 
 /// <summary>A simple assignment <c>t = v</c>, or a ref assignment <c>t = ref v</c>.</summary>
@@ -24,4 +26,11 @@ internal sealed class IrAssignment(IrExpression target, IrExpression value, bool
         target == Target && value == Value
             ? this
             : KeepSpelling(new IrAssignment(target, value, IsRef, Type, Category, Source));
+
+    /// <summary>The decisions of the pass; an error before it ran.</summary>
+    public IrAssignmentDecision Decided => GetDecision<IrAssignmentDecision>();
+
+    /// <summary>This node with <paramref name="decision"/>.</summary>
+    public IrAssignment WithDecision(IrAssignmentDecision decision) =>
+        IrExpression.WithDecision<IrAssignment>(this, decision);
 }

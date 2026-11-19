@@ -58,7 +58,9 @@ intrinsics as follows:
   values the GPU may return ([Semantics Charter §6.5](06_semantics.md#65-the-cpu-paths)).
 
 The CPU paths cannot split every shape into states. These forms are compile errors, reported for every dialect, except
-that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists:
+that a project built only for CUDA accepts a warp shuffle in the places that GSH0062 lists, and the jump that GSH0121
+lists in its kernels, and in its device functions too when it does not export its device code
+(`GSharpExportDeviceCode=false`):
 
 * [GSH0037](../03_bcl_api/diagnostics/GSH0037.md): a barrier in a lambda or a local function that the CPU dialects do
   not split.
@@ -74,6 +76,9 @@ that a project built only for CUDA accepts a warp shuffle in the places that GSH
   expression arm, a `when` clause, after `?.` or as the right operand of `??`.
 * [GSH0120](../03_bcl_api/diagnostics/GSH0120.md): in a method that reaches `Warp.ActiveMask()`, a `goto` that jumps
   from outside into the middle of a forward-goto range or a goto loop holding a warp collective or barrier.
+* [GSH0121](../03_bcl_api/diagnostics/GSH0121.md): a `goto` to a label written right after another label
+  (`second` in `first: second: s`) from another state: across a warp collective, a grid sync or a label that starts a
+  state (temporary; across a barrier or a call that suspends it is GSH0040).
 
 Other differences of the CPU paths:
 
@@ -211,6 +216,7 @@ examples:
 | [**GSH0117**](../03_bcl_api/diagnostics/GSH0117.md) | Error | SharedMemory<T> count must not be negative | Triggered when a `SharedMemory<T>` is created with a negative constant count. A count of 0 declares empty shared memory. |
 | [**GSH0119**](../03_bcl_api/diagnostics/GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates | Triggered on the CPU dialect when a body that the managed path must copy into a generated file (it suspends or holds a construct only the managed path rewrites, such as an integer division) names a file-local type; the managed launch of the kernel that needs the copy throws. |
 | [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop that holds a warp collective or barrier. |
+| [**GSH0121**](../03_bcl_api/diagnostics/GSH0121.md) | Error | A goto reaches the inner label of chained labels from another state | Triggered when a `goto` jumps to a label written right after another label from another state of the CPU state machine (across a warp collective, a grid sync or a label that starts a state; across a barrier or a call that suspends it is GSH0040). Temporary. |
 | [**GSH0122**](../03_bcl_api/diagnostics/GSH0122.md) | Error | Math.Clamp is called with a constant min greater than its constant max | Triggered when both bounds of a `Math.Clamp` call are constants and `min > max`, which throws `ArgumentException` in C# whenever the call runs. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |

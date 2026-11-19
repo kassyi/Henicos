@@ -41,59 +41,68 @@ internal sealed class StructLayoutRule :
         var parameters = node.ParameterList.Parameters;
         for (var i = 0; i < parameters.Count && i < method.Parameters.Length; i++)
         {
-            if (parameters[i].Type is not { } typeSyntax)
+            if (parameters[i].Type is { } typeSyntax)
             {
-                continue;
-            }
-
-            var marshaledType = GetMarshaledType(method.Parameters[i].Type, out var isArray);
-            var structType = AsUserStruct(marshaledType);
-            if (structType is not null &&
-                (ReportIfUnsupported(structType, typeSyntax, ref context) ||
-                 ReportInaccessibleFieldType(structType, typeSyntax, ref context)))
-            {
-                continue;
-            }
-
-            if (isArray)
-            {
-                if (HostShadowStructs.IsConverted(marshaledType, context.Dialect))
-                {
-                    ReportConverted(marshaledType, typeSyntax, ref context);
-                }
-
-                // [WHY] The CUDA launcher allocates and copies the array fields of each element; the CPU one pins them
-                if (structType is not null && context.Dialect.IsCuda &&
-                    TransferClassifier.TryFindArrayField(structType, out var arrayField))
-                {
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
-                        typeSyntax,
-                        TypeLayoutCalculator.FormatTypeName(structType),
-                        arrayField);
-                }
-            }
-            else if (structType is not null &&
-                     TryFindConvertedInlineArrayElement(structType, context.Dialect, depth: 0, out var element))
-            {
-                ReportConverted(element, typeSyntax, ref context);
+                AnalyzeParameter(method.Parameters[i].Type, typeSyntax, ref context);
             }
         }
 
         // The returned values come back as an array with one element per thread, converted like an array parameter's
         // (#704, #961). A managed return type is GSH0004 (KernelSignatureRule).
-        if (!method.ReturnType.IsUnmanagedType || node.ReturnType is not { } returnSyntax)
+        if (method.ReturnType.IsUnmanagedType && node.ReturnType is { } returnSyntax)
+        {
+            AnalyzeReturnValue(method.ReturnType, returnSyntax, ref context);
+        }
+    }
+
+    // A struct parameter, an array of structs, or a struct with an [InlineArray] of converted elements
+    private static void AnalyzeParameter(ITypeSymbol parameterType, TypeSyntax typeSyntax,
+        ref ValidationContext context)
+    {
+        var marshaledType = GetMarshaledType(parameterType, out var isArray);
+        var structType = AsUserStruct(marshaledType);
+        if (structType is not null &&
+            (ReportIfUnsupported(structType, typeSyntax, ref context) ||
+             ReportInaccessibleFieldType(structType, typeSyntax, ref context)))
         {
             return;
         }
 
-        var returnStruct = AsUserStruct(GetMarshaledType(method.ReturnType, out _));
+        if (isArray)
+        {
+            if (HostShadowStructs.IsConverted(marshaledType, context.Dialect))
+            {
+                ReportConverted(marshaledType, typeSyntax, ref context);
+            }
+
+            // [WHY] The CUDA launcher allocates and copies the array fields of each element; the CPU one pins them
+            if (structType is not null && context.Dialect.IsCuda &&
+                TransferClassifier.TryFindArrayField(structType, out var arrayField))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.StructArrayFieldAllocatedPerElement,
+                    typeSyntax,
+                    TypeLayoutCalculator.FormatTypeName(structType),
+                    arrayField);
+            }
+        }
+        else if (structType is not null &&
+                 TryFindConvertedInlineArrayElement(structType, context.Dialect, out var element))
+        {
+            ReportConverted(element, typeSyntax, ref context);
+        }
+    }
+
+    private static void AnalyzeReturnValue(ITypeSymbol returnType, TypeSyntax returnSyntax,
+        ref ValidationContext context)
+    {
+        var returnStruct = AsUserStruct(GetMarshaledType(returnType, out _));
         if ((returnStruct is null ||
              (!ReportIfUnsupported(returnStruct, returnSyntax, ref context) &&
               !ReportInaccessibleFieldType(returnStruct, returnSyntax, ref context))) &&
-            HostShadowStructs.IsConverted(method.ReturnType, context.Dialect))
+            HostShadowStructs.IsConverted(returnType, context.Dialect))
         {
-            ReportConverted(method.ReturnType, returnSyntax, ref context);
+            ReportConverted(returnType, returnSyntax, ref context);
         }
     }
 
@@ -191,21 +200,36 @@ internal sealed class StructLayoutRule :
         return true;
     }
 
-    private static void ReportConverted(ITypeSymbol type, SyntaxNode typeSyntax, ref ValidationContext context) =>
+    // [WHY] A struct that holds itself by value is CS0523, which no field order fixes, so the advice is left out
+    private static void ReportConverted(ITypeSymbol type, SyntaxNode typeSyntax, ref ValidationContext context)
+    {
+        var difference = TransferClassifier.DescribeLayoutDifference(type, context.Dialect, out var holdsItself);
         context.ReportDiagnostic(
             GSharpDiagnostics.StructArrayConvertedPerElement,
             typeSyntax,
             TypeLayoutCalculator.FormatTypeName(type),
-            TransferClassifier.DescribeLayoutDifference(type, context.Dialect));
+            difference,
+            holdsItself ? "" : " Reorder the fields or avoid array fields to transfer them as one block.");
+    }
 
     // The element of the first [InlineArray] in the struct, its nested structs included, that is converted element by
     // element
     private static bool TryFindConvertedInlineArrayElement(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        int depth, [NotNullWhen(true)] out INamedTypeSymbol? element)
+        [NotNullWhen(true)] out INamedTypeSymbol? element)
     {
-        const int MaxDepth = 16;
+        using var visits = StructVisits.Start();
+        return TryFindConvertedInlineArrayElement(structType, dialect, visits, out element);
+    }
+
+    // [WHY] Each struct is searched once (visits), also a struct that holds itself (CS0523) or arrays of itself
+    // several times; a larger construction of a generic struct that names itself stops there
+    // (GrowingGenericStructs), so the search ends without a depth bound, which would cut off what lies below a
+    // struct first met deep in the tree
+    private static bool TryFindConvertedInlineArrayElement(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        StructVisits visits, [NotNullWhen(true)] out INamedTypeSymbol? element)
+    {
         element = null;
-        if (depth > MaxDepth)
+        if (!visits.TryVisit(structType))
         {
             return false;
         }
@@ -224,7 +248,7 @@ internal sealed class StructLayoutRule :
                 return true;
             }
 
-            if (TryFindConvertedInlineArrayElement(nested, dialect, depth + 1, out element))
+            if (TryFindConvertedInlineArrayElement(nested, dialect, visits, out element))
             {
                 return true;
             }

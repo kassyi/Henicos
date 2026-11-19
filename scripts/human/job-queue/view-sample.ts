@@ -3,7 +3,9 @@
 // are the same on every run.
 
 import type { StatusJob, StatusReply } from "./protocol.ts";
-import type { ChatRecord, ChatView } from "./view-chats.ts";
+import type { ViewPanel } from "./plugin-api.ts";
+import { chatPanel } from "./plugins/agents/panel.ts";
+import type { ChatRecord, ChatView } from "./plugins/agents/view-chats.ts";
 
 export const Now = Date.UTC(2026, 10, 14, 5, 32, 0);
 export const Minute = 60 * 1000;
@@ -174,4 +176,9 @@ export function sampleChats(): ChatView {
       chat({ agent: "antigravity", state: "background", kind: null, since: Now - 8 * Minute }),
     ],
   };
+}
+
+/** The panel of the agents plugin showing `chats` (null: nothing read), as renderScreen takes it. */
+export function samplePanel(chats: ChatView | null): { view: ViewPanel; data: unknown } {
+  return { view: chatPanel(() => chats), data: chats };
 }

@@ -26,12 +26,19 @@ internal sealed class NullableGetValueOrDefaultRule : IInvocationTranspilerRule
     );
 
     /// <summary>
+    /// Whether a call of <paramref name="symbol"/> (with <paramref name="isMemberAccessCall"/> indicating member-access
+    /// syntax) is a call of <c>GetValueOrDefault</c> on <c>Nullable&lt;T&gt;</c>.
+    /// </summary>
+    internal static bool Claims(IMethodSymbol symbol, bool isMemberAccessCall) =>
+        symbol is { Name: MethodName, ContainingType.OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
+        isMemberAccessCall;
+
+    /// <summary>
     /// Whether <paramref name="node"/>, a call of <paramref name="symbol"/>, is a call of
     /// <c>GetValueOrDefault</c> on a receiver that this rule writes.
     /// </summary>
     public static bool Claims(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
-        symbol is { Name: MethodName, ContainingType.OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
-        node.Expression is MemberAccessExpressionSyntax;
+        Claims(symbol, node.Expression is MemberAccessExpressionSyntax);
 
     /// <inheritdoc />
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)

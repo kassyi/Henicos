@@ -31,38 +31,97 @@ internal static class AotArtifactWriter
         IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null,
         string? partitionJson = null)
     {
-        if (target.IsDesignTimeCompilation)
+        var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
+        var fileName = AotModuleNames.GetArtifactFileStem(target.ModuleName) + ext;
+        var files = new NativeModuleFiles(null, [new NativeModuleFile(fileName, bodySource, IncludeErrorSites: true)]);
+        Write(in target, config, files, context, findImportedFullName, errorSites, partitionJson);
+    }
+
+    /// <summary>
+    /// Writes the split or single-unit <paramref name="files"/> with sidecar <c>.gsym.json</c> files, optional
+    /// partition JSON, and the unit manifest, unless this is an IDE design-time compilation.
+    /// </summary>
+    public static void Write(in AotTarget target, GeneratorConfig config, NativeModuleFiles files,
+        SourceProductionContext context, Func<string, string?>? findImportedFullName = null,
+        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null,
+        string? partitionJson = null) =>
+        WriteCore(in target, config, files, context.ReportDiagnostic, findImportedFullName, errorSites, partitionJson);
+
+    /// <summary>
+    /// Writes <paramref name="files"/> and reports I/O failures through <paramref name="reportDiagnostic"/>.
+    /// </summary>
+    internal static void WriteCore(in AotTarget target, GeneratorConfig config, NativeModuleFiles files,
+        Action<Diagnostic> reportDiagnostic, Func<string, string?>? findImportedFullName = null,
+        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites = null,
+        string? partitionJson = null)
+    {
+        if (target.IsDesignTimeCompilation || config.IntermediateOutputPath is not { Length: > 0 } directory)
         {
             return;
         }
 
-        var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
-        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
-        var dialectName = config.IsCuda ? "Cuda" : "Cpu";
-        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName,
-            id => GlobalCppNames.TryGetFullName(id, out var full) ? full : findImportedFullName?.Invoke(id),
-            errorSites);
+        if (files.Units.IsDefaultOrEmpty)
+        {
+            throw new ArgumentException("At least one translation unit is required.", nameof(files));
+        }
 
+        var dialectName = config.IsCuda ? "Cuda" : "Cpu";
         var ext = config.IsCuda ? ".g.cu" : ".g.cpp";
         var stem = AotModuleNames.GetArtifactFileStem(target.ModuleName);
-        var fileName = stem + ext;
-        var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
-        if (string.IsNullOrEmpty(safeIntermediateOutputPath))
+
+        var fileCount = (files.Header.HasValue ? 2 : 0)
+            + files.Units.Length * 2
+            + (partitionJson is not null ? 1 : 0)
+            + 1;
+        var writeItems = new (string Path, string Content)[fileCount];
+        var itemIndex = 0;
+
+        if (files.Header is { } header)
         {
-            return;
+            var (sourceItem, symbolItem) = BuildArtifactPair(
+                directory, header, dialectName, findImportedFullName, errorSites);
+            writeItems[itemIndex++] = sourceItem;
+            writeItems[itemIndex++] = symbolItem;
         }
 
-        var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
-        var gsymFilePath = filePath + ".gsym.json";
-        var manifestPath = Path.Combine(safeIntermediateOutputPath, ManifestFileName);
-        var partitionPath = Path.Combine(safeIntermediateOutputPath, stem + ".partition.json");
+        using var manifestWriter = new SourceWriter();
+        foreach (var unit in files.Units)
+        {
+            var (sourceItem, symbolItem) = BuildArtifactPair(
+                directory, unit, dialectName, findImportedFullName, errorSites);
+            writeItems[itemIndex++] = sourceItem;
+            writeItems[itemIndex++] = symbolItem;
+            manifestWriter.Append(unit.FileName).Append('\n');
+        }
 
-        // The manifest goes last: when an earlier write fails, the manifest still names the source of the earlier build
-        // instead of a source that was not written
-        var manifest = (manifestPath, fileName + "\n");
-        WriteFiles(safeIntermediateOutputPath, context, partitionJson is null
-            ? [(filePath, fullSource), (gsymFilePath, gsymContent), manifest]
-            : [(filePath, fullSource), (gsymFilePath, gsymContent), (partitionPath, partitionJson), manifest]);
+        if (partitionJson is not null)
+        {
+            writeItems[itemIndex++] = (Path.Combine(directory, stem + ".partition.json"), partitionJson);
+        }
+
+        // The manifest goes last: when an earlier write fails, the manifest still names the sources of the earlier
+        // build instead of sources that were not written
+        writeItems[itemIndex] = (Path.Combine(directory, ManifestFileName), manifestWriter.ToString());
+
+        WriteFiles(directory, reportDiagnostic, writeItems, stem, ext, files);
+    }
+
+    private static ((string Path, string Content) Source, (string Path, string Content) SymbolFile) BuildArtifactPair(
+        string directory,
+        NativeModuleFile file,
+        string dialectName,
+        Func<string, string?>? findImportedFullName,
+        IReadOnlyList<GSharpNameEncoding.SymbolErrorSiteRecord>? errorSites)
+    {
+        var sourceHash = GSharpNameEncoding.ComputeSourceHash(file.BodySource);
+        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + file.BodySource;
+        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(
+            file.BodySource,
+            dialectName,
+            id => GlobalCppNames.TryGetFullName(id, out var full) ? full : findImportedFullName?.Invoke(id),
+            file.IncludeErrorSites ? errorSites : null);
+        var filePath = Path.Combine(directory, file.FileName);
+        return ((filePath, fullSource), (filePath + ".gsym.json", gsymContent));
     }
 
     /// <summary>
@@ -79,12 +138,24 @@ internal static class AotArtifactWriter
             return;
         }
 
-        WriteFiles(directory, context, (Path.Combine(directory, ManifestFileName), ""));
+        var stem = AotModuleNames.GetArtifactFileStem(target.ModuleName);
+        WriteFiles(
+            directory,
+            context.ReportDiagnostic,
+            [(Path.Combine(directory, ManifestFileName), "")],
+            stem: stem,
+            removePartitionFile: true);
     }
 
-    // Writes the files in order and stops at the first failure, which it reports as an info diagnostic naming that file
-    private static void WriteFiles(string directory, SourceProductionContext context,
-        params (string Path, string Content)[] files)
+    // Writes the files in order, deletes any stale split or partition files when requested, and stops at first failure
+    private static void WriteFiles(
+        string directory,
+        Action<Diagnostic> reportDiagnostic,
+        (string Path, string Content)[] files,
+        string stem = "",
+        string ext = "",
+        NativeModuleFiles? splitFiles = null,
+        bool removePartitionFile = false)
     {
         var currentPath = files[0].Path;
 #pragma warning disable RS1035 // Do not do file IO in analyzers
@@ -103,6 +174,16 @@ internal static class AotArtifactWriter
                     File.WriteAllText(path, content);
                 }
             }
+
+            if (splitFiles is not null)
+            {
+                CleanStaleSplitFiles(directory, stem, ext, splitFiles, ref currentPath);
+            }
+
+            if (removePartitionFile)
+            {
+                DeleteIfExists(Path.Combine(directory, stem + ".partition.json"), ref currentPath);
+            }
         }
         catch (Exception ex)
         {
@@ -112,10 +193,60 @@ internal static class AotArtifactWriter
                 Location.None,
                 currentPath,
                 ex.Message);
-            context.ReportDiagnostic(diagnostic);
+            reportDiagnostic(diagnostic);
         }
 #pragma warning restore RS1035
     }
+
+#pragma warning disable RS1035 // Do not do file IO in analyzers
+    private static void CleanStaleSplitFiles(
+        string directory,
+        string stem,
+        string ext,
+        NativeModuleFiles splitFiles,
+        ref string currentPath)
+    {
+        if (splitFiles.Header is null)
+        {
+            var staleHeaderPath = Path.Combine(directory, stem + ".g.hpp");
+            DeleteIfExists(staleHeaderPath, ref currentPath);
+            DeleteIfExists(staleHeaderPath + ".gsym.json", ref currentPath);
+        }
+
+        for (var i = Math.Max(1, splitFiles.Units.Length); ; i++)
+        {
+            var staleUnitPath = Path.Combine(directory, $"{stem}.{i}{ext}");
+            var staleSymbolPath = staleUnitPath + ".gsym.json";
+            var unitExists = File.Exists(staleUnitPath);
+            var symbolExists = File.Exists(staleSymbolPath);
+            if (!unitExists && !symbolExists && i >= NativeModulePartitioner.MaxUnits)
+            {
+                break;
+            }
+
+            if (unitExists)
+            {
+                currentPath = staleUnitPath;
+                File.Delete(staleUnitPath);
+            }
+
+            if (symbolExists)
+            {
+                currentPath = staleSymbolPath;
+                File.Delete(staleSymbolPath);
+            }
+        }
+    }
+
+    private static void DeleteIfExists(string path, ref string currentPath)
+    {
+        if (File.Exists(path))
+        {
+            currentPath = path;
+            File.Delete(path);
+        }
+    }
+#pragma warning restore RS1035
 
 #pragma warning disable RS1035 // Do not do file IO in analyzers
     private static bool HasSameContent(string path, string content)

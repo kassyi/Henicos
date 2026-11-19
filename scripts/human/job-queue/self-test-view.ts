@@ -15,6 +15,7 @@ import {
   fit,
   helpLines,
   initialViewState,
+  panelJobs,
   renderScreen,
   screenJobs,
   shortCommand,
@@ -25,8 +26,8 @@ import {
 } from "./view.ts";
 import { describeResult, reduceKey, splitKeys } from "./watch.ts";
 import { Campbell, CellWidth, LineHeight, Padding, Screenshots, terminalSvg, writeScreenshots } from "./screenshot.ts";
-import { Minute, Now, job, sampleReply } from "./view-sample.ts";
-import { checkChats } from "./self-test-chats.ts";
+import { Minute, Now, job, samplePanel, sampleReply } from "./view-sample.ts";
+import { chatLegend } from "./plugins/agents/view-chats.ts";
 
 const plain = (lines: string[]): string[] => lines;
 
@@ -524,7 +525,8 @@ function checkPauseKey(): void {
 /** The help: keys and legend side by side when they fit, else one per page; the samples in their screen colors. */
 function checkHelp(): void {
   const plainText = (lines: { text: string }[]): string[] => lines.map((line) => line.text);
-  const wide = plainText(helpLines(100));
+  const chatPart = chatLegend(null); // the legend the agents plugin adds
+  const wide = plainText(helpLines(100, chatPart));
   assert.match(wide[0] ?? "", /^ Keys +Timeline/, "both columns on one screen");
   assert.ok(
     wide.some((line) => /^ c +cancel it \(y\/n\) +█ +past its usual run time/.test(line)),
@@ -535,7 +537,7 @@ function checkHelp(): void {
     "the wait reasons are listed",
   );
   wide.forEach((line) => assert.ok(displayWidth(line) <= 100, `fits 100 columns: ${line}`));
-  const narrow = plainText(helpLines(70));
+  const narrow = plainText(helpLines(70, chatPart));
   const blank = narrow.findIndex((line) => line.trim() === "");
   assert.ok(blank > 0 && narrow.slice(0, blank).some((line) => /^ q +quit/.test(line)), "the keys first");
   assert.match(narrow[blank + 1] ?? "", /^ Timeline/, "then the legend");
@@ -544,15 +546,15 @@ function checkHelp(): void {
   const reply = sampleReply();
   const small = { columns: 70, rows: 13, now: Now };
   const state = { ...initialViewState(), help: 1 };
-  const first = plain(renderScreen(reply, state, small, false));
+  const first = plain(renderScreen(reply, state, small, false, samplePanel(null)));
   assert.strictEqual(state.helpPages, Math.ceil(narrow.length / 9));
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
-  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false));
+  const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false, samplePanel(null)));
   assert.ok(
     last.some((line) => /#n +a job it queued/.test(line)),
     "the last page ends the legend",
   );
-  const colored = helpLines(100).map((line) => line.render(true));
+  const colored = helpLines(100, chatPart).map((line) => line.render(true));
   assert.ok(
     colored.some((line) => line.includes("\x1b[31m█\x1b[0m")),
     "the late sample is red, as on the timeline",
@@ -683,6 +685,28 @@ function checkScreenshots(plugins: ShortNameProvider): void {
   }
 }
 
+/** The jobs handed to the panel: the worktree, or the directory when an older scheduler sends no worktree. */
+function checkPanelJobs(): void {
+  const jobs = screenJobs({
+    ...sampleReply(),
+    running: [],
+    waiting: [
+      job(1, { cwd: "here/sub", worktree: "here" }),
+      job(2, { cwd: "older/sub", worktree: undefined, session: "chat-b" }),
+    ],
+  });
+  assert.deepStrictEqual(
+    panelJobs(jobs)
+      .filter((panelJob) => panelJob.id <= 2)
+      .map((panelJob) => [panelJob.id, panelJob.worktree, panelJob.cwd, panelJob.session]),
+    [
+      [1, "here", "here/sub", undefined],
+      [2, "older/sub", "older/sub", "chat-b"],
+    ],
+    "an older scheduler's job falls back to its directory",
+  );
+}
+
 export async function checkView(): Promise<void> {
   const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
   const plugins = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
@@ -697,6 +721,6 @@ export async function checkView(): Promise<void> {
   checkKeys();
   checkGpuPairsAndReasons();
   checkSharedView();
-  checkChats();
+  checkPanelJobs();
   checkScreenshots(plugins);
 }

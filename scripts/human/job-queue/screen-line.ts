@@ -3,6 +3,9 @@
 
 export type Style = "" | "bold" | "dim" | "run" | "rest" | "late" | "wait" | "gpu" | "warn" | "now";
 
+/** A line of the help legend: a heading, or a sample drawn in its screen style and what it means. */
+export type LegendEntry = { heading: string } | { sample: string; style: Style; text: string };
+
 const StyleCodes: Record<Exclude<Style, "">, string> = {
   bold: "1",
   dim: "2",
