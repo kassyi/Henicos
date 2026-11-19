@@ -379,6 +379,18 @@ const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   ['gsharp_cuda_trap_tests=1 dotnet test X --filter "Name~Foo"', "exclusive"],
   ['dotnet test X --filter "Name~Foo" -e gsharp_cuda_trap_tests=1', "exclusive"],
   ['dotnet test X --filter "Name~Foo" -e "GSHARP_CUDA_""TRAP_TESTS=1"', "exclusive"],
+  [`dotnet test X --filter "${Kept}" -e GSHARP_CUDA_\\TRAP_TESTS=1`, "exclusive"],
+  // A variable set under a name a variable makes
+  [`export $V=1; dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`export \${P}TRAP_TESTS=1; dotnet test X --filter "${Kept}"`, "exclusive"],
+  [`export A=1; dotnet test X --filter "${Kept}"`, "shared"],
+  // A test case filter spelled another way: it may pick the tests the --filter keeps out
+  [`dotnet test X --filter "${Kept}" -p:VSTestTestCaseFilter=FullyQualifiedName~PoolStressTests`, "exclusive"],
+  [
+    `dotnet test X --filter "${Kept}" -- RunConfiguration.TestCaseFilter=FullyQualifiedName~PoolStressTests`,
+    "exclusive",
+  ],
+  ["just test -- RunConfiguration.TestCaseFilter=FullyQualifiedName~PoolStressTests", "exclusive"],
 ];
 
 /** Checks 3 to 7 of the share rules: the table, the environment, the plugin options. */

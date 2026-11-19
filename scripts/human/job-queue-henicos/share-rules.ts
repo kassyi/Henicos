@@ -40,7 +40,8 @@ export function shareOptions(options: Readonly<Record<string, unknown>>): ShareO
 
 /**
  * The values of the --filter options of a step (`--filter v`, `--filter=v`; "" for a --filter without a value), or null
- * when the step has another spelling of a filter (`--filter:v`, `/TestCaseFilter:v`) that this does not read.
+ * when the step has another spelling of a filter that this does not read (`--filter:v`, any word that names a test
+ * case filter: `/TestCaseFilter:v`, `-p:VSTestTestCaseFilter=v`, `RunConfiguration.TestCaseFilter=v`).
  */
 function filtersOf(words: readonly string[]): string[] | null {
   const filters: string[] = [];
@@ -51,7 +52,7 @@ function filtersOf(words: readonly string[]): string[] | null {
       i++;
     } else if (word.startsWith("--filter=")) {
       filters.push((words[i] as string).slice("--filter=".length));
-    } else if (word.startsWith("--filter") || word.startsWith("/testcasefilter")) {
+    } else if (word.startsWith("--filter") || word.includes("testcasefilter")) {
       return null;
     }
   }
@@ -118,9 +119,20 @@ function isPlainAssignment(words: readonly string[]): boolean {
   return (words.length === 1 && words[0]?.includes("=") === true) || (words.length === 3 && words[1] === "=");
 }
 
-/** A step whose words are not what runs (a variable the shell expands), or that runs something a variable names. */
+/** A word that assigns to a name a variable makes (`$V=1`, `${P}X=1`): which variable it sets is not known. */
+function assignsHiddenName(word: string): boolean {
+  return word.slice(0, Math.max(0, word.indexOf("="))).includes("$");
+}
+
+/**
+ * A step whose words are not what runs (a variable the shell expands), that runs something a variable names, or that
+ * sets a variable whose name a variable makes (`export $V=1`, also in a step that does no work).
+ */
 function isHidden(step: ReadStep, expands: boolean): boolean {
-  return step.words[0]?.startsWith("$") === true ? !isPlainAssignment(step.words) : expands && !isTrivialStep(step);
+  if (step.words[0]?.startsWith("$") === true) {
+    return !isPlainAssignment(step.words);
+  }
+  return (expands && !isTrivialStep(step)) || step.words.some(assignsHiddenName);
 }
 
 /** A set variable counts unless it is empty or "0"; names compare in any case, as Windows reads them. */
@@ -166,11 +178,12 @@ export function shareOf(command: string, context: ClientContext): ShareMode | un
   ) {
     return "exclusive";
   }
-  // 4 and 5. No exclusive variable named in the command (its text, and its words without quotes) or set in the
-  // environment, in any case
+  // 4 and 5. No exclusive variable named in the command (its text, and its words without quotes and without the `\`
+  // escapes of bash) or set in the environment, in any case
   const words = line.steps
     .flatMap((step) => step.words)
     .join(" ")
+    .replaceAll("\\", "")
     .toLowerCase();
   const named = (name: string): boolean => lower.includes(name.toLowerCase()) || words.includes(name.toLowerCase());
   if (options.exclusiveEnv.some((name) => named(name) || isSet(context.env, name))) {
