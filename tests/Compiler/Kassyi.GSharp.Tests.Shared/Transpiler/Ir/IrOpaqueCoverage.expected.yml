@@ -1144,6 +1144,18 @@
 - {file: "TestCases/Generator/MutantSwitches_Original.cs", method: "Kernels.Range", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Generator/MutantSwitches_Original.cs", method: "Kernels.SwitchKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generator/SadPathDiagnostics.cu.cs", method: "ErrorSpecKernel.BadKernel", node: "expression", reason: "UnsupportedShape", operation: "ObjectCreation", syntax: "ObjectCreationExpression", detail: "class", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedBuilderKernel", node: "expression", reason: "UnsupportedOperation", operation: "CollectionExpression", syntax: "CollectionExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedLambdaKernel", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleLambdaExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedLambdaKernel", node: "expression", reason: "UnsupportedShape", operation: "Invocation", syntax: "InvocationExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedLocalFunctionKernel", node: "expression", reason: "UnsupportedShape", operation: "Invocation", syntax: "InvocationExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedLocalFunctionKernel", node: "statement", reason: "UnsupportedOperation", operation: "LocalFunction", syntax: "LocalFunctionStatement", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedMethodGroupKernel", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "IdentifierName", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedMethodGroupKernel", node: "expression", reason: "UnsupportedShape", operation: "Invocation", syntax: "InvocationExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedPinnableKernel", node: "statement", reason: "UnsupportedOperation", operation: "None", syntax: "FixedStatement", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedTruthTestKernel", node: "expression", reason: "UnsupportedShape", operation: "Binary", syntax: "LogicalAndExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.MarkedKernel", node: "expression", reason: "Invalid", operation: "Binary", syntax: "AddExpression", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Sum", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "DefineKernels.IteratorKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generators/ConditionalCallIterators.cs", method: "CallIterators.Values", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 1}

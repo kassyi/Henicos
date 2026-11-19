@@ -129,8 +129,76 @@ internal static class DeviceImportAssembler
         AppendFunctionBodies(source, functions, isCuda);
 
         return new ImportedDeviceCode(source.ToString(), CollectIncludes(structs, functions, isCuda),
-            CollectFullNames(structs, functions), CollectErrorSites(functions));
+            CollectFullNames(structs, functions), CollectErrorSites(functions),
+            CollectCalls(records, byName, reached, isCuda));
     }
+
+    /// <summary>
+    /// <paramref name="names"/> with the functions of other assemblies that they reach through the placed records: what
+    /// an imported function calls in its own assembly, which the module's own call graph does not see.
+    /// </summary>
+    public static EquatableArray<string> ExtendReach(EquatableArray<string> names,
+        EquatableArray<(string Name, string Callee)> calls)
+    {
+        if (names.IsDefaultOrEmpty || calls.IsDefaultOrEmpty)
+        {
+            return names;
+        }
+
+        var reached = new SortedSet<string>(names, StringComparer.Ordinal);
+        var pending = new Stack<string>(names);
+        while (pending.Count > 0)
+        {
+            var name = pending.Pop();
+            foreach (var (caller, callee) in calls)
+            {
+                if (string.Equals(caller, name, StringComparison.Ordinal) && reached.Add(callee))
+                {
+                    pending.Push(callee);
+                }
+            }
+        }
+
+        return reached.Count == names.Length ? names : reached.ToImmutableArray().AsEquatableArray();
+    }
+
+    // Each name of a placed record with each function name that its text refers to and that a placed record defines,
+    // looked up as Reach looks it up; the name of a struct type is not a function
+    private static EquatableArray<(string Name, string Callee)> CollectCalls(
+        EquatableArray<ImportedDeviceRecord> records, Dictionary<string, ImmutableArray<int>.Builder> byName,
+        HashSet<int> reached, bool isCuda)
+    {
+        var calls = ImmutableArray.CreateBuilder<(string Name, string Callee)>();
+        foreach (var index in reached)
+        {
+            var record = records[index];
+            foreach (var reference in record.Record.GetDialect(isCuda).References)
+            {
+                if (!byName.TryGetValue(reference, out var indices))
+                {
+                    continue;
+                }
+
+                var callee = Choose(records, indices, record.AssemblyName);
+                if (!reached.Contains(callee) || IsStructTypeName(records[callee].Record, reference))
+                {
+                    continue;
+                }
+
+                calls.Add((record.Record.Names.CppName, reference));
+                record.Record.Names.DefinedNames
+                    .AsStackEnumerable()
+                    .Select(reference, static (name, called) => (name, called))
+                    .AddTo(calls);
+            }
+        }
+
+        return calls.ToImmutable().AsEquatableArray();
+    }
+
+    private static bool IsStructTypeName(DeviceExportRecord record, string name) =>
+        record.Kind == DeviceExportRecord.StructKind &&
+        string.Equals(record.Names.CppName, name, StringComparison.Ordinal);
 
     // The sites of the throws of the placed functions, in the order of the functions
     private static EquatableArray<ErrorSiteEntry> CollectErrorSites(ImmutableArray<DeviceExportRecord>.Builder functions)

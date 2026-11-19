@@ -9,11 +9,16 @@ namespace Kassyi.GSharp.Compiler.Aot;
 /// <param name="ErrorSites">
 /// The error sites of the <c>throw</c> statements of the imported functions, which the module registers with its kernels.
 /// </param>
+/// <param name="Calls">
+/// The function names that each name of a placed record calls among the placed records (each name of a struct record
+/// stands for all of its members), for the spill warnings (<see cref="DeviceImportAssembler.ExtendReach"/>).
+/// </param>
 internal readonly record struct ImportedDeviceCode(
     string Source,
     EquatableArray<string> Includes,
     EquatableArray<(string Name, string FullName)> FullNames,
-    EquatableArray<ErrorSiteEntry> ErrorSites = default)
+    EquatableArray<ErrorSiteEntry> ErrorSites = default,
+    EquatableArray<(string Name, string Callee)> Calls = default)
 {
     /// <summary>The full name of <paramref name="name"/>, when it is an imported name that was shortened.</summary>
     public string? FindFullName(string name)
