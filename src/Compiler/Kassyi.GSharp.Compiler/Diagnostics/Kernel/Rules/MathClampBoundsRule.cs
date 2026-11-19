@@ -75,14 +75,16 @@ internal sealed class MathClampBoundsRule : ISyntaxValidationRule<InvocationExpr
         _ => false
     };
 
-    // The text of a bound as C# source: an infinity has no literal, so the message names it by its constant, which the
-    // swapped example in the message then compiles with
+    // The text of a bound as C# source: an infinity has no literal, so the message names it by its constant, and a float
+    // bound carries the f suffix (without it the swapped example would pick the double overload), so that the swapped
+    // example in the message compiles
     private static string Format(object value) => value switch
     {
         double d when double.IsPositiveInfinity(d) => "double.PositiveInfinity",
         double d when double.IsNegativeInfinity(d) => "double.NegativeInfinity",
         float f when float.IsPositiveInfinity(f) => "float.PositiveInfinity",
         float f when float.IsNegativeInfinity(f) => "float.NegativeInfinity",
+        float f => f.ToString("R", CultureInfo.InvariantCulture) + "f",
         _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
     };
 }

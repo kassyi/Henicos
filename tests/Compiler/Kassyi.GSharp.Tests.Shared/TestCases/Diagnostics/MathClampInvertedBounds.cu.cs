@@ -47,5 +47,6 @@ public static partial class MathClampInvertedBoundsKernels
         int t = ThreadIndex.X;
         d[t] = Math.Clamp(d[t], double.PositiveInfinity, double.NegativeInfinity);
         f[t] = Math.Clamp(f[t], 0f, float.NegativeInfinity);
+        f[t] = Math.Clamp(f[t], 1f, 0.5f);
     }
 }
