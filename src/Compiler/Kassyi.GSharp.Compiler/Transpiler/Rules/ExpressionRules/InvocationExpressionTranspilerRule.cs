@@ -101,9 +101,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
 
         StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
-        var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
-                               !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&
-                               symbol.ContainingType?.HasAttribute(KnownAttributes.CudaIntrinsicPattern) != true;
+        var convertArguments = CallTargetClassifier.ConvertsArguments(symbol, context.Emitter.Dialect);
         var checks = PlanArgumentChecks(symbol, node.ArgumentList.Arguments, ref context);
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);
