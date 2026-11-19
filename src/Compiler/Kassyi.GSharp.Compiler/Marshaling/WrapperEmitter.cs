@@ -80,7 +80,6 @@ internal static class WrapperEmitter
             using static {ManagedNames.Context};
             """);
         writer.AppendLineIf(referencesStackLinq, "using global::Kassyi.ZeroAlloc.Linq;");
-        WriteExtensionImports(writer, header);
         writer.AppendLine(GeneratedCSharpWarningSuppressions);
         writer.AppendLine();
 
@@ -107,15 +106,6 @@ internal static class WrapperEmitter
         }
     }
 
-    // using static <class>; for each class whose extension calls a managed body keeps in their reduced form
-    private static void WriteExtensionImports(SourceWriter writer, in HostClassHeader header)
-    {
-        foreach (var import in header.ExtensionImports)
-        {
-            writer.AppendLine($"using static {import};");
-        }
-    }
-
     /// <summary>Emits the wrapper source of one kernel class.</summary>
     /// <param name="model">The kernels of the class.</param>
     /// <param name="config">The generator options.</param>
@@ -139,7 +129,6 @@ internal static class WrapperEmitter
             using static {ManagedNames.Context};
             using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteExtensionImports(writer, model.Class);
         writer.AppendLine(GeneratedCSharpWarningSuppressions);
 
         writer.AppendLine();

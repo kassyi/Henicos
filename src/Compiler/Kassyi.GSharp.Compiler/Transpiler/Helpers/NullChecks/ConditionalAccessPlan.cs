@@ -107,21 +107,27 @@ internal static class ConditionalAccess
             return (ConditionalReceiverKind.Unsupported, UnsupportedReceiver);
         }
 
-        // The value of the receiver is written without its type, so a member that the receiver's type maps (an array
-        // view's Count or Length, a vector's X) or an indexer of the value cannot be written
+        return GetNullableProblem(node, valueType) is { } problem
+            ? (ConditionalReceiverKind.Unsupported, problem)
+            : (ConditionalReceiverKind.Nullable, null);
+    }
+
+    // The value of a Nullable<T> receiver is written without its type, so a member that the receiver's type maps (an
+    // array view's Count or Length, a vector's X) or an indexer of the value cannot be written: the GSH0003 text, or
+    // null when the access can be written
+    private static string? GetNullableProblem(ConditionalAccessExpressionSyntax node, ITypeSymbol valueType)
+    {
         if (valueType.IsArrayLikeType())
         {
-            return (ConditionalReceiverKind.Unsupported, NullableArrayView);
+            return NullableArrayView;
         }
 
         if (valueType.IsSystemNumericsVector())
         {
-            return (ConditionalReceiverKind.Unsupported, NullableVector);
+            return NullableVector;
         }
 
-        return FirstBinding(node) is ElementBindingExpressionSyntax
-            ? (ConditionalReceiverKind.Unsupported, NullableElementAccess)
-            : (ConditionalReceiverKind.Nullable, null);
+        return FirstBinding(node) is ElementBindingExpressionSyntax ? NullableElementAccess : null;
     }
 
     // The binding that reads the receiver of node: the first one in document order, since WhenNotNull starts with it

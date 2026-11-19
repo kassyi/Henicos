@@ -104,20 +104,23 @@ internal static class SemanticModelExtensions
                 targetModel = GetSemanticModelForTree(semanticModel, targetTree);
             }
 
-            var span = new TextSpan(start, length);
-            originalNode = targetTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
-            // An element binding ([i] of a?[i]) and its argument list share the span; the expression is the binding,
-            // which a rewrite of the binding (the element access of a null-conditional access) stands for
-            if (originalNode is BracketedArgumentListSyntax { Parent: ElementBindingExpressionSyntax binding } &&
-                binding.Span == span)
-            {
-                originalNode = binding;
-            }
-
+            originalNode = FindNodeAt(targetTree, new TextSpan(start, length));
             return true;
         }
 
         return false;
+    }
+
+    // The innermost node at span. An element binding ([i] of a?[i]) and its argument list share the span; the
+    // expression is the binding, which a rewrite of the binding (the element access of a null-conditional access)
+    // stands for
+    private static SyntaxNode FindNodeAt(SyntaxTree tree, TextSpan span)
+    {
+        var node = tree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+        return node is BracketedArgumentListSyntax { Parent: ElementBindingExpressionSyntax binding } &&
+               binding.Span == span
+            ? binding
+            : node;
     }
 
     /// <summary>

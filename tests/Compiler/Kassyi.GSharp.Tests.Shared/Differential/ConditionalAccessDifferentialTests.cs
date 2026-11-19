@@ -25,8 +25,8 @@ public class ConditionalAccessDifferentialTests
 
     // A kernel with a barrier: expected gives the columns of a row from the input and the row
     private static DifferentialCase BarrierCase(string kernel, string[] columns,
-        Action<DiffBuffers, LaunchShape> launch, Func<int[], int, int[]> expected) =>
-        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+        Action<DiffBuffers, LaunchShape> launch, Func<int[], int, int[]> expected, bool qualified = false) =>
+        new(qualified ? kernel : $"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
             Inputs = (rng, rows) => new DiffBuffers()
@@ -74,6 +74,18 @@ public class ConditionalAccessDifferentialTests
         }
 
         return points;
+    }
+
+    // Inner.X = 3 * i
+    private static ConditionalComputed[] Computed(int rows)
+    {
+        var values = new ConditionalComputed[rows];
+        for (int i = 0; i < rows; i++)
+        {
+            values[i] = new ConditionalComputed { X = i, Inner = new ConditionalPoint { X = 3 * i, Y = 0 } };
+        }
+
+        return values;
     }
 
     // Every third element null
@@ -230,11 +242,35 @@ public class ConditionalAccessDifferentialTests
             b.Get<int>("a"), NullableInts(s.Rows), b.Get<int>("dst"), s.Rows,
             gridDimX: s.GridX, blockDimX: s.BlockX));
 
-    internal static readonly DifferentialCase s_extensionOnBinding = Case(
+    internal static readonly DifferentialCase s_extensionOnBinding = BarrierCase(
         nameof(ConditionalAccessDifferentialKernels.ExtensionOnBindingKernel),
-        ["element_plus_one", "x_after_increment", "inner_plus_one"],
+        ["element_plus_one", "x_after_increment", "field_of_element_plus_one", "inner_plus_one"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchExtensionOnBindingKernel(
-            b.Get<int>("a"), Points(s.Rows), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+            b.Get<int>("a"), Points(s.Rows), Computed(s.Rows), b.Get<int>("dst"),
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) =>
+        [
+            IsNullRow(a, t) ? -1 : t + 1,
+            IsNullRow(a, t) ? t : t + 1,
+            IsNullRow(a, t) ? -1 : 3 * t + 1,
+            (a[t] & 2) == 0 ? -1 : (a[t] & 0xFF) + 1
+        ]);
+
+    internal static readonly DifferentialCase s_twinFirst = BarrierCase(
+        nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinFirstFileKernel),
+        ["overload", "same_signature"],
+        static (b, s) => ConditionalAccessTwinKernels.LaunchTwinFirstFileKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[0] + 1000), unchecked(a[2] + 3000)],
+        qualified: true);
+
+    internal static readonly DifferentialCase s_twinSecond = BarrierCase(
+        nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinSecondFileKernel),
+        ["overload", "same_signature"],
+        static (b, s) => ConditionalAccessTwinKernels.LaunchTwinSecondFileKernel(
+            b.Get<int>("a"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) => IsNullRow(a, t) ? [-1, -1] : [unchecked(a[1] + 2000), unchecked(a[3] + 4000)],
+        qualified: true);
 
     internal static readonly DifferentialCase s_receiverReassigned = CaseWithSecondInput(
         nameof(ConditionalAccessDifferentialKernels.ReceiverReassignedKernel),
@@ -392,4 +428,18 @@ public class ConditionalAccessDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ConditionalAccess_IndexReassignsTheReceiver_ReadsTheReceiverEvaluatedFirst() =>
         DifferentialRunner.Run(s_receiverReassigned);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_ExtensionCallInTheFirstFileOfAPartialClass_CallsTheMethodThatFileBinds() =>
+        DifferentialRunner.Run(s_twinFirst);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_ExtensionCallInTheSecondFileOfAPartialClass_CallsTheMethodThatFileBinds() =>
+        DifferentialRunner.Run(s_twinSecond);
 }

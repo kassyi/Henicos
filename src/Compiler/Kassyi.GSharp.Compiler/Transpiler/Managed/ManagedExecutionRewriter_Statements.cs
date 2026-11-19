@@ -11,6 +11,11 @@ internal sealed partial class ManagedExecutionRewriter
             return special;
         }
 
+        if (TryRewriteConditionalAccessStatement(node) is { } conditional)
+        {
+            return conditional;
+        }
+
         // c = a + b; with an operator macro becomes the call of its target (#711)
         if (node.Expression is AssignmentExpressionSyntax assignment &&
             ManagedRewriteClassifier.TryGetOperatorMacro(assignment, semanticModel, out var macro) &&

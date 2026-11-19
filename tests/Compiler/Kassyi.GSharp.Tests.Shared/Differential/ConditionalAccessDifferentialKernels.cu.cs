@@ -424,29 +424,30 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             dst[col + 1] = evaluations;
         }
 
-        // Extension calls on a binding of the access: an element by value and by ref this, a nested field of a
-        // Nullable<S>; the extension class is in another namespace
+        // Extension calls on a binding of the access: an element by value and by ref this, a field of an element, a
+        // nested field of a Nullable<S>; the extension class is in another namespace. The barrier makes the managed
+        // path run the generated copy of the kernel
         [GpuKernel]
-        public static void ExtensionOnBindingKernel(int[] a, ConditionalPoint[] ps, int[] dst, int n)
+        public static void ExtensionOnBindingKernel(int[] a, ConditionalPoint[] ps, ConditionalComputed[] cs,
+            int[] dst)
         {
             int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            if (t >= n)
-            {
-                return;
-            }
-
             ConditionalPoint[]? q = (a[t] & 1) == 0 ? null : ps;
             int? plus = q?[t].PlusOne();
             q?[t].IncrementX();
+            ConditionalComputed[]? c = (a[t] & 1) == 0 ? null : cs;
+            int? deep = c?[t].Inner.PlusOne();
             ConditionalComputed? h = (a[t] & 2) == 0
                 ? null
                 : new ConditionalComputed { X = 1, Inner = new ConditionalPoint { X = a[t] & 0xFF, Y = 0 } };
             int? inner = h?.Inner.PlusOne();
+            Gpu.SyncThreads();
 
-            int col = t * 3;
+            int col = t * 4;
             dst[col + 0] = plus ?? -1;
             dst[col + 1] = ps[t].X;
-            dst[col + 2] = inner ?? -1;
+            dst[col + 2] = deep ?? -1;
+            dst[col + 3] = inner ?? -1;
         }
 
         [GpuDeviceFunction]
