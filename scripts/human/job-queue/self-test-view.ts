@@ -633,6 +633,15 @@ function checkTerminalLook(): void {
     );
     assert.ok(waiting.includes(`${esc}[48;5;237;2m`), `#${id}: dim timeline cells on the highlight`);
   }
+  // The first timeline cell is not always blank: at 50 columns the bar of #815 starts in it, and stays unreversed
+  const firstCell = renderScreen(
+    sampleReply(),
+    { ...initialViewState(), selectedId: 815 },
+    { columns: 50, rows: 13, now: Now },
+    true,
+  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  assert.ok(firstCell.includes(`${esc}[48;5;237;31m█`), "#815: the first timeline cell keeps its red");
+  assert.ok(!firstCell.includes(`${esc}[7;31m█`), "#815: the first timeline cell is not reversed");
   // Without a timeline (a narrow screen) the progress text of a late job is reversed like the other columns
   const narrowSelected = renderScreen(
     sampleReply(),
