@@ -6,14 +6,8 @@ namespace Kassyi.GSharp.Compiler.Tasks.Toolchains;
 /// </summary>
 public sealed class MsvcToolchain : INativeToolchain
 {
-    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
-        new(StringComparer.OrdinalIgnoreCase);
-
     private readonly IProcessRunner _processRunner;
-    private readonly bool _disableCache;
-    private readonly string? _vswherePathOverride;
-    private readonly Dictionary<string, Dictionary<string, string>> _resolvedEnvs =
-        new(StringComparer.OrdinalIgnoreCase);
+    private readonly MsvcEnvironmentResolver _environment;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MsvcToolchain"/> class.
@@ -27,8 +21,7 @@ public sealed class MsvcToolchain : INativeToolchain
         string? vswherePathOverride = null)
     {
         _processRunner = processRunner;
-        _disableCache = disableCache;
-        _vswherePathOverride = vswherePathOverride;
+        _environment = new MsvcEnvironmentResolver(processRunner, disableCache, vswherePathOverride);
     }
 
     /// <inheritdoc />
@@ -45,7 +38,7 @@ public sealed class MsvcToolchain : INativeToolchain
     {
         foreach (var arch in architectures)
         {
-            var vcvarsArch = ToVcvarsArchitecture(arch);
+            var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(arch);
             var env = GetVcvarsEnvironment(vcvarsArch, cancellationToken);
             if (env == null)
             {
@@ -54,7 +47,7 @@ public sealed class MsvcToolchain : INativeToolchain
                 return ToolchainPreparationResult.Failed;
             }
 
-            _resolvedEnvs[vcvarsArch] = env;
+            _environment.Remember(vcvarsArch, env);
         }
 
         return ToolchainPreparationResult.Ready;
@@ -63,13 +56,7 @@ public sealed class MsvcToolchain : INativeToolchain
     /// <inheritdoc />
     public Dictionary<string, string>? GetEnvironmentVariables(string architecture)
     {
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var env))
-        {
-            return env;
-        }
-
-        return GetVcvarsEnvironment(vcvarsArch);
+        return _environment.GetEnvironment(MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture));
     }
 
     /// <summary>
@@ -82,14 +69,101 @@ public sealed class MsvcToolchain : INativeToolchain
         string vcvarsArch,
         CancellationToken cancellationToken = default)
     {
-        if (_disableCache)
+        return _environment.GetVcvarsEnvironment(vcvarsArch, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public CompilerIdentity GetCompilerIdentity(
+        string architecture,
+        CancellationToken cancellationToken = default)
+    {
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
+        var env = _environment.ResolveCompileEnvironment(vcvarsArch, cancellationToken);
+        var clPath = NativeToolchainHelper.FindExecutableInPath("cl.exe", env);
+        // cl.exe adds CL and _CL_ to its arguments and searches INCLUDE: each changes the object file
+        return new CompilerIdentity(clPath, MsvcEnvironmentResolver.ReadMsvcVersion(clPath, env),
+            NativeToolchainHelper.DescribeEnvironment(env, "CL", "_CL_", "INCLUDE"));
+    }
+
+    /// <inheritdoc />
+    public string BuildCompileObjectArguments(
+        string sourcePath,
+        string objPath,
+        string architecture,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null)
+    {
+        var sanitizerFlags = string.Empty;
+        if ((sanitizers & NativeSanitizers.Address) != 0)
         {
-            return ResolveVcvarsEnvironment(vcvarsArch, cancellationToken);
+            var effectivePdb = !string.IsNullOrEmpty(pdbPath)
+                ? pdbPath
+                : Path.ChangeExtension(objPath, ".vc.pdb");
+            sanitizerFlags = $" /fsanitize=address /Zi /Fd:\"{effectivePdb}\"";
         }
 
-        return s_vcvarsCache.GetOrAdd(
+        return $"{OptimizationFlags} {CompileFlags}{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\"";
+    }
+
+    /// <inheritdoc />
+    public bool TryCompileToObject(
+        string sourcePath,
+        string objPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null)
+    {
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
+        NativeToolchainHelper.EnsureParentDirectory(objPath);
+        var clArgs = BuildCompileObjectArguments(sourcePath, objPath, architecture, sanitizers, pdbPath);
+
+        log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
+        return TryRunCl(
+            clArgs,
             vcvarsArch,
-            arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch, cancellationToken))).Value;
+            sourcePath,
+            objPath,
+            log,
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public bool TryLinkSharedLibrary(
+        IReadOnlyList<string> objPaths,
+        string outputPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None)
+    {
+        if (objPaths.Count == 0)
+        {
+            log.LogError("Cannot link native shared library with zero object files.");
+            return false;
+        }
+
+        var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
+        NativeToolchainHelper.EnsureParentDirectory(outputPath);
+
+        var joinedObjs = NativeToolchainHelper.JoinQuotedPaths(objPaths);
+        var sanitizerFlags = (sanitizers & NativeSanitizers.Address) != 0 ? " /fsanitize=address /Zi" : "";
+        var linkArgs = $"{LinkFlags}{sanitizerFlags} {joinedObjs} /Fe:\"{outputPath}\"";
+
+        log.LogMessage(
+            MessageImportance.Normal,
+            $"Linking {objPaths.Count} C++ object(s) for {vcvarsArch}: {outputPath}");
+
+        if (!TryRunCl(linkArgs, vcvarsArch, outputPath, outputPath, log, cancellationToken))
+        {
+            return false;
+        }
+
+        var baseDir = Path.GetDirectoryName(outputPath) ?? "";
+        var baseName = Path.GetFileNameWithoutExtension(outputPath);
+        CleanupLinkArtifacts(log, baseDir, baseName);
+        return true;
     }
 
     /// <inheritdoc />
@@ -99,26 +173,36 @@ public sealed class MsvcToolchain : INativeToolchain
         string architecture,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default,
-        NativeSanitizers sanitizers = NativeSanitizers.None)
+        NativeSanitizers sanitizers = NativeSanitizers.None) =>
+        NativeToolchainHelper.TryCompileSingleSourceToSharedLibrary(
+            this, sourcePath, outputPath, architecture, log, cancellationToken, sanitizers);
+
+    private bool TryRunCl(
+        string clArgs,
+        string vcvarsArch,
+        string warningContextFile,
+        string expectedOutputPath,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken)
     {
-        var vcvarsArch = ToVcvarsArchitecture(architecture);
-
-        var paths = ClBuildPaths.For(outputPath);
-        var clArgs = BuildClArguments(sourcePath, paths.ObjPath, outputPath, paths.VcPdbPath, sanitizers);
-
-        log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
-
-        var startInfo = CreateClStartInfo(clArgs, ResolveCompileEnvironment(vcvarsArch, cancellationToken));
+        var startInfo = CreateClStartInfo(
+            clArgs, _environment.ResolveCompileEnvironment(vcvarsArch, cancellationToken));
 
         try
         {
             var result = _processRunner.Run(startInfo, cancellationToken);
 
-            if (result.ExitCode == 0 && File.Exists(outputPath))
+            if (result.ExitCode == 0 && NativeToolchainHelper.HasNonEmptyFile(expectedOutputPath))
             {
-                NvccOutputParser.LogCompilerWarnings(log, sourcePath, result.StandardOutput, result.StandardError);
-                CleanupBuildArtifacts(log, sourcePath, paths.BaseDir, paths.BaseName, paths.ObjPath, paths.VcPdbPath);
+                NvccOutputParser.LogCompilerWarnings(
+                    log, warningContextFile, result.StandardOutput, result.StandardError);
                 return true;
+            }
+
+            if (result.ExitCode == 0)
+            {
+                log.LogError(
+                    $"MSVC exited with code 0 without producing a non-empty output '{expectedOutputPath}'.");
             }
 
             LogCompileFailure(log, result);
@@ -135,40 +219,11 @@ public sealed class MsvcToolchain : INativeToolchain
         }
     }
 
-    // The intermediate files that cl.exe writes next to the output library.
-    private readonly record struct ClBuildPaths(string BaseDir, string BaseName, string ObjPath, string VcPdbPath)
-    {
-        public static ClBuildPaths For(string outputPath)
-        {
-            var baseDir = Path.GetDirectoryName(outputPath) ?? "";
-            var baseName = Path.GetFileNameWithoutExtension(outputPath);
-            return new ClBuildPaths(
-                baseDir,
-                baseName,
-                Path.Combine(baseDir, baseName + ".obj"),
-                Path.Combine(baseDir, baseName + ".vc.pdb"));
-        }
-    }
-
-    // The resolved vcvarsall environment of the architecture, or null when it cannot be resolved.
-    private Dictionary<string, string>? ResolveCompileEnvironment(
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        if (_resolvedEnvs.TryGetValue(vcvarsArch, out var resolved) ||
-            (resolved = GetVcvarsEnvironment(vcvarsArch, cancellationToken)) != null)
-        {
-            return resolved;
-        }
-
-        return null;
-    }
-
     private static ProcessStartInfo CreateClStartInfo(string clArgs, Dictionary<string, string>? env)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = FindClExe(env),
+            FileName = NativeToolchainHelper.FindExecutableInPath("cl.exe", env),
             Arguments = clArgs
         };
 
@@ -183,55 +238,16 @@ public sealed class MsvcToolchain : INativeToolchain
         return startInfo;
     }
 
-    // cl.exe from the PATH of the vcvarsall environment, else the bare name.
-    private static string FindClExe(Dictionary<string, string>? env)
-    {
-        if (env == null || !env.TryGetValue("PATH", out var pathEnv))
-        {
-            return "cl.exe";
-        }
-
-        var span = pathEnv.AsSpan();
-        while (span.Length > 0)
-        {
-            var sepIdx = span.IndexOf(Path.PathSeparator);
-            var segment = sepIdx >= 0 ? span.Slice(0, sepIdx) : span;
-            var fullPath = Path.Combine(segment.ToString(), "cl.exe");
-            if (File.Exists(fullPath))
-            {
-                return fullPath;
-            }
-
-            if (sepIdx < 0)
-            {
-                break;
-            }
-
-            span = span.Slice(sepIdx + 1);
-        }
-
-        return "cl.exe";
-    }
-
-    // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
-    private static void CleanupBuildArtifacts(
+    // MSVC link produces .lib, .exp, and .ilk alongside the DLL; clean them without removing DLL or optional .pdb.
+    private static void CleanupLinkArtifacts(
         TaskLoggingHelper log,
-        string sourcePath,
         string baseDir,
-        string baseName,
-        string objPath,
-        string vcPdbPath)
+        string baseName)
     {
         var libPath = Path.Combine(baseDir, baseName + ".lib");
         var expPath = Path.Combine(baseDir, baseName + ".exp");
-
-        var srcDir = Path.GetDirectoryName(sourcePath) ?? "";
-        var srcObjPath = Path.Combine(srcDir, Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-        var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
-            Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-
         var ilkPath = Path.Combine(baseDir, baseName + ".ilk");
-        CompileKernelTaskBase.CleanupFiles(log, objPath, libPath, expPath, ilkPath, vcPdbPath, srcObjPath, cwdObjPath);
+        CompileKernelTaskBase.CleanupFiles(log, libPath, expPath, ilkPath);
     }
 
     private static void LogCompileFailure(TaskLoggingHelper log, ProcessResult result)
@@ -265,146 +281,11 @@ public sealed class MsvcToolchain : INativeToolchain
     // detected.
     private const string OptimizationFlags = "/Oi /Ot /Oy /Ob2 /GF /Gy";
 
-    // The flags of every native kernel build besides the optimization and the sanitizers (see BuildClArguments).
-    private const string CommonFlags = "/LD /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj /we4533";
+    // Compile/link flags besides optimization and sanitizers (BuildCompileObjectArguments & TryLinkSharedLibrary).
+    private const string CompileFlags = "/c /nologo /std:c++17 /openmp /EHs /Zc:preprocessor /bigobj /we4533";
+    private const string LinkFlags = "/nologo /LD /openmp";
 
     // Logged once per task run by CompileCppToNativeTask when 'undefined' is requested with this toolchain.
     internal const string UndefinedSanitizerUnsupportedWarning =
         "GSharpNativeSanitizers specifies 'undefined', which is not supported by MSVC (no UndefinedBehaviorSanitizer). Continuing with AddressSanitizer only when 'address' is specified, ignoring 'undefined'.";
-
-    // OptimizationFlags = /O2 without /Og (see the constant)
-    // /LD = Create DLL
-    // /Fo = Object file name
-    // /Fe = Output file name
-    // /nologo = Suppress copyright message
-    // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
-    // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
-    // /openmp = Enable OpenMP for BSP CPU scheduler parallelism
-    // /EHs = C++ exceptions, also through extern "C" functions: a kernel step that cannot go on (a shared memory
-    //        placement that fails) throws to the launcher, which catches it inside the OpenMP loop. /EHsc would let the
-    //        compiler assume that the extern "C" kernels never throw
-    // /bigobj = Allow more than 65,279 sections: one translation unit holds every kernel of the assembly, and a
-    //           large one (the test assemblies) fails with C1128 without it
-    // /we4533 = C4533 as an error: a goto or switch case that jumps past an initialization is ill-formed C++ that
-    //           MSVC accepts with this warning and that g++ and clang reject, so a Windows build catches it too
-    // /fsanitize=address /Zi /Fd = AddressSanitizer with debug information for symbolized reports ('undefined' has no
-    //                              MSVC counterpart and is ignored)
-    private static string BuildClArguments(
-        string sourcePath,
-        string objPath,
-        string outputPath,
-        string vcPdbPath,
-        NativeSanitizers sanitizers)
-    {
-        var sanitizerFlags = (sanitizers & NativeSanitizers.Address) != 0
-            ? $" /fsanitize=address /Zi /Fd:\"{vcPdbPath}\""
-            : "";
-
-        return $"{OptimizationFlags} {CommonFlags}{sanitizerFlags} \"{sourcePath}\" /Fo:\"{objPath}\" " +
-            $"/Fe:\"{outputPath}\"";
-    }
-
-    private static string ToVcvarsArchitecture(string arch) => arch switch
-    {
-        "x64" => "x64",
-        "arm64" => "x64_arm64",
-        _ => arch
-    };
-
-    private Dictionary<string, string>? ResolveVcvarsEnvironment(
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        var vswhere = LocateVswhere();
-        if (vswhere == null)
-        {
-            return null;
-        }
-
-        var installationPath = QueryInstallationPath(vswhere, cancellationToken);
-        if (string.IsNullOrEmpty(installationPath))
-        {
-            return null;
-        }
-
-        var vcvarsPath = Path.Combine(installationPath, "VC", "Auxiliary", "Build", "vcvarsall.bat");
-        if (!File.Exists(vcvarsPath))
-        {
-            return null;
-        }
-
-        return RunVcvars(vcvarsPath, vcvarsArch, cancellationToken);
-    }
-
-    private string? LocateVswhere()
-    {
-        if (_vswherePathOverride is { Length: > 0 })
-        {
-            return _vswherePathOverride;
-        }
-
-        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-        var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
-        return File.Exists(vswhere) ? vswhere : null;
-    }
-
-    // The vswhere query below is repeated by tools/collect-env/ToolchainProbe.cs (Msvc); keep both in sync.
-    private string? QueryInstallationPath(string vswhere, CancellationToken cancellationToken)
-    {
-        var vswhereStartInfo = new ProcessStartInfo
-        {
-            FileName = vswhere,
-            Arguments = "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 " +
-                "-property installationPath",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var vswhereResult = _processRunner.Run(vswhereStartInfo, cancellationToken);
-        return vswhereResult.ExitCode == 0 ? vswhereResult.StandardOutput.AsSpan().Trim().ToString() : null;
-    }
-
-    // Runs vcvarsall.bat in cmd.exe and reads the environment it leaves (the output of `set`).
-    private Dictionary<string, string>? RunVcvars(
-        string vcvarsPath,
-        string vcvarsArch,
-        CancellationToken cancellationToken)
-    {
-        var envStartInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"set VSCMD_SKIP_SENDTELEMETRY=1 && call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var envResult = _processRunner.Run(envStartInfo, cancellationToken);
-        return envResult.ExitCode == 0 ? ParseEnvironment(envResult.StandardOutput) : null;
-    }
-
-    private static Dictionary<string, string> ParseEnvironment(string setOutput)
-    {
-        var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        using var reader = new StringReader(setOutput);
-        while (reader.ReadLine() is { } line)
-        {
-            var eqIndex = line.IndexOf('=');
-            if (eqIndex > 0)
-            {
-                envVars[line[..eqIndex]] = line[(eqIndex + 1)..];
-            }
-        }
-
-        return envVars;
-    }
 }

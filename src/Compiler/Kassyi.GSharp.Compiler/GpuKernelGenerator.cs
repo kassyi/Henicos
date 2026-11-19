@@ -265,7 +265,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(
             aotTarget.Combine(allKernels).Combine(allDevices).Combine(importedCode).Combine(configProvider)
                 .WithTrackingName(AotArtifactTrackingName),
-            static (spc, input) => WriteAot(spc, input.Left.Left.Left.Left, input.Left.Left.Left.Right,
+            static (spc, input) => AotModuleWriter.Write(spc, input.Left.Left.Left.Left, input.Left.Left.Left.Right,
                 input.Left.Left.Right, input.Left.Right, input.Right));
         context.RegisterSourceOutput(
             configProvider.Combine(hasKernels).WithTrackingName(TargetArchitecturesTrackingName),
@@ -967,88 +967,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return sites.ToImmutable().AsEquatableArray();
     }
 
-    // The native module of the assembly (.g.cu / .g.cpp), which the build compiles ahead of time
-    private static void WriteAot(SourceProductionContext context, AotTarget target,
-        ImmutableArray<TranspiledKernelResult> kernelMethods, ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
-        ImportedDeviceCode imports, GeneratorConfig config)
-    {
-        if (kernelMethods.IsDefaultOrEmpty)
-        {
-            AotArtifactWriter.WriteEmptyManifest(target, config, context);
-            return;
-        }
-
-        var isCuda = config.IsCuda;
-        var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
-        var commonDeviceSource = imports.Source + NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
-        var preludeSource = NativeModuleAssembler.GetPreludeSource(in config);
-        if (isCuda && config.IsCheckedBuild)
-        {
-            preludeSource = "#define GSHARP_CHECKED 1\n" + preludeSource;
-        }
-
-        var symbolSites = ImmutableArray.CreateBuilder<GSharpNameEncoding.SymbolErrorSiteRecord>();
-        var rawSites = ImmutableArray.CreateBuilder<ErrorSiteEntry>();
-        foreach (var method in kernelMethods)
-        {
-            if (!method.ErrorSites.IsDefaultOrEmpty)
-            {
-                foreach (var site in method.ErrorSites)
-                {
-                    rawSites.Add(site);
-                }
-            }
-        }
-
-        if (!ErrorSiteTable.TryBuildModuleSites(rawSites, out var moduleSites, out var c1, out var c2))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                GSharpDiagnostics.ErrorSiteIdCollision,
-                Location.None,
-                c1.SiteId,
-                c1.MemberName, c1.File, c1.Line, c1.Column,
-                c2.MemberName, c2.File, c2.Line, c2.Column));
-        }
-        else
-        {
-            foreach (var site in moduleSites)
-            {
-                symbolSites.Add(new GSharpNameEncoding.SymbolErrorSiteRecord(
-                    site.SiteId,
-                    site.File,
-                    site.Line,
-                    site.Column,
-                    site.MemberName,
-                    site.DefaultMessage));
-            }
-        }
-
-        using var allKernelsSource = new SourceWriter();
-        var kernelItems = new KernelPartitionItem[kernelMethods.Length];
-        for (var i = 0; i < kernelMethods.Length; i++)
-        {
-            var method = kernelMethods[i];
-            var source = method.GetSource(isCuda);
-            allKernelsSource.AppendLine(source);
-            var byteCount = Encoding.UTF8.GetByteCount(source);
-            kernelItems[i] = new KernelPartitionItem(method.Class.FullyQualifiedName, byteCount);
-        }
-
-        var dialectName = isCuda ? "Cuda" : "Cpu";
-        var partitionPlan = NativeModulePartitioner.Plan(kernelItems.AsSpan());
-        var partitionJson = NativeModulePlanJson.Format(
-            dialectName, partitionPlan, kernelItems.AsSpan());
-
-        var requiredIncludes = NativeModuleAssembler.CollectIncludes(kernelMethods, distinctDeviceMethods, isCuda);
-        imports.Includes
-            .AsStackEnumerable()
-            .AddTo(requiredIncludes);
-        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
-            allKernelsSource.ToString());
-        AotArtifactWriter.Write(target, config, bodySource, context, imports.FindFullName,
-            symbolSites.ToImmutable(), partitionJson);
-    }
-
     // The device code of other assemblies that the kernels and device functions of the module reach
     private static ImportedDeviceCode ResolveImports(EquatableArray<ImportedDeviceRecord> deviceImports,
         ImmutableArray<TranspiledKernelResult> kernelMethods,
@@ -1088,14 +1006,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
     private static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
-    {
-        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
-        deviceMethods
-            .AsStackEnumerable()
-            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
-        return distinct;
-    }
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods) =>
+        NativeModuleAssembler.GetDistinctDeviceMethods(deviceMethods);
 
     // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
     // function's sites once, however many results it has
