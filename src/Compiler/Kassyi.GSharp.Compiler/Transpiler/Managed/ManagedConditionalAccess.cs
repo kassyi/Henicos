@@ -63,9 +63,10 @@ internal static class ManagedConditionalAccess
 
     /// <summary>
     /// Whether <paramref name="node"/> is a statement: it is used as one, it is the <c>WhenNotNull</c> of an access
-    /// that is (the inner access of <c>h?.Data?.M();</c>), or it is the body of a <c>Gpu.ForUnroll</c> or
-    /// <c>Gpu.SyncGrid</c> lambda, which is inlined as a statement. Decided on the node of the user's tree that
-    /// <paramref name="node"/> stands for: the inner access of a chain is planned on a tree of its own.
+    /// that is (the inner access of <c>h?.Data?.M();</c>), or it is the expression body of a void method, local
+    /// function or lambda, or of a <c>Gpu.ForUnroll</c> or <c>Gpu.SyncGrid</c> lambda, which is inlined as a
+    /// statement. Decided on the node of the user's tree that <paramref name="node"/> stands for: the inner access of
+    /// a chain is planned on a tree of its own.
     /// </summary>
     public static bool IsStatement(ConditionalAccessExpressionSyntax node, SemanticModel semanticModel)
     {
@@ -81,7 +82,7 @@ internal static class ManagedConditionalAccess
                 IsInStatementPosition(outer, compilation),
             AnonymousFunctionExpressionSyntax lambda when lambda.ExpressionBody == node =>
                 compilation.ContainsSyntaxTree(lambda.SyntaxTree) &&
-                SplitPointPlacement.IsInlinedMacroBody(lambda, compilation.GetCachedSemanticModel(lambda.SyntaxTree)),
+                IsStatementLambda(lambda, compilation.GetCachedSemanticModel(lambda.SyntaxTree)),
             ArrowExpressionClauseSyntax { Parent: MethodDeclarationSyntax { ReturnType: var returnType } } =>
                 IsVoid(returnType),
             ArrowExpressionClauseSyntax { Parent: LocalFunctionStatementSyntax { ReturnType: var returnType } } =>
@@ -92,14 +93,27 @@ internal static class ManagedConditionalAccess
     private static bool IsVoid(TypeSyntax type) =>
         type is PredefinedTypeSyntax { Keyword.RawKind: (int)SyntaxKind.VoidKeyword };
 
+    // A lambda whose expression body is a statement: one that returns void, or the body of a Gpu.ForUnroll or
+    // Gpu.SyncGrid, which is inlined as a statement
+    private static bool IsStatementLambda(AnonymousFunctionExpressionSyntax lambda, SemanticModel semanticModel) =>
+        SplitPointPlacement.IsInlinedMacroBody(lambda, semanticModel) ||
+        semanticModel.GetSymbolInfo(lambda).Symbol is IMethodSymbol { ReturnsVoid: true };
+
     /// <summary>
-    /// The access that is the whole expression body of a local function that returns <see langword="void"/>
-    /// (<c>void F() =&gt; q?[t].M();</c>) and needs the pattern variable: the managed copy writes it as a block body.
+    /// The access that is the whole expression body of <paramref name="callable"/> (a local function, a lambda or the
+    /// arrow body of a method) when that body is a statement and the access needs the pattern variable: the managed
+    /// copy writes it as a block body (<c>void F() =&gt; q?[t].M();</c>).
     /// </summary>
-    public static ConditionalAccessExpressionSyntax? GetVoidBodyAccess(LocalFunctionStatementSyntax node,
+    public static ConditionalAccessExpressionSyntax? GetVoidBodyAccess(SyntaxNode callable,
         SemanticModel semanticModel) =>
-        node is { ExpressionBody.Expression: ConditionalAccessExpressionSyntax access } &&
-        IsVoid(node.ReturnType) &&
+        callable switch
+        {
+            LocalFunctionStatementSyntax function => function.ExpressionBody?.Expression,
+            AnonymousFunctionExpressionSyntax lambda => lambda.ExpressionBody,
+            ArrowExpressionClauseSyntax arrow => arrow.Expression,
+            _ => null
+        } is ConditionalAccessExpressionSyntax access &&
+        IsStatement(access, semanticModel) &&
         NeedsReceiverVariable(access, semanticModel)
             ? access
             : null;
@@ -146,11 +160,8 @@ internal static class ManagedConditionalAccess
                 .WithDesignation(SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(variable)))
         );
 
-    /// <summary>
-    /// Whether <paramref name="call"/> is a call on the receiver of a null-conditional access (<c>?.M()</c>) or one
-    /// whose receiver chain starts with a binding (<c>?[i].M()</c>, <c>?.A.B.M()</c>).
-    /// </summary>
-    public static bool IsCallOnBinding(InvocationExpressionSyntax call) =>
+    // A reduced call on the receiver (?.M()) or whose receiver chain starts with a binding (?[i].M(), ?.A.B.M())
+    private static bool IsCallOnBinding(InvocationExpressionSyntax call) =>
         call.Expression switch
         {
             MemberBindingExpressionSyntax => true,

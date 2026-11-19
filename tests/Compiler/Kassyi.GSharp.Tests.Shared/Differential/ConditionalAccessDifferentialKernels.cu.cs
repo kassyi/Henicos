@@ -486,16 +486,11 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             dst[col + 3] = log2;
         }
 
-        // The expression body of a void device function is a statement
-        [GpuDeviceFunction]
-        public static void IncrementElement(ConditionalPoint[]? q, int t) => q?[t].IncrementX();
-
         // Extension methods that return void, called as statements: at the end of a chain (h?.Data?.M(),
-        // hp?.Pts?[t].M()), as the body of a Gpu.ForUnroll lambda, which is inlined as a statement, and as the
-        // expression body of a void device function and of a void local function
+        // hp?.Pts?[t].M()) and as the body of a Gpu.ForUnroll lambda, which is inlined as a statement
         [GpuKernel]
         public static void VoidExtensionStatementKernel(int[] a, int[] ws, ConditionalPoint[] ps1,
-            ConditionalPoint[] ps2, ConditionalPoint[] ps3, ConditionalPoint[] ps4, int[] dst)
+            ConditionalPoint[] ps2, int[] dst)
         {
             int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             int sel = a[t] & 3;
@@ -506,18 +501,45 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             h?.Data?.SetAt(t, 7);
             hp?.Pts?[t].IncrementX();
             Gpu.ForUnroll(0, 2, i => q?[t].IncrementX());
-            IncrementElement((a[t] & 8) == 0 ? null : ps3, t);
-            ConditionalPoint[]? q4 = (a[t] & 16) == 0 ? null : ps4;
-            void IncrementOwn() => q4?[t].IncrementX();
-            IncrementOwn();
             Gpu.SyncThreads();
 
-            int col = t * 5;
+            int col = t * 3;
             dst[col + 0] = ws[t];
             dst[col + 1] = ps1[t].X;
             dst[col + 2] = ps2[t].X;
-            dst[col + 3] = ps3[t].X;
-            dst[col + 4] = ps4[t].X;
+        }
+
+        // The expression body of a void device function is a statement
+        [GpuDeviceFunction]
+        public static void IncrementElement(ConditionalPoint[]? q, int t) => q?[t].IncrementX();
+
+        // The same with a division, which gives the function a managed version (written for the managed path)
+        [GpuDeviceFunction]
+        public static void AddQuotient(ConditionalPoint[]? q, int t, int a, int d) => q?[t].AddX(a / d);
+
+        // Extension methods that return void as the expression body of a void device function (one with a managed
+        // version), of a void local function and of a void lambda (Gpu.SingleThread, whose body thread 0 runs); the
+        // barrier makes the managed path run the copy
+        [GpuKernel]
+        public static void VoidExtensionBodyKernel(int[] a, ConditionalPoint[] ps1, ConditionalPoint[] ps2,
+            ConditionalPoint[] ps3, ConditionalPoint[] ps4, int[] dst)
+        {
+            int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+            Gpu.SyncThreads();
+            IncrementElement((a[t] & 1) == 0 ? null : ps1, t);
+            AddQuotient((a[t] & 2) == 0 ? null : ps2, t, t * 10, (a[t] & 7) + 1);
+            ConditionalPoint[]? q3 = (a[t] & 4) == 0 ? null : ps3;
+            void IncrementOwn() => q3?[t].IncrementX();
+            IncrementOwn();
+            ConditionalPoint[]? q4 = (a[t] & 8) == 0 ? null : ps4;
+            Gpu.SingleThread(() => q4?[t].IncrementX());
+            Gpu.SyncThreads();
+
+            int col = t * 4;
+            dst[col + 0] = ps1[t].X;
+            dst[col + 1] = ps2[t].X;
+            dst[col + 2] = ps3[t].X;
+            dst[col + 3] = ps4[t].X;
         }
 
         [GpuDeviceFunction]
@@ -564,5 +586,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMeth
 
         [GpuDeviceFunction]
         public static void SetAt(this int[] values, int index, int value) => values[index] = value;
+
+        [GpuDeviceFunction]
+        public static void AddX(this ref ConditionalPoint p, int k) => p.X += k;
     }
 }

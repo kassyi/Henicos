@@ -292,6 +292,31 @@ internal static class ManagedNameQualifier
 
     private sealed class Rewriter(SemanticModel semanticModel) : CSharpSyntaxRewriter
     {
+        private ManagedConditionalAccessWriter? _conditionalAccessWriter;
+
+        // The same form of a null-conditional access that calls an extension method on a binding as the managed
+        // rewriter writes, so that a body without other rewrites qualifies to the same text
+        private ManagedConditionalAccessWriter ConditionalAccessWriter =>
+            _conditionalAccessWriter ??= new ManagedConditionalAccessWriter(semanticModel, Visit);
+
+        public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>
+            ConditionalAccessWriter.TryVisitAccess(node) ?? base.VisitConditionalAccessExpression(node);
+
+        public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node) =>
+            ConditionalAccessWriter.TryVisitStatement(node) ?? base.VisitExpressionStatement(node);
+
+        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitLocalFunctionStatement((LocalFunctionStatementSyntax)callable));
+
+        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitSimpleLambdaExpression((SimpleLambdaExpressionSyntax)callable));
+
+        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
+            ConditionalAccessWriter.VisitCallable(node, callable =>
+                base.VisitParenthesizedLambdaExpression((ParenthesizedLambdaExpressionSyntax)callable));
+
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
             QualifyName(node, base.VisitIdentifierName(node), semanticModel);
 

@@ -11,7 +11,7 @@ internal sealed partial class ManagedExecutionRewriter
             return special;
         }
 
-        if (TryRewriteConditionalAccessStatement(node) is { } conditional)
+        if (ConditionalAccessWriter.TryVisitStatement(node) is { } conditional)
         {
             return conditional;
         }

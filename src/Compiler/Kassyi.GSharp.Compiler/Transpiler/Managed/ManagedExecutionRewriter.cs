@@ -51,18 +51,6 @@ internal sealed partial class ManagedExecutionRewriter(
     // The number of the next variable that holds the target of a division read before its value (ManagedDivision)
     private int _nextDivisionCurrentId;
 
-    // The number of the next pattern variable that holds the receiver of a null-conditional access
-    // (ManagedConditionalAccess)
-    private int _nextConditionalReceiverId;
-
-    // The access that is the expression body of the void local function being rewritten, and the statement written
-    // for it (VisitLocalFunctionWithVoidBody)
-    private ConditionalAccessExpressionSyntax? _voidBodyAccess;
-    private StatementSyntax? _voidBodyStatement;
-
-    // Above 0 inside a void access outside a statement, whose extension calls on bindings stay in the reduced form
-    private int _keepsReducedCallsOnBindings;
-
     public override SyntaxNode? Visit(SyntaxNode? node)
     {
         if (_nextUnrollId < 0 && node is not null)
@@ -562,14 +550,19 @@ internal sealed partial class ManagedExecutionRewriter(
     public override SyntaxNode? VisitInterpolation(InterpolationSyntax node) =>
         ManagedNameQualifier.ParenthesizeInterpolation(base.VisitInterpolation(node));
 
+    // A void local function or lambda whose expression body is a null-conditional access that calls an extension
+    // method on a binding gets a block body (ManagedConditionalAccessWriter)
     public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
-        VisitLocalFunctionWithVoidBody(node);
+        ConditionalAccessWriter.VisitCallable(node, callable =>
+            VisitNestedCallable((LocalFunctionStatementSyntax)callable, base.VisitLocalFunctionStatement));
 
     public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
-        VisitNestedCallable(node, base.VisitSimpleLambdaExpression);
+        ConditionalAccessWriter.VisitCallable(node, callable =>
+            VisitNestedCallable((SimpleLambdaExpressionSyntax)callable, base.VisitSimpleLambdaExpression));
 
     public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
-        VisitNestedCallable(node, base.VisitParenthesizedLambdaExpression);
+        ConditionalAccessWriter.VisitCallable(node, callable => VisitNestedCallable(
+            (ParenthesizedLambdaExpressionSyntax)callable, base.VisitParenthesizedLambdaExpression));
 
     public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
         VisitNestedCallable(node, base.VisitAnonymousMethodExpression);

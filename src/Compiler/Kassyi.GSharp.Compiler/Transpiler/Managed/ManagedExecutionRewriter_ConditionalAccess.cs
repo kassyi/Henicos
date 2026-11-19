@@ -2,104 +2,21 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    // a?[i].M() with an extension method M becomes (a is { } t ? (R)(global::N.C.M(t[i])) : default(R))
-    // (ManagedConditionalAccess); any other access stays a null-conditional access
-    public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node)
-    {
-        if (!ManagedConditionalAccess.NeedsReceiverVariable(node, semanticModel))
-        {
-            return base.VisitConditionalAccessExpression(node);
-        }
+    private ManagedConditionalAccessWriter? _conditionalAccessWriter;
 
-        // The expression body of a void local function: its statement goes into the block body that
-        // VisitLocalFunctionStatement writes
-        if (node == _voidBodyAccess)
-        {
-            _voidBodyStatement = RewriteConditionalAccessStatement(node);
-            return node;
-        }
+    // The null-conditional accesses that call an extension method on a binding (ManagedConditionalAccessWriter)
+    private ManagedConditionalAccessWriter ConditionalAccessWriter =>
+        _conditionalAccessWriter ??= new ManagedConditionalAccessWriter(semanticModel, Visit);
 
-        // A call that returns void outside a statement (a for incrementor) has no value to write, and the plan reports
-        // it (GSH0003): the access is written as C# has it, with its calls in their reduced form, as the managed copy
-        // writes the other forms the plan rejects
-        if (semanticModel.GetTypeSymbol(node) is { SpecialType: SpecialType.System_Void })
-        {
-            _keepsReducedCallsOnBindings++;
-            try
-            {
-                return base.VisitConditionalAccessExpression(node);
-            }
-            finally
-            {
-                _keepsReducedCallsOnBindings--;
-            }
-        }
+    // a?[i].M() with an extension method M becomes (a is { } t ? (R)(global::N.C.M(t[i])) : default(R)); any other
+    // access stays a null-conditional access
+    public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>
+        ConditionalAccessWriter.TryVisitAccess(node) ?? base.VisitConditionalAccessExpression(node);
 
-        var (receiver, whenNotNull, variable) = VisitWithReceiverVariable(node);
-        return ManagedConditionalAccess.CreateValue(node, receiver, whenNotNull, variable, semanticModel)
-            .WithTriviaFrom(node);
-    }
-
-    // a?[i].M(); with an extension method M becomes if (a is { } t) { global::N.C.M(t[i]); }
-    private StatementSyntax? TryRewriteConditionalAccessStatement(ExpressionStatementSyntax node) =>
-        node.Expression is ConditionalAccessExpressionSyntax access &&
-        ManagedConditionalAccess.NeedsReceiverVariable(access, semanticModel)
-            ? RewriteConditionalAccessStatement(access).WithTriviaFrom(node)
-            : null;
-
-    // A WhenNotNull that is an access needing its own variable is a statement as well (h?.Data?.M() becomes
-    // if (h is { } t0) { if (t0.Data is { } t1) { M(t1); } }): a call that returns void has no value to write
-    private StatementSyntax RewriteConditionalAccessStatement(ConditionalAccessExpressionSyntax node)
-    {
-        var receiver = VisitReceiver(node);
-        var body = node.WhenNotNull is ConditionalAccessExpressionSyntax nested &&
-                   ManagedConditionalAccess.NeedsReceiverVariable(nested, semanticModel)
-            ? RewriteConditionalAccessStatement(nested)
-            : SyntaxFactory.ExpressionStatement(VisitWhenNotNull(node));
-        return ManagedConditionalAccess.CreateStatement(receiver, body, NextConditionalReceiver());
-    }
-
-    // void F() => a?[i].M(); becomes void F() { if (a is { } t) { global::N.C.M(t[i]); } }
-    private SyntaxNode? VisitLocalFunctionWithVoidBody(LocalFunctionStatementSyntax node)
-    {
-        if (ManagedConditionalAccess.GetVoidBodyAccess(node, semanticModel) is not { } access)
-        {
-            return VisitNestedCallable(node, base.VisitLocalFunctionStatement);
-        }
-
-        var outerAccess = _voidBodyAccess;
-        _voidBodyAccess = access;
-        try
-        {
-            var visited = VisitNestedCallable(node, base.VisitLocalFunctionStatement) as LocalFunctionStatementSyntax ??
-                          throw new InvalidOperationException($"'{node.Identifier}' did not rewrite.");
-            var statement = _voidBodyStatement ??
-                            throw new InvalidOperationException($"The body of '{node.Identifier}' did not rewrite.");
-            return visited
-                .WithExpressionBody(null)
-                .WithSemicolonToken(default)
-                .WithBody(SyntaxFactory.Block(statement));
-        }
-        finally
-        {
-            _voidBodyAccess = outerAccess;
-            _voidBodyStatement = null;
-        }
-    }
-
-    // The receiver and WhenNotNull rewritten in the order C# evaluates them, and the name of the pattern variable
-    private (ExpressionSyntax Receiver, ExpressionSyntax WhenNotNull, string Variable) VisitWithReceiverVariable(
-        ConditionalAccessExpressionSyntax node) =>
-        (VisitReceiver(node), VisitWhenNotNull(node), NextConditionalReceiver());
-
-    private ExpressionSyntax VisitReceiver(ConditionalAccessExpressionSyntax node) =>
-        Visit(node.Expression) as ExpressionSyntax ??
-        throw new InvalidOperationException($"The receiver of '{node}' did not rewrite.");
-
-    private ExpressionSyntax VisitWhenNotNull(ConditionalAccessExpressionSyntax node) =>
-        Visit(node.WhenNotNull) as ExpressionSyntax ??
-        throw new InvalidOperationException($"The access '{node}' did not rewrite.");
-
-    private string NextConditionalReceiver() =>
-        GSharpInternalNames.Lowering.ConditionalReceiverPrefix + _nextConditionalReceiverId++;
+    /// <summary>
+    /// The block body of a void method whose expression body is a null-conditional access that calls an extension
+    /// method on a binding, or <see langword="null"/>; the managed copy writes it in place of the expression body.
+    /// </summary>
+    public BlockSyntax? TryRewriteBody(ArrowExpressionClauseSyntax body) =>
+        ConditionalAccessWriter.TryWriteBody(body);
 }

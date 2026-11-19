@@ -271,17 +271,29 @@ public class ConditionalAccessDifferentialTests
 
     internal static readonly DifferentialCase s_voidExtensionStatement = BarrierCase(
         nameof(ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel),
-        ["chain_written", "element_of_chain_x", "unrolled_x", "device_function_x", "local_function_x"],
+        ["chain_written", "element_of_chain_x", "unrolled_x"],
         static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionStatementKernel(
-            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), Points(s.Rows), Points(s.Rows),
-            b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
+            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
+            gridDimX: s.GridX, blockDimX: s.BlockX),
         static (a, t) =>
         [
             (a[t] & 3) < 2 ? 0 : 7,
             (a[t] & 4) == 0 ? t : t + 1,
-            IsNullRow(a, t) ? t : t + 2,
-            (a[t] & 8) == 0 ? t : t + 1,
-            (a[t] & 16) == 0 ? t : t + 1
+            IsNullRow(a, t) ? t : t + 2
+        ]);
+
+    internal static readonly DifferentialCase s_voidExtensionBody = BarrierCase(
+        nameof(ConditionalAccessDifferentialKernels.VoidExtensionBodyKernel),
+        ["device_function_x", "managed_version_x", "local_function_x", "lambda_x"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionBodyKernel(
+            b.Get<int>("a"), Points(s.Rows), Points(s.Rows), Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) =>
+        [
+            (a[t] & 1) == 0 ? t : t + 1,
+            (a[t] & 2) == 0 ? t : t + t * 10 / ((a[t] & 7) + 1),
+            (a[t] & 4) == 0 ? t : t + 1,
+            t == 0 && (a[0] & 8) != 0 ? 1 : t
         ]);
 
     internal static readonly DifferentialCase s_twinFirst = BarrierCase(
@@ -484,4 +496,11 @@ public class ConditionalAccessDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ConditionalAccess_VoidExtensionCallAsAStatement_RunsOnlyForNonNullReceivers() =>
         DifferentialRunner.Run(s_voidExtensionStatement);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_VoidExtensionCallAsAVoidBody_RunsOnlyForNonNullReceivers() =>
+        DifferentialRunner.Run(s_voidExtensionBody);
 }

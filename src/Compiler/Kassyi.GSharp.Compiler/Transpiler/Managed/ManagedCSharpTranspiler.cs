@@ -241,6 +241,12 @@ internal static class ManagedCSharpTranspiler
             rewriter.Visit(MutantSwitchRemover.Remove(node, semanticModel)) as T
             ?? throw new InvalidOperationException("Managed execution rewriting removed the device function body.");
 
+        // A void expression body that is a null-conditional access calling an extension method on a binding is a block
+        // body: its access is written as a statement on the receiver in a pattern variable (ManagedConditionalAccess)
+        var accessBody = declaration.ExpressionBody is { } arrow
+            ? rewriter.TryRewriteBody(MutantSwitchRemover.Remove(arrow, semanticModel))
+            : null;
+
         // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
         // directives), without attributes (the version is not a device function) and without 'this'
@@ -254,8 +260,11 @@ internal static class ManagedCSharpTranspiler
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
             .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
             .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel))
-            .WithBody(declaration.Body is { } body ? RewriteBody(body) : null)
-            .WithExpressionBody(declaration.ExpressionBody is { } expressionBody ? RewriteBody(expressionBody) : null)
+            .WithBody(accessBody ?? (declaration.Body is { } body ? RewriteBody(body) : null))
+            .WithExpressionBody(accessBody == null && declaration.ExpressionBody is { } expressionBody
+                ? RewriteBody(expressionBody)
+                : null)
+            .WithSemicolonToken(accessBody == null ? declaration.SemicolonToken : default)
             .WithoutTrivia();
 
         using var writer = new SourceWriter();

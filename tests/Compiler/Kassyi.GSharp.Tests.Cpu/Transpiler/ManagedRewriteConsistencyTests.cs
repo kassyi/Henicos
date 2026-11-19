@@ -244,9 +244,6 @@ public class ManagedRewriteConsistencyTests
                 },
             SwitchExpressionSyntax switchExpression =>
                 model.GetOperation(switchExpression) is ISwitchExpressionOperation { IsExhaustive: false },
-            // A null-conditional access that calls an extension method on a binding is written on its receiver in a
-            // pattern variable, where the qualifier alone would move the binding out of the access
-            ConditionalAccessExpressionSyntax access => ManagedConditionalAccess.NeedsReceiverVariable(access, model),
             ArgumentSyntax { RefKindKeyword.RawKind: (int)SyntaxKind.None } argument =>
                 model.GetOperation(argument.Expression) is
                 {
