@@ -255,4 +255,70 @@ namespace SuspendingCallInStructMemberTest
             Value = TaggedRotate(tag);
         }
     }
+
+    // Warp intrinsics written directly in a struct member body, and sort comparison members
+    public static partial class SuspendingCallInStructMemberKernels
+    {
+        [GpuKernel]
+        public static void WarpIntrinsicKernel(int[] output)
+        {
+            var s = new ShuffleCtor(ThreadIndex.X);
+            var w = new SyncWarpCtor(ThreadIndex.X);
+            var m = new ActiveMaskCtor(ThreadIndex.X);
+            output[ThreadIndex.X] = s.V + w.V + m.V;
+        }
+
+        [GpuKernel]
+        public static void SortKernel(Span<int> data, Span<RotRecord> records)
+        {
+            if (ThreadIndex.X == 0)
+            {
+                data.Sort(new RotComparer());
+                records.Sort();
+            }
+        }
+    }
+
+    public struct ShuffleCtor
+    {
+        public int V;
+
+        public ShuffleCtor(int t)
+        {
+            V = Warp.ShuffleSync(0xFFFFFFFFu, t, 0);
+        }
+    }
+
+    public struct SyncWarpCtor
+    {
+        public int V;
+
+        public SyncWarpCtor(int t)
+        {
+            Gpu.SyncWarp(0xFFFFFFFFu);
+            V = t;
+        }
+    }
+
+    public struct ActiveMaskCtor
+    {
+        public int V;
+
+        public ActiveMaskCtor(int t)
+        {
+            V = t + (int)Warp.ActiveMask();
+        }
+    }
+
+    public struct RotComparer : System.Collections.Generic.IComparer<int>
+    {
+        public int Compare(int a, int b) => TaggedRotate(a) - b;
+    }
+
+    public struct RotRecord : IComparable<RotRecord>
+    {
+        public int Key;
+
+        public int CompareTo(RotRecord other) => TaggedRotate(Key) - other.Key;
+    }
 }

@@ -127,8 +127,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed, and a
     // warp shuffle anywhere else is not a split point, so a lane would read another lane's value before that lane wrote
-    // it, or the shuffle would run where C# does not evaluate it (#1274). A struct member body is not turned into a state
-    // machine either; the transpiler reports a suspending call there when it writes the body
+    // it, or the shuffle would run where C# does not evaluate it (#1274). A struct member body is not turned into a
+    // state machine either; the transpiler reports a suspending call or a warp shuffle there when it writes the body
     // (StructMemberSuspendingCall), so that a member that device code never runs is not reported.
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
@@ -199,7 +199,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
                 invocation.GetLocation(), callee.Name, shuffleContext,
-                GetWarpCallee(intrinsic.Shuffle));
+                SplitPointPlacement.GetWarpCallee(intrinsic.Shuffle));
         }
 
         return true;
@@ -208,29 +208,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     // Whether the project builds the native C++ and managed paths: every dialect but CUDA
     private static bool BuildsCpuPaths(AnalyzerOptions options) =>
         !TranspilerDialects.IsCuda(TranspilerDialects.GetName(options.AnalyzerConfigOptionsProvider.GlobalOptions));
-
-    // The callee kinds of GSH0062, the third argument of its message
-    private const string WarpShuffleCallee = "is a warp shuffle";
-
-    private const string WarpVoteCallee = "is a warp vote or reduction";
-
-    private const string WarpBarrierCallee = "is a warp barrier";
-
-    private const string WarpActiveMaskCallee = "returns the lanes of the warp that reach it together";
-
-    private static string GetWarpCallee(WarpShuffleKind kind) =>
-        kind switch
-        {
-            WarpShuffleKind.SyncWarp => WarpBarrierCallee,
-            WarpShuffleKind.ActiveMask => WarpActiveMaskCallee,
-            _ when IsVoteOrReduction(kind) => WarpVoteCallee,
-            _ => WarpShuffleCallee
-        };
-
-    private static bool IsVoteOrReduction(WarpShuffleKind kind) =>
-        kind is WarpShuffleKind.Ballot or WarpShuffleKind.All or WarpShuffleKind.Any or WarpShuffleKind.ReduceAdd
-            or WarpShuffleKind.ReduceMin or WarpShuffleKind.ReduceMax or WarpShuffleKind.ReduceAnd
-            or WarpShuffleKind.ReduceOr or WarpShuffleKind.ReduceXor;
 
     // [WHY] A suspending call is called again on every resume, and the lowering keeps a by-reference argument as the
     // location it names, evaluating only its array or pointer and its indices once. A reference that a call, a property
@@ -246,19 +223,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 SpilledArguments.ClassifyByReference(argument, model) == ByReferencePassing.ReselectedLocation
             );
 
-    // Lambdas and local functions belong to the member that declares them
-    private static ISymbol? GetDeclaringMember(ISymbol? symbol)
-    {
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
-        return symbol;
-    }
-
     private static bool IsInGpuMethod(ISymbol? symbol) =>
-        GetDeclaringMember(symbol) is IMethodSymbol declaring && GpuExecutionSpace.IsGpuFunction(declaring);
+        symbol.GetDeclaringMember() is IMethodSymbol declaring && GpuExecutionSpace.IsGpuFunction(declaring);
 
     /// <summary>
     /// Whether <paramref name="invocation"/> calls <c>Gpu.SyncThreads()</c>, however it is spelled (<c>Gpu.</c>, a

@@ -3,6 +3,20 @@ namespace Kassyi.GSharp.Compiler.Extensions;
 /// <summary>Provides zero-allocation extension methods for Roslyn symbol inspections and namespace matching.</summary>
 internal static class SymbolExtensions
 {
+    /// <summary>
+    /// The member that declares <paramref name="symbol"/>: a lambda or local function belongs to the member around it.
+    /// Any other symbol is its own declaring member.
+    /// </summary>
+    public static ISymbol? GetDeclaringMember(this ISymbol? symbol)
+    {
+        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
+        {
+            symbol = symbol.ContainingSymbol;
+        }
+
+        return symbol;
+    }
+
     public static bool IsSystemNamespace(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true };
 

@@ -52,6 +52,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 return;
             }
 
+            // Before the custom rules, which write the warp intrinsics
+            StructMemberSuspendingCall.FailIfInStructMember(node, symbol, ref context);
             if (TryTranspileCustomInvocation(node, symbol, ref context))
             {
                 return;
@@ -100,7 +102,6 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        StructMemberSuspendingCall.FailIfInStructMember(node, symbol, ref context);
         StructOrdering.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         var convertArguments = context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
                                !symbol.HasAttribute(KnownAttributes.CudaIntrinsic) &&

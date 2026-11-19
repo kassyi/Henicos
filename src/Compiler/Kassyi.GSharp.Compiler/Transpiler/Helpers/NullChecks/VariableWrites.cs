@@ -18,12 +18,7 @@ internal static class VariableWrites
 
     private static bool FindWrite(ISymbol variable, Compilation compilation)
     {
-        var owner = variable.ContainingSymbol;
-        while (owner is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            owner = owner.ContainingSymbol;
-        }
-
+        var owner = variable.ContainingSymbol.GetDeclaringMember();
         if (owner is not IMethodSymbol { DeclaringSyntaxReferences.Length: > 0 } method)
         {
             return true;

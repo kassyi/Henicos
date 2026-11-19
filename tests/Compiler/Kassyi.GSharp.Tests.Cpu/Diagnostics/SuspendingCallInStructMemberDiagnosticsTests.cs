@@ -5,15 +5,18 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// <summary>
 /// A struct member body that device code runs (constructor, member initializer, accessor, conversion operator, the
 /// truth operators that a <c>&amp;&amp;</c> over an operator macro calls, a <c>Dispose</c> that a device <c>using</c>
-/// calls) is not turned into a state machine, so a call there of a device function that reaches a barrier is GSH0062
-/// at the call, with or without <c>[GpuDeviceFunction]</c> on the member, and once however many GPU methods use the
-/// struct. Members that only the host calls, a struct that no device code uses, a class and a static device function
-/// of a struct are not reported.
+/// calls, a <c>Compare</c> or <c>CompareTo</c> that a device <c>Sort</c> calls) is not turned into a state machine, so
+/// a call there of a device function that reaches a barrier, or of a warp shuffle, <c>Gpu.SyncWarp</c> or
+/// <c>Warp.ActiveMask()</c>, is GSH0062 at the call, with or without <c>[GpuDeviceFunction]</c> on the member, and once
+/// however many GPU methods use the struct. Members that only the host calls, a struct that no device code uses, a
+/// class and a static device function of a struct are not reported.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class SuspendingCallInStructMemberDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/SuspendingCallInStructMember.cs";
+
+    private static readonly string Id = GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id;
 
     private const string Callee =
         "is a device function that reaches Gpu.SyncThreads() or a warp shuffle, so it cannot be called ";
@@ -42,7 +45,12 @@ public class SuspendingCallInStructMemberDiagnosticsTests
                 (Analyzer, 185, 68, 185, 89),
                 (Analyzer, 198, 17, 198, 32),
                 (Analyzer, 212, 60, 212, 81),
-                (Analyzer, 214, 61, 214, 82)
+                (Analyzer, 214, 61, 214, 82),
+                (Analyzer, 288, 17, 288, 52),
+                (Analyzer, 298, 13, 298, 38),
+                (Analyzer, 309, 26, 309, 43),
+                (Analyzer, 315, 45, 315, 60),
+                (Analyzer, 322, 50, 322, 67)
             ],
             Sorted(diagnostics.Ranges(GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id)));
         Assert.All(
@@ -64,7 +72,19 @@ public class SuspendingCallInStructMemberDiagnosticsTests
         Assert.Equal([121, 127, 175, 181], StartLines(diagnostics, "in a property accessor"));
         Assert.Equal([155, 185], StartLines(diagnostics, "in a conversion operator"));
         Assert.Equal([212, 214], StartLines(diagnostics, "in a user-defined operator"));
-        Assert.Equal([198], StartLines(diagnostics, "in a method of a struct"));
+        Assert.Equal([198, 315, 322], StartLines(diagnostics, "in a method of a struct"));
+        Assert.Equal(
+            [(Analyzer, 288, 17, 288, 52)],
+            diagnostics.Ranges(Id, "'ShuffleSync' is a warp shuffle, so it cannot be called in a constructor"));
+        Assert.Equal(
+            [(Analyzer, 298, 13, 298, 38)],
+            diagnostics.Ranges(Id, "'SyncWarp' is a warp barrier, so it cannot be called in a constructor"));
+        Assert.Equal(
+            [(Analyzer, 309, 26, 309, 43)],
+            diagnostics.Ranges(
+                Id,
+                "'ActiveMask' returns the lanes of the warp that reach it together, so it cannot be called in a "
+                + "constructor"));
     }
 
     [Theory]
@@ -78,7 +98,7 @@ public class SuspendingCallInStructMemberDiagnosticsTests
         var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
 
         var stated = KernelDiagnostics.FindStatedFailures(run);
-        Assert.Equal(15, stated.Count);
+        Assert.Equal(20, stated.Count);
         Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
         Assert.All(stated, static f => Assert.EndsWith("GSH0062", f.Failure, StringComparison.Ordinal));
     }

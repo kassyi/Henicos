@@ -130,12 +130,8 @@ internal sealed class ErrorSiteTable
             return null;
         }
 
-        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start);
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
+        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start)
+            .GetDeclaringMember();
         return symbol is IMethodSymbol method ? method.Name : null;
     }
 

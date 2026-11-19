@@ -52,18 +52,11 @@ public class SharedMemoryDeclarationAnalyzer : DiagnosticAnalyzer
         constructor.Parameters.Length < 2 || constructor.Parameters[1].Type.SpecialType != SpecialType.System_UInt64;
 
     // Mirrors what the C# compiler passes for [CallerMemberName]: the member that declares a lambda or local function
-    private static string GetCallerMemberName(ISymbol? symbol)
-    {
-        while (symbol is IMethodSymbol { MethodKind: MethodKind.AnonymousFunction or MethodKind.LocalFunction })
-        {
-            symbol = symbol.ContainingSymbol;
-        }
-
-        return symbol switch
+    private static string GetCallerMemberName(ISymbol? symbol) =>
+        symbol.GetDeclaringMember() switch
         {
             IMethodSymbol { AssociatedSymbol: { } associated } => associated.Name,
-            null => string.Empty,
-            _ => symbol.Name
+            { } member => member.Name,
+            null => string.Empty
         };
-    }
 }
