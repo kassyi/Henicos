@@ -6,6 +6,8 @@ a receiver written with a leading dot) and where a new helper goes.
 | Intent | Use | Do not write |
 | ----- | ----- | ----- |
 | Symbol of a node | `.GetSymbol` | `GetSymbolInfo(node).Symbol` |
+| The `Add` that C# calls for an element of a collection initializer, also for an element of a lowered tree | `.GetCollectionInitializerAdd` | `GetCollectionInitializerSymbolInfo` on a lowered node, which binds to nothing |
+| The element of the user's collection initializer that an element of a lowered initializer stands for, found by its index through the initializer, with the semantic model of its tree | `.TryGetOriginalInitializerElement` | `TryGetOriginalNode` on the element of a lowered initializer, which a temporary may have replaced |
 | Type of an expression | `.GetTypeSymbol` | `GetTypeInfo(node).Type` |
 | Type an expression converts to (the parameter type of an argument) | `.GetConvertedTypeSymbol` | `GetTypeInfo(node).ConvertedType` |
 | Declared symbol of a given kind | `.GetDeclaredSymbol` (`GetDeclaredSymbol<IMethodSymbol>(decl)`) | `GetDeclaredSymbol(decl) as IMethodSymbol` |

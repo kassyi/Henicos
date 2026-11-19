@@ -131,10 +131,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation)
     {
-        var unsupportedContext = SplitPointPlacement.FindUnsupportedContext(
-            invocation, context.SemanticModel, isWarpShuffle: false);
-        var shuffleContext = SplitPointPlacement.FindUnsupportedContext(
-            invocation, context.SemanticModel, isWarpShuffle: true);
+        var (unsupportedContext, shuffleContext) = FindUnsupportedContexts(invocation, context.SemanticModel);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation, context.SemanticModel);
         if (unsupportedContext == null && shuffleContext == null && byReferenceArgument == null)
         {
@@ -188,6 +185,20 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 callee.Name, "with a by-reference argument that a call, a property or a ref conditional selects",
                 SplitPointPlacement.SuspendingDeviceFunctionCallee);
         }
+    }
+
+    // The GSH0062 context of the call where a call that suspends, and where a warp shuffle, cannot stand; null where it
+    // may. A split that the CPU paths would hoist out of a creation with a collection initializer, before what C#
+    // evaluates first, is such a place for both until #2105
+    private static (string? Suspending, string? Shuffle) FindUnsupportedContexts(InvocationExpressionSyntax invocation,
+        SemanticModel model)
+    {
+        var initializerContext = CollectionInitializerSplitContext.IsReordered(invocation, model)
+            ? CollectionInitializerSplitContext.Context
+            : null;
+        return (
+            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: false) ?? initializerContext,
+            SplitPointPlacement.FindUnsupportedContext(invocation, model, isWarpShuffle: true) ?? initializerContext);
     }
 
     // Whether the project builds the native C++ and managed paths: every dialect but CUDA
