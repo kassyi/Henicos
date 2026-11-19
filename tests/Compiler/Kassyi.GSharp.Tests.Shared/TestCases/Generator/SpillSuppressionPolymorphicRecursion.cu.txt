@@ -1,8 +1,8 @@
 using Kassyi.GSharp.Core;
 
-// A generic struct whose constructor constructs the same struct with a deeper type argument (polymorphic recursion):
-// every step is a new construction. Kept out of the *.cs test cases, which the IR tests compile and walk, because the
-// generator itself does not handle this form yet
+// Generic structs whose constructors construct a struct with a type argument that holds their own type parameter
+// (polymorphic recursion): every step is a new construction. Kept out of the *.cs test cases, which the IR tests
+// compile and walk, because the generator itself does not handle this form yet
 namespace PolymorphicRecursion
 {
     public struct Wrap<T> where T : struct
@@ -10,6 +10,7 @@ namespace PolymorphicRecursion
         public T Inner;
     }
 
+    // Deep<T> -> Deep<Wrap<T>>
     public struct Deep<T> where T : struct
     {
         public int N;
@@ -24,15 +25,95 @@ namespace PolymorphicRecursion
         }
     }
 
+    // A<T> -> B<Wrap<T>> -> A<Wrap<T>>
+    public struct A<T> where T : struct
+    {
+        public int N;
+
+        public A(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new B<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    public struct B<T> where T : struct
+    {
+        public int N;
+
+        public B(int n)
+        {
+            N = n;
+            if (n > 0)
+            {
+                N += new A<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    // S<T, U> -> S<U, Wrap<T>>
+    public struct S<T, U> where T : struct where U : struct
+    {
+        public int N;
+
+        public S(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new S<U, Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    // O<T>.I -> O<Wrap<T>>.I
+    public struct O<T> where T : struct
+    {
+        public struct I
+        {
+            public int N;
+
+            public I(int n)
+            {
+                N = Kernels.Step(n);
+                if (n > 0)
+                {
+                    N += new O<Wrap<T>>.I(n - 1).N;
+                }
+            }
+        }
+    }
+
     public static partial class Kernels
     {
         [GpuDeviceFunction]
         public static int Step(int x) => x + 1;
 
         [GpuKernel]
-        public static void PolyKernel(int[] d)
+        public static void DeepKernel(int[] d)
         {
             d[0] = new Deep<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void AlternatingKernel(int[] d)
+        {
+            d[0] = new A<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void SwapKernel(int[] d)
+        {
+            d[0] = new S<int, long>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void NestedTypeKernel(int[] d)
+        {
+            d[0] = new O<int>.I(d[1]).N;
         }
     }
 }

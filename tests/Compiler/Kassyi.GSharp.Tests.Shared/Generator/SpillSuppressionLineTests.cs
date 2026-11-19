@@ -78,6 +78,7 @@ public class SpillSuppressionLineTests
     [InlineData("ViaNested")]
     [InlineData("ViaUsingDeclaration")]
     [InlineData("ViaUsingExpression")]
+    [InlineData("ViaFiniteGrowth")]
     public void CudaModule_FunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
     {
         var module = s_cudaModule.Value;
@@ -127,17 +128,22 @@ public class SpillSuppressionLineTests
         Assert.DoesNotContain(name, ReadSuppressionLine(module));
     }
 
-    // Deep<T> constructs Deep<Wrap<T>>: every step is a new construction, so the walk has to stop on its own
-    [Fact]
+    // Each kernel reaches a struct that constructs itself, or another that constructs it back, with a type argument
+    // that holds its own type parameter: every step is a new construction, so the walk has to stop on its own
+    [Theory]
     [Scenario(TestScenario.Boundary)]
-    public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends()
+    [InlineData("DeepKernel")]
+    [InlineData("AlternatingKernel")]
+    [InlineData("SwapKernel")]
+    [InlineData("NestedTypeKernel")]
+    public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends(string kernelName)
     {
         var compilation = RoslynTestUtility.CreateCompilation(
             RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionPolymorphicRecursion.cu.txt"));
         var declaration = compilation.SyntaxTrees
             .SelectMany(static tree => tree.GetRoot().DescendantNodes())
             .OfType<MethodDeclarationSyntax>()
-            .Single(static method => method.Identifier.ValueText == "PolyKernel");
+            .Single(method => method.Identifier.ValueText == kernelName);
         var kernel = Assert.IsAssignableFrom<IMethodSymbol>(
             compilation.GetSemanticModel(declaration.SyntaxTree).GetDeclaredSymbol(declaration));
 

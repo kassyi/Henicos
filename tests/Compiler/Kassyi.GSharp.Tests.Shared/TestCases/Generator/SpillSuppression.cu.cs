@@ -78,6 +78,34 @@ namespace SpillSuppressionTest
         }
     }
 
+    // A generic struct that constructs itself once more with a constant type argument: finite (Grower<int> and
+    // Grower<Wrapper<int>>), and new T() of the second runs Wrapper<int>(), which calls ViaFiniteGrowth
+    public struct Wrapper<T> where T : struct
+    {
+        public int A;
+
+        public Wrapper()
+        {
+            A = Kernels.ViaFiniteGrowth(1);
+        }
+    }
+
+    public struct Grower<T> where T : struct
+    {
+        public T Value;
+        public int N;
+
+        public Grower(int n)
+        {
+            Value = new T();
+            N = n;
+            if (n > 0)
+            {
+                N += new Grower<Wrapper<int>>(n - 1).N;
+            }
+        }
+    }
+
     public ref struct DeclarationDisposer
     {
         public int A;
@@ -210,6 +238,7 @@ namespace SpillSuppressionTest
         [GpuDeviceFunction] public static int ViaNested(int x) => x + 16;
         [GpuDeviceFunction] public static int ViaUsingDeclaration(int x) => x + 17;
         [GpuDeviceFunction] public static int ViaUsingExpression(int x) => x + 18;
+        [GpuDeviceFunction] public static int ViaFiniteGrowth(int x) => x + 19;
 
         // A device function whose own call of ViaNested is not an invocation (a property getter)
         [GpuDeviceFunction]
@@ -239,7 +268,8 @@ namespace SpillSuppressionTest
             d[2] = x + ViaGetter(d[1]) + ViaSetter(d[1]) + ViaIndexer(d[1]) + ViaConversion(d[1]) + ViaMacro(d[1]) +
                 ViaTruthTest(d[1]) + ViaConstructor(d[1]) + ViaInitializer(d[1]) + ViaGenericNew(d[1]) +
                 ViaLocal(d[1]) + ViaLambda(d[1]) + ViaMethodGroup(d[1]) + ViaDispose(d[1]) + ViaBuilder(d[1]) +
-                ViaPinnable(d[1]) + ViaNested(d[1]) + ViaUsingDeclaration(d[1]) + ViaUsingExpression(d[1]);
+                ViaPinnable(d[1]) + ViaNested(d[1]) + ViaUsingDeclaration(d[1]) + ViaUsingExpression(d[1]) +
+                ViaFiniteGrowth(d[1]);
         }
 #pragma warning restore GS0001
 
@@ -386,6 +416,13 @@ namespace SpillSuppressionTest
             {
                 d[0] = resource.A;
             }
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedFiniteGrowthKernel(int[] d)
+        {
+            d[0] = new Grower<int>(d[1]).N;
         }
 
         [GpuKernel]
