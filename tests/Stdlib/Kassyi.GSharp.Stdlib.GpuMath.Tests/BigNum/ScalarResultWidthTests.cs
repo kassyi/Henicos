@@ -154,6 +154,26 @@ public sealed class ScalarResultWidthTests : IDisposable
         _workspace.ThrowIfDeviceErrors();
     }
 
+    // In place, the borrow of 2^(32 words - 1) - 1 runs through every word, also across the passes of one block (1500,
+    // 3000), and the result fits the operand: the exact value and no domain error.
+    // mutant: GpuBigIntScalarKernels.cu.cs:58 `subtract == 1 ? 1u : 0u` -> `0u` (x - 2 in every word count)
+    [Theory]
+    [InlineData(3)]
+    [InlineData(68)]
+    [InlineData(1500)]
+    [InlineData(3000)]
+    [Scenario(TestScenario.Boundary)]
+    public void Sub_OneFromTopBitOnlyInPlace_BorrowsThroughEveryWord(int words)
+    {
+        var x = BigInteger.One << (32 * words - 1);
+        using var buffer = GpuBigUInt.FromBigInteger(_workspace, x, words);
+
+        GpuBigIntMath.Sub(buffer, 1u, buffer);
+
+        Assert.Equal(x - 1, buffer.ToBigInteger());
+        _workspace.ThrowIfDeviceErrors();
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task EqualWidth_WithCarry_IsReportedByAnAsynchronousRead()
