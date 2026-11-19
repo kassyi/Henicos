@@ -2,7 +2,8 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Checks the signature of a kernel or device function: its return type (GSH0004), an instance device function
-/// (GSH0066), function pointer parameters (GSH0003) and the CUDA kernel parameter space (GSH0064).
+/// (GSH0066), multidimensional array, function pointer and device-function heap object parameters (GSH0003), and the
+/// CUDA kernel parameter space (GSH0064).
 /// </summary>
 internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarationSyntax>
 {
@@ -55,32 +56,38 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                 method.Name);
         }
 
+        var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);
         foreach (var parameter in method.Parameters)
         {
             if (parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var parameterSyntax) &&
                 parameterSyntax.Type is { } typeSyntax)
             {
-                if (GpuCodeConstraints.ContainsMultidimensionalArray(parameter.Type))
-                {
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.UnsupportedSyntax,
-                        typeSyntax,
-                        GpuCodeConstraints.MultidimensionalArray);
-                }
-                else if (GpuCodeConstraints.IsFunctionPointer(parameter.Type))
-                {
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.UnsupportedSyntax,
-                        typeSyntax,
-                        typeSyntax.Kind().ToString());
-                }
+                ReportParameterType(parameter.Type, typeSyntax, isKernel, ref context);
             }
         }
 
-        if (method.HasAttribute(KnownAttributes.GpuKernel))
+        if (isKernel)
         {
             CheckReservedLaunchParameterNames(method, ref context);
             CheckKernelParameterSpace(node, method, ref context);
+        }
+    }
+
+    // A kernel parameter of a heap object type is GSH0112 (KernelDeclarationAnalyzer), so a kernel is not reported again
+    private static void ReportParameterType(ITypeSymbol type, TypeSyntax typeSyntax, bool isKernel,
+        ref ValidationContext context)
+    {
+        var message = type switch
+        {
+            _ when GpuCodeConstraints.ContainsMultidimensionalArray(type) => GpuCodeConstraints.MultidimensionalArray,
+            _ when GpuCodeConstraints.IsFunctionPointer(type) => typeSyntax.Kind().ToString(),
+            _ when !isKernel && GpuCodeConstraints.IsHeapObjectType(type) => GpuCodeConstraints.HeapObjectType,
+            _ => null
+        };
+
+        if (message is not null)
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, message);
         }
     }
 

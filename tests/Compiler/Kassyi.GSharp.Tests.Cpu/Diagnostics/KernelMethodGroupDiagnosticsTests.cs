@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 public class KernelMethodGroupDiagnosticsTests
 {
     private const string TestCase = "Diagnostics/KernelMethodGroupAndDelegateCombination.cu.cs";
+    private const string DeviceFunctionParameterTestCase = "Diagnostics/DeviceFunctionHeapObjectParameters.cu.cs";
 
     // Line 23 names the kernel alone, line 24 through its type; line 25 converts a device function, which is fine
     [Theory]
@@ -69,5 +70,44 @@ public class KernelMethodGroupDiagnosticsTests
                 (Analyzer, 58, 9, 58, 17)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "type object, Delegate or MulticastDelegate"));
+    }
+
+    // Device function parameters of object, Delegate, MulticastDelegate, or 1D arrays of them (including ref/in) are
+    // reported once at the parameter type (GSH0003); the call site Take(5) and TakeInt/TakeSpan produce no diagnostic
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task HeapObjectType_DeviceFunctionParameter_ReportsGsh0003AtTheType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(DeviceFunctionParameterTestCase, dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 11, 28, 11, 34),
+                (Analyzer, 14, 35, 14, 41),
+                (Analyzer, 17, 33, 17, 39),
+                (Analyzer, 20, 36, 20, 44),
+                (Analyzer, 23, 45, 23, 62),
+                (Analyzer, 26, 33, 26, 41)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, GpuCodeConstraints.HeapObjectType));
+        Assert.Equal(6, diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id).Count);
+    }
+
+    // A kernel parameter of the same types is GSH0112 alone: GSH0003 would be a second report of one parameter
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task HeapObjectType_KernelParameter_ReportsGsh0112OnceAndNoGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(DeviceFunctionParameterTestCase, dialect);
+
+        Assert.Equal(
+            [(Analyzer, 42, 46, 42, 54), (Analyzer, 48, 48, 48, 58)],
+            diagnostics.Ranges(GSharpDiagnostics.KernelParameterHasNoDeviceRepresentation.Id));
+        Assert.Equal(6, diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id).Count);
+        Assert.Equal(8, diagnostics.Length);
     }
 }
