@@ -482,6 +482,159 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 static trivia => trivia.IsKind(SyntaxKind.ErrorDirectiveTrivia)));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ChainedLabelJump_GotoToInnerLabelFromAnotherState_ReportsGSH0121OnGoto()
+    {
+        var actual = await RunAsync("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs", "Cpu");
+
+        var id = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
+        // mutant: FindGotosToChainedLabelsAcrossStates `!=` -> `==` -> none of these, and the same-state goto instead
+        // mutant: the chain walk stops after one inner label -> no report at line 59
+        // mutant: NumberStates with an empty set of state labels -> no report at line 85
+        Assert.Equal(
+            [
+                (id, 21, 13, 21, 25),
+                (id, 35, 13, 35, 25),
+                (id, 59, 13, 59, 24),
+                (id, 85, 13, 85, 25),
+                (id, 102, 13, 102, 25)
+            ],
+            actual);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ChainedLabelJump_Generator_ReportsTheAnalyzersGSH0121AndTheGeneratedCSharpCompiles()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+
+        Assert.Equal(
+            [
+                (DiagnosticOrigin.Analyzer, 21, 13, 21, 25),
+                (DiagnosticOrigin.Analyzer, 35, 13, 35, 25),
+                (DiagnosticOrigin.Analyzer, 59, 13, 59, 24),
+                (DiagnosticOrigin.Analyzer, 85, 13, 85, 25),
+                (DiagnosticOrigin.Analyzer, 102, 13, 102, 25)
+            ],
+            run.Analyzer
+                .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+                .ToImmutableArray()
+                .Ranges(GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id)
+                .OrderBy(static r => r.StartLine)
+                .ToList());
+        Assert.Equal(5, run.Analyzer.Length);
+        // The generator reports the same diagnostics from its own lowering, so a build without the analyzers stops too.
+        // Equal diagnostics (same descriptor, place and arguments) are the ones the compiler shows once
+        // mutant: HeldRefLocalSite.Collect without the GSH0121 sites -> the generator reports nothing
+        Assert.Equal(5, run.Generator.Length);
+        Assert.True(run.Analyzer.ToHashSet().SetEquals(run.Generator));
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+        // The managed output of a rejected method is not written: no CS0159 is generated
+        // mutant: ManagedCSharpTranspiler.CreateBody without the GotosToChainedLabelsAcrossStates branch -> CS0159
+        Assert.Empty(run.Output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString()));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ChainedLabelJump_CudaDialectExported_ReportsTheDeviceFunctionOnly()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cuda");
+
+        // A CUDA project exports its device code by default: its consumers on the CPU paths run the managed state
+        // machine of the device function, which the rejected jump leaves empty. The kernels run on the GPU as written
+        // mutant: ChainedLabelJumpChecks without the IsKernel check -> the gotos of the kernels too
+        // mutant: ChainedLabelJumpChecks without the ExportsDeviceCode check -> nothing
+        // mutant: ReportHeldRefLocals with the kernels' sites on CUDA -> the generator reports the kernels too
+        var id = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 102, 13, 102, 25)],
+            run.Analyzer
+                .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+                .ToImmutableArray()
+                .Ranges(id)
+                .ToList());
+        Assert.True(run.Analyzer.Where(d => d.Id == id).ToHashSet().SetEquals(run.Generator.Where(d => d.Id == id)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ChainedLabelJump_GotoAcrossBarrier_ReportsGSH0040AloneFromAnalyzerAndGenerator()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoBarrierKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+
+        // A goto across a barrier or a call that suspends gets GSH0040 only; one across a shuffle alone keeps GSH0121,
+        // though the method has a barrier before the chain. The generator reports the same, so a build without the
+        // analyzers stops at the same places
+        // mutant: FindReported without the IsCrossBarrierGoto check -> GSH0121 at lines 31 and 50 too
+        // mutant: IsCrossBarrierGoto given the goto of the lowered body -> GSH0121 at lines 31 and 50 too
+        // mutant: GSH0121 left out whenever the method has a barrier -> no GSH0121 at line 70
+        // mutant: HeldRefLocalSite.Report without the CrossesBarrier branch -> the generator reports GSH0121 at 31 and 50
+        var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
+        var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
+        var analyzer = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .ToImmutableArray();
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 31, 13, 31, 25), (DiagnosticOrigin.Analyzer, 50, 13, 50, 25)],
+            analyzer.Ranges(gsh0040).OrderBy(static r => r.StartLine).ToList());
+        Assert.Equal([(DiagnosticOrigin.Analyzer, 70, 13, 70, 25)], analyzer.Ranges(gsh0121).ToList());
+        Assert.Equal(3, run.Generator.Length);
+        Assert.True(run.Analyzer
+            .Where(d => d.Id == gsh0040 || d.Id == gsh0121)
+            .ToHashSet()
+            .SetEquals(run.Generator));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ChainedLabelJump_CudaDialectNotExported_ReportsNothing()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoKernels.cu.cs"));
+
+        // Without the export no managed state machine is emitted, so the CUDA jump is left as written
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cuda",
+            new Dictionary<string, string> { ["build_property.GSharpExportDeviceCode"] = "false" });
+
+        Assert.DoesNotContain(run.Analyzer, static d => d.Id == GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id);
+        Assert.Empty(run.Generator);
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task ChainedLabelJumpValid_Generator_ReportsNoDiagnostics(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/ChainedLabelGotoValidKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        // Same state, first label, a label with a statement of its own, and an unroll hint before chained labels: no
+        // GSH0121, and no GSH0017 stated as #error in the CPU C++ output (which splitting the chain would give)
+        // mutant: FindGotosToChainedLabelsAcrossStates without the state comparison -> GSH0121 on the same-state goto
+        Assert.Empty(run.Analyzer);
+        Assert.Empty(run.Generator);
+        Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
+        Assert.Empty(run.Output.GetDiagnostics()
+            .Where(static d => d.Severity == DiagnosticSeverity.Error)
+            .Select(static d => d.ToString()));
+    }
+
     private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>> RunAsync(
         string relativeTestCasePath, string dialect = "Cuda")
     {

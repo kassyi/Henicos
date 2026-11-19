@@ -865,6 +865,14 @@
   defaultSeverity: Error
   isEnabledByDefault: true
 
+- name: GotoToChainedLabelAcrossStates
+  id: GSH0121
+  title: "A goto reaches the inner label of chained labels from another state"
+  messageFormat: "'goto {0}' jumps to the label '{0}' of the chain of labels that starts with '{1}', from another state of the CPU state machine: a warp collective, a grid sync or a label that starts a state lies between them. Only '{1}' can start a state, so the CPU paths cannot build this jump yet. Write 'goto {1};', which jumps to the same statement, or write an empty statement right before the label ('...: ; {0}: ...') so that '{0}' starts a statement of its own. A goto across a barrier or a call that suspends is reported as GSH0040 instead."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
 - name: StackLinqChainTooDeep
   id: SLQ0001
   title: "StackLinq method chain is too deep"

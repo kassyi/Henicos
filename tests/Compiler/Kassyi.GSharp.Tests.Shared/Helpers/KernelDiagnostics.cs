@@ -94,9 +94,10 @@ public static class KernelDiagnostics
     }
 
     /// <summary>Runs the analyzers and the generator on <paramref name="compilation"/> for <paramref name="dialect"/>.</summary>
-    public static async Task<KernelDiagnosticsRun> RunCompilationAsync(Compilation compilation, string dialect)
+    public static async Task<KernelDiagnosticsRun> RunCompilationAsync(Compilation compilation, string dialect,
+        Dictionary<string, string>? additionalOptions = null)
     {
-        var options = new TestAnalyzerConfigOptionsProvider(dialect);
+        var options = new TestAnalyzerConfigOptionsProvider(dialect, additionalOptions);
 
         var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, options);
         var analyzerDiagnostics = await compilation

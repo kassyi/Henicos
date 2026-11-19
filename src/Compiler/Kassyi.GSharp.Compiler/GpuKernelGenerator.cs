@@ -215,7 +215,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var allDevices = deviceMethods.Collect();
 
         // [WHY] A ref local that the CPU state machine would keep in its frame and GSH0039 does not report is the
-        // generator's own finding, from the lowering (#1640); reported for the CPU dialect only, which lowers (#929)
+        // generator's own finding, from the lowering (#1640); reported for the CPU dialect only, which lowers (#929).
+        // GSH0121 rides along, also on a CUDA build that exports device code (ReportHeldRefLocals)
         var heldRefLocalSites = kernelMethods
             .Select(static (kernel, _) => kernel.HeldRefLocalSites)
             .Collect()
@@ -402,7 +403,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var structExports = DeviceExportEmitter.CreateStructRecords(context.SemanticModel.Compilation, cudaStructs,
                 cppStructs);
             var kernelErrorSites = errorSites.Entries.AsEquatableArray();
-            var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel);
+            var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -586,7 +587,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource,
                 export,
                 structExports,
-                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel),
+                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration),
                 functionSites);
         }
         catch (InsufficientExecutionStackException)
@@ -1138,25 +1139,26 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return distinct;
     }
 
-    // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite); a device
-    // function's sites once, however many results it has
+    // GSH0003 at the ref locals that the CPU state machines would keep in their frames (HeldRefLocalSite), GSH0039 and
+    // GSH0121; a device function's sites once, however many results it has. A CUDA build emits managed state machines
+    // only for the device functions it exports, so it reports only their GSH0121 (ChainedLabelJumpChecks)
     private static void ReportHeldRefLocals(SourceProductionContext context,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> kernels,
         ImmutableArray<EquatableArray<HeldRefLocalSite>> devices,
         GeneratorConfig config,
         Compilation compilation)
     {
-        if (config.IsCuda)
+        if (config.IsCuda && !config.ExportDeviceCode)
         {
             return;
         }
 
         var reported = new HashSet<HeldRefLocalSite>();
-        foreach (var sites in kernels.AddRange(devices))
+        foreach (var sites in config.IsCuda ? devices : kernels.AddRange(devices))
         {
             foreach (var site in sites)
             {
-                if (reported.Add(site))
+                if ((!config.IsCuda || site.IsChainedLabelGoto) && reported.Add(site))
                 {
                     site.Report(context, compilation);
                 }
