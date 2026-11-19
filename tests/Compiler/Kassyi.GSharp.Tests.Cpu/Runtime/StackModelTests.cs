@@ -113,7 +113,8 @@ public class StackModelTests
         int refTotal = 100;
         int outValue = 0;
 
-        RunManaged(() => StackModelKernels.LaunchRefOutKernel(input, output, ref refTotal, out outValue, n, blockDimX: n));
+        RunManaged(() =>
+            StackModelKernels.LaunchRefOutKernel(input, output, ref refTotal, out outValue, n, blockDimX: n));
 
         for (int i = 0; i < n; i++)
         {
@@ -233,7 +234,8 @@ public class StackModelTests
     {
         // The state machine does not wait at a barrier inside a local function yet (#2057, resume after a barrier
         // reached through a delegate, a lambda or a local function on the CPU paths); the stack model does
-        Skip.IfNot(BuiltWithStackModel, "The state machine does not wait at a barrier inside a local function (#2057).");
+        Skip.IfNot(BuiltWithStackModel,
+            "The state machine does not wait at a barrier inside a local function (#2057).");
         const int n = 16;
         var input = CreateSequence(n);
         var scratch = new int[n];

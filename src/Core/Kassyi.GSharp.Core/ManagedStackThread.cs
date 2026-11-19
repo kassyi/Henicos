@@ -66,11 +66,11 @@ internal static class ManagedBaton
     }
 }
 
-// The signal one thread of the stack model waits for. The count of the signals sent and of those its thread has taken is
-// the record; the event only wakes the thread. A wait that failed can then tell from the counts whether its signal has
-// come (a SynchronizationContext may take the event and throw after it), and a set of the event that no count goes with
-// (left over after such a failure, or not taken while an interruption was pending) only makes the thread look at the
-// counts again. Only one thread waits for a signal; any thread may send one.
+// The signal one thread of the stack model waits for. The count of the signals sent and of those its thread has taken
+// is the record; the event only wakes the thread. A wait that failed can then tell from the counts whether its signal
+// has come (a SynchronizationContext may take the event and throw after it), and a set of the event that no count goes
+// with (left over after such a failure, or not taken while an interruption was pending) only makes the thread look at
+// the counts again. Only one thread waits for a signal; any thread may send one.
 internal sealed class ManagedBatonSignal
 {
     private readonly AutoResetEvent _event = new(false);

@@ -64,17 +64,17 @@ public static class ManagedStackRunner
         var geometry = new LaunchGeometry(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
         LaunchLimits.GetManagedContextCount(geometry.TotalBlocks, blockDimX, blockDimY, blockDimZ, kernelName);
 
-        // [WHY] A wait of the scheduler can run another launch on the same thread (a SynchronizationContext that asks for
-        // wait notification, as a UI dispatcher does, or a message pumped during the wait of an STA thread). That launch
-        // gets its own launch record, worker array and block state, so that it leaves the waiting launch's untouched
+        // [WHY] A wait of the scheduler can run another launch on the same thread (a SynchronizationContext that asks
+        // for wait notification, as a UI dispatcher does, or a message pumped during the wait of an STA thread). That
+        // launch gets its own launch record, worker array and block state, so that it leaves the waiting launch's
+        // untouched
         var nested = t_activeLaunches > 0;
         var launch = nested ? new ManagedStackLaunch() : (t_launch ??= new ManagedStackLaunch());
         var outerState = nested ? ManagedGpuContext.SwapBlockState(new ManagedBlockState()) : null;
         t_activeLaunches++;
         try
         {
-            RunLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, geometry, launch,
-                nested, thread);
+            RunLaunch(geometry, sharedMemBytes, launch, nested, thread);
         }
         finally
         {
@@ -86,9 +86,8 @@ public static class ManagedStackRunner
         }
     }
 
-    private static void RunLaunch(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY,
-        uint blockDimZ, uint sharedMemBytes, in LaunchGeometry geometry, ManagedStackLaunch launch, bool nested,
-        Action<long> thread)
+    private static void RunLaunch(in LaunchGeometry geometry, uint sharedMemBytes, ManagedStackLaunch launch,
+        bool nested, Action<long> thread)
     {
         var threadsPerBlock = checked((int)geometry.ThreadsPerBlock);
         launch.State = ManagedGpuContext.ShareBlockState();
@@ -103,69 +102,11 @@ public static class ManagedStackRunner
         try
         {
             workers = ManagedStackThreadPool.Instance.Rent(threadsPerBlock, nested);
+            var schedule = new BlockSchedule(geometry, launch, workers, threadsPerBlock, orderProvider, seen);
             for (long block = 0; block < geometry.TotalBlocks; block++)
             {
-                var blockBase = block * threadsPerBlock;
-                for (var t = 0; t < threadsPerBlock; t++)
-                {
-                    var w = workers[t];
-                    var id = blockBase + t;
-                    w.Launch = launch;
-                    w.Body = thread;
-                    w.LinearThreadId = id;
-                    w.Context = geometry.ContextOf(id);
-                    w.AtBlockBarrier = false;
-                    w.Done = false;
-                    w.Failure = null;
-                }
-
-                var round = 0;
-                var anyActive = true;
-                while (anyActive)
-                {
-                    anyActive = false;
-                    round++;
-                    int[]? order = null;
-                    if (orderProvider is not null && seen is not null)
-                    {
-                        var roundInfo = new ManagedStackRound(
-                            gridDimX, gridDimY, gridDimZ,
-                            blockDimX, blockDimY, blockDimZ,
-                            checked((int)block), round, threadsPerBlock);
-                        order = GetOrder(orderProvider, roundInfo, seen);
-                    }
-
-                    for (var k = 0; k < threadsPerBlock; k++)
-                    {
-                        var w = workers[order is null ? k : order[k]];
-                        if (w.Done || w.AtBlockBarrier)
-                        {
-                            continue;
-                        }
-
-                        ManagedBaton.HandOver(w.Go, launch.Scheduler);
-                        if (w.Failure is { } failure)
-                        {
-                            first ??= failure;
-                            w.Failure = null;
-                        }
-
-                        if (!w.Done && !w.AtBlockBarrier)
-                        {
-                            throw new InvalidOperationException(
-                                "G#: a stack thread returned to the scheduler without finishing or reaching a block barrier");
-                        }
-                    }
-
-                    for (var t = 0; t < threadsPerBlock; t++)
-                    {
-                        if (workers[t].AtBlockBarrier)
-                        {
-                            workers[t].AtBlockBarrier = false;
-                            anyActive = true;
-                        }
-                    }
-                }
+                schedule.AssignBlock(block, thread);
+                schedule.RunBlock(block, ref first);
             }
         }
         catch (Exception) when (first is not null)
@@ -274,6 +215,108 @@ public static class ManagedStackRunner
         }
 
         failure?.Throw();
+    }
+
+    // The rounds of the blocks of one launch: the scheduler gives the baton to each thread of the block in turn (in
+    // index order, or the order of UseThreadOrder) until each has finished or reached the block barrier, then releases
+    // the barrier and runs the next round, until no thread waits at a barrier
+    private readonly struct BlockSchedule(
+        LaunchGeometry geometry,
+        ManagedStackLaunch launch,
+        ManagedStackThread[] workers,
+        int threadsPerBlock,
+        Func<ManagedStackRound, int[]>? orderProvider,
+        bool[]? seen)
+    {
+        // Gives each worker its GPU thread of <block>
+        public void AssignBlock(long block, Action<long> thread)
+        {
+            var blockBase = block * threadsPerBlock;
+            for (var t = 0; t < threadsPerBlock; t++)
+            {
+                var w = workers[t];
+                var id = blockBase + t;
+                w.Launch = launch;
+                w.Body = thread;
+                w.LinearThreadId = id;
+                w.Context = geometry.ContextOf(id);
+                w.AtBlockBarrier = false;
+                w.Done = false;
+                w.Failure = null;
+            }
+        }
+
+        // Runs the rounds of <block>; the first failure of a GPU thread goes to <first>, and the block goes on
+        public void RunBlock(long block, ref ExceptionDispatchInfo? first)
+        {
+            var round = 0;
+            bool anyActive;
+            do
+            {
+                round++;
+                anyActive = RunRound(block, round, ref first);
+            }
+            while (anyActive);
+        }
+
+        // One round; whether a thread reached the barrier, so that another round follows
+        private bool RunRound(long block, int round, ref ExceptionDispatchInfo? first)
+        {
+            var order = GetRoundOrder(block, round);
+            for (var k = 0; k < threadsPerBlock; k++)
+            {
+                var w = workers[order is null ? k : order[k]];
+                if (!w.Done && !w.AtBlockBarrier)
+                {
+                    Step(w, ref first);
+                }
+            }
+
+            var anyActive = false;
+            for (var t = 0; t < threadsPerBlock; t++)
+            {
+                if (workers[t].AtBlockBarrier)
+                {
+                    workers[t].AtBlockBarrier = false;
+                    anyActive = true;
+                }
+            }
+
+            return anyActive;
+        }
+
+        private int[]? GetRoundOrder(long block, int round)
+        {
+            if (orderProvider is null || seen is null)
+            {
+                return null;
+            }
+
+            var dimensions = geometry.Dimensions(threadsPerBlock);
+            var roundInfo = new ManagedStackRound(
+                dimensions.GridDimX, dimensions.GridDimY, dimensions.GridDimZ,
+                dimensions.BlockDimX, dimensions.BlockDimY, dimensions.BlockDimZ,
+                checked((int)block), round, threadsPerBlock);
+            return GetOrder(orderProvider, roundInfo, seen);
+        }
+
+        // Runs <w> until it finishes or reaches the block barrier
+        private void Step(ManagedStackThread w, ref ExceptionDispatchInfo? first)
+        {
+            ManagedBaton.HandOver(w.Go, launch.Scheduler);
+            if (w.Failure is { } failure)
+            {
+                first ??= failure;
+                w.Failure = null;
+            }
+
+            if (!w.Done && !w.AtBlockBarrier)
+            {
+                throw new InvalidOperationException(
+                    "G#: a stack thread returned to the scheduler without finishing or reaching a block " +
+                    "barrier");
+            }
+        }
     }
 
     private sealed class ThreadOrderScope(Func<ManagedStackRound, int[]>? previous) : IDisposable

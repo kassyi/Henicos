@@ -163,15 +163,15 @@ internal static class ManagedStackFormCollector
                     continue;
                 }
 
-                if (method.HasAttribute(KnownAttributes.GpuKernel))
+                var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);
+                if (isKernel &&
+                    KernelDeclaration.IsLaunchable(method, compilation, cancellationToken) &&
+                    ManagedStackEligibility.IsStackKernel(method, compilation))
                 {
-                    if (KernelDeclaration.IsLaunchable(method, compilation, cancellationToken) &&
-                        ManagedStackEligibility.IsStackKernel(method, compilation))
-                    {
-                        kernels.Add(method);
-                    }
+                    kernels.Add(method);
                 }
-                else if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+                else if (!isKernel &&
+                         method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
                          !method.IsPartialWithoutImplementation() &&
                          ManagedStackEligibility.IsStackFunction(method, compilation))
                 {
@@ -181,8 +181,8 @@ internal static class ManagedStackFormCollector
         }
     }
 
-    // [WHY] A stack form is an addition of the Stack model: when it cannot be made, the function keeps its state machine
-    // and the reason is stated in the build output (GpuKernelGenerator.EmitManagedStackFailures) instead of failing it
+    // [WHY] A stack form is an addition of the Stack model: when it cannot be made, the function keeps its state
+    // machine and the reason is stated in the build output (ManagedStackPipeline.EmitFailures) instead of failing it
     private static string? TryGenerate(IMethodSymbol method, Compilation compilation, bool isKernel,
         ImmutableArray<string>.Builder failures)
     {
@@ -193,8 +193,8 @@ internal static class ManagedStackFormCollector
                 return null;
             }
 
-            var plan = MethodEmissionPlan.Create(declaration, compilation.GetCachedSemanticModel(declaration.SyntaxTree),
-                isKernel);
+            var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
+            var plan = MethodEmissionPlan.Create(declaration, semanticModel, isKernel);
             if (!isKernel && plan.Kind != MethodEmissionKind.SuspendingDeviceFunction)
             {
                 return null;

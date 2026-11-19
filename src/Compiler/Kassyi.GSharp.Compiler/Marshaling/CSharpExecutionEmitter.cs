@@ -130,7 +130,8 @@ internal static class CSharpExecutionEmitter
         }
     }
 
-    // <runnerCall>, __gsharp_csharp_thread => [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
+    // <runnerCall>, __gsharp_csharp_thread =>
+    //     [__gsharp_csharp_result[__gsharp_csharp_thread] = ]<kernel>(<arguments>));
     private static void WriteRun(SourceWriter writer, in CSharpExecutionPlan plan, string runnerCall)
     {
         writer.Append($"{runnerCall}, {ThreadParameter} => ");

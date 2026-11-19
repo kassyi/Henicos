@@ -2,8 +2,8 @@ using Kassyi.GSharp.Core;
 
 namespace ManagedStackFallbackGeneratorCases;
 
-// A kernel that the stack model takes (a block barrier, no call of a function without a stack form) but whose stack form
-// cannot be made: it names ShuffleStep, which reaches a warp shuffle and has no stack form, as a method group
+// A kernel that the stack model takes (a block barrier, no call of a function without a stack form) but whose stack
+// form cannot be made: it names ShuffleStep, which reaches a warp shuffle and has no stack form, as a method group
 [SkipSnapshotConsistency("Input for ManagedStackModelGeneratorTests")]
 public static partial class FallbackKernels
 {

@@ -94,8 +94,9 @@ StackModel:
     # Followed by the body of the function's name (GlobalCppNames.GetKernelDerivedName).
     MethodPrefix: __gsharp_stackmodel_
     # The nested class that holds the [UnsafeAccessor] stub through which a stack form calls a target it cannot name
-    # (ManagedAccessorSet): followed by the body of the function's name and a counter (__gsharp_stackaccessor_<path>_<n>).
-    # A prefix of its own, so that the stubs of a function's stack form and of its managed version never share a name.
+    # (ManagedAccessorSet): followed by the body of the function's name and a counter
+    # (__gsharp_stackaccessor_<path>_<n>). A prefix of its own, so that the stubs of a function's stack form and of its
+    # managed version never share a name.
     AccessorPrefix: __gsharp_stackaccessor_
     # The block barrier of a stack form: the GPU thread waits in it until the scheduler runs it again.
     BlockBarrier: { Value: __gsharp_stack_block_barrier, Managed: ManagedGpuContext.Stack.cs }

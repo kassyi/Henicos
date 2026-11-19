@@ -52,7 +52,8 @@ public class ManagedStackModelGeneratorTests
             "\n\n",
             sources
                 .Where(static s => s.HintName.EndsWith("StackModelKernels.g.cs", StringComparison.Ordinal) ||
-                                   s.HintName.EndsWith("StackModelKernels.DeviceStateMachines.g.cs", StringComparison.Ordinal))
+                                   s.HintName.EndsWith("StackModelKernels.DeviceStateMachines.g.cs",
+                                       StringComparison.Ordinal))
                 .Select(static s => $"// === {s.HintName} ===\n{s.SourceText}"));
 
         return Verifier.Verify(combined, "cs")
@@ -67,8 +68,8 @@ public class ManagedStackModelGeneratorTests
         var unset = Run(barrierModel: null, s_fallbackTree);
         var stack = Run(barrierModel: "Stack", s_fallbackTree);
 
-        Assert.DoesNotContain(unset, static s => s.HintName == GpuKernelGenerator.ManagedStackFailuresHintName);
-        var failures = Assert.Single(stack, static s => s.HintName == GpuKernelGenerator.ManagedStackFailuresHintName);
+        Assert.DoesNotContain(unset, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
+        var failures = Assert.Single(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
         Assert.Contains("FallbackKernels.PassesSuspendingGroupKernel: InvalidOperationException", failures.SourceText,
             StringComparison.Ordinal);
         // A device function whose form cannot be made takes the forms of its callers along, up the whole chain
@@ -85,7 +86,7 @@ public class ManagedStackModelGeneratorTests
             GSharpInternalNames.StackModel.MethodPrefix, StringComparison.Ordinal));
         AssertSameSources(
             unset,
-            stack.Where(static s => s.HintName != GpuKernelGenerator.ManagedStackFailuresHintName).ToArray());
+            stack.Where(static s => s.HintName != ManagedStackPipeline.FailuresHintName).ToArray());
     }
 
     private static readonly SyntaxTree s_fallbackTree =

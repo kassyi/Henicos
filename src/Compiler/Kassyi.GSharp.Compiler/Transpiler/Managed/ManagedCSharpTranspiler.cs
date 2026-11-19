@@ -208,9 +208,9 @@ internal static class ManagedCSharpTranspiler
 
     /// <summary>
     /// Emits the stack form of a kernel or a device function that reaches a block barrier: a static method with the
-    /// user's parameters, named <c>__gsharp_stackmodel_&lt;path&gt;</c>, whose body is the user's body after the managed
-    /// rewrites (<see cref="ManagedExecutionRewriter"/>). The body is not lowered: each GPU thread runs it on a stack of
-    /// its own and waits inside the barrier.
+    /// user's parameters, named <c>__gsharp_stackmodel_&lt;path&gt;</c>, whose body is the user's body after the
+    /// managed rewrites (<see cref="ManagedExecutionRewriter"/>). The body is not lowered: each GPU thread runs it on a
+    /// stack of its own and waits inside the barrier.
     /// </summary>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="plan"/> has no symbol or no body.

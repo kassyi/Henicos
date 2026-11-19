@@ -2,19 +2,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args,
-    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]), or Class.__gsharp_enter_Foo(args, ref
-    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
+    // A block barrier of a stack form, a call of the user's code (qualified, routed, with its caller information) or a
+    // resume call of the lowered state machine (RewriteResumeCall)
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
-        if (bodyKind == ManagedBodyKind.StackBody &&
-            semanticModel.GetSymbol(node) is IMethodSymbol method &&
-            SyncIntrinsicClassifier.Classify(method).Kind == SyncIntrinsicKind.BlockBarrier)
+        if (TryRewriteStackBarrier(node) is { } stackBarrier)
         {
-            // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier()
-            return SyntaxFactory.InvocationExpression(
-                ManagedNames.CreateMemberAccess(GSharpInternalNames.StackModel.BlockBarrier)
-            ).WithTriviaFrom(node);
+            return stackBarrier;
         }
 
         if (node.Expression is not IdentifierNameSyntax
@@ -32,6 +26,14 @@ internal sealed partial class ManagedExecutionRewriter
                 : result;
         }
 
+        return RewriteResumeCall(node);
+    }
+
+    // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args,
+    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]), or Class.__gsharp_enter_Foo(args, ref
+    // __gsharp_ctx.__gsharp_call_frame_n[, ref target]) for a frame held as an object
+    private InvocationExpressionSyntax RewriteResumeCall(InvocationExpressionSyntax node)
+    {
         var arguments = node.ArgumentList.Arguments;
         if (arguments[0].Expression is not InvocationExpressionSyntax call ||
             arguments[1].Expression is not LiteralExpressionSyntax frameIndex ||
@@ -79,6 +81,22 @@ internal sealed partial class ManagedExecutionRewriter
         return SyntaxFactory.InvocationExpression(
             SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee, prefix)),
             SyntaxFactory.ArgumentList(callArguments));
+    }
+
+    // In a stack form, a block barrier becomes the barrier of the managed stack model:
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_block_barrier(); null for any other call
+    private InvocationExpressionSyntax? TryRewriteStackBarrier(InvocationExpressionSyntax node)
+    {
+        if (bodyKind != ManagedBodyKind.StackBody ||
+            semanticModel.GetSymbol(node) is not IMethodSymbol method ||
+            SyncIntrinsicClassifier.Classify(method).Kind != SyncIntrinsicKind.BlockBarrier)
+        {
+            return null;
+        }
+
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(GSharpInternalNames.StackModel.BlockBarrier)
+        ).WithTriviaFrom(node);
     }
 
     // The frame passed to the callee: __gsharp_ctx.__gsharp_call_frame_<i> (&__gsharp_ctx->... in an unsafe context),

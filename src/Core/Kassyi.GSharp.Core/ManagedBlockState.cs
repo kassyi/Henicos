@@ -7,18 +7,18 @@ internal sealed class ManagedBlockState
 #pragma warning disable SA1401 // Data-only internal block state; array fields are passed by ref to Array.Resize
     // One region per static shared memory declaration per block (a constant count, or a declaration in code that the
     // compiler does not rewrite). A later declaration never moves an earlier region: threads keep the span they were
-    // handed, so moving a region would leave them writing to a copy nobody else reads. Only the same declaration reached
-    // with a larger count moves its own region (see GrowRegion), which a constant count never does.
-    // The state is kept between grids; only the region counts are reset.
+    // handed, so moving a region would leave them writing to a copy nobody else reads. Only the same declaration
+    // reached with a larger count moves its own region (see GrowRegion), which a constant count never does. The state
+    // is kept between grids; only the region counts are reset.
     internal ManagedGpuContext.SharedRegion?[]?[]? PerBlockRegions;
 
     internal int[]? PerBlockRegionCount;
 
     // The dynamic shared memory of each block (#544): one array of the launch's sharedMemBytes, in which the dynamic
     // declarations get their regions with the arithmetic of the CUDA placement (__gsharp_dsmem_place in Prelude.cu) and
-    // of the native CPU arena. When the blocks run in grid phases (a cooperative kernel), every block keeps its array for
-    // the grid, so a span stays valid across the grid syncs. Otherwise each block runs to its end before the next one
-    // starts, and the blocks use one array in turn, as the native arena of an OpenMP thread does.
+    // of the native CPU arena. When the blocks run in grid phases (a cooperative kernel), every block keeps its array
+    // for the grid, so a span stays valid across the grid syncs. Otherwise each block runs to its end before the next
+    // one starts, and the blocks use one array in turn, as the native arena of an OpenMP thread does.
     internal ManagedGpuContext.DynamicSharedMemory?[]? PerBlockDynamic;
 
     internal bool BlocksRunInPhases;

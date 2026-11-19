@@ -121,7 +121,8 @@ internal sealed partial class ManagedExecutionRewriter
     {
         if (rewritten is not InvocationExpressionSyntax call ||
             semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
-            ManagedRouting.GetRoutedExtensionCall(symbol, semanticModel.Compilation, bodyKind) is not var (extension, prefix))
+            ManagedRouting.GetRoutedExtensionCall(symbol, semanticModel.Compilation, bodyKind) is not
+                var (extension, prefix))
         {
             return rewritten;
         }
@@ -139,7 +140,8 @@ internal sealed partial class ManagedExecutionRewriter
         method = null;
         prefix = null;
         if (semanticModel.GetSymbol(node) is not IMethodSymbol symbol ||
-            ManagedRouting.GetRoutedReferencePrefix(symbol, semanticModel.Compilation, bodyKind) is not { } targetPrefix)
+            ManagedRouting.GetRoutedReferencePrefix(symbol, semanticModel.Compilation, bodyKind) is not
+                { } targetPrefix)
         {
             return false;
         }

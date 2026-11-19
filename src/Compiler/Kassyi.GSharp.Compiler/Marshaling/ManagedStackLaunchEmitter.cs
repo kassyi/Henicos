@@ -13,7 +13,8 @@ internal static class ManagedStackLaunchEmitter
         if (plan.CannotRunReason is { } reason)
         {
             throw new InvalidOperationException(
-                $"Kernel '{kernel.MessageName}' was marked stack-eligible but cannot run on the stack model: {reason}.");
+                $"Kernel '{kernel.MessageName}' was marked stack-eligible but cannot run on the stack model: " +
+                $"{reason}.");
         }
 
         var kernelNameLiteral = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);

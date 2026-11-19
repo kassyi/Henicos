@@ -23,7 +23,9 @@ internal record struct GeneratorConfig(
     bool IsCheckedBuild = false,
     TargetLimits TargetLimits = default)
 {
-    /// <summary>The execution model for block barriers on the managed CPU path (<c>GSharpManagedBarrierModel</c>).</summary>
+    /// <summary>
+    /// The execution model for block barriers on the managed CPU path (<c>GSharpManagedBarrierModel</c>).
+    /// </summary>
     public ManagedBarrierModel ManagedBarrierModel { get; init; } = ManagedBarrierModel.StateMachine;
 
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>

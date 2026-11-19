@@ -16,8 +16,11 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
     <DefineConstants>GSHARP_CPU</DefineConstants>
-    <DefineConstants Condition="'$(GSharpManagedBarrierModel)' == 'Stack'">$(DefineConstants);GSHARP_MANAGED_STACK</DefineConstants>
     <RootNamespace>Kassyi.GSharp.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GSharpManagedBarrierModel)' == 'Stack'">
+    <DefineConstants>$(DefineConstants);GSHARP_MANAGED_STACK</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

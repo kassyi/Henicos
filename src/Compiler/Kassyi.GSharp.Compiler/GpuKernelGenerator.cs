@@ -64,21 +64,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// </summary>
     public const string DeviceImportTableTrackingName = "GpuDeviceImports";
 
-    /// <summary>
-    /// The tracking name of the step that makes the stack forms of the managed stack model. It reads the compilation
-    /// only under <c>GSharpManagedBarrierModel=Stack</c>; otherwise it returns nothing.
-    /// </summary>
-    public const string ManagedStackFormsTrackingName = "GpuManagedStackForms";
-
-    /// <summary>
-    /// The tracking name of the input of the output that lists the functions whose stack form could not be made; empty,
-    /// and cached, unless <c>GSharpManagedBarrierModel=Stack</c>.
-    /// </summary>
-    public const string ManagedStackFailuresTrackingName = "GpuManagedStackFailuresInput";
-
-    /// <summary>The generated file that lists the functions whose stack form could not be made.</summary>
-    internal const string ManagedStackFailuresHintName = "GSharp.ManagedStackFailures.g.cs";
-
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
     {
         var root = methodDeclaration.SyntaxTree.GetRoot();
@@ -246,15 +231,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var importedCode = allKernels.Combine(allDevices).Combine(deviceImports).Combine(configProvider)
             .Select(static (input, _) => ResolveImports(input.Left.Right, input.Left.Left.Left,
                 GetDistinctDeviceMethods(input.Left.Left.Right), input.Right.IsCuda));
-        // [WHY] The stack forms are made only under GSharpManagedBarrierModel=Stack; under the default the step returns
-        // nothing without reading the compilation, so the default build neither makes them nor can fail on them
-        var stackForms = context.CompilationProvider
-            .Combine(configProvider.Select(static (config, _) => config.ManagedBarrierModel))
-            .Select(static (input, cancellationToken) =>
-                ManagedStackFormCollector.Collect(input.Left, input.Right, cancellationToken))
-            .WithTrackingName(ManagedStackFormsTrackingName);
-        var kernelsWithStackForms = allKernels.Combine(stackForms)
-            .Select(static (input, _) => ManagedStackFormCollector.Attach(input.Left, input.Right));
+        var stackForms = ManagedStackPipeline.Forms(context.CompilationProvider, configProvider);
+        var kernelsWithStackForms = ManagedStackPipeline.AttachToKernels(allKernels, stackForms);
         var kernelModule = kernelsWithStackForms.Combine(configProvider.Select(static (config, _) => config.EmitSource))
             .Combine(allDevices).Combine(importedCode)
             .Select(static (input, _) => KernelModuleModel.Create(input.Left.Left.Left, input.Left.Left.Right,
@@ -268,10 +246,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var referencesStackLinq = context.CompilationProvider
             .Select(static (compilation, _) => ReferencesAssembly(compilation, WrapperEmitter.StackLinqAssemblyName));
         var stateMachines = allDevices.Combine(stackForms)
-            .SelectMany(static (input, _) => GroupDeviceStateMachines(input.Left, input.Right.Devices));
-        context.RegisterSourceOutput(
-            stackForms.Select(static (forms, _) => forms.Failures).WithTrackingName(ManagedStackFailuresTrackingName),
-            static (spc, failures) => EmitManagedStackFailures(spc, failures));
+            .SelectMany(static (input, _) =>
+                DeviceStateMachineGroups.Create(GetDistinctDeviceMethods(input.Left), input.Right.Devices));
+        ManagedStackPipeline.RegisterFailures(context, stackForms);
 
         context.RegisterSourceOutput(
             allDevices.Combine(importedCode).Combine(configProvider).Combine(hasKernels)
@@ -946,59 +923,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        var includeStack = config.ManagedBarrierModel == ManagedBarrierModel.Stack &&
-                           !group.StackSources.IsDefaultOrEmpty;
-        if (group.Sources.IsDefaultOrEmpty && !includeStack)
+        if (ManagedStackPipeline.DeviceSources(group, config) is not { } sources)
         {
             return;
         }
-
-        IEnumerable<string> sources = includeStack
-            ? ConcatSources(group.Sources, group.StackSources)
-            : group.Sources;
 
         context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
             SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, sources, referencesStackLinq),
                 Encoding.UTF8));
-    }
-
-    // The functions that run as state machines under GSharpManagedBarrierModel=Stack because their stack form could not
-    // be made, one comment line each (ManagedStackFormCollector); nothing when every form was made
-    private static void EmitManagedStackFailures(SourceProductionContext context, EquatableArray<string> failures)
-    {
-        if (failures.IsDefaultOrEmpty)
-        {
-            return;
-        }
-
-        using var writer = new SourceWriter();
-        writer.AppendGeneratedFileHeader(enableNullable: false);
-        writer.AppendLine("// G#: these functions run as state machines: their stack form could not be made");
-        foreach (var failure in failures)
-        {
-            writer.Append("// ");
-            foreach (var c in failure)
-            {
-                writer.Append(c is '\r' or '\n' ? ' ' : c);
-            }
-
-            writer.AppendLine();
-        }
-
-        context.AddSource(ManagedStackFailuresHintName, SourceText.From(writer.ToString(), Encoding.UTF8));
-    }
-
-    private static IEnumerable<string> ConcatSources(EquatableArray<string> first, EquatableArray<string> second)
-    {
-        foreach (var source in first)
-        {
-            yield return source;
-        }
-
-        foreach (var source in second)
-        {
-            yield return source;
-        }
     }
 
     private static bool ReferencesAssembly(Compilation compilation, string assemblyName)
@@ -1033,55 +965,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         return sites.ToImmutable().AsEquatableArray();
-    }
-
-    // Keyed by the hint name, which identifies the class (#472)
-    private static ImmutableArray<DeviceStateMachineGroup> GroupDeviceStateMachines(
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
-        EquatableArray<ManagedStackDeviceForm> stackForms)
-    {
-        var sourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
-        var stackSourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-
-        // The class's lists, created when the class first has a source
-        (ImmutableArray<string>.Builder Sources, ImmutableArray<string>.Builder StackSources) GetLists(
-            HostClassHeader header)
-        {
-            if (!sourcesByClass.TryGetValue(header.HintName, out var sources))
-            {
-                sources = ImmutableArray.CreateBuilder<string>();
-                sourcesByClass[header.HintName] = sources;
-                stackSourcesByClass[header.HintName] = ImmutableArray.CreateBuilder<string>();
-                classOrder.Add(header);
-            }
-
-            return (sources, stackSourcesByClass[header.HintName]);
-        }
-
-        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
-        {
-            if (method.ManagedCSharpSource.Length > 0)
-            {
-                GetLists(method.Class).Sources.Add(method.ManagedCSharpSource);
-            }
-        }
-
-        foreach (var form in stackForms)
-        {
-            GetLists(form.Class).StackSources.Add(form.Source);
-        }
-
-        var groups = ImmutableArray.CreateBuilder<DeviceStateMachineGroup>(classOrder.Count);
-        classOrder
-            .AsStackEnumerable()
-            .Select((sourcesByClass, stackSourcesByClass), static (header, state) =>
-                new DeviceStateMachineGroup(
-                    header,
-                    state.sourcesByClass[header.HintName].ToImmutable().AsEquatableArray(),
-                    state.stackSourcesByClass[header.HintName].ToImmutable().AsEquatableArray()))
-            .AddTo(groups);
-        return groups.MoveToImmutable();
     }
 
     // The native module of the assembly (.g.cu / .g.cpp), which the build compiles ahead of time

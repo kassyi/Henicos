@@ -17,7 +17,9 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <param name="ErrorSites">
 /// The source locations of the run-time error sites of the kernel, which the class reports by site ID.
 /// </param>
-/// <param name="ManagedStackSource">The unlowered stack form of the kernel for the managed stack model, or empty.</param>
+/// <param name="ManagedStackSource">
+/// The unlowered stack form of the kernel for the managed stack model, or empty.
+/// </param>
 internal readonly record struct KernelEmission(
     KernelHostModel Host,
     string MemberKey,

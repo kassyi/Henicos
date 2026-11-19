@@ -103,7 +103,8 @@ internal readonly record struct KernelHostModel
 
     /// <summary>
     /// Whether the kernel can run on one OS stack per GPU thread under the managed stack model; set only under
-    /// <c>GSharpManagedBarrierModel=Stack</c>, when its stack form is attached (<see cref="ManagedStackFormCollector"/>).
+    /// <c>GSharpManagedBarrierModel=Stack</c>, when its stack form is attached
+    /// (<see cref="ManagedStackFormCollector"/>).
     /// </summary>
     public bool SupportsManagedStack { get; init; }
 
@@ -387,7 +388,9 @@ internal readonly record struct FieldOffsetGuard(string Name, string FullyQualif
 /// <summary>The managed state machines of the device functions of one class that may suspend.</summary>
 /// <param name="Class">The class that the state machines go into.</param>
 /// <param name="Sources">The state machines, in declaration order.</param>
-/// <param name="StackSources">The managed stack forms of eligible suspending device functions, in declaration order.</param>
+/// <param name="StackSources">
+/// The managed stack forms of eligible suspending device functions, in declaration order.
+/// </param>
 internal readonly record struct DeviceStateMachineGroup(
     HostClassHeader Class,
     EquatableArray<string> Sources,

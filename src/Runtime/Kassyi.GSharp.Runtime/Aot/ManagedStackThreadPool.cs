@@ -149,8 +149,8 @@ internal sealed class ManagedStackThreadPool
                 return;
             }
 
-            // [WHY] Only a launch wakes a worker that is not retiring, and it sets Launch first; a wake without one means
-            // that the baton of the stack model lost step, an error of G# that must not pass unnoticed
+            // [WHY] Only a launch wakes a worker that is not retiring, and it sets Launch first; a wake without one
+            // means that the baton of the stack model lost step, an error of G# that must not pass unnoticed
             var launch = self.Launch ?? throw new InvalidOperationException(
                 "G#: internal error: a stack thread was woken without a launch (the managed stack model lost step)");
             if (!launch.Cancelled)
