@@ -315,6 +315,18 @@ namespace App
         public static int CallStaticGen<T>(double d) where T : IStaticGen => T.Create(d);
 
         public static int CallInstGen<T>(T x, double d) where T : IInstGen => x.Pick(d);
+
+        public static T AbsOfAbs<T>(T a) where T : INumberBase<T> => T.Abs(T.Abs(a));
+
+        public static T AbsOfSum<T>(T a, T b) where T : INumberBase<T> => T.Abs(a + b);
+
+        public static T AbsOfNegation<T>(T a) where T : INumberBase<T>, IUnaryNegationOperators<T, T> => T.Abs(-a);
+
+        public static T AbsOfMaxValue<T>() where T : INumberBase<T>, IMinMaxValue<T> => T.Abs(T.MaxValue);
+
+        public static T AbsOfAbsPlusB<T>(T a, T b) where T : INumberBase<T> => T.Abs(T.Abs(a) + b);
+
+        public static T AbsOfMax<T>(T a, T b) where T : INumber<T> => T.Abs(T.Max(a, b));
     }
 
     public static partial class Outer<T> where T : unmanaged

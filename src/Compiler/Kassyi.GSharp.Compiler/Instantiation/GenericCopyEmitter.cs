@@ -155,8 +155,10 @@ internal static class GenericCopyEmitter
                 CopyRewrite.NameOf nameOf => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression,
                     SyntaxFactory.Literal(nameOf.Text)),
                 CopyRewrite.ConstrainedCall call => WriteHelperCall(Inner<InvocationExpressionSyntax>(node), call),
-                CopyRewrite.ArgumentCall => Parenthesize(Inner<InvocationExpressionSyntax>(node).ArgumentList
-                    .Arguments[0].Expression),
+                // A new node, never the argument itself: the argument may be the root of another rewrite, which keeps
+                // its own number
+                CopyRewrite.ArgumentCall => SyntaxFactory.ParenthesizedExpression(
+                    Inner<InvocationExpressionSyntax>(node).ArgumentList.Arguments[0].Expression),
                 CopyRewrite.FalseCall => SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression),
                 CopyRewrite.MathCall math => WriteMathCall(Inner<InvocationExpressionSyntax>(node), math),
                 CopyRewrite.NarrowedOperator narrowed =>

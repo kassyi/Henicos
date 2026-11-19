@@ -123,6 +123,17 @@ public class GenericCopiesTests
     [InlineData("CheckedSum", "System.UIntPtr")]
     [InlineData("Locals", "System.Int32")]
     [InlineData("Recurse", "System.Int32")]
+    [InlineData("AbsOfAbs", "System.Byte")]
+    [InlineData("AbsOfAbs", "System.Char")]
+    [InlineData("AbsOfAbs", "System.UInt32")]
+    [InlineData("AbsOfAbs", "System.UInt64")]
+    [InlineData("AbsOfAbs", "System.UIntPtr")]
+    [InlineData("AbsOfAbs", "System.Int32")]
+    [InlineData("AbsOfSum", "System.Byte")]
+    [InlineData("AbsOfNegation", "System.UInt32")]
+    [InlineData("AbsOfMaxValue", "System.UInt32")]
+    [InlineData("AbsOfAbsPlusB", "System.Byte")]
+    [InlineData("AbsOfMax", "System.Char")]
     public void Create_SupportedForm_GivesACopyThatCompiles(string method, string typeArgument)
     {
         var (copy, set) = CreateCopy(method, typeArgument);
@@ -251,6 +262,33 @@ public class GenericCopiesTests
         }
     }
 
+    // The copy keeps the node of the inner call of T.Abs(T.Abs(a)): the outer call is a new parenthesized node around
+    // the inner one, which keeps its own number
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("System.Byte")]
+    [InlineData("System.UInt32")]
+    [InlineData("System.UIntPtr")]
+    public void Create_NestedArgumentCall_KeepsTheNodeOfTheInnerCall(string typeArgument)
+    {
+        var (copy, set) = CreateCopy("AbsOfAbs", typeArgument);
+        var type = set.Compilation.GetTypeByMetadataName(typeArgument) ?? throw new InvalidOperationException(typeArgument);
+        var declaration = Assert.IsAssignableFrom<MethodDeclarationSyntax>(
+            Instance(set.Compilation, "AbsOfAbs", type).Definition.DeclaringSyntaxReferences.Single().GetSyntax());
+        var nodes = CopyNodeIndex.List(declaration);
+        var calls = declaration.DescendantNodes().OfType<InvocationExpressionSyntax>().ToArray();
+        Assert.Equal(2, calls.Length);
+        var outer = Array.IndexOf(nodes, calls[0]);
+        var inner = Array.IndexOf(nodes, calls[1]);
+
+        var innerNode = Assert.Single(
+            Assert.IsAssignableFrom<MethodDeclarationSyntax>(copy.Declaration).DescendantNodes(),
+            node => CopyNodeIndex.TryGet(node, out var index) && index == inner);
+        Assert.IsType<ParenthesizedExpressionSyntax>(innerNode);
+        var parent = Assert.IsType<ParenthesizedExpressionSyntax>(innerNode.Parent);
+        Assert.True(CopyNodeIndex.TryGet(parent, out var parentIndex) && parentIndex == outer);
+    }
+
     // The emitted copy computes what the generic method computes, for every input of the small types: the narrowing
     // forms, the shift masks and the checked forms (exceptions included)
     // The generic methods that are run with a type of 8 or 16 bits: every value of the 8-bit types, a spread of the
@@ -325,6 +363,10 @@ public class GenericCopiesTests
         { "OneOverZero", "System.Byte" },
         { "CheckedMaxValuePlusOne", "System.Byte" },
         { "CompareTo", "System.Char" },
+        { "AbsOfAbs", "System.Byte" },
+        { "AbsOfSum", "System.Byte" },
+        { "AbsOfAbsPlusB", "System.Byte" },
+        { "AbsOfMax", "System.Char" },
     };
 
     // The same with the integer types of 32 bits or more: the corners of each width
@@ -356,6 +398,8 @@ public class GenericCopiesTests
         { "CheckedMultiply", "System.Int32" },
         { "Shift", "System.UInt32" },
         { "ShiftRightUnsigned", "System.Int64" },
+        { "AbsOfAbs", "System.UInt64" },
+        { "AbsOfNegation", "System.UInt32" },
     };
 
     // The same with the floating point types and decimal: NaN, infinities, signed zero, the corners
