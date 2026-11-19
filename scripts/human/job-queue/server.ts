@@ -26,18 +26,22 @@ import {
   numberField,
   optionalNumberField,
   placesField,
+  resourceField,
   send,
+  shareField,
   type Incoming,
   type Outcome,
   type Outlook,
   type ServerMessage,
 } from "./protocol.ts";
 import { MachineProfile } from "./machine.ts";
+import { resourceOf, specsFromConfig, usageOf } from "./resources.ts";
 import { Scheduler, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import { cancelTargets, type Phase } from "./server-job-state.ts";
 import { commandProcesses, DetachedObserver } from "./server-observe.ts";
+import { describeProbe, ProbeRunner } from "./server-probe.ts";
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory, worktreeKey } from "./system.ts";
 
@@ -51,6 +55,8 @@ export interface ServeOptions {
   stateDir: string;
   /** Optional explicit path to job-queue.config.json (--config). */
   configPath?: string;
+  /** The shared slots of the "gpu" resource (--gpu-slots); absent or 0: the configuration's. */
+  gpuSlots?: number;
   /** Where the log lines go; stdout (server.log) by default. The self-test's in-process schedulers drop them. */
   log?: (text: string) => void;
 }
@@ -88,6 +94,8 @@ export class JobServer {
   /** Ends, frees or keeps the records whose client is away, on what the processes show (server-observe.ts). */
   readonly observer: DetachedObserver;
   readonly server: net.Server;
+  /** Measures what a second shared turn needs (server-probe.ts); stopped with the scheduler. */
+  readonly probes = new ProbeRunner();
 
   constructor(options: ServeOptions) {
     this.options = options;
@@ -111,7 +119,8 @@ export class JobServer {
     const slots = options.slots > 0 ? options.slots : (machine as MachineProfile).slots;
     const memoryMb = options.memoryMb > 0 ? options.memoryMb : (machine as MachineProfile).memoryPoolMb;
     // nothing is granted before listening (see listen)
-    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb);
+    const resources = specsFromConfig(this.config, options.gpuSlots ?? 0);
+    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb, resources);
     const stateDirectory = options.stateDir || resolveStateDirectory();
     this.history = new RunHistory(path.join(stateDirectory, "history.json"), this.log);
     this.nextId = this.history.nextId;
@@ -218,6 +227,8 @@ export class JobServer {
       cpus: this.cpus(job),
       capacity: this.scheduler.capacity,
       protocol: ProtocolVersion,
+      // Told only of a turn that counts as shared: the client then takes the lock as shared, so that both agree
+      ...(job.gpuTurn === true && job.share === "shared" ? { share: "shared" as const } : {}),
     };
   }
 
@@ -225,7 +236,9 @@ export class JobServer {
     for (const job of granted) {
       job.phase = "running";
       job.epoch++;
-      const flags = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${job.backfilled ? " backfilled" : ""}`;
+      const shared = job.gpuTurn === true && job.share === "shared" ? " shared" : "";
+      const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${shared}`;
+      const flags = `${gpu}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant #${job.id} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
       this.tell(job, this.grantMessage(job));
     }
@@ -260,6 +273,8 @@ export class JobServer {
     const places = placesField(message);
     const keys = keysField(message);
     const memoryMb = memoryMbField(message);
+    const resource = resourceField(message);
+    const share = shareField(message);
     const gpuTurn = message.gpuTurn === true;
     return {
       id,
@@ -282,6 +297,8 @@ export class JobServer {
       worktree,
       ...(places !== undefined ? { places } : {}),
       ...(keys !== undefined ? { keys } : {}),
+      ...(resource !== undefined ? { resource } : {}),
+      ...(share !== undefined ? { share } : {}),
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
@@ -325,7 +342,7 @@ export class JobServer {
    * connections that wait for it. It grants nothing: settle does, once per event.
    */
   finish(job: ServerJob, outcome: Outcome, why: string): void {
-    this.log(`end #${job.id}: ${outcome} (${why})`);
+    this.log(`end #${job.id}: ${outcome} (${why}${outcome === "failed" ? this.sharedWith(job) : ""})`);
     if (this.records.get(job.id) === job) {
       this.records.delete(job.id);
     }
@@ -360,6 +377,15 @@ export class JobServer {
     if (this.scheduler.isIdle()) {
       this.idleSince = Date.now();
     }
+  }
+
+  /** For a failed shared turn: the shared turns that run beside it ("; shared with #15"), which may explain it. */
+  private sharedWith(job: ServerJob): string {
+    if (job.phase !== "running" || job.gpuTurn !== true || job.share !== "shared") {
+      return "";
+    }
+    const others = usageOf(this.scheduler.running, resourceOf(job)).sharedTurns.filter((turn) => turn !== job);
+    return others.length > 0 ? `; shared with ${others.map((turn) => `#${turn.id}`).join(", ")}` : "";
   }
 
   /**
@@ -409,6 +435,27 @@ export class JobServer {
     }
     this.announce(scheduler.grant());
     this.store.persist();
+    this.startProbes();
+  }
+
+  /**
+   * Measures each resource whose first waiting turn waits for a probe (Scheduler.probeWanted); the result is recorded
+   * and settles again, so that the turn is granted at once when the probe passed.
+   */
+  private startProbes(): void {
+    const now = Date.now();
+    for (const name of this.scheduler.probeWanted(now)) {
+      const state = this.scheduler.stateOf(name);
+      const probe = state.spec.probe;
+      if (probe === null) {
+        continue;
+      }
+      this.probes.start(name, probe, state.generation, now, (result) => {
+        this.scheduler.recordProbe(name, result);
+        this.log(describeProbe(name, probe, result));
+        this.settle();
+      });
+    }
   }
 
   /** Cancels one job: a waiting job leaves at once; a running one keeps its slot until its client has stopped it. */

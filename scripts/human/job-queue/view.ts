@@ -3,7 +3,7 @@
 // at the bottom. Pure: it turns a StatusReply, the chats and the view state into lines, with no I/O, so that the
 // self-test checks it.
 
-import type { StatusJob, StatusReply } from "./protocol.ts";
+import type { ResourceStatus, StatusJob, StatusReply } from "./protocol.ts";
 import { type Style, ScreenLine, displayWidth, duration, fit } from "./screen-line.ts";
 import { type ChatView, type LegendEntry, chatCounts, chatLegend, chatLines, waitingChats } from "./view-chats.ts";
 import { FlashMs, overlayFlash } from "./view-flash.ts";
@@ -28,8 +28,21 @@ export interface ScreenJob extends StatusJob {
 }
 
 /**
+ * Whether a waiting shared turn only waits for the probe: its resource has no exclusive user and a free slot (so that
+ * what it lacks is free memory on the GPU). False without `resources` (an older scheduler) and for an exclusive turn.
+ */
+function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
+  if (job.share !== "shared") {
+    return false;
+  }
+  const resource = reply.resources?.find((entry) => entry.name === (job.resource ?? "gpu"));
+  return resource !== undefined && resource.exclusive.length === 0 && resource.shared.length < resource.slots;
+}
+
+/**
  * What a waiting job waits for, in words a person reads without the docs: "after #821" (its --after job), "GPU busy"
- * (another job has the GPU), "CPU full" (every slot in use), "mem full" (the memory pool of the test runs), or
+ * (another job has the GPU), "GPU memory" (a shared turn waits for the probe of the free GPU memory), "CPU full"
+ * (every slot in use), "mem full" (the memory pool of the test runs), or
  * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
@@ -40,7 +53,7 @@ function waitReason(job: StatusJob, reply: StatusReply): string {
     return "paused";
   }
   if (job.gpuTurn) {
-    return "GPU busy";
+    return waitsForProbe(job, reply) ? "GPU memory" : "GPU busy";
   }
   if (reply.used + job.weight > reply.capacity) {
     return "CPU full";
@@ -59,10 +72,17 @@ export function screenJobs(reply: StatusReply | null): ScreenJob[] {
   }
   const holders = reply.running.filter((job) => job.gpu && !job.gpuTurn);
   const pairs = new Map<number, StatusJob>(); // turn id -> holder
-  for (const turn of reply.running.filter((job) => job.gpuTurn)) {
-    const holder = holders.find(
-      (h) => h.command === turn.command && h.cwd === turn.cwd && ![...pairs.values()].includes(h),
-    );
+  const free = (holder: StatusJob): boolean => ![...pairs.values()].includes(holder);
+  const turns = reply.running.filter((job) => job.gpuTurn);
+  // The holder names its turn (an older scheduler does not say: then the same command in the same directory does)
+  for (const turn of turns) {
+    const holder = holders.find((h) => h.turn === turn.id && free(h));
+    if (holder !== undefined) {
+      pairs.set(turn.id, holder);
+    }
+  }
+  for (const turn of turns.filter((job) => !pairs.has(job.id))) {
+    const holder = holders.find((h) => h.turn == null && h.command === turn.command && h.cwd === turn.cwd && free(h));
     if (holder !== undefined) {
       pairs.set(turn.id, holder);
     }
@@ -74,7 +94,15 @@ export function screenJobs(reply: StatusReply | null): ScreenJob[] {
       const holder = pairs.get(job.id);
       return holder === undefined
         ? { ...job, gpu: job.gpu || job.gpuTurn, holderId: null, reason: "" }
-        : { ...holder, id: job.id, gpu: true, gpuTurn: false, holderId: holder.id, reason: "" };
+        : {
+            ...holder,
+            id: job.id,
+            gpu: true,
+            gpuTurn: false,
+            ...(job.share !== undefined ? { share: job.share } : {}),
+            holderId: holder.id,
+            reason: "",
+          };
     });
   const waiting = reply.waiting.map((job) => ({
     ...job,
@@ -279,6 +307,33 @@ function bar(used: number, capacity: number, cells: number): string {
   return "■".repeat(filled) + "□".repeat(cells - filled);
 }
 
+/**
+ * The resources of the header: "GPU #12 #15 +2" is the turns that run on the resource and the jobs that wait for it.
+ * GPU is always shown; another resource only while a job uses it or waits for it.
+ */
+function resourceParts(resources: ResourceStatus[], jobs: ScreenJob[], line: ScreenLine): void {
+  const shown = resources.some((entry) => entry.name === "gpu")
+    ? resources
+    : [{ name: "gpu", slots: 1, shared: [], exclusive: [] }, ...resources];
+  for (const entry of shown) {
+    const ids = [...entry.shared, ...entry.exclusive].sort((a, b) => a - b);
+    const waiting = jobs.filter(
+      (job) => job.state === "waiting" && (job.gpu || job.gpuTurn) && (job.resource ?? "gpu") === entry.name,
+    ).length;
+    if (entry.name !== "gpu" && ids.length === 0 && waiting === 0) {
+      continue;
+    }
+    line.add(`  ${entry.name.toUpperCase()} `);
+    if (ids.length === 0) {
+      line.add("-", "dim");
+    }
+    ids.forEach((id, index) => line.add(`${index > 0 ? " " : ""}#${id}`, "gpu"));
+    if (waiting > 0) {
+      line.add(` +${waiting}`, "dim");
+    }
+  }
+}
+
 function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: number, now: number): ScreenLine {
   const line = new ScreenLine(columns).add(` queue ${new Date(now).toTimeString().slice(0, 8)}`, "bold");
   if (reply === null) {
@@ -299,11 +354,15 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
       .add(bar(reply.memoryUsed, reply.memoryCapacity, 7), "wait")
       .add(` ${percent}%`);
   }
-  const holder = jobs.find((job) => job.state === "running" && job.gpu);
-  const turns = jobs.filter((job) => job.state === "waiting" && (job.gpu || job.gpuTurn)).length;
-  line.add("  GPU ").add(holder ? `#${holder.id}` : "-", holder ? "gpu" : "dim");
-  if (turns > 0) {
-    line.add(` +${turns}`, "dim");
+  if (reply.resources !== undefined) {
+    resourceParts(reply.resources, jobs, line);
+  } else {
+    const holder = jobs.find((job) => job.state === "running" && job.gpu);
+    const turns = jobs.filter((job) => job.state === "waiting" && (job.gpu || job.gpuTurn)).length;
+    line.add("  GPU ").add(holder ? `#${holder.id}` : "-", holder ? "gpu" : "dim");
+    if (turns > 0) {
+      line.add(` +${turns}`, "dim");
+    }
   }
   const keys = "  ?:keys";
   return line.width + keys.length <= columns ? line.padTo(columns - keys.length).add(keys, "dim") : line.padTo();
@@ -338,9 +397,13 @@ const HelpLegend: LegendEntry[] = [
   { sample: "CPU full", style: "warn", text: "every slot in use" },
   { sample: "mem full", style: "warn", text: "the memory pool is full" },
   { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
+  { sample: "GPU memory", style: "warn", text: "a shared turn waits for the probe" },
   { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after #n", style: "warn", text: "until job n has ended" },
+  { heading: "GPU turn (mark before the command)" },
+  { sample: "G", style: "gpu", text: "an exclusive GPU turn" },
+  { sample: "g", style: "gpu", text: "a shared GPU turn" },
 ];
 
 /** A screen of this many rows shows a row per waiting chat; a shorter one sums them up in one line. */
@@ -363,7 +426,7 @@ function helpLegendLine(line: ScreenLine, entry: LegendEntry): ScreenLine {
   if ("heading" in entry) {
     return line.add(entry.heading, "bold");
   }
-  const width = entry.sample.length === 1 ? 2 : 10;
+  const width = entry.sample.length === 1 ? 2 : 12; // "GPU memory" is the longest sample
   return line
     .add(entry.sample, entry.style)
     .add(" ".repeat(width - entry.sample.length))
@@ -466,7 +529,7 @@ function jobLine(
   const line = new ScreenLine(columns)
     .add(selected ? "▸" : " ", "bold")
     .add(String(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
-    .add(job.gpu ? "G" : " ", "gpu")
+    .add(job.gpu ? (job.share === "shared" ? "g" : "G") : " ", "gpu")
     .add(" ")
     .add(fit(shortCommand(job.command, plugins), commandWidth), job.state === "running" ? "" : "dim")
     .add(" ");

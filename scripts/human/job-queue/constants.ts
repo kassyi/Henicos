@@ -41,6 +41,8 @@ export const RegrantMs = 5 * 1000; // how often the scheduler re-orders and gran
 export const ProbeFreshMs = 5 * 1000;
 // The least time between two probes of one resource (the server starts them)
 export const ProbeIntervalMs = 5 * 1000;
+// How long a probe may run when the configuration gives no timeout
+export const ProbeTimeoutMs = 3000;
 export const ForecastNoticeMs = 60 * 1000; // a waiting client is told again when its expected start moved this much
 // forecast: the rest of a running job that has run longer than any recorded run
 export const OverrunGuessMs = 30 * 1000;

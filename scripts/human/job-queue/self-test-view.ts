@@ -8,7 +8,7 @@ import * as path from "node:path";
 import { EntryScript } from "./constants.ts";
 import { loadConfig } from "./config.ts";
 import { PluginHost } from "./plugin-host.ts";
-import type { StatusReply } from "./protocol.ts";
+import type { ResourceStatus, StatusJob, StatusReply } from "./protocol.ts";
 import {
   FlashMs,
   displayWidth,
@@ -49,7 +49,7 @@ function checkLayout(plugins: ShortNameProvider): void {
     "run left, rest right",
   );
   assert.match(lines[0] ?? "", /CPU ■■■■□□□□ 4\/8 {2}MEM ■□□□□□□ 19% {2}GPU #812 \+1/);
-  assert.match(lines[2] ?? "", /^▸812G test-category Runtime/, "running jobs first, the GPU holder flagged");
+  assert.match(lines[2] ?? "", /^▸812g test-category Runtime/, "running jobs first, the shared GPU turn flagged g");
   assert.ok((lines[2] ?? "").includes("█") && (lines[2] ?? "").includes("▓"), "run so far and the expected rest");
   assert.ok((lines[4] ?? "").includes("?"), "a job without history shows no expected rest");
   assert.ok((lines[6] ?? "").includes("⋯") && (lines[6] ?? "").includes("▒"), "waits for the GPU, then runs");
@@ -256,6 +256,7 @@ function checkGpuPairsAndReasons(): void {
   const other = job(902, { state: "running", command: "node b.js Y", grantedAt: Now - Minute, endAt: Now + Minute });
   const reply: StatusReply = {
     ...sampleReply(),
+    resources: undefined, // an older scheduler: the holder pairs by command, the header counts the GPU jobs
     capacity: 3,
     used: 3,
     running: [turn, holder, other],
@@ -315,6 +316,102 @@ function checkGpuPairsAndReasons(): void {
   assert.deepStrictEqual(
     unpaired.map((j) => j.id),
     [900, 901, 910, 911],
+  );
+}
+
+/** A shared turn is drawn `g`, an exclusive one `G`; the header lists the turns of each resource; the wait is named. */
+export function checkSharedView(): void {
+  const turn = (id: number, share: "shared" | undefined, extra: Partial<StatusJob> = {}): StatusJob =>
+    job(id, {
+      state: "running",
+      gpuTurn: true,
+      weight: 0,
+      command: `node t.js ${id}`,
+      grantedAt: Now - Minute,
+      endAt: Now + Minute,
+      ...(share !== undefined ? { share } : {}),
+      ...extra,
+    });
+  const resource = (shared: number[], exclusive: number[], slots = 2) => ({ name: "gpu", slots, shared, exclusive });
+  const reply = (running: StatusJob[], waiting: StatusJob[], resources?: ResourceStatus[]): StatusReply => ({
+    ...sampleReply(),
+    running,
+    waiting,
+    resources, // undefined for an older scheduler, whatever the sample has
+  });
+  const waitingTurn = (id: number, share: "shared" | undefined) =>
+    job(id, {
+      gpuTurn: true,
+      ...(share !== undefined ? { share } : {}),
+      startAt: Now + Minute,
+      endAt: Now + 2 * Minute,
+    });
+  const reasonOf = (r: StatusReply, id: number): string | undefined => screenJobs(r).find((j) => j.id === id)?.reason;
+  const screen = (r: StatusReply): string[] =>
+    renderScreen(r, initialViewState(), { columns: 80, rows: 10, now: Now }, false);
+
+  // The marks and the header: a shared turn is g, an exclusive one G; the turns of the resource are listed
+  const both = reply(
+    [turn(900, "shared"), turn(901, "shared")],
+    [waitingTurn(910, "shared")],
+    [resource([900, 901], [])],
+  );
+  const lines = screen(both);
+  assert.match(lines[0] ?? "", /GPU #900 #901 \+1/, "every running turn of the resource, then the waiting ones");
+  assert.ok(
+    lines.some((line) => /^[ ▸]900g /.test(line)),
+    `a shared turn is g: ${lines.join("|")}`,
+  );
+  const exclusive = reply([turn(902, undefined)], [], [resource([], [902])]);
+  assert.ok(
+    screen(exclusive).some((line) => /^[ ▸]902G /.test(line)),
+    "an exclusive turn is G",
+  );
+  assert.match(screen(exclusive)[0] ?? "", /GPU #902(?! #)/);
+  // Without `resources` (an older scheduler): the header and the mark as before
+  const older = reply([turn(900, "shared")], [waitingTurn(910, "shared")]);
+  assert.match(screen(older)[0] ?? "", /GPU #900 \+1/);
+  // What a waiting turn waits for: memory (the probe) only when a shared turn could take the free slot
+  assert.strictEqual(reasonOf(both, 910), "GPU busy", "both slots are taken");
+  const room = reply([turn(900, "shared")], [waitingTurn(910, "shared")], [resource([900], [])]);
+  assert.strictEqual(reasonOf(room, 910), "GPU memory", "a slot is free: the probe decides");
+  const held = reply([turn(900, "shared")], [waitingTurn(910, "shared")], [resource([900], [77])]);
+  assert.strictEqual(reasonOf(held, 910), "GPU busy", "an exclusive user holds the GPU");
+  const exclusiveWaits = reply([turn(900, "shared")], [waitingTurn(910, undefined)], [resource([900], [])]);
+  assert.strictEqual(reasonOf(exclusiveWaits, 910), "GPU busy", "an exclusive turn waits for the shared one");
+  assert.strictEqual(reasonOf(older, 910), "GPU busy", "no resources: as before");
+  // The legend names it
+  const legend = helpLines(100).map((line) => line.text);
+  assert.ok(
+    legend.some((line) => /GPU memory +a shared turn waits for the probe/.test(line)),
+    "GPU memory is explained",
+  );
+  assert.ok(
+    legend.some((line) => /g +a shared GPU turn/.test(line)),
+    "g is explained",
+  );
+  // A holder is paired with its turn by the turn id, whatever its command
+  const holder = job(901, { state: "running", gpu: true, weight: 2, command: "node other.js", turn: 900 });
+  const paired = screenJobs(reply([turn(900, "shared"), holder], [], [resource([900], [])]));
+  assert.deepStrictEqual(
+    paired.map((j) => [j.id, j.holderId, j.share]),
+    [[900, 901, "shared"]],
+    "one line, with the share of the turn",
+  );
+  // Without a turn id the command and the directory pair them, as before; another turn's holder never does
+  const bare = job(901, { state: "running", gpu: true, command: "node t.js 900" });
+  assert.deepStrictEqual(
+    screenJobs(reply([turn(900, undefined), bare], [])).map((j) => [j.id, j.holderId]),
+    [[900, 901]],
+  );
+  const foreign = { ...bare, turn: 555 };
+  assert.deepStrictEqual(
+    screenJobs(reply([turn(900, undefined), foreign], [])).map((j) => [j.id, j.holderId]),
+    [
+      [900, null],
+      [901, null],
+    ],
+    "a holder of another turn is not this turn's",
   );
 }
 
@@ -498,6 +595,7 @@ export async function checkView(): Promise<void> {
   checkLayout(plugins);
   checkKeys();
   checkGpuPairsAndReasons();
+  checkSharedView();
   checkChats();
   checkScreenshots(plugins);
 }

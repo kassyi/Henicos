@@ -24,7 +24,7 @@ terminal, so they are the same on every run. A change to what the view shows reg
 `node scripts/human/job-queue.js --screenshots scripts/human/job-queue/images` in the same change.
 
 A terminal of 120 columns: running jobs first (green run so far, red past the usual run time, a `G` for the GPU job and
-its holder under the GPU lock as one line), then the waiting jobs with what each waits for, left of now:
+its holder under the GPU lock as one line, `g` for a shared GPU turn), then the waiting jobs with what each waits for, left of now:
 
 ![The live view, 120 columns](images/wide.svg)
 
@@ -111,6 +111,8 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `resources.ts` | The turn resources, with no I/O: `ResourceSpec`, `resourceOf`, `usageOf` (the use of a resource counted from the running jobs) and `turnVerdict` (the grant rule) |
 | `resource-checks.ts` | Self-test checks of the turn resources (run through the unit checks) |
+| `server-probe.ts` | The probe of a turn resource: `runProbe` runs the program of `resources.<name>.probe` without a shell (ok on exit 0 and a first number of at least `min`; a timeout, a failure to start or no number is not ok), `ProbeRunner` keeps one per resource, five seconds apart, and kills them when the scheduler stops |
+| `server-shared-checks.ts`, `server-probe-checks.ts` | Self-test checks of shared turns against a scheduler in the test's own process (the `share` of a grant, the probe before a second shared turn, restore, `status` resources, the log of a failed shared turn) and of `runProbe` and the `serve --gpu-slots` range |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read; pure |
@@ -260,6 +262,13 @@ falls back where an older scheduler refuses (for example `run --gpu` takes the G
 optional, and send a higher version only on the messages that need it (`wireVersion` in `protocol.ts`). `pause` and
 `resume` are version 3 messages like `start`, with no new version: a scheduler of version 3 from an older checkout
 answers `unknown message type` (the client prints the hint to stop it), and ignores `paused` in the state file.
+
+A shared GPU turn is the same kind of addition: `share` and `resource` in `request` and `adopt`, `share` in `granted`,
+`resource`, `share` and `turn` in a job of `status` and of the state file, and `resources` in `status`. All are
+optional and need no new version, and each falls back to the stricter reading when it is ignored: an older client sends
+no `share`, so its turn is exclusive; an older scheduler never sends `share` in `granted`, so a client takes the lock
+exclusively; an older scheduler that reads a state file with two running shared turns restores both as running turns
+and grants no other turn until both end; a view that gets no `resources` draws the header and the marks as before.
 
 The optional fields `turn` (in `request` and `adopt`) and `pid` / `queuedAt` (in `report`) need no new version: an
 older scheduler ignores them, and an older client that sends none is matched by its pid and command, and its report is
