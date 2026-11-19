@@ -100,6 +100,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
         var operandWords = CreateNormalizedWords(seed: 7200 + numWords, numWords);
         var operand = FromWords(operandWords);
+        var rootWords = (numWords + 1) / 2;
 
         uint[] cpuWords;
         using (CpuFallbackScope.Enter())
@@ -112,9 +113,9 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(sqrt(a)) satisfies r^2 <= a < (r + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:245
-        //         `var marginWords = 16;` -> `var marginWords = 0;`
-        // input: 4
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:225
+        //         `(actualBits + 63) / 64` -> `actualBits / 64`
+        // input: 33
         var cpuRoot = FromWords(cpuWords);
         Assert.True(cpuRoot * cpuRoot <= operand, "CPU sqrt exceeds exact root");
         Assert.True(operand < (cpuRoot + 1) * (cpuRoot + 1), "CPU sqrt below floor");
@@ -130,8 +131,9 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
                 GpuBigIntDivRem.Sqrt(gpuOperand, gpuResult);
                 var gpuWords = gpuResult.ToHostArray();
 
-                // ComputeInitialSqrtGuess launches InverseSqrtMega with marginWords = 16, so the active override must
-                // match blockSize for that kernel invocation.
+                // The operand has 32 * numWords bits, so SqrtFloor takes a root of r = ceil(numWords / 2) words and
+                // launches the inverse square root of its top r + 1 words with SqrtFloorMarginWords(r) margin words;
+                // the active override must match blockSize for that kernel invocation.
                 // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
                 //         CooperativeMegaKernelLauncher.cs:219
                 //         `var overrideState = s_candidateBlockSizesOverride.Value;` -> `null`
@@ -139,7 +141,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
                 Assert.True(CooperativeMegaKernelLauncher.TryGetCachedOverrideBlockSize(
                     gpuWorkspace,
                     static () => GpuBigIntSqrtKernels.ResolveInverseSqrtNewtonRaphsonMegaKernel(),
-                    4 * numWords + 3 * 16,
+                    4 * (rootWords + 1) + 3 * GpuBigIntDivRem.SqrtFloorMarginWords(rootWords),
                     out var chosenBlockSize));
                 Assert.Equal(blockSize, chosenBlockSize);
 

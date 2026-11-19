@@ -26,20 +26,20 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     [SkippableFact]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Sqrt_LargeValues_ProducesNonEmptyResult()
+    public void Sqrt_LargeAllOnesOperand_IsFloorOfSquareRoot()
     {
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
-        
+
         var aArr = new uint[512];
         Array.Fill(aArr, 0xFFFFFFFFu);
-        
+
         using var a = new GpuBigUInt(ctx, aArr);
         using var result = new GpuBigUInt(ctx, 512);
-        
+
         GpuBigIntDivRem.Sqrt(a, result);
-        
-        Assert.True(result.NumWords > 0);
+
+        AssertIsFloorSquareRoot(a.ToBigInteger(), result.ToBigInteger(), "512 words of ones");
     }
 
     [SkippableTheory]
@@ -117,8 +117,8 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
     public void Sqrt_PrefilledResultBuffer_IsOverwritten(uint value, uint expectedRoot)
     {
         // The result buffer is filled with 0xFFFFFFFF first; every word above the root must be cleared.
-        // mutant: GpuBigIntDivRem.Sqrt.cs:196 `resultBuffer.Clear()` removed (value 0)
-        // mutant: GpuBigIntDivRem.Sqrt.cs:220 `resultBuffer.Clear()` removed (value 10000)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:186 `resultBuffer.Clear()` removed (value 0)
+        // mutant: GpuBigIntDivRem.Sqrt.cs:209 `resultBuffer.Clear()` removed (value 10000)
         CudaCapability.EnsureGpuAvailable();
         using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         using var a = new GpuBigUInt(ctx, new uint[] { value, 0, 0, 0 });
@@ -375,6 +375,197 @@ public class GpuBigIntSqrtTests(ITestOutputHelper output)
             "Highest" => (BigInteger.One << (2 * p)) - 1,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown SqrtFloor input."),
         };
+    }
+
+    /// <summary>
+    /// Sqrt inputs above one word: the kind of operand and its words (2 to 8, around 64, and 1000). An odd word count
+    /// leaves 64r - L = 32 for a full top word, an even one 0.
+    /// </summary>
+    public static TheoryData<string, int> SqrtMultiWordInputs()
+    {
+        var data = new TheoryData<string, int>();
+        string[] kinds =
+        [
+            "Random", "AllOnes", "PowerOfTwo", "PowerOfTwoMinusOne", "Square", "SquareMinusOne", "SquarePlusOne",
+            "OddBitLength", "EvenBitLength"
+        ];
+        foreach (var kind in kinds)
+        {
+            foreach (var words in new[] { 2, 3, 4, 5, 6, 7, 8, 63, 64, 65, 1000 })
+            {
+                data.Add(kind, words);
+            }
+        }
+
+        return data;
+    }
+
+    // Sqrt of an operand above 32 bits normalizes it with an even shift for SqrtFloor and shifts the root back. The
+    // squares and their neighbours are where a root one off shows; PowerOfTwoMinusOne and OddBitLength have an odd bit
+    // length (64r - L odd), PowerOfTwo, AllOnes and EvenBitLength an even one.
+    // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every input: the top bit leaves the 2r words)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (every input with 64r - L >= 2: odd word counts and
+    //         EvenBitLength; OddBitLength of an even word count has 64r - L = 1, so k = 0)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (every input whose bit length
+    //         is not a multiple of 64)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SqrtMultiWordInputs))]
+    public void Sqrt_MultiWordOperand_IsFloorOfSquareRoot(string kind, int words)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        var a = BuildSqrtOperand(kind, words);
+        using var ctx = new GpuWorkspace(16 * words + 4096, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, words);
+        using var result = new GpuBigUInt(ctx, words);
+
+        GpuBigIntDivRem.Sqrt(operand, result);
+
+        AssertIsFloorSquareRoot(a, result.ToBigInteger(), $"{kind} words={words}");
+    }
+
+    // The gap 64r - L between the bit length and the root words: 0 (no shift), 1 (odd, k = 0 keeps the bit length
+    // 64r - 1), 2 (k = 1) and 63 (the largest, k = 31), each in a 4-word operand; and the one-word roots (L = 33 to
+    // 64, k = 15 down to 0), the shortest operands that take this path.
+    // mutant: GpuBigIntDivRem.Sqrt.cs:226 `/ 2` -> `/ 2 + 1` (every bit length)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `-halfShift` -> `0` (126, 65 and the one-word roots below 63)
+    // mutant: GpuBigIntDivRem.Sqrt.cs:225 `(actualBits + 63) / 64` -> `actualBits / 64` (127, 126, 65 and the
+    //         one-word roots below 64)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(128)]
+    [InlineData(127)]
+    [InlineData(126)]
+    [InlineData(65)]
+    [InlineData(64)]
+    [InlineData(63)]
+    [InlineData(62)]
+    [InlineData(61)]
+    [InlineData(48)]
+    [InlineData(47)]
+    [InlineData(40)]
+    [InlineData(34)]
+    [InlineData(33)]
+    public void Sqrt_NormalizationGap_IsFloorOfSquareRoot(int bitLength)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        var a = RandomWithBitLength(new Random(911 + bitLength), bitLength);
+        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, 4);
+        using var result = new GpuBigUInt(ctx, 4);
+
+        GpuBigIntDivRem.Sqrt(operand, result);
+
+        AssertIsFloorSquareRoot(a, result.ToBigInteger(), $"bit length {bitLength}");
+    }
+
+    /// <summary>
+    /// Result buffers of Sqrt for an 8-word operand: the kind of buffer and the bit length of the operand (131: a root
+    /// of 3 words, below the minimum of 4; 256: a root of exactly 4 words).
+    /// </summary>
+    public static TheoryData<string, int> SqrtResultBufferInputs()
+    {
+        var data = new TheoryData<string, int>();
+        foreach (var kind in new[] { "SameWidth", "Wider", "MinimumWidth", "OperandItself" })
+        {
+            data.Add(kind, 131);
+            data.Add(kind, 256);
+        }
+
+        return data;
+    }
+
+    // Any result buffer from ceil(8 / 2) = 4 words up receives the root and zeros above it: each separate buffer is
+    // filled with ones first, and the whole buffer is read back. The operand itself may also be the result buffer.
+    // mutant: GpuBigIntDivRem.Sqrt.cs:237 `resultBuffer` -> `ResultBuffers.Head(resultBuffer, rootWords)` (131 with
+    //         SameWidth, Wider, MinimumWidth and OperandItself: the words above the root keep their old value)
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(SqrtResultBufferInputs))]
+    public void Sqrt_ResultBufferWidth_ReceivesRootWithZerosAbove(string kind, int bitLength)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int OperandWords = 8;
+        var a = RandomWithBitLength(new Random(919 + bitLength), bitLength);
+        var resultWords = kind switch
+        {
+            "SameWidth" or "OperandItself" => OperandWords,
+            "Wider" => OperandWords + 4,
+            "MinimumWidth" => OperandWords / 2,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown result buffer.")
+        };
+        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, OperandWords);
+        using var separate = new GpuBigUInt(ctx, Enumerable.Repeat(uint.MaxValue, resultWords).ToArray());
+        var result = kind == "OperandItself" ? operand : separate;
+
+        GpuBigIntDivRem.Sqrt(operand, result);
+
+        Assert.Equal(resultWords, result.NumWords);
+        AssertIsFloorSquareRoot(a, result.ToBigInteger(), $"{kind} bit length {bitLength}");
+    }
+
+    // The minimum result width follows from the operand's width, not from its value: one word below ceil(8 / 2) = 4 is
+    // rejected although the root of this 131-bit value fits in 3 words.
+    // mutant: GpuBigIntDivRem.Sqrt.cs:181 `ResultBuffers.ThrowIfNarrower(...)` removed (the root is written into 3
+    //         words without an exception)
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void Sqrt_ResultOneWordBelowOperandMinimum_ThrowsArgumentException()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        var a = RandomWithBitLength(new Random(919 + 131), 131);
+        using var ctx = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
+        using var operand = GpuBigUInt.FromBigInteger(ctx, a, 8);
+        using var result = new GpuBigUInt(ctx, 3);
+
+        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Sqrt(operand, result));
+    }
+
+    private static void AssertIsFloorSquareRoot(BigInteger a, BigInteger r, string label)
+    {
+        // r² <= a < (r + 1)² defines floor(sqrt(a)) without a reference implementation; the test's own integer square
+        // root must give the same value.
+        Assert.True(r.Sign >= 0 && r * r <= a && a < (r + 1) * (r + 1), $"{label}: the result is not floor(sqrt(a))");
+        Assert.Equal(FloorSqrt(a), r);
+    }
+
+    private static BigInteger BuildSqrtOperand(string kind, int words)
+    {
+        var bits = 32 * words;
+        // Seed 907 + 31 * words keeps the values stable across runs; every kind draws the same values.
+        var random = new Random(907 + 31 * words);
+        var randomFull = RandomWithBitLength(random, bits);
+        var s = RandomWithBitLength(random, bits / 2);
+        var low = RandomWithBitLength(random, bits - 3);
+        var top = BigInteger.One << (bits - 1);
+        return kind switch
+        {
+            "Random" => randomFull,
+            "AllOnes" => (BigInteger.One << bits) - 1,
+            "PowerOfTwo" => top,
+            "PowerOfTwoMinusOne" => top - 1,
+            "Square" => s * s,
+            "SquareMinusOne" => s * s - 1,
+            "SquarePlusOne" => s * s + 1,
+            // The same low bits under a top bit at bits - 2 (bit length bits - 1, odd) or bits - 3 (bits - 2, even).
+            "OddBitLength" => low | (BigInteger.One << (bits - 2)),
+            "EvenBitLength" => low | (BigInteger.One << (bits - 3)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown Sqrt input."),
+        };
+    }
+
+    private static BigInteger RandomWithBitLength(Random random, int bitLength)
+    {
+        var bytes = new byte[bitLength / 8 + 2];
+        random.NextBytes(bytes);
+        bytes[^1] = 0;
+        var top = BigInteger.One << (bitLength - 1);
+        return (new BigInteger(bytes) & (top - 1)) | top;
     }
 
     private static BigInteger FloorSqrt(BigInteger value)
