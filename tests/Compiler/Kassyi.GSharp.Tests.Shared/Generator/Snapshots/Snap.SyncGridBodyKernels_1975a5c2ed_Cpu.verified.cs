@@ -4985,7 +4985,7 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 __gsharp_ctx->__gsharp_id_1_b=__gsharp_in___gsharp_id_1_b;
 }
-auto __gsharp_id_4_Add = [&]() {
+auto __gsharp_id_4_Add = [&, __gsharp_ctx]() {
 if(__gsharp_ctx->__gsharp_id_2_tid>1000)
 {
 return;

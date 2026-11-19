@@ -6,12 +6,14 @@ import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
+import { createRequire, syncBuiltinESMExports } from "node:module";
 import { EntryScript, OrphanPollMs, StartupGraceMs } from "./constants.ts";
 import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
+import { ResourceChecks } from "./resource-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
 import { gitBashPath, quoteArgument } from "./shell.ts";
@@ -25,9 +27,7 @@ import { checkRestarts } from "./self-test-restart.ts";
 import { checkView } from "./self-test-view.ts";
 import { checkLib } from "./lib-checks.ts";
 import { checkPlugins } from "./plugin-checks.ts";
-import { checkDotnetPlugin } from "./plugins/dotnet/checks.ts";
-import { checkJustPlugin } from "./plugins/just/checks.ts";
-import { checkHenicosPlugin } from "../job-queue-henicos/checks.ts";
+import { runPluginChecks } from "./plugin-host.ts";
 
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
@@ -67,19 +67,59 @@ async function named(name: string, check: () => void | Promise<void>): Promise<v
 }
 
 export async function selfTest(): Promise<void> {
-  for (const [name, check] of Object.entries({ ...FairnessChecks, ...SchedulerChecks, ...JobStateChecks })) {
-    await named(name, () => check(assert));
+  const cjsAssert = createRequire(import.meta.url)("node:assert") as Record<string, unknown>;
+  const originalAssert = new Map<string, (...args: unknown[]) => unknown>();
+  let unitAssertions = 0;
+  for (const key of Object.keys(cjsAssert)) {
+    if (key === "AssertionError" || key === "strict") {
+      continue;
+    }
+    const value = cjsAssert[key];
+    if (typeof value === "function") {
+      const original = value as (...args: unknown[]) => unknown;
+      originalAssert.set(key, original);
+      const restoreIdentity = key === "match" || key === "doesNotMatch";
+      const wrapped = function (this: unknown, ...args: unknown[]): unknown {
+        unitAssertions++;
+        if (!restoreIdentity) {
+          return Reflect.apply(original, this, args);
+        }
+        // Node 22's internalMatch distinguishes match vs doesNotMatch via `fn === assert.match`.
+        cjsAssert[key] = original;
+        try {
+          return Reflect.apply(original, this, args);
+        } finally {
+          cjsAssert[key] = wrapped;
+        }
+      };
+      cjsAssert[key] = wrapped;
+    }
   }
-  await named("checkShellHelpers", checkShellHelpers);
-  for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
-    await named(name, () => check(assert));
+  syncBuiltinESMExports();
+  try {
+    for (const [name, check] of Object.entries({
+      ...FairnessChecks,
+      ...SchedulerChecks,
+      ...ResourceChecks,
+      ...JobStateChecks,
+    })) {
+      await named(name, () => check(assert));
+    }
+    await named("checkShellHelpers", checkShellHelpers);
+    for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
+      await named(name, () => check(assert));
+    }
+    await named("checkView", checkView);
+    await named("checkLib", checkLib);
+    await named("checkPlugins", () => checkPlugins(assert));
+    await named("pluginChecks", () => runPluginChecks(assert));
+  } finally {
+    for (const [key, original] of originalAssert) {
+      cjsAssert[key] = original;
+    }
+    syncBuiltinESMExports();
   }
-  await named("checkView", checkView);
-  await named("checkLib", checkLib);
-  await named("checkPlugins", () => checkPlugins(assert));
-  await named("checkDotnetPlugin", () => checkDotnetPlugin(assert));
-  await named("checkJustPlugin", () => checkJustPlugin(assert));
-  await named("checkHenicosPlugin", () => checkHenicosPlugin(assert));
+  process.stdout.write(`job-queue self-test: ${unitAssertions} assertions in the unit checks\n`);
 
   const fixture = new QueueFixture();
   const { dir, env, children, servers, ports } = fixture;

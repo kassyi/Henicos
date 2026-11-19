@@ -122,11 +122,8 @@ internal static class DynamicSharedMemoryEmitter
     public static void FailIfReferencedWithoutCall(ExpressionSyntax reference, IMethodSymbol method,
         ref TranspileContext context)
     {
-        var called =
-            (reference.Parent is InvocationExpressionSyntax invocation && invocation.Expression == reference) ||
-            (reference.Parent is MemberAccessExpressionSyntax access && access.Name == reference &&
-             access.Parent is InvocationExpressionSyntax outer && outer.Expression == access);
-        if (!called && TakesTable(method, context.Emitter.Dialect, context.Query.SemanticModel.Compilation))
+        if (!CallTargetClassifier.IsCalledReference(reference) &&
+            TakesTable(method, context.Emitter.Dialect, context.Query.SemanticModel.Compilation))
         {
             context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, reference, DynamicSharedMemoryAnalysis.PassedAsDelegate);
         }

@@ -35,7 +35,7 @@ internal static class StatementPrelude
                     ?? throw new InvalidOperationException(
                         $"The type of declaration expression '{declExpr}' could not be resolved from the semantic model.");
 
-                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+                SharedMemoryStorageType.Append(ref context, typeSymbol);
                 context.Emitter.Writer.Append(' ');
                 CppNameResolver.AppendDeclaredName(singleVar, singleVar.Identifier, ref context);
                 context.Emitter.Writer.AppendLine(";");
@@ -67,7 +67,7 @@ internal static class StatementPrelude
                 TypeTests.PlanDeclaration(pattern, context.Query.SemanticModel) is not null &&
                 context.Query.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(patternVariable) is { } patternLocal)
             {
-                context.Emitter.Dialect.AppendType(ref context, patternLocal.Type);
+                SharedMemoryStorageType.Append(ref context, patternLocal.Type);
                 context.Emitter.Writer.Append(' ');
                 CppNameResolver.AppendDeclaredName(patternVariable, patternVariable.Identifier, ref context);
                 context.Emitter.Writer.AppendLine(";");

@@ -6,7 +6,8 @@
   "plugins": [
     { "name": "./scripts/human/job-queue-henicos" },
     { "name": "dotnet" },
-    { "name": "just" }
+    { "name": "just" },
+    { "name": "nvidia-gpu" }
   ],
   "pools": {
     "coresPerSlot": 3,
@@ -18,8 +19,9 @@
     "gpu": {
       "slots": 1,
       "lock": {
-        "seats": ["tmp/gpu-test-lock"]
-      }
+        "seats": ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"]
+      },
+      "holderWatch": ["scripts/human/job-queue/plugins/nvidia-gpu/holder-watch.js"]
     }
   },
   "legacyClients": {
