@@ -269,6 +269,19 @@ public class ConditionalAccessDifferentialTests
             IsNullRow(a, t) ? 0 : 2
         ]);
 
+    internal static readonly DifferentialCase s_voidExtensionStatement = BarrierCase(
+        nameof(ConditionalAccessDifferentialKernels.VoidExtensionStatementKernel),
+        ["chain_written", "element_of_chain_x", "unrolled_x"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchVoidExtensionStatementKernel(
+            b.Get<int>("a"), new int[s.Rows], Points(s.Rows), Points(s.Rows), b.Get<int>("dst"),
+            gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) =>
+        [
+            (a[t] & 3) < 2 ? 0 : 7,
+            (a[t] & 4) == 0 ? t : t + 1,
+            IsNullRow(a, t) ? t : t + 2
+        ]);
+
     internal static readonly DifferentialCase s_twinFirst = BarrierCase(
         nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinFirstFileKernel),
         ["overload", "same_signature"],
@@ -462,4 +475,11 @@ public class ConditionalAccessDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ConditionalAccess_ExtensionCallOfAnAccessOnABinding_EvaluatesEachReceiverOnceInOrder() =>
         DifferentialRunner.Run(s_nestedExtensionCall);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_VoidExtensionCallAsAStatement_RunsOnlyForNonNullReceivers() =>
+        DifferentialRunner.Run(s_voidExtensionStatement);
 }

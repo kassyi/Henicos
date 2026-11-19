@@ -68,7 +68,7 @@ internal static class ConditionalAccess
     /// outside a statement (<c>for (...; ...; i++, q?[t].M())</c>).
     /// </summary>
     public const string VoidExtensionCallOutsideStatement =
-        "?. calling an extension method that returns void outside a statement";
+        "?. calling an extension method that returns void outside a statement, which the managed CPU path cannot write";
 
     /// <summary>Decides how <paramref name="node"/> is written.</summary>
     /// <exception cref="InvalidOperationException">
@@ -101,7 +101,7 @@ internal static class ConditionalAccess
     private static bool IsVoidCallOutsideStatement(ConditionalAccessExpressionSyntax node, ITypeSymbol accessType,
         SemanticModel model) =>
         accessType.SpecialType == SpecialType.System_Void &&
-        !ManagedConditionalAccess.IsStatement(node) &&
+        !ManagedConditionalAccess.IsStatement(node, model) &&
         ManagedConditionalAccess.NeedsReceiverVariable(node, model);
 
     private static InvalidOperationException Unresolved(string part, SyntaxNode node) =>

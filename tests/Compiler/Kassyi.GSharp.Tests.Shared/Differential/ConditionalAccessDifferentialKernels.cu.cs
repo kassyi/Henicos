@@ -17,6 +17,12 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
         public int[]? Data;
     }
 
+    /// <summary>A struct whose array field of structs is read by a chained null-conditional access.</summary>
+    public struct ConditionalPointsHolder
+    {
+        public ConditionalPoint[]? Pts;
+    }
+
     /// <summary>
     /// A struct with a computed property and a nested struct field, read through a <c>Nullable&lt;T&gt;</c>.
     /// </summary>
@@ -480,6 +486,29 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
             dst[col + 3] = log2;
         }
 
+        // Extension methods that return void, called as statements: at the end of a chain (h?.Data?.M(),
+        // hp?.Pts?[t].M()) and as the body of a Gpu.ForUnroll lambda, which is inlined as a statement
+        [GpuKernel]
+        public static void VoidExtensionStatementKernel(int[] a, int[] ws, ConditionalPoint[] ps1,
+            ConditionalPoint[] ps2, int[] dst)
+        {
+            int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+            int sel = a[t] & 3;
+            ConditionalHolder? h = sel == 0 ? null : new ConditionalHolder { Data = sel == 1 ? null : ws };
+            ConditionalPointsHolder? hp = (a[t] & 4) == 0 ? null : new ConditionalPointsHolder { Pts = ps1 };
+            ConditionalPoint[]? q = (a[t] & 1) == 0 ? null : ps2;
+            Gpu.SyncThreads();
+            h?.Data?.SetAt(t, 7);
+            hp?.Pts?[t].IncrementX();
+            Gpu.ForUnroll(0, 2, i => q?[t].IncrementX());
+            Gpu.SyncThreads();
+
+            int col = t * 3;
+            dst[col + 0] = ws[t];
+            dst[col + 1] = ps1[t].X;
+            dst[col + 2] = ps2[t].X;
+        }
+
         [GpuDeviceFunction]
         public static int SwapArray(ref int[]? r, int[] other)
         {
@@ -521,5 +550,8 @@ namespace Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessExtensionMeth
 
         [GpuDeviceFunction]
         public static void IncrementX(this ref ConditionalPoint p) => p.X++;
+
+        [GpuDeviceFunction]
+        public static void SetAt(this int[] values, int index, int value) => values[index] = value;
     }
 }

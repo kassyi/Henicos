@@ -11,6 +11,14 @@ internal sealed partial class ManagedExecutionRewriter
             return base.VisitConditionalAccessExpression(node);
         }
 
+        // A call that returns void has no value to write: the statement form in an action invoked in place, for a
+        // position the plan rejects (GSH0003), so that the managed copy is valid C# anyway
+        if (semanticModel.GetTypeSymbol(node) is { SpecialType: SpecialType.System_Void })
+        {
+            return ManagedConditionalAccess.InvokeStatement(RewriteConditionalAccessStatement(node))
+                .WithTriviaFrom(node);
+        }
+
         var (receiver, whenNotNull, variable) = VisitWithReceiverVariable(node);
         return ManagedConditionalAccess.CreateValue(node, receiver, whenNotNull, variable, semanticModel)
             .WithTriviaFrom(node);

@@ -62,14 +62,26 @@ internal static class ManagedConditionalAccess
                 });
 
     /// <summary>
-    /// Whether <paramref name="node"/> is a statement: it is used as one, or it is the <c>WhenNotNull</c> of an access
-    /// that is (the inner access of <c>h?.Data?.M();</c>).
+    /// Whether <paramref name="node"/> is a statement: it is used as one, it is the <c>WhenNotNull</c> of an access
+    /// that is (the inner access of <c>h?.Data?.M();</c>), or it is the body of a <c>Gpu.ForUnroll</c> or
+    /// <c>Gpu.SyncGrid</c> lambda, which is inlined as a statement. Decided on the node of the user's tree that
+    /// <paramref name="node"/> stands for: the inner access of a chain is planned on a tree of its own.
     /// </summary>
-    public static bool IsStatement(ConditionalAccessExpressionSyntax node) =>
+    public static bool IsStatement(ConditionalAccessExpressionSyntax node, SemanticModel semanticModel)
+    {
+        var original = semanticModel.GetOriginalNode(node) as ConditionalAccessExpressionSyntax ?? node;
+        return IsInStatementPosition(original, semanticModel.Compilation);
+    }
+
+    private static bool IsInStatementPosition(ConditionalAccessExpressionSyntax node, Compilation compilation) =>
         node.Parent switch
         {
             ExpressionStatementSyntax => true,
-            ConditionalAccessExpressionSyntax outer when outer.WhenNotNull == node => IsStatement(outer),
+            ConditionalAccessExpressionSyntax outer when outer.WhenNotNull == node =>
+                IsInStatementPosition(outer, compilation),
+            AnonymousFunctionExpressionSyntax lambda when lambda.ExpressionBody == node =>
+                compilation.ContainsSyntaxTree(lambda.SyntaxTree) &&
+                SplitPointPlacement.IsInlinedMacroBody(lambda, compilation.GetCachedSemanticModel(lambda.SyntaxTree)),
             _ => false
         };
 
@@ -105,6 +117,15 @@ internal static class ManagedConditionalAccess
             CreateTest(receiver, variable),
             SyntaxFactory.Block(ConditionalAccess.ReplaceBindings(body, SyntaxFactory.IdentifierName(variable)))
         );
+
+    /// <summary><c>((global::System.Action)(() =&gt; { &lt;statement&gt; }))()</c>.</summary>
+    public static ExpressionSyntax InvokeStatement(StatementSyntax statement) =>
+        SyntaxFactory.InvocationExpression(
+            SyntaxFactory.ParenthesizedExpression(
+                SyntaxFactory.CastExpression(
+                    SyntaxFactory.ParseTypeName("global::System.Action"),
+                    SyntaxFactory.ParenthesizedExpression(
+                        SyntaxFactory.ParenthesizedLambdaExpression(SyntaxFactory.Block(statement))))));
 
     // r is { } t
     private static ExpressionSyntax CreateTest(ExpressionSyntax receiver, string variable) =>
