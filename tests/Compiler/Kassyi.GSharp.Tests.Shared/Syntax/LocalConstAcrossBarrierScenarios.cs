@@ -45,34 +45,41 @@ internal static class LocalConstAcrossBarrierScenarios
         Assert.All(result, static value => Assert.Equal(4294967295L, value));
     }
 
-    public static void TypedLocalConstsAcrossBarrier(Action<Action> run)
-    {
-        var intResults = new int[WarpSize * 8];
-        var uintResults = new uint[WarpSize];
-        var ulongResults = new ulong[WarpSize];
+    public static void ShortConstWrap(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchShortConstWrapKernel(r,
+            blockDimX: ThreadCount), static _ => short.MinValue);
 
-        run(() => LocalConstAcrossBarrierKernels.LaunchTypedLocalConstsAcrossBarrierKernel(
-            intResults,
-            uintResults,
-            ulongResults,
-            blockDimX: WarpSize));
+    public static void ShortConstSum(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchShortConstSumKernel(r,
+            blockDimX: ThreadCount), static _ => 4);
 
-        for (int i = 0; i < WarpSize; i++)
-        {
-            int baseIdx = i * 8;
-            Assert.Equal(short.MinValue, intResults[baseIdx + 0]);
-            Assert.Equal(4, intResults[baseIdx + 1]);
-            Assert.Equal('Z', intResults[baseIdx + 2]);
-            Assert.Equal(1, intResults[baseIdx + 3]);
-            Assert.Equal((int)LocalConstMode.Beta, intResults[baseIdx + 4]);
-            Assert.Equal(255, intResults[baseIdx + 5]);
-            Assert.Equal(1, intResults[baseIdx + 6]);
-            Assert.Equal(131, intResults[baseIdx + 7]);
+    public static void UshortConstConversion(Action<Action> run) =>
+        AssertEachThread<uint>(run, static r => LocalConstAcrossBarrierKernels.LaunchUshortConstConversionKernel(r,
+            blockDimX: ThreadCount), static _ => 49u);
 
-            Assert.Equal(49u, uintResults[i]);
-            Assert.Equal((1UL << 40) | (uint)i, ulongResults[i]);
-        }
-    }
+    public static void CharConst(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchCharConstKernel(r,
+            blockDimX: ThreadCount), static _ => 'Z');
+
+    public static void BoolConst(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchBoolConstKernel(r,
+            blockDimX: ThreadCount), static _ => 1);
+
+    public static void ByteConstMax(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchByteConstMaxKernel(r,
+            blockDimX: ThreadCount), static _ => 255);
+
+    public static void NanConst(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchNanConstKernel(r,
+            blockDimX: ThreadCount), static _ => 1);
+
+    public static void UlongConstMask(Action<Action> run) =>
+        AssertEachThread<ulong>(run, static r => LocalConstAcrossBarrierKernels.LaunchUlongConstMaskKernel(r,
+            blockDimX: ThreadCount), static i => (1UL << 40) | (uint)i);
+
+    public static void StaticLocalFunctionConst(Action<Action> run) =>
+        AssertEachThread<int>(run, static r => LocalConstAcrossBarrierKernels.LaunchStaticLocalFunctionConstKernel(r,
+            blockDimX: ThreadCount), static _ => 6);
 
     public static void ZeroFloatConstDivisorsAcrossBarrier(Action<Action> run)
     {
@@ -238,6 +245,19 @@ internal static class LocalConstAcrossBarrierScenarios
         for (int i = 0; i < WarpSize; i++)
         {
             Assert.Equal(5u + (uint)i, result[i]);
+        }
+    }
+
+    // Launches the kernel on ThreadCount threads and checks the value of each thread
+    private static void AssertEachThread<T>(Action<Action> run, Action<T[]> launch, Func<int, T> expected)
+    {
+        var result = new T[ThreadCount];
+
+        run(() => launch(result));
+
+        for (int i = 0; i < ThreadCount; i++)
+        {
+            Assert.Equal(expected(i), result[i]);
         }
     }
 }

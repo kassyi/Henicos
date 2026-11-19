@@ -55,48 +55,97 @@ public static partial class LocalConstAcrossBarrierKernels
     }
 
     [GpuKernel]
-    public static void TypedLocalConstsAcrossBarrierKernel(int[] intResults, uint[] uintResults, ulong[] ulongResults)
+    public static void ShortConstWrapKernel(int[] result)
+    {
+        const short Max = short.MaxValue;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        var wrapped = Max;
+        wrapped++;
+        result[tid] = wrapped;
+    }
+
+    [GpuKernel]
+    public static void ShortConstSumKernel(int[] result)
+    {
+        const short Pos = 7;
+        const short Neg = -3;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[tid] = Neg + Pos;
+    }
+
+    // A constant int converts to ushort only as a constant
+    [GpuKernel]
+    public static void UshortConstConversionKernel(uint[] result)
+    {
+        const int PosInt = 7;
+        const ulong Small = 42UL;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        ushort u = PosInt;
+        result[tid] = (uint)Small + u;
+    }
+
+    [GpuKernel]
+    public static void CharConstKernel(int[] result)
+    {
+        const char Ch = 'Z';
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        int charValue = Ch;
+        result[tid] = charValue;
+    }
+
+    [GpuKernel]
+    public static void BoolConstKernel(int[] result)
     {
         const bool Flag = true;
         const bool Off = false;
-        const char Ch = 'Z';
-        const short Max = short.MaxValue;
-        const int PosInt = 7;
-        const short Pos = 7;
-        const short Neg = -3;
-        const LocalConstMode Mode = LocalConstMode.Beta;
-        const ulong BigMask = 1UL << 40;
-        const ulong Small = 42UL;
-        const byte ByteMax = 255;
-        const float NaN = float.NaN;
-        const int NamedVal = 123;
-
         int tid = ThreadIndex.X;
         Gpu.SyncThreads();
+        result[tid] = (Flag && !Off) ? 1 : 0;
+    }
 
-        var wrapped = Max;
-        wrapped++;
-        ushort u = PosInt;
-        int charVal = Ch;
-        int flagVal = (Flag && !Off) ? 1 : 0;
-        int modeVal = (int)Mode;
-        int negVal = Neg + Pos;
-        int maxByte = Math.Max(ByteMax, tid);
-        int nanFlag = (NaN != NaN) ? 1 : 0;
-        int namedSum = nameof(NamedVal).Length + NamedVal;
+    // The byte constant and the int pick Math.Max(int, int)
+    [GpuKernel]
+    public static void ByteConstMaxKernel(int[] result)
+    {
+        const byte ByteMax = 255;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[tid] = Math.Max(ByteMax, tid);
+    }
 
-        int baseIdx = tid * 8;
-        intResults[baseIdx + 0] = wrapped;
-        intResults[baseIdx + 1] = negVal;
-        intResults[baseIdx + 2] = charVal;
-        intResults[baseIdx + 3] = flagVal;
-        intResults[baseIdx + 4] = modeVal;
-        intResults[baseIdx + 5] = maxByte;
-        intResults[baseIdx + 6] = nanFlag;
-        intResults[baseIdx + 7] = namedSum;
+    [GpuKernel]
+    public static void NanConstKernel(int[] result)
+    {
+        const float NaN = float.NaN;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[tid] = (NaN != NaN) ? 1 : 0;
+    }
 
-        uintResults[tid] = (uint)Small + u;
-        ulongResults[tid] = BigMask | (ulong)(uint)tid;
+    [GpuKernel]
+    public static void UlongConstMaskKernel(ulong[] result)
+    {
+        const ulong BigMask = 1UL << 40;
+        int tid = ThreadIndex.X;
+        Gpu.SyncThreads();
+        result[tid] = BigMask | (ulong)(uint)tid;
+    }
+
+    // A static local function reads the const, which needs no capture
+    [GpuKernel]
+    public static void StaticLocalFunctionConstKernel(int[] result)
+    {
+        const int D = 6;
+        int tid = ThreadIndex.X;
+
+        static int F() => D;
+
+        Gpu.SyncThreads();
+        result[tid] = F();
     }
 
     [GpuKernel]

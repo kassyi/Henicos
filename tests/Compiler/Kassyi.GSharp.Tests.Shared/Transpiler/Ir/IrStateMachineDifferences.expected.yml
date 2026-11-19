@@ -2050,6 +2050,9 @@
 - {file: "Syntax/LambdaAndLocalFunctionsKernels.cu.cs", method: "LambdaAndLocalFunctionsKernels.NonCapturingLambdaKernel", status: "Compared", count: 1}
 - {file: "Syntax/LambdaAndLocalFunctionsKernels.cu.cs", method: "LambdaAndLocalFunctionsKernels.ShadowedVariableCaptureKernel", status: "Compared", count: 1}
 - {file: "Syntax/LambdaAndLocalFunctionsKernels.cu.cs", method: "LambdaAndLocalFunctionsKernels.ValueCapturingLambdaKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.BoolConstKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ByteConstMaxKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.CharConstKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ConstAcrossBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ConstConversionChangesOperatorKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ConstInitializerAfterBarrierKernel", status: "Compared", count: 1}
@@ -2061,12 +2064,17 @@
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.MovedLocalFunctionConstKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.MultiDeclaratorConstKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.NameofConstAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.NanConstKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ReadConstAfterBarrierDevice", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ShortConstSumKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ShortConstWrapKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.SiblingScopeConstsKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.SpecialFloatConstsAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.StaticLocalFunctionConstKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.SwitchSameSectionTwoBlocksConstsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.SwitchScopedBlockConstsAcrossSectionsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
-- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.TypedLocalConstsAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UlongConstMaskKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UshortConstConversionKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ZeroFloatConstDivisorsAcrossBarrierKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CalledBeforeDeclarationKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CapturesLocalAfterLastBarrierKernel", status: "OpaqueStatement", count: 1}
@@ -4781,6 +4789,7 @@
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.CaseLabelConstAcrossBarrier", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.ConstBeforeBarrier", status: "Compared", count: 1}
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.ConstInsideLocalFunctionAndLambda", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.ConstPatternsAcrossBarrier", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.ConstWithoutBarrier", status: "Compared", count: 1}
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.ConstsAndLocalFunction", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/LocalConstLiftingCases.cu.cs", method: "LocalConstLiftingCases.GotoCaseRenamedConst", status: "OpaqueStatement", count: 1}

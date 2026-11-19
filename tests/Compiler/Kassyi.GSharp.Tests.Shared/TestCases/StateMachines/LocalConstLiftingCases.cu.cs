@@ -118,6 +118,27 @@ public static partial class LocalConstLiftingCases
         }
     }
 
+    // Constant patterns after the barrier name the const (the native C++ does not translate these patterns)
+    [GpuKernel]
+    public static void ConstPatternsAcrossBarrier(int[] r)
+    {
+        const int Lim = 1;
+        int t = ThreadIndex.X;
+        Gpu.SyncThreads();
+        switch (t)
+        {
+            case < Lim:
+                r[t * 3] = 1;
+                break;
+            default:
+                r[t * 3] = 2;
+                break;
+        }
+
+        r[t * 3 + 1] = t is < Lim ? 1 : 2;
+        r[t * 3 + 2] = t is Lim ? 7 : 8;
+    }
+
     // Not a kernel: the goto forms that IsNonValueIdentifierPosition classifies
     public static void GotoLabelAndGotoCase(int[] r, int t)
     {
@@ -145,4 +166,7 @@ public static partial class LocalConstLiftingCases
 
     public static void RunGotoCaseRenamedConst(int[] r, uint blockDimX) =>
         LaunchGotoCaseRenamedConst(r, blockDimX: blockDimX);
+
+    public static void RunConstPatternsAcrossBarrier(int[] r, uint blockDimX) =>
+        LaunchConstPatternsAcrossBarrier(r, blockDimX: blockDimX);
 }

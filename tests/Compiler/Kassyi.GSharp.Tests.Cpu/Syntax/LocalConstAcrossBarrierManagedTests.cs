@@ -30,8 +30,43 @@ public class LocalConstAcrossBarrierManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void LocalConst_ManagedTypedVariationsAcrossBarrier_PreservesTypesAndValues() =>
-        LocalConstAcrossBarrierScenarios.TypedLocalConstsAcrossBarrier(s_runManaged);
+    public void LocalConst_ManagedShortMaxIncremented_WrapsToMinValue() =>
+        LocalConstAcrossBarrierScenarios.ShortConstWrap(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedShortConstsAdded_PromoteToInt() =>
+        LocalConstAcrossBarrierScenarios.ShortConstSum(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedIntConstToUshort_ConvertsAsConstant() =>
+        LocalConstAcrossBarrierScenarios.UshortConstConversion(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedCharConstToInt_KeepsCode() =>
+        LocalConstAcrossBarrierScenarios.CharConst(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedBoolConsts_CombineAsConstants() =>
+        LocalConstAcrossBarrierScenarios.BoolConst(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedByteConstInMathMax_PicksIntOverload() =>
+        LocalConstAcrossBarrierScenarios.ByteConstMax(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedNaNConst_IsNotEqualToItself() =>
+        LocalConstAcrossBarrierScenarios.NanConst(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedUlongConstMask_KeepsHighBit() =>
+        LocalConstAcrossBarrierScenarios.UlongConstMask(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
@@ -57,6 +92,11 @@ public class LocalConstAcrossBarrierManagedTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void LocalConst_ManagedReadByMovedLocalFunction_StaysConstant() =>
         LocalConstAcrossBarrierScenarios.MovedLocalFunctionConst(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ManagedReadByStaticLocalFunction_StaysConstant() =>
+        LocalConstAcrossBarrierScenarios.StaticLocalFunctionConst(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

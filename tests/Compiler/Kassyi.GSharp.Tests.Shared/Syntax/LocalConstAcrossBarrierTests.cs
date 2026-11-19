@@ -31,8 +31,43 @@ public class LocalConstAcrossBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
-    public void LocalConst_TypedVariationsAcrossBarrier_PreservesTypesAndValues() =>
-        LocalConstAcrossBarrierScenarios.TypedLocalConstsAcrossBarrier(s_runDefault);
+    public void LocalConst_ShortMaxIncremented_WrapsToMinValue() =>
+        LocalConstAcrossBarrierScenarios.ShortConstWrap(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ShortConstsAdded_PromoteToInt() =>
+        LocalConstAcrossBarrierScenarios.ShortConstSum(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_IntConstToUshort_ConvertsAsConstant() =>
+        LocalConstAcrossBarrierScenarios.UshortConstConversion(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_CharConstToInt_KeepsCode() =>
+        LocalConstAcrossBarrierScenarios.CharConst(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_BoolConsts_CombineAsConstants() =>
+        LocalConstAcrossBarrierScenarios.BoolConst(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ByteConstInMathMax_PicksIntOverload() =>
+        LocalConstAcrossBarrierScenarios.ByteConstMax(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_NaNConst_IsNotEqualToItself() =>
+        LocalConstAcrossBarrierScenarios.NanConst(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_UlongConstMask_KeepsHighBit() =>
+        LocalConstAcrossBarrierScenarios.UlongConstMask(s_runDefault);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
@@ -58,6 +93,11 @@ public class LocalConstAcrossBarrierTests : TranspilerTestBase
     [Scenario(TestScenario.Boundary)]
     public void LocalConst_ReadByMovedLocalFunction_StaysConstant() =>
         LocalConstAcrossBarrierScenarios.MovedLocalFunctionConst(s_runDefault);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalConst_ReadByStaticLocalFunction_StaysConstant() =>
+        LocalConstAcrossBarrierScenarios.StaticLocalFunctionConst(s_runDefault);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]

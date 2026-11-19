@@ -36,8 +36,8 @@ public class LocalConstHoistingTests
     {
         var lowered = Lower("ConstBeforeBarrier");
 
-        // mutant: HoistedVariableAnalysis.Analyze `if (liftedConstants != null && IsConstDeclarator(decl))` ->
-        // `if (false)` -> D becomes a context field
+        // mutant: HoistedVariableAnalysis.Analyze `if (IsConstDeclarator(decl))` -> `if (false)` -> D becomes a
+        // context field
         // mutant: ContextHoister.VisitLocalDeclarationStatement without `return null;` -> D is declared twice
         Assert.Equal(["D"], FrontConstNames(lowered.LoweredBody));
         Assert.IsType<SwitchStatementSyntax>(lowered.LoweredBody.Statements.Last());
@@ -113,7 +113,7 @@ public class LocalConstHoistingTests
             .Single(static m => m.Identifier.ValueText.StartsWith("__gsharp_statemachine_", StringComparison.Ordinal) &&
                                 m.Identifier.ValueText.EndsWith("__SiblingConstsOfOneName", StringComparison.Ordinal));
 
-        // mutant: ContextLocalRewriter.CreateFrontDeclarationRenames `counts[constName] < 2` -> `true` -> two consts
+        // mutant: ContextLocalRewriter.CreateFrontDeclarationRenames.Rename `counts[name] < 2` -> `true` -> two consts
         // named K in one block (CS0128)
         // mutant: ContextLocalRewriter.VisitVariableDeclarator returns `visited` -> the references name a const that
         // is not declared (CS0103)
@@ -170,6 +170,19 @@ public class LocalConstHoistingTests
         Invoke("RunGotoCaseRenamedConst", r);
 
         Assert.Equal([5, 5, 5, 5], r);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ManagedStateMachine_ConstPatternsAfterBarrier_MatchTheConst()
+    {
+        int[] r = new int[ThreadCount * 3];
+
+        Invoke("RunConstPatternsAcrossBarrier", r);
+
+        // case < Lim, t is < Lim, t is Lim for t = 0..3
+        Assert.Equal([1, 1, 8, 2, 2, 7, 2, 2, 8, 2, 2, 8], r);
     }
 
     private static string[] FrontConstNames(BlockSyntax body) =>
