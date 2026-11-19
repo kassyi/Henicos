@@ -451,8 +451,15 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
     assert.deepStrictEqual(repoConfig.config.plugins, [
       { name: "./scripts/human/job-queue-henicos" },
       { name: "dotnet" },
-      { name: "just" },
+      {
+        name: "just",
+        options: {
+          hookRecipes: "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
+          hookDryRunRecipes: "^(mutate|long-checks)$",
+        },
+      },
       { name: "nvidia-gpu" },
+      { name: "agents" },
     ]);
     assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
     assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);

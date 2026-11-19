@@ -6,8 +6,15 @@
   "plugins": [
     { "name": "./scripts/human/job-queue-henicos" },
     { "name": "dotnet" },
-    { "name": "just" },
-    { "name": "nvidia-gpu" }
+    {
+      "name": "just",
+      "options": {
+        "hookRecipes": "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
+        "hookDryRunRecipes": "^(mutate|long-checks)$"
+      }
+    },
+    { "name": "nvidia-gpu" },
+    { "name": "agents" }
   ],
   "pools": {
     "coresPerSlot": 3,
