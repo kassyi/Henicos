@@ -249,6 +249,25 @@
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.PerBlockCountKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.RegionOrderKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryLimitKernels.cu.cs", method: "SharedMemoryLimitKernels.TwoRegionsKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.AliasAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.BarrierFunctionResultKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CallResultAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.ConditionalOfLocalsKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CopyOfLocalKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreateInExpressionBody", status: "NoStateMachine", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreateInReturn", status: "NoStateMachine", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreationInArgumentKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreationInConditionalKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreationInExpressionBodyKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreationInLocalFunctionExpressionBodyKernel", status: "OpaqueStatement", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.CreationInReturnKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.DeviceFunctionResultKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.DeviceFunctionTwiceKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.FillAcrossBarrier", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.FloatAndByteAliasKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.Identity", status: "NoStateMachine", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.ParenthesizedCreationKernel", status: "Compared", count: 1}
+- {file: "Core/SharedMemoryLocalFormsKernels.cu.cs", method: "SharedMemoryLocalFormsKernels.StoreAndLoad", status: "NoStateMachine", count: 1}
 - {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutDiscardKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutTypedKernel", status: "Compared", count: 1}
 - {file: "Core/SharedMemoryOutKernels.cu.cs", method: "SharedMemoryOutKernels.OutVarKernel", status: "Compared", count: 1}
@@ -451,6 +470,7 @@
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8ColMajorBKernel", status: "Compared", count: 1}
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8ColMajorStoreKernel", status: "Compared", count: 1}
 - {file: "Core/WmmaKernels.cu.cs", method: "WmmaKernels.WmmaInt8RowMajorKernel", status: "Compared", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ImmutableForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ImmutableKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.MemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableImmutableKernel", status: "Compared", count: 1}
@@ -458,6 +478,7 @@
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableSegmentKernel", status: "Compared", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ReadOnlyMemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ReadOnlySpanKernel", status: "OpaqueStatement", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SegmentForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SegmentKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SpanKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SpanSum", status: "NoStateMachine", count: 1}
@@ -466,6 +487,7 @@
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NonNullableArrayKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NonNullableLength", status: "NoStateMachine", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayAfterBarrierKernel", status: "OpaqueStatement", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableLength", status: "NoStateMachine", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableStackLinqSum", status: "NoStateMachine", count: 1}
@@ -1872,6 +1894,7 @@
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverLabeledBlockKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverNestedBlockKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverNestedStructKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverSharedMemoryAliasKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverSharedMemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoPastLabeledDeclarationKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoPastLabeledStructKernel", status: "OpaqueStatement", count: 1}

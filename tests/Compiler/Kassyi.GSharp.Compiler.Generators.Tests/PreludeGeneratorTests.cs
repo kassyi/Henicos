@@ -1,4 +1,5 @@
 using System.Linq;
+using Kassyi.GSharp.Cuda;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Compiler.Generators.Tests;
@@ -30,7 +31,7 @@ public class PreludeGeneratorTests
 
         Assert.Equal(0, result.ExitCode);
         var (cuda, cpp, _) = ReadPreludes(scratch);
-        Assert.Equal("int b;\n\nint a;\n\nint cu;\n\n", cuda);
+        Assert.Equal(ExpectedCudaGuard() + "int b;\n\nint a;\n\nint cu;\n\n", cuda);
         // The C++ prelude drops one trailing line break of a header included at its very end.
         Assert.Equal("int a;\nint b;\n\n", cpp);
     }
@@ -59,7 +60,7 @@ public class PreludeGeneratorTests
         var result = RunPrelude(scratch);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Equal("int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
+        Assert.Equal(ExpectedCudaGuard() + "int a;\n\nint a;\n\n\n", ReadPreludes(scratch).Cuda);
     }
 
     [Fact]
@@ -150,7 +151,7 @@ public class PreludeGeneratorTests
 
         Assert.Equal(0, result.ExitCode);
         var (cuda, cpp, cppStackThreads) = ReadPreludes(scratch);
-        Assert.Equal("#include <mma.h>\nint cu;\n\n", cuda);
+        Assert.Equal(ExpectedCudaGuard() + "#include <mma.h>\nint cu;\n\n", cuda);
         Assert.Equal("#include <cstdint>\n\n", cpp);
         Assert.Equal("int stack_helper;\n\n", cppStackThreads);
     }
@@ -188,6 +189,34 @@ public class PreludeGeneratorTests
         Assert.Equal(beforeConstants["Cpp"], afterConstants["Cpp"]);
         Assert.NotEqual(beforeConstants["CppStackThreads"], afterConstants["CppStackThreads"]);
         Assert.NotEqual(beforeConstants["Hash"], afterConstants["Hash"]);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void CudaPrelude_WithIncludeInResource_PrependsNvccMinimumGuardBeforeInclude()
+    {
+        using var scratch = CreateResources(
+            cuda: "#include <cooperative_groups.h>\nint cu;\n",
+            cpp: "#include <cstdint>\n");
+
+        var result = RunPrelude(scratch);
+
+        Assert.Equal(0, result.ExitCode);
+        var (cuda, cpp, _) = ReadPreludes(scratch);
+        Assert.Equal(ExpectedCudaGuard() + "#include <cooperative_groups.h>\nint cu;\n\n", cuda);
+        Assert.Equal("#include <cstdint>\n\n", cpp);
+    }
+
+    private static string ExpectedCudaGuard()
+    {
+        var major = NvccMinimum.MajorRelease;
+        return
+            "#if !defined(__CUDACC_VER_MAJOR__)\n" +
+            "#error \"The G# CUDA prelude must be compiled by nvcc (__CUDACC_VER_MAJOR__ is not defined).\"\n" +
+            $"#elif __CUDACC_VER_MAJOR__ < {major}\n" +
+            $"#error \"G# needs the CUDA Toolkit {major}.0 or later " +
+            $"(nvcc __CUDACC_VER_MAJOR__ is below {major}). Install a newer nvcc.\"\n" +
+            "#endif\n";
     }
 
     private static ScratchDirectory CreateResources(string cuda, string cpp)

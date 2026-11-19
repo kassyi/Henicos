@@ -278,6 +278,12 @@ public struct Emitter(
     public Dictionary<SyntaxNode, int> DiscardStorages { get; } = new();
 
     /// <summary>
+    /// The number (<c>__gsharp_smem_&lt;n&gt;</c>) of each <c>SharedMemory&lt;T&gt;</c> creation that the statement
+    /// prelude declared the memory for (SharedMemoryCreationLift); the count is the next number.
+    /// </summary>
+    public Dictionary<SyntaxNode, int> SharedMemoryLifts { get; } = new();
+
+    /// <summary>
     /// The temporary (<c>__gsharp_seq_&lt;n&gt;</c>) that a part of the target of a step or compound assignment was
     /// evaluated into, written in place of the part while the target is written (IntegerSemanticsEmitter).
     /// </summary>

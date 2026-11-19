@@ -58,7 +58,7 @@ internal sealed partial class ManagedExecutionRewriter(
             _nextUnrollId = FindNextUnrollId(node);
         }
 
-        return base.Visit(node);
+        return ManagedSegmentSource.Rewrite(node, base.Visit(node));
     }
 
     // A loop that PreLoweringExpander made of a barrier-bearing ForUnroll already uses these names. Its variable lives

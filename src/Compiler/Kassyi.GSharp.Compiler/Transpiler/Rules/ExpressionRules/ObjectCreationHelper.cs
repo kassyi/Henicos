@@ -33,6 +33,11 @@ internal static class ObjectCreationHelper
                 return;
             }
 
+            if (SharedMemoryCreationLift.TryAppend(node, ref context))
+            {
+                return;
+            }
+
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.Append(' ');

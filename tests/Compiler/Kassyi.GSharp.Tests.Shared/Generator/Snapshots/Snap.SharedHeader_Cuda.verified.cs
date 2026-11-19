@@ -5,7 +5,12 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaPrelude
 {
-public const string Source = @"#include <cooperative_groups.h>
+public const string Source = @"#if !defined(__CUDACC_VER_MAJOR__)
+#error ""The G# CUDA prelude must be compiled by nvcc (__CUDACC_VER_MAJOR__ is not defined).""
+#elif __CUDACC_VER_MAJOR__ < 13
+#error ""G# needs the CUDA Toolkit 13.0 or later (nvcc __CUDACC_VER_MAJOR__ is below 13). Install a newer nvcc.""
+#endif
+#include <cooperative_groups.h>
 #include <mma.h>
 #include <math_constants.h>
 namespace cg = cooperative_groups;
@@ -1241,6 +1246,17 @@ if (array.data == nullptr)
 __gsharp_inline_trap(GSharpErrorCode::NullReference, __gsharp_inline_site(site));
 }
 return static_cast<A&&>(array);
+}
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// (""The underlying array is null."") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+__device__ __forceinline__ A __gsharp_segment_ref(A&& segment, S site)
+{
+if (segment.data == nullptr)
+{
+__gsharp_inline_trap(GSharpErrorCode::InvalidOperation, __gsharp_inline_site(site));
+}
+return static_cast<A&&>(segment);
 }
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails
 // as the C# method throws ArgumentNullException (""source""). The place is as for __gsharp_array_ref

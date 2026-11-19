@@ -443,6 +443,8 @@ struct Kassyi_GSharp_Core_SharedMemory {
 T* data;
 inline T& operator[](int index) { return data[index]; }
 inline const T& operator[](int index) const { return data[index]; }
+// The frame of a state machine keeps a SharedMemory<T> local, which a device function result or a copy assigns
+inline Kassyi_GSharp_Core_SharedMemory<T>& operator=(T* pointer) { data = pointer; return *this; }
 inline operator T*() { return data; }
 inline operator const T*() const { return data; }
 };
@@ -1078,6 +1080,18 @@ if (array.data == nullptr)
 __gsharp_trap_abort(GSharpErrorCode::NullReference, site);
 }
 return static_cast<A&&>(array);
+}
+
+// The ArraySegment<T> that a foreach reads: a default one has no array, which C# reports as InvalidOperationException
+// (""The underlying array is null."") when the loop starts. The place is as for __gsharp_array_ref
+template <typename A, typename S>
+inline A __gsharp_segment_ref(A&& segment, S site)
+{
+if (segment.data == nullptr)
+{
+__gsharp_trap_abort(GSharpErrorCode::InvalidOperation, site);
+}
+return static_cast<A&&>(segment);
 }
 
 // The array that a StackLinq query starts from (AsStackEnumerable, or the source of a fused chain): a null array fails

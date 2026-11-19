@@ -1,4 +1,5 @@
 using System.Globalization;
+using Kassyi.GSharp.Cuda;
 using Kassyi.GSharp.Hashing;
 
 namespace Kassyi.GSharp.Compiler.Generators;
@@ -43,8 +44,23 @@ public static class PreludeGenerator
 
         var content = ReadText(rootPath) + "\n";
         var includeChain = new List<string> { rootPath };
-        return RemoveIndentation(ResolveEmbeddedIncludes(
+        var resolved = RemoveIndentation(ResolveEmbeddedIncludes(
             resourcesDir, rootPath, content, isCuda, atDocumentEnd: true, includeChain));
+        return isCuda ? PrependNvccMinimumGuard(resolved) : resolved;
+    }
+
+    private static string PrependNvccMinimumGuard(string cudaPrelude)
+    {
+        using var writer = new SourceWriter();
+        writer.Append("#if !defined(__CUDACC_VER_MAJOR__)\n");
+        writer.Append("#error \"The G# CUDA prelude must be compiled by nvcc ");
+        writer.Append("(__CUDACC_VER_MAJOR__ is not defined).\"\n");
+        writer.Append($"#elif __CUDACC_VER_MAJOR__ < {NvccMinimum.MajorRelease}\n");
+        writer.Append($"#error \"G# needs the CUDA Toolkit {NvccMinimum.MajorRelease}.0 or later ");
+        writer.Append($"(nvcc __CUDACC_VER_MAJOR__ is below {NvccMinimum.MajorRelease}). Install a newer nvcc.\"\n");
+        writer.Append("#endif\n");
+        writer.Append(cudaPrelude);
+        return writer.ToString();
     }
 
     // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain

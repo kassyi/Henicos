@@ -227,7 +227,11 @@ internal sealed class ContextLocalRewriter : CSharpSyntaxRewriter
         var key = LoweringIdentity.ForReference(memberAccess.Name, _semanticModel);
         if (key.Symbol == null)
         {
-            return memberAccess;
+            // The temporary of a suspending call has no symbol; it is a resume local when its type is a ref struct
+            return memberAccess.Name.Identifier.ValueText.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix,
+                       StringComparison.Ordinal) && _resumeLocals.Contains(key)
+                ? memberAccess.Name.WithTriviaFrom(memberAccess)
+                : memberAccess;
         }
 
         SimpleNameSyntax name = _renamedLocals.TryGetValue(key, out var renamed)

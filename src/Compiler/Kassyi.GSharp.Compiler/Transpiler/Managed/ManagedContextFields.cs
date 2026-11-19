@@ -89,7 +89,7 @@ internal static class ManagedContextFields
 
             contextField = RenameIfTheBodyDeclares(contextField, key, bodyNames, renamedLocals);
             var resumeLocal = CreateResumeLocal(contextField, semanticModel);
-            if (key.Symbol != null)
+            if (key.Symbol != null || IsCallTemp(field))
             {
                 unhoistedLocals[key] = resumeLocal;
             }
@@ -211,10 +211,25 @@ internal static class ManagedContextFields
         field with
         {
             Declarator = ManagedNameQualifier.Qualify(
-                SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(field.Declarator, semanticModel, findOnly: true),
+                SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKeys(WithoutCallInitializer(field.Declarator),
+                    semanticModel, findOnly: true),
                 semanticModel),
             Resume = ResumeLocals.Describe(field.Declarator, field.ResolvedType, semanticModel)
         };
+
+    // The temporary that receives the result of a suspending call has no symbol; the lowering names it with this prefix
+    internal static bool IsCallTemp(VariableDeclaratorSyntax declarator) =>
+        declarator.Identifier.ValueText.StartsWith(
+            GSharpInternalNames.Lowering.CallTempPrefix, StringComparison.Ordinal);
+
+    // [WHY] The call that fills the temporary runs where it is called, with the locals of that state. A resume
+    // re-declares the temporary before the switch, so it keeps the call out of the declaration: the argument locals
+    // are not there yet, and the call would run on every resume. The suspending call writes the result through 'ref'.
+    private static VariableDeclaratorSyntax WithoutCallInitializer(VariableDeclaratorSyntax declarator) =>
+        IsCallTemp(declarator)
+            ? declarator.WithInitializer(
+                SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)))
+            : declarator;
 
     // [WHY] A resume local is declared at the top of the state function, so a local of the same name declared in a
     // nested scope of the body (one that no barrier crosses, a sibling of the hoisted one) is CS0136. The check is by
