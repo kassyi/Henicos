@@ -46,7 +46,7 @@ internal sealed class StructPath
 
     /// <summary>Whether <paramref name="structType"/> is on the path: a field of its type closes a cycle.</summary>
     public bool Contains(INamedTypeSymbol structType) =>
-        _structs.Contains(structType) || GrowingGenericStructs.IsLargerConstruction(structType, _structs);
+        _structs.Contains(structType) || GrowingGenericStructs.HoldsAnotherConstructionByValue(structType, _structs);
 
     /// <summary>One struct entered on a <see cref="StructPath"/>; disposing it leaves the struct.</summary>
     public readonly ref struct Step

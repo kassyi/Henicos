@@ -9,25 +9,113 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// </summary>
 internal static class GrowingGenericStructs
 {
+    // [WHY] The by-value search follows constructed field types, which a definition that grows elsewhere could make
+    // endless; past this many constructions it answers that the definition holds itself, which only stops a layout
+    // walk that already holds another construction of the definition
+    private const int MaxSearchedConstructions = 64;
+
     /// <summary>
-    /// Whether <paramref name="type"/> is a construction of a generic struct whose members name a construction of its
-    /// own definition (<see cref="GrowingGenericStructs"/>), and <paramref name="met"/> already holds another
-    /// construction of that definition: the walk is where the construction grows, and stops.
+    /// For a walk with a set of the structs it has met that follows arrays, properties or type arguments: whether
+    /// <paramref name="type"/> is a construction that grows out of one in <paramref name="met"/> (each type argument
+    /// holds the earlier one's, as <c>G&lt;int[,]&gt;</c> holds <c>int</c>) of a definition whose members name a
+    /// construction of itself. Another construction (<c>G&lt;M&gt;</c> after <c>G&lt;int&gt;</c>) is searched once
+    /// like any struct, and so is <c>Pair&lt;Pair&lt;int&gt;&gt;</c>, whose definition names only its type argument.
     /// </summary>
     /// <remarks>
-    /// The definition is only searched when the set holds another construction of it, so a walk without such a pair
-    /// pays one look at the set per generic struct. <c>Pair&lt;Pair&lt;int&gt;&gt;</c> is not stopped: the definition
-    /// <c>Pair&lt;T&gt;</c> names only its type argument.
+    /// Known limit: what only the larger construction holds (<c>G&lt;T&gt; { G&lt;T[,]&gt;[] K; T Leaf; }</c>, where
+    /// the <c>Leaf</c> of <c>G&lt;int[,]&gt;</c> is a multidimensional array) is not searched.
     /// </remarks>
     public static bool IsLargerConstruction<T>(ITypeSymbol type, HashSet<T> met)
         where T : class, ITypeSymbol =>
         type is INamedTypeSymbol { IsGenericType: true, TypeKind: TypeKind.Struct } named &&
         met
             .AsStackEnumerable()
-            .Any(named, static (other, entered) =>
+            .Any(named, static (other, entered) => other is INamedTypeSymbol earlier && GrowsOutOf(entered, earlier)) &&
+        NamesItself(named.OriginalDefinition);
+
+    /// <summary>
+    /// For a layout walk, which follows fields by value: whether <paramref name="structType"/> is a construction of a
+    /// definition that holds a construction of itself by value (the CS0523 rule), and <paramref name="path"/> holds
+    /// another construction of it. <c>V&lt;V&lt;int&gt;&gt;</c> of
+    /// <c>V&lt;T&gt; { T X; V&lt;T&gt; Swapped =&gt; default; }</c> is laid out in full.
+    /// </summary>
+    public static bool HoldsAnotherConstructionByValue(INamedTypeSymbol structType, HashSet<INamedTypeSymbol> path) =>
+        structType.IsGenericType &&
+        path
+            .AsStackEnumerable()
+            .Any(structType, static (other, entered) =>
                 !SymbolEqualityComparer.Default.Equals(other, entered) &&
                 SymbolEqualityComparer.Default.Equals(other.OriginalDefinition, entered.OriginalDefinition)) &&
-        NamesItself(named.OriginalDefinition);
+        HoldsItselfByValue(structType.OriginalDefinition);
+
+    // A construction of the same definition whose every type argument holds the earlier one's
+    private static bool GrowsOutOf(INamedTypeSymbol later, INamedTypeSymbol earlier)
+    {
+        if (SymbolEqualityComparer.Default.Equals(later, earlier) ||
+            !SymbolEqualityComparer.Default.Equals(later.OriginalDefinition, earlier.OriginalDefinition))
+        {
+            return false;
+        }
+
+        for (var i = 0; i < later.TypeArguments.Length; i++)
+        {
+            if (!Holds(later.TypeArguments[i], earlier.TypeArguments[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Whether part is whole, or an element or type argument of it at any depth
+    private static bool Holds(ITypeSymbol whole, ITypeSymbol part) =>
+        SymbolEqualityComparer.Default.Equals(whole, part) ||
+        whole switch
+        {
+            IArrayTypeSymbol array => Holds(array.ElementType, part),
+            IPointerTypeSymbol pointer => Holds(pointer.PointedAtType, part),
+            INamedTypeSymbol named => named.TypeArguments
+                .AsStackEnumerable()
+                .Any(part, static (argument, p) => Holds(argument, p)),
+            _ => false
+        };
+
+    // The CS0523 rule on constructed field types: a field of definition, or of a struct held by value below it (as
+    // constructed there: B<A<A<T>>>.V is A<A<T>>, a Nullable's value included), whose definition is definition
+    private static bool HoldsItselfByValue(INamedTypeSymbol definition)
+    {
+        var searched = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { definition };
+        var pending = new Queue<INamedTypeSymbol>();
+        pending.Enqueue(definition);
+        while (pending.Count > 0)
+        {
+            foreach (var member in pending.Dequeue().GetMembers())
+            {
+                if (member is IFieldSymbol { IsStatic: false } field &&
+                    field.Type.UnwrapNullable() is INamedTypeSymbol { TypeKind: TypeKind.Struct } held &&
+                    (SymbolEqualityComparer.Default.Equals(held.OriginalDefinition, definition) ||
+                     !TryQueue(held, searched, pending)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Queues a struct not searched yet; false once the search has met too many constructions
+    private static bool TryQueue(INamedTypeSymbol held, HashSet<INamedTypeSymbol> searched,
+        Queue<INamedTypeSymbol> pending)
+    {
+        if (searched.Add(held))
+        {
+            pending.Enqueue(held);
+        }
+
+        return searched.Count <= MaxSearchedConstructions;
+    }
 
     // Whether a member type of definition, or of the definition of a struct that a member type names, names a
     // construction of definition; through arrays, Nullable, pointers and type arguments, in fields and properties.
@@ -41,36 +129,54 @@ internal static class GrowingGenericStructs
         var named = new List<INamedTypeSymbol>();
         while (pending.Count > 0)
         {
+            named.Clear();
             foreach (var member in pending.Dequeue().GetMembers())
             {
-                named.Clear();
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    CollectStructs(field.Type, named);
-                }
-                else if (member is IPropertySymbol { IsStatic: false, IsIndexer: false } property)
-                {
-                    CollectStructs(property.Type, named);
-                }
+                CollectMemberStructs(member, named);
+            }
 
-                foreach (var held in named)
-                {
-                    if (SymbolEqualityComparer.Default.Equals(held.OriginalDefinition, definition))
-                    {
-                        return true;
-                    }
-
-                    // [WHY] A BCL struct names no user definition through its members; its type arguments are
-                    // already collected
-                    if (!held.ContainingNamespace.IsSystemOrNumerics() && searched.Add(held.OriginalDefinition))
-                    {
-                        pending.Enqueue(held.OriginalDefinition);
-                    }
-                }
+            if (named
+                .AsStackEnumerable()
+                .Any((definition, searched, pending), static (held, state) =>
+                    MatchesOrQueues(held, state.definition, state.searched, state.pending)))
+            {
+                return true;
             }
         }
 
         return false;
+    }
+
+    // True when held is a construction of definition; otherwise queues its user definition once
+    private static bool MatchesOrQueues(INamedTypeSymbol held, INamedTypeSymbol definition,
+        HashSet<INamedTypeSymbol> searched, Queue<INamedTypeSymbol> pending)
+    {
+        if (SymbolEqualityComparer.Default.Equals(held.OriginalDefinition, definition))
+        {
+            return true;
+        }
+
+        // [WHY] A BCL struct names no user definition through its members; its type arguments are already collected
+        if (!held.ContainingNamespace.IsSystemOrNumerics() && searched.Add(held.OriginalDefinition))
+        {
+            pending.Enqueue(held.OriginalDefinition);
+        }
+
+        return false;
+    }
+
+    // The structs that the type of an instance field or property names
+    private static void CollectMemberStructs(ISymbol member, List<INamedTypeSymbol> structs)
+    {
+        switch (member)
+        {
+            case IFieldSymbol { IsStatic: false } field:
+                CollectStructs(field.Type, structs);
+                break;
+            case IPropertySymbol { IsStatic: false, IsIndexer: false } property:
+                CollectStructs(property.Type, structs);
+                break;
+        }
     }
 
     // The structs that type names: itself, the elements of arrays and pointers, and its type arguments

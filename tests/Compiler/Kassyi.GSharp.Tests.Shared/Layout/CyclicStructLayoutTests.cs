@@ -208,6 +208,69 @@ public class CyclicStructLayoutTests
         Assert.Contains(".Inner.__bad'", reported[0].Message, StringComparison.Ordinal);
     }
 
+    // Valid C#: another construction of a generic struct that does not grow (G<M> after G<int>) is searched like any
+    // struct, so what it holds is reported as on main, with the name collision of the two constructions (GSH0058)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("SecondConstructionMultidimensional.cu.cs", "GSH0003", 21, 49, 21, 55, "Cpu")]
+    [InlineData("SecondConstructionMultidimensional.cu.cs", "GSH0003", 21, 49, 21, 55, "Cuda")]
+    [InlineData("SecondConstructionReservedName.cu.cs", "GSH0055", 21, 56, 21, 61, "Cpu")]
+    [InlineData("SecondConstructionReservedName.cu.cs", "GSH0055", 21, 56, 21, 61, "Cuda")]
+    [InlineData("SecondConstructionInaccessible.cu.cs", "GSH0108", 17, 49, 17, 55, "Cpu")]
+    [InlineData("SecondConstructionInaccessible.cu.cs", "GSH0108", 17, 49, 17, 55, "Cuda")]
+    public async Task Run_SecondConstructionThatDoesNotGrow_ReportsWhatItHolds(string testCase, string id,
+        int startLine, int startColumn, int endLine, int endColumn, string dialect)
+    {
+        var (errors, reported) = await RunAsync(CyclicStructs + testCase, dialect);
+        var structLine = testCase == "SecondConstructionInaccessible.cu.cs" ? 10 : 14;
+
+        Assert.Empty(errors);
+        Assert.Equal(
+            [
+                (Analyzer, "GSH0058", structLine, 19, structLine, 20),
+                (Analyzer, id, startLine, startColumn, endLine, endColumn)
+            ],
+            reported.Select(static d => (d.Origin, d.Id, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+    }
+
+    // Valid C#: V<T> names V<T> in a property and Tr<T> in an array, not by value, so V<V<int>> and Tr<Tr<int>> are no
+    // cycle and keep their full layouts, and an array of V<V<int>> as a kernel parameter gets nothing
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public void GetStructLayout_ConstructionInsideItsOwnConstruction_LaysOutEveryField(string dialect)
+    {
+        var compilation = RoslynTestUtility
+            .GetTestCaseContext(CyclicStructs + "NestedGenericConstruction.cu.cs")
+            .Compilation;
+        var vector = GetType(compilation, "NestedGenericConstruction+V`1");
+        var tree = GetType(compilation, "NestedGenericConstruction+Tr`1");
+        var int32 = compilation.GetSpecialType(SpecialType.System_Int32);
+        var target = dialect == "Cuda" ? s_cudaDialect : s_cpuDialect;
+
+        var vectors = TypeLayoutCalculator.GetStructLayout(vector.Construct(vector.Construct(int32)), target);
+        var trees = TypeLayoutCalculator.GetStructLayout(tree.Construct(tree.Construct(int32)), target);
+
+        Assert.Equal(
+            (16, 4, TransferClass.Identical),
+            (vectors.Device.Size, vectors.Device.Alignment, vectors.Transfer));
+        Assert.Equal(
+            [("X", 0, 8), ("Y", 8, 8)],
+            vectors.Host.Fields.Select(static f => (f.Member.Name, f.Offset, f.Layout.Size)));
+        Assert.Equal((40, 8), (trees.Device.Size, trees.Device.Alignment));
+        Assert.Equal(
+            [("Kids", 0, 16), ("Value", 16, 24)],
+            trees.DeviceFields.Select(static f => (f.Member.Name, f.Offset, f.Layout.Size)));
+    }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public Task Run_ConstructionInsideItsOwnConstruction_ReportsNothing(string dialect) =>
+        AssertOnlyCSharpErrorsAsync(CyclicStructs + "NestedGenericConstruction.cu.cs", dialect, []);
+
     // The arm of the union's own type is the cycle, not an arm whose host and device layouts differ (GSH0078): the
     // parameter and the local get nothing, and the array the GSH0080 of any array of a cyclic struct
     [Theory]

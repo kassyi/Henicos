@@ -1479,6 +1479,7 @@
 - {file: "Generator/AotContextNameKernels.cu.cs", method: "AotContextNameKernels.Third", status: "Compared", count: 1}
 - {file: "Generator/ArraySyntaxTest.cu.cs", method: "ArraySyntaxTestKernels.ImplicitArrayFormsKernel", status: "Compared", count: 1}
 - {file: "Generator/SourceGeneratorTestKernels.cu.cs", method: "SourceGeneratorTestKernels.MyTestKernel", status: "Compared", count: 1}
+- {file: "Layout/NestedGenericConstructionKernels.cu.cs", method: "NestedGenericConstructionKernels.NestedConstructionKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.AliasedKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.HolderKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.OptionalKernel", status: "Compared", count: 1}
@@ -4781,8 +4782,12 @@
 - {file: "TestCases/Layout/CyclicStructs/GenericCyclicStruct.cu.cs", method: "GenericCyclicStruct.GenericKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/MutualCyclicStructs.cu.cs", method: "MutualCyclicStructs.MutualKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NestedCyclicStruct.cu.cs", method: "NestedCyclicStruct.NestedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/NestedGenericConstruction.cu.cs", method: "NestedGenericConstruction.NestedConstructionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NullableArgumentCycle.cu.cs", method: "NullableArgumentCycle.NullableArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/NullableCyclicStruct.cu.cs", method: "NullableCyclicStruct.NullableKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/SecondConstructionInaccessible.cu.cs", method: "SecondConstructionInaccessible.SecondConstructionKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/SecondConstructionMultidimensional.cu.cs", method: "SecondConstructionMultidimensional.SecondConstructionKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/SecondConstructionReservedName.cu.cs", method: "SecondConstructionReservedName.SecondConstructionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/TypeArgumentCycle.cu.cs", method: "TypeArgumentCycle.TypeArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/WideCyclicStructs.cu.cs", method: "WideCyclicStructs.FourKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/WideCyclicStructs.cu.cs", method: "WideCyclicStructs.ThreeKernel", status: "Compared", count: 1}
