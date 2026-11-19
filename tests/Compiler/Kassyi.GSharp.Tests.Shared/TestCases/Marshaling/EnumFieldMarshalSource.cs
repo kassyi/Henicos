@@ -65,3 +65,22 @@ public static partial class JobKernels
         job.Data[ThreadIndex.X] = 1;
     }
 }
+
+// What the shadow struct and the host mirror declare for each kind of member: a private enum of each underlying type,
+// an enum field the launcher can name, a private field of a public enum type and a private field of another type
+public struct StorageProbe
+{
+    private enum ByteLevel : byte { A }
+
+    private enum LongLevel : long { A }
+
+    private enum ULongLevel : ulong { A }
+
+    public int[] Data;
+    private ByteLevel _byteLevel;
+    private LongLevel _longLevel;
+    private ULongLevel _ulongLevel;
+    public Mode PublicMode;
+    private Mode _privateMode;
+    private int _count;
+}

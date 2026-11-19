@@ -28,7 +28,7 @@ public class PrivateFieldStructTests : TranspilerTestBase
         PrivateFieldStructKernels.LaunchStepPrivateFieldsKernel(ref holder, blockDimX: 1);
 
         // Scalar in (_scale = 3) and nested scalar in (_inner._bias = 5) through the private array: data[i] * 3 + 5
-        // mutant: NativeStructEmitter.NeedsHostMirror without `|| IsUnnameableField(...)` -> the launcher reads
+        // mutant: NativeStructEmitter.NeedsHostMirror without `HostFieldAccess.ReadsThroughMirror(...)` -> the launcher reads
         // host._scale and the build fails with CS0122
         // mutant: StructMarshalMethodEmitter.WriteMarshalMember `native.<f> = host.<f>;` -> `native.<f> = default;`
         // -> _scale and _bias reach the device as 0 ([0, 0, 0])

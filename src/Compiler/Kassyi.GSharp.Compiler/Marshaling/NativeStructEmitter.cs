@@ -42,7 +42,7 @@ internal static class NativeStructEmitter
                 writer.AppendLine("\";");
                 writer.AppendLine($"[{HostTypeNames.FieldOffset}({offset})]");
 
-                MapToNativeField(writer, field, fieldLayout.Size, dialect);
+                MapToNativeField(writer, field, fieldLayout.Size, dialect, launcherAssembly);
             }
 
             if (NeedsHostMirror(s, structLayout, launcherAssembly))
@@ -86,8 +86,7 @@ internal static class NativeStructEmitter
 
         foreach (var member in StructAbiMembers.Get(s))
         {
-            if (member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty ||
-                IsUnnameableField(member, launcherAssembly))
+            if (HostFieldAccess.ReadsThroughMirror(member, launcherAssembly))
             {
                 return true;
             }
@@ -95,11 +94,6 @@ internal static class NativeStructEmitter
 
         return false;
     }
-
-    // A field or fixed buffer that the marshaling would read as host.<name> but that generated code cannot name
-    private static bool IsUnnameableField(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
-        member is { Kind: StructAbiMemberKind.Field or StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field } &&
-        !HostFieldAccess.CanName(field, launcherAssembly);
 
     // [StructLayout(LayoutKind.<Sequential | Explicit | Auto>[, Pack = <n>][, Size = <n>])]
     // public unsafe struct __gsharp_host_mirror {
@@ -146,7 +140,7 @@ internal static class NativeStructEmitter
         }
 
         writer.Append("public ");
-        writer.AppendFullyQualifiedCsharpName(member.Type);
+        writer.AppendFullyQualifiedCsharpName(field.StorageType);
         writer.AppendLine($" {name};");
     }
 
@@ -189,7 +183,7 @@ internal static class NativeStructEmitter
                 writer.AppendLine(" &&");
                 if (field.Check == HostMirrorOffsetCheck.PredictedOffset)
                 {
-                    WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.Member.Type, $"ref m.{name}");
+                    WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
                     writer.Append($" == {field.ExpectedOffset}");
                     continue;
                 }
@@ -199,7 +193,7 @@ internal static class NativeStructEmitter
                 writer.Append($", byte>(ref s), ref {Unsafe}.As<");
                 writer.AppendFullyQualifiedCsharpName(field.Member.Type);
                 writer.Append($", byte>(ref {Unsafe}.AsRef(in s.{name}))) == ");
-                WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.Member.Type, $"ref m.{name}");
+                WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
             }
 
             writer.AppendLine(";");
@@ -256,7 +250,7 @@ internal static class NativeStructEmitter
     }
 
     private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
     {
         var name = field.Name.ToCSharpIdentifier();
         switch (ClassifyField(field, dialect))
@@ -271,7 +265,7 @@ internal static class NativeStructEmitter
                 break;
             case NativeFieldKind.DirectValue:
                 writer.Append("public ");
-                writer.AppendFullyQualifiedCsharpName(field.Type);
+                writer.AppendFullyQualifiedCsharpName(HostFieldAccess.GetStorageType(field, launcherAssembly));
                 writer.AppendLine($" {name};");
                 break;
             case NativeFieldKind.FixedBuffer:

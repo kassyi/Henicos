@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// The launcher names the type of each field in the shadow struct, in the <c>Marshal_</c> methods and layout guards
 /// of a nested struct and in the host mirror of a struct with fields it cannot name. A field whose type the class
 /// cannot see (a private type nested in the struct) would give CS0122 in generated code. The analyzer reports it as
-/// GSH0108 and the generator writes a launcher that throws instead (#808).
+/// GSH0108 and the generator writes a launcher that throws instead (#808). An enum member that only the host mirror
+/// reads is declared as its underlying type instead, so its type is not looked at (<see cref="HostFieldAccess"/>).
 /// </remarks>
 internal static class LauncherTypeAccess
 {
@@ -76,6 +77,13 @@ internal static class LauncherTypeAccess
     {
         // GSH0078 reports a member the shadow struct leaves out
         if (NativeStructEmitter.IsOmittedFromShadow(member))
+        {
+            return null;
+        }
+
+        // An enum member that only the host mirror reads is declared as its underlying type
+        // (HostFieldAccess.GetStorageType); an array or a Nullable<enum> still names the enum
+        if (HostFieldAccess.IsStoredAsUnderlyingType(member, launcherClass.ContainingAssembly))
         {
             return null;
         }
