@@ -39,9 +39,9 @@ public static class StructLayoutValidator
 
     // [WHY] The device can express an explicit layout only as union groups (fields at the same offset) that do not
     // overlap each other, each at an offset its alignment allows; a member must be a value the device
-    // has a type for. A nested struct passes its own reason up.
+    // has a type for. A nested struct passes its own reason up. structType is already entered on structPath.
     internal static UnsupportedLayout? FindUnsupportedLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields)
+        TypeLayoutKind kind, int explicitSize, ImmutableArray<FieldLayout> deviceFields, StructPath structPath)
     {
         // [WHY] C# accepts StructLayout.Size on an [InlineArray] struct, but the runtime refuses to load the type
         // (TypeLoadException), so there is no host layout to follow
@@ -90,9 +90,11 @@ public static class StructLayoutValidator
                     type);
             }
 
+            // [WHY] A struct on the path holds itself: C# reports it (CS0523), and G# adds nothing
             if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
                 TypeLayoutCalculator.IsUserStruct(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect).Unsupported is { } nestedProblem)
+                !structPath.Contains(nested) &&
+                TypeLayoutCalculator.GetStructLayout(nested, dialect, structPath).Unsupported is { } nestedProblem)
             {
                 var path = member.Kind == StructAbiMemberKind.InlineArrayElement || nestedProblem.FieldPath is null
                     ? nestedProblem.FieldPath
@@ -107,7 +109,7 @@ public static class StructLayoutValidator
         // [WHY] After the member checks: a union arm with a reference type, a type without a device representation or
         // an unsupported nested struct is reported for that member (GSH0078 / GSH0079 with the field), not as an arm
         // whose host and device layouts differ
-        return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect) : null;
+        return kind == TypeLayoutKind.Explicit ? FindUnsupportedUnionArm(deviceFields, dialect, structPath) : null;
     }
 
     // A field at an offset its device alignment does not allow, or two fields that overlap without starting at the
@@ -146,7 +148,8 @@ public static class StructLayoutValidator
     }
 
     // Two fields at the same offset (a union group) where one of them has different host and device layouts
-    private static UnsupportedLayout? FindUnsupportedUnionArm(ImmutableArray<FieldLayout> deviceFields, ITranspilerDialect dialect)
+    private static UnsupportedLayout? FindUnsupportedUnionArm(ImmutableArray<FieldLayout> deviceFields,
+        ITranspilerDialect dialect, StructPath path)
     {
         for (var i = 0; i < deviceFields.Length; i++)
         {
@@ -155,9 +158,9 @@ public static class StructLayoutValidator
             {
                 var earlier = deviceFields[j];
                 if (earlier.Offset == field.Offset &&
-                    (!IsUnionArmBlittable(earlier, dialect) || !IsUnionArmBlittable(field, dialect)))
+                    (!IsUnionArmBlittable(earlier, dialect, path) || !IsUnionArmBlittable(field, dialect, path)))
                 {
-                    var badMember = !IsUnionArmBlittable(field, dialect) ? field.Member : earlier.Member;
+                    var badMember = !IsUnionArmBlittable(field, dialect, path) ? field.Member : earlier.Member;
                     return new UnsupportedLayout(
                         $"field '{field.Member.Name}' at offset {field.Offset} overlaps field '{earlier.Member.Name}', " +
                         $"and '{badMember.Name}' has different host and device layouts",
@@ -170,11 +173,11 @@ public static class StructLayoutValidator
         return null;
     }
 
-    private static bool IsUnionArmBlittable(FieldLayout field, ITranspilerDialect dialect) =>
+    private static bool IsUnionArmBlittable(FieldLayout field, ITranspilerDialect dialect, StructPath path) =>
         !field.Member.Type.IsArrayLikeType() &&
         !field.Member.Type.IsNullableArrayLike() &&
-        HostLayoutCalculator.TryGetHostLayout(field.Member.Type, out var elemHost) &&
+        HostLayoutCalculator.TryGetHostLayout(field.Member.Type, out var elemHost, path) &&
         elemHost.Size * field.Member.ElementCount == field.Layout.Size &&
-        TransferClassifier.IsMemberTransferIdentical(field.Member.Type, dialect);
+        TransferClassifier.IsMemberTransferIdentical(field.Member.Type, dialect, path);
 
 }

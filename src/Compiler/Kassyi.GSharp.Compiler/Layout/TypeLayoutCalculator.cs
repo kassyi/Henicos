@@ -40,16 +40,23 @@ internal static class TypeLayoutCalculator
     }
 
     /// <summary>Calculates the device size and alignment requirements for <paramref name="type"/> under <paramref name="dialect"/>.</summary>
-    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect) => type switch
+    /// <param name="type">The type to lay out.</param>
+    /// <param name="dialect">The dialect whose type map and array view decide the leaf layouts.</param>
+    /// <param name="path">
+    /// The structs whose layout is being computed around this one; <see langword="null"/> at the start.
+    /// </param>
+    public static TypeLayout GetDeviceLayout(ITypeSymbol type, ITranspilerDialect dialect,
+        StructPath? path = null) => type switch
     {
         _ when type.IsArrayLikeType() => dialect.ArrayViewLayout,
         IPointerTypeSymbol or IFunctionPointerTypeSymbol
             or { SpecialType: SpecialType.System_IntPtr or SpecialType.System_UIntPtr } => dialect.PointerLayout,
-        INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } => GetDeviceLayout(underlying, dialect),
+        INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } underlying } =>
+            GetDeviceLayout(underlying, dialect, path),
         _ when dialect.TryGetTypeLayout(type, out var mapped) => mapped,
         INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var value] } =>
-            GetNullableLayout(GetDeviceLayout(value, dialect)),
-        INamedTypeSymbol { TypeKind: TypeKind.Struct } named => GetDeviceStructLayout(named, dialect),
+            GetNullableLayout(GetDeviceLayout(value, dialect, path)),
+        INamedTypeSymbol { TypeKind: TypeKind.Struct } named => GetDeviceStructLayout(named, dialect, path),
         // [WHY] Type parameters (ITypeParameterSymbol) arrive during pre-substitution layout estimates
         // on open generic types/methods or analyzer parameter space checks. A 4-byte fallback suffices.
         ITypeParameterSymbol or { TypeKind: TypeKind.TypeParameter } => new TypeLayout(4, 4),
@@ -70,32 +77,55 @@ internal static class TypeLayoutCalculator
         return new TypeLayout(size, valLayout.Alignment);
     }
 
-    private static TypeLayout GetDeviceStructLayout(INamedTypeSymbol namedStruct, ITranspilerDialect dialect)
+    private static TypeLayout GetDeviceStructLayout(INamedTypeSymbol namedStruct, ITranspilerDialect dialect,
+        StructPath? path)
     {
+        using var step = StructPath.Enter(path, namedStruct);
+        if (step.IsCycle)
+        {
+            // [WHY] A struct that holds itself is CS0523; any size lets the walk end
+            return new TypeLayout(4, 4);
+        }
+
         StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-        return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null);
+        return ComputeDeviceStructLayout(namedStruct, dialect, kind, pack, explicitSize, fields: null, step.Path);
     }
 
 
     /// <summary>Calculates the complete device (D), host (H), and transfer classification model for <paramref name="structType"/>.</summary>
-    public static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect)
+    /// <param name="structType">The struct to lay out.</param>
+    /// <param name="dialect">The dialect whose type map and array view decide the leaf layouts.</param>
+    /// <param name="path">
+    /// The structs whose layout is being computed around this one; <see langword="null"/> at the start.
+    /// </param>
+    public static StructLayoutInfo GetStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
+        StructPath? path = null)
     {
+        // [WHY] Already on the path only when a caller asks again for a struct it is laying out; the walks of the
+        // fields below stop at it, so this layout ends either way
+        using var step = StructPath.Enter(path, structType);
         StructLayoutReader.Read(structType, out var kind, out var pack, out var explicitSize);
 
         // 1. Device (D)
         var deviceFieldsBuilder = ImmutableArray.CreateBuilder<FieldLayout>();
         var deviceLayout =
-            ComputeDeviceStructLayout(structType, dialect, kind, pack, explicitSize, deviceFieldsBuilder);
+            ComputeDeviceStructLayout(structType, dialect, kind, pack, explicitSize, deviceFieldsBuilder, step.Path);
         var deviceFields = MarkCopiedFields(deviceFieldsBuilder.ToImmutable(), kind);
 
         // 2. Host (H)
-        var hostLayout = HostLayoutCalculator.ComputeStructHostLayout(structType, kind, pack, explicitSize);
+        var hostLayout = HostLayoutCalculator.ComputeStructHostLayout(structType, kind, pack, explicitSize, step.Path);
 
         // 3. TransferClass
-        var unsupported = StructLayoutValidator.FindUnsupportedLayout(structType, dialect, kind, explicitSize, deviceFields);
+        var unsupported = StructLayoutValidator.FindUnsupportedLayout(
+            structType,
+            dialect,
+            kind,
+            explicitSize,
+            deviceFields,
+            step.Path);
         var transfer = unsupported.HasValue
             ? TransferClass.Unsupported
-            : TransferClassifier.ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout);
+            : TransferClassifier.ClassifyTransfer(dialect, deviceLayout, deviceFields, hostLayout, step.Path);
 
         return new StructLayoutInfo(kind, pack, deviceLayout, deviceFields, hostLayout, transfer, unsupported);
     }
@@ -105,13 +135,13 @@ internal static class TypeLayoutCalculator
     // values. StructLayout.Size, of any layout kind, is the minimum size. Either way the size is rounded up to the
     // largest alignment, as C++ sizeof is a multiple of alignof.
     private static TypeLayout ComputeDeviceStructLayout(INamedTypeSymbol structType, ITranspilerDialect dialect,
-        TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields)
+        TypeLayoutKind kind, int pack, int explicitSize, ImmutableArray<FieldLayout>.Builder? fields, StructPath path)
     {
         var end = 0;
         var maxAlign = 1;
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            var elemLayout = GetDeviceLayout(member.Type, dialect);
+            var elemLayout = GetDeviceLayout(member.Type, dialect, path);
             var fieldSize = elemLayout.Size * member.ElementCount;
             var effectiveAlign = pack > 0 ? Math.Min(elemLayout.Alignment, pack) : elemLayout.Alignment;
             int offset;

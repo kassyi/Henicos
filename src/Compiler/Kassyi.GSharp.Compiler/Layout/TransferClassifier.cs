@@ -8,16 +8,25 @@ public static class TransferClassifier
     /// struct or of a converted <c>Nullable&lt;T&gt;</c>, as the <c>{1}</c> of GSH0080 (<c>field 'V' is at offset 4 on
     /// the host and 8 on the device</c>, <c>the value is at offset 4 on the host and 8 on the device</c>).
     /// </summary>
-    public static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect)
+    public static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect) =>
+        DescribeLayoutDifference(type, dialect, path: null);
+
+    private static string DescribeLayoutDifference(ITypeSymbol type, ITranspilerDialect dialect, StructPath? path)
     {
         if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
             TransferPlanner.Plan(type, dialect) is TransferPlan.Nullable nullable)
         {
-            return DescribeNullableDifference(type.UnwrapNullable(), nullable, dialect);
+            return DescribeNullableDifference(type.UnwrapNullable(), nullable, dialect, path);
         }
 
         var structType = (INamedTypeSymbol)type;
-        var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect);
+        using var step = StructPath.Enter(path, structType);
+        if (step.IsCycle)
+        {
+            return $"'{TypeLayoutCalculator.FormatTypeName(structType)}' holds itself";
+        }
+
+        var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect, step.Path);
         if (layout.Kind == TypeLayoutKind.Auto)
         {
             return "LayoutKind.Auto lets the runtime reorder the fields on the host";
@@ -33,10 +42,10 @@ public static class TransferClassifier
                 }
 
                 if (member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
-                    !HostLayoutCalculator.TryGetHostLayout(nested, out _))
+                    !HostLayoutCalculator.TryGetHostLayout(nested, out _, step.Path))
                 {
                     return $"field '{member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                           DescribeLayoutDifference(nested, dialect);
+                           DescribeLayoutDifference(nested, dialect, step.Path);
                 }
             }
 
@@ -61,10 +70,10 @@ public static class TransferClassifier
 
             if (device.Member.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
                 TypeLayoutCalculator.IsUserStruct(nested) &&
-                TypeLayoutCalculator.GetStructLayout(nested, dialect).Transfer != TransferClass.Identical)
+                TypeLayoutCalculator.GetStructLayout(nested, dialect, step.Path).Transfer != TransferClass.Identical)
             {
                 return $"field '{device.Member.Name}' of type '{TypeLayoutCalculator.FormatTypeName(nested)}': " +
-                       DescribeLayoutDifference(nested, dialect);
+                       DescribeLayoutDifference(nested, dialect, step.Path);
             }
         }
 
@@ -73,13 +82,13 @@ public static class TransferClassifier
 
     // The value of a Nullable whose plan is not identical: its own difference, or where it sits
     private static string DescribeNullableDifference(ITypeSymbol valueType, TransferPlan.Nullable nullable,
-        ITranspilerDialect dialect)
+        ITranspilerDialect dialect, StructPath? path)
     {
         if (nullable.Value is not TransferPlan.Blit &&
             valueType is INamedTypeSymbol { TypeKind: TypeKind.Struct } value)
         {
             return $"the value of type '{TypeLayoutCalculator.FormatTypeName(value)}': " +
-                   DescribeLayoutDifference(value, dialect);
+                   DescribeLayoutDifference(value, dialect, path);
         }
 
         if (nullable.ValueHostOffset != nullable.ValueDeviceOffset)
@@ -95,8 +104,18 @@ public static class TransferClassifier
     /// Finds the first array-like member of <paramref name="structType"/>, its nested structs and inline array
     /// elements, as a dotted path (<c>Inner.Values</c>): the arrays that the launcher allocates and copies for each element.
     /// </summary>
-    public static bool TryFindArrayField(INamedTypeSymbol structType, out string path)
+    public static bool TryFindArrayField(INamedTypeSymbol structType, out string path) =>
+        TryFindArrayField(structType, out path, structPath: null);
+
+    private static bool TryFindArrayField(INamedTypeSymbol structType, out string path, StructPath? structPath)
     {
+        using var step = StructPath.Enter(structPath, structType);
+        if (step.IsCycle)
+        {
+            path = string.Empty;
+            return false;
+        }
+
         foreach (var member in StructAbiMembers.Get(structType))
         {
             if (member.Type.IsArrayLikeType() || member.Type.IsNullableArrayLike())
@@ -108,7 +127,7 @@ public static class TransferClassifier
             // A Nullable<S> holds the arrays of S (#972)
             if (member.Type.UnwrapNullable() is INamedTypeSymbol { TypeKind: TypeKind.Struct } nested &&
                 TypeLayoutCalculator.IsUserStruct(nested) &&
-                TryFindArrayField(nested, out var nestedPath))
+                TryFindArrayField(nested, out var nestedPath, step.Path))
             {
                 path = member.Kind == StructAbiMemberKind.InlineArrayElement
                     ? nestedPath
@@ -126,7 +145,8 @@ public static class TransferClassifier
         ITranspilerDialect dialect,
         TypeLayout deviceLayout,
         ImmutableArray<FieldLayout> deviceFields,
-        HostLayout hostLayout)
+        HostLayout hostLayout,
+        StructPath path)
     {
         if (!hostLayout.IsKnown)
         {
@@ -149,7 +169,7 @@ public static class TransferClassifier
                 return TransferClass.Convert;
             }
 
-            if (!IsMemberTransferIdentical(dField.Member.Type, dialect))
+            if (!IsMemberTransferIdentical(dField.Member.Type, dialect, path))
             {
                 return TransferClass.Convert;
             }
@@ -159,7 +179,7 @@ public static class TransferClassifier
     }
 
 
-    internal static bool IsMemberTransferIdentical(ITypeSymbol memberType, ITranspilerDialect dialect)
+    internal static bool IsMemberTransferIdentical(ITypeSymbol memberType, ITranspilerDialect dialect, StructPath path)
     {
         // [WHY] A Nullable is identical only when its value is and sits at the same offset: Vector2? has an 8-byte
         // value on both sides, at 4 on the host and at 8 on CUDA (#961)
@@ -173,12 +193,14 @@ public static class TransferClassifier
 
         if (dialect.TryGetTypeLayout(memberType, out var mappedD))
         {
-            return HostLayoutCalculator.TryGetHostLayout(memberType, out var mappedH) && mappedD.Size == mappedH.Size;
+            return HostLayoutCalculator.TryGetHostLayout(memberType, out var mappedH, path) &&
+                   mappedD.Size == mappedH.Size;
         }
 
         if (memberType is INamedTypeSymbol { TypeKind: TypeKind.Struct } nestedStruct)
         {
-            return TypeLayoutCalculator.GetStructLayout(nestedStruct, dialect).Transfer == TransferClass.Identical;
+            return TypeLayoutCalculator.GetStructLayout(nestedStruct, dialect, path).Transfer ==
+                   TransferClass.Identical;
         }
 
         return true;

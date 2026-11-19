@@ -4767,6 +4767,14 @@
 - {file: "TestCases/Ir/IrSplitLoweringCases.cs", method: "Cases.TakeLong", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Ir/IrSplitLoweringCases.cs", method: "Cases.TwoSplitStatements", status: "Compared", count: 1}
 - {file: "TestCases/LabeledJumps/LabeledJumpPlanCases.cs", method: "LabeledJumpPlanCases.CountTwo", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/BranchingCyclicStruct.cu.cs", method: "BranchingCyclicStruct.BranchingKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CyclicStructDeviceFunction.cu.cs", method: "CyclicStructDeviceFunction.DeviceFunctionKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CyclicStructDeviceFunction.cu.cs", method: "CyclicStructDeviceFunction.Read", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CyclicStructLocal.cu.cs", method: "CyclicStructLocal.LocalKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CyclicStructLocal.cu.cs", method: "CyclicStructLocal.Make", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/MutualCyclicStructs.cu.cs", method: "MutualCyclicStructs.MutualKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/NestedCyclicStruct.cu.cs", method: "NestedCyclicStruct.NestedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/NullableCyclicStruct.cu.cs", method: "NullableCyclicStruct.NullableKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/ExplicitUnionOrder.cs", method: "UnionOrderKernels.ReadKernel", status: "Compared", count: 1}
 - {file: "TestCases/MacroExpansion.cu.cs", method: "MacroExpansionKernel.TestMacroKernel", status: "Compared", count: 1}
 - {file: "TestCases/MacroOperatorTranspilation.cu.cs", method: "DummyKernels.DummyOp", status: "NoStateMachine", count: 1}

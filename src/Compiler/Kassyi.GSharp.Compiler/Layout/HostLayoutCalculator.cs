@@ -4,8 +4,9 @@ namespace Kassyi.GSharp.Compiler.Layout;
 internal static class HostLayoutCalculator
 {
 
+    // The host layout of a struct already entered on path
     internal static HostLayout ComputeStructHostLayout(INamedTypeSymbol structType, TypeLayoutKind kind, int pack,
-        int explicitSize)
+        int explicitSize, StructPath path)
     {
         if (kind == TypeLayoutKind.Auto)
         {
@@ -18,7 +19,7 @@ internal static class HostLayoutCalculator
 
         foreach (var member in StructAbiMembers.Get(structType))
         {
-            if (!TryGetHostLayout(member.Type, out var elemHost))
+            if (!TryGetHostLayout(member.Type, out var elemHost, path))
             {
                 return new HostLayout(false, 0, 0, ImmutableArray<FieldLayout>.Empty);
             }
@@ -59,9 +60,15 @@ internal static class HostLayoutCalculator
     /// <remarks>
     /// A struct is laid out from the fields Roslyn shows. A BCL struct read from a reference assembly shows none of its
     /// private fields, so the answer is wrong for it (<c>decimal</c> and <c>DateTime</c> come out as 1 byte); such a
-    /// struct has no device representation, so a layout that holds one is reported before this size is used.
+    /// struct has no device representation, so a layout that holds one is reported before this size is used. A struct
+    /// that holds itself (CS0523) has none.
     /// </remarks>
-    public static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout)
+    /// <param name="type">The type to lay out.</param>
+    /// <param name="layout">The size and alignment, when they are known.</param>
+    /// <param name="path">
+    /// The structs whose layout is being computed around this one; <see langword="null"/> at the start.
+    /// </param>
+    public static bool TryGetHostLayout(ITypeSymbol type, out TypeLayout layout, StructPath? path = null)
     {
         if (type.IsReferenceType || type.IsArrayLikeType() || type.IsNullableArrayLike())
         {
@@ -78,7 +85,7 @@ internal static class HostLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType })
         {
-            return TryGetHostLayout(enumUnderlyingType, out layout);
+            return TryGetHostLayout(enumUnderlyingType, out layout, path);
         }
 
         if (HostLeafLayouts.TryGet(type, out layout))
@@ -91,7 +98,7 @@ internal static class HostLayoutCalculator
                 OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
             } nullableType)
         {
-            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout))
+            if (!TryGetHostLayout(nullableType.TypeArguments[0], out var valLayout, path))
             {
                 layout = default;
                 return false;
@@ -105,8 +112,11 @@ internal static class HostLayoutCalculator
 
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct)
         {
+            using var step = StructPath.Enter(path, namedStruct);
             StructLayoutReader.Read(namedStruct, out var kind, out var pack, out var explicitSize);
-            var structHost = ComputeStructHostLayout(namedStruct, kind, pack, explicitSize);
+            var structHost = step.IsCycle
+                ? default
+                : ComputeStructHostLayout(namedStruct, kind, pack, explicitSize, step.Path);
             if (!structHost.IsKnown)
             {
                 layout = default;
