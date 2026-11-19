@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // Keeps the registry of the Claude chats that work on this repository: which chat has which topic, under which call name
-// and session reference. A person says "call <name>" and an agent resolves the name to "<display name> [ref]" for SendMessage.
-// The registry lives in tmp/status/registry.md of the main checkout, so every worktree shares one file.
+// and session reference. A person says "call <name>"; an agent resolves the name to the ref, finds the row with that ref
+// in ListAgents and sends to the session name shown there. Session names change (/rename), so the registry keeps none.
+// The registry lives in tmp/status/chat-registry.md of the main checkout, so every worktree shares one file. Older
+// versions of this script wrote tmp/status/registry.md with a "Display name" column; that file is read once to start
+// the new one and is never written, so a worktree that still runs an older version cannot erase the new rows.
 // Usage:
 //   node scripts/agent/chat-registry.js --hook                       SessionStart hook: adds a pending row, tells the chat to register
-//   node scripts/agent/chat-registry.js set --session <id> --ref <ref> --name <display> --call <call> --topic <topic> [--state <s>]
-//   node scripts/agent/chat-registry.js resolve <call>               prints "<display> [<ref>]"; exit 1 when unknown, 2 when ambiguous
+//   node scripts/agent/chat-registry.js set --session <id> --ref <ref> --call <call> --topic <topic> [--state <s>]
+//   node scripts/agent/chat-registry.js resolve <call>               prints the ref; exit 1 when unknown, 2 when ambiguous
 //   node scripts/agent/chat-registry.js show                         prints the registry
 //   node scripts/agent/chat-registry.js --self-test                  checks the parser and the writer on a temporary file
 'use strict';
@@ -15,19 +18,24 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const usage = 'Usage: chat-registry.js (--hook | set --session <id> --ref <ref> --name <display> --call <call> '
+const usage = 'Usage: chat-registry.js (--hook | set --session <id> --ref <ref> --call <call> '
     + '--topic <topic> [--state <s>] | resolve <call> | show | --self-test)';
 
 const header = [
     '# Chat registry (topics and send targets)',
     '',
-    'Always send to "<display name> [ref]". A call name is what a person says to reach a chat (an asynchronous message). The session ID is for reference only.',
+    'A call name is what a person says to reach a chat (an asynchronous message). To send, find the row with the ref in ListAgents and send to "<name shown there> [ref]". The session ID is for reference only.',
     '',
-    '| Call name | Ref | Display name | Session ID | Topic | State |',
-    '| :--- | :--- | :--- | :--- | :--- | :--- |',
+    '| Call name | Ref | Session ID | Topic | State |',
+    '| :--- | :--- | :--- | :--- | :--- |',
 ];
 
-const columns = ['call', 'ref', 'name', 'session', 'topic', 'state'];
+const columns = ['call', 'ref', 'session', 'topic', 'state'];
+
+// Header text to row key. "Display name" is a column of older registries: it is read and dropped on the next write.
+const headerKeys = {
+    'Call name': 'call', Ref: 'ref', 'Display name': 'name', 'Session ID': 'session', Topic: 'topic', State: 'state',
+};
 
 // The registry is shared by all worktrees: the directory of the main checkout (the parent of the common git directory).
 function registryPath() {
@@ -37,9 +45,9 @@ function registryPath() {
         const common = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], {
             cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
         }).trim();
-        return path.join(path.dirname(common), 'tmp', 'status', 'registry.md');
+        return path.join(path.dirname(common), 'tmp', 'status', 'chat-registry.md');
     } catch (_) {
-        return path.resolve(__dirname, '..', '..', 'tmp', 'status', 'registry.md');
+        return path.resolve(__dirname, '..', '..', 'tmp', 'status', 'chat-registry.md');
     }
 }
 
@@ -50,19 +58,23 @@ function parse(text) {
     if (first < 0) return { before: lines, rows: [], after: [] };
     let end = first;
     while (end < lines.length && lines[end].startsWith('|')) end++;
+    const keys = lines[first].split('|').slice(1, -1).map((c) => headerKeys[c.trim()]);
     const rows = [];
     for (const line of lines.slice(first + 2, end)) {
         // Every "|" in the file is a cell separator: literal pipes inside cells are stored as "&#124;" (see escapeCell).
         const cells = line.split('|').slice(1, -1).map((c) => unescapeCell(c.trim()));
-        if (cells.length === columns.length) rows.push(Object.fromEntries(columns.map((k, i) => [k, cells[i]])));
+        if (cells.length !== keys.length) continue;
+        const row = {};
+        keys.forEach((k, i) => { if (columns.includes(k)) row[k] = cells[i]; });
+        rows.push(row);
     }
     return { before: lines.slice(0, first), rows, after: lines.slice(end) };
 }
 
 function render(model) {
     const table = [
-        '| Call name | Ref | Display name | Session ID | Topic | State |',
-        '| :--- | :--- | :--- | :--- | :--- | :--- |',
+        header[4],
+        header[5],
         ...model.rows.map((r) => `| ${columns.map((k) => escapeCell(r[k] || '-')).join(' | ')} |`),
     ];
     const before = model.before.length ? model.before : header.slice(0, 4);
@@ -70,7 +82,12 @@ function render(model) {
 }
 
 function load(file) {
-    if (!fs.existsSync(file)) return { before: header.slice(0, 4), rows: [], after: [] };
+    if (!fs.existsSync(file)) {
+        // The first load starts from the rows of the older registry beside it, keeping none of its other text.
+        const legacy = path.join(path.dirname(file), 'registry.md');
+        const rows = legacy !== file && fs.existsSync(legacy) ? parse(fs.readFileSync(legacy, 'utf8')).rows : [];
+        return { before: header.slice(0, 4), rows, after: [] };
+    }
     return parse(fs.readFileSync(file, 'utf8'));
 }
 
@@ -117,7 +134,7 @@ function withLock(file, fn) {
 }
 
 function pendingRow(session) {
-    return { call: '(not set)', ref: '-', name: '-', session, topic: '-', state: 'pending registration' };
+    return { call: '(not set)', ref: '-', session, topic: '-', state: 'pending registration' };
 }
 
 function upsert(model, session, fields) {
@@ -132,8 +149,8 @@ function registerContext(session) {
         `[Chat registry] This chat's session ID is ${session}.`,
         'In your first reply, summarize this chat\'s topic in one or two lines and ask the user to confirm the topic name.',
         'After the user agrees, get your own ref from ListAgents (the first line says "This session is ... [ref]"), then run:',
-        `node scripts/agent/chat-registry.js set --session ${session} --ref <ref> --name "<display name>" --call "<call name>" --topic "<topic>"`,
-        'When asked to call another chat, resolve the call name in the registry and send with SendMessage to "<display name> [ref]" (read the registry before sending).',
+        `node scripts/agent/chat-registry.js set --session ${session} --ref <ref> --call "<call name>" --topic "<topic>"`,
+        'When asked to call another chat, resolve the call name to a ref (chat-registry.js resolve "<call name>"), find the row with that ref in ListAgents, and send with SendMessage to "<name shown there> [ref]". No row means the chat has ended.',
     ].join('\n');
 }
 
@@ -179,18 +196,19 @@ function runHook() {
 }
 
 function runSet(opts) {
-    for (const k of ['session', 'ref', 'name', 'call', 'topic']) {
+    // --name of older instructions is accepted and ignored: the session name is read from ListAgents when sending.
+    for (const k of ['session', 'ref', 'call', 'topic']) {
         if (typeof opts[k] !== 'string' || !opts[k]) { console.error(`missing --${k}\n${usage}`); return 1; }
     }
     const file = registryPath();
     withLock(file, () => {
         const model = upsert(load(file), opts.session, {
-            ref: opts.ref, name: opts.name, call: opts.call, topic: opts.topic,
+            ref: opts.ref, call: opts.call, topic: opts.topic,
             state: typeof opts.state === 'string' ? opts.state : 'active, confirmed',
         });
         save(file, model);
     });
-    console.log(`registered: ${opts.call} -> ${opts.name} [${opts.ref}]`);
+    console.log(`registered: ${opts.call} -> [${opts.ref}]`);
     return 0;
 }
 
@@ -201,22 +219,38 @@ function runResolve(call) {
     if (hits.length === 0) { console.error(`no chat is registered as "${call}"`); return 1; }
     if (hits.length > 1) {
         console.error(`"${call}" is ambiguous:`);
-        for (const h of hits) console.error(`  ${h.name} [${h.ref}]`);
+        for (const h of hits) console.error(`  [${h.ref}] ${h.topic}`);
         return 2;
     }
-    console.log(`${hits[0].name} [${hits[0].ref}]`);
+    console.log(hits[0].ref);
     return 0;
 }
 
 function selfTest() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chat-registry-'));
-    const file = path.join(dir, 'registry.md');
-    save(file, upsert(load(file), 'aaaa-1111', { ref: '111111', name: 'henicos-x', call: 'alpha', topic: 'topic A' }));
+    const file = path.join(dir, 'chat-registry.md');
+    save(file, upsert(load(file), 'aaaa-1111', { ref: '111111', call: 'alpha', topic: 'topic A' }));
     save(file, upsert(load(file), 'aaaa-1111', { ref: '222222' }));
-    save(file, upsert(load(file), 'bbbb-2222', { ref: '333333', name: 'henicos-y', call: 'beta', topic: 'topic B' }));
+    save(file, upsert(load(file), 'bbbb-2222', { ref: '333333', call: 'beta', topic: 'topic B' }));
     const model = load(file);
-    const ok = model.rows.length === 2 && model.rows[0].ref === '222222' && model.rows[0].call === 'alpha'
+    let ok = model.rows.length === 2 && model.rows[0].ref === '222222' && model.rows[0].call === 'alpha'
         && model.rows[1].call === 'beta';
+    // A registry written with the older "Display name" column is read, and the column is dropped on the next write.
+    fs.writeFileSync(file, ['# old', '', '| Call name | Ref | Display name | Session ID | Topic | State |',
+        '| :--- | :--- | :--- | :--- | :--- | :--- |', '| gamma | 444444 | henicos-z | cccc-3333 | topic C | active |', ''].join('\n'));
+    save(file, load(file));
+    const migrated = fs.readFileSync(file, 'utf8');
+    const row = load(file).rows[0];
+    ok = ok && !migrated.includes('Display name') && !migrated.includes('henicos-z') && row.call === 'gamma'
+        && row.ref === '444444' && row.session === 'cccc-3333' && row.topic === 'topic C' && row.state === 'active';
+    // Without the new file, the rows of the older registry.md beside it are the start, and registry.md stays unchanged.
+    const legacy = path.join(dir, 'registry.md');
+    fs.renameSync(file, legacy);
+    const legacyText = fs.readFileSync(legacy, 'utf8');
+    save(file, upsert(load(file), 'dddd-4444', { ref: '555555', call: 'delta', topic: 'topic D' }));
+    const started = load(file).rows;
+    ok = ok && started.length === 2 && started[0].call === 'gamma' && started[1].call === 'delta'
+        && fs.readFileSync(legacy, 'utf8') === legacyText;
     fs.rmSync(dir, { recursive: true, force: true });
     console.log(ok ? 'self-test passed' : 'self-test FAILED');
     return ok ? 0 : 1;
