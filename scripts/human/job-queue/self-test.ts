@@ -15,6 +15,8 @@ import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { ResourceChecks } from "./resource-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
+import { ProbeChecks } from "./server-probe-checks.ts";
+import { SharedServerChecks } from "./server-shared-checks.ts";
 import { ClientChecks } from "./self-test-client.ts";
 import { gitBashPath, quoteArgument } from "./shell.ts";
 import { MachineProfile, MinimumSlots } from "./machine.ts";
@@ -106,7 +108,12 @@ export async function selfTest(): Promise<void> {
       await named(name, () => check(assert));
     }
     await named("checkShellHelpers", checkShellHelpers);
-    for (const [name, check] of Object.entries({ ...JobServerChecks, ...ClientChecks })) {
+    for (const [name, check] of Object.entries({
+      ...JobServerChecks,
+      ...SharedServerChecks,
+      ...ProbeChecks,
+      ...ClientChecks,
+    })) {
       await named(name, () => check(assert));
     }
     await named("checkView", checkView);

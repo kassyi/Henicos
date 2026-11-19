@@ -19,7 +19,7 @@ import {
 } from "./constants.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
 import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
-import { loadConfig } from "./config.ts";
+import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
 import { prefix } from "./system.ts";
@@ -41,7 +41,7 @@ const Usage = [
   "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
-  "                                        [--config <path>]",
+  "                                        [--gpu-slots <n>] [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
   "  node scripts/human/job-queue.js --screenshots <dir>",
   "",
@@ -80,8 +80,10 @@ const Usage = [
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2, or config pools); --memory-mb: the memory pool for test runs (default",
-  "            half the physical memory, or config pools); --config: the configuration file (default:",
-  "            JOB_QUEUE_CONFIG, else job-queue.config.json upward from the entry script).",
+  "            half the physical memory, or config pools); --gpu-slots: the shared GPU turns that run at a time",
+  "            (default config resources.gpu.slots, 1; from 1 up to the seats of the GPU lock; a second shared",
+  "            turn starts only after the probe of resources.gpu.probe has passed); --config: the configuration",
+  "            file (default: JOB_QUEUE_CONFIG, else job-queue.config.json upward from the entry script).",
   "--screenshots",
   "            Draws the live view from a fixed sample status as SVG files into <dir> (wide.svg, small.svg,",
   "            selected.svg, help.svg; no scheduler). Regenerates the images of the README after a change to the view.",
@@ -118,6 +120,8 @@ interface Options extends RunOptions {
   watch: boolean;
   accuracy: boolean;
   untilIdle: boolean;
+  /** serve --gpu-slots: the shared slots of the GPU resource; 0 for the configuration's. */
+  gpuSlots: number;
   /** The job a mode acts on (status, cancel, move, set-weight, start); 0 for none. */
   jobId: number;
   moveFirst: boolean;
@@ -158,6 +162,7 @@ export function parseArgs(argv: string[]): Options {
     shell: "",
     stateDir: "",
     configPath: "",
+    gpuSlots: 0,
     json: false,
     watch: false,
     accuracy: false,
@@ -252,6 +257,9 @@ export function parseArgs(argv: string[]): Options {
       case "--memory-mb":
         options.memoryMb = parsePositive("--memory-mb", own[++i]);
         break;
+      case "--gpu-slots":
+        options.gpuSlots = parsePositive("--gpu-slots", own[++i]);
+        break;
       case "--policy": {
         const value = own[++i];
         if (!isPolicy(value)) {
@@ -341,6 +349,16 @@ export async function main(argv: string[]): Promise<void> {
     options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
     if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
       plugins = await PluginHost.load(loaded.config, loaded.configRoot);
+    }
+  }
+  if (options.mode !== "serve" && options.gpuSlots > 0) {
+    usageError("--gpu-slots goes with serve alone.");
+  }
+  if (options.mode === "serve" && options.gpuSlots > 0) {
+    const configured = loadConfig({ mode: "serve", configPath: options.configPath || undefined, warn: prefix });
+    const problem = gpuSlotsProblem(options.gpuSlots, configured.config);
+    if (problem !== null) {
+      usageError(problem);
     }
   }
   try {

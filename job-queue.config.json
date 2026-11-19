@@ -25,6 +25,12 @@
   "resources": {
     "gpu": {
       "slots": 1,
+      "probe": {
+        "argv": ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+        "min": 3072,
+        "timeoutMs": 3000,
+        "settleMs": 15000
+      },
       "lock": {
         "seats": ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"]
       },
