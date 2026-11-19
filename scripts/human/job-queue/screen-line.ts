@@ -15,6 +15,19 @@ const StyleCodes: Record<Exclude<Style, "">, string> = {
   now: "1;33",
 };
 
+/** The styles of the timeline cells: a selected line keeps their colors. */
+const BarStyles: Partial<Record<Style, true>> = {
+  run: true,
+  rest: true,
+  late: true,
+  wait: true,
+  warn: true,
+  now: true,
+};
+
+/** The background of a selected line behind the timeline and the blanks (256-color dark grey). */
+const SelectedBackground = "48;5;237";
+
 /** East Asian wide and fullwidth characters take two cells in a terminal. */
 function charWidth(code: number): number {
   const wide =
@@ -169,15 +182,20 @@ export class ScreenLine {
     return this;
   }
 
-  /** The line with ANSI colors (when `color`), the whole line in reverse video when `selected`. */
+  /**
+   * The line with ANSI colors (when `color`). A selected line keeps the colors of the timeline cells and lays a dim
+   * highlight behind them and behind the blanks; the rest (marker, id, command, progress text) is in reverse video.
+   */
   render(color: boolean, selected = false): string {
     if (!color) {
       return this.text;
     }
     return this.parts
       .map(({ text, style }) => {
-        const codes = [selected ? "7" : "", style === "" ? "" : StyleCodes[style]].filter((c) => c !== "").join(";");
-        return codes === "" ? text : `\x1b[${codes}m${text}\x1b[0m`;
+        const highlighted = selected && (style in BarStyles || text.trim() === "");
+        const marker = !selected ? "" : highlighted ? SelectedBackground : "7";
+        const codes = [marker, style === "" ? "" : StyleCodes[style]].filter((c) => c !== "").join(";");
+        return codes === "" ? text : `[${codes}m${text}[0m`;
       })
       .join("");
   }
