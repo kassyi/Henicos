@@ -10,8 +10,8 @@ internal static class TranspilerDialectExtensions
         (dialect.Capabilities & DialectCapabilities.HardwareThreadScheduling) == 0;
 
     /// <summary>
-    /// Whether the dialect runs the GPU threads of a block on their own native CPU stacks instead of lowering into state
-    /// machines.
+    /// Whether the dialect runs the GPU threads of a block on their own native CPU stacks instead of lowering
+    /// into state machines.
     /// </summary>
     public static bool RunsThreadsOnOwnStacks(this ITranspilerDialect dialect) =>
         !dialect.IsCuda && (dialect.Capabilities & DialectCapabilities.HardwareThreadScheduling) != 0;

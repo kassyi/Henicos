@@ -4,14 +4,15 @@ namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
 /// Translates a kernel or a suspending device function into its native stack form
-/// (<see cref="Models.GeneratorConfig.RunsOnNativeStacks"/>), next to the state machine form the generator has translated.
+/// (<see cref="Models.GeneratorConfig.RunsOnNativeStacks"/>), next to the state machine form
+/// the generator has translated.
 /// </summary>
 internal static class NativeStackTranslator
 {
     /// <summary>
-    /// The C++ text of a kernel: its native stack form when the build runs on native stacks and the kernel can, otherwise
-    /// the state machine form (<paramref name="cppSource"/>). An internal error is stated in the C++ text, as for the
-    /// other dialects.
+    /// The C++ text of a kernel: its native stack form when the build runs on native stacks and the kernel can,
+    /// otherwise the state machine form (<paramref name="cppSource"/>). An internal error is stated in the C++ text,
+    /// as for the other dialects.
     /// </summary>
     public static KernelCppText ForKernel(NativeStackContext context, in MethodEmissionPlan plan, string cppSource,
         HashSet<string> cppIncludes, ErrorSiteTable errorSites)
@@ -19,7 +20,8 @@ internal static class NativeStackTranslator
         var stateMachine = new KernelCppText(cppSource, GpuKernelGenerator.ToIncludes(cppIncludes),
             errorSites.Entries.AsEquatableArray());
         if (!context.OnStacks || context.TargetSymbol is not IMethodSymbol methodSymbol ||
-            NativeStackEligibility.Classify(methodSymbol, plan.Declaration, plan.SemanticModel) != NativeStackObstacle.None)
+            NativeStackEligibility.Classify(methodSymbol, plan.Declaration, plan.SemanticModel) !=
+                NativeStackObstacle.None)
         {
             return stateMachine;
         }

@@ -106,7 +106,9 @@
   </Target>
 
   <Target Name="GSharpValidateNativeBarrierModel" BeforeTargets="CoreCompile"
-          Condition="'$(DesignTimeBuild)' != 'true' and '$(GSharpNativeBarrierModel)' != '' and '$(GSharpNativeBarrierModel)' != 'StateMachine' and '$(GSharpNativeBarrierModel)' != 'Stack'">
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(GSharpNativeBarrierModel)' != ''
+                     and '$(GSharpNativeBarrierModel)' != 'StateMachine'
+                     and '$(GSharpNativeBarrierModel)' != 'Stack'">
     <Error Text="GSharpNativeBarrierModel value '$(GSharpNativeBarrierModel)' is invalid. Supported values are 'StateMachine' and 'Stack'." />
   </Target>
 

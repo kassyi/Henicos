@@ -15,7 +15,8 @@ internal static class NativeModuleAssembler
 
     /// <summary>
     /// The prelude that precedes the device code in the dialect's native module, with the native stack runtime header
-    /// appended when the module runs its GPU threads on their own stacks (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
+    /// appended when the module runs its GPU threads on their own stacks
+    /// (<see cref="GeneratorConfig.RunsOnNativeStacks"/>).
     /// </summary>
     public static string GetPreludeSource(in GeneratorConfig config) =>
         config.RunsOnNativeStacks

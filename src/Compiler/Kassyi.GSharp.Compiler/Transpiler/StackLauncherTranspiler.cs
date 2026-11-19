@@ -11,7 +11,8 @@ using static GSharpInternalNames.StateMachine;
 /// </summary>
 internal static class StackLauncherTranspiler
 {
-    // Runs each block's GPU threads on their own native stacks while keeping the OpenMP thread's stack pool for the launch
+    // Runs each block's GPU threads on their own native stacks while keeping the OpenMP thread's stack pool
+    // for the launch
     public static void WriteIndependentBlocks(in HostLauncherTranspiler.KernelStep step, ref TranspileContext context)
     {
         context.Emitter.Writer.Append($"auto {Body} = [&]() ");

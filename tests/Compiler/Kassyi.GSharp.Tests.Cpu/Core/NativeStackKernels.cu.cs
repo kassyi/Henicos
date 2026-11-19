@@ -135,7 +135,8 @@ public static partial class NativeStackKernels
     }
 
     [GpuKernel]
-    public static void FailureAfterBarrierKernel(int[] source, int[] before, int[] after, int failingThread, int badIndex)
+    public static void FailureAfterBarrierKernel(
+        int[] source, int[] before, int[] after, int failingThread, int badIndex)
     {
         int tid = ThreadIndex.X;
         before[tid] = tid + 100;

@@ -62,7 +62,9 @@ internal sealed class NativeStackProbeLibrary : IDisposable
         }
     }
 
-    /// <summary>The address of the exported function <paramref name="name"/>, to be cast to its function pointer type.</summary>
+    /// <summary>
+    /// The address of the exported function <paramref name="name"/>, to be cast to its function pointer type.
+    /// </summary>
     public nint GetExport(string name) => NativeLibrary.GetExport(_handle, name);
 
     /// <summary>Creates an empty directory under the temporary directory, named by <paramref name="prefix"/>.</summary>

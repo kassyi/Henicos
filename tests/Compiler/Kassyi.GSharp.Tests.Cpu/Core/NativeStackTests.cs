@@ -124,7 +124,8 @@ public class NativeStackTests
         var after = Enumerable.Repeat(Sentinel, 4).ToArray();
 
         var exception = Assert.Throws<IndexOutOfRangeException>(() =>
-            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after, failingThread: 2, badIndex: 5, blockDimX: 4));
+            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+                failingThread: 2, badIndex: 5, blockDimX: 4));
 
         Assert.Equal("(2,0,0)", exception.Data["GSharp.ThreadIndex"]);
         Assert.Equal([100, 101, 102, 103], before);
@@ -170,11 +171,13 @@ public class NativeStackTests
         var after = Enumerable.Repeat(Sentinel, 4).ToArray();
 
         Assert.Throws<IndexOutOfRangeException>(() =>
-            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after, failingThread: 2, badIndex: 5, blockDimX: 4));
+            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+                failingThread: 2, badIndex: 5, blockDimX: 4));
 
         before = Enumerable.Repeat(Sentinel, 4).ToArray();
         after = Enumerable.Repeat(Sentinel, 4).ToArray();
-        NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after, failingThread: 2, badIndex: 1, blockDimX: 4);
+        NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+            failingThread: 2, badIndex: 1, blockDimX: 4);
 
         Assert.Equal([100, 101, 102, 103], before);
         Assert.Equal([50, 51, 62, 53], after);
@@ -186,8 +189,14 @@ public class NativeStackTests
     {
         Skip.IfNot(IsStackBuild(), "Runs only when GSharpNativeBarrierModel=Stack.");
 
-        Assert.Contains(GSharpInternalNames.NativeStack.Resume, NativeStackKernels.NeighbourKernel_Source, StringComparison.Ordinal);
-        Assert.DoesNotContain("__gsharp_yielded_for_block_barrier=true", NativeStackKernels.NeighbourKernel_Source, StringComparison.Ordinal);
+        Assert.Contains(
+            GSharpInternalNames.NativeStack.Resume,
+            NativeStackKernels.NeighbourKernel_Source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "__gsharp_yielded_for_block_barrier=true",
+            NativeStackKernels.NeighbourKernel_Source,
+            StringComparison.Ordinal);
     }
 
     [SkippableFact]
@@ -196,8 +205,14 @@ public class NativeStackTests
     {
         Skip.If(IsStackBuild(), "Runs only when GSharpNativeBarrierModel is not Stack.");
 
-        Assert.DoesNotContain(GSharpInternalNames.NativeStack.Resume, NativeStackKernels.NeighbourKernel_Source, StringComparison.Ordinal);
-        Assert.Contains("__gsharp_yielded_for_block_barrier=true", NativeStackKernels.NeighbourKernel_Source, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            GSharpInternalNames.NativeStack.Resume,
+            NativeStackKernels.NeighbourKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "__gsharp_yielded_for_block_barrier=true",
+            NativeStackKernels.NeighbourKernel_Source,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -256,9 +271,21 @@ public class NativeStackTests
     {
         Skip.IfNot(IsStackBuild(), "Runs only when GSharpNativeBarrierModel=Stack.");
 
-        Assert.Contains(GSharpInternalNames.NativeStack.Resume, NativeStackKernels.OneLevelSuspendingDeviceKernel_Source, StringComparison.Ordinal);
-        Assert.DoesNotContain("__gsharp_yielded_for_block_barrier=true", NativeStackKernels.OneLevelSuspendingDeviceKernel_Source, StringComparison.Ordinal);
-        Assert.Contains(GSharpInternalNames.NativeStack.Resume, NativeStackKernels.MultiLevelSuspendingDeviceKernel_Source, StringComparison.Ordinal);
-        Assert.DoesNotContain(GSharpInternalNames.NativeStack.Resume, NativeStackKernels.ShuffleDeviceFallbackKernel_Source, StringComparison.Ordinal);
+        Assert.Contains(
+            GSharpInternalNames.NativeStack.Resume,
+            NativeStackKernels.OneLevelSuspendingDeviceKernel_Source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "__gsharp_yielded_for_block_barrier=true",
+            NativeStackKernels.OneLevelSuspendingDeviceKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            GSharpInternalNames.NativeStack.Resume,
+            NativeStackKernels.MultiLevelSuspendingDeviceKernel_Source,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            GSharpInternalNames.NativeStack.Resume,
+            NativeStackKernels.ShuffleDeviceFallbackKernel_Source,
+            StringComparison.Ordinal);
     }
 }

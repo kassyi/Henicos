@@ -37,7 +37,8 @@ public class NativeStackModelGeneratorTests
             .UseDirectory("Snapshots")
             .UseFileName("Snap.NativeStackModel_Cpu_Stack")
             .ScrubLinesWithReplace(static line => line.Replace(
-                $"GpuDeviceExportAttribute({DeviceExportRecord.CurrentFormatVersion}, @\"{DeviceExportRecord.CurrentPreludeHash}\"",
+                $"GpuDeviceExportAttribute({DeviceExportRecord.CurrentFormatVersion}, " +
+                $"@\"{DeviceExportRecord.CurrentPreludeHash}\"",
                 "GpuDeviceExportAttribute({FormatVersion}, @\"{PreludeHash}\"",
                 StringComparison.Ordinal));
     }
@@ -230,7 +231,9 @@ public class NativeStackModelGeneratorTests
 
     private static Compilation CreateKernelCompilation()
     {
-        var path = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Core", "NativeStackKernels.cu.cs");
-        return RoslynTestUtility.CreateCompilationAt(path, File.ReadAllText(path)).WithAssemblyName("NativeStackSnapshotTest");
+        var path = RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Core", "NativeStackKernels.cu.cs");
+        return RoslynTestUtility.CreateCompilationAt(path, File.ReadAllText(path))
+            .WithAssemblyName("NativeStackSnapshotTest");
     }
 }

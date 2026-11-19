@@ -1,12 +1,17 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>What the CPU launcher knows about the kernel it calls for each thread (<see cref="HostLauncherTranspiler.KernelStep"/>).</summary>
+/// <summary>
+/// What the CPU launcher knows about the kernel it calls for each thread
+/// (<see cref="HostLauncherTranspiler.KernelStep"/>).
+/// </summary>
 [Flags]
 internal enum KernelStepTraits
 {
     None = 0,
 
-    /// <summary>The kernel takes the context of its thread (it has a state machine, or runs on its own stack).</summary>
+    /// <summary>
+    /// The kernel takes the context of its thread (it has a state machine, or runs on its own stack).
+    /// </summary>
     HasContext = 1,
 
     /// <summary>The kernel returns a value that the launcher stores into the result array.</summary>

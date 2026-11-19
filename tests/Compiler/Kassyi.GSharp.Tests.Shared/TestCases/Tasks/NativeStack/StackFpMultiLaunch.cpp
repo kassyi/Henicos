@@ -48,7 +48,8 @@ static void RunFpLaunch(
     };
 
     const auto fp = __gsharp_stack_capture_fp();
-    #pragma omp parallel num_threads(__gsharp_stack_thread_limit(static_cast<uint64_t>(threadsPerBlock), totalBlocks, 0))
+    #pragma omp parallel \
+        num_threads(__gsharp_stack_thread_limit(static_cast<uint64_t>(threadsPerBlock), totalBlocks, 0))
     {
         #pragma omp single
         {

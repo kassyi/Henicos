@@ -22,7 +22,8 @@
 
 #if defined(_WIN32)
 extern "C" {
-__declspec(dllimport) void* __stdcall CreateFiberEx(size_t commitSize, size_t reserveSize, unsigned long flags, void (__stdcall* start)(void*), void* parameter);
+__declspec(dllimport) void* __stdcall CreateFiberEx(size_t commitSize, size_t reserveSize, unsigned long flags,
+    void (__stdcall* start)(void*), void* parameter);
 __declspec(dllimport) void __stdcall SwitchToFiber(void* fiber);
 __declspec(dllimport) void __stdcall DeleteFiber(void* fiber);
 __declspec(dllimport) void* __stdcall ConvertThreadToFiberEx(void* parameter, unsigned long flags);
@@ -38,14 +39,16 @@ extern "C" void __gsharp_stack_switch(void** save, void* load);
 extern "C" void __gsharp_stack_trampoline();
 // System V x86-64: callee-saved rbx rbp r12-r15, mxcsr and the x87 control word
 __asm__(
-    ".text\n.globl __gsharp_stack_switch\n.hidden __gsharp_stack_switch\n.type __gsharp_stack_switch,@function\n__gsharp_stack_switch:\n"
+    ".text\n.globl __gsharp_stack_switch\n.hidden __gsharp_stack_switch\n"
+    ".type __gsharp_stack_switch,@function\n__gsharp_stack_switch:\n"
     "  pushq %rbp\n  pushq %rbx\n  pushq %r12\n  pushq %r13\n  pushq %r14\n  pushq %r15\n"
     "  subq $8, %rsp\n  stmxcsr (%rsp)\n  fnstcw 4(%rsp)\n"
     "  movq %rsp, (%rdi)\n  movq %rsi, %rsp\n"
     "  ldmxcsr (%rsp)\n  fldcw 4(%rsp)\n  addq $8, %rsp\n"
     "  popq %r15\n  popq %r14\n  popq %r13\n  popq %r12\n  popq %rbx\n  popq %rbp\n  ret\n"
     ".size __gsharp_stack_switch,.-__gsharp_stack_switch\n"
-    ".globl __gsharp_stack_trampoline\n.hidden __gsharp_stack_trampoline\n.type __gsharp_stack_trampoline,@function\n__gsharp_stack_trampoline:\n"
+    ".globl __gsharp_stack_trampoline\n.hidden __gsharp_stack_trampoline\n"
+    ".type __gsharp_stack_trampoline,@function\n__gsharp_stack_trampoline:\n"
     "  movq %r13, %rdi\n  callq *%r12\n  ud2\n.size __gsharp_stack_trampoline,.-__gsharp_stack_trampoline\n");
 #else
 #error "GSharpNativeBarrierModel=Stack supports Windows and x86-64 Linux only"
@@ -81,7 +84,8 @@ inline __gsharp_stack_fp_state __gsharp_stack_capture_fp() noexcept {
 // The stacks of one OpenMP thread, kept between the blocks of one launch
 struct __gsharp_stack_pool {
     std::vector<void*> free;
-    void* scheduler = nullptr;   // Windows: the fiber of the OpenMP thread. Linux: its stack pointer while a GPU thread runs
+    // Windows: the fiber of the OpenMP thread. Linux: its stack pointer while a GPU thread runs
+    void* scheduler = nullptr;
     bool converted = false;      // Windows: this pool made the OpenMP thread a fiber
     __gsharp_stack_fp_state fp{};
     explicit __gsharp_stack_pool(__gsharp_stack_fp_state initialFp = __gsharp_stack_capture_fp()) noexcept
@@ -236,7 +240,8 @@ inline __gsharp_stack_block::__gsharp_stack_block(__gsharp_stack_pool& stacks, u
             thread.block = this;
             thread.stack = pool.acquire();
 #if defined(__linux__) && defined(__x86_64__)
-            uintptr_t top = (reinterpret_cast<uintptr_t>(thread.stack) + __GSHARP_STACK_RESERVE_BYTES) & ~static_cast<uintptr_t>(15);
+            uintptr_t top = (reinterpret_cast<uintptr_t>(thread.stack) + __GSHARP_STACK_RESERVE_BYTES) &
+                ~static_cast<uintptr_t>(15);
             uint64_t* sp = reinterpret_cast<uint64_t*>(top - 64);
             sp[0] = 0;
             std::memcpy(sp, &pool.fp.mxcsr, 4);

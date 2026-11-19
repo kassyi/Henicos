@@ -27,10 +27,12 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
             "Tasks/NativeStack/StackVmaBudget.cpp", "stack_vma", "Linux VMA budget throttling applies on Linux only.");
 
         var probeAvailableVmas = (delegate* unmanaged[Cdecl]<nuint>)library.GetExport("ProbeAvailableVmas");
-        var probeThreadLimit = (delegate* unmanaged[Cdecl]<ulong, long, nuint, int>)library.GetExport("ProbeThreadLimit");
+        var probeThreadLimit =
+            (delegate* unmanaged[Cdecl]<ulong, long, nuint, int>)library.GetExport("ProbeThreadLimit");
         var probeMaxOmpThreads = (delegate* unmanaged[Cdecl]<int>)library.GetExport("ProbeMaxOmpThreads");
         var runMultiBlockWithBudget =
-            (delegate* unmanaged[Cdecl]<long, uint, nuint, int*, int*, void>)library.GetExport("RunMultiBlockWithBudget");
+            (delegate* unmanaged[Cdecl]<long, uint, nuint, int*, int*, void>)
+            library.GetExport("RunMultiBlockWithBudget");
 
         nuint availableVmas = probeAvailableVmas();
         Assert.True(availableVmas > 0);
@@ -52,7 +54,8 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
 
         int maxOmpThreads = probeMaxOmpThreads();
         output.WriteLine(
-            $"availableVmas={availableVmas}, maxOmpThreads={maxOmpThreads}, observedThreadsDefault={observedThreadsDefault}, observedThreadsLimited={observedThreadsLimited}");
+            $"availableVmas={availableVmas}, maxOmpThreads={maxOmpThreads}, " +
+            $"observedThreadsDefault={observedThreadsDefault}, observedThreadsLimited={observedThreadsLimited}");
 
         Assert.Equal(outputDefault, outputLimited);
         Assert.Equal(1, observedThreadsLimited);
@@ -110,7 +113,8 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
         }
     }
 
-    // The caller's floating-point control at each launch: the default, round toward zero with flush to zero, the default
+    // The caller's floating-point control at each launch: the default, round toward zero with flush to zero,
+    // the default
     private static readonly (string Label, uint Mxcsr, ushort Fcw, uint SumBits, uint ProdBits)[] s_fpLaunches =
     [
         ("Launch1_Default", 0x1F80u, 0x037F, 0x3F800001u, 0x00022D84u),
@@ -128,7 +132,8 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
 
         var probeMaxOmpThreads = (delegate* unmanaged[Cdecl]<int>)library.GetExport("ProbeMaxOmpThreadsForFp");
         var runConsecutiveFpLaunches =
-            (delegate* unmanaged[Cdecl]<long, uint, uint, ushort, uint*, uint*, ushort*, ushort*, uint*, uint*, int*, int*, void>)
+            (delegate* unmanaged[Cdecl]<
+                long, uint, uint, ushort, uint*, uint*, ushort*, ushort*, uint*, uint*, int*, int*, void>)
             library.GetExport("RunConsecutiveFpLaunches");
 
         const int TotalBlocks = 64;
@@ -197,10 +202,13 @@ public sealed class NativeStackToolchainTests(ITestOutputHelper output)
         }
 
         output.WriteLine(
-            $"{label}: maxOmpThreads={maxOmpThreads}, observedOmpThreads={observedOmpThreads}, nonZeroWorkerGpuThreads={nonZeroWorkerThreads}/{beforeMxcsr.Length}");
+            $"{label}: maxOmpThreads={maxOmpThreads}, observedOmpThreads={observedOmpThreads}, " +
+            $"nonZeroWorkerGpuThreads={nonZeroWorkerThreads}/{beforeMxcsr.Length}");
         if (maxOmpThreads >= 2)
         {
-            Assert.True(observedOmpThreads >= 2, $"{label}: expected multi-threaded OpenMP launch, got {observedOmpThreads}.");
+            Assert.True(
+                observedOmpThreads >= 2,
+                $"{label}: expected multi-threaded OpenMP launch, got {observedOmpThreads}.");
         }
     }
 

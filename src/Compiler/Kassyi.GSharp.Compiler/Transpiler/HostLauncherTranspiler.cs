@@ -453,7 +453,8 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result]); or __gsharp_stack_resume(<thread>);
+    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result]);
+    // or __gsharp_stack_resume(<thread>);
     private static void WriteKernelCall(in KernelStep step, ref TranspileContext context)
     {
         if (step.UsesStack)

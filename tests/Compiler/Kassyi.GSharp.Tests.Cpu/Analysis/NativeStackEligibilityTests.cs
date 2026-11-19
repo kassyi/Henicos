@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analysis;
 public class NativeStackEligibilityTests
 {
     private static readonly Compilation s_compilation = RoslynTestUtility.CreateCompilation(
-        File.ReadAllText(RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", "NativeStackEligibilityCases.cs"))
+        File.ReadAllText(RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Analysis", "Cases", "NativeStackEligibilityCases.cs"))
     );
 
     [Theory]
@@ -16,21 +17,29 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels", "LocalFunctionBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "LambdaBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "NoBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "WarpShuffleAndBarrierKernel", NativeStackObstacle.WarpCollective)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.WarpCollective)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "WarpShuffleAndBarrierKernel", NativeStackObstacle.WarpCollective)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.WarpCollective)]
     [InlineData("NativeStackEligibilityCases.Kernels", "GridSyncAndBarrierKernel", NativeStackObstacle.GridSync)]
     [InlineData("NativeStackEligibilityCases.Kernels", "CooperativeBarrierKernel", NativeStackObstacle.Cooperative)]
     [InlineData("NativeStackEligibilityCases.Kernels", "SuspendingDeviceFunctionKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "MultiLevelSuspendingKernel", NativeStackObstacle.None)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "ShuffleDeviceFunctionKernel", NativeStackObstacle.WarpCollective)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "ShuffleDeviceFunctionKernel", NativeStackObstacle.WarpCollective)]
     [InlineData("NativeStackEligibilityCases.Kernels", "MultiLevelShuffleKernel", NativeStackObstacle.WarpCollective)]
     [InlineData("NativeStackEligibilityCases.Kernels", "GridSyncDeviceFunctionKernel", NativeStackObstacle.GridSync)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "DirectRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "MutuallyRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "WrapperCallingRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "DirectRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "MutuallyRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "WrapperCallingRecursiveSuspendingKernel", NativeStackObstacle.RecursiveSuspendingCall)]
     [InlineData("NativeStackUsingStaticCases.Kernels", "UsingStaticSyncThreadsKernel", NativeStackObstacle.None)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "UserLookalikeBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
-    [InlineData("NativeStackEligibilityCases.Kernels", "ConditionalOmittedCallKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UserLookalikeBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "ConditionalOmittedCallKernel", NativeStackObstacle.NoBlockBarrier)]
     internal void Classify_KernelBody_ReturnsExpectedObstacle(
         string typeName,
         string methodName,
@@ -85,7 +94,9 @@ public class NativeStackEligibilityTests
             .AddReferences(libReference);
 
         var (symbol, declaration, model) = GetKernel(consumerCompilation, "ConsumerApp.Kernels", "CallRemoteKernel");
-        Assert.Equal(NativeStackObstacle.ImportedSuspendingCall, NativeStackEligibility.Classify(symbol, declaration, model));
+        Assert.Equal(
+            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
     [Fact]
@@ -137,8 +148,11 @@ public class NativeStackEligibilityTests
             .WithAssemblyName("ConsumerApp")
             .AddReferences(libReference);
 
-        var (symbol, declaration, model) = GetKernel(consumerCompilation, "ConsumerApp.Kernels", "CallLocalWrapperKernel");
-        Assert.Equal(NativeStackObstacle.ImportedSuspendingCall, NativeStackEligibility.Classify(symbol, declaration, model));
+        var (symbol, declaration, model) =
+            GetKernel(consumerCompilation, "ConsumerApp.Kernels", "CallLocalWrapperKernel");
+        Assert.Equal(
+            NativeStackObstacle.ImportedSuspendingCall,
+            NativeStackEligibility.Classify(symbol, declaration, model));
     }
 
     private static (IMethodSymbol Symbol, MethodDeclarationSyntax Declaration, SemanticModel Model) GetKernel(

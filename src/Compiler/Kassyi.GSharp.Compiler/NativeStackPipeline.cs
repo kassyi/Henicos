@@ -29,11 +29,16 @@ internal static class NativeStackPipeline
         public GeneratorAttributeSyntaxContext Context { get; } = context;
     }
 
-    /// <summary>The transform of <c>ForAttributeWithMetadataName</c>: keeps the context for <see cref="Translate{TResult}"/>.</summary>
-    public static AttributeTarget Capture(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken) =>
+    /// <summary>
+    /// The transform of <c>ForAttributeWithMetadataName</c>: keeps the context for <see cref="Translate{TResult}"/>.
+    /// </summary>
+    public static AttributeTarget Capture(GeneratorAttributeSyntaxContext context,
+        CancellationToken cancellationToken) =>
         new(context);
 
-    /// <summary>Whether the build asks for the native stack form, a step of its own so that tests can track it.</summary>
+    /// <summary>
+    /// Whether the build asks for the native stack form, a step of its own so that tests can track it.
+    /// </summary>
     public static IncrementalValueProvider<bool> Switch(IncrementalValueProvider<GeneratorConfig> config) =>
         config
             .Select(static (value, _) => value.RunsOnNativeStacks)

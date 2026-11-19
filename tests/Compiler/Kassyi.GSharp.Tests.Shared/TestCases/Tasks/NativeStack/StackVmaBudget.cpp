@@ -37,7 +37,8 @@ void RunMultiBlockWithBudget(
         output[static_cast<size_t>(bid) * bdim + tid] = smem[next];
     };
 
-    #pragma omp parallel num_threads(__gsharp_stack_thread_limit(static_cast<uint64_t>(threadsPerBlock), totalBlocks, vmaBudgetOverride))
+    #pragma omp parallel \
+        num_threads(__gsharp_stack_thread_limit(static_cast<uint64_t>(threadsPerBlock), totalBlocks, vmaBudgetOverride))
     {
         #pragma omp single
         {
