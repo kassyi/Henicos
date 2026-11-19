@@ -80,7 +80,9 @@ public sealed class MsvcToolchain : INativeToolchain
         var vcvarsArch = MsvcEnvironmentResolver.ToVcvarsArchitecture(architecture);
         var env = _environment.ResolveCompileEnvironment(vcvarsArch, cancellationToken);
         var clPath = NativeToolchainHelper.FindExecutableInPath("cl.exe", env);
-        return new CompilerIdentity(clPath, MsvcEnvironmentResolver.ReadMsvcVersion(clPath, env));
+        // cl.exe adds CL and _CL_ to its arguments and searches INCLUDE: each changes the object file
+        return new CompilerIdentity(clPath, MsvcEnvironmentResolver.ReadMsvcVersion(clPath, env),
+            NativeToolchainHelper.DescribeEnvironment(env, "CL", "_CL_", "INCLUDE"));
     }
 
     /// <inheritdoc />

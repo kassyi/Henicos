@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Kassyi.GSharp.Compiler.Tasks.Toolchains;
 
 /// <summary>
@@ -112,6 +114,29 @@ internal static class NativeToolchainHelper
             // Treat unreadable file metadata as absent so the caller does not skip or trust an invalid output.
             return false;
         }
+    }
+
+    /// <summary>
+    /// The values of <paramref name="names"/> as <c>NAME=value</c> joined by tabs, read from <paramref name="env"/>
+    /// (the environment the compiler is started with) or, without one, from this process; an unset variable is empty.
+    /// </summary>
+    public static string DescribeEnvironment(Dictionary<string, string>? env, params string[] names)
+    {
+        var builder = new StringBuilder();
+        foreach (var name in names)
+        {
+            var value = env is not null
+                ? env.TryGetValue(name, out var set) ? set : string.Empty
+                : Environment.GetEnvironmentVariable(name) ?? string.Empty;
+            if (builder.Length > 0)
+            {
+                builder.Append('\t');
+            }
+
+            builder.Append(name).Append('=').Append(value);
+        }
+
+        return builder.ToString();
     }
 
     public static void EnsureParentDirectory(string filePath)

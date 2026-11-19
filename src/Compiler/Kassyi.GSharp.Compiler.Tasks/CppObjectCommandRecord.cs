@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 
 /// <summary>
 /// Builds and hashes the command record stored next to each compiled CPU native object file so unchanged
-/// translation units skip recompilation when their source, shared module header, compiler, and flags match.
+/// translation units skip recompilation when their source, shared module header, compiler, flags and the environment
+/// variables the compiler reads (<see cref="CompilerIdentity.Environment"/>) match.
 /// </summary>
 internal static class CppObjectCommandRecord
 {
@@ -19,8 +20,8 @@ internal static class CppObjectCommandRecord
         string compileArguments,
         string unitSourceHash,
         string headerSourceHash) =>
-        $"version=1\narch={architecture}\ncompiler={compiler.Path}\n" +
-        $"compiler-version={compiler.Version}\nargs={compileArguments}\n" +
+        $"version=2\narch={architecture}\ncompiler={compiler.Path}\n" +
+        $"compiler-version={compiler.Version}\nenvironment={compiler.Environment}\nargs={compileArguments}\n" +
         $"unit={unitSourceHash}\nheader={headerSourceHash}";
 
     public static string GetModuleHeaderPath(string unitSourcePath, string moduleStem)

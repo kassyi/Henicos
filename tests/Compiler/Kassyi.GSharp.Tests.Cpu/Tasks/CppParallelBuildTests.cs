@@ -330,6 +330,60 @@ public class CppParallelBuildTests
         Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
     }
 
+    // cl.exe adds the CL variable to its arguments, so a CL that changes between builds must recompile the unit.
+    // mutant: MsvcToolchain.GetCompilerIdentity without the environment argument (the record misses CL)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_MsvcClEnvironmentChanged_RecompilesTheUnit()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
+        var objDir = Path.Combine(ctx.TempDir, "objs");
+        var clDir = Path.Combine(ctx.TempDir, "msvc");
+        Directory.CreateDirectory(clDir);
+        File.WriteAllText(Path.Combine(clDir, "cl.exe"), "");
+
+        ctx.Runner.CmdStandardOutput = $"VCToolsVersion=14.40.0\r\nPATH={clDir}";
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp"], ctx.CreateMsvcToolchain(), objDir).Execute());
+
+        ctx.Runner.Invocations.Clear();
+        ctx.Runner.CmdStandardOutput = $"VCToolsVersion=14.40.0\r\nPATH={clDir}\r\nCL=/DFOO=1";
+        Assert.True(ctx.CreateCppTask(["Mod.g.cpp"], ctx.CreateMsvcToolchain(), objDir).Execute());
+
+        Assert.Single(ctx.Runner.Invocations, i => i.FileName.Contains("cl.exe") && i.Arguments.Contains("/c "));
+    }
+
+    // GCC and Clang search CPATH, so a CPATH that changes between builds must recompile every unit.
+    // mutant: GccClangToolchain.GetCompilerIdentity without the environment argument (the record misses CPATH)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCppToNativeTask_GccCpathChanged_RecompilesAllUnits()
+    {
+        var saved = Environment.GetEnvironmentVariable("CPATH");
+        try
+        {
+            using var ctx = new CompileTaskTestContext();
+            ctx.CreateDummySource("Mod.g.cpp", "// unit 0");
+            ctx.CreateDummySource("Mod.1.g.cpp", "// unit 1");
+            var objDir = Path.Combine(ctx.TempDir, "objs");
+
+            Environment.SetEnvironmentVariable("CPATH", null);
+            Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir)
+                .Execute());
+
+            ctx.Runner.Invocations.Clear();
+            Environment.SetEnvironmentVariable("CPATH", Path.Combine(ctx.TempDir, "include"));
+            Assert.True(ctx.CreateCppTask(["Mod.g.cpp", "Mod.1.g.cpp"], ctx.CreateGccClangToolchain("g++"), objDir)
+                .Execute());
+
+            Assert.Equal(2, CountGccCompiles(ctx.Runner));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CPATH", saved);
+        }
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
