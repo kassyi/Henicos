@@ -188,7 +188,7 @@ Because floating-point operations ultimately delegate to integer significand ari
 | **Addition / Subtraction** | $\mathcal{O}(N)$ | Highly parallelized across CUDA blocks. |
 | **Multiplication** | $\mathcal{O}(N \log N)$ | Number Theoretic Transform (NTT) / Fast Fourier Transform (FFT). |
 | **Division** | $\mathcal{O}(N \log N)$ | Newton-Raphson Iteration (utilizing NTT Multiplication). |
-| **Square Root** | $\mathcal{O}(N \log N)$ | Newton-Raphson inverse square root, one multiplication and an exact correction to the floor. |
+| **Square Root** | $\mathcal{O}(N \log N)$ | Newton-Raphson inverse square root (one cooperative mega-kernel up to `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` root words, host-driven precision doubling above), one multiplication and an exact correction to the floor. |
 | **Power of 10** | $\mathcal{O}(N \log N)$ | Binary Exponentiation (dominated by NTT multiplication). |
 | **Bitwise Operations** | $\mathcal{O}(N)$ | Approaching $\mathcal{O}(1)$ step time due to massive parallelism. |
 | **GCD** | $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log^2 N)$ | Lehmer's GCD algorithm optimized for GPU execution. |
@@ -210,6 +210,22 @@ flowchart LR
 1.  **C# GpuBigInt (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
 2.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpKernelProvider.cs`, this dispatches to compiled G# device kernels natively written in C# using `[GpuKernel]` and compiled Ahead-Of-Time into GPU FATBIN modules.
 3.  **CPU Fallback Backend**: A purely CPU-side fallback (`CSharpCpuBigIntProvider`) for executing identical arithmetic logic deterministically on the host CPU for non-GPU testing and debugging.
+
+### Precision-Doubling Inverse Square Root
+
+`SqrtFloor` takes the approximate inverse square root of the top `w = n + 1` words `A` of its operand (bit length `32w` or `32w - 1`) with `m = ceil(n / 2)` margin words, `B = 32(w + m)`. A root wider than `GpuWorkspace.SqrtPrecisionDoublingThresholdWords` words computes it from the host with ordinary launches instead of the cooperative mega-kernel (`GpuBigIntDivRem.InverseSqrtDoubling.cs`):
+
+- **Scale**: `E = 16w + 32m + 2`. The stage of `p` working words holds `Y`, an approximation of `x* / 2^E` (`x* = 2^B / sqrt(A)`) with `32p` fraction bits.
+- **Schedule**: `p_K = w + 1`, `p_(k-1) = ceil(p_k / 2) + 1` (2 before a stage of 3 words), down to a first stage of 2 words. The first stage reads the initial guess `x0` (about 30 correct bits) as `floor(x0 / 2^(E - 64))`.
+- **One stage** (`dw = max(2, ceil(p / 2))`, four floors, all other products exact):
+  - `S = floor(Y^2 / 2^(32(p - 1)))` (first floor);
+  - `A_k = floor(A / 2^(32(w - p - 1)))`, the top `p + 1` words of `A` (second floor);
+  - `D = floor((2^(64p + 60) - A_k·S) / 2^(32p + 60))`, signed (third floor);
+  - `dY = floor(Yt·D / 2^(32 dw + 1))`, `Yt` the top `dw` words of `Y` (fourth floor), and `Y' = Y + dY`.
+- **Signed values without a synchronization**: `D` is kept as `D + 2^(32 dw - 1)`, non-negative for every `|D| < 2^(32 dw - 1)`, and `Yt·D` as `Yt·(D + 2^(32 dw - 1)) - Yt·2^(32 dw - 1)` modulo `2^(32(p + dw + 1))`, so every step uses the unsigned multiplication, shift and modular addition already on the device. Debug builds check the bound on `D` on the device (`BigIntWideOps.CheckFitsBits`); release builds launch nothing for it.
+- **Result**: `x~ = floor(Y_K / 2^(32 p_K - E))`.
+- **Error bounds**: `|D| < 2^(32 dw - 1)` in every stage (at least 24 bits to spare), `|Y_K - floor(x* 2^(32 p_K - E))| <= 1` and `|x~ - floor(x*)| <= 1`, proved for `w >= 2` under the initial-guess error of at most `5·2^-32` (provable, about `2^-29.678`) with `x0 <= x*`.
+- **Contract**: the approximate inverse square root returns `x~ - 1`, so its result stays at most `ApproximateInverseSqrtMaxError` below the floor and never above it, as the mega-kernel's does. `SqrtFloor` then corrects its estimate to the exact floor either way.
 
 ### Execution Strategy & Memory Management
 
