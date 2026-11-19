@@ -215,6 +215,10 @@
     ir:     spill(Gpu.NotNull(a)) spill(Gpu.NotNull(a)[1]) split(Warp.ShuffleSync(m, v, 1))
     syntax: split(Warp.ShuffleSync(m, v, 1))
 #991 an earlier operand of an operation that does not split
+  GenericDeviceFunction.cu.cs GenericDeviceFunctionCases.K: xs[tid] = Pick(xs[tid], AfterSync(tid), true) + GenericDeviceFunctionHolder<long>.Twice(tid);
+    ir:     spill(xs[tid]) split(AfterSync(tid))
+    syntax: split(AfterSync(tid))
+#991 an earlier operand of an operation that does not split
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.ParenthesizedSpillKernel: r[0] = (PickH(h).Data)[Bar()];
     ir:     spill(PickH(h).Data) split(Bar())
     syntax: split(Bar())
@@ -262,10 +266,6 @@
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.SpillKernel: r[5] = ElementOf((Pick(b))!, Bar());
     ir:     spill(Pick(b)) split(Bar())
     syntax: split(Bar())
-#991 an earlier operand of an operation that does not split
-  GenericDeviceFunction.cu.cs GenericDeviceFunctionCases.K: xs[tid] = Pick(xs[tid], AfterSync(tid), true) + GenericDeviceFunctionHolder<long>.Twice(tid);
-    ir:     spill(xs[tid]) split(AfterSync(tid))
-    syntax: split(AfterSync(tid))
 #991 an earlier operand of an operation that does not split
   IrSpillPlannerCases.cs Cases.EarlierArgumentOfACallThatDoesNotSplit: result[0] = Pair(a[0], Suspend());
     ir:     spill(a[0]) split(Suspend())

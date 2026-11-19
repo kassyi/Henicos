@@ -167,20 +167,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             walker.Visit(methodDeclaration);
         }
 
-        // The generator does not transpile a generic device function as it is written (GenericDefinitions): one
-        // diagnostic at its name says so, instead of one for each use of a type parameter that the transpiler meets
-        if (IsGenericDeviceFunction(methodSymbol, methodDeclaration))
-        {
-            diagnostics.Add(Diagnostic.Create(
-                GSharpDiagnostics.GenericDeviceFunctionNotCompiled,
-                methodDeclaration.Identifier.GetLocation(),
-                methodSymbol.Name,
-                GenericDefinitions.NotSupportedReason));
-        }
-        else
-        {
-            TranspilerFailureCheck.AddFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
-        }
+        AddDeclarationFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
 
         // A rule and the transpiler, or the signature and the body, find the same construct: one diagnostic per ID and location
         var reported = new HashSet<(string Id, Location Location)>();
@@ -194,10 +181,25 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             ).Do(context, static (diagnostic, analysis) => analysis.ReportDiagnostic(diagnostic));
     }
 
-    // A [GpuDeviceFunction] that the generator leaves out (GpuKernelGenerator.TranspileDeviceMethod)
-    private static bool IsGenericDeviceFunction(IMethodSymbol method, MethodDeclarationSyntax declaration) =>
-        method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
-        GenericDefinitions.IsLeftOut(method, declaration);
+    // What the generator could not emit for the declaration. It does not transpile a generic device function that uses
+    // its type parameters (GenericDefinitions): one diagnostic at its name says so, instead of one for each use of a
+    // type parameter that the transpiler meets
+    private static void AddDeclarationFailures(MethodDeclarationSyntax declaration, IMethodSymbol method,
+        SemanticModel model, ImmutableArray<Diagnostic>.Builder diagnostics)
+    {
+        if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+            GenericDefinitions.IsLeftOut(method, model.Compilation))
+        {
+            diagnostics.Add(Diagnostic.Create(
+                GSharpDiagnostics.GenericDeviceFunctionNotCompiled,
+                declaration.Identifier.GetLocation(),
+                method.Name,
+                GenericDefinitions.NotSupportedReason));
+            return;
+        }
+
+        TranspilerFailureCheck.AddFailures(declaration, method, model, diagnostics);
+    }
 
     // A location in source that the declaration does not contain; a diagnostic without a location stays with its method
     private static bool IsOutside(Location location, SyntaxNode declaration) =>

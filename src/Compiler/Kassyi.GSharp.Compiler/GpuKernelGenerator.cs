@@ -461,162 +461,151 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
-        // A generic device function is not lowered or transpiled as it is written: its type parameters have no C++
-        // type, and the frame of one that reaches a barrier cannot be typed. The analyzer reports GSH0121 at the same
-        // name, and the record says that the function was not transpiled (GSH0089 for a consumer)
-        var (definition, _) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
-        if (GenericDefinitions.IsLeftOut(methodSymbol, definition))
+        // A generic device function that uses its type parameters is not lowered or transpiled as it is written
+        // (GenericDefinitions); the analyzer reports GSH0123 at the same name
+        var compilation = context.SemanticModel.Compilation;
+        if (GenericDefinitions.IsLeftOut(methodSymbol, compilation))
         {
-            var failure = new TranspileFailure(GSharpDiagnostics.GenericDeviceFunctionNotCompiled,
-                definition.Identifier.GetLocation(), [methodSymbol.Name, GenericDefinitions.NotSupportedReason]);
-            return NotTranspiled(methodSymbol, context.SemanticModel.Compilation, failure,
-                CreateFailedFunctionRecord(methodSymbol, ""));
+            var (bodyDeclaration, _) = GetBodyDeclaration(methodDeclaration, methodSymbol, context.SemanticModel);
+            return DeviceMethodResults.LeftOutGeneric(methodSymbol, bodyDeclaration, compilation);
         }
 
         try
         {
-            var cudaFailures = new FailureCollector();
-            var cppFailures = new FailureCollector();
-            var cudaDialect = new GSharpCudaDialect();
-            var cppDialect = new StandardCppDialect();
-
-            var (bodyDeclaration, bodyModel) = GetBodyDeclaration(
-                methodDeclaration,
-                methodSymbol,
-                context.SemanticModel
-            );
-            var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: false);
-
-            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
-
-            var cudaStructs = new StructSourceCollector();
-            var cppStructs = new StructSourceCollector();
-            // The sites of the throws of this function: they go with it to every module that places it
-            var throwSites = new ErrorSiteTable();
-            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda, cudaStructs, throwSites: throwSites);
-            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp, cppStructs, throwSites: throwSites);
-            var functionSites = throwSites.Entries.AsEquatableArray();
-
-            // A device function that may suspend has a frame, which embeds the frames of the calls it makes
-            var compilation = context.SemanticModel.Compilation;
-            var frameName = "";
-            var frameDependencies = ImmutableArray.CreateBuilder<string>();
-            var managedCSharpSource = "";
-            if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && bodyDeclaration.GetBodyNode() is { } body)
-            {
-                frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
-                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
-                {
-                    frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
-                }
-
-                // Left out when it could not compile (ManagedStateMachineAvailability); the record says so
-                if (ManagedStateMachineAvailability.CanEmit(methodSymbol, compilation))
-                {
-                    managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
-                }
-            }
-            else if (plan.HasManagedVersion)
-            {
-                // A function that does not suspend and expands an operator macro (or calls one that does) runs from its
-                // managed version on the managed path (#711)
-                managedCSharpSource = MethodTranspiler.GenerateManagedVersionSource(in plan);
-            }
-
-            var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
-            // A frame narrower than external callers is run from other assemblies through its entries, which have the
-            // accessibility of the function (#1884, #1991, #1845)
-            var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
-                                         managedCSharpSource.Length > 0;
-            var privateManagedFrame = hasManagedStateMachine &&
-                                      ManagedStateMachineAvailability.HasEntries(
-                                          methodSymbol,
-                                          ManagedStateMachineAvailability.GetFrameAccessibility(
-                                              methodSymbol, compilation));
-            var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
-                                    managedCSharpSource.Length > 0;
-            var managedForms = new ExportedManagedForms(
-                StateMachine: hasManagedStateMachine,
-                PrivateFrame: privateManagedFrame,
-                Version: hasManagedVersion
-            );
-            DeviceExportRecord export = default;
-            var structExports = default(EquatableArray<DeviceExportRecord>);
-            // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
-            // message, which a consumer states in GSH0089) and leaves the library's own text as it is
-            try
-            {
-                export = plan.Kind == MethodEmissionKind.Iterator
-                    // An iterator is expanded where it is enumerated; another assembly gets GSH0003 for it
-                    ? default
-                    : CreateFunctionRecord(methodSymbol, compilation,
-                        ExportedText(cudaSignature, cudaSource, cudaStructs, cudaFailures.HasFailures,
-                            ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
-                        ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
-                            ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
-                        frameName, frames, managedForms, functionSites);
-                structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                export = plan.Kind == MethodEmissionKind.Iterator
-                    ? default
-                    : CreateFailedFunctionRecord(methodSymbol, PartFailure.Describe(exception));
-                structExports = default;
-            }
-
-            var cpp = NativeStackTranslator.ForDeviceFunction(context, in plan, methodDeclaration,
-                new DeviceCppText(cppSignature, cppFailures.Apply(cppSource), requiredIncludesCpp, functionSites));
-
-            return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
-                methodSymbol.Name,
-                cudaSignature,
-                cudaFailures.Apply(cudaSource),
-                cpp.Signature,
-                cpp.Body,
-                ToIncludes(requiredIncludesCuda),
-                ToIncludes(cpp.Includes),
-                "",
-                frameName,
-                frames,
-                managedCSharpSource,
-                export,
-                structExports,
-                HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration),
-                cpp.ErrorSites);
+            return TranspileDeviceMethodBody(context, methodDeclaration, methodSymbol);
         }
         catch (InsufficientExecutionStackException)
         {
             var location = methodDeclaration.Identifier.GetLocation();
-            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location, [methodSymbol.Name]);
-            return NotTranspiled(methodSymbol, context.SemanticModel.Compilation, failure, default);
+            var failure = new TranspileFailure(GSharpDiagnostics.MethodTooComplexToCompile, location,
+                [methodSymbol.Name]);
+            return DeviceMethodResults.NotTranspiled(methodSymbol, compilation, failure, default);
         }
         catch (Exception ex)
         {
-            var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
-
-            return new TranspiledDeviceMethodResult(
-                HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
-                methodSymbol.Name,
-                "", errorSource, "", errorSource, default, default, ex.ToString());
+            return DeviceMethodResults.InternalError(methodSymbol, compilation, ex);
         }
     }
 
-    // A device function that is not transpiled: both dialects state <failure> as #error, and <export> is its record
-    private static TranspiledDeviceMethodResult NotTranspiled(IMethodSymbol methodSymbol, Compilation compilation,
-        TranspileFailure failure, DeviceExportRecord export)
+    // The transpilation of a device function in both dialects, its frame, its managed forms and its export records
+    private static TranspiledDeviceMethodResult TranspileDeviceMethodBody(NativeStackContext context,
+        MethodDeclarationSyntax methodDeclaration, IMethodSymbol methodSymbol)
     {
-        var errorSource = NativeModuleAssembler.FormatTranspileFailures([failure.Format()]);
+        var cudaFailures = new FailureCollector();
+        var cppFailures = new FailureCollector();
+        var cudaDialect = new GSharpCudaDialect();
+        var cppDialect = new StandardCppDialect();
+
+        var (bodyDeclaration, bodyModel) = GetBodyDeclaration(
+            methodDeclaration,
+            methodSymbol,
+            context.SemanticModel
+        );
+        var plan = MethodEmissionPlan.Create(bodyDeclaration, bodyModel, isKernel: false);
+
+        var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
+        var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
+
+        var cudaStructs = new StructSourceCollector();
+        var cppStructs = new StructSourceCollector();
+        // The sites of the throws of this function: they go with it to every module that places it
+        var throwSites = new ErrorSiteTable();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+            out var requiredIncludesCuda, cudaStructs, throwSites: throwSites);
+        var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+            out var requiredIncludesCpp, cppStructs, throwSites: throwSites);
+        var functionSites = throwSites.Entries.AsEquatableArray();
+
+        // A device function that may suspend has a frame, which embeds the frames of the calls it makes
+        var compilation = context.SemanticModel.Compilation;
+        var frameName = "";
+        var frameDependencies = ImmutableArray.CreateBuilder<string>();
+        var managedCSharpSource = "";
+        if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && bodyDeclaration.GetBodyNode() is { } body)
+        {
+            frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
+                methodSymbol);
+            foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body, compilation))
+            {
+                frameDependencies.Add(
+                    GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
+            }
+
+            // Left out when it could not compile (ManagedStateMachineAvailability); the record says so
+            if (ManagedStateMachineAvailability.CanEmit(methodSymbol, compilation))
+            {
+                managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
+            }
+        }
+        else if (plan.HasManagedVersion)
+        {
+            // A function that does not suspend and expands an operator macro (or calls one that does) runs from its
+            // managed version on the managed path (#711)
+            managedCSharpSource = MethodTranspiler.GenerateManagedVersionSource(in plan);
+        }
+
+        var frames = new EquatableArray<string>(frameDependencies.ToImmutable());
+        // A frame narrower than external callers is run from other assemblies through its entries, which have the
+        // accessibility of the function (#1884, #1991, #1845)
+        var hasManagedStateMachine = plan.Kind == MethodEmissionKind.SuspendingDeviceFunction &&
+                                     managedCSharpSource.Length > 0;
+        var privateManagedFrame = hasManagedStateMachine &&
+                                  ManagedStateMachineAvailability.HasEntries(
+                                      methodSymbol,
+                                      ManagedStateMachineAvailability.GetFrameAccessibility(
+                                          methodSymbol, compilation));
+        var hasManagedVersion = plan.Kind != MethodEmissionKind.SuspendingDeviceFunction &&
+                                managedCSharpSource.Length > 0;
+        var managedForms = new ExportedManagedForms(
+            StateMachine: hasManagedStateMachine,
+            PrivateFrame: privateManagedFrame,
+            Version: hasManagedVersion
+        );
+        DeviceExportRecord export = default;
+        var structExports = default(EquatableArray<DeviceExportRecord>);
+        // [WHY] The records are built apart from the transpilation: an exception there fails the records (with the
+        // message, which a consumer states in GSH0089) and leaves the library's own text as it is
+        try
+        {
+            export = plan.Kind == MethodEmissionKind.Iterator
+                // An iterator is expanded where it is enumerated; another assembly gets GSH0003 for it
+                ? default
+                : CreateFunctionRecord(methodSymbol, compilation,
+                    ExportedText(cudaSignature, cudaSource, cudaStructs, cudaFailures.HasFailures,
+                        ToIncludes(requiredIncludesCuda), compilation, isCuda: true),
+                    ExportedText(cppSignature, cppSource, cppStructs, cppFailures.HasFailures,
+                        ToIncludes(requiredIncludesCpp), compilation, isCuda: false),
+                    frameName, frames, managedForms, functionSites);
+            structExports = DeviceExportEmitter.CreateStructRecords(compilation, cudaStructs, cppStructs);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            export = plan.Kind == MethodEmissionKind.Iterator
+                ? default
+                : DeviceMethodResults.CreateFailedFunctionRecord(methodSymbol, PartFailure.Describe(exception));
+            structExports = default;
+        }
+
+        var cpp = NativeStackTranslator.ForDeviceFunction(context, in plan, methodDeclaration,
+            new DeviceCppText(cppSignature, cppFailures.Apply(cppSource), requiredIncludesCpp, functionSites));
+
         return new TranspiledDeviceMethodResult(
-            HostClassHeader.Create(methodSymbol.ContainingType, compilation),
+            HostClassHeader.Create(methodSymbol.ContainingType, context.SemanticModel.Compilation),
             methodSymbol.Name,
-            "", errorSource, "", errorSource,
-            default, default, "",
-            Export: export);
+            cudaSignature,
+            cudaFailures.Apply(cudaSource),
+            cpp.Signature,
+            cpp.Body,
+            ToIncludes(requiredIncludesCuda),
+            ToIncludes(cpp.Includes),
+            "",
+            frameName,
+            frames,
+            managedCSharpSource,
+            export,
+            structExports,
+            HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration),
+            cpp.ErrorSites);
     }
 
     // The text of one dialect as the function's record stores it: the signature, and the body without the struct and
@@ -655,26 +644,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         bool Failed,
         EquatableArray<string> Includes,
         EquatableArray<string> KeptNames);
-
-    // The record of a function whose records could not be built: failed in both dialects, with the message
-    private static DeviceExportRecord CreateFailedFunctionRecord(IMethodSymbol method, string internalError)
-    {
-        var cppName = GlobalCppNames.GetFunctionName(method);
-        var names = new DeviceExportRecord.ExportNames(
-            CppName: cppName,
-            CppFullName: GlobalCppNames.TryGetFullName(cppName, out var fullName) ? fullName : "",
-            DefinedNames: default,
-            DefinedIds: default,
-            DefinedFullNames: default);
-        return new DeviceExportRecord(
-            DeviceExportRecord.FunctionKind,
-            method.OriginalDefinition.GetDocumentationCommentId() ?? cppName,
-            names,
-            Cuda: DeviceExportRecord.DialectText.NotTranspiled,
-            Cpp: DeviceExportRecord.DialectText.NotTranspiled,
-            DeviceExportRecord.FunctionTraits.None,
-            internalError);
-    }
 
     private static DeviceExportRecord.DialectText BuildFunctionDialectText(
         string cppName,

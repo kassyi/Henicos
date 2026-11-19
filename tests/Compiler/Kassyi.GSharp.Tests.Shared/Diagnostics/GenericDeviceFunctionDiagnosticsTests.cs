@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
 /// <summary>
-/// G# does not compile a generic device function as it is written: the analyzer reports GSH0121 once at its name, and
+/// G# does not compile a generic device function as it is written: the analyzer reports GSH0123 once at its name, and
 /// the generator neither transpiles nor lowers it, so a function that reaches a barrier no longer fails the generator
 /// (GSH0048) or leaves generated C# that names a frame it did not write.
 /// </summary>
@@ -15,7 +15,7 @@ public class GenericDeviceFunctionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Pick_GenericDeviceFunction_ReportsGsh0121AtTheName(string dialect)
+    public async Task Pick_GenericDeviceFunction_ReportsGsh0123AtTheName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -29,7 +29,7 @@ public class GenericDeviceFunctionDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task AfterSync_GenericDeviceFunctionWithBarrier_ReportsGsh0121AtTheName(string dialect)
+    public async Task AfterSync_GenericDeviceFunctionWithBarrier_ReportsGsh0123AtTheName(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
@@ -50,11 +50,37 @@ public class GenericDeviceFunctionDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
-        Assert.DoesNotContain(diagnostics, static d => d.StartLine >= 24);
+        Assert.DoesNotContain(diagnostics, static d => d.StartLine is >= 24 and < 31);
         Assert.Equal(2, diagnostics.Count(static d => d.Id == GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id));
     }
 
-    // The generator states GSH0121 as #error where the analyzer reports it, and the generated C# compiles as far as
+    // A generic device function whose type parameters appear in neither its signature nor its body (as the fuzzer's
+    // device functions are) is compiled as before, also one that waits at a barrier, and the kernel's state machine
+    // with it
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Phantom_TypeParametersNamedNowhere_ReportsNothing(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(TestCase));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, dialect);
+
+        Assert.DoesNotContain(run.Analyzer, static d => d.Location.GetLineSpan().StartLinePosition.Line >= 31);
+        // Only the two functions that name their type parameter are stated as #error
+        var id = GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id;
+        var stated = KernelDiagnostics.FindStatedFailures(run);
+        Assert.Equal(2, stated.Count);
+        Assert.Contains(stated, f => f.Failure.EndsWith($"(6,21): {id}", StringComparison.Ordinal));
+        Assert.Contains(stated, f => f.Failure.EndsWith($"(9,21): {id}", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            run.Output.GetDiagnostics(),
+            static d => d.Severity == DiagnosticSeverity.Error &&
+                        d.GetMessage().Contains("Phantom", StringComparison.Ordinal));
+    }
+
+    // The generator states GSH0123 as #error where the analyzer reports it, and the generated C# compiles as far as
     // the frames and state machines go: before, the lowering of the open declaration threw (GSH0048) and the kernel's
     // managed state machine named a frame that was never written (CS0426, CS0117, CS0246)
     [Theory]

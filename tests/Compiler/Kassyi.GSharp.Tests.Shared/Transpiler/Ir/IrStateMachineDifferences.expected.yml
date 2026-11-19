@@ -745,6 +745,9 @@
 - {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "FieldKeywordPropertyDifferentialKernels.FieldKeywordWith", status: "Compared", count: 1}
 - {file: "Differential/FieldKeywordPropertyDifferentialKernels.cu.cs", method: "FieldKeywordPropertyDifferentialKernels.ReadTwice", status: "NoStateMachine", count: 1}
 - {file: "Differential/FloatAtomicAddMatrixKernels.cu.cs", method: "FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel", status: "Compared", count: 1}
+- {file: "Differential/GenericPhantomDifferentialKernels.cu.cs", method: "GenericPhantomDifferentialKernels.Phantom", status: "NoStateMachine", count: 1}
+- {file: "Differential/GenericPhantomDifferentialKernels.cu.cs", method: "GenericPhantomDifferentialKernels.PhantomForward", status: "NoStateMachine", count: 1}
+- {file: "Differential/GenericPhantomDifferentialKernels.cu.cs", method: "GenericPhantomDifferentialKernels.PhantomKernel", status: "Compared", count: 1}
 - {file: "Differential/GridSyncAndSingleThreadDifferentialKernels.cu.cs", method: "GridSyncAndSingleThreadDifferentialKernels.ComputeLeaderSeed", status: "NoStateMachine", count: 1}
 - {file: "Differential/GridSyncAndSingleThreadDifferentialKernels.cu.cs", method: "GridSyncAndSingleThreadDifferentialKernels.CooperativeMultiPhaseReduceNormalizeKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/GridSyncAndSingleThreadDifferentialKernels.cu.cs", method: "GridSyncAndSingleThreadDifferentialKernels.CooperativePingPongStencilAndXorSwapKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
@@ -4009,6 +4012,9 @@
 - {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionCases.K", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionCases.Pick", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericDeviceFunctionHolder.Twice", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericPhantomCases.Phantom", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericPhantomCases.PhantomForward", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Diagnostics/GenericDeviceFunction.cu.cs", method: "GenericPhantomCases.PhantomKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuConstantArguments.cu.cs", method: "GpuConstantArgumentKernels.ConstantArgumentsKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuConstantArguments.cu.cs", method: "GpuConstantArgumentKernels.NonConstantArgumentKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuFinalizer.cu.cs", method: "HostFinalizerKernels.Run", status: "Compared", count: 1}

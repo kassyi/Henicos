@@ -1709,7 +1709,7 @@ inline __device__ int __gsharp_fn_FileLocalRepro__LocalMath_f0__Thrice(int __gsh
 return __gsharp_mul_i32(__gsharp_id_0_x,3);
 }
 
-#error ""FileLocalType_ManagedBody.cs(46,25): GSH0121: 'Id' cannot be compiled for the GPU: generic device functions are not supported yet.""
+#error ""FileLocalType_ManagedBody.cs(46,25): GSH0123: 'Id' cannot be compiled for the GPU: generic device functions are not supported yet.""
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_FileLocalRepro__Pair__
 #define __GSHARP_STRUCT___gsharp_ty_FileLocalRepro__Pair__
