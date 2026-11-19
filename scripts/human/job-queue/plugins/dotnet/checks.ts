@@ -615,6 +615,12 @@ function checkPrepareCommand(assert: AssertModule, host: PluginHost): void {
   const kept = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 6, nested: false }, exported);
   assert.strictEqual(kept.env.MSBUILDCORELIMIT, undefined, "exported MSBUILDCORELIMIT is not overridden");
   assert.strictEqual(kept.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100");
+  // Any command gets the bound, so a script that starts dotnet itself passes it on
+  for (const input of ["node scripts/human/test-stability.js --count 3", "echo hi"]) {
+    const other = host.prepareCommand(input, { jobId: 1, cpus: 6, nested: false }, ctx);
+    assert.strictEqual(other.env.MSBUILDCORELIMIT, "6", input);
+    assert.strictEqual(other.env.MSBUILDNODECOREALLOCATIONWEIGHT, "100", input);
+  }
   const zero = host.prepareCommand("dotnet build X", { jobId: 1, cpus: 0, nested: false }, ctx);
   assert.strictEqual(zero.command, "dotnet build X");
   assert.strictEqual(zero.note, undefined);
