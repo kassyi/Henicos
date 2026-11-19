@@ -18,7 +18,7 @@
 //   queue-rewrite.js      which denied commands are queued instead, delegating GPU/options/split to plugins
 //   hook.js               denial wording and hook-io.js dispatch
 //   plugin-loader.js      discovers job-queue.config.json and loads plugin hook-rules.js / hook-io.js modules
-//   self-test.js          --self-test (self-test-rewrite.js: the rewrite)
+//   self-test.js          --self-test (self-test-rewrite.js: the rewrite; self-test-failures.js: broken plugins)
 // Out of reach: a command held in a variable and run later ($c = 'buildtool test'; cmd /c $c) and the contents of a
 // script file the command runs.
 // A hook that fails can stop every command in agents that treat a non-zero exit code as a denial, so --hook allows
