@@ -83,12 +83,13 @@ public class CollectionInitializerDifferentialTests
             .In("xs", DiffValues.Int32(rng, rows))
             .In("cells", DiffValues.Int32(rng, rows).Select(static v => v & 0xFFFF).ToArray())
             .Out<int>("r", rows, CollectionInitializerDifferentialKernels.AcrossBarrierColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => CollectionInitializerDifferentialKernels.LaunchCollectionInitializerAcrossBarrierKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("cells"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        Launch = static (b, s) =>
+            CollectionInitializerDifferentialKernels.LaunchCollectionInitializerAcrossBarrierKernel(
+                b.Get<int>("xs"),
+                b.Get<int>("cells"),
+                b.Get<int>("r"),
+                gridDimX: s.GridX,
+                blockDimX: s.BlockX),
         // C# cannot run a kernel that reaches Gpu.SyncThreads()
         Reference = static (b, _) =>
         {
