@@ -2422,7 +2422,6 @@ __gsharp_id_8_x = 1;
 __gsharp_id_9_y = __gsharp_add_i32(__gsharp_id_8_x,__gsharp_id_7_w);
 }
 __gsharp_grid_sync();
-int __gsharp_id_10_k = 5;
 __gsharp_grid_sync();
 if(!__gsharp_sg_done_0)
 {
@@ -2431,7 +2430,7 @@ __gsharp_id_11_z = (__gsharp_array_at(__gsharp_id_3_counter, __gsharp_id_5_tid, 
 __gsharp_grid_sync();
 if(!__gsharp_sg_done_0)
 {
-__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_6_v,__gsharp_id_9_y),__gsharp_id_10_k);
+__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_6_v,__gsharp_id_9_y),5);
 }
 __gsharp_grid_sync();
 if(!__gsharp_sg_done_0)

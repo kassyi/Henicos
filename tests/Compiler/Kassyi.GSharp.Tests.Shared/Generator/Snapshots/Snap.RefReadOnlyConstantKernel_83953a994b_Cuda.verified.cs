@@ -97,9 +97,8 @@ public static partial class AotContexts
 }
 public const string ConstantLocalToRefReadOnlyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ConstantLocalToRefReadOnlyKernel(GSharpArray<int> __gsharp_id_0_r, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_localConstant = 3;
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_2_tid, 842636013u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(&__gsharp_id_1_localConstant);
+__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_2_tid, 842636013u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(__gsharp_temp_address<int>(3));
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ConstantLocalToRefReadOnlyKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ConstantLocalToRefReadOnlyKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);

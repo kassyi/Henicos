@@ -233,7 +233,6 @@ __gsharp_ctx->__gsharp_id_3_largeStructVal=__gsharp_in___gsharp_id_3_largeStruct
 __gsharp_ctx->__gsharp_id_4_particleCount=__gsharp_in___gsharp_id_4_particleCount;
 __gsharp_ctx->__gsharp_id_5_unrollFactor=__gsharp_in___gsharp_id_5_unrollFactor;
 }
-float __gsharp_id_6_Gravity = 9.8f;
 switch(__gsharp_state)
 {
 case 0:
@@ -275,7 +274,7 @@ if(__gsharp_ctx->__gsharp_id_29_i==1)
 {
 continue;
 }
-__gsharp_ctx->__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_28_mag,__gsharp_ctx->__gsharp_id_23_p.__gsharp_mb_X*__gsharp_ctx->__gsharp_id_29_i+__gsharp_id_6_Gravity);
+__gsharp_ctx->__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_ctx->__gsharp_id_28_mag,__gsharp_ctx->__gsharp_id_23_p.__gsharp_mb_X*__gsharp_ctx->__gsharp_id_29_i+9.8f);
 }
 if(!__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(__gsharp_ctx->__gsharp_id_28_mag))
 {

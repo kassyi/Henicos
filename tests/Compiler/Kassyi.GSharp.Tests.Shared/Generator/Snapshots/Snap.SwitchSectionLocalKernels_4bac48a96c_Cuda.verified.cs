@@ -632,8 +632,6 @@ finally
 #pragma warning restore CS8500
 public const string SectionConstantKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__SectionConstantKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-{
-const int __gsharp_id_2_Offset = 40;
 switch(__gsharp_id_1_flag)
 {
 case 0:
@@ -647,7 +645,6 @@ __gsharp_switch_1_state_default:
 {
 __gsharp_array_at(__gsharp_id_0_output, 0, 477648807u)=42;
 break;
-}
 }
 }
 }
@@ -778,14 +775,12 @@ finally
 #pragma warning restore CS8500
 public const string ByteConstantKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ByteConstantKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-{
-const unsigned char __gsharp_id_2_Max = 255;
 switch(__gsharp_id_1_flag)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_3_x = __gsharp_id_2_Max;
+auto __gsharp_id_3_x = (unsigned char)255;
 __gsharp_id_3_x=(unsigned char)__gsharp_add_i32(__gsharp_id_3_x,1);
 __gsharp_array_at(__gsharp_id_0_output, 0, 132179847u)=__gsharp_id_3_x;
 break;
@@ -793,11 +788,10 @@ break;
 default:
 __gsharp_switch_1_state_default:
 {
-auto __gsharp_id_4_y = __gsharp_id_2_Max;
+auto __gsharp_id_4_y = (unsigned char)255;
 __gsharp_id_4_y=(unsigned char)__gsharp_add_i32(__gsharp_id_4_y,1);
-__gsharp_array_at(__gsharp_id_0_output, 0, 1531769391u)=__gsharp_id_4_y+__gsharp_id_2_Max;
+__gsharp_array_at(__gsharp_id_0_output, 0, 1531769391u)=__gsharp_id_4_y+255;
 break;
-}
 }
 }
 }
@@ -928,22 +922,19 @@ finally
 #pragma warning restore CS8500
 public const string ConstantInArgumentKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ConstantInArgumentKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-{
-const int __gsharp_id_2_K = 40;
 switch(__gsharp_id_1_flag)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 401834789u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ReadIn(&__gsharp_id_2_K);
+__gsharp_array_at(__gsharp_id_0_output, 0, 401834789u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ReadIn(__gsharp_temp_address<int>(40));
 break;
 }
 default:
 __gsharp_switch_1_state_default:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 1850967737u)=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ReadIn(&__gsharp_id_2_K),1);
+__gsharp_array_at(__gsharp_id_0_output, 0, 1850967737u)=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSectionLocalKernels__ReadIn(__gsharp_temp_address<int>(40)),1);
 break;
-}
 }
 }
 }
