@@ -189,7 +189,7 @@ public sealed class MemoryWatchdog(
     /// Gets the tests that raised the peak the most, largest first (at most 20).
     /// </summary>
     /// <remarks>
-    /// The growth is the rise of the high-water mark between the start and the end of a test. Under parallel execution
+    /// The growth is the rise of the peak (on Linux the largest sample) between the start and the end of a test. Under parallel execution
     /// it includes what the tests running beside it allocated, so it names candidates rather than proving a cause.
     /// </remarks>
     public IReadOnlyList<PeakGrowth> TopGrowth
@@ -392,7 +392,7 @@ public sealed class MemoryWatchdog(
 }
 
 /// <summary>
-/// The rise of the memory high-water mark during one test.
+/// The rise of the memory peak during one test.
 /// </summary>
 /// <param name="TestName">The test name.</param>
 /// <param name="GrowthBytes">The rise of the peak between the start and the end of the test, in bytes.</param>

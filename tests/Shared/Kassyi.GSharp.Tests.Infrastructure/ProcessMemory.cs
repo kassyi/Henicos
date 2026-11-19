@@ -18,7 +18,8 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 ///   <c>/proc/self/status</c>. <c>RssShmem</c> holds the code the JIT writes, which the runtime maps twice through
 ///   shared memory (W^X); with <c>DOTNET_EnableWriteXorExecute=0</c> the same pages move to <c>RssAnon</c>. Mapped
 ///   files (the runtime and the loaded assemblies, about 60 MB) are not counted: no test controls them and they differ
-///   between machines, and Windows does not count them either.</description></item>
+///   between machines, and Windows does not count them either. Private pages swapped out (<c>VmSwap</c>) are not
+///   counted, so under memory pressure the reading can be low.</description></item>
 ///   <item><description>Other systems: <see cref="Process.PeakWorkingSet64"/>.</description></item>
 /// </list>
 /// The Windows counter is a peak kept by the kernel, so a peak reached between two samples is still seen by the next

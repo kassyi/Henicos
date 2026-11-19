@@ -56,8 +56,8 @@ system.
   select a budget.
 - **Breach**: every test that was running when the peak passed the budget fails with `MemoryBudgetExceededException`.
   The message gives the peak, the budget and its profile, the running tests (one of them caused the growth), the five
-  tests that raised the peak most (growth of the high-water mark between their start and end; approximate while tests
-  run in parallel) and the memory snapshot taken at the breach.
+  tests that raised the peak most (growth of the peak, on Linux the largest sample, between their start and end;
+  approximate while tests run in parallel) and the memory snapshot taken at the breach.
 - **Snapshot at the breach**: `dotnet-gcdump collect` of the test host plus its `dotnet-gcdump report` (types by size),
   run one-shot through `dotnet dnx` at a pinned version, into `tmp/test-memory/<assembly>-<time>-<pid>/`.
   `GSHARP_TEST_MEMORY_DUMP=full` writes a full dump (`dotnet-dump collect --type Full`) instead; `none` writes nothing.
