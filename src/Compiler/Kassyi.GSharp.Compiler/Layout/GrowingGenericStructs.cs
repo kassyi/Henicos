@@ -76,9 +76,12 @@ internal static class GrowingGenericStructs
             _ => false
         };
 
-    // The CS0523 rule on constructed field types: a field of definition, or of a struct held by value below it (as
-    // constructed there: B<A<A<T>>>.V is A<A<T>>, a Nullable's value included), whose definition is definition
-    private static bool HoldsItselfByValue(INamedTypeSymbol definition)
+    /// <summary>
+    /// The CS0523 rule on constructed field types: whether a field of <paramref name="definition"/>, or of a struct
+    /// held by value below it (as constructed there: <c>B&lt;A&lt;A&lt;T&gt;&gt;&gt;.V</c> is
+    /// <c>A&lt;A&lt;T&gt;&gt;</c>, a Nullable's value included), is a construction of <paramref name="definition"/>.
+    /// </summary>
+    public static bool HoldsItselfByValue(INamedTypeSymbol definition)
     {
         var searched = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { definition };
         var pending = new Queue<INamedTypeSymbol>();

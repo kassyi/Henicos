@@ -4773,6 +4773,12 @@
 - {file: "TestCases/Layout/CyclicStructs/ArrayTree3.cu.cs", method: "ArrayTree3.ArrayTreeKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/ArrayTree4.cu.cs", method: "ArrayTree4.ArrayTreeKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/BranchingCyclicStruct.cu.cs", method: "BranchingCyclicStruct.BranchingKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.CycKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.GenericKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.GenericNullableKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.LoopKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.NullableKernel", status: "Compared", count: 1}
+- {file: "TestCases/Layout/CyclicStructs/CycleReasons.cu.cs", method: "CycleReasons.RingKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/CyclicExplicitUnion.cu.cs", method: "CyclicExplicitUnion.UnionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/CyclicStructDeviceFunction.cu.cs", method: "CyclicStructDeviceFunction.DeviceFunctionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Layout/CyclicStructs/CyclicStructDeviceFunction.cu.cs", method: "CyclicStructDeviceFunction.Read", status: "NoStateMachine", count: 1}

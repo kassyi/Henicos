@@ -89,8 +89,7 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
     // The declaration of the struct, of the value of a Nullable<T> (the BCL declares Nullable<T> itself), or else of
     // the kernel class, so that the diagnostic has a place in the user's source
     private static Location GetDeclarationLocation(INamedTypeSymbol duplicate, INamedTypeSymbol kernelClass) =>
-        FirstSourceLocation(duplicate) ??
-        (duplicate.UnwrapNullable() is INamedTypeSymbol value ? FirstSourceLocation(value) : null) ??
+        FirstSourceLocation(duplicate.UnwrapNullable()) ??
         FirstSourceLocation(kernelClass) ??
         Location.None;
 

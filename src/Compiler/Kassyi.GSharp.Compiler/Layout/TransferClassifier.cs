@@ -35,11 +35,14 @@ public static class TransferClassifier
         if (step.IsCycle)
         {
             holdsItself = true;
-            // [WHY] Named by its definition, as CS0523 names it: the construction met here can be another one of
-            // the definition than the one on the path (A<long, Wrap<int>> below A<int, long> of
-            // A<T, U> { A<U, Wrap<T>> F; })
-            var definition = TypeLayoutCalculator.FormatTypeName(structType.OriginalDefinition);
-            return $"'{definition}' holds itself by value (CS0523)";
+            // [WHY] A definition that holds itself by value is named by its definition, as CS0523 names it: the
+            // construction met here can be another one than the one on the path (A<long, Wrap<int>> below
+            // A<int, long> of A<T, U> { A<U, Wrap<T>> F; }). A wrapper on the cycle that does not hold itself
+            // (Box<Loop> of Box<T> { T V; } around Loop { Box<Loop> B; }) is named by the construction, which does
+            var holder = GrowingGenericStructs.HoldsItselfByValue(structType.OriginalDefinition)
+                ? structType.OriginalDefinition
+                : structType;
+            return $"'{TypeLayoutCalculator.FormatTypeName(holder)}' holds itself by value (CS0523)";
         }
 
         var layout = TypeLayoutCalculator.GetStructLayout(structType, dialect, step.Path);

@@ -187,6 +187,38 @@ public class CyclicStructLayoutTests
             StringComparison.Ordinal);
     }
 
+    // The GSH0080 reason names what holds itself by value: a definition that does (as CS0523 names it), or else the
+    // construction met again, as Box<Loop> around Loop { Box<Loop> B; } of Box<T> { T V; }, which holds only its
+    // type argument
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Run_CyclesOfSeveralShapesAsArrays_NameWhatHoldsItselfInTheReason(string dialect)
+    {
+        const string Reasons = "Kassyi.GSharp.Tests.TestCases.Layout.CyclicStructs.CycleReasons.";
+        var (_, reported) = await RunAsync(CyclicStructs + "CycleReasons.cu.cs", dialect);
+        var converted = reported.Where(static d => d.Id == "GSH0080").ToList();
+        string[] holders =
+        [
+            Reasons + "Cyc", Reasons + "N", Reasons + "S<T>", Reasons + "NG<T>", Reasons + "X<T>", Reasons + "Y<T>",
+            Reasons + "X<T>", Reasons + "Loop", Reasons + "Box<" + Reasons + "Loop>"
+        ];
+
+        Assert.Equal(
+            [
+                (63, 34, 63, 39), (66, 39, 66, 42), (69, 38, 69, 46), (72, 46, 72, 55), (75, 35, 75, 43),
+                (75, 51, 75, 59), (75, 68, 75, 71), (79, 35, 79, 41), (79, 49, 79, 60)
+            ],
+            converted.Select(static d => (d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)));
+        Assert.Equal(holders.Length, converted.Count);
+        for (var i = 0; i < holders.Length; i++)
+        {
+            Assert.EndsWith("'" + holders[i] + "' holds itself by value (CS0523)).", converted[i].Message,
+                StringComparison.Ordinal);
+        }
+    }
+
     // The shadows of Nullable<A<long, Wrap<int>>> and of the next Nullable construction share one AotContexts name;
     // GSH0058 points at the declaration of A, since Nullable<T> has none in the user's source
     [Theory]
