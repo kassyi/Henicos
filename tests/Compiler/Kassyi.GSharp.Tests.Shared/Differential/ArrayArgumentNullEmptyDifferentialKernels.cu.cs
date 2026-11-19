@@ -216,6 +216,19 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
         }
     }
 
+    // A barrier in the body lowers the foreach into an indexed loop, whose source the CPU paths keep in the frame of
+    // the state machine; a null array throws at the loop entry as in the plain loop
+    [GpuKernel]
+    public static void NullableArrayForEachBarrierKernel(int[]? a, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in a)
+        {
+            Gpu.SyncThreads();
+            o[0] += v + 1;
+        }
+    }
+
     [GpuDeviceFunction]
     public static int NonNullableLength(int[] x) => x.Length;
 

@@ -453,6 +453,7 @@
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableSegmentKernel", status: "Compared", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ReadOnlyMemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.ReadOnlySpanKernel", status: "OpaqueStatement", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SegmentForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SegmentKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SpanKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.SpanLike.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.SpanSum", status: "NoStateMachine", count: 1}
@@ -461,6 +462,7 @@
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NonNullableArrayKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NonNullableLength", status: "NoStateMachine", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayAfterBarrierKernel", status: "OpaqueStatement", count: 1}
+- {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayForEachBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableArrayKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableLength", status: "NoStateMachine", count: 1}
 - {file: "Differential/ArrayArgumentNullEmptyDifferentialKernels.cu.cs", method: "ArrayArgumentNullEmptyDifferentialKernels.NullableStackLinqSum", status: "NoStateMachine", count: 1}

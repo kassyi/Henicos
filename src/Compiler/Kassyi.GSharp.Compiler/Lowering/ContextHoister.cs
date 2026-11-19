@@ -340,6 +340,8 @@ public class ContextHoister(
                 .WithAdditionalAnnotations(spilledTypeAnnotations)
         ).WithAdditionalAnnotations(spanAnnotations)
          .WithAdditionalAnnotations(spilledTypeAnnotations)
-         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind));
+         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
+         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.SegmentCheckAnnotationKind));
     }
 }

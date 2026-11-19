@@ -70,6 +70,27 @@ public static partial class ArrayArgumentNullEmptyDifferentialKernels
             case ArrayArgumentRead.Length:
                 o[0] = g.Count;
                 break;
+            case ArrayArgumentRead.ForEach:
+                o[0] = 100;
+                foreach (var v in g)
+                {
+                    o[0] += v + 1;
+                }
+
+                break;
+        }
+    }
+
+    // A barrier in the body lowers the foreach into an indexed loop over the segment, which the CPU paths run in their
+    // state machine; a default segment throws at the loop entry as in the plain loop
+    [GpuKernel]
+    public static void SegmentForEachBarrierKernel(ArraySegment<int> g, int[] o)
+    {
+        o[0] = 100;
+        foreach (var v in g)
+        {
+            Gpu.SyncThreads();
+            o[0] += v + 1;
         }
     }
 

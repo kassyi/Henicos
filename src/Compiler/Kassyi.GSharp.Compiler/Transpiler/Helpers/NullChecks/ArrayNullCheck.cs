@@ -229,31 +229,82 @@ internal static class ArrayNullCheck
     }
 
     /// <summary>
-    /// Writes <paramref name="expression"/> through the check when lowering marked it
-    /// (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>, the source of a lowered <c>foreach</c>), with the
-    /// place the annotation carries.
+    /// Writes <paramref name="expression"/> through the check when lowering marked it, the source of a lowered
+    /// <c>foreach</c>: the null check of an array (<see cref="LoweringAnnotations.ArrayNullCheckAnnotationKind"/>) or
+    /// the check of a default segment (<see cref="LoweringAnnotations.SegmentCheckAnnotationKind"/>), with the place
+    /// the annotation carries.
     /// </summary>
     /// <returns><see langword="false"/>, writing nothing, when the expression carries no such annotation.</returns>
-    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context)
+    public static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, ref TranspileContext context) =>
+        TryAppendAnnotatedCheck(expression, LoweringAnnotations.ArrayNullCheckAnnotationKind, ref context) ||
+        TryAppendAnnotatedCheck(expression, LoweringAnnotations.SegmentCheckAnnotationKind, ref context);
+
+    private static bool TryAppendAnnotatedCheck(ExpressionSyntax expression, string kind,
+        ref TranspileContext context)
     {
-        if (!expression.HasAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        if (!expression.HasAnnotations(kind))
         {
             return false;
         }
 
-        foreach (var annotation in expression.GetAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind))
+        foreach (var annotation in expression.GetAnnotations(kind))
         {
             if (annotation.Data is { } place)
             {
                 // The expression itself, without the annotation that brought it here
-                var receiver = expression.WithoutAnnotations(LoweringAnnotations.ArrayNullCheckAnnotationKind);
-                AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                var receiver = expression.WithoutAnnotations(kind);
+                if (kind == LoweringAnnotations.SegmentCheckAnnotationKind)
+                {
+                    AppendSegmentCheck(receiver, PlanSegmentSite(receiver, place, ref context), ref context);
+                }
+                else
+                {
+                    AppendCheck(receiver, PlanSite(receiver, place, ref context), ref context);
+                }
+
                 return true;
             }
         }
 
         return false;
     }
+
+    /// <summary>The text of the error of a default <c>ArraySegment&lt;T&gt;</c>, which .NET words this way.</summary>
+    public const string SegmentSiteMessage = "The underlying array is null.";
+
+    // The trap kind of the check of a default segment
+    private const string SegmentTrapKind = "SegmentNull";
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is <c>ArraySegment&lt;T&gt;</c>, whose default value has no array.
+    /// </summary>
+    public static bool IsArraySegment(ITypeSymbol? type) =>
+        type is INamedTypeSymbol { IsGenericType: true, Name: "ArraySegment" } named &&
+        named.ContainingNamespace.IsSystemNamespace();
+
+    /// <summary>
+    /// Writes the source <paramref name="receiver"/> of a <c>foreach</c>: an <c>ArraySegment&lt;T&gt;</c> through
+    /// <c>__gsharp_segment_ref(&lt;receiver&gt;, &lt;site&gt;)</c>, as C# enters the loop over a default one with
+    /// <see cref="InvalidOperationException"/>; any other source as <see cref="AppendReceiver"/> writes it.
+    /// </summary>
+    public static void AppendForEachSource(ExpressionSyntax receiver, ref TranspileContext context)
+    {
+        if (!IsArraySegment(context.Query.SemanticModel.GetTypeSymbol(receiver)))
+        {
+            AppendReceiver(receiver, ref context);
+            return;
+        }
+
+        AppendSegmentCheck(receiver, PlanSegmentSite(receiver, null, ref context), ref context);
+    }
+
+    private static NullCheckSite PlanSegmentSite(ExpressionSyntax receiver, string? place,
+        ref TranspileContext context) =>
+        PlanSite(receiver, place, SegmentSiteMessage, SegmentTrapKind, ref context);
+
+    private static void AppendSegmentCheck(ExpressionSyntax receiver, NullCheckSite site,
+        ref TranspileContext context) =>
+        AppendHelperCall(GSharpInternalNames.Prelude.SegmentRef, receiver, site, ref context);
 
     /// <summary>
     /// The check of the array <paramref name="source"/> that a StackLinq query starts from, which throws

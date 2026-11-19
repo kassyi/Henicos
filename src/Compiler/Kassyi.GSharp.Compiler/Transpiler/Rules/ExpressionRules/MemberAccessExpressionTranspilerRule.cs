@@ -451,7 +451,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             );
         }
 
-        if (name.Name == "Length" &&
+        if (name.Name is "Length" or "Count" &&
             node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
         {
             return MemberNamePlan.ForEachArrayLength(name);

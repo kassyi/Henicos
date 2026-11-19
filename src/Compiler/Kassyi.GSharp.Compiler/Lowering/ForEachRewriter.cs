@@ -19,7 +19,14 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         var expr = ((ExpressionSyntax)Visit(node.Expression)).WithoutTrivia();
         var body = (StatementSyntax)Visit(node.Statement);
 
-        return LowerArrayForEach(node, expr, body, id, GetNullCheckPlace(node.Expression), NeedsElementCast(node));
+        return LowerArrayForEach(
+            node,
+            expr,
+            body,
+            id,
+            GetNullCheckPlace(node.Expression),
+            NeedsElementCast(node),
+            IsArraySegment(node.Expression));
     }
 
     private bool NeedsElementCast(ForEachStatementSyntax node) =>
@@ -27,18 +34,22 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         semanticModel.GetTypeSymbol(node.Expression).TryGetArrayLikeElementType(out var elementType) &&
         ForEachElementConversion.GetTarget(node, elementType, semanticModel) != null;
 
-    // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706). The source is
-    // checked once, where the lowered local is initialized; the decision and the place of the source expression travel
-    // in an ArrayNullCheckAnnotationKind annotation on the initializer, which ContextHoister keeps.
+    private bool IsArraySegment(ExpressionSyntax source) =>
+        semanticModel != null && ArrayNullCheck.IsArraySegment(semanticModel.GetTypeSymbol(source));
+
+    // [WHY] foreach over a null array throws NullReferenceException at the loop entry in C# (#706), and foreach over a
+    // default ArraySegment<T> InvalidOperationException (#1828). The source is checked once, where the lowered local is
+    // initialized; the decision and the place of the source expression travel in an ArrayNullCheckAnnotationKind (or
+    // SegmentCheckAnnotationKind) annotation on the initializer, which ContextHoister keeps.
     private string? GetNullCheckPlace(ExpressionSyntax source) =>
-        semanticModel != null && ArrayNullCheck.NeedsCheck(source, semanticModel)
+        semanticModel != null && (ArrayNullCheck.NeedsCheck(source, semanticModel) || IsArraySegment(source))
             ? SourcePlace.Format(semanticModel, source)
             : null;
 
     // {
     //     var __gsharp_foreach_src_<id> = <expr>;
     //     for (int __gsharp_foreach_i_<id> = 0;
-    //          __gsharp_foreach_i_<id> < __gsharp_foreach_src_<id>.Length;
+    //          __gsharp_foreach_i_<id> < __gsharp_foreach_src_<id>.Length;  (.Count for an ArraySegment<T>)
     //          __gsharp_foreach_i_<id>++)
     //     {
     //         <T> <x> = __gsharp_foreach_src_<id>[__gsharp_foreach_i_<id>];
@@ -51,7 +62,8 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         StatementSyntax body,
         int id,
         string? nullCheckPlace = null,
-        bool castElement = false)
+        bool castElement = false,
+        bool isSegment = false)
     {
         var annotations = ImmutableArray.CreateRange(
             node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
@@ -59,12 +71,12 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         var srcName = $"{GSharpInternalNames.Lowering.ForEachSourcePrefix}{id}";
         var indexName = $"{GSharpInternalNames.Lowering.ForEachIndexPrefix}{id}";
 
-        var srcStatement = DeclareSource(srcName, expr, nullCheckPlace, annotations);
+        var srcStatement = DeclareSource(srcName, expr, nullCheckPlace, isSegment, annotations);
         var itemStatement = DeclareItem(node, srcName, indexName, castElement, annotations);
         var forStatement = SyntaxFactory.ForStatement(
             DeclareIndex(indexName, annotations),
             SyntaxFactory.SeparatedList<ExpressionSyntax>(),
-            IndexInRange(indexName, srcName, annotations),
+            IndexInRange(indexName, srcName, isSegment, annotations),
             SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(IncrementIndex(indexName, annotations)),
             PrependItem(itemStatement, body).WithAdditionalAnnotations(annotations)
         ).WithAdditionalAnnotations(annotations);
@@ -78,13 +90,15 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         string srcName,
         ExpressionSyntax expr,
         string? nullCheckPlace,
+        bool isSegment,
         ImmutableArray<SyntaxAnnotation> annotations)
     {
+        var kind = isSegment
+            ? LoweringAnnotations.SegmentCheckAnnotationKind
+            : LoweringAnnotations.ArrayNullCheckAnnotationKind;
         var source = nullCheckPlace == null
             ? expr
-            : expr.WithAdditionalAnnotations(
-                new SyntaxAnnotation(LoweringAnnotations.ArrayNullCheckAnnotationKind, nullCheckPlace)
-            );
+            : expr.WithAdditionalAnnotations(new SyntaxAnnotation(kind, nullCheckPlace));
         return LoweringSyntax.DeclareLocal(srcName, source).WithAdditionalAnnotations(annotations);
     }
 
@@ -106,10 +120,11 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
         ).WithAdditionalAnnotations(annotations);
     }
 
-    // __gsharp_foreach_i_<id> < __gsharp_foreach_src_<id>.Length
+    // __gsharp_foreach_i_<id> < __gsharp_foreach_src_<id>.Length (.Count for an ArraySegment<T>, which has no Length)
     private static BinaryExpressionSyntax IndexInRange(
         string indexName,
         string srcName,
+        bool isSegment,
         ImmutableArray<SyntaxAnnotation> annotations) =>
         SyntaxFactory.BinaryExpression(
             SyntaxKind.LessThanExpression,
@@ -119,7 +134,7 @@ public class ForEachRewriter(SemanticModel? semanticModel = null) : SplitPointBl
                 SyntaxFactory.IdentifierName(srcName)
                     .WithAdditionalAnnotations(
                         new SyntaxAnnotation(LoweringAnnotations.ForEachArraySourceAnnotationKind)),
-                SyntaxFactory.IdentifierName("Length")
+                SyntaxFactory.IdentifierName(isSegment ? "Count" : "Length")
             )
         ).WithAdditionalAnnotations(annotations);
 
