@@ -100,8 +100,8 @@ public class ManagedStackPoolTests
                     int local = ManagedGpuContext.ThreadIdxX;
                     if (local == 0)
                     {
-                        // The scheduler waits for this thread now: the interruption ends that wait
-                        scheduler?.Interrupt();
+                        // The interruption ends the scheduler's wait for this thread
+                        InterruptOnceBlocked(scheduler);
                     }
 
                     ManagedGpuContext.__gsharp_stack_block_barrier();
@@ -163,7 +163,7 @@ public class ManagedStackPoolTests
                             Interlocked.Increment(ref unwound);
                             if (local == 0)
                             {
-                                scheduler?.Interrupt();
+                                InterruptOnceBlocked(scheduler);
                             }
                         }
                     }));
@@ -263,7 +263,7 @@ public class ManagedStackPoolTests
             Assert.Throws<ThreadInterruptedException>(() =>
                 ManagedStackRunner.Run(1, 1, 1, 1, 1, 1, 0, "Test.InterruptTwice", _ =>
                 {
-                    scheduler?.Interrupt();
+                    InterruptOnceBlocked(scheduler);
                     Thread.Sleep(100);
                     scheduler?.Interrupt();
                 }));
@@ -419,6 +419,18 @@ public class ManagedStackPoolTests
         }
 
         return expected;
+    }
+
+    // Interrupts <scheduler> once it is blocked in its wait for the calling GPU thread.
+    // [WHY] An interruption of a thread that is not blocked stays pending until the thread next blocks, and the
+    // scheduler does not block for a thread whose answer has already come (ManagedBatonSignal.Wait). Interrupted before
+    // it blocks, it would take the interruption in its wait for a later thread, or in none
+    private static void InterruptOnceBlocked(Thread? scheduler)
+    {
+        Assert.NotNull(scheduler);
+        Assert.True(SpinWait.SpinUntil(
+            () => (scheduler.ThreadState & ThreadState.WaitSleepJoin) != 0, s_joinTimeout));
+        scheduler.Interrupt();
     }
 
     private static T RunOnNewThread<T>(Func<T> body) where T : class
