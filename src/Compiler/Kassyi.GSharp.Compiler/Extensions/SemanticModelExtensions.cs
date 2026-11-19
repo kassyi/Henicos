@@ -192,11 +192,41 @@ internal static class SemanticModelExtensions
             : null;
 
     /// <summary>
-    /// Gets the original location for the specified syntax node, or null if unmapped. The location of a node of a closed
-    /// copy of a generic declaration is that of the declaration node it came from (<see cref="GenericCopyOrigins"/>).
+    /// Gets the original location for the specified syntax node, or null if unmapped. The location of a node of a
+    /// closed copy of a generic declaration is that of the declaration node it came from
+    /// (<see cref="GenericCopyOrigins"/>).
     /// </summary>
+    /// <remarks>For reporting only, as <see cref="GetReportLocation"/>.</remarks>
     public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node) =>
         FindCompilationNode(semanticModel, node) is { } compilationNode ? GetUserLocation(compilationNode) : null;
+
+    /// <summary>
+    /// The node of a tree of <paramref name="semanticModel"/>'s compilation that <paramref name="node"/> is, or that it
+    /// or its nearest mapped ancestor was derived from by lowering; null when none is mapped.
+    /// </summary>
+    /// <remarks>
+    /// The node to ask the semantic model about (a position for <see cref="SemanticModel.LookupSymbols"/>, the member
+    /// around it). For a node of a closed copy of a generic declaration it is the node of the copy, in the derived
+    /// compilation, where <see cref="GetReportLocation"/> gives the place in the user's source, which that compilation
+    /// does not hold.
+    /// </remarks>
+    public static SyntaxNode? GetCompilationNode(this SemanticModel semanticModel, SyntaxNode node)
+    {
+        if (semanticModel.Compilation.ContainsSyntaxTree(node.SyntaxTree))
+        {
+            return node;
+        }
+
+        for (var current = node; current != null; current = current.Parent)
+        {
+            if (FindCompilationNode(semanticModel, current) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
 
     // The node of the compilation tree that <node> is or was derived from by lowering, or that its initializer value is
     // for a declarator; null when unmapped
@@ -243,24 +273,15 @@ internal static class SemanticModelExtensions
     /// declaration node it came from in the user's compilation (<see cref="GenericCopyOrigins"/>): the copy is in a
     /// derived compilation, whose trees a generator of the user's compilation cannot report in either.
     /// </para>
+    /// <para>
+    /// For reporting only: the location may be in a tree that <paramref name="semanticModel"/>'s compilation does not
+    /// hold. A semantic lookup takes the node of the compilation from <see cref="GetCompilationNode"/>.
+    /// </para>
     /// </remarks>
-    public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node)
-    {
-        if (semanticModel.Compilation.ContainsSyntaxTree(node.SyntaxTree))
-        {
-            return GetUserLocation(node);
-        }
-
-        for (var current = node; current != null; current = current.Parent)
-        {
-            if (semanticModel.GetOriginalLocation(current) is { } location)
-            {
-                return location;
-            }
-        }
-
-        return Location.None;
-    }
+    public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node) =>
+        semanticModel.GetCompilationNode(node) is { } compilationNode
+            ? GetUserLocation(compilationNode)
+            : Location.None;
 
     /// <summary>
     /// Whether the locals at <paramref name="node"/> start zeroed: <see cref="SymbolExtensions.AreLocalsZeroed"/> of the
@@ -275,15 +296,12 @@ internal static class SemanticModelExtensions
     {
         // The node in the compilation, not its place in the user's source: a closed copy is a member of the derived
         // compilation, and its own declaration carries the attributes of the generic one
-        for (var current = node; current != null; current = current.Parent)
+        if (semanticModel.GetCompilationNode(node) is { SyntaxTree: var tree } found &&
+            semanticModel.Compilation.ContainsSyntaxTree(tree))
         {
-            if (FindCompilationNode(semanticModel, current) is { SyntaxTree: var tree } found &&
-                semanticModel.Compilation.ContainsSyntaxTree(tree))
-            {
-                return GetSemanticModelForTree(semanticModel, tree)
-                    .GetEnclosingSymbol(found.SpanStart)
-                    .AreLocalsZeroed();
-            }
+            return GetSemanticModelForTree(semanticModel, tree)
+                .GetEnclosingSymbol(found.SpanStart)
+                .AreLocalsZeroed();
         }
 
         return true;

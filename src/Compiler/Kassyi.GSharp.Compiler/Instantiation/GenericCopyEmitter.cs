@@ -15,10 +15,10 @@ internal static class GenericCopyEmitter
     /// original-span annotation (<see cref="LoweringAnnotations.FormatOriginalSpanData(SyntaxNode, int, int)"/>).
     /// </summary>
     /// <remarks>
-    /// [WHY] Not the original-span annotation itself: the lowering reads a node's semantics through that annotation, and
-    /// for a node of a copy it would read the generic declaration (a type parameter, another parameter symbol) instead
-    /// of the copy. The copy is a node of the derived compilation, so the lowering annotates it as its own; only a
-    /// diagnostic goes back to the declaration (<see cref="GenericCopyOrigins"/>).
+    /// [WHY] Not the original-span annotation itself: the lowering reads a node's semantics through that annotation,
+    /// and for a node of a copy it would read the generic declaration (a type parameter, another parameter symbol)
+    /// instead of the copy. The copy is a node of the derived compilation, so the lowering annotates it as its own;
+    /// only a diagnostic goes back to the declaration (<see cref="GenericCopyOrigins"/>).
     /// </remarks>
     public const string CopyOriginAnnotationKind = "GSharpGenericCopyOrigin";
 

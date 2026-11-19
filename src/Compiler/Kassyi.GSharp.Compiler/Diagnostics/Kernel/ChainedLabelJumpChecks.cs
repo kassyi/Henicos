@@ -98,8 +98,10 @@ internal static class ChainedLabelJumpChecks
         {
             var location = semanticModel.GetReportLocation(jump.Goto);
             var crossesBarrier = false;
-            if (location.SourceTree is { } tree &&
-                tree.GetRoot().FindNode(location.SourceSpan).FirstAncestorOrSelf<GotoStatementSyntax>() is { } sourceGoto)
+            // The goto of the compilation, beside the barriers and labels of <method>: for a closed copy of a generic
+            // declaration the report location is in the user's tree, not the copy's
+            if (semanticModel.GetCompilationNode(jump.Goto)?.FirstAncestorOrSelf<GotoStatementSyntax>() is
+                { } sourceGoto)
             {
                 if (barriers is null || labels is null)
                 {

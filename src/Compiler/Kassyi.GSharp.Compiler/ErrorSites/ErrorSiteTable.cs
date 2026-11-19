@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Instantiation;
+
 namespace Kassyi.GSharp.Compiler.ErrorSites;
 
 /// <summary>
@@ -123,6 +125,8 @@ internal sealed class ErrorSiteTable
     // [WHY] A member function of a struct (such as Dispose of a using or a constructor) is emitted once per kernel that
     // uses it into one guarded definition of the module, so its site must be the same entry for every kernel: named
     // after the kernel, two kernels would give one site ID two entries (GSH0103).
+    // A location outside the compilation (the place in the user's source of a node of a closed copy of a generic
+    // declaration, which is in a derived compilation) has no member here: the node overload finds it.
     public static string? GetSourceMemberName(Location location, Compilation compilation)
     {
         if (location.SourceTree is not { } tree || !compilation.ContainsSyntaxTree(tree))
@@ -130,10 +134,30 @@ internal sealed class ErrorSiteTable
             return null;
         }
 
-        var symbol = compilation.GetCachedSemanticModel(tree).GetEnclosingSymbol(location.SourceSpan.Start)
-            .GetDeclaringMember();
-        return symbol is IMethodSymbol method ? method.Name : null;
+        return MemberName(compilation.GetCachedSemanticModel(tree), location.SourceSpan.Start);
     }
+
+    /// <summary>
+    /// Resolves the enclosing source method name for <paramref name="node"/>, also a node of a lowered tree, from the
+    /// node of <paramref name="semanticModel"/>'s compilation it came from
+    /// (<see cref="SemanticModelExtensions.GetCompilationNode"/>). The closed copy of a generic declaration is named as
+    /// the declaration, as the user wrote it.
+    /// </summary>
+    public static string? GetSourceMemberName(SyntaxNode node, SemanticModel semanticModel)
+    {
+        if (semanticModel.GetCompilationNode(node) is not { } found)
+        {
+            return null;
+        }
+
+        return MemberName(semanticModel.Compilation.GetCachedSemanticModel(found.SyntaxTree), found.SpanStart);
+    }
+
+    // The member around <position>, unwrapping anonymous and local functions; a closed copy by its generic declaration
+    private static string? MemberName(SemanticModel model, int position) =>
+        model.GetEnclosingSymbol(position).GetDeclaringMember() is IMethodSymbol method
+            ? GenericInstanceTable.TryGet(method, out var instance) ? instance.Definition.Name : method.Name
+            : null;
 
     /// <summary>
     /// Creates an <see cref="ErrorSiteEntry"/> from a syntax node and semantic model, at the location
@@ -148,7 +172,7 @@ internal sealed class ErrorSiteTable
     {
         var location = semanticModel?.GetReportLocation(node) ?? Location.None;
         var sourceMemberName = semanticModel is not null
-            ? GetSourceMemberName(location, semanticModel.Compilation) ?? memberName
+            ? GetSourceMemberName(node, semanticModel) ?? memberName
             : memberName;
         return CreateSite(location, sourceMemberName, defaultMessage, trapKind);
     }
