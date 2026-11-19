@@ -638,3 +638,47 @@ NativeStack:
     Fp: __gsharp_stack_fp
     Stacks: __gsharp_stack_stacks
     Block: __gsharp_stack
+
+StackWarp:
+  Summary: >-
+    Warp collectives on the CPU stack models: each GPU thread keeps the visit counts of the collectives of its kernel in
+    one array on its own stack, and every frame finds its counts at an offset fixed at compile time (WarpFrameLayout).
+  Names:
+    # No entry is marked with Prelude or Managed until a runtime declares it: the build checks every marked name.
+    # The hidden parameter of a function that reaches a collective: the offset of its frame in the counts
+    Frame: __gsharp_warp_frame
+    # The counts of a kernel, a local array of its stack form
+    Visits: __gsharp_stack_warp_visits
+    Begin: __gsharp_stack_warp_begin
+    # Publish, leave the stack for the scheduler, read: one collective
+    Meet: __gsharp_stack_warp_meet
+    Yield: __gsharp_stack_yield
+    Self: __gsharp_stack_warp_self
+    FrameAt: __gsharp_stack_warp_frame_at
+    ThreadType: __gsharp_stack_warp_thread
+    BlockType: __gsharp_stack_warp_block
+    FrameType: __gsharp_stack_warp_frame
+    # One function per collective (WarpShuffleShape.StackFunction): the frame, the site and the place come first, then
+    # the arguments of the C# call
+    ShuffleSync: __gsharp_stack_warp_shuffle_sync
+    ShuffleUpSync: __gsharp_stack_warp_shuffle_up_sync
+    ShuffleDownSync: __gsharp_stack_warp_shuffle_down_sync
+    ShuffleXorSync: __gsharp_stack_warp_shuffle_xor_sync
+    BallotSync: __gsharp_stack_warp_ballot_sync
+    AllSync: __gsharp_stack_warp_all_sync
+    AnySync: __gsharp_stack_warp_any_sync
+    ReduceAddSync: __gsharp_stack_warp_reduce_add_sync
+    ReduceMinSync: __gsharp_stack_warp_reduce_min_sync
+    ReduceMaxSync: __gsharp_stack_warp_reduce_max_sync
+    ReduceAndSync: __gsharp_stack_warp_reduce_and_sync
+    ReduceOrSync: __gsharp_stack_warp_reduce_or_sync
+    ReduceXorSync: __gsharp_stack_warp_reduce_xor_sync
+    MatchAnySync: __gsharp_stack_warp_match_any_sync
+    MatchAllSync: __gsharp_stack_warp_match_all_sync
+    SyncWarp: __gsharp_stack_warp_syncwarp
+    ActiveMask: __gsharp_stack_warp_active_mask
+    # The reconvergence regions of a function that reaches Warp.ActiveMask(): enter and leave a thread-dependent branch,
+    # and arrive where it ends, wait for the lanes that entered it, and pass
+    RegionEnter: __gsharp_stack_warp_region_enter
+    RegionLeave: __gsharp_stack_warp_region_leave
+    Reconverge: __gsharp_stack_warp_reconverge
