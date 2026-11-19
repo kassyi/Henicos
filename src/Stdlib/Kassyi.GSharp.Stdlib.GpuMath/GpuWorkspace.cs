@@ -69,6 +69,7 @@ public class GpuWorkspace : IGpuResourceScope
     internal int DeviceOrdinal { get; }
 
     private int _disposed;
+    private int _inverseSqrtDoublingRuns;
     private readonly List<IDisposable> _trackedResources = [];
 
     /// <summary>
@@ -113,6 +114,37 @@ public class GpuWorkspace : IGpuResourceScope
     public int PolyAlgorithmThreshold { get; set; } = 1024;
 
     /// <summary>
+    /// Gets or sets the size of a square root, in 32-bit words, above which its inverse square root is computed by
+    /// precision doubling driven from the host instead of one cooperative mega-kernel. Default is 45 words.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The size is the word count of the root: <c>r</c> words for an operand of <c>2r</c> words of
+    /// <c>GpuBigIntDivRem.Sqrt</c>, and the significand words of a big-float square root. A root of at most this many
+    /// words runs every Newton iteration at full width in one cooperative kernel; a wider root runs a chain of ordinary
+    /// kernel launches whose working precision doubles from two words to the full width, with far fewer multiplied
+    /// words but a few hundred more launches.
+    /// </para>
+    /// <para>
+    /// The result is exactly the same either way; only the time differs. The size at which the two take the same time
+    /// depends on the GPU (its number of SMs and its launch latency), so measure it on yours and set it here. On the
+    /// GPU the default was measured on, the mega-kernel is the faster while its transforms fit 512 points, which holds
+    /// up to 45 root words. 0 sends every root to the precision doubling, <see cref="int.MaxValue"/> every root to the
+    /// mega-kernel.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
+    public int SqrtPrecisionDoublingThresholdWords
+    {
+        get;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            field = value;
+        }
+    } = 45;
+
+    /// <summary>
     /// Gets the tuning parameters of the big-float transcendental functions (<c>Exp</c>, <c>Log</c>, <c>Pow</c>) run on
     /// this workspace, on the GPU and in CPU fallback mode alike.
     /// </summary>
@@ -138,6 +170,15 @@ public class GpuWorkspace : IGpuResourceScope
     {
         get;
     } = new();
+
+    /// <summary>
+    /// Gets the number of inverse square roots this workspace computed by precision doubling, which the tests read to
+    /// see which path ran.
+    /// </summary>
+    internal int InverseSqrtDoublingRuns => Volatile.Read(ref _inverseSqrtDoublingRuns);
+
+    /// <summary>Counts an inverse square root computed by precision doubling.</summary>
+    internal void CountInverseSqrtDoubling() => Interlocked.Increment(ref _inverseSqrtDoublingRuns);
 
     /// <summary>
     /// Gets the device copies of the constants that the big-float transcendental functions share (ln 2), uploaded on

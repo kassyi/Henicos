@@ -19,4 +19,12 @@ internal sealed class StatePlan(
     /// <summary>Whether <paramref name="labeled"/> starts a state.</summary>
     public bool StartsState(LabeledStatementSyntax labeled) =>
         stateLabels.Contains(LoweringIdentity.ForDeclaration(labeled, model));
+
+    /// <summary>
+    /// The gotos that reach an inner label of chained labels from another state, which the state machine cannot jump
+    /// (GSH0121, or GSH0040 across a barrier): the analyzer and the generator report them, and the managed output of
+    /// the method is not written.
+    /// </summary>
+    public ImmutableArray<ChainedLabelGoto> GotosToChainedLabelsAcrossStates { get; init; } =
+        ImmutableArray<ChainedLabelGoto>.Empty;
 }

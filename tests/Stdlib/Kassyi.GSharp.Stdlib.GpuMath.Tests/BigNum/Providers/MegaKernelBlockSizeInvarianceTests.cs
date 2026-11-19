@@ -43,7 +43,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(2^B / sqrt(a)) satisfies a * x^2 <= 2^(2B) < a * (x + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:77
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:83
         //         `ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);` -> removed
         // input: (16, 4)
         var cpuValue = FromWords(cpuWords);
@@ -113,7 +113,7 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
 
         // Algebraic defining inequality: floor(sqrt(a)) satisfies r^2 <= a < (r + 1)^2.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:225
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:243
         //         `(actualBits + 63) / 64` -> `actualBits / 64`
         // input: 33
         var cpuRoot = FromWords(cpuWords);
@@ -125,7 +125,11 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
             foreach (var blockSize in CandidateBlockSizes)
             {
                 CooperativeMegaKernelLauncher.CandidateBlockSizesOverride = [blockSize];
-                using var gpuWorkspace = new GpuWorkspace(numWords * 6, GpuExecutionEngine.GSharpAot);
+                // Every root of this test goes to the mega-kernel whose block size it checks, at any default threshold
+                using var gpuWorkspace = new GpuWorkspace(numWords * 6, GpuExecutionEngine.GSharpAot)
+                {
+                    SqrtPrecisionDoublingThresholdWords = int.MaxValue,
+                };
                 using var gpuOperand = new GpuBigUInt(gpuWorkspace, operandWords);
                 using var gpuResult = new GpuBigUInt(gpuWorkspace, numWords);
                 GpuBigIntDivRem.Sqrt(gpuOperand, gpuResult);

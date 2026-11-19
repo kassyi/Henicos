@@ -100,7 +100,8 @@ public static class AstLoweringPipeline
         };
         return lowered with
         {
-            SpansAcrossStates = SpanAcrossStates.Find(lowered, bodyModel, body.Parent as MethodDeclarationSyntax)
+            SpansAcrossStates = SpanAcrossStates.Find(lowered, bodyModel, body.Parent as MethodDeclarationSyntax),
+            GotosToChainedLabelsAcrossStates = statePlan.GotosToChainedLabelsAcrossStates
         };
     }
 

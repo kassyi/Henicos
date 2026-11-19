@@ -64,7 +64,9 @@ public sealed class ExpressionEvaluationOrderTests
         var lines = new List<string>();
         for (var seed = 0; seed < Trees; seed++)
         {
-            using var workspace = new GpuWorkspace(1 << 16);
+            // The buffer leases of Sqrt depend on its path: the mega-kernel at every size keeps the snapshot
+            // independent of the default threshold
+            using var workspace = new GpuWorkspace(1 << 16) { SqrtPrecisionDoublingThresholdWords = int.MaxValue };
             var trace = new Trace();
             var random = new Random(1513 + seed);
             var values = LeafValues(random, signed: false);
