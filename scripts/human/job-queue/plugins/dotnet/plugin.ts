@@ -21,6 +21,13 @@ import { limitMsbuildNodes } from "./msbuild-nodes.ts";
 
 const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 
+// IBuildEngine9.RequestCores is bounded by MSBUILDCORELIMIT, not by -m. The scheduler hands out
+// MSBUILDCORELIMIT - max(1, executing requests * weight / 100) - cores already granted, so a limit of the grant with a
+// weight of 100 keeps (requests executing + cores granted) within the grant when a task asks. The default weight of 0
+// counts one implicit core only, which lets every other node run beside the explicit cores.
+const CoreLimitVariable = "MSBUILDCORELIMIT";
+const CoreWeightVariable = "MSBUILDNODECOREALLOCATIONWEIGHT";
+
 const DotnetTestPattern = new RegExp(
   [String.raw`\bdotnet(\.exe)?"?\s+(test|vstest|stryker)\b`, String.raw`\bdotnet-stryker\b`].join("|"),
 );
@@ -80,13 +87,22 @@ const plugin = {
     };
   },
 
-  prepareCommand(command: string, grant: GrantInfo): PreparedCommand | undefined {
+  prepareCommand(command: string, grant: GrantInfo, context: ClientContext): PreparedCommand | undefined {
     if (grant.cpus <= 0) {
       return undefined;
     }
+    // A value the caller exported is kept; one set in the command itself (VAR=x dotnet ..., $env:VAR = ...) runs
+    // after this env and wins in the shell. The plugin sees the command text and the client's environment only.
+    const env: Record<string, string> = { [MsbuildArgsVariable]: `-m:${grant.cpus}` };
+    if (context.env[CoreLimitVariable] === undefined) {
+      env[CoreLimitVariable] = String(grant.cpus);
+    }
+    if (context.env[CoreWeightVariable] === undefined) {
+      env[CoreWeightVariable] = "100";
+    }
     return {
       command: limitMsbuildNodes(command, grant.cpus),
-      env: { [MsbuildArgsVariable]: `-m:${grant.cpus}` },
+      env,
       note: `${grant.cpus} MSBuild nodes`,
     };
   },

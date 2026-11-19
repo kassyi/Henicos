@@ -29,6 +29,30 @@ public class ArtifactHelperTests
 
     [Theory]
     [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("Kassyi.GSharp.Kernels_Foo.g.cpp", "Kassyi.GSharp.Kernels_Foo", "Kassyi.GSharp.Kernels_Foo")]
+    [InlineData("Kassyi.GSharp.Kernels_Foo.1.g.cpp", "Kassyi.GSharp.Kernels_Foo", "Kassyi.GSharp.Kernels_Foo.1")]
+    [InlineData("Kassyi.GSharp.Kernels_Foo.0.g.cpp", "Kassyi.GSharp.Kernels_Foo", "Kassyi.GSharp.Kernels_Foo.0")]
+    [InlineData("C:/out/A.B.C.15.g.cpp", "A.B.C", "A.B.C.15")]
+    [InlineData("kernel1.cpp", "kernel1", "kernel1")]
+    [InlineData("kernel2.cpp", "kernel2", "kernel2")]
+    [InlineData("MyMod.extra.g.cpp", "MyMod.extra", "MyMod.extra")]
+    [InlineData(".1.g.cpp", ".1", ".1")]
+    [InlineData("foo..g.cpp", "foo.", "foo.")]
+    [InlineData("foo.-1.g.cpp", "foo.-1", "foo.-1")]
+    [InlineData("foo.99999999999.g.cpp", "foo.99999999999", "foo.99999999999")]
+    public void GetNativeModuleAndUnitStem_VariousUnitPaths_GroupsOnlyTrailingNonNegativeInt(
+        string sourcePath,
+        string expectedModuleStem,
+        string expectedUnitStem)
+    {
+        var (moduleStem, unitStem) = ArtifactHelper.GetNativeModuleAndUnitStem(sourcePath);
+        Assert.Equal(expectedModuleStem, moduleStem);
+        Assert.Equal(expectedUnitStem, unitStem);
+    }
+
+    [Theory]
+    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.Boundary)]
     [InlineData(null)]
     [InlineData("")]

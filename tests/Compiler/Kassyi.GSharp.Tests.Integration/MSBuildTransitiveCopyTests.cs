@@ -147,4 +147,57 @@ public class MSBuildTransitiveCopyTests : IDisposable
         exitCode.Should().NotBe(0, $"Build should fail when task assembly is invalid or missing. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
         stdout.Should().Contain("MSB4062", $"MSBuild should report missing task assembly error. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
+
+    [Fact]
+    public async Task Build_ConsumerReferencingSplitCpuProducer_CopiesSingleModuleDllTransitively()
+    {
+        var producerDir = Path.Combine(_testRoot, "ProducerSplit");
+        var consumerDir = Path.Combine(_testRoot, "ConsumerSplit");
+        Directory.CreateDirectory(producerDir);
+        Directory.CreateDirectory(consumerDir);
+
+        var targetsPath = Path.Combine(
+            _repoRoot, "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets");
+        var taskAssemblyPath = Path.Combine(
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory,
+            "Kassyi.GSharp.Compiler.Tasks.dll");
+
+        File.WriteAllText(Path.Combine(producerDir, "ProducerSplit.csproj"), $"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <GSharpMockCompilation>true</GSharpMockCompilation>
+                <GSharpCompilerTaskAssembly>{taskAssemblyPath}</GSharpCompilerTaskAssembly>
+              </PropertyGroup>
+              <Import Project="{targetsPath}" />
+            </Project>
+            """);
+
+        var producerObjDir = Path.Combine(producerDir, "obj", "Debug", "net10.0");
+        Directory.CreateDirectory(producerObjDir);
+        File.WriteAllText(Path.Combine(producerObjDir, "SplitMod.g.hpp"), "// header");
+        File.WriteAllText(Path.Combine(producerObjDir, "SplitMod.g.cpp"), "// unit 0");
+        File.WriteAllText(Path.Combine(producerObjDir, "SplitMod.1.g.cpp"), "// unit 1");
+        File.WriteAllLines(
+            Path.Combine(producerObjDir, "Kassyi.GSharp.Kernels.artifacts"),
+            ["SplitMod.g.cpp", "SplitMod.1.g.cpp"]);
+
+        File.WriteAllText(Path.Combine(consumerDir, "ConsumerSplit.csproj"), """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+              </PropertyGroup>
+              <ItemGroup>
+                <ProjectReference Include="..\ProducerSplit\ProducerSplit.csproj" />
+              </ItemGroup>
+            </Project>
+            """);
+
+        var (exitCode, stdout, stderr) = await BuildProcessRunner.RunBuildAsync(consumerDir, "ConsumerSplit.csproj");
+        exitCode.Should().Be(0, $"ConsumerSplit build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+
+        var consumerOutputDir = Path.Combine(consumerDir, "bin", "Debug", "net10.0");
+        Directory.GetFiles(consumerOutputDir, "SplitMod_*.dll").Should().ContainSingle();
+        Directory.GetFiles(consumerOutputDir, "SplitMod.1_*.dll").Should().BeEmpty();
+    }
 }

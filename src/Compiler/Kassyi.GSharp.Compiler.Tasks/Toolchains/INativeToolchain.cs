@@ -18,18 +18,64 @@ public interface INativeToolchain
     /// <param name="architectures">The target CPU architectures (e.g., <c>x64</c>, <c>arm64</c>).</param>
     /// <param name="log">The MSBuild task logging helper.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
-    /// <returns>A <see cref="ToolchainPreparationResult"/> indicating whether compilation should proceed, skip, or fail.</returns>
+    /// <returns>
+    /// A <see cref="ToolchainPreparationResult"/> indicating whether compilation should proceed, skip, or fail.
+    /// </returns>
     ToolchainPreparationResult PrepareEnvironment(
         string[] architectures,
         TaskLoggingHelper log,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the resolved environment variables for the specified architecture, or <see langword="null"/> if no custom environment is required.
+    /// Gets the resolved environment variables for the specified architecture, or <see langword="null"/> if no
+    /// custom environment is required.
     /// </summary>
     /// <param name="architecture">The target CPU architecture (e.g., <c>x64</c>, <c>arm64</c>).</param>
     /// <returns>A dictionary of environment variables, or <see langword="null"/>.</returns>
     Dictionary<string, string>? GetEnvironmentVariables(string architecture);
+
+    /// <summary>
+    /// Gets the resolved compiler executable path and version string for the specified target architecture.
+    /// </summary>
+    /// <param name="architecture">The target CPU architecture (e.g., <c>x64</c>, <c>arm64</c>).</param>
+    /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
+    /// <returns>The <see cref="CompilerIdentity"/> used for incremental command record comparison.</returns>
+    CompilerIdentity GetCompilerIdentity(string architecture, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Builds the exact command-line arguments passed to the compiler when compiling a single C++ translation unit
+    /// into an object file.
+    /// </summary>
+    string BuildCompileObjectArguments(
+        string sourcePath,
+        string objPath,
+        string architecture,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null);
+
+    /// <summary>
+    /// Compiles a single C++ translation unit into an object file (<c>.obj</c> or <c>.o</c>) at
+    /// <paramref name="objPath"/>.
+    /// </summary>
+    bool TryCompileToObject(
+        string sourcePath,
+        string objPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None,
+        string? pdbPath = null);
+
+    /// <summary>
+    /// Links one or more compiled object files into a native shared library at <paramref name="outputPath"/>.
+    /// </summary>
+    bool TryLinkSharedLibrary(
+        IReadOnlyList<string> objPaths,
+        string outputPath,
+        string architecture,
+        TaskLoggingHelper log,
+        CancellationToken cancellationToken = default,
+        NativeSanitizers sanitizers = NativeSanitizers.None);
 
     /// <summary>
     /// Compiles a C++ source file into a native shared library at the specified output path.
@@ -39,8 +85,13 @@ public interface INativeToolchain
     /// <param name="architecture">The target CPU architecture (e.g., <c>x64</c>, <c>arm64</c>).</param>
     /// <param name="log">The MSBuild task logging helper.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
-    /// <param name="sanitizers">The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.</param>
-    /// <returns><see langword="true"/> if compilation succeeded and produced the output file; otherwise, <see langword="false"/>.</returns>
+    /// <param name="sanitizers">
+    /// The native sanitizers (<see cref="NativeSanitizers"/>) to enable for compilation.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if compilation succeeded and produced the output file; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
     bool TryCompileCppToSharedLibrary(
         string sourcePath,
         string outputPath,
