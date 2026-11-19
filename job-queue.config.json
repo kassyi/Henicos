@@ -21,7 +21,13 @@
       }
     },
     { "name": "nvidia-gpu" },
-    { "name": "agents" }
+    {
+      "name": "agents",
+      "options": {
+        "sessionEnv": ["CLAUDE_CODE_SESSION_ID", "ANTIGRAVITY_CONVERSATION_ID"],
+        "chatStatus": "scripts/human/chat-status.js"
+      }
+    }
   ],
   "pools": {
     "coresPerSlot": 3,

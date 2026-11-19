@@ -616,7 +616,13 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
         },
       },
       { name: "nvidia-gpu" },
-      { name: "agents" },
+      {
+        name: "agents",
+        options: {
+          sessionEnv: ["CLAUDE_CODE_SESSION_ID", "ANTIGRAVITY_CONVERSATION_ID"],
+          chatStatus: "scripts/human/chat-status.js",
+        },
+      },
     ]);
     assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
     assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);

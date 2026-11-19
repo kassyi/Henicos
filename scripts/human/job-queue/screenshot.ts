@@ -7,7 +7,7 @@ import * as path from "node:path";
 import type { StatusJob, StatusReply } from "./protocol.ts";
 import { displayWidth } from "./screen-line.ts";
 import { initialViewState, renderScreen, type ShortNameProvider, type ViewState } from "./view.ts";
-import { LaneWorktree, Minute, Now, PanelWorktree, job, sampleChats, sampleReply } from "./view-sample.ts";
+import { LaneWorktree, Minute, Now, PanelWorktree, job, samplePanel, sampleChats, sampleReply } from "./view-sample.ts";
 
 export const CellWidth = 8.4;
 export const LineHeight = 18;
@@ -392,7 +392,7 @@ export const Screenshots: Screenshot[] = [
   { file: "small.svg", columns: 70, rows: 13, state: {} },
   { file: "selected.svg", columns: 120, rows: 17, state: { selectedId: 812 } },
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
-  { file: "chats-hidden.svg", columns: 120, rows: 17, state: { chatsHidden: true } },
+  { file: "chats-hidden.svg", columns: 120, rows: 17, state: { panelHidden: true } },
   { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
   // just resumed: the play mark, and nothing of the pause in the header
   { file: "resumed.svg", columns: 120, rows: 17, state: { flash: { kind: "resume", until: Now + 1000 } } },
@@ -413,7 +413,7 @@ export function writeScreenshots(dir: string, plugins?: ShortNameProvider): stri
         { ...initialViewState(), ...state },
         { columns, rows, now: Now },
         true,
-        sampleChats(),
+        samplePanel(sampleChats()),
         plugins,
       );
       const target = path.join(dir, file);
