@@ -155,6 +155,17 @@ jobs:
           --no-build -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
           --blame-crash --blame-crash-dump-type mini
 
+      - name: Run CPU Native Tests With One Stack Per GPU Thread
+        if: matrix.suite == 'cpu'
+        env:
+          GSHARP_TEST_NO_CUDA: "1"
+        run: >-
+          dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj
+          -p:GSharpNativeBarrierModel=Stack -p:GSharpOutputVariant=stack
+          --filter "(Category=Differential|Category=Execution|Category=GpuExecution|Category=CpuExecution)&Category!=Stress&Category!=Benchmark"
+          -c Release --logger trx --results-directory "${{ env.TEST_RESULTS_DIR }}"
+          --blame-crash --blame-crash-dump-type mini
+
       - name: Run CPU Managed Stack Model Tests
         if: matrix.suite == 'cpu'
         env:

@@ -7,7 +7,6 @@ namespace Kassyi.GSharp.Compiler.Helpers;
 /// This is crucial for Roslyn Incremental Generators to properly cache results.
 /// </summary>
 internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable<EquatableArray<T>>, IEnumerable<T>
-    where T : IEquatable<T>
 {
     private readonly ImmutableArray<T> _array = array;
 
@@ -34,9 +33,10 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
             return false;
         }
 
+        var comparer = EqualityComparer<T>.Default;
         for (var i = 0; i < _array.Length; i++)
         {
-            if (!_array[i].Equals(other._array[i]))
+            if (!comparer.Equals(_array[i], other._array[i]))
             {
                 return false;
             }
@@ -55,9 +55,10 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
         }
 
         var hash = 17;
+        var comparer = EqualityComparer<T>.Default;
         foreach (var item in _array)
         {
-            hash = hash * 31 + (item == null ? 0 : item.GetHashCode());
+            hash = hash * 31 + (item is null ? 0 : comparer.GetHashCode(item));
         }
 
         return hash;

@@ -85,7 +85,7 @@ internal static class CudaImportPlanner
     }
 
     // Why the launcher cannot pass <parameter>, or null when it can (the table of ModuleKernelParameterTypes)
-    private static string? GetProblem(IParameterSymbol parameter, ModuleLaunchSetting launchSetting,
+    internal static string? GetProblem(IParameterSymbol parameter, ModuleLaunchSetting launchSetting,
         Compilation compilation)
     {
         var type = parameter.Type;

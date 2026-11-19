@@ -47,8 +47,9 @@ G# treats a form that neither C# nor the GPU defines like `1 / 0` in C#:
 
 - The release CUDA build keeps three checks, each one compare and one branch that normal use does not take:
   the divisor of an integer `/` and `%` (and `/=`, `%=`) that may be 0 (§6.4); the minimum value of `Math.Abs` of `int`,
-  `long`, `short` and `sbyte`; and a check placed in a branch that only an unmatched case reaches, such as the trap after
-  the last arm of a switch expression without a discard arm (removing it would leave undefined behavior in the output).
+  `long`, `short`, `sbyte` and `nint`; and a check placed in a branch that only an unmatched case reaches, such as the
+  trap after the last arm of a switch expression without a discard arm (removing it would leave undefined behavior in
+  the output).
 - A compile error is reported only when the analysis is certain. A form that the analysis can only suspect compiles and is left to the run-time checks, so correct code is never rejected.
 - A result that a CPU path happens to produce for such a form is never treated as correct. A CPU result that differs from the GPU result points to undefined behavior on the GPU first.
 - When a GPU thread fails a check through the runtime error channel (`__gsharp_trap` / `__gsharp_trap_site`), it records the `GSharpErrorCode`, the compile-time error site ID, and its 3D thread and block coordinates in the error record of its launch (the first failing thread of the launch wins), and ends there: on sm_70 and later it exits, so the kernel completes and the context stays usable. The launcher of the launch (or, for a `Ptr` launch, the next synchronization point; the post-launch stream synchronization emitted when `<GSharpCheckedBuild>true</GSharpCheckedBuild>` is enabled covers both) translates the record into the matching standard .NET exception (`IndexOutOfRangeException`, `DivideByZeroException`, `OverflowException`, `ArgumentOutOfRangeException`, `ArgumentException`, `InvalidOperationException`, `SwitchExpressionException`, `NullReferenceException`, or `NotSupportedException`) with no `InnerException`, and `Exception.Data` populated with `GSharp.ErrorCode`, `GSharp.ThreadIndex`, `GSharp.BlockIndex`, `GSharp.MemberName`, and `GSharp.SourceLocation`.
@@ -65,12 +66,15 @@ Some C# definitions cost time on the GPU: bounds checks and division-by-zero che
 - An integer `/` or `%` (and `/=`, `%=`) whose divisor may be 0 throws `DivideByZeroException` on every path: the
   native CPU build, the managed path and the CUDA build, release included (the failing CUDA thread records the error
   and exits, §6.3). A divisor whose constant or type excludes 0 has no check (`x / 7`). `Math.Abs` of the minimum
-  value of `int`, `long`, `short` and `sbyte` throws `OverflowException` on every path in the same way, release CUDA
-  included.
+  value of `int`, `long`, `short`, `sbyte` and `nint` throws `OverflowException` on every path in the same way, release
+  CUDA included.
   `MinValue / -1` and `MinValue % -1`, which C# leaves implementation-defined in an unchecked context, give the GPU
-  result, `MinValue` and `0`, on every path: the native CPU build tests for `-1`, and the managed path calls a G#
-  function for a division that may reach that case, in a kernel and in a device function alike, where the C# operator
-  would throw `OverflowException`. The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
+  result, `MinValue` and `0`, on every path: the native CPU build and the CUDA build test for `-1` before dividing,
+  and the managed path calls a G# function for a division that may reach that case, in a kernel and in a device
+  function alike, where the C# operator would throw `OverflowException`. When the compiler cannot prove that the
+  dividend is not `MinValue` or the divisor is not `-1`, that `b == -1` branch adds one comparison before the
+  division on the GPU; it sets the `MinValue / -1` result (`MinValue` and `0`) and is not an error check (not a
+  fourth check in §6.3). The C# execution (`KernelExecution.CSharp`) runs the user's C# as it is and throws
   it. The managed path throws it too in two forms that keep the C# operator (a type that holds device functions must be
   `partial`, class or struct, GSH0036: the rewritten copy of a function is written into a partial declaration of its
   types):

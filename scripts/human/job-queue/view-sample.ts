@@ -48,10 +48,22 @@ export function sampleReply(): StatusReply {
     used: 4,
     memoryCapacity: 32000,
     memoryUsed: 6000,
+    // Two shared GPU turns may run at a time; #812 holds one and nothing is exclusive, so #821 waits for the probe
+    resources: [
+      {
+        name: "gpu",
+        slots: 2,
+        shared: [812],
+        exclusive: [],
+        probe: { ok: true, value: 4121, at: Now - 3000 },
+      },
+    ],
     running: [
       job(812, {
         state: "running",
         gpu: true,
+        gpuTurn: true,
+        share: "shared",
         weight: 2,
         memoryMb: 6144,
         command: "just test-category Runtime",
@@ -66,6 +78,7 @@ export function sampleReply(): StatusReply {
       job(821, {
         gpu: true,
         gpuTurn: true,
+        share: "shared",
         ahead: 1,
         position: 2,
         startAt: Now + 4 * Minute,

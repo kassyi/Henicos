@@ -26,7 +26,16 @@ Returns the smaller of two specified numbers.
 | --- | --- |
 | [Min(float, float)](#min-float-float) | Returns the smaller of two specified numbers. |
 | [Min(double, double)](#min-double-double) | Returns the smaller of two specified numbers. |
+| [Min(sbyte, sbyte)](#min-integer) | Returns the smaller of two 8-bit signed integers. |
+| [Min(byte, byte)](#min-integer) | Returns the smaller of two 8-bit unsigned integers. |
+| [Min(short, short)](#min-integer) | Returns the smaller of two 16-bit signed integers. |
+| [Min(ushort, ushort)](#min-integer) | Returns the smaller of two 16-bit unsigned integers. |
 | [Min(int, int)](#min-int-int) | Returns the smaller of two 32-bit signed integers. |
+| [Min(uint, uint)](#min-integer) | Returns the smaller of two 32-bit unsigned integers. |
+| [Min(long, long)](#min-integer) | Returns the smaller of two 64-bit signed integers. |
+| [Min(ulong, ulong)](#min-integer) | Returns the smaller of two 64-bit unsigned integers. |
+| [Min(nint, nint)](#min-integer) | Returns the smaller of two native-sized signed integers. |
+| [Min(nuint, nuint)](#min-integer) | Returns the smaller of two native-sized unsigned integers. |
 
 ## Min(float, float)
 
@@ -100,6 +109,32 @@ The second 32-bit signed integer.
 
 <i>int</i><br>
 The smaller of `val1` and `val2`.
+
+#### Exceptions
+
+None. Does not throw exceptions.
+
+<a id="min-integer"></a>
+
+## Min(T, T) (Other Integer Types)
+
+Returns the smaller of two values for `sbyte`, `byte`, `short`, `ushort`, `uint`, `long`, `ulong`, `nint`, and `nuint`.
+
+```csharp
+public static sbyte Min(sbyte val1, sbyte val2);
+public static byte Min(byte val1, byte val2);
+public static short Min(short val1, short val2);
+public static ushort Min(ushort val1, ushort val2);
+public static uint Min(uint val1, uint val2);
+public static long Min(long val1, long val2);
+public static ulong Min(ulong val1, ulong val2);
+public static nint Min(nint val1, nint val2);
+public static nuint Min(nuint val1, nuint val2);
+```
+
+#### Returns
+
+The smaller of `val1` and `val2`, preserving the operand type (`__gsharp_min_int`).
 
 #### Exceptions
 

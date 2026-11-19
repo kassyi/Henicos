@@ -9,9 +9,9 @@ public static class SYN_155_UnsupportedBitOperationsMethod
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithUnsupportedBitOperations(uint[] data)
     {
-        // Calling an unmapped BitOperations method (e.g. BitOperations.RoundUpToPowerOf2) in kernel
-        // triggers unsupported syntax diagnostic GSH0003
-        uint result = BitOperations.RoundUpToPowerOf2(data[0]);
+        // Calling an unmapped BitOperations method (e.g. BitOperations.Crc32C) in kernel
+        // triggers unmapped method diagnostic GSH0109
+        uint result = BitOperations.Crc32C(data[0], 1u);
         data[0] = result;
     }
 }

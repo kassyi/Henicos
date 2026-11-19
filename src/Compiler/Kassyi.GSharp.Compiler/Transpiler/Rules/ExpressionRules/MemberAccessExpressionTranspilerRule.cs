@@ -110,6 +110,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
             NonNullProof.FailIfReferencedWithoutCall(node, method, ref context);
+            SuspendingCallReference.FailIfReferencedWithoutCall(node, method, ref context);
             context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
             return true;
         }
@@ -155,7 +156,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, extension, ref context);
-        if (!InvocationExpressionTranspilerRule.FailIfSuspendingExtension(node, extension, ref context))
+        if (!SuspendingCallReference.FailIfReferencedWithoutCall(node, extension, ref context))
         {
             WriteBoundExtensionLambda(node.Expression, method, extension, ref context);
         }
@@ -451,7 +452,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             );
         }
 
-        if (name.Name == "Length" &&
+        if (name.Name is "Length" or "Count" &&
             node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
         {
             return MemberNamePlan.ForEachArrayLength(name);

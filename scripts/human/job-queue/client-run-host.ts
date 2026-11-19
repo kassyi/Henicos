@@ -15,6 +15,7 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
+import type { ShareMode } from "./resources.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
 import { ProcessTable, prefix } from "./system.ts";
 
@@ -33,14 +34,31 @@ async function stopUnder(parent: ChildProcess): Promise<void> {
 }
 
 /**
+ * The arguments of gpu-lock.js for a GPU turn that runs `inner`: `--mode shared` for `mode` "shared" alone, so that
+ * gpu-lock.js takes every seat (its default, exclusive) in any other case.
+ */
+export function gpuLockArguments(options: RunOptions, mode: ShareMode, inner: string): string[] {
+  const args = [GpuLockScript];
+  if (options.timeoutMinutes > 0) {
+    args.push("--timeout-minutes", String(options.timeoutMinutes));
+  }
+  if (mode === "shared") {
+    args.push("--mode", "shared");
+  }
+  args.push("--", inner);
+  return args;
+}
+
+/**
  * --gpu, once the turn came: runs this script again for the same command under gpu-lock.js, which then registers the
  * command's slots as a GPU holder (granted at once). Resolves to its exit like CommandShell.run; `onChild` receives
- * gpu-lock.js.
+ * gpu-lock.js. `mode` "shared" takes one seat of the lock (--mode shared); anything else takes it exclusively.
  */
 function runGpuLocked(
   options: RunOptions,
   weight: number,
   turn: number,
+  mode: ShareMode,
   onChild: (child: ChildProcess) => void,
 ): Promise<ShellResult> {
   const innerArgs = [`"${process.execPath}"`, `"${EntryScript}"`, "run", "--weight", String(weight)];
@@ -56,11 +74,7 @@ function runGpuLocked(
     [CommandVariable]: options.command,
     [ShellVariable]: CommandShell.resolve(options.shell).name, // gpu-lock.js runs the inner client through cmd.exe
   };
-  const args = [GpuLockScript];
-  if (options.timeoutMinutes > 0) {
-    args.push("--timeout-minutes", String(options.timeoutMinutes));
-  }
-  args.push("--", innerArgs.join(" "));
+  const args = gpuLockArguments(options, mode, innerArgs.join(" "));
   return new Promise((resolve) => {
     // Unix: its own process group, so that a cancel stops gpu-lock.js and everything under it (Windows: taskkill /T)
     const child = spawn(process.execPath, args, { stdio: "inherit", env, detached: process.platform !== "win32" });
@@ -109,8 +123,16 @@ export interface RunHost {
   ): Promise<void>;
   /** Runs the command in the caller's shell (CommandShell.run). */
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
-  /** Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown). */
-  runUnderGpuLock(weight: number, turn: number, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
+  /**
+   * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
+   * lock for `mode` "shared", else on all of them.
+   */
+  runUnderGpuLock(
+    weight: number,
+    turn: number,
+    mode: ShareMode,
+    onChild: (child: ChildProcess) => void,
+  ): Promise<ShellResult>;
   /** Stops the command: what runs under gpu-lock.js when `underGpuLock` (Windows), else the whole tree. */
   stop(child: ChildProcess | null, underGpuLock: boolean): void;
   /** Ends the process (process.exit); a fake records the code and returns. */
@@ -146,8 +168,13 @@ export class ProcessRunHost implements RunHost {
     return CommandShell.resolve(this.options.shell).run(command, env, onChild);
   }
 
-  runUnderGpuLock(weight: number, turn: number, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
-    return runGpuLocked(this.options, weight, turn, onChild);
+  runUnderGpuLock(
+    weight: number,
+    turn: number,
+    mode: ShareMode,
+    onChild: (child: ChildProcess) => void,
+  ): Promise<ShellResult> {
+    return runGpuLocked(this.options, weight, turn, mode, onChild);
   }
 
   stop(child: ChildProcess | null, underGpuLock: boolean): void {

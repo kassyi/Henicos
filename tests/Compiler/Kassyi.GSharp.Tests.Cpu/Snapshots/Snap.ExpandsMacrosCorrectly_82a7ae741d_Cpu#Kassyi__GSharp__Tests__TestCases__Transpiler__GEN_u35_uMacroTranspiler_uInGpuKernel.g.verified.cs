@@ -34,7 +34,7 @@ extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__TestCa
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
 auto* __gsharp_root = __gsharp_ctx;
-auto __gsharp_id_6_LocalStep = [&]() {
+auto __gsharp_id_6_LocalStep = [&, __gsharp_ctx]() {
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,11);
 __gsharp_ctx->__gsharp_id_0_sum=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_0_sum,22);
 }

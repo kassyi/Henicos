@@ -82,7 +82,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
         IsNullOrDefault(branch) || !nullable.IsEqualTo(context.Query.SemanticModel.GetTypeSymbol(branch));
 
     private static bool IsNullOrDefault(ExpressionSyntax branch) =>
-        IntegerSemanticsEmitter.Unparenthesize(branch)
+        branch.UnwrapParentheses()
             .IsKind(SyntaxKind.NullLiteralExpression, SyntaxKind.DefaultLiteralExpression);
 
     // <branch> of the nullable type; <T?>() for null or default, <T?>(<branch>) for a value of another type

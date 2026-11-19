@@ -461,4 +461,17 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
 
         dst[t] = Math.Abs(vals[t]);
     }
+
+    [GpuKernel]
+    public static void MathAbsIntPtrKernel(long[] vals, long[] dst, int rows)
+    {
+        int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
+        if (t >= rows)
+        {
+            return;
+        }
+
+        nint v = (nint)vals[t];
+        dst[t] = Math.Abs(v);
+    }
 }

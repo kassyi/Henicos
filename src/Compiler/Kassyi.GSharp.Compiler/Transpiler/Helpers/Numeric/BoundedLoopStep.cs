@@ -161,7 +161,7 @@ internal static class BoundedLoopStep
         };
         // ref (i) and &(i) name the counter as well
         return expression != null &&
-               IntegerSemanticsEmitter.Unparenthesize(expression) is IdentifierNameSyntax identifier &&
+               expression.UnwrapParentheses() is IdentifierNameSyntax identifier &&
                SymbolEqualityComparer.Default.Equals(model.GetSymbolInfo(identifier).Symbol, counter);
     }
 }

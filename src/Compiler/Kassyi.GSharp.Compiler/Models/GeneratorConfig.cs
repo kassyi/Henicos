@@ -29,6 +29,16 @@ internal record struct GeneratorConfig(
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>
     public readonly bool IsCuda => TranspilerDialects.IsCuda(TargetDialect);
 
+    /// <summary>The <c>GSharpNativeBarrierModel</c> of the project; only the C++ dialects read it.</summary>
+    public NativeBarrierModel NativeBarrierModel { get; init; }
+
+    /// <summary>
+    /// Whether the native C++ module runs the GPU threads of a block on their own stacks
+    /// (<c>GSharpNativeBarrierModel=Stack</c> on a C++ dialect). The CUDA dialect never does: the generator does not
+    /// even translate the stack form then.
+    /// </summary>
+    public readonly bool RunsOnNativeStacks => !IsCuda && NativeBarrierModel == NativeBarrierModel.Stack;
+
     /// <summary>The generated class that holds the prelude source shared by every kernel.</summary>
     public readonly string SharedPreludeClassName => $"GSharpShared{TargetDialect}Prelude";
 

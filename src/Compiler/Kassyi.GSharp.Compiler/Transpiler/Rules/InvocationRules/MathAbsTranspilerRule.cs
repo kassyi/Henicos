@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
-/// Writes <c>Math.Abs</c> of <c>int</c>, <c>long</c>, <c>short</c> and <c>sbyte</c> as a call of a Prelude function
-/// that raises <see cref="OverflowException"/> for the minimum value, as C# does (#947):
+/// Writes <c>Math.Abs</c> of <c>int</c>, <c>long</c>, <c>short</c>, <c>sbyte</c> and <c>nint</c> as a call of a
+/// Prelude function that raises <see cref="OverflowException"/> for the minimum value, as C# does (#947):
 /// <c>__gsharp_abs_i32(&lt;value&gt;, &lt;site&gt;)</c>. C++ <c>abs</c> of the minimum is undefined, and CUDA gives the
 /// minimum back.
 /// </summary>
@@ -24,7 +24,7 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
         {
             Name: "Abs",
             Parameters: [{ Type.SpecialType: SpecialType.System_Int32 or SpecialType.System_Int64 or
-                SpecialType.System_Int16 or SpecialType.System_SByte }]
+                SpecialType.System_Int16 or SpecialType.System_SByte or SpecialType.System_IntPtr }]
         } &&
         IsSystemMath(symbol.ContainingType);
 
@@ -56,7 +56,7 @@ internal sealed class MathAbsTranspilerRule : IInvocationTranspilerRule
     private static string GetHelper(SpecialType type) => type switch
     {
         SpecialType.System_Int32 => GSharpInternalNames.IntegerSemantics.AbsInt32,
-        SpecialType.System_Int64 => GSharpInternalNames.IntegerSemantics.AbsInt64,
+        SpecialType.System_Int64 or SpecialType.System_IntPtr => GSharpInternalNames.IntegerSemantics.AbsInt64,
         SpecialType.System_Int16 => GSharpInternalNames.IntegerSemantics.AbsInt16,
         _ => GSharpInternalNames.IntegerSemantics.AbsSByte
     };

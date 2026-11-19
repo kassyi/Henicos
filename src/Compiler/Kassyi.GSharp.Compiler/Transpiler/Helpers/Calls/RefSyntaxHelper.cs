@@ -144,7 +144,7 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static CppLocation ClassifyStorage(ExpressionSyntax expression, SemanticModel model)
     {
-        return Unparenthesize(expression) switch
+        return expression.UnwrapParentheses() switch
         {
             DeclarationExpressionSyntax => CppLocation.Storage,
             IdentifierNameSyntax identifier => ClassifySymbol(model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier)),
@@ -163,16 +163,6 @@ internal static class RefSyntaxHelper
         return typeInfo.Type != null &&
                typeInfo.ConvertedType != null &&
                !typeInfo.Type.IsEqualTo(typeInfo.ConvertedType);
-    }
-
-    private static ExpressionSyntax Unparenthesize(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 
     private static CppLocation ClassifyMemberAccess(MemberAccessExpressionSyntax access, SemanticModel model)

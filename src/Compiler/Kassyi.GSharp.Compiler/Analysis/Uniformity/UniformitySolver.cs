@@ -106,9 +106,9 @@ internal sealed class UniformitySolver(UniformityState state)
             Observe();
         }
 
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
+        if (expression is ParenthesizedExpressionSyntax parenthesized)
         {
-            expression = parenthesized.Expression;
+            expression = parenthesized.UnwrapParentheses();
         }
 
         if (state.Observed != null && state.Observed.TryGetValue(expression, out var variance))

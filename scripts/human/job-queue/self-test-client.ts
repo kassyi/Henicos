@@ -12,6 +12,7 @@ import { QueuedRun } from "./client-queued-run.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import { CancelledExitCode, JobVariable, ProtocolVersion } from "./constants.ts";
 import { onMessages, type Incoming } from "./protocol.ts";
+import type { ShareMode } from "./resources.ts";
 import type { ShellResult } from "./shell.ts";
 
 type AssertModule = typeof Assert;
@@ -84,6 +85,23 @@ function fakeChild(): ChildProcess {
   }) as unknown as ChildProcess;
 }
 
+/** Starts a fake command: `end` ends it as a real one ends (its exit code, "close", then the promise of the run). */
+function fakeStart(onChild: (child: ChildProcess) => void): {
+  child: ChildProcess;
+  end: (result: ShellResult) => void;
+  ended: Promise<ShellResult>;
+} {
+  const child = fakeChild();
+  const ended = deferred<ShellResult>();
+  onChild(child);
+  const end = (result: ShellResult): void => {
+    Object.assign(child, { exitCode: result.code });
+    child.emit("close", result.code, null);
+    ended.resolve(result);
+  };
+  return { child, end, ended: ended.promise };
+}
+
 /** A RunHost whose connections and command end come when the check releases them, and that records every effect. */
 export class FakeHost implements RunHost {
   readonly connects: { promise: Promise<net.Socket>; resolve: (socket: net.Socket) => void }[] = [];
@@ -93,6 +111,8 @@ export class FakeHost implements RunHost {
     child: ChildProcess;
     end: (result: ShellResult) => void;
   }[] = [];
+  /** The GPU locks a turn took, with the mode it asked gpu-lock.js for; `end` ends the command as runCommand's. */
+  readonly locks: { weight: number; turn: number; mode: ShareMode; end: (result: ShellResult) => void }[] = [];
   readonly reports: unknown[][] = [];
   readonly stops: (ChildProcess | null)[] = [];
   readonly exits: number[] = [];
@@ -109,21 +129,20 @@ export class FakeHost implements RunHost {
   }
 
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
-    const child = fakeChild();
-    const ended = deferred<ShellResult>();
-    onChild(child);
-    // As a real command ends: its exit code, the "close" event, then the promise of CommandShell.run
-    const end = (result: ShellResult): void => {
-      Object.assign(child, { exitCode: result.code });
-      child.emit("close", result.code, null);
-      ended.resolve(result);
-    };
+    const { child, end, ended } = fakeStart(onChild);
     this.commands.push({ command, env, child, end });
-    return ended.promise;
+    return ended;
   }
 
-  runUnderGpuLock(): Promise<ShellResult> {
-    throw new Error("no GPU turn in these checks");
+  runUnderGpuLock(
+    weight: number,
+    turn: number,
+    mode: ShareMode,
+    onChild: (child: ChildProcess) => void,
+  ): Promise<ShellResult> {
+    const { end, ended } = fakeStart(onChild);
+    this.locks.push({ weight, turn, mode, end });
+    return ended;
   }
 
   stop(child: ChildProcess | null): void {

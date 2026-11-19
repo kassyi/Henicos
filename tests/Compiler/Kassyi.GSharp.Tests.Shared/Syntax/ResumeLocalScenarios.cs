@@ -192,6 +192,51 @@ internal static class ResumeLocalScenarios
         Assert.Equal(new[] { 106, 105, 103, 100 }, result);
     }
 
+    public static void LambdaCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchLambdaCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
+
+    public static void LocalFunctionCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchLocalFunctionCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
+
+    public static void RecursiveLocalFuncCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchRecursiveLocalFuncCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 4, 5, 6, 7 }, result);
+    }
+
+    public static void MutuallyRecursiveLocalFuncCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchMutuallyRecursiveLocalFuncCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
+
+    public static void AsymmetricMutuallyRecursiveLocalFuncCapturedInt(Action<Action> run)
+    {
+        var result = new int[4];
+
+        run(() => ResumeLocalKernels.LaunchAsymmetricMutuallyRecursiveLocalFuncCapturedIntKernel(result, blockDimX: 4));
+
+        Assert.Equal(new[] { 1, 2, 3, 4 }, result);
+    }
+
     public static void ReadOnlyCollectionSpan(Action<Action> run)
     {
         var a = new int[2];

@@ -34,7 +34,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Numeric;
 /// An integer <c>/</c> or <c>%</c> whose divisor may be 0 is a Prelude call (<c>IntegerDivision.hpp</c>) that throws
 /// <see cref="DivideByZeroException"/> as C# does (#718), on the native CPU build and every CUDA build.
 /// <c>MinValue / -1</c> and <c>MinValue % -1</c>, implementation-defined in C#, give the GPU result (MinValue and 0),
-/// which the native build tests for because x86 <c>idiv</c> raises a hardware exception. Whether a division needs the
+/// which every build tests for because x86 <c>idiv</c> raises a hardware exception and <c>nvcc</c> folds constant
+/// <c>MinValue / -1</c> as undefined behavior. Whether a division needs the
 /// call is <see cref="DivisionCheckRule.Decide"/>, from the ranges of its operands (<see cref="DecideDivision"/>): a
 /// divisor whose constant or type range excludes 0 (and -1, for a dividend that may be MinValue) keeps the operator.
 /// </para>

@@ -4,13 +4,16 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 internal static class StatementTranspilers
 {
     /// <summary>
-    /// Transpiles a C# local function into a C++ capture-by-reference auto lambda expression.
+    /// Transpiles a C# local function into a C++ auto lambda expression.
     /// </summary>
+    // auto <name> = <capture>(<parameters>) -> <return type> { <body> };
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
         context.Emitter.Writer.Append("auto ");
         CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
-        context.Emitter.Writer.Append(" = [&]");
+        context.Emitter.Writer.Append(" = ");
+        var plan = LambdaCapture.Create(node.Body, node.ExpressionBody?.Expression);
+        LambdaCapture.Append(context.Emitter.Writer, plan);
         context.Visitor.Visit(node.ParameterList);
         context.Emitter.Writer.Append(' ');
         RefLocals.AppendReferenceReturn(context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(node),
