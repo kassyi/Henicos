@@ -95,4 +95,21 @@ public class CollectionInitializerDiagnosticsTests
             [($"(40,46): {GSharpDiagnostics.UnmarkedMethodCalledFromGpuCode.Id}", true)],
             KernelDiagnostics.FindStatedFailures(run));
     }
+
+    // A generic Add has no instantiation for an element (a written call of one does not build either): GSH0003 at each
+    // element of line 24, which names the generic method
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task GenericAdd_InitializerElement_ReportsGsh0003AtTheElement(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/CollectionInitializerGenericAdd.cs",
+            dialect);
+
+        Assert.Equal(
+            [(Analyzer, 24, 44, 24, 53), (Analyzer, 24, 55, 24, 58)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "whose Add is a generic method"));
+    }
 }

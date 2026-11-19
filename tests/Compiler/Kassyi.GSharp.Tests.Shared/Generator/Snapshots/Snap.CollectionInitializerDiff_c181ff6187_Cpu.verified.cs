@@ -447,42 +447,19 @@ int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_0_xs, __gsharp_id_3_tid, 111
 int __gsharp_id_5_k = 0;
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_3_tid,12);
 auto __gsharp_id_7_single = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_id_4_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0);
-int __gsharp_seq_1 = __gsharp_add_i32(__gsharp_id_4_x,1);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1);
-int __gsharp_seq_2 = 3;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_2);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_id_4_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0); int __gsharp_seq_1 = __gsharp_add_i32(__gsharp_id_4_x,1); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1); int __gsharp_seq_2 = 3; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_2); return __gsharp_tmp; }
 ());
 auto __gsharp_id_8_multi = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_3 = __gsharp_id_4_x;
-int __gsharp_seq_4 = 2;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_3,__gsharp_seq_4);
-int __gsharp_seq_5 = 3;
-int __gsharp_seq_6 = __gsharp_id_4_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_5,__gsharp_seq_6);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_3 = __gsharp_id_4_x; int __gsharp_seq_4 = 2; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_3,__gsharp_seq_4); int __gsharp_seq_5 = 3; int __gsharp_seq_6 = __gsharp_id_4_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_5,__gsharp_seq_6); return __gsharp_tmp; }
 ());
 auto __gsharp_id_9_nested = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_7 = __gsharp_id_4_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_7);
-int __gsharp_seq_8 = 7;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_8);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_7 = __gsharp_id_4_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_7); int __gsharp_seq_8 = 7; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_8); return __gsharp_tmp; }
 ());
 auto __gsharp_id_10_order = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_9 = __gsharp_add_i32(__gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1),__gsharp_id_4_x);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_9);
-int __gsharp_seq_10 = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1),2),__gsharp_id_4_x);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_10);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_9 = __gsharp_add_i32(__gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1),__gsharp_id_4_x); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_9); int __gsharp_seq_10 = __gsharp_add_i32(__gsharp_mul_i32(__gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1),2),__gsharp_id_4_x); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_10); return __gsharp_tmp; }
 ());
 auto __gsharp_id_11_argumentOrder = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_11 = __gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1);
-int __gsharp_seq_12 = __gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_11,__gsharp_seq_12);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_11 = __gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1); int __gsharp_seq_12 = __gsharp_sub_i32((__gsharp_id_5_k=__gsharp_add_i32(__gsharp_id_5_k,1)),1); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_11,__gsharp_seq_12); return __gsharp_tmp; }
 ());
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_id_6_o+0, 520191717u)=__gsharp_id_7_single.__gsharp_mb_Sum;
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,1), 1077900951u)=__gsharp_id_7_single.__gsharp_mb_Log;
@@ -496,24 +473,15 @@ __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,8), 17364829
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,9), 859714281u)=([&]() {
 auto __gsharp_seq_13 = __gsharp_array_at(__gsharp_id_1_cells, __gsharp_id_3_tid, 1825931596u);
 auto __gsharp_seq_14 = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; GSharpArray<int> __gsharp_seq_15 = __gsharp_id_1_cells;
-int __gsharp_seq_16 = __gsharp_id_3_tid;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o1(&__gsharp_tmp,__gsharp_seq_15,__gsharp_seq_16);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; GSharpArray<int> __gsharp_seq_15 = __gsharp_id_1_cells; int __gsharp_seq_16 = __gsharp_id_3_tid; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o1(&__gsharp_tmp,__gsharp_seq_15,__gsharp_seq_16); return __gsharp_tmp; }
 ()).__gsharp_mb_Sum;
 return __gsharp_add_i32(__gsharp_seq_13,__gsharp_seq_14);
 }());
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,10), 1885749225u)=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_17 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerMeters__op_uImplicit(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerDifferentialKernels__MetersOf(__gsharp_id_4_x));
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_17);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_17 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerMeters__op_uImplicit(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerDifferentialKernels__MetersOf(__gsharp_id_4_x)); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_17); return __gsharp_tmp; }
 ()).__gsharp_mb_Sum;
 __gsharp_array_at(__gsharp_id_2_r, __gsharp_add_i32(__gsharp_id_6_o,11), 1199114259u)=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_18 = __gsharp_id_4_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_18);
-double __gsharp_seq_19 = 0.5;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o2(&__gsharp_tmp,__gsharp_seq_19);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_18 = __gsharp_id_4_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_18); double __gsharp_seq_19 = 0.5; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o2(&__gsharp_tmp,__gsharp_seq_19); return __gsharp_tmp; }
 ()).__gsharp_mb_Sum;
 __gsharp_state=-1;
 return;
@@ -993,11 +961,7 @@ __gsharp_state=1;
 return;
 }
 __gsharp_ctx->__gsharp_id_5_plain=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_ctx->__gsharp_call_temp_0;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0);
-int __gsharp_seq_1 = 7;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_ctx->__gsharp_call_temp_0; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0); int __gsharp_seq_1 = 7; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1); return __gsharp_tmp; }
 ());
 goto __gsharp_switch_1_state_2;
 }
@@ -1010,10 +974,7 @@ __gsharp_state=2;
 return;
 }
 __gsharp_ctx->__gsharp_id_6_complex=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_2 = __gsharp_ctx->__gsharp_call_temp_1;
-int __gsharp_seq_3 = __gsharp_ctx->__gsharp_id_3_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_2,__gsharp_seq_3);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_2 = __gsharp_ctx->__gsharp_call_temp_1; int __gsharp_seq_3 = __gsharp_ctx->__gsharp_id_3_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp,__gsharp_seq_2,__gsharp_seq_3); return __gsharp_tmp; }
 ());
 goto __gsharp_switch_1_state_3;
 }
@@ -1026,11 +987,7 @@ __gsharp_state=3;
 return;
 }
 __gsharp_ctx->__gsharp_id_7_member=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_4 = __gsharp_ctx->__gsharp_call_temp_2;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_4);
-int __gsharp_seq_5 = 3;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_5);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_4 = __gsharp_ctx->__gsharp_call_temp_2; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_4); int __gsharp_seq_5 = 3; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_5); return __gsharp_tmp; }
 ());
 __gsharp_ctx->__gsharp_cond_temp_0={};
 if(!(__gsharp_array_ref(__gsharp_ctx->__gsharp_id_0_xs, 1674646504u).length>0))
@@ -1061,9 +1018,7 @@ case 6:
 __gsharp_switch_1_state_6:
 {
 __gsharp_ctx->__gsharp_id_8_conditional=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_6 = __gsharp_ctx->__gsharp_cond_temp_0;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_6);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_6 = __gsharp_ctx->__gsharp_cond_temp_0; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_6); return __gsharp_tmp; }
 ());
 __gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_x,""Warp.ShuffleXorSync"",""CollectionInitializerDifferentialKernels.cs(81,55)"");
 __gsharp_state=7;
@@ -1074,9 +1029,7 @@ __gsharp_switch_1_state_7:
 {
 __gsharp_ctx->__gsharp_warp_temp_4=__gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_3_x,1,32,""CollectionInitializerDifferentialKernels.cs(81,55)"");
 __gsharp_ctx->__gsharp_id_9_shuffled=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_7 = __gsharp_ctx->__gsharp_warp_temp_4;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_7);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_7 = __gsharp_ctx->__gsharp_warp_temp_4; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_7); return __gsharp_tmp; }
 ());
 goto __gsharp_switch_1_state_8;
 }
@@ -1089,9 +1042,7 @@ __gsharp_state=8;
 return;
 }
 __gsharp_ctx->__gsharp_id_10_converted=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; double __gsharp_seq_8 = __gsharp_ctx->__gsharp_call_temp_5*0.5;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o2(&__gsharp_tmp,__gsharp_seq_8);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; double __gsharp_seq_8 = __gsharp_ctx->__gsharp_call_temp_5*0.5; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o2(&__gsharp_tmp,__gsharp_seq_8); return __gsharp_tmp; }
 ());
 goto __gsharp_switch_1_state_9;
 }
@@ -1104,9 +1055,7 @@ __gsharp_state=9;
 return;
 }
 __gsharp_ctx->__gsharp_id_11_assigned=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_9 = __gsharp_ctx->__gsharp_call_temp_6;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_9);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_9 = __gsharp_ctx->__gsharp_call_temp_6; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_9); return __gsharp_tmp; }
 ());
 goto __gsharp_switch_1_state_10;
 }
@@ -1119,9 +1068,7 @@ __gsharp_state=10;
 return;
 }
 auto __gsharp_id_12_meters = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; auto __gsharp_seq_10 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerMeters__op_uImplicit(__gsharp_ctx->__gsharp_call_temp_7);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_10);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; auto __gsharp_seq_10 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerMeters__op_uImplicit(__gsharp_ctx->__gsharp_call_temp_7); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_10); return __gsharp_tmp; }
 ());
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_r, __gsharp_ctx->__gsharp_id_4_o+0, 867951085u)=__gsharp_ctx->__gsharp_id_5_plain.__gsharp_mb_Sum;
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_r, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_o,1), 1248196479u)=__gsharp_ctx->__gsharp_id_5_plain.__gsharp_mb_Log;
@@ -1704,17 +1651,10 @@ __gsharp_ctx->__gsharp_id_3_tid=__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.
 __gsharp_ctx->__gsharp_id_4_x=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_xs, __gsharp_ctx->__gsharp_id_3_tid, 702031805u)&0xFF;
 __gsharp_ctx->__gsharp_id_5_o=__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_3_tid,5);
 __gsharp_ctx->__gsharp_id_6_live=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_ctx->__gsharp_id_4_x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0);
-int __gsharp_seq_1 = __gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_x,1);
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; int __gsharp_seq_0 = __gsharp_ctx->__gsharp_id_4_x; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_0); int __gsharp_seq_1 = __gsharp_add_i32(__gsharp_ctx->__gsharp_id_4_x,1); __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o0(&__gsharp_tmp,__gsharp_seq_1); return __gsharp_tmp; }
 ());
 __gsharp_ctx->__gsharp_id_7_nested=([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_2 = __gsharp_ctx->__gsharp_id_4_x;
-int __gsharp_seq_3 = 2;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_2,__gsharp_seq_3);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerHolder __gsharp_tmp{}; int __gsharp_seq_2 = __gsharp_ctx->__gsharp_id_4_x; int __gsharp_seq_3 = 2; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o3(&__gsharp_tmp.__gsharp_mb_Inner,__gsharp_seq_2,__gsharp_seq_3); return __gsharp_tmp; }
 ());
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -1730,10 +1670,7 @@ __gsharp_array_at(__gsharp_ctx->__gsharp_id_2_r, __gsharp_add_i32(__gsharp_ctx->
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_2_r, __gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_o,4), 23339135u)=([&]() {
 auto __gsharp_seq_4 = __gsharp_array_at(__gsharp_ctx->__gsharp_id_1_cells, __gsharp_ctx->__gsharp_id_3_tid, 1592679694u);
 auto __gsharp_seq_5 = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; GSharpArray<int> __gsharp_seq_6 = __gsharp_ctx->__gsharp_id_1_cells;
-int __gsharp_seq_7 = __gsharp_ctx->__gsharp_id_3_tid;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o1(&__gsharp_tmp,__gsharp_seq_6,__gsharp_seq_7);
-return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBag __gsharp_tmp{}; GSharpArray<int> __gsharp_seq_6 = __gsharp_ctx->__gsharp_id_1_cells; int __gsharp_seq_7 = __gsharp_ctx->__gsharp_id_3_tid; __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differential__CollectionInitializerBagExtensions__Add_o1(&__gsharp_tmp,__gsharp_seq_6,__gsharp_seq_7); return __gsharp_tmp; }
 ()).__gsharp_mb_Sum;
 return __gsharp_add_i32(__gsharp_seq_4,__gsharp_seq_5);
 }());

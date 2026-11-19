@@ -324,9 +324,11 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         Assert.Empty(await RunAsync("Analyzers/BarrierUsage/WarpShuffleInUnsplitContextKernels.cu.cs", "Cuda"));
     }
 
-    // The CPU paths hoist a split in a collection initializer to the start of the statement, before the values, Add
-    // calls and constructor that C# evaluates first; CUDA does not split. Until the CPU paths run one stack per GPU
-    // thread (#2105) such a split is reported, and a split that is the first value of its creation is not
+    // The CPU paths hoist a split in the initializer of a creation with a collection initializer to the start of the
+    // statement, before the values, Add calls and constructor that C# evaluates first, also in an object initializer
+    // around or inside the collection; CUDA does not split. Until the CPU paths run one stack per GPU thread (#2105)
+    // such a split is reported, and a split that is the first value of its creation (a member value or an element
+    // creation included, after constants only) is not
     private const string CollectionInitializerKernels =
         "Analyzers/BarrierUsage/SuspendingCallInCollectionInitializerKernels.cu.cs";
 
@@ -338,12 +340,16 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 64, 41, 64, 53),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 65, 51, 65, 63),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 66, 47, 66, 59),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 67, 68, 67, 80),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 68, 47, 68, 59),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 69, 42, 69, 77)
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 83, 41, 83, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 84, 51, 84, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 85, 47, 85, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 86, 68, 86, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 87, 47, 87, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 88, 42, 88, 77),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 89, 74, 89, 86),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 90, 85, 90, 97),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 91, 71, 91, 83),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 92, 72, 92, 84)
             ],
             actual);
 
@@ -352,7 +358,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             .WithDialect("Cpu")
             .GetDiagnosticsAsync();
         Assert.All(diagnostics, static d => Assert.Contains(
-            "in a collection initializer where C# evaluates another value",
+            "in the initializer of a creation with a collection initializer, where C# evaluates another value",
             d.GetMessage(CultureInfo.InvariantCulture),
             StringComparison.Ordinal));
     }
@@ -367,11 +373,15 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 64, 41, 64, 53),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 65, 51, 65, 63),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 66, 47, 66, 59),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 67, 68, 67, 80),
-                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 68, 47, 68, 59)
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 83, 41, 83, 53),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 84, 51, 84, 63),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 85, 47, 85, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 86, 68, 86, 80),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 87, 47, 87, 59),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 89, 74, 89, 86),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 90, 85, 90, 97),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 91, 71, 91, 83),
+                (GSharpDiagnostics.SuspendingCallInUnsupportedContext.Id, 92, 72, 92, 84)
             ],
             actual);
     }
