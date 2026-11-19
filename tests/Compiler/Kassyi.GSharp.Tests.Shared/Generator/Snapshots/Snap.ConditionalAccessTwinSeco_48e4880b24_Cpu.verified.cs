@@ -219,8 +219,8 @@ return;
 case 1:
 {
 int col = __gsharp_ctx.t * 2;
-__gsharp_ctx.dst[col + 0] = ((__gsharp_ctx.s)is { } __gsharp_cond_receiver_0 ? (int? )(global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessTwinB.TwinBExtensions.TwinSum(__gsharp_cond_receiver_0, 1)) : default(int? )) ?? -1;
-__gsharp_ctx.dst[col + 1] = ((__gsharp_ctx.s)is { } __gsharp_cond_receiver_1 ? (int? )(global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessTwinB.TwinBExtensions.TwinSame(__gsharp_cond_receiver_1)) : default(int? )) ?? -1;
+__gsharp_ctx.dst[col + 0] = ((__gsharp_ctx.s)is { } __gsharp_cond_receiver_0 ? (global::System.Nullable<int>)(global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessTwinB.TwinBExtensions.TwinSum(__gsharp_cond_receiver_0, 1)) : default(global::System.Nullable<int>)) ?? -1;
+__gsharp_ctx.dst[col + 1] = ((__gsharp_ctx.s)is { } __gsharp_cond_receiver_1 ? (global::System.Nullable<int>)(global::Kassyi.GSharp.Tests.Shared.Differential.ConditionalAccessTwinB.TwinBExtensions.TwinSame(__gsharp_cond_receiver_1)) : default(global::System.Nullable<int>)) ?? -1;
 __gsharp_ctx.__gsharp_state = -1;
 return;
 }

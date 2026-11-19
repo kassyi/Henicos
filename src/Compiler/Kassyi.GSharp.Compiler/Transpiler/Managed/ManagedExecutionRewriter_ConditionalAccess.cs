@@ -17,27 +17,37 @@ internal sealed partial class ManagedExecutionRewriter
     }
 
     // a?[i].M(); with an extension method M becomes if (a is { } t) { global::N.C.M(t[i]); }
-    private StatementSyntax? TryRewriteConditionalAccessStatement(ExpressionStatementSyntax node)
-    {
-        if (node.Expression is not ConditionalAccessExpressionSyntax access ||
-            !ManagedConditionalAccess.NeedsReceiverVariable(access, semanticModel))
-        {
-            return null;
-        }
+    private StatementSyntax? TryRewriteConditionalAccessStatement(ExpressionStatementSyntax node) =>
+        node.Expression is ConditionalAccessExpressionSyntax access &&
+        ManagedConditionalAccess.NeedsReceiverVariable(access, semanticModel)
+            ? RewriteConditionalAccessStatement(access).WithTriviaFrom(node)
+            : null;
 
-        var (receiver, whenNotNull, variable) = VisitWithReceiverVariable(access);
-        return ManagedConditionalAccess.CreateStatement(receiver, whenNotNull, variable).WithTriviaFrom(node);
+    // A WhenNotNull that is an access needing its own variable is a statement as well (h?.Data?.M() becomes
+    // if (h is { } t0) { if (t0.Data is { } t1) { M(t1); } }): a call that returns void has no value to write
+    private StatementSyntax RewriteConditionalAccessStatement(ConditionalAccessExpressionSyntax node)
+    {
+        var receiver = VisitReceiver(node);
+        var body = node.WhenNotNull is ConditionalAccessExpressionSyntax nested &&
+                   ManagedConditionalAccess.NeedsReceiverVariable(nested, semanticModel)
+            ? RewriteConditionalAccessStatement(nested)
+            : SyntaxFactory.ExpressionStatement(VisitWhenNotNull(node));
+        return ManagedConditionalAccess.CreateStatement(receiver, body, NextConditionalReceiver());
     }
 
     // The receiver and WhenNotNull rewritten in the order C# evaluates them, and the name of the pattern variable
     private (ExpressionSyntax Receiver, ExpressionSyntax WhenNotNull, string Variable) VisitWithReceiverVariable(
-        ConditionalAccessExpressionSyntax node)
-    {
-        var receiver = Visit(node.Expression) as ExpressionSyntax ??
-                       throw new InvalidOperationException($"The receiver of '{node}' did not rewrite.");
-        var whenNotNull = Visit(node.WhenNotNull) as ExpressionSyntax ??
-                          throw new InvalidOperationException($"The access '{node}' did not rewrite.");
-        return (receiver, whenNotNull,
-            GSharpInternalNames.Lowering.ConditionalReceiverPrefix + _nextConditionalReceiverId++);
-    }
+        ConditionalAccessExpressionSyntax node) =>
+        (VisitReceiver(node), VisitWhenNotNull(node), NextConditionalReceiver());
+
+    private ExpressionSyntax VisitReceiver(ConditionalAccessExpressionSyntax node) =>
+        Visit(node.Expression) as ExpressionSyntax ??
+        throw new InvalidOperationException($"The receiver of '{node}' did not rewrite.");
+
+    private ExpressionSyntax VisitWhenNotNull(ConditionalAccessExpressionSyntax node) =>
+        Visit(node.WhenNotNull) as ExpressionSyntax ??
+        throw new InvalidOperationException($"The access '{node}' did not rewrite.");
+
+    private string NextConditionalReceiver() =>
+        GSharpInternalNames.Lowering.ConditionalReceiverPrefix + _nextConditionalReceiverId++;
 }

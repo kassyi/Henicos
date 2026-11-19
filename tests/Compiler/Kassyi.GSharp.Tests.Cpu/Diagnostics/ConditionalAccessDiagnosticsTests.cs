@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 /// <summary>
 /// A null-conditional access on a <c>Nullable&lt;T&gt;</c> whose value the transpiler cannot read without its type
 /// (an indexer of the value, a member or element of an array view, a member of a vector) is GSH0003 at the whole
-/// access, where the C++ build otherwise stops at a C++ error; a field of the value is written as usual.
+/// access, where the C++ build otherwise stops at a C++ error; a field of the value is written as usual. So is an
+/// extension method that returns void, called on a binding outside a statement, which the managed copy cannot write.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class ConditionalAccessDiagnosticsTests
@@ -18,7 +19,8 @@ public class ConditionalAccessDiagnosticsTests
     [
         ConditionalAccess.NullableElementAccess,
         ConditionalAccess.NullableArrayView,
-        ConditionalAccess.NullableVector
+        ConditionalAccess.NullableVector,
+        ConditionalAccess.VoidExtensionCallOutsideStatement
     ];
 
     [Theory]
@@ -44,7 +46,8 @@ public class ConditionalAccessDiagnosticsTests
                 (Analyzer, id, 35, 22, 35, 29, ConditionalAccess.NullableArrayView),
                 (Analyzer, id, 45, 23, 45, 34, ConditionalAccess.NullableArrayView),
                 (Analyzer, id, 56, 20, 56, 24, ConditionalAccess.NullableVector),
-                (Analyzer, id, 57, 20, 57, 24, ConditionalAccess.NullableVector)
+                (Analyzer, id, 57, 20, 57, 24, ConditionalAccess.NullableVector),
+                (Analyzer, id, 68, 37, 68, 49, ConditionalAccess.VoidExtensionCallOutsideStatement)
             ],
             actual);
     }

@@ -256,6 +256,19 @@ public class ConditionalAccessDifferentialTests
             (a[t] & 2) == 0 ? -1 : (a[t] & 0xFF) + 1
         ]);
 
+    internal static readonly DifferentialCase s_nestedExtensionCall = BarrierCase(
+        nameof(ConditionalAccessDifferentialKernels.NestedExtensionCallKernel),
+        ["holder_data_sum", "holder_log", "element_plus_one", "index_log"],
+        static (b, s) => ConditionalAccessDifferentialKernels.LaunchNestedExtensionCallKernel(
+            b.Get<int>("a"), NullablePoints(s.Rows), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
+        static (a, t) =>
+        [
+            (a[t] & 3) < 2 ? -1 : unchecked(a[0] + a[1]),
+            1,
+            IsNullRow(a, t) || t % 3 == 0 ? -1 : t + 101,
+            IsNullRow(a, t) ? 0 : 2
+        ]);
+
     internal static readonly DifferentialCase s_twinFirst = BarrierCase(
         nameof(ConditionalAccessTwinKernels) + "." + nameof(ConditionalAccessTwinKernels.TwinFirstFileKernel),
         ["overload", "same_signature"],
@@ -442,4 +455,11 @@ public class ConditionalAccessDifferentialTests
     [Scenario(TestScenario.Boundary)]
     public void ConditionalAccess_ExtensionCallInTheSecondFileOfAPartialClass_CallsTheMethodThatFileBinds() =>
         DifferentialRunner.Run(s_twinSecond);
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Differential)]
+    [Scenario(TestScenario.Boundary)]
+    public void ConditionalAccess_ExtensionCallOfAnAccessOnABinding_EvaluatesEachReceiverOnceInOrder() =>
+        DifferentialRunner.Run(s_nestedExtensionCall);
 }

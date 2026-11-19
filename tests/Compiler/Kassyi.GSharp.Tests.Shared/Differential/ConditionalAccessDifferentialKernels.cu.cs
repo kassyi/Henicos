@@ -451,6 +451,36 @@ namespace Kassyi.GSharp.Tests.Shared.Differential
         }
 
         [GpuDeviceFunction]
+        public static int Mark(ref int log, int digit, int value)
+        {
+            log = log * 10 + digit;
+            return value;
+        }
+
+        // An inner access whose call is an extension method and whose receiver is a binding of the outer access
+        // (.Data, [t]): the outer receiver once, then the inner receiver, then the call, each only when the one before
+        // is not null
+        [GpuKernel]
+        public static void NestedExtensionCallKernel(int[] a, ConditionalPoint?[] nps, int[] dst)
+        {
+            int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+            int sel = a[t] & 3;
+            ConditionalHolder? h = sel == 0 ? null : new ConditionalHolder { Data = sel == 1 ? null : a };
+            int log1 = 0;
+            int? v = (Mark(ref log1, 1, 0) == 0 ? h : null)?.Data?.SumOfFirstTwo();
+            ConditionalPoint?[]? q = (a[t] & 1) == 0 ? null : nps;
+            int log2 = 0;
+            int? w = q?[Mark(ref log2, 2, t)]?.PlusOne();
+            Gpu.SyncThreads();
+
+            int col = t * 4;
+            dst[col + 0] = v ?? -1;
+            dst[col + 1] = log1;
+            dst[col + 2] = w ?? -1;
+            dst[col + 3] = log2;
+        }
+
+        [GpuDeviceFunction]
         public static int SwapArray(ref int[]? r, int[] other)
         {
             r = other;

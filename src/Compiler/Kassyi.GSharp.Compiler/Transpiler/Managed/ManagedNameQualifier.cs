@@ -55,7 +55,7 @@ internal static class ManagedNameQualifier
     /// </para>
     /// <para>
     /// A call on a binding of a null-conditional access (<c>q?[i].M()</c>, <c>s?.M()</c>) keeps the binding, or for a
-    /// call on the receiver itself <see cref="ManagedConditionalAccess.ReceiverMarker"/>, as its first argument;
+    /// call on the receiver itself <see cref="ManagedConditionalAccess.CreateReceiverMarker"/>, as its first argument;
     /// <see cref="ManagedConditionalAccess"/> then reads them from the receiver in a pattern variable.
     /// </para>
     /// </remarks>

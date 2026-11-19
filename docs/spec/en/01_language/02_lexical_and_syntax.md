@@ -72,7 +72,8 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
   array and on a `Nullable<T>` of a struct. The receiver is evaluated once; the access, its index and arguments and the
   right side of an assignment are evaluated only when it is not null. `?[]` on a `Nullable<T>` and `?.` on a
   `Nullable<T>` of an array view or of a vector (`Vector2?`, `Float2?`) are
-  [GSH0003](../03_bcl_api/diagnostics/GSH0003.md). A call that suspends at a barrier inside the access is
+  [GSH0003](../03_bcl_api/diagnostics/GSH0003.md), and so is an extension method that returns `void`, called through
+  `?.` outside a statement (a `for` incrementor). A call that suspends at a barrier inside the access is
   [GSH0062](../03_bcl_api/diagnostics/GSH0062.md).
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.

@@ -15,16 +15,16 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </remarks>
 internal static class ManagedConditionalAccess
 {
-    /// <summary>
-    /// The annotation of the placeholder that stands for the receiver itself as the first argument of a static call
-    /// (<c>s?.M()</c>), replaced by the pattern variable.
-    /// </summary>
-    public static readonly SyntaxAnnotation ReceiverMarker = new("GSharpConditionalReceiver");
+    private static readonly SymbolDisplayFormat s_typeFormat = SymbolDisplayFormat.FullyQualifiedFormat
+        .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.ExpandNullable);
 
-    /// <summary>The placeholder for the receiver (<see cref="ReceiverMarker"/>).</summary>
+    /// <summary>
+    /// A placeholder for the receiver itself as the first argument of a static call (<c>s?.M()</c>), replaced by the
+    /// pattern variable (<see cref="ConditionalAccess.ReceiverPlaceholder"/>).
+    /// </summary>
     public static ExpressionSyntax CreateReceiverMarker() =>
         SyntaxFactory.IdentifierName(GSharpInternalNames.Lowering.ConditionalReceiverPrefix).WithAdditionalAnnotations(
-            ReceiverMarker);
+            ConditionalAccess.ReceiverPlaceholder);
 
     /// <summary>
     /// The type of the value of the receiver of the null-conditional access that holds <paramref name="node"/>: the
@@ -42,17 +42,36 @@ internal static class ManagedConditionalAccess
 
     /// <summary>
     /// Whether the managed copy of <paramref name="node"/> needs the pattern variable: its <c>WhenNotNull</c> (not
-    /// that of an access nested in it) calls an extension method on a binding of <paramref name="node"/>.
+    /// that of an access nested in it) calls an extension method on a binding of <paramref name="node"/>, or holds an
+    /// access that needs one, whose receiver starts with a binding of <paramref name="node"/>.
     /// </summary>
     public static bool NeedsReceiverVariable(ConditionalAccessExpressionSyntax node, SemanticModel semanticModel) =>
         node.WhenNotNull
             .DescendantNodesAndSelf()
             .AsStackEnumerable()
             .Any((Access: node, Model: semanticModel), static (n, state) =>
-                n is InvocationExpressionSyntax call &&
-                IsCallOnBinding(call) &&
-                FindOwner(call) == state.Access &&
-                state.Model.GetSymbol(call) is IMethodSymbol { ReducedFrom: not null });
+                n switch
+                {
+                    InvocationExpressionSyntax call =>
+                        IsCallOnBinding(call) &&
+                        FindOwner(call) == state.Access &&
+                        state.Model.GetSymbol(call) is IMethodSymbol { ReducedFrom: not null },
+                    ConditionalAccessExpressionSyntax nested =>
+                        FindOwner(nested) == state.Access && NeedsReceiverVariable(nested, state.Model),
+                    _ => false
+                });
+
+    /// <summary>
+    /// Whether <paramref name="node"/> is a statement: it is used as one, or it is the <c>WhenNotNull</c> of an access
+    /// that is (the inner access of <c>h?.Data?.M();</c>).
+    /// </summary>
+    public static bool IsStatement(ConditionalAccessExpressionSyntax node) =>
+        node.Parent switch
+        {
+            ExpressionStatementSyntax => true,
+            ConditionalAccessExpressionSyntax outer when outer.WhenNotNull == node => IsStatement(outer),
+            _ => false
+        };
 
     /// <summary>
     /// <c>(r is { } t ? (R)(&lt;access on t&gt;) : default(R))</c> for <paramref name="node"/>, whose receiver and
@@ -64,23 +83,27 @@ internal static class ManagedConditionalAccess
     {
         var type = semanticModel.GetTypeSymbol(node) ??
                    throw new InvalidOperationException($"The type of the access '{node}' did not resolve.");
-        var typeSyntax = SyntaxFactory.ParseTypeName(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        // Nullable<T> spelled out: the managed source is printed by NormalizeWhitespace, which writes (int? )
+        var typeSyntax = SyntaxFactory.ParseTypeName(type.ToDisplayString(s_typeFormat));
         return SyntaxFactory.ParenthesizedExpression(
             SyntaxFactory.ConditionalExpression(
                 CreateTest(receiver, variable),
                 SyntaxFactory.CastExpression(typeSyntax,
-                    SyntaxFactory.ParenthesizedExpression(BindReceiver(whenNotNull, variable))),
+                    SyntaxFactory.ParenthesizedExpression(
+                        ConditionalAccess.ReplaceBindings(whenNotNull, SyntaxFactory.IdentifierName(variable)))),
                 SyntaxFactory.DefaultExpression(typeSyntax)
             )
         );
     }
 
-    /// <summary><c>if (r is { } t) { &lt;access on t&gt;; }</c> for an access used as a statement.</summary>
-    public static StatementSyntax CreateStatement(ExpressionSyntax receiver, ExpressionSyntax whenNotNull,
-        string variable) =>
+    /// <summary>
+    /// <c>if (r is { } t) { &lt;access on t&gt; }</c> for an access used as a statement; <paramref name="body"/> is
+    /// the statement written for its <c>WhenNotNull</c>.
+    /// </summary>
+    public static StatementSyntax CreateStatement(ExpressionSyntax receiver, StatementSyntax body, string variable) =>
         SyntaxFactory.IfStatement(
             CreateTest(receiver, variable),
-            SyntaxFactory.Block(SyntaxFactory.ExpressionStatement(BindReceiver(whenNotNull, variable)))
+            SyntaxFactory.Block(ConditionalAccess.ReplaceBindings(body, SyntaxFactory.IdentifierName(variable)))
         );
 
     // r is { } t
@@ -91,10 +114,6 @@ internal static class ManagedConditionalAccess
                 .WithPropertyPatternClause(SyntaxFactory.PropertyPatternClause())
                 .WithDesignation(SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(variable)))
         );
-
-    private static ExpressionSyntax BindReceiver(ExpressionSyntax whenNotNull, string variable) =>
-        new BindingReplacer(SyntaxFactory.IdentifierName(variable)).Visit(whenNotNull) as ExpressionSyntax ??
-        throw new InvalidOperationException($"The bindings of '{whenNotNull}' did not rewrite to an expression.");
 
     // A reduced call on the receiver (?.M()) or whose receiver chain starts with a binding (?[i].M(), ?.A.B.M())
     private static bool IsCallOnBinding(InvocationExpressionSyntax call) =>
@@ -129,24 +148,5 @@ internal static class ManagedConditionalAccess
         }
 
         return null;
-    }
-
-    // The bindings of the access, and the receiver placeholder, read from the pattern variable; an access nested in
-    // WhenNotNull keeps the bindings of its own WhenNotNull
-    private sealed class BindingReplacer(IdentifierNameSyntax variable) : CSharpSyntaxRewriter
-    {
-        public override SyntaxNode? VisitMemberBindingExpression(MemberBindingExpressionSyntax node) =>
-            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, variable, node.Name);
-
-        public override SyntaxNode? VisitElementBindingExpression(ElementBindingExpressionSyntax node) =>
-            SyntaxFactory.ElementAccessExpression(variable, node.ArgumentList);
-
-        public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
-            node.HasAnnotation(ReceiverMarker) ? variable.WithTriviaFrom(node) : node;
-
-        public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>
-            node.WithExpression(Visit(node.Expression) as ExpressionSyntax ??
-                                throw new InvalidOperationException(
-                                    $"The receiver of '{node}' did not rewrite to an expression."));
     }
 }

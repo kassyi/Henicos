@@ -63,6 +63,13 @@ internal static class ConditionalAccess
     /// <summary>The GSH0003 text of <c>?.</c> on a <c>Nullable&lt;T&gt;</c> of a vector (<c>Vector2?</c>).</summary>
     public const string NullableVector = "?. on a Nullable<T> of a vector";
 
+    /// <summary>
+    /// The GSH0003 text of a <c>?.</c> that calls an extension method returning <see langword="void"/> on a binding
+    /// outside a statement (<c>for (...; ...; i++, q?[t].M())</c>).
+    /// </summary>
+    public const string VoidExtensionCallOutsideStatement =
+        "?. calling an extension method that returns void outside a statement";
+
     /// <summary>Decides how <paramref name="node"/> is written.</summary>
     /// <exception cref="InvalidOperationException">
     /// The type of the receiver or of the access did not resolve.
@@ -75,7 +82,10 @@ internal static class ConditionalAccess
         var accessType = model.GetTypeSymbol(node.WhenNotNull) ?? throw Unresolved("access", node.WhenNotNull);
         if (accessType.SpecialType == SpecialType.System_Void || node.Parent is ExpressionStatementSyntax)
         {
-            return new ConditionalAccessPlan(kind, ConditionalResultForm.Statement, null, problem);
+            return problem == null && IsVoidCallOutsideStatement(node, accessType, model)
+                ? new ConditionalAccessPlan(ConditionalReceiverKind.Unsupported, ConditionalResultForm.Statement, null,
+                    VoidExtensionCallOutsideStatement)
+                : new ConditionalAccessPlan(kind, ConditionalResultForm.Statement, null, problem);
         }
 
         var resultType = model.GetTypeSymbol(node) ?? throw Unresolved("access", node);
@@ -84,6 +94,15 @@ internal static class ConditionalAccess
             : ConditionalResultForm.Lifted;
         return new ConditionalAccessPlan(kind, form, resultType, problem);
     }
+
+    // An extension method that returns void, called on a binding outside a statement (a for incrementor): the managed
+    // copy writes such a call as a statement on the receiver in a pattern variable (ManagedConditionalAccess), and C#
+    // has no expression for it
+    private static bool IsVoidCallOutsideStatement(ConditionalAccessExpressionSyntax node, ITypeSymbol accessType,
+        SemanticModel model) =>
+        accessType.SpecialType == SpecialType.System_Void &&
+        !ManagedConditionalAccess.IsStatement(node) &&
+        ManagedConditionalAccess.NeedsReceiverVariable(node, model);
 
     private static InvalidOperationException Unresolved(string part, SyntaxNode node) =>
         new($"The type of the {part} '{node}' did not resolve.");
@@ -155,8 +174,23 @@ internal static class ConditionalAccess
     /// </remarks>
     public static ExpressionSyntax BindReceiver(ExpressionSyntax access, ExpressionSyntax receiver,
         Compilation compilation) =>
-        new BindingReplacer(receiver).Visit(AnnotateSource(access, compilation)) as ExpressionSyntax ??
-        throw new InvalidOperationException($"The bindings of '{access}' did not rewrite to an expression.");
+        ReplaceBindings(AnnotateSource(access, compilation), receiver);
+
+    /// <summary>
+    /// The annotation of a placeholder that stands for the receiver itself (the first argument of the static call of
+    /// <c>s?.M()</c> on the managed path); <see cref="ReplaceBindings{TNode}"/> replaces it with the receiver.
+    /// </summary>
+    public static readonly SyntaxAnnotation ReceiverPlaceholder = new("GSharpConditionalReceiver");
+
+    /// <summary>
+    /// <paramref name="node"/> (the <c>WhenNotNull</c> of a null-conditional access, or what was written for it) with
+    /// its member and element bindings, and each <see cref="ReceiverPlaceholder"/>, read from
+    /// <paramref name="receiver"/>. A nested null-conditional access keeps the bindings of its own <c>WhenNotNull</c>;
+    /// only its receiver is rewritten. Each replacement keeps the original-span annotation of the binding.
+    /// </summary>
+    public static TNode ReplaceBindings<TNode>(TNode node, ExpressionSyntax receiver) where TNode : SyntaxNode =>
+        new BindingReplacer(receiver).Visit(node) as TNode ??
+        throw new InvalidOperationException($"The bindings of '{node}' did not rewrite to the same kind of node.");
 
     // A node of the compilation gets the original-span annotation of its own position. A node of a lowered tree
     // already carries the span of the node it stands for, and the nodes lowering built have none on purpose: a span
@@ -175,6 +209,9 @@ internal static class ConditionalAccess
         public override SyntaxNode? VisitElementBindingExpression(ElementBindingExpressionSyntax node) =>
             SyntaxFactory.ElementAccessExpression(receiver, node.ArgumentList)
                 .WithOriginalSpanFrom(node);
+
+        public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node) =>
+            node.HasAnnotation(ReceiverPlaceholder) ? receiver.WithTriviaFrom(node) : node;
 
         // The bindings of WhenNotNull belong to the inner access; only its receiver reads the outer one
         public override SyntaxNode? VisitConditionalAccessExpression(ConditionalAccessExpressionSyntax node) =>

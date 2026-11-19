@@ -57,4 +57,23 @@ public static partial class ConditionalAccessUnsupported
         float? y = f?.Y;
         dst[ThreadIndex.X] = (x ?? -1f) + (y ?? -1f);
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Sad Path")]
+    public static void IncrementorKernel(ConditionalIndexed[] items, int[] dst, int mode)
+    {
+        ConditionalIndexed[]? q = mode == 0 ? null : items;
+        int t = ThreadIndex.X;
+        // GSH0003: an extension method that returns void, called through ?. outside a statement
+        for (int i = 0; i < 2; i++, q?[t].Bump())
+        {
+            dst[t] += i;
+        }
+    }
+}
+
+public static partial class ConditionalIndexedExtensions
+{
+    [GpuDeviceFunction]
+    public static void Bump(this ref ConditionalIndexed p) => p.X++;
 }
