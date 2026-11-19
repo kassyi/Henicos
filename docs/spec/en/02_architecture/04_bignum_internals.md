@@ -188,7 +188,7 @@ Because floating-point operations ultimately delegate to integer significand ari
 | **Addition / Subtraction** | $\mathcal{O}(N)$ | Highly parallelized across CUDA blocks. |
 | **Multiplication** | $\mathcal{O}(N \log N)$ | Number Theoretic Transform (NTT) / Fast Fourier Transform (FFT). |
 | **Division** | $\mathcal{O}(N \log N)$ | Newton-Raphson Iteration (utilizing NTT Multiplication). |
-| **Square Root** | $\mathcal{O}(N \log N)$ | Heron's Method (Newton-Raphson for Square Roots). |
+| **Square Root** | $\mathcal{O}(N \log N)$ | Newton-Raphson inverse square root, one multiplication and an exact correction to the floor. |
 | **Power of 10** | $\mathcal{O}(N \log N)$ | Binary Exponentiation (dominated by NTT multiplication). |
 | **Bitwise Operations** | $\mathcal{O}(N)$ | Approaching $\mathcal{O}(1)$ step time due to massive parallelism. |
 | **GCD** | $\mathcal{O}(N^2)$ to $\mathcal{O}(N \log^2 N)$ | Lehmer's GCD algorithm optimized for GPU execution. |

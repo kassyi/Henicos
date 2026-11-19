@@ -63,7 +63,7 @@ public class GpuBigIntDivRemTests : IDisposable
         GpuBigIntDivRem.InverseSqrt(gpuA, invSqrt, 0);
         AssertExactInverseSqrt(a, 4 * 32, invSqrt.ToBigInteger());
 
-        // Sqrt (Heron refinement after the inverse square root).
+        // Sqrt (SqrtFloor on the operand normalized to an even shift).
         using var sqrt = new GpuBigUInt(customCtx, 4);
         GpuBigIntDivRem.Sqrt(gpuA, sqrt);
         AssertFloorSquareRoot(a, sqrt.ToBigInteger());
@@ -764,8 +764,8 @@ public class GpuBigIntDivRemTests : IDisposable
         "Words33"
     ];
 
-    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:200); the others run the inverse
-    // square root and Heron's refinement. Even / odd leading zeros reach both sides of the lz parity fix (line 194).
+    // Zero / One / MaxSingleWord take the single-word path (GpuBigIntDivRem.Sqrt.cs:190); the others are normalized
+    // for SqrtFloor. Even / odd leading zeros reach both parities of 64r - L in the normalization shift (line 226).
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
@@ -1247,10 +1247,10 @@ public class GpuBigIntDivRemTests : IDisposable
     private static void AssertFloorSquareRoot(BigInteger value, BigInteger root)
     {
         // s * s <= a < (s + 1) * (s + 1) defines floor(sqrt(a)) without a reference implementation.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:292
-        //         `ShiftRight(sumWithDivision, 1, currentRoot)` -> `ShiftRight(sumWithDivision, 2, currentRoot)`
-        // input: Sqrt PerfectSquare, AllOnes, Words33
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:219 `(uint)Math.Sqrt(val)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:237
+        //         `ShiftAndResize(scaledRoot, -halfShift, resultBuffer)` -> `ShiftAndResize(scaledRoot, 0, resultBuffer)`
+        // input: Sqrt SmallestTwoWord, EvenLeadingZeros, OddLeadingZeros
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.Sqrt.cs:208 `(uint)Math.Sqrt(val)`
         //         -> `(uint)Math.Sqrt(val) + 1`
         // input: Sqrt One, MaxSingleWord
         Assert.True(root.Sign >= 0 && root * root <= value, $"{root}^2 exceeds {value}");

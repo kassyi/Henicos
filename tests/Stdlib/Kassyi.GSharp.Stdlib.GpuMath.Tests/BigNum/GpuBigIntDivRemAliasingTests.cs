@@ -148,7 +148,7 @@ public sealed class GpuBigIntDivRemAliasingTests : IDisposable
     [InlineData(1)]
     public void Sqrt_ResultIsTheOperand_GivesTheSeparateBufferResult(int valueWords)
     {
-        // 64 words: Heron's refinement reads the operand on every step; 2 words (2^62 + 5): just above one word; 1 word
+        // 64 words: the normalization shift for SqrtFloor; 2 words (2^62 + 5): just above one word; 1 word
         // (15): the single-word path. Every path reads the operand completely before it writes the result, so Sqrt needs
         // no copy; this test keeps that true.
         // mutant: the single-word path clears the result before it reads the operand
