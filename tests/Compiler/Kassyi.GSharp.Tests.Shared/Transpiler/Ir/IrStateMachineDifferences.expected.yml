@@ -1268,6 +1268,7 @@
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel", status: "Compared", count: 1}
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.Pair", status: "NoStateMachine", count: 1}
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel", status: "Compared", count: 1}
+- {file: "Differential/SameNameLabelDifferentialKernels.cu.cs", method: "SameNameLabelDifferentialKernels.SiblingLabelsKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.Bump", status: "NoStateMachine", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.ConditionalRefWriteDevice", status: "Compared", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.MutateByRef", status: "NoStateMachine", count: 1}
@@ -3284,6 +3285,9 @@
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.LambdaWriteKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.ReturnUnderBranch", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.ReturnUnderBranchKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingChainedLabelsKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingLabelsKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingLabelsOwnBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs", method: "ShortCircuitSuspendingCallKernels.ShortCircuitCallKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs", method: "ShortCircuitSuspendingCallKernels.WaitAndConfirm", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallAfterConditionalAccessKernels.cu.cs", method: "SuspendingCallAfterConditionalAccessKernels.AcceptedFormsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
