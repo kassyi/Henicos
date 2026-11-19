@@ -121,6 +121,24 @@ export function checkHolderTies(assert: AssertModule): void {
   assert.strictEqual(usageOf(tied.running, "gpu").exclusiveBusy, true, "a holder of no running turn is exclusive");
 }
 
+/** A holder counts on the resource of the turn that started it: holders send no resource, which would read as "gpu". */
+export function checkHolderResource(assert: AssertModule): void {
+  const s = scheduler([spec("gpu", 2, false), spec("x", 2, false)]);
+  const onX = turn(1, "exclusive", { resource: "x" });
+  assert.deepStrictEqual(s.enqueue(onX, 0), [onX]);
+  const own = holder(2, 1);
+  s.enqueue(own, 1);
+  assert.deepStrictEqual(usageOf(s.running, "x").holders, [own], "the holder of a turn on x is x's");
+  assert.deepStrictEqual(usageOf(s.running, "gpu").holders, [], "and not gpu's");
+  const onGpu = turn(3, "shared");
+  assert.deepStrictEqual(s.enqueue(onGpu, 2), [onGpu], "so a turn on gpu is granted beside it");
+  s.remove(onX, 3);
+  assert.deepStrictEqual(usageOf(s.running, "gpu").untied, [own], "once its turn ended it is an untied holder of gpu");
+  const named = Object.assign(holder(4, null), { resource: "x" });
+  s.enqueue(named, 4);
+  assert.deepStrictEqual(usageOf(s.running, "x").untied, [named], "an untied holder that names a resource is its");
+}
+
 /** The turn is gone and its holder remains: the holder counts as exclusive. */
 export function checkOrphanHolder(assert: AssertModule): void {
   const s = scheduler([spec("gpu", 2, false)]);
@@ -168,13 +186,25 @@ export function checkProbeWanted(assert: AssertModule): void {
   assert.deepStrictEqual(s.probeWanted(0), [], "nothing waits");
   s.enqueue(a, 0);
   s.enqueue(b, 100);
-  assert.deepStrictEqual(s.probeWanted(14999), [], "the running turn is still young");
-  assert.deepStrictEqual(s.probeWanted(15000), ["gpu"], "it has run settleMs");
-  s.recordProbe("gpu", fresh(s, "gpu", 20000));
-  assert.deepStrictEqual(s.grant(20000), [b]);
+  assert.deepStrictEqual(s.probeWanted(60000), [], "a turn whose command holds nothing yet has not settled");
+  s.enqueue(holder(11, 1), 5000);
+  assert.deepStrictEqual(s.probeWanted(19999), [], "counted from the holder's start, not from the turn's grant");
+  assert.deepStrictEqual(s.probeWanted(20000), ["gpu"], "its command has used the GPU for settleMs");
+  s.enqueue(holder(12, 1), 18000);
+  assert.deepStrictEqual(s.probeWanted(20000), [], "a later holder of the same turn starts the count again");
+  assert.deepStrictEqual(s.probeWanted(33000), ["gpu"]);
+  s.recordProbe("gpu", fresh(s, "gpu", 33000));
+  assert.deepStrictEqual(s.grant(33000), [b]);
+  s.enqueue(holder(13, 2), 34000);
   s.add(c);
-  assert.deepStrictEqual(s.probeWanted(25000), [], "the youngest running turn counts: b is 5 seconds old");
-  assert.deepStrictEqual(s.probeWanted(35000), ["gpu"], "all have settled");
+  assert.deepStrictEqual(s.probeWanted(40000), [], "the youngest running turn counts: b's command is 6 seconds old");
+  assert.deepStrictEqual(s.probeWanted(49000), ["gpu"], "all have settled");
+  const unsettled = scheduler([
+    { ...spec("gpu", 2, true), probe: { argv: ["probe"], min: 1, timeoutMs: 1, settleMs: 0 } },
+  ]);
+  unsettled.enqueue(turn(1, "shared"), 0);
+  unsettled.enqueue(turn(2, "shared"), 1);
+  assert.deepStrictEqual(unsettled.probeWanted(1), ["gpu"], "settleMs 0 waits for no holder");
   const exclusive = scheduler([spec("gpu", 3, true)]);
   exclusive.enqueue(turn(1, "shared"), 0);
   exclusive.enqueue(turn(2, "exclusive"), 1);
@@ -186,6 +216,7 @@ export function checkPauseAndForecast(assert: AssertModule): void {
   const paused = scheduler([spec("gpu", 2, true)]);
   const first = turn(1, "shared");
   assert.deepStrictEqual(paused.enqueue(first, 0), [first]);
+  paused.enqueue(holder(11, 1), 0);
   paused.paused = true;
   assert.deepStrictEqual(paused.enqueue(turn(2, "shared"), 1), [], "no turn while paused");
   paused.recordProbe("gpu", fresh(paused, "gpu", 60000));
@@ -283,6 +314,7 @@ export const ResourceChecks: Record<string, (assert: AssertModule) => void> = {
   checkHeadOnly,
   checkShareDefaultsToExclusive,
   checkHolderTies,
+  checkHolderResource,
   checkOrphanHolder,
   checkProbeResults,
   checkProbeWanted,
