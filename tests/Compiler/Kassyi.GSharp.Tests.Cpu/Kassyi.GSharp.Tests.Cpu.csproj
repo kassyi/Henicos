@@ -22,6 +22,8 @@
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
+    <Compile Remove="Analysis\Cases\**\*.cs" />
+    <None Include="Analysis\Cases\**\*.cs" />
     <Compile Include="..\Kassyi.GSharp.Tests.Shared\TestCases\Layout\HostLayoutCases.cs" />
   </ItemGroup>
 
@@ -68,4 +70,8 @@
   </ItemGroup>
 
   <Import Project="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
+
+  <ItemGroup Condition="'$(GSharpNativeBarrierModel)' != ''">
+    <AssemblyMetadata Include="GSharpNativeBarrierModel" Value="$(GSharpNativeBarrierModel)" />
+  </ItemGroup>
 </Project>

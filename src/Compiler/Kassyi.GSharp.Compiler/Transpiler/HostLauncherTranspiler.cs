@@ -6,6 +6,7 @@ using static GSharpInternalNames.Launcher;
 using static GSharpInternalNames.ReturnValue;
 using static GSharpInternalNames.StateMachine;
 using static GSharpInternalNames.Prelude;
+using static GSharpInternalNames.NativeStack;
 
 /// <summary>
 /// Emits CPU / OpenMP multi-threaded execution launchers for host execution.
@@ -39,6 +40,8 @@ internal static class HostLauncherTranspiler
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {
         var hasContext = contextFields != null;
+        var usesStack = context.Emitter.Dialect.RunsThreadsOnOwnStacks();
+        var effectiveHasContext = hasContext || usesStack;
         var method = plan.Declaration;
         var methodSymbol = plan.Symbol;
         if (methodSymbol == null)
@@ -52,11 +55,12 @@ internal static class HostLauncherTranspiler
         var step = new KernelStep(
             method,
             GlobalCppNames.GetKernelName(methodSymbol),
-            hasContext,
+            effectiveHasContext,
             plan.HasAutoResult,
-            hasContext && methodSymbol.IsCooperativeKernel(),
-            hasContext && SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation),
-            KernelHostNames.GetMessageName(methodSymbol)
+            !usesStack && effectiveHasContext && methodSymbol.IsCooperativeKernel(),
+            !usesStack && effectiveHasContext && SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation),
+            KernelHostNames.GetMessageName(methodSymbol),
+            usesStack
         );
         WriteLauncherBody(GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol), step, structArguments,
             ref context);
@@ -123,6 +127,12 @@ internal static class HostLauncherTranspiler
     // Every block runs to its end on the OpenMP thread that takes it, with contexts of its own and the thread's arena
     private static void WriteIndependentBlocks(string contextName, in KernelStep step, ref TranspileContext context)
     {
+        if (step.UsesStack)
+        {
+            WriteStackIndependentBlocks(step, ref context);
+            return;
+        }
+
         context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
         context.Emitter.Writer.AppendLine(
             $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
@@ -161,6 +171,52 @@ internal static class HostLauncherTranspiler
             }
 
             WriteStepAbortCatches(ref context);
+        }
+    }
+
+    // Runs each block's GPU threads on their own native stacks while keeping the OpenMP thread's stack pool for the launch
+    private static void WriteStackIndependentBlocks(in KernelStep step, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append($"auto {Body} = [&]() ");
+        using (context.Emitter.Writer.Braces())
+        {
+            WriteDirectKernelCall(step, includeContext: false, ref context);
+            context.Emitter.Writer.Append(';');
+        }
+        context.Emitter.Writer.AppendLine(";");
+
+        context.Emitter.Writer.AppendLine($"const auto {Fp} = {CaptureFp}();");
+        context.Emitter.Writer.AppendLine(
+            $"#pragma omp parallel num_threads({ThreadLimit}((uint64_t){BlockDimX} * {BlockDimY} * {BlockDimZ}, {TotalBlocks}))");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine($"{PoolType} {Stacks}({Fp});");
+            context.Emitter.Writer.AppendLine("#pragma omp for schedule(dynamic)");
+            context.Emitter.Writer.AppendLine(
+                $"for (int64_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
+            using (context.Emitter.Writer.Scope())
+            {
+                context.Emitter.Writer.AppendLine("try");
+                using (context.Emitter.Writer.Scope())
+                {
+                    WriteBlockCoordinates(ref context);
+                    context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
+                    context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
+                    context.Emitter.Writer.AppendLine(
+                        $"{BlockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body});");
+                    context.Emitter.Writer.AppendLine(
+                        $"{ThreadType}* {Contexts} = {Block}.threads.data();");
+                    context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
+                    context.Emitter.Writer.AppendLine($"while ({AnyActive})");
+                    using (context.Emitter.Writer.Scope())
+                    {
+                        context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
+                        WriteBlockLoop(step, declaresThreadsPerBlock: true, ref context);
+                    }
+                }
+
+                WriteStepAbortCatches(ref context);
+            }
         }
     }
 
@@ -368,7 +424,7 @@ internal static class HostLauncherTranspiler
             {
                 context.Emitter.Writer.AppendLine(SetThreadIndexCall);
                 WriteKernelCall(step, ref context);
-                if (step.HasContext)
+                if (step.HasContext && !step.UsesStack)
                 {
                     WriteGridSyncCheck(step, ref context);
                 }
@@ -423,8 +479,21 @@ internal static class HostLauncherTranspiler
         }
     }
 
-    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result]);
+    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result]); or __gsharp_stack_resume(<thread>);
     private static void WriteKernelCall(in KernelStep step, ref TranspileContext context)
+    {
+        if (step.UsesStack)
+        {
+            context.Emitter.Writer.AppendLine($"{Resume}({ThreadContext});");
+            return;
+        }
+
+        WriteDirectKernelCall(step, step.HasContext, ref context);
+        context.Emitter.Writer.AppendLine(";");
+    }
+
+    // <kernel>(<arguments>[, &__gsharp_contexts[<thread>]][, __gsharp_auto_result])
+    private static void WriteDirectKernelCall(in KernelStep step, bool includeContext, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(step.MethodName);
         using (context.Emitter.Writer.Parentheses())
@@ -437,7 +506,7 @@ internal static class HostLauncherTranspiler
                 CppNameResolver.AppendDeclaredName(parameter, parameter.Identifier, ref context);
             }
 
-            if (step.HasContext)
+            if (includeContext)
             {
                 AppendArgumentSeparator(ref isFirst, ref context);
                 context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
@@ -449,8 +518,6 @@ internal static class HostLauncherTranspiler
                 context.Emitter.Writer.Append(Buffer);
             }
         }
-
-        context.Emitter.Writer.AppendLine(";");
     }
 
     // The thread stopped at Gpu.SyncGrid: in a cooperative kernel it waits there until the next phase, which clears the
@@ -514,7 +581,8 @@ internal static class HostLauncherTranspiler
         bool hasAutoResult,
         bool isCooperative,
         bool reachesWarpShuffle,
-        string messageName)
+        string messageName,
+        bool usesStack = false)
     {
         public MethodDeclarationSyntax Method { get; } = method;
 
@@ -530,5 +598,7 @@ internal static class HostLauncherTranspiler
         public bool ReachesWarpShuffle { get; } = reachesWarpShuffle;
 
         public string MessageName { get; } = messageName;
+
+        public bool UsesStack { get; } = usesStack;
     }
 }
