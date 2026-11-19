@@ -120,7 +120,7 @@ internal static class DeconstructionAssignment
             return new LeafValue(right, next++);
         }
 
-        right = IntegerSemanticsEmitter.Unparenthesize(right);
+        right = right.UnwrapParentheses();
         switch (right)
         {
             case TupleExpressionSyntax tuple when tuple.Arguments.Count == shape.Length:
@@ -299,7 +299,7 @@ internal static class DeconstructionAssignment
             {
                 if (boundTargets[i] == ReceiverBound &&
                     targets[i].Node is ExpressionSyntax target &&
-                    IntegerSemanticsEmitter.Unparenthesize(target) is MemberAccessExpressionSyntax
+                    target.UnwrapParentheses() is MemberAccessExpressionSyntax
                     {
                         Expression: var receiver
                     })
@@ -323,7 +323,7 @@ internal static class DeconstructionAssignment
             return EvaluationOrder.DeclareTemp(ref context, target, reference: true);
         }
 
-        if (IntegerSemanticsEmitter.Unparenthesize(target) is MemberAccessExpressionSyntax { Expression: var receiver })
+        if (target.UnwrapParentheses() is MemberAccessExpressionSyntax { Expression: var receiver })
         {
             context.Emitter.SpilledExpressions[receiver] =
                 EvaluationOrder.DeclareTemp(ref context, receiver, reference: true);

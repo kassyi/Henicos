@@ -70,7 +70,7 @@ internal static class VariableWrites
     // Whether target is the variable or a chain of fields from it (a tuple names each of its elements)
     private static bool TargetsVariable(ExpressionSyntax target, ISymbol variable, SemanticModel model)
     {
-        target = SkipParentheses(target);
+        target = target.UnwrapParentheses();
         if (target is TupleExpressionSyntax tuple)
         {
             foreach (var argument in tuple.Arguments)
@@ -86,21 +86,11 @@ internal static class VariableWrites
 
         while (target is MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access)
         {
-            target = SkipParentheses(access.Expression);
+            target = access.Expression.UnwrapParentheses();
         }
 
         return target is IdentifierNameSyntax identifier &&
                identifier.Identifier.ValueText == variable.Name &&
                model.GetSymbol(identifier).IsEqualTo(variable);
-    }
-
-    private static ExpressionSyntax SkipParentheses(ExpressionSyntax expression)
-    {
-        while (expression is ParenthesizedExpressionSyntax parenthesized)
-        {
-            expression = parenthesized.Expression;
-        }
-
-        return expression;
     }
 }

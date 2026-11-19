@@ -52,7 +52,7 @@ internal static class DynamicSharedMemoryAnalysis
     /// </summary>
     public static BaseObjectCreationExpressionSyntax? GetCreation(VariableDeclaratorSyntax declarator) =>
         declarator.Initializer is { } initializer
-            ? IteratorTypeResolver.UnwrapParentheses(initializer.Value) as BaseObjectCreationExpressionSyntax
+            ? initializer.Value.UnwrapParentheses() as BaseObjectCreationExpressionSyntax
             : null;
 
     /// <summary>
