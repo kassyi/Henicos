@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
@@ -6,23 +8,41 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// generic instantiations is finite.
 /// </summary>
 /// <remarks>
+/// <para>
 /// The nodes of the graph are type parameters (a method's own and those of the types that contain it). A call written
 /// in a definition's body adds an edge from each type parameter <c>P</c> that occurs in a type argument to the callee's
 /// type parameter <c>Q</c> that the argument is for; the edge is expansive when <c>P</c> sits inside another type there
-/// (<c>Wrap&lt;P&gt;</c>), not when the argument is <c>P</c> itself. The instantiations are infinite only when an
-/// expansive edge lies on a cycle: when <c>Q</c> reaches <c>P</c> again. A constant argument
+/// (<c>Wrap&lt;P&gt;</c>), not when the argument is <c>P</c> itself. A type argument passed for a type parameter
+/// that the callee creates with <c>new Q()</c> (itself, or through the type parameters it passes it on to) is a call
+/// of that type's parameterless constructor as well, which adds its edges in the caller.
+/// </para>
+/// <para>
+/// The instantiations are infinite only when an expansive edge lies on a cycle: when both of its ends are in one
+/// strongly connected component, found once per compilation (Tarjan). A constant argument
 /// (<c>C&lt;Wrap&lt;int&gt;&gt;</c>) adds no edge, and an expansive edge that no path brings back
 /// (<c>D&lt;T&gt;</c> creating <c>E&lt;int&gt;</c>, which creates <c>D&lt;Wrap&lt;U&gt;&gt;</c>) is finite.
 /// <see cref="DeviceFunctionReach"/> stops its walk only on such a cycle, and a program with one cannot be emitted
 /// anyway (#2199).
+/// </para>
 /// </remarks>
 internal static class GenericExpansion
 {
-    // [WHY] The edges of each definition, and the callees each definition reaches on a cycle, are found once per
-    // compilation; every kernel's walk asks for the same definitions
+    // [WHY] Every kernel's walk asks for the same definitions: the edges of each definition, the methods of each type,
+    // the type parameters each definition creates, whether each type parameter is created and the expanding callees are
+    // found once per compilation
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<TypeParameterEdge>> s_edges = new();
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_expanding = new();
+
+    private static readonly PerCompilationSymbolCache<INamedTypeSymbol, ImmutableArray<IMethodSymbol>> s_methods =
+        new();
+
+    private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<ITypeParameterSymbol>> s_created =
+        new();
+
+    private static readonly PerCompilationSymbolCache<ITypeParameterSymbol, bool> s_isCreated = new();
+
+    private static readonly ConditionalWeakTable<Compilation, Components> s_components = new();
 
     /// <summary>
     /// The definitions that <paramref name="definition"/> calls through an expansive edge on a cycle of the type
@@ -32,97 +52,175 @@ internal static class GenericExpansion
         Compilation compilation) =>
         s_expanding.For(compilation).GetOrAdd(definition, d =>
         {
+            var components = s_components.GetValue(compilation, static c => new Components(c));
             var expanding = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-            foreach (var edge in GetEdges(d, compilation))
-            {
-                if (edge.Expansive && !expanding.Contains(edge.Callee) && Reaches(edge.To, edge.From, compilation))
-                {
-                    expanding.Add(edge.Callee);
-                }
-            }
-
+            GetEdges(d, compilation)
+                .AsStackEnumerable()
+                .Where(components, static (edge, graph) => edge.Expansive && graph.AreConnected(edge.From, edge.To))
+                .Select(static edge => edge.Callee)
+                .AddTo(expanding);
             return expanding.ToImmutableArray();
         });
 
-    // One edge of the graph: the type parameter From occurs in the argument for To in a call of Callee
+    // One edge of the graph: the type parameter From occurs in the argument for To in a call that the walk takes as a
+    // call of Callee (a constructor that a callee runs through new Q() counts as part of the call of that callee)
     private readonly record struct TypeParameterEdge(
         ITypeParameterSymbol From,
         ITypeParameterSymbol To,
         bool Expansive,
         IMethodSymbol Callee);
 
-    // The edges of the calls written in definition's bodies
+    // The edges of the calls written in definition's bodies, with the parameterless constructor calls that a callee's
+    // new Q() makes of the arguments passed for Q
     private static ImmutableArray<TypeParameterEdge> GetEdges(IMethodSymbol definition, Compilation compilation) =>
         s_edges.For(compilation).GetOrAdd(definition, d =>
         {
             var edges = ImmutableArray.CreateBuilder<TypeParameterEdge>();
-            var occurring = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default);
-            foreach (var callee in DeviceFunctionReach.GetWrittenCallees(d, compilation))
+            var pending = new Stack<(IMethodSymbol Call, IMethodSymbol Callee)>();
+            DeviceFunctionReach.GetWrittenCallees(d, compilation)
+                .AsStackEnumerable()
+                .Do(pending, static (call, stack) => stack.Push((call, DeviceFunctionEffects.GetDefinition(call))));
+            while (pending.Count > 0)
             {
-                var calleeDefinition = DeviceFunctionEffects.GetDefinition(callee);
-                var arguments = GetTypeArguments(callee);
-                var parameters = GetTypeParameters(calleeDefinition);
-                for (var i = 0; i < arguments.Count && i < parameters.Count; i++)
-                {
-                    occurring.Clear();
-                    AddTypeParameters(arguments[i], occurring);
-                    foreach (var from in occurring)
-                    {
-                        var expansive = !arguments[i].IsEqualTo(from);
-                        edges.Add(new TypeParameterEdge(from, parameters[i], expansive, calleeDefinition));
-                    }
-                }
+                var (call, callee) = pending.Pop();
+                AddCallEdges(call, callee, compilation, edges, pending);
             }
 
             return edges.ToImmutable();
         });
 
-    // Whether a path of edges leads from start to target
-    private static bool Reaches(ITypeParameterSymbol start, ITypeParameterSymbol target, Compilation compilation)
+    // The edges of one call, taken as a call of callee; a constructor that the call runs through new Q() is pushed as
+    // part of the same call (its type arguments are parts of this call's, so the pushing ends)
+    private static void AddCallEdges(IMethodSymbol call, IMethodSymbol callee, Compilation compilation,
+        ImmutableArray<TypeParameterEdge>.Builder edges, Stack<(IMethodSymbol Call, IMethodSymbol Callee)> pending)
     {
-        var seen = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default) { start };
-        var pending = new Stack<ITypeParameterSymbol>();
-        pending.Push(start);
-        while (pending.Count > 0)
+        var arguments = GetTypeArguments(call);
+        var parameters = GetTypeParameters(DeviceFunctionEffects.GetDefinition(call));
+        var occurring = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default);
+        for (var i = 0; i < arguments.Count && i < parameters.Count; i++)
         {
-            var parameter = pending.Pop();
-            if (parameter.IsEqualTo(target))
+            occurring.Clear();
+            AddTypeParameters(arguments[i], occurring);
+            foreach (var from in occurring)
             {
-                return true;
+                edges.Add(new TypeParameterEdge(from, parameters[i], !arguments[i].IsEqualTo(from), callee));
             }
 
-            foreach (var scope in GetScope(parameter))
+            if (arguments[i] is INamedTypeSymbol { TypeKind: TypeKind.Struct } created &&
+                IsCreated(parameters[i], compilation) &&
+                OperationCalls.FindParameterlessConstructor(created) is { IsImplicitlyDeclared: false } constructor)
             {
-                foreach (var edge in GetEdges(scope, compilation))
+                pending.Push((constructor, callee));
+            }
+        }
+    }
+
+    // Whether the bodies that can use parameter create it with new Q(), directly or by passing it on unchanged to a
+    // type parameter that is created
+    private static bool IsCreated(ITypeParameterSymbol parameter, Compilation compilation) =>
+        s_isCreated.For(compilation).GetOrAdd(parameter, p => FindCreation(p, compilation));
+
+    private static bool FindCreation(ITypeParameterSymbol parameter, Compilation compilation)
+    {
+        var seen = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default) { parameter };
+        var pending = new Stack<ITypeParameterSymbol>();
+        pending.Push(parameter);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            foreach (var method in GetScope(current, compilation))
+            {
+                if (GetCreatedTypeParameters(method, compilation)
+                    .AsStackEnumerable()
+                    .Any(current, static (created, parameter) => created.IsEqualTo(parameter)))
                 {
-                    if (edge.From.IsEqualTo(parameter) && seen.Add(edge.To))
-                    {
-                        pending.Push(edge.To);
-                    }
+                    return true;
                 }
+
+                AddPassedOn(current, method, compilation, seen, pending);
             }
         }
 
         return false;
     }
 
-    // The methods whose bodies can use parameter: its method, or every method of its type and of the types in it
-    private static List<IMethodSymbol> GetScope(ITypeParameterSymbol parameter)
+    // The type parameters that method passes current on to unchanged (C<current>), not seen before
+    private static void AddPassedOn(ITypeParameterSymbol current, IMethodSymbol method, Compilation compilation,
+        HashSet<ITypeParameterSymbol> seen, Stack<ITypeParameterSymbol> pending)
     {
-        var methods = new List<IMethodSymbol>();
-        if (parameter.DeclaringMethod is { } method)
+        foreach (var callee in DeviceFunctionReach.GetWrittenCallees(method, compilation))
         {
-            methods.Add(method.OriginalDefinition);
+            var arguments = GetTypeArguments(callee);
+            var parameters = GetTypeParameters(DeviceFunctionEffects.GetDefinition(callee));
+            for (var i = 0; i < arguments.Count && i < parameters.Count; i++)
+            {
+                if (arguments[i].IsEqualTo(current) && seen.Add(parameters[i]))
+                {
+                    pending.Push(parameters[i]);
+                }
+            }
         }
-        else if (parameter.DeclaringType is { } type)
-        {
-            AddMethods(type.OriginalDefinition, methods);
-        }
-
-        return methods;
     }
 
-    private static void AddMethods(INamedTypeSymbol type, List<IMethodSymbol> methods)
+    // The type parameters that method's bodies create with new Q()
+    private static ImmutableArray<ITypeParameterSymbol> GetCreatedTypeParameters(IMethodSymbol method,
+        Compilation compilation) =>
+        s_created.For(compilation).GetOrAdd(method, m =>
+        {
+            var created = ImmutableArray.CreateBuilder<ITypeParameterSymbol>();
+            if (!DeviceFunctionBodies.TryGet(m, compilation, out var bodies))
+            {
+                return created.ToImmutable();
+            }
+
+            foreach (var body in bodies)
+            {
+                if (compilation.ContainsSyntaxTree(body.SyntaxTree) &&
+                    compilation.GetCachedSemanticModel(body.SyntaxTree).GetOperation(body) is { } operation)
+                {
+                    foreach (var node in operation.DescendantsAndSelf())
+                    {
+                        if (node is ITypeParameterObjectCreationOperation { Type: ITypeParameterSymbol parameter })
+                        {
+                            created.Add(parameter);
+                        }
+                    }
+                }
+            }
+
+            return created.ToImmutable();
+        });
+
+    // The edges that leave parameter: those of the methods whose bodies can use it
+    private static IEnumerable<ITypeParameterSymbol> GetSuccessors(ITypeParameterSymbol parameter,
+        Compilation compilation)
+    {
+        foreach (var method in GetScope(parameter, compilation))
+        {
+            foreach (var edge in GetEdges(method, compilation))
+            {
+                if (edge.From.IsEqualTo(parameter))
+                {
+                    yield return edge.To;
+                }
+            }
+        }
+    }
+
+    // The methods whose bodies can use parameter: its method, or every method of its type and of the types in it
+    private static ImmutableArray<IMethodSymbol> GetScope(ITypeParameterSymbol parameter, Compilation compilation) =>
+        parameter.DeclaringMethod is { } method
+            ? ImmutableArray.Create(method.OriginalDefinition)
+            : parameter.DeclaringType is { } type
+                ? s_methods.For(compilation).GetOrAdd(type.OriginalDefinition, static t =>
+                {
+                    var methods = ImmutableArray.CreateBuilder<IMethodSymbol>();
+                    AddMethods(t, methods);
+                    return methods.ToImmutable();
+                })
+                : ImmutableArray<IMethodSymbol>.Empty;
+
+    private static void AddMethods(INamedTypeSymbol type, ImmutableArray<IMethodSymbol>.Builder methods)
     {
         foreach (var member in type.GetMembers())
         {
@@ -187,5 +285,101 @@ internal static class GenericExpansion
         }
 
         return arguments;
+    }
+
+    // The strongly connected components of the type-parameter graph of one compilation, found with Tarjan's algorithm
+    // from each type parameter the first time it is asked about; a component, once found, never changes
+    private sealed class Components(Compilation compilation)
+    {
+        private readonly object _gate = new();
+        private readonly Dictionary<ITypeParameterSymbol, int> _component = new(SymbolEqualityComparer.Default);
+        private readonly Dictionary<ITypeParameterSymbol, int> _index = new(SymbolEqualityComparer.Default);
+        private readonly Dictionary<ITypeParameterSymbol, int> _lowLink = new(SymbolEqualityComparer.Default);
+        private readonly HashSet<ITypeParameterSymbol> _onStack = new(SymbolEqualityComparer.Default);
+        private readonly Stack<ITypeParameterSymbol> _stack = new();
+        private int _nextIndex;
+        private int _nextComponent;
+
+        // Whether from and to are in one component: whether to reaches from again
+        public bool AreConnected(ITypeParameterSymbol from, ITypeParameterSymbol to)
+        {
+            lock (_gate)
+            {
+                return GetComponent(from) == GetComponent(to);
+            }
+        }
+
+        private int GetComponent(ITypeParameterSymbol parameter)
+        {
+            if (!_component.ContainsKey(parameter))
+            {
+                Visit(parameter);
+            }
+
+            return _component[parameter];
+        }
+
+        // Tarjan's algorithm from root, with an explicit stack of the successors still to visit
+        private void Visit(ITypeParameterSymbol root)
+        {
+            var work = new Stack<(ITypeParameterSymbol Node, IEnumerator<ITypeParameterSymbol> Successors)>();
+            Open(root, work);
+            while (work.Count > 0)
+            {
+                var (node, successors) = work.Peek();
+                if (successors.MoveNext())
+                {
+                    var next = successors.Current;
+                    if (!_index.ContainsKey(next))
+                    {
+                        Open(next, work);
+                    }
+                    else if (_onStack.Contains(next))
+                    {
+                        _lowLink[node] = Math.Min(_lowLink[node], _index[next]);
+                    }
+
+                    continue;
+                }
+
+                work.Pop();
+                if (work.Count > 0)
+                {
+                    var parent = work.Peek().Node;
+                    _lowLink[parent] = Math.Min(_lowLink[parent], _lowLink[node]);
+                }
+
+                if (_lowLink[node] == _index[node])
+                {
+                    Close(node);
+                }
+            }
+        }
+
+        private void Open(ITypeParameterSymbol node,
+            Stack<(ITypeParameterSymbol Node, IEnumerator<ITypeParameterSymbol> Successors)> work)
+        {
+            _index[node] = _nextIndex;
+            _lowLink[node] = _nextIndex;
+            _nextIndex++;
+            _stack.Push(node);
+            _onStack.Add(node);
+            work.Push((node, GetSuccessors(node, compilation).GetEnumerator()));
+        }
+
+        // Pops the component whose root is node
+        private void Close(ITypeParameterSymbol node)
+        {
+            ITypeParameterSymbol member;
+            do
+            {
+                member = _stack.Pop();
+                _onStack.Remove(member);
+                _component[member] = _nextComponent;
+            }
+            while (!member.IsEqualTo(node));
+
+            _nextComponent++;
+        }
     }
 }

@@ -98,6 +98,29 @@ namespace PolymorphicRecursion
         }
     }
 
+    // Carried by new T(): G<T> creates T, and V<U>() creates G<V<V<U>>>, whose new T() runs V<V<U>>(), ...
+    public struct G<T> where T : struct
+    {
+        public T Value;
+        public int N;
+
+        public G(int n)
+        {
+            Value = new T();
+            N = Kernels.Step(n);
+        }
+    }
+
+    public struct V<U> where U : struct
+    {
+        public int A;
+
+        public V()
+        {
+            A = new G<V<V<U>>>(0).N;
+        }
+    }
+
     public static partial class Kernels
     {
         [GpuDeviceFunction]
@@ -119,6 +142,12 @@ namespace PolymorphicRecursion
         public static void SwapKernel(int[] d)
         {
             d[0] = new S<int, long>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void NewTypeParameterKernel(int[] d)
+        {
+            d[0] = new V<int>().A;
         }
 
         [GpuKernel]
