@@ -6,7 +6,8 @@ namespace Kassyi.GSharp.Compiler.Tasks.Toolchains;
 /// compile and link commands on top of it.
 /// </summary>
 /// <param name="processRunner">The process runner used to invoke <c>vswhere.exe</c> and <c>cmd.exe</c>.</param>
-/// <param name="disableCache">If <see langword="true"/>, bypasses the static <c>vcvarsall.bat</c> environment cache.</param>
+/// <param name="disableCache">If <see langword="true"/>, bypasses the static <c>vcvarsall.bat</c> environment
+/// cache.</param>
 /// <param name="vswherePathOverride">Optional explicit path to <c>vswhere.exe</c>.</param>
 internal sealed class MsvcEnvironmentResolver(
     IProcessRunner processRunner,
@@ -19,7 +20,9 @@ internal sealed class MsvcEnvironmentResolver(
     private readonly ConcurrentDictionary<string, Dictionary<string, string>> _resolvedEnvs =
         new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Maps a host architecture name (<c>x64</c>, <c>arm64</c>) to the <c>vcvarsall.bat</c> argument.</summary>
+    /// <summary>
+    /// Maps a host architecture name (<c>x64</c>, <c>arm64</c>) to the <c>vcvarsall.bat</c> argument.
+    /// </summary>
     public static string ToVcvarsArchitecture(string arch) => arch switch
     {
         "x64" => "x64",
@@ -30,7 +33,8 @@ internal sealed class MsvcEnvironmentResolver(
     /// <summary>
     /// Resolves or retrieves the cached <c>vcvarsall.bat</c> environment variables for the specified architecture.
     /// </summary>
-    /// <param name="vcvarsArch">The <c>vcvarsall.bat</c> architecture specification (e.g., <c>x64</c>, <c>x64_arm64</c>).</param>
+    /// <param name="vcvarsArch">The <c>vcvarsall.bat</c> architecture specification (e.g., <c>x64</c>,
+    /// <c>x64_arm64</c>).</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
     /// <returns>A dictionary of environment variables, or <see langword="null"/> if resolution failed.</returns>
     public Dictionary<string, string>? GetVcvarsEnvironment(
@@ -44,10 +48,13 @@ internal sealed class MsvcEnvironmentResolver(
 
         return s_vcvarsCache.GetOrAdd(
             vcvarsArch,
-            arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch, cancellationToken))).Value;
+            arch => new Lazy<Dictionary<string, string>?>(
+                () => ResolveVcvarsEnvironment(arch, cancellationToken))).Value;
     }
 
-    /// <summary>Remembers the environment that <see cref="MsvcToolchain.PrepareEnvironment"/> resolved for an architecture.</summary>
+    /// <summary>
+    /// Remembers the environment that <see cref="MsvcToolchain.PrepareEnvironment"/> resolved for an architecture.
+    /// </summary>
     public void Remember(string vcvarsArch, Dictionary<string, string> environment) =>
         _resolvedEnvs[vcvarsArch] = environment;
 
@@ -83,7 +90,9 @@ internal sealed class MsvcEnvironmentResolver(
         return resolved;
     }
 
-    /// <summary>Reads the version of <paramref name="clPath"/>, or <c>VCToolsVersion</c> of the environment, or <c>unknown</c>.</summary>
+    /// <summary>
+    /// Reads the version of <paramref name="clPath"/>, or <c>VCToolsVersion</c> of the environment, or <c>unknown</c>.
+    /// </summary>
     public static string ReadMsvcVersion(string clPath, Dictionary<string, string>? env)
     {
         if (File.Exists(clPath))
