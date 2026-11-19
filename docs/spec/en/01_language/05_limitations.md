@@ -75,8 +75,8 @@ lists in its kernels, and in its device functions too when it does not export it
   `Warp.ActiveMask()`, or a device function that reaches a barrier, called from a lambda, a local function, a switch
   expression arm, a `when` clause, after `?.` or as the right operand of `??`.
 * [GSH0120](../03_bcl_api/diagnostics/GSH0120.md): in a method that reaches `Warp.ActiveMask()`, a `goto` that jumps
-  from outside into the middle of a forward-goto range or a goto loop, or forms a cross-section cycle in a
-  thread-dependent `switch`, holding a warp collective or barrier.
+  from outside into the middle of a forward-goto range or a goto loop, or forms a loop through a place where lanes
+  from different sections of a thread-dependent `switch` meet, holding a warp collective or barrier.
 * [GSH0121](../03_bcl_api/diagnostics/GSH0121.md): a `goto` to a label written right after another label
   (`second` in `first: second: s`) from another state: across a warp collective, a grid sync or a label that starts a
   state (temporary; across a barrier or a call that suspends it is GSH0040).
@@ -216,7 +216,7 @@ examples:
 | [**GSH0116**](../03_bcl_api/diagnostics/GSH0116.md) | Warning | No GPU of GSharpTargetArchitectures has an oversized shared memory configuration | Triggered when a kernel enables `[GpuKernel(AllowOversizedSharedMemory = true)]` but no target GPU of `GSharpTargetArchitectures` has an oversized shared memory configuration. |
 | [**GSH0117**](../03_bcl_api/diagnostics/GSH0117.md) | Error | SharedMemory<T> count must not be negative | Triggered when a `SharedMemory<T>` is created with a negative constant count. A count of 0 declares empty shared memory. |
 | [**GSH0119**](../03_bcl_api/diagnostics/GSH0119.md) | Warning | A file-local type cannot be named by the managed copy that G# generates | Triggered on the CPU dialect when a body that the managed path must copy into a generated file (it suspends or holds a construct only the managed path rewrites, such as an integer division) names a file-local type; the managed launch of the kernel that needs the copy throws. |
-| [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop, or forms a cross-section cycle in a thread-dependent `switch`, holding a warp collective or barrier. |
+| [**GSH0120**](../03_bcl_api/diagnostics/GSH0120.md) | Error | A goto jumps into the middle of a reconvergence region | Triggered when a `goto` in a method reaching `Warp.ActiveMask()` jumps from outside into the middle of a forward-goto range or goto loop, or forms a loop through a place where lanes from different sections of a thread-dependent `switch` meet, holding a warp collective or barrier. |
 | [**GSH0121**](../03_bcl_api/diagnostics/GSH0121.md) | Error | A goto reaches the inner label of chained labels from another state | Triggered when a `goto` jumps to a label written right after another label from another state of the CPU state machine (across a warp collective, a grid sync or a label that starts a state; across a barrier or a call that suspends it is GSH0040). Temporary. |
 | [**SLQ0001**](../03_bcl_api/diagnostics/SLQ0001.md) | Error | StackLinq method chain is too deep | Triggered when a StackLinq chain exceeds the compiler depth limit. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |

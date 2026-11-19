@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Validates that <c>goto</c> statements in methods reaching <c>Warp.ActiveMask()</c> do not jump into the middle of a
-/// reconvergence region (<c>ForwardRange</c>, <c>GotoLoop</c>, or a <c>switch</c> join cycle, GSH0120)
+/// reconvergence region (<c>ForwardRange</c>, <c>GotoLoop</c>, or a loop through a <c>switch</c> join, GSH0120)
 /// (<see cref="KernelBarrierValidator"/>).
 /// </summary>
 internal static class ReconvergenceJumpChecks
@@ -174,8 +174,9 @@ internal static class ReconvergenceJumpChecks
                 GSharpDiagnostics.GotoEntersReconvergenceRegionMiddle,
                 rejected.GetLocation(),
                 FormatSwitchJumpTarget(rejected),
-                "on a cycle between sections of a thread-dependent switch that holds a warp collective or barrier",
-                "Break the cycle or write the loop as a while or for statement.");
+                "along a loop through a place where lanes from different sections of a thread-dependent switch that " +
+                "holds a warp collective or barrier meet",
+                "Break the loop, or write it as a while or for statement.");
         }
     }
 

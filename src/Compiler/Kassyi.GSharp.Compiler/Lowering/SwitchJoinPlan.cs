@@ -14,7 +14,7 @@ internal sealed record SwitchJoin(int Order, int Section, int Position);
 
 /// <summary>
 /// Planned reconvergence joins for a thread-dependent <c>switch</c>: ordered joins, the earliest held join order per
-/// <c>(section, segment)</c>, and any cross-section jumps that form a cycle.
+/// <c>(section, segment)</c>, and any jumps that form a loop through a join.
 /// </summary>
 /// <param name="Joins">Planned join points in ascending <see cref="SwitchJoin.Order"/> (<c>J_1 .. J_k</c>).</param>
 /// <param name="FirstHeld">
@@ -22,7 +22,8 @@ internal sealed record SwitchJoin(int Order, int Section, int Position);
 /// <c>Joins.Length + 1</c> when none is reachable.
 /// </param>
 /// <param name="Rejected">
-/// Cross-section jumps that participate in a cycle (when non-empty, no joins are planned).
+/// Cross-section jumps on a cycle, and jumps back inside a section across one of its joins (when non-empty, no joins
+/// are planned).
 /// </param>
 internal sealed record SwitchJoinPlan(
     ImmutableArray<SwitchJoin> Joins,
@@ -41,7 +42,7 @@ internal sealed record SwitchJoinPlan(
 internal static class SwitchJoinPlanner
 {
     /// <summary>
-    /// Plans join points for <paramref name="switchStatement"/>, or returns cyclic jumps in
+    /// Plans join points for <paramref name="switchStatement"/>, or returns the jumps that form a loop through a join in
     /// <see cref="SwitchJoinPlan.Rejected"/> with no planned joins.
     /// </summary>
     internal static SwitchJoinPlan Plan(
@@ -75,12 +76,13 @@ internal static class SwitchJoinPlanner
         var adjacency = BuildJoinGraph(joinCount, sectionNodes, resolvedJumps);
 
         var rejected = FindCyclicJumps(joinCount, resolvedJumps, sectionNodes, adjacency);
-        if (!rejected.IsEmpty)
+        AddBackJumpsAcrossJoins(rejected, switchStatement, nodes, sectionNodes, canonicalIndices, isIncluded);
+        if (rejected.Count > 0)
         {
             return new SwitchJoinPlan(
                 ImmutableArray<SwitchJoin>.Empty,
                 ImmutableArray<ImmutableArray<int>>.Empty,
-                rejected);
+                rejected.ToImmutable());
         }
 
         var orderByNode = ComputeTopologicalOrders(nodes, adjacency, out var orderedJoins);
@@ -237,11 +239,7 @@ internal static class SwitchJoinPlanner
         for (var i = 0; i < jumps.Length; i++)
         {
             var jump = jumps[i];
-            var segment = sectionNodes[jump.SourceSection]
-                .AsStackEnumerable()
-                .Count((nodes, jump.StatementIndex), static (nodeIndex, state) =>
-                    state.nodes[nodeIndex].Position <= state.StatementIndex + 1
-                );
+            var segment = CountJoinsUpTo(nodes, sectionNodes[jump.SourceSection], jump.StatementIndex);
             var targetNode = nodeByKey[(jump.TargetSection, jump.TargetPosition)];
             resolved[i] = new ResolvedJump(jump.SourceSection, segment, jump.Jump, targetNode);
         }
@@ -294,7 +292,7 @@ internal static class SwitchJoinPlanner
         }
     }
 
-    private static ImmutableArray<GotoStatementSyntax> FindCyclicJumps(
+    private static ImmutableArray<GotoStatementSyntax>.Builder FindCyclicJumps(
         int joinCount,
         ResolvedJump[] resolvedJumps,
         ImmutableArray<int>[] sectionNodes,
@@ -318,8 +316,68 @@ internal static class SwitchJoinPlanner
             }
         }
 
-        return rejected.Count == 0 ? ImmutableArray<GotoStatementSyntax>.Empty : rejected.ToImmutable();
+        return rejected;
     }
+
+    // A goto back to a label of its own section that lies before one of the section's joins passes that join again:
+    // its lanes arrive there a second time with the switch region on top, so they form a loop through the join just as
+    // a cycle of cross-section jumps does
+    private static void AddBackJumpsAcrossJoins(
+        ImmutableArray<GotoStatementSyntax>.Builder rejected,
+        SwitchStatementSyntax switchStatement,
+        ImmutableArray<(int Section, int Position)> nodes,
+        ImmutableArray<int>[] sectionNodes,
+        int[][] canonicalIndices,
+        Func<GotoStatementSyntax, bool>? isIncluded)
+    {
+        for (var s = 0; s < switchStatement.Sections.Count; s++)
+        {
+            if (sectionNodes[s].IsEmpty)
+            {
+                continue;
+            }
+
+            var statements = switchStatement.Sections[s].Statements;
+            for (var k = 0; k < statements.Count; k++)
+            {
+                foreach (var node in statements[k].DescendantNodesAndSelf(static n =>
+                             n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+                {
+                    if (node is not GotoStatementSyntax gotoStmt ||
+                        !gotoStmt.IsKind(SyntaxKind.GotoStatement) ||
+                        (isIncluded != null && !isIncluded(gotoStmt)) ||
+                        gotoStmt.Expression is not IdentifierNameSyntax { Identifier.ValueText: var labelName } ||
+                        ReconvergenceSyntax.FindLabel(gotoStmt, labelName) is not { } targetLabel)
+                    {
+                        continue;
+                    }
+
+                    var l = JumpRegionPlanner.FindCanonicalStatementIndexForLabel(
+                        statements,
+                        targetLabel,
+                        canonicalIndices[s]);
+                    if (l >= 0 &&
+                        l <= k &&
+                        CountJoinsUpTo(nodes, sectionNodes[s], l) < CountJoinsUpTo(nodes, sectionNodes[s], k) &&
+                        !rejected.Contains(gotoStmt))
+                    {
+                        rejected.Add(gotoStmt);
+                    }
+                }
+            }
+        }
+    }
+
+    // The segment of statement statementIndex: the joins of its section placed before it or at its labels
+    private static int CountJoinsUpTo(
+        ImmutableArray<(int Section, int Position)> nodes,
+        ImmutableArray<int> nodesInSection,
+        int statementIndex) =>
+        nodesInSection
+            .AsStackEnumerable()
+            .Count((nodes, statementIndex), static (nodeIndex, state) =>
+                state.nodes[nodeIndex].Position <= state.statementIndex + 1
+            );
 
     private static bool IsReachable(
         int start,

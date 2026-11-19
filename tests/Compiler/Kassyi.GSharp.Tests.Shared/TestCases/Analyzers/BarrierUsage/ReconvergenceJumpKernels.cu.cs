@@ -248,4 +248,35 @@ public static partial class ReconvergenceJumpKernels
 
         result[t] = m;
     }
+
+    [GpuKernel]
+    public static void SwitchBackwardGotoAcrossJoinKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (t % 3)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto first;
+            case 1:
+            first:
+                n++;
+            second:
+                n++;
+                if (n < 4)
+                {
+                    goto first;
+                }
+
+                break;
+            default:
+                goto second;
+        }
+
+        result[t] = m;
+        result[t + 32] = (uint)n;
+        result[t + 64] = Warp.ActiveMask();
+    }
 }

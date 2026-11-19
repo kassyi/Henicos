@@ -207,4 +207,52 @@ public class SwitchJoinPlannerTests
         Assert.Equal(new[] { 1, 3 }, plan.FirstHeld[1]);
         Assert.Equal(new[] { 2, 3 }, plan.FirstHeld[2]);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_BackwardGotoInSectionAcrossJoin_RejectsItWithNoJoins()
+    {
+        var sw = ParseSwitch(@"
+            switch (x)
+            {
+                case 0:
+                    goto first;
+                case 1:
+                first:
+                    a();
+                second:
+                    b();
+                    if (c) goto first;
+                    break;
+                default:
+                    goto second;
+            }");
+
+        var plan = Plan(sw);
+        Assert.Empty(plan.Joins);
+        Assert.Empty(plan.FirstHeld);
+        var rejected = Assert.Single(plan.Rejected);
+        Assert.Same(sw.Sections[1], rejected.FirstAncestorOrSelf<SwitchSectionSyntax>());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_BackwardGotoInSectionWithinOneSegment_KeepsTheJoin()
+    {
+        var sw = ParseSwitch(@"
+            switch (x)
+            {
+                case 0:
+                    goto first;
+                case 1:
+                first:
+                    a();
+                    if (c) goto first;
+                    break;
+            }");
+
+        var plan = Plan(sw);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(new SwitchJoin(Order: 1, Section: 1, Position: 1), Assert.Single(plan.Joins));
+    }
 }

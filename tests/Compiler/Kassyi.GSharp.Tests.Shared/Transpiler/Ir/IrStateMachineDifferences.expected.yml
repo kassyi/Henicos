@@ -3271,6 +3271,7 @@
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.CrossSectionGotoToGotoLoopHeadKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.ForwardGotoIntoGotoLoopMiddleKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.JumpIntoMiddleInDeviceFunction", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchBackwardGotoAcrossJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchMutualCycleKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchSelfCycleKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", method: "ReconvergenceJumpNestedFunctionKernels.LambdaMiddleGotoKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
