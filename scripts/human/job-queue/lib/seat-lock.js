@@ -450,6 +450,8 @@ function createSeatLock(seatPaths, commandText, options = {}) {
   const ownedSeats = new Map();
   const intentPath = resolvedSeatPaths.length === 2 ? intentPathOf(resolvedSeatPaths[0]) : null;
   let ownsIntent = false;
+  /** Tells this caller's intent record from one another caller wrote over it. */
+  const intentToken = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   function writeIntentRecord() {
     const record = {
@@ -464,53 +466,65 @@ function createSeatLock(seatPaths, commandText, options = {}) {
       mode: 'exclusive',
       stage: 'acquiring',
       turn,
+      token: intentToken,
     };
     fs.writeFileSync(path.join(intentPath, 'owner.json'), JSON.stringify(record));
+    // NTFS keeps a directory's mtime when a file in it is rewritten; a reader that meets the record half-written falls
+    // back on that mtime (isLiveIntent), so it must move with every refresh
+    const now = new Date();
+    fs.utimesSync(intentPath, now, now);
+  }
+
+  /** False when the intent directory holds the record of another caller (it replaced this one's). */
+  function isOwnIntent() {
+    const record = readSeatOwner(intentPath);
+    return record === null || record.token === intentToken;
   }
 
   /**
-   * Leaves or refreshes this caller's intent for both seats. Another live intent is left alone (it goes first; this
-   * caller takes over once it is gone); a dead or stale one is replaced. A lost directory is created again.
+   * Leaves or refreshes this caller's intent for both seats. Another live intent is left alone: shared callers wait for
+   * it as well, and exclusive callers are not ordered among themselves (each keeps trying the seats). A dead or stale
+   * intent is replaced. The intent only asks shared callers to wait, so failing to leave it is reported and the wait
+   * for the seats goes on.
    */
   function announceIntent() {
-    if (ownsIntent) {
-      try {
-        writeIntentRecord();
-        return;
-      } catch (error) {
-        if (!error || error.code !== 'ENOENT') {
-          throw error;
+    try {
+      if (ownsIntent) {
+        if (isOwnIntent()) {
+          writeIntentRecord();
+          return;
         }
         ownsIntent = false;
       }
-    }
-    if (isLiveIntent(intentPath, Date.now())) {
-      return;
-    }
-    if (fs.existsSync(intentPath)) {
-      releaseDirectory(intentPath, prefix);
-    }
-    try {
-      fs.mkdirSync(intentPath);
-    } catch (error) {
-      if ((error && error.code === 'EEXIST') || isWindowsContendedError(error, intentPath)) {
+      if (isLiveIntent(intentPath, Date.now())) {
         return;
       }
-      throw error;
-    }
-    ownsIntent = true;
-    try {
+      if (fs.existsSync(intentPath)) {
+        releaseDirectory(intentPath, prefix);
+      }
+      try {
+        fs.mkdirSync(intentPath);
+      } catch (error) {
+        if ((error && error.code === 'EEXIST') || isWindowsContendedError(error, intentPath)) {
+          return;
+        }
+        throw error;
+      }
+      ownsIntent = true;
       writeIntentRecord();
     } catch (error) {
+      process.stderr.write(`${prefix} could not leave the exclusive intent ${intentPath}: ${error.message}\n`);
       withdrawIntent();
-      throw error;
     }
   }
 
+  /** Removes this caller's intent, unless another caller has replaced it meanwhile. */
   function withdrawIntent() {
     if (ownsIntent) {
       ownsIntent = false;
-      releaseDirectory(intentPath, prefix);
+      if (isOwnIntent()) {
+        releaseDirectory(intentPath, prefix);
+      }
     }
   }
 
@@ -1170,6 +1184,56 @@ function selfTest() {
     assert.strictEqual(readSeatOwner(intent).pid, process.pid, 'a waiter replaces a dead intent with its own');
     heir.releaseLock();
     fs.rmSync(seat1, RmRetryOptions);
+  });
+
+  // Check 9: a refresh moves the intent directory's mtime (a half-written record falls back on it), a waiter does not
+  // remove an intent another caller wrote over its own, and a failed first write of the record does not end the wait.
+  withTempSeats((seat0, seat1) => {
+    const intent = intentPathOf(seat0);
+    const holder = createSeatLock([seat0, seat1], 'node -e "holder"', { mode: 'shared' });
+    const shared = createSeatLock([seat0, seat1], 'node -e "shared"', { mode: 'shared' });
+    const waiter = createSeatLock([seat0, seat1], 'node -e "waiter"', { mode: 'exclusive' });
+    assert.strictEqual(holder.tryAcquire().seat, 0, 'a shared holder keeps the waiter out; seat 1 stays free');
+    assert.strictEqual(waiter.tryAcquire().acquired, false);
+    const old = new Date(Date.now() - IntentStaleMs - 1000);
+    fs.utimesSync(intent, old, old);
+    assert.strictEqual(waiter.tryAcquire().acquired, false, 'still waiting: the refresh');
+    fs.writeFileSync(path.join(intent, 'owner.json'), '{"pid": 1, "ho');
+    assert.strictEqual(shared.tryAcquire().acquired, false, 'a half-written record of a refreshed intent still stops it');
+    fs.writeFileSync(
+      path.join(intent, 'owner.json'),
+      JSON.stringify({ pid: process.pid, host: os.hostname(), platform: process.platform, token: 'other' }),
+    );
+    waiter.releaseLock();
+    assert.strictEqual(readSeatOwner(intent).token, 'other', 'an intent another caller wrote over is left to it');
+    fs.rmSync(intent, RmRetryOptions);
+    holder.releaseLock();
+    fs.mkdirSync(seat1);
+
+    const flaky = createSeatLock([seat0, seat1], 'node -e "flaky"', { mode: 'exclusive' });
+    const realWrite = fs.writeFileSync;
+    const realStderr = process.stderr.write;
+    fs.writeFileSync = (file, ...rest) => {
+      if (String(file).startsWith(intent)) {
+        const error = new Error(`ENOENT: no such file or directory, open '${String(file)}'`);
+        error.code = 'ENOENT';
+        throw error;
+      }
+      return realWrite.call(fs, file, ...rest);
+    };
+    process.stderr.write = () => true;
+    let result;
+    try {
+      result = flaky.tryAcquire();
+    } finally {
+      fs.writeFileSync = realWrite;
+      process.stderr.write = realStderr;
+    }
+    assert.strictEqual(result.acquired, false, 'a failed intent write does not throw out of tryAcquire');
+    assert.strictEqual(fs.existsSync(intent), false, 'and leaves no intent behind');
+    fs.rmSync(seat1, RmRetryOptions);
+    assert.strictEqual(flaky.tryAcquire().acquired, true, 'the wait goes on');
+    flaky.releaseLock();
   });
 }
 
