@@ -1485,6 +1485,8 @@
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.RefAndOutKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.ScalarsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.StructsKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldMarshalingKernels.cu.cs", method: "EnumFieldMarshalingKernels.ReadEnumFieldsKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldMarshalingKernels.cu.cs", method: "EnumFieldMarshalingKernels.WriteEnumFieldsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "Kernels.ScaleKernel", status: "Compared", count: 1}
 - {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "ProtectedNestedLaunchBase.DirectScaleKernel", status: "Compared", count: 1}
 - {file: "Runtime/AutoAllocateReturnArraysKernels.cu.cs", method: "AutoAllocateReturnArraysKernels.AutoLayoutResultKernel", status: "Compared", count: 1}
@@ -4709,6 +4711,8 @@
 - {file: "TestCases/Marshaling/CpuNativeArgumentSource.cs", method: "Arguments.ScalarKinds", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/CpuNativeArgumentSource.cs", method: "Arguments.ScalarResult", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/CpuNativeArgumentSource.cs", method: "Arguments.StructKinds", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/EnumFieldMarshalSource.cs", method: "JobKernels.Run", status: "Compared", count: 1}
+- {file: "TestCases/Marshaling/EnumFieldMarshalSource.cs", method: "JobKernels.RunHidden", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/KernelTwoFormsPlanSource.cs", method: "TestKernels.MatchingKernel", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/KernelTwoFormsPlanSource.cs", method: "TestKernels.NonMatchingKernel", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/KernelTwoFormsPlanSource.cs", method: "TestKernels.UnrelatedTypeInKernel", status: "Compared", count: 1}
