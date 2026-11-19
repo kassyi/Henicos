@@ -4467,6 +4467,10 @@
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.Relay", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.Shared", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedBuilderKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConstrainedGetterKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConstrainedIndexerKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConstrainedRefKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConstrainedSetterKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConstructorKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedConversionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedFiniteGrowthKernel", status: "Compared", count: 1}
@@ -4488,6 +4492,10 @@
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingExpressionKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.UnmarkedUsingKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaBuilder", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConstrainedGetter", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConstrainedIndexer", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConstrainedRef", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConstrainedSetter", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConstructor", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaConversion", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.ViaDispose", status: "NoStateMachine", count: 1}
@@ -4516,6 +4524,10 @@
 - {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedGetterKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionConsumer.cu.cs", method: "Kernels.UnmarkedViaFunctionKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionDefaultInterfaceMember.cu.cs", method: "Kernels.MarkedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionDefaultInterfaceMember.cu.cs", method: "Kernels.OnlyMarked", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionDefaultInterfaceMember.cu.cs", method: "Kernels.UnmarkedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SpillSuppressionDefaultInterfaceMember.cu.cs", method: "Kernels.ViaDefaultMember", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionLibrary.cs", method: "Lib.F", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionLibrary.cs", method: "Lib.F2", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppressionLibrary.cs", method: "Lib.FCtor", status: "NoStateMachine", count: 1}

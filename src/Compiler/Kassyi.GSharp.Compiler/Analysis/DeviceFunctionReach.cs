@@ -41,6 +41,14 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </remarks>
 internal static class DeviceFunctionReach
 {
+    /// <summary>
+    /// The name that stands for functions the walk cannot name: a member of an interface reached through a type
+    /// parameter whose type argument has no implementation of it in the compilation (a default interface member). It
+    /// never equals a function of a ptxas line, and <see cref="Aot.SpillSuppressionPlan"/> lists no function when a
+    /// kernel without the pragma reaches it.
+    /// </summary>
+    public const string UnknownFunctions = "*";
+
     // [WHY] The direct callees of each function are found once per compilation; the walk of each kernel reuses them.
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_callees = new();
 
@@ -113,7 +121,8 @@ internal static class DeviceFunctionReach
             var definition = DeviceFunctionEffects.GetDefinition(function);
             if (DeviceFunctionBodies.TryGet(definition, compilation, out _) ||
                 (DeviceExportTable.IsOutside(definition, compilation) &&
-                 (DeviceExportTable.TryFind(definition, out _) || TryFindImportedStruct(function, out _))))
+                 (DeviceExportTable.TryFind(definition, out _) || TryFindImportedStruct(function, out _))) ||
+                definition.ContainingType is { TypeKind: TypeKind.Interface })
             {
                 callees.Add(function);
             }
@@ -131,12 +140,81 @@ internal static class DeviceFunctionReach
             return;
         }
 
-        OperationCalls.Add(operation, typeArguments, called);
+        if (!AddConstrainedCalls(operation, typeArguments, compilation, called))
+        {
+            OperationCalls.Add(operation, typeArguments, called);
+        }
+
         AddCallsWithoutOperation(operation, typeArguments, compilation, called);
         foreach (var child in operation.ChildOperations)
         {
             AddCalls(child, typeArguments, compilation, called);
         }
+    }
+
+    // A member of an interface reached through a type parameter (default(T).Value on T : IHas, T.Create(), a + b on
+    // T : IAdditionOperators): the call runs the implementation of the type argument, found as the walk has replaced
+    // the type parameter. A member that the type argument does not implement in the compilation (a default interface
+    // member) stays the interface member, named UnknownFunctions; one of a type outside the compilation (int) runs no
+    // device code of the compilation and adds nothing. False when operation is no such call
+    private static bool AddConstrainedCalls(IOperation operation, TypeArgumentMap typeArguments,
+        Compilation compilation, ImmutableArray<IMethodSymbol>.Builder called)
+    {
+        if (GetConstrainedReceiver(operation) is not { } receiver)
+        {
+            return false;
+        }
+
+        var members = ImmutableArray.CreateBuilder<IMethodSymbol>();
+        OperationCalls.Add(operation, TypeArgumentMap.None, members);
+        var concrete = typeArguments.Substitute(receiver);
+        foreach (var member in members)
+        {
+            if (FindImplementation(typeArguments.Substitute(member), concrete, compilation) is { } implementation)
+            {
+                called.Add(implementation);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The type parameter through which <paramref name="operation"/> calls a member of an interface, or null when it
+    /// calls none that way: the constrained type of a static member or operator, or the receiver of an instance member.
+    /// </summary>
+    internal static ITypeParameterSymbol? GetConstrainedReceiver(IOperation operation) => operation switch
+    {
+        IInvocationOperation invocation when IsInterfaceMember(invocation.TargetMethod) =>
+            AsTypeParameter(invocation.ConstrainedToType ?? invocation.Instance?.Type),
+        IPropertyReferenceOperation property when IsInterfaceMember(property.Property) =>
+            AsTypeParameter(property.ConstrainedToType ?? property.Instance?.Type),
+        IBinaryOperation binary => AsTypeParameter(binary.ConstrainedToType),
+        IUnaryOperation unary => AsTypeParameter(unary.ConstrainedToType),
+        ICompoundAssignmentOperation compound => AsTypeParameter(compound.ConstrainedToType),
+        IIncrementOrDecrementOperation increment => AsTypeParameter(increment.ConstrainedToType),
+        IConversionOperation conversion => AsTypeParameter(conversion.ConstrainedToType),
+        _ => null
+    };
+
+    private static bool IsInterfaceMember(ISymbol member) => member.ContainingType is { TypeKind: TypeKind.Interface };
+
+    private static ITypeParameterSymbol? AsTypeParameter(ITypeSymbol? type) => type as ITypeParameterSymbol;
+
+    // The implementation of member in type; member itself when type is of the compilation and does not implement it
+    // with a member of its own (a default interface member, or a type parameter not replaced); null for a type outside
+    // the compilation without one
+    private static IMethodSymbol? FindImplementation(IMethodSymbol member, ITypeSymbol type, Compilation compilation)
+    {
+        if (type is INamedTypeSymbol named && named.FindImplementationForInterfaceMember(member) is IMethodSymbol
+            {
+                ContainingType.TypeKind: not TypeKind.Interface
+            } implementation)
+        {
+            return implementation;
+        }
+
+        return type is INamedTypeSymbol outside && DeviceExportTable.IsOutside(outside, compilation) ? null : member;
     }
 
     // The calls that C# makes for operation without an operation of their own (OperationCalls does not list them)
@@ -250,6 +328,11 @@ internal static class DeviceFunctionReach
     private static string? GetEmittedName(IMethodSymbol function, Compilation compilation)
     {
         var definition = DeviceFunctionEffects.GetDefinition(function);
+        if (definition.ContainingType is { TypeKind: TypeKind.Interface })
+        {
+            return UnknownFunctions;
+        }
+
         if (DeviceExportTable.IsOutside(definition, compilation) && !DeviceExportTable.TryFind(definition, out _) &&
             TryFindImportedStruct(function, out var structRecord))
         {

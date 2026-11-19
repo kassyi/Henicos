@@ -80,6 +80,10 @@ public class SpillSuppressionLineTests
     [InlineData("ViaUsingExpression")]
     [InlineData("ViaFiniteGrowth")]
     [InlineData("ViaIndirectGrowth")]
+    [InlineData("ViaConstrainedGetter")]
+    [InlineData("ViaConstrainedSetter")]
+    [InlineData("ViaConstrainedIndexer")]
+    [InlineData("ViaConstrainedRef")]
     public void CudaModule_FunctionAnUnmarkedKernelReachesOnlyThrough_IsNotListed(string function)
     {
         var module = s_cudaModule.Value;
@@ -129,6 +133,22 @@ public class SpillSuppressionLineTests
         Assert.DoesNotContain(name, ReadSuppressionLine(module));
     }
 
+    // A kernel without the pragma reaches a default interface member through a type parameter, whose body the walk
+    // does not name: no function is listed, not even one that only the marked kernel reaches
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CudaModule_UnmarkedKernelReachesADefaultInterfaceMember_ListsOnlyTheMarkedKernel()
+    {
+        var module = GenerateModule(
+            RoslynTestUtility.CreateCompilation(
+                RoslynTestUtility.ReadTestCase("Generator/SpillSuppressionDefaultInterfaceMember.cu.cs")),
+            "Cuda", ".g.cu", AssemblyName);
+
+        Assert.Equal(["__gsharp_k_SpillSuppressionDefaultMember__Kernels__MarkedKernel"], ReadSuppressionLine(module));
+        Assert.Contains("int __gsharp_fn_SpillSuppressionDefaultMember__Kernels__OnlyMarked(int", module,
+            StringComparison.Ordinal);
+    }
+
     // Each kernel reaches a struct that constructs itself, or another that constructs it back, with a type argument
     // that holds its own type parameter: every step is a new construction, so the walk has to stop on its own
     [Theory]
@@ -138,6 +158,7 @@ public class SpillSuppressionLineTests
     [InlineData("SwapKernel")]
     [InlineData("MutualKernel")]
     [InlineData("NewTypeParameterKernel")]
+    [InlineData("ConstrainedMemberKernel")]
     public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends(string kernelName)
     {
         var compilation = RoslynTestUtility.CreateCompilation(
@@ -189,6 +210,29 @@ public class SpillSuppressionLineTests
 
         Assert.Empty(names);
         Assert.Equal("", SpillSuppressionPlan.FormatLine(names));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Create_UnknownFunctionsOfAKernelWithoutThePragma_ListsOnlyTheMarkedKernels()
+    {
+        KernelSpillScope[] kernels =
+        [
+            new("__gsharp_k_A", true, Names("__gsharp_fn_Own", DeviceFunctionReach.UnknownFunctions)),
+            new("__gsharp_k_B", false, Names(DeviceFunctionReach.UnknownFunctions)),
+        ];
+
+        Assert.Equal(["__gsharp_k_A"], SpillSuppressionPlan.Create(kernels).ToArray());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Create_UnknownFunctionsOfAMarkedKernel_AreNotListed()
+    {
+        KernelSpillScope[] kernels =
+            [new("__gsharp_k_A", true, Names("__gsharp_fn_Own", DeviceFunctionReach.UnknownFunctions))];
+
+        Assert.Equal(["__gsharp_fn_Own", "__gsharp_k_A"], SpillSuppressionPlan.Create(kernels).ToArray());
     }
 
     [Fact]

@@ -13,8 +13,9 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// in a definition's body adds an edge from each type parameter <c>P</c> that occurs in a type argument to the callee's
 /// type parameter <c>Q</c> that the argument is for; the edge is expansive when <c>P</c> sits inside another type there
 /// (<c>Wrap&lt;P&gt;</c>), not when the argument is <c>P</c> itself. A type argument passed for a type parameter
-/// that the callee creates with <c>new Q()</c> (itself, or through the type parameters it passes it on to) is a call
-/// of that type's parameterless constructor as well, which adds its edges in the caller.
+/// that the callee creates with <c>new Q()</c>, or reaches a member of an interface through (<c>default(Q).Value</c>),
+/// itself or through the type parameters it passes it on to, runs a member of that type as well, which adds the edges
+/// of a call of it in the caller.
 /// </para>
 /// <para>
 /// The instantiations are infinite only when an expansive edge lies on a cycle: when both of its ends are in one
@@ -28,8 +29,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 internal static class GenericExpansion
 {
     // [WHY] Every kernel's walk asks for the same definitions: the edges of each definition, the methods of each type,
-    // the type parameters each definition creates, whether each type parameter is created and the expanding callees are
-    // found once per compilation
+    // the type parameters each definition creates or reaches members through, how each type parameter is used and the
+    // expanding callees are found once per compilation
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<TypeParameterEdge>> s_edges = new();
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<IMethodSymbol>> s_expanding = new();
@@ -37,10 +38,10 @@ internal static class GenericExpansion
     private static readonly PerCompilationSymbolCache<INamedTypeSymbol, ImmutableArray<IMethodSymbol>> s_methods =
         new();
 
-    private static readonly PerCompilationSymbolCache<IMethodSymbol, ImmutableArray<ITypeParameterSymbol>> s_created =
-        new();
+    private static readonly PerCompilationSymbolCache<IMethodSymbol,
+        ImmutableArray<(ITypeParameterSymbol Parameter, TypeParameterUse Use)>> s_used = new();
 
-    private static readonly PerCompilationSymbolCache<ITypeParameterSymbol, bool> s_isCreated = new();
+    private static readonly PerCompilationSymbolCache<ITypeParameterSymbol, TypeParameterUse> s_use = new();
 
     private static readonly ConditionalWeakTable<Compilation, Components> s_components = new();
 
@@ -61,6 +62,19 @@ internal static class GenericExpansion
                 .AddTo(expanding);
             return expanding.ToImmutableArray();
         });
+
+    // How a generic body runs code of a type argument
+    [Flags]
+    private enum TypeParameterUse
+    {
+        None = 0,
+
+        // new Q(): the parameterless constructor of the argument, when it declares one
+        Created = 1,
+
+        // A member of an interface reached through Q: the argument's implementation of it
+        Reached = 2,
+    }
 
     // One edge of the graph: the type parameter From occurs in the argument for To in a call that the walk takes as a
     // call of Callee (a constructor that a callee runs through new Q() counts as part of the call of that callee)
@@ -106,22 +120,25 @@ internal static class GenericExpansion
                 edges.Add(new TypeParameterEdge(from, parameters[i], !arguments[i].IsEqualTo(from), callee));
             }
 
-            if (arguments[i] is INamedTypeSymbol { TypeKind: TypeKind.Struct } created &&
-                IsCreated(parameters[i], compilation) &&
-                OperationCalls.FindParameterlessConstructor(created) is { IsImplicitlyDeclared: false } constructor)
+            if (arguments[i] is INamedTypeSymbol { TypeKind: TypeKind.Struct } argument &&
+                GetUse(parameters[i], compilation) is not TypeParameterUse.None and var use &&
+                OperationCalls.FindParameterlessConstructor(argument) is { } constructor &&
+                ((use & TypeParameterUse.Reached) != 0 || !constructor.IsImplicitlyDeclared))
             {
+                // A member of the argument runs: its type arguments flow as in a call of any member of it
                 pending.Push((constructor, callee));
             }
         }
     }
 
-    // Whether the bodies that can use parameter create it with new Q(), directly or by passing it on unchanged to a
-    // type parameter that is created
-    private static bool IsCreated(ITypeParameterSymbol parameter, Compilation compilation) =>
-        s_isCreated.For(compilation).GetOrAdd(parameter, p => FindCreation(p, compilation));
+    // How the bodies that can use parameter run code of its type argument: new Q(), or a member of an interface
+    // reached through Q; directly or by passing Q on unchanged to a type parameter that does
+    private static TypeParameterUse GetUse(ITypeParameterSymbol parameter, Compilation compilation) =>
+        s_use.For(compilation).GetOrAdd(parameter, p => FindUse(p, compilation));
 
-    private static bool FindCreation(ITypeParameterSymbol parameter, Compilation compilation)
+    private static TypeParameterUse FindUse(ITypeParameterSymbol parameter, Compilation compilation)
     {
+        var use = TypeParameterUse.None;
         var seen = new HashSet<ITypeParameterSymbol>(SymbolEqualityComparer.Default) { parameter };
         var pending = new Stack<ITypeParameterSymbol>();
         pending.Push(parameter);
@@ -130,18 +147,15 @@ internal static class GenericExpansion
             var current = pending.Pop();
             foreach (var method in GetScope(current, compilation))
             {
-                if (GetCreatedTypeParameters(method, compilation)
+                use |= GetUsedTypeParameters(method, compilation)
                     .AsStackEnumerable()
-                    .Any(current, static (created, parameter) => created.IsEqualTo(parameter)))
-                {
-                    return true;
-                }
-
+                    .Where(current, static (used, own) => used.Parameter.IsEqualTo(own))
+                    .Aggregate(TypeParameterUse.None, static (all, used) => all | used.Use);
                 AddPassedOn(current, method, compilation, seen, pending);
             }
         }
 
-        return false;
+        return use;
     }
 
     // The type parameters that method passes current on to unchanged (C<current>), not seen before
@@ -162,15 +176,15 @@ internal static class GenericExpansion
         }
     }
 
-    // The type parameters that method's bodies create with new Q()
-    private static ImmutableArray<ITypeParameterSymbol> GetCreatedTypeParameters(IMethodSymbol method,
-        Compilation compilation) =>
-        s_created.For(compilation).GetOrAdd(method, m =>
+    // The type parameters that method's bodies create with new Q() or reach a member of an interface through
+    private static ImmutableArray<(ITypeParameterSymbol Parameter, TypeParameterUse Use)> GetUsedTypeParameters(
+        IMethodSymbol method, Compilation compilation) =>
+        s_used.For(compilation).GetOrAdd(method, m =>
         {
-            var created = ImmutableArray.CreateBuilder<ITypeParameterSymbol>();
+            var used = ImmutableArray.CreateBuilder<(ITypeParameterSymbol Parameter, TypeParameterUse Use)>();
             if (!DeviceFunctionBodies.TryGet(m, compilation, out var bodies))
             {
-                return created.ToImmutable();
+                return used.ToImmutable();
             }
 
             foreach (var body in bodies)
@@ -182,13 +196,17 @@ internal static class GenericExpansion
                     {
                         if (node is ITypeParameterObjectCreationOperation { Type: ITypeParameterSymbol parameter })
                         {
-                            created.Add(parameter);
+                            used.Add((parameter, TypeParameterUse.Created));
+                        }
+                        else if (DeviceFunctionReach.GetConstrainedReceiver(node) is { } receiver)
+                        {
+                            used.Add((receiver, TypeParameterUse.Reached));
                         }
                     }
                 }
             }
 
-            return created.ToImmutable();
+            return used.ToImmutable();
         });
 
     // The edges that leave parameter: those of the methods whose bodies can use it

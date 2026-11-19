@@ -149,6 +149,87 @@ namespace SpillSuppressionTest
         }
     }
 
+    // A member of an interface called on a constrained type parameter: the call runs the implementation of the
+    // type argument (HasImpl.Value), which no body names
+    public interface IHasValue
+    {
+        int Value { get; }
+    }
+
+    public struct HasImpl : IHasValue
+    {
+        public int A;
+
+        public int Value => Kernels.ViaConstrainedGetter(A);
+    }
+
+    public struct ReadsValue<T> where T : struct, IHasValue
+    {
+        public int N;
+
+        public ReadsValue(int n)
+        {
+            N = default(T).Value + n;
+        }
+    }
+
+    public interface IHasSlot
+    {
+        int Value { get; set; }
+
+        int this[int i] { get; }
+
+        ref int Slot { get; }
+    }
+
+    public struct SlotImpl : IHasSlot
+    {
+        public int[] Data;
+        public int A;
+
+        public int Value
+        {
+            get => A;
+            set => A = Kernels.ViaConstrainedSetter(value);
+        }
+
+        public int this[int i] => Kernels.ViaConstrainedIndexer(A + i);
+
+        public ref int Slot => ref Data[Kernels.ViaConstrainedRef(0)];
+    }
+
+    public struct WritesValue<T> where T : struct, IHasSlot
+    {
+        public int N;
+
+        public WritesValue(int n)
+        {
+            var value = default(T);
+            value.Value = n;
+            N = n;
+        }
+    }
+
+    public struct ReadsIndexer<T> where T : struct, IHasSlot
+    {
+        public int N;
+
+        public ReadsIndexer(int n)
+        {
+            N = default(T)[n];
+        }
+    }
+
+    public struct ReadsSlot<T> where T : struct, IHasSlot
+    {
+        public int N;
+
+        public ReadsSlot(T value)
+        {
+            N = value.Slot;
+        }
+    }
+
     public ref struct DeclarationDisposer
     {
         public int A;
@@ -283,6 +364,10 @@ namespace SpillSuppressionTest
         [GpuDeviceFunction] public static int ViaUsingExpression(int x) => x + 18;
         [GpuDeviceFunction] public static int ViaFiniteGrowth(int x) => x + 19;
         [GpuDeviceFunction] public static int ViaIndirectGrowth(int x) => x + 20;
+        [GpuDeviceFunction] public static int ViaConstrainedGetter(int x) => x + 21;
+        [GpuDeviceFunction] public static int ViaConstrainedSetter(int x) => x + 22;
+        [GpuDeviceFunction] public static int ViaConstrainedIndexer(int x) => x + 23;
+        [GpuDeviceFunction] public static int ViaConstrainedRef(int x) => x + 24;
 
         // A device function whose own call of ViaNested is not an invocation (a property getter)
         [GpuDeviceFunction]
@@ -313,7 +398,9 @@ namespace SpillSuppressionTest
                 ViaTruthTest(d[1]) + ViaConstructor(d[1]) + ViaInitializer(d[1]) + ViaGenericNew(d[1]) +
                 ViaLocal(d[1]) + ViaLambda(d[1]) + ViaMethodGroup(d[1]) + ViaDispose(d[1]) + ViaBuilder(d[1]) +
                 ViaPinnable(d[1]) + ViaNested(d[1]) + ViaUsingDeclaration(d[1]) + ViaUsingExpression(d[1]) +
-                ViaFiniteGrowth(d[1]) + ViaIndirectGrowth(d[1]);
+                ViaFiniteGrowth(d[1]) + ViaIndirectGrowth(d[1]) +
+                ViaConstrainedGetter(d[1]) + ViaConstrainedSetter(d[1]) + ViaConstrainedIndexer(d[1]) +
+                ViaConstrainedRef(d[1]);
         }
 #pragma warning restore GS0001
 
@@ -474,6 +561,35 @@ namespace SpillSuppressionTest
         public static void UnmarkedIndirectGrowthKernel(int[] d)
         {
             d[0] = new Forth<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedConstrainedGetterKernel(int[] d)
+        {
+            d[0] = new ReadsValue<HasImpl>(d[1]).N;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedConstrainedSetterKernel(int[] d)
+        {
+            d[0] = new WritesValue<SlotImpl>(d[1]).N;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedConstrainedIndexerKernel(int[] d)
+        {
+            d[0] = new ReadsIndexer<SlotImpl>(d[1]).N;
+        }
+
+        [GpuKernel]
+        [SkipSnapshotConsistency("Generator case")]
+        public static void UnmarkedConstrainedRefKernel(int[] d)
+        {
+            var slot = new SlotImpl { Data = d };
+            d[0] = new ReadsSlot<SlotImpl>(slot).N;
         }
 
         [GpuKernel]

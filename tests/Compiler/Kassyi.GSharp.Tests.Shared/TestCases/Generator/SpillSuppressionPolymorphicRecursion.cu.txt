@@ -121,6 +121,30 @@ namespace PolymorphicRecursion
         }
     }
 
+    // Carried by a member of an interface reached through T: GI<T> reads default(T).Value, and VI<U>.Value creates
+    // GI<VI<VI<U>>>, whose read runs VI<VI<U>>.Value, ...
+    public interface IVal
+    {
+        int Value { get; }
+    }
+
+    public struct GI<T> where T : struct, IVal
+    {
+        public int N;
+
+        public GI(int n)
+        {
+            N = default(T).Value + Kernels.Step(n);
+        }
+    }
+
+    public struct VI<U> : IVal where U : struct
+    {
+        public int A;
+
+        public int Value => new GI<VI<VI<U>>>(0).N;
+    }
+
     public static partial class Kernels
     {
         [GpuDeviceFunction]
@@ -148,6 +172,12 @@ namespace PolymorphicRecursion
         public static void NewTypeParameterKernel(int[] d)
         {
             d[0] = new V<int>().A;
+        }
+
+        [GpuKernel]
+        public static void ConstrainedMemberKernel(int[] d)
+        {
+            d[0] = new GI<VI<int>>(d[1]).N;
         }
 
         [GpuKernel]

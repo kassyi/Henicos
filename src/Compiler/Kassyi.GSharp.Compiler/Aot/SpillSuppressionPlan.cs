@@ -18,17 +18,25 @@ internal static class SpillSuppressionPlan
     /// <summary>The names whose spills are not reported, sorted; empty when no kernel is under the pragma.</summary>
     public static ImmutableArray<string> Create(IReadOnlyList<KernelSpillScope> kernels)
     {
-        var suppressed = new SortedSet<string>(StringComparer.Ordinal);
+        var markedKernels = new HashSet<string>(StringComparer.Ordinal);
         kernels
             .AsStackEnumerable()
             .Where(static kernel => kernel.SuppressesSpill)
             .Select(static kernel => kernel.KernelName)
-            .AddTo(suppressed);
+            .AddTo(markedKernels);
+        var suppressed = new SortedSet<string>(markedKernels, StringComparer.Ordinal);
         AddReachedFunctions(kernels, true, suppressed);
 
         var reportedElsewhere = new HashSet<string>(StringComparer.Ordinal);
         AddReachedFunctions(kernels, false, reportedElsewhere);
         suppressed.ExceptWith(reportedElsewhere);
+        suppressed.Remove(DeviceFunctionReach.UnknownFunctions);
+        if (reportedElsewhere.Contains(DeviceFunctionReach.UnknownFunctions))
+        {
+            // A kernel without the pragma reaches functions the walk cannot name: only the marked kernels stay listed
+            suppressed.IntersectWith(markedKernels);
+        }
+
         return suppressed.ToImmutableArray();
     }
 
