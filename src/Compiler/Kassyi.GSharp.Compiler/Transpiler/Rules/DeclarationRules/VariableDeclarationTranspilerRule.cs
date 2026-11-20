@@ -28,7 +28,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     /// <inheritdoc />
     public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Type);
+        var typeSymbol = GetDeclaredType(node.Type, ref context);
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);
@@ -52,7 +52,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     internal static void WriteUsingResource(VariableDeclarationSyntax declaration, VariableDeclaratorSyntax variable,
         ref TranspileContext context)
     {
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(declaration.Type);
+        var typeSymbol = GetDeclaredType(declaration.Type, ref context);
         if (variable == declaration.Variables[0])
         {
             ValidateAndTrackVariableType(typeSymbol, declaration.Type, ref context);
@@ -62,6 +62,22 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
         DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
+    }
+
+    /// <summary>
+    /// The type of the locals that a declaration of type <paramref name="type"/> declares. A predefined type that a
+    /// lowering pass wrote (the locals of a <c>Gpu.GridStrideLoop</c> expansion in the body of a CPU stack form) carries
+    /// the original span of the statement it came from, which names no type; the keyword names it.
+    /// </summary>
+    internal static ITypeSymbol? GetDeclaredType(TypeSyntax type, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        var typeSymbol = model.GetTypeSymbol(type);
+        return typeSymbol is null or { SpecialType: SpecialType.System_Void } &&
+               type is PredefinedTypeSyntax predefined &&
+               HoistedFieldTypeResolver.TryGetSpecialType(predefined.Keyword.Kind()) is { } specialType
+            ? model.Compilation.GetSpecialType(specialType)
+            : typeSymbol;
     }
 
     private static VariableMapping AnalyzeVariableMapping(VariableDeclarationSyntax node, ITypeSymbol? typeSymbol)
@@ -159,10 +175,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             PinnableReferenceMethod.WriteSpill(variable, in plan, ref context);
         }
 
-        // A split declaration has no initializer to deduce auto from, so it names the type
+        // A split declaration has no initializer to deduce auto from, so it names the type: for a var temporary that a
+        // lowering pass wrote (the result of Warp.ActiveMask() in the stack body), whose var names no type, the type of
+        // its initializer
+        var splitType = typeSymbol ?? (isVar ? GetInitializerType(variable, ref context) : null);
         var splitInitialization = context.Query.SemanticModel.GetOriginalNode(variable) is not ParameterSyntax &&
-                                  IsJumpedOverInitialization(variable, typeSymbol);
-        WriteDeclaredType(variable, typeSymbol, isVar && !splitInitialization, ref context);
+                                  IsJumpedOverInitialization(variable, splitType);
+        WriteDeclaredType(variable, splitInitialization ? splitType : typeSymbol, isVar && !splitInitialization,
+            ref context);
         context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
         if (splitInitialization)
@@ -182,6 +202,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(variable, ref context);
         }
     }
+
+    // The type of the initializer of a var local, or null when it has none
+    private static ITypeSymbol? GetInitializerType(VariableDeclaratorSyntax variable, ref TranspileContext context) =>
+        variable.Initializer?.Value is { } initializer
+            ? context.Query.SemanticModel.GetTypeSymbol(initializer)
+            : null;
 
     // An iterator local is inlined where it is enumerated: it declares only the locals that back the arguments of its
     // source call, and nothing for an iterator of another assembly. Returns false for any other local.

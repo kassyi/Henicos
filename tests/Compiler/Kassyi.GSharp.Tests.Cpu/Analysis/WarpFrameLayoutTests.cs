@@ -229,6 +229,23 @@ public class WarpFrameLayoutTests
         }
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Layout_UnannotatedNodeOfAnotherTree_FindsNoSiteAtItsOwnSpan()
+    {
+        var (_, declaration, _) = GetMethod("FullPairSum");
+        var layout = GetLayout("FullPairSum");
+        var call = Invocations(declaration).Single();
+
+        // The same text parsed again: the call has the span of the site, but it is a node the lowering could have
+        // written, with no original span to say which call it stands for
+        var reparsed = CSharpSyntaxTree.ParseText(declaration.SyntaxTree.GetText());
+        var copy = reparsed.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single(node => node.Span == call.Span);
+
+        Assert.False(layout.TryGetSite(copy, 0, out _));
+    }
+
     // Dk(v) => D(k-1)(D(k-1)(v)): the size doubles with every level and passes int.MaxValue at D30
     [Theory]
     [Scenario(TestScenario.Boundary)]
