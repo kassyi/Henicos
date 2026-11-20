@@ -15,6 +15,8 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <b>Completion arbitration:</b> three parties may complete an armed operation — the host callback (success),
 /// the cancellation callback, and the watchdog (stream or context fault). Only the party that wins the
 /// compare-exchange on <see cref="_pendingVersion"/> signals the core, so late or stale signals are discarded.
+/// The host callback never waits for the tick barrier (see "Context lifetime"): when a tick holds it, the callback
+/// hands the barrier pass and the signal to the thread pool and returns at once.
 /// </para>
 /// <para>
 /// <b>Lifetime invariant:</b> the driver holds <see cref="_selfHandle"/> until the host callback runs. An instance is
@@ -35,11 +37,21 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <para>
 /// <b>Context lifetime:</b> the watchdog makes the observed context current, and a destroyed context handle crashes the
 /// process inside the driver instead of returning an error. Two rules keep the handle alive while it is used:
-/// a tick runs its pending check and its driver calls under <see cref="_tickLock"/>, and the winner of
-/// <see cref="TryComplete"/> passes through that lock before signaling, so no tick is inside the driver once an awaiter
-/// can resume (and, for example, destroy the context). Contexts destroyed while an operation is still armed must go
-/// through <see cref="GpuKernelLoader.DestroyContext"/>, which abandons those operations first. An operation leaves the
-/// armed registry only after that barrier, so an empty registry for a context means no tick is using it.
+/// a tick runs its pending check and its driver calls under <see cref="_tickLock"/>, and the winner of the
+/// arbitration passes through that lock before signaling (<see cref="LeaveBarrierAndSignal"/>), so no tick is inside
+/// the driver once an awaiter can resume (and, for example, destroy the context). Contexts destroyed while an operation
+/// is still armed must go through <see cref="GpuKernelLoader.DestroyContext"/>, which abandons those operations first.
+/// An operation leaves the armed registry only after that barrier, so an empty registry for a context means no tick is
+/// using it.
+/// </para>
+/// <para>
+/// A tick inside the driver can itself wait for the stream: <c>cuMemFree</c> or <c>cuMemFreeHost</c> on another thread
+/// holds a lock of the driver until every stream of the device has drained, and the tick's context switch waits for
+/// that lock. The host callback must therefore not wait for the tick ("The host function must not perform any
+/// synchronization that may depend on outstanding CUDA work not mandated to run earlier", <c>cuLaunchHostFunc</c>):
+/// it only tries the barrier, and when a tick holds it, a thread-pool work item passes the barrier and signals instead.
+/// A tick only tries the barrier as well and skips its period when the barrier is taken, so ticks stuck behind a tick
+/// inside the driver do not pile up on the thread pool.
 /// </para>
 /// <para>
 /// <b>Lock order:</b> <see cref="_tickLock"/> before <see cref="s_armedLock"/>; no path acquires them the other way.
@@ -306,11 +318,11 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             // A kernel whose failing thread recorded an error and exited completes normally; reading the pinned
             // host-mapped slot calls no CUDA API
             DeviceErrorSlot.ThrowIfDeviceError();
-            source.TryComplete(source._armedVersion, error: null);
+            source.TryCompleteFromHostCallback(error: null);
         }
         catch (Exception ex)
         {
-            source.TryComplete(source._armedVersion, ex);
+            source.TryCompleteFromHostCallback(ex);
         }
         finally
         {
@@ -321,8 +333,14 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     private void OnWatchdogTick()
     {
         // Held across the pending check and the driver calls; see "Context lifetime" in the type remarks.
-        // TryComplete below re-enters it on this thread, which Lock permits.
-        lock (_tickLock)
+        // TryComplete below re-enters it on this thread, which Lock permits. Taken only when free: a holder is either
+        // an earlier tick (possibly stuck in the driver) or a winner passing the barrier, and both make this tick moot.
+        if (!_tickLock.TryEnter())
+        {
+            return;
+        }
+
+        try
         {
             var version = Volatile.Read(ref _armedVersion);
             if (Volatile.Read(ref _pendingVersion) != version)
@@ -356,6 +374,10 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 
             TryComplete(version, GpuKernelLoader.CreateExceptionForDriverError(status, $"CUDA stream faulted while awaiting completion: {status}"));
         }
+        finally
+        {
+            _tickLock.Exit();
+        }
     }
 
     private bool TryComplete(int version, Exception? error)
@@ -365,11 +387,49 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             return false;
         }
 
-        // Waits for a tick that passed its pending check before the exchange above to leave the driver. Ticks that
-        // start later see the exchange and return without touching the context.
-        lock (_tickLock)
+        PassBarrierAndSignal(error);
+        return true;
+    }
+
+    // The completion of the host callback, which runs on the driver thread and blocks its stream until it returns.
+    // Never waits for the tick barrier: a tick holding it may be waiting inside the driver for this very stream.
+    private void TryCompleteFromHostCallback(Exception? error)
+    {
+        var version = _armedVersion;
+        if (Interlocked.CompareExchange(ref _pendingVersion, NotArmed, version) != version)
         {
-            // Unregistered only past that barrier: AbandonContext treats an absent entry as "no tick can be in the
+            return;
+        }
+
+        if (_tickLock.TryEnter())
+        {
+            LeaveBarrierAndSignal(error);
+            return;
+        }
+
+        // The consumer's reference keeps the instance out of the pool until the work item has signaled, even after the
+        // callback releases its own reference on return.
+        ThreadPool.UnsafeQueueUserWorkItem(
+            static state => state.Source.PassBarrierAndSignal(state.Error),
+            (Source: this, Error: error),
+            preferLocal: false);
+    }
+
+    // Waits for a tick that passed its pending check before the winning exchange to leave the driver. Ticks that start
+    // later see the exchange and return without touching the context.
+    private void PassBarrierAndSignal(Exception? error)
+    {
+        _tickLock.Enter();
+        LeaveBarrierAndSignal(error);
+    }
+
+    // Called by the winner with _tickLock entered; exits it, then signals. Nothing touches the instance after the
+    // signal, since the consumer may then return it to the pool.
+    private void LeaveBarrierAndSignal(Exception? error)
+    {
+        try
+        {
+            // Unregistered only past the barrier: AbandonContext treats an absent entry as "no tick can be in the
             // driver", so removing it earlier would let cuCtxDestroy run under an in-flight tick.
             lock (s_armedLock)
             {
@@ -379,7 +439,16 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             // After the s_armedLock section, so that a concurrent ArmCore cannot restart the timer after this stop.
             _watchdog.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
+        finally
+        {
+            _tickLock.Exit();
+        }
 
+        Signal(error);
+    }
+
+    private void Signal(Exception? error)
+    {
         if (error is null)
         {
             _core.SetResult(true);
@@ -388,8 +457,6 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         {
             _core.SetException(error);
         }
-
-        return true;
     }
 
     private void Release()
