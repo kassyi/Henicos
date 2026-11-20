@@ -11,6 +11,18 @@ internal sealed partial class ManagedExecutionRewriter
     // [UnsafeAccessor] stub (ManagedAccessorSet), which reaches its managed version when it has one
     private ExpressionSyntax SpellDeviceFunction(IMethodSymbol callee)
     {
+        // [WHY] The stack form of a target that reaches a warp collective takes the offset of its frame first, and the
+        // layout of the caller counts only the calls written in the source (WarpFrameLayout), not the operator the
+        // macro replaces. The form of the caller cannot be made; the collector states why and the caller keeps its
+        // state machine
+        if (bodyKind == ManagedBodyKind.StackBody &&
+            SuspensionAnalysis.ReachesWarpShuffle(callee, semanticModel.Compilation))
+        {
+            throw new InvalidOperationException(
+                $"A stack form cannot call '{callee.Name}', which reaches a warp collective, " +
+                "through an operator macro.");
+        }
+
         var prefix = GetTargetPrefix(callee);
         if (accessors.IsAccessible(callee))
         {

@@ -39,6 +39,8 @@ public static partial class ManagedGpuContext
         {
             Array.Clear(self.WarpVisits, 0, size);
         }
+
+        self.WarpVisitCount = size;
     }
 
     /// <summary>Internal: <c>Warp.ShuffleSync</c> on the managed stack model. Do not use directly.</summary>
@@ -304,11 +306,21 @@ public static partial class ManagedGpuContext
         string location) where T : unmanaged
     {
         var self = StackWarpSelf();
-        var at = new ManagedStackWarpFrame(self.WarpVisits, frame);
-        __gsharp_warp_publish(0, ref at, site, mask, value, name, location);
+        // [WHY] The count of the collective must lie in the counts that begin cleared for this GPU thread: the pooled
+        // array is longer, and a count outside them would be one that another kernel or thread left behind
+        if (frame < 0 || site < 0 || (long)frame + 1 + site >= self.WarpVisitCount)
+        {
+            throw new InvalidOperationException(
+                $"G#: internal error: {name} at {location} has the count {(long)frame + 1 + site} of frame {frame} " +
+                $"and site {site}, outside the {self.WarpVisitCount} visit counts of its kernel " +
+                "(please report this G# bug)");
+        }
+
         var launch = self.Launch ?? throw new InvalidOperationException(
             "G#: internal error: a warp collective of the stack model runs outside a launch " +
             "(please report this G# bug)");
+        var at = new ManagedStackWarpFrame(self.WarpVisits, frame);
+        __gsharp_warp_publish(0, ref at, site, mask, value, name, location);
         self.AtWarp = true;
         ManagedBaton.HandOver(launch.Scheduler, self.Go);
         self.AtWarp = false;
@@ -320,11 +332,20 @@ public static partial class ManagedGpuContext
         return at;
     }
 
-    // The GPU thread that the calling OS thread runs on the managed stack model
-    private static ManagedStackThread StackWarpSelf() =>
-        t_stackThread ?? throw new InvalidOperationException(
-            "G#: internal error: a warp collective of the stack model runs outside a managed stack launch " +
-            "(please report this G# bug)");
+    // The GPU thread that the calling OS thread runs on the managed stack model, in a launch whose scheduler runs the
+    // warp rendezvous. [WHY] A launch without it does not reset the records of its blocks nor let a waiting lane run
+    // only when its lanes met, so a collective there would read the records of an earlier launch
+    private static ManagedStackThread StackWarpSelf()
+    {
+        if (t_stackThread is not { Launch: { ReachesWarpCollective: true } } self)
+        {
+            throw new InvalidOperationException(
+                "G#: internal error: a warp collective of the stack model runs outside a managed stack launch of a " +
+                "kernel that reaches one (please report this G# bug)");
+        }
+
+        return self;
+    }
 
     // A frame of the managed stack model: its offset in the visit counts of the GPU thread is its path, the same in
     // every lane, and the count of its collective site s is at offset + 1 + s

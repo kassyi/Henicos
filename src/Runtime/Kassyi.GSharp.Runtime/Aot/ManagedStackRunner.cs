@@ -138,7 +138,19 @@ public static class ManagedStackRunner
         }
         finally
         {
-            Unwind(launch, workers, threadsPerBlock);
+            try
+            {
+                Unwind(launch, workers, threadsPerBlock);
+            }
+            finally
+            {
+                // The scheduler took the block dimensions for the warp rendezvous; it leaves no GPU thread context
+                // behind, as the state-machine launcher clears its own at the end of a launch
+                if (launch.ReachesWarpCollective)
+                {
+                    ManagedGpuContext.ClearThreadContext();
+                }
+            }
         }
 
         first?.Throw();
@@ -265,6 +277,7 @@ public static class ManagedStackRunner
                 w.Context = geometry.ContextOf(id);
                 w.AtBlockBarrier = false;
                 w.AtWarp = false;
+                w.WarpVisitCount = 0;
                 w.Done = false;
                 w.Failure = null;
             }

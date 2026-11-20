@@ -33,6 +33,9 @@ internal sealed class ManagedStackThread
     // The visit counts of the warp collectives of the kernel this OS thread runs (ManagedGpuContext.StackWarp.cs):
     // grown when a kernel needs more, and kept for the next GPU threads and launches of the thread
     internal uint[] WarpVisits { get; set; } = [];
+
+    // The counts of WarpVisits that the kernel of the current GPU thread cleared (begin); 0 until it does
+    internal int WarpVisitCount { get; set; }
 }
 
 // What the threads of one launch share with their scheduler.

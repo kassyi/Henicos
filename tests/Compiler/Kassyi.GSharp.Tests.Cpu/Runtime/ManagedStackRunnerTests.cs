@@ -646,6 +646,94 @@ public class ManagedStackRunnerTests
         Assert.Equal([0xDu, 0u, 0xDu, 0xDu], output);
     }
 
+    // A launch run without the warp rendezvous (the generated launcher passes it only for a kernel that reaches a
+    // collective) never resets the records of its blocks: a collective there is an internal error, not a read of the
+    // records an earlier launch left
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void StackWarp_LaunchWithoutTheWarpRendezvous_ThrowsAnInternalError()
+    {
+        RunWarp(1, 2, "Test.WarpBefore", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0x3u, (int)tid, 1);
+        });
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            ManagedStackRunner.Run(1, 1, 1, 2, 1, 1, 0, "Test.NoWarpFlag", tid =>
+            {
+                ManagedGpuContext.__gsharp_stack_warp_begin(2);
+                ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0x3u, (int)tid + 100, 1);
+            }));
+
+        Assert.Contains("internal error", ex.Message, StringComparison.Ordinal);
+    }
+
+    // The count of a collective must lie in the counts that begin cleared: the pooled array is longer, so a frame or
+    // site past them, or a collective before begin, would otherwise use a count another kernel left
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(2, 0, 1)]
+    [InlineData(4, 2, 1)]
+    [InlineData(4, -1, 0)]
+    [InlineData(0, 0, 0)]
+    public void StackWarp_CountOutsideTheClearedCounts_ThrowsAnInternalError(int size, int frame, int site)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            RunWarp(1, 2, "Test.CountOutside", tid =>
+            {
+                if (size > 0)
+                {
+                    ManagedGpuContext.__gsharp_stack_warp_begin(size);
+                }
+
+                ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(frame, site, "Test(1,1)", 0x3u, (int)tid, 1);
+            }));
+
+        Assert.Contains("internal error", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("outside the", ex.Message, StringComparison.Ordinal);
+    }
+
+    // The last count that begin cleared is still inside
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StackWarp_LastClearedCount_MeetsAsUsual()
+    {
+        var output = new int[2];
+
+        RunWarp(1, 2, "Test.LastCount", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(4);
+            output[tid] = ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(1, 1, "Test(1,1)", 0x3u, (int)tid,
+                1);
+        });
+
+        Assert.Equal([1, 0], output);
+    }
+
+    // The scheduler takes the block dimensions for the rendezvous and, as the state-machine launcher does, clears the
+    // context of the calling thread at the end
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RunWarp_AfterTheLaunch_ClearsTheContextOfTheCaller()
+    {
+        ManagedGpuContext.IsActive = true;
+        try
+        {
+            RunWarp(1, 2, "Test.WarpCallerClean", _ =>
+            {
+                ManagedGpuContext.__gsharp_stack_warp_begin(2);
+                ManagedGpuContext.__gsharp_stack_warp_syncwarp(0, 0, "Test(1,1)", 0x3u);
+            });
+
+            Assert.False(ManagedGpuContext.IsActive);
+        }
+        finally
+        {
+            ManagedGpuContext.IsActive = false;
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void StackWarpBegin_OutsideALaunch_ThrowsInvalidOperation()

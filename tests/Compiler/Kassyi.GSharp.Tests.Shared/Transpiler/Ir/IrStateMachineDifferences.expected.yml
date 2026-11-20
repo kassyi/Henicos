@@ -4712,6 +4712,9 @@
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.ShuffleKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.WaitAndRead", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.WarpCallKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generators/ManagedStackOperatorMacroCases.cs", method: "MacroKernels.Add", status: "Compared", count: 1}
+- {file: "TestCases/Generators/ManagedStackOperatorMacroCases.cs", method: "MacroKernels.MacroAfterBarrierKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generators/ManagedStackOperatorMacroCases.cs", method: "MacroKernels.MacroAndShuffleKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.FillKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.GridKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.IteratorKernel", status: "OpaqueStatement", count: 1}
