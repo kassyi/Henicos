@@ -124,6 +124,12 @@ async function checkWritingSettings(assert: AssertModule): Promise<void> {
     assert.match((await worktreeDigest(repo, { ...process.env })) ?? "", /^[0-9a-f]{40,64}$/, "a digest all the same");
     assert.ok(!fs.existsSync(mark), "the clean filter does not run");
     assert.deepStrictEqual(snapshot(path.join(repo, ".git")), before, "no shared index or other file is added");
+    // An untracked file and a freshly split index: git add would write a new shared index into .git
+    fs.writeFileSync(path.join(repo, "new.txt"), "new\n");
+    git(repo, "update-index", "--split-index");
+    const split = snapshot(path.join(repo, ".git"));
+    assert.match((await worktreeDigest(repo, { ...process.env })) ?? "", /^[0-9a-f]{40,64}$/);
+    assert.deepStrictEqual(snapshot(path.join(repo, ".git")), split, "no new shared index after an untracked file");
   } finally {
     fs.rmSync(repo, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
