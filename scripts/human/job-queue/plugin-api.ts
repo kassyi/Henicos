@@ -142,6 +142,12 @@ export interface QueuePlugin {
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;
 
+  /**
+   * [all] Names of environment variables whose values differ from run to run by nature (a chat session id), left out
+   * of the environment hash the scheduler logs per job.
+   */
+  volatileEnv?(context: ClientContext): readonly string[] | undefined;
+
   /** [first] Returns the agent chat session id for the job. */
   session?(context: ClientContext): string | undefined;
 

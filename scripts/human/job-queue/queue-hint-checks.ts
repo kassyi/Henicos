@@ -10,7 +10,8 @@ import { parseArgs } from "./cli.ts";
 import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
 import type { RunOptions } from "./client.ts";
 import { QueuedRun } from "./client-queued-run.ts";
-import { ProtocolVersion } from "./constants.ts";
+import { JobVariable, ProtocolVersion } from "./constants.ts";
+import { differingNames, environmentHash, VolatileEnv } from "./environment-hash.ts";
 import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
 import { PluginHost } from "./plugin-host.ts";
 import type { StatusJob } from "./protocol.ts";
@@ -222,6 +223,7 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
   };
   const scheduler = new FakeScheduler();
   await scheduler.listen();
+  process.env.JOB_QUEUE_CHECK_SESSION = "a session";
   try {
     const cases: [(string | undefined)[], boolean, boolean][] = [
       [["a", "b"], false, true],
@@ -238,6 +240,7 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
       const plugin: QueuePlugin = {
         name: "digests",
         apiVersion: PluginApiVersion,
+        volatileEnv: () => ["JOB_QUEUE_CHECK_SESSION"],
         contentDigest: async () => {
           const call = calls.push(calls.length) - 1;
           if (call === 1) {
@@ -265,6 +268,11 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
         if (accepted === undefined) {
           throw new Error("no connection");
         }
+        // The registration carries the environment's hash, without the variables the plugins name
+        const keys = (accepted.messages[0]?.envKeys ?? {}) as Record<string, string>;
+        assert.match(String(accepted.messages[0]?.envHash), /^[0-9a-f]{12}$/);
+        assert.ok(Object.keys(keys).length > 0, "the variables by name");
+        assert.ok(!("JOB_QUEUE_CHECK_SESSION" in keys), "a plugin's volatile variable is left out");
         FakeScheduler.send(accepted, { type: "granted", id: 18739, cpus: 1, capacity: 2, protocol: ProtocolVersion });
         await until("the command starts before the digest", () => host.commands.length === 1);
         release();
@@ -283,8 +291,58 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
       }
     }
   } finally {
+    delete process.env.JOB_QUEUE_CHECK_SESSION;
     scheduler.close();
   }
+}
+
+/** The hash per name and in all: values change it, the volatile names and the given ones do not. */
+function checkEnvironmentHash(assert: AssertModule): void {
+  const env = { PATH: "/bin", HOME: "/home/x", [JobVariable]: "12", SHLVL: "2", CHAT: "a" };
+  const base = environmentHash(env, [...VolatileEnv, "CHAT"]);
+  assert.deepStrictEqual(Object.keys(base.keys), ["HOME", "PATH"], "sorted, without the volatile names");
+  assert.match(base.hash, /^[0-9a-f]{12}$/);
+  assert.ok(
+    Object.values(base.keys).every((value) => /^[0-9a-f]{8}$/.test(value)),
+    "no value is sent",
+  );
+  const same = environmentHash({ ...env, [JobVariable]: "13", SHLVL: "3", CHAT: "b" }, [...VolatileEnv, "CHAT"]);
+  assert.strictEqual(same.hash, base.hash, "the left-out variables change nothing");
+  const other = environmentHash({ ...env, PATH: "/usr/bin" }, [...VolatileEnv, "CHAT"]);
+  assert.notStrictEqual(other.hash, base.hash, "a value changes the hash");
+  assert.deepStrictEqual(differingNames(base.keys, other.keys), ["PATH"]);
+  const added = environmentHash({ ...env, EXTRA: "1" }, [...VolatileEnv, "CHAT"]);
+  assert.deepStrictEqual(differingNames(base.keys, added.keys), ["EXTRA"], "a name in one of them only");
+  if (process.platform === "win32") {
+    assert.deepStrictEqual(
+      Object.keys(environmentHash({ Path: "x", shlvl: "1" }, VolatileEnv).keys),
+      ["Path"],
+      "names without case on Windows",
+    );
+  }
+}
+
+/** The log line of a queued job: cwd, worktree and env; the next run of the same command names what differs. */
+async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
+  await withServer(async (port, log) => {
+    const queue = async (command: string, envKeys: unknown): Promise<void> => {
+      const client = await connectRaw(port);
+      client.send({ ...registration(command, 1, process.pid), cwd: "here", envHash: "abc", envKeys });
+      await client.until("queued");
+      client.close();
+    };
+    await queue("A", { PATH: "11111111", HOME: "22222222" });
+    assert.match(log.find((line) => line.startsWith("queue")) ?? "", /pid \d+ cwd here worktree \S+ env abc: A$/);
+    await queue("A", { PATH: "33333333", HOME: "22222222", EXTRA: "44444444" });
+    const differs = log.filter((line) => line.includes("env differs"));
+    assert.strictEqual(differs.length, 1);
+    assert.match(differs[0] ?? "", /^j\d{4}: env differs from j\d{4} \(same command and worktree\): EXTRA, PATH$/);
+    await queue("A", { PATH: "33333333", HOME: "22222222", EXTRA: "44444444" });
+    await queue("B", { PATH: "55555555" });
+    assert.strictEqual(log.filter((line) => line.includes("env differs")).length, 1, "the same, or another command");
+    await queue("C", { PATH: "not a hash" });
+    assert.match(log.filter((line) => line.startsWith("queue")).at(-1) ?? "", /worktree \S+: C$/, "malformed: no env");
+  });
 }
 
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
@@ -294,4 +352,6 @@ export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Pr
   checkWaitForMessages,
   checkHere,
   checkWorktreeChange,
+  checkEnvironmentHash,
+  checkEnvironmentLog,
 };

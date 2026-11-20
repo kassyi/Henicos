@@ -19,6 +19,7 @@ import { describeOutlook, describeWaitFor } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
+import { environmentHash, VolatileEnv, type EnvironmentHash } from "./environment-hash.ts";
 import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
@@ -86,6 +87,8 @@ export class QueuedRun {
    * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
    */
   private queuedDigest: Promise<ContentDigest | undefined> | null = null;
+  /** The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first registration. */
+  private environment: EnvironmentHash | null = null;
   /** The pause was told (once per run). */
   private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
@@ -541,6 +544,11 @@ export class QueuedRun {
     if (this.queuedDigest === null && this.state === "waiting" && !this.inGpuLock && this.plugins !== undefined) {
       this.queuedDigest = this.plugins.contentDigest(this.digestContext(this.plugins));
     }
+    // Without the variables that differ per run by nature, the core's and the plugins' (a chat session id)
+    const environment = (this.environment ??= environmentHash(process.env, [
+      ...VolatileEnv,
+      ...(this.plugins?.volatileEnv(context(this.plugins)) ?? []),
+    ]));
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -555,6 +563,8 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
+      envHash: environment.hash,
+      envKeys: environment.keys,
       // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
       session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,

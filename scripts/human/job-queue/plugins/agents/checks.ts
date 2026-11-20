@@ -34,6 +34,9 @@ function checkSession(assert: AssertModule): void {
     "the order of sessionEnv decides",
   );
   assert.strictEqual(plugin.session(context(both, { sessionEnv: ["OTHER_CHAT"] })), undefined, "only the listed names");
+  // The same names are left out of the environment hash the scheduler logs
+  assert.deepStrictEqual(plugin.volatileEnv(context({})), ["CLAUDE_CODE_SESSION_ID", "ANTIGRAVITY_CONVERSATION_ID"]);
+  assert.deepStrictEqual(plugin.volatileEnv(context({}, { sessionEnv: ["OTHER_CHAT"] })), ["OTHER_CHAT"]);
   assert.strictEqual(
     plugin.session(context(both, { sessionEnv: "OTHER" })),
     "claude-chat",

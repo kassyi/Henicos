@@ -337,6 +337,22 @@ export class PluginHost {
     return undefined;
   }
 
+  /** [all] The names every plugin gives for volatileEnv, in plugin order. */
+  volatileEnv(context: BaseClientContext): string[] {
+    const names: string[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.volatileEnv !== "function") {
+        continue;
+      }
+      const res = this.callHook(i, "volatileEnv", (p) => p.volatileEnv?.(this.contextFor(i, context)));
+      if (Array.isArray(res)) {
+        names.push(...res.filter((name): name is string => typeof name === "string" && name !== ""));
+      }
+    }
+    return names;
+  }
+
   /** [sequential] Chains command rewrites, merges env later-wins, and joins non-empty notes with ", ". */
   prepareCommand(
     command: string,
