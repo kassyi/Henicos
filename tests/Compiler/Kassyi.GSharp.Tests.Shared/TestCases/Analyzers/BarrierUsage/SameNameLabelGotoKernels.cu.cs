@@ -94,4 +94,31 @@ public static partial class SameNameLabelGotoKernels
 
         result[t] = v;
     }
+
+    // A forward goto to the label later in its own block; an earlier sibling block declares the same name before the
+    // barrier, and the nearest label of the name before the goto is that earlier one
+    [GpuKernel]
+    public static void SiblingLabelsForwardKernel(int[] result)
+    {
+        int n = 0;
+        int m = 0;
+        {
+        again:
+            n++;
+        }
+
+        Gpu.SyncThreads();
+        {
+            if (m == 0)
+            {
+                goto again;
+            }
+
+            m += 5;
+        again:
+            m++;
+        }
+
+        result[ThreadIndex.X] = n + m;
+    }
 }
