@@ -46,8 +46,9 @@ const LatestEndNoticeMs = 60 * 1000;
 
 /**
  * "2 ahead, expected start ~20:31 (in 6m), expected end ~20:35 (in 10m)" for a waiting job, "expected end ~20:35 (in
- * 4m)" for a running one; ", at the latest ~20:52" follows when the longest recorded run would end a minute or more
- * later.
+ * 4m)" for a running one. When its longest recorded run would end a minute or more later, a running job adds ", at
+ * the latest ~20:52"; a waiting one ", if it runs its longest ~20:52", since the jobs ahead of it may take longer
+ * too.
  */
 export function describeOutlook(outlook: object, now: number): string {
   const view = outlook as Partial<Record<string, unknown>>;
@@ -65,7 +66,7 @@ export function describeOutlook(outlook: object, now: number): string {
   const { latestEndAt } = view;
   const latest =
     typeof latestEndAt === "number" && Number.isFinite(latestEndAt) && latestEndAt - endAt >= LatestEndNoticeMs
-      ? `, at the latest ~${clock(latestEndAt)}`
+      ? `, ${view.state === "running" ? "at the latest" : "if it runs its longest"} ~${clock(latestEndAt)}`
       : "";
   const end = `expected end ~${clock(endAt)} (in ${minutes(endAt - now)})${latest}`;
   if (view.state === "running") {

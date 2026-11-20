@@ -131,6 +131,11 @@ function checkLatestEnd(assert: AssertModule): void {
   );
   assert.strictEqual(describeOutlook({ ...view, latestEndAt: 659999 }, 0), `expected end ~${clock(600000)} (in 10m)`);
   assert.strictEqual(describeOutlook(view, 0), `expected end ~${clock(600000)} (in 10m)`, "an older scheduler");
+  // A waiting job's longest run counts from its expected start, which the jobs ahead may push back: not "at the latest"
+  assert.match(
+    describeOutlook({ ...view, state: "waiting", latestEndAt: 660000 }, 0),
+    new RegExp(`, if it runs its longest ~${clock(660000)}$`),
+  );
 }
 
 /** A scheduler of one slot on a private port and state directory, with its log lines kept, for `body`. */
