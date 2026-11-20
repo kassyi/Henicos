@@ -76,9 +76,9 @@ internal static class ManagedStackFormCollector
     {
         var kernels = new List<IMethodSymbol>();
         var devices = new List<IMethodSymbol>();
-        CollectFunctions(compilation, kernels, devices, cancellationToken);
-
         var failures = ImmutableArray.CreateBuilder<string>();
+        CollectFunctions(compilation, kernels, devices, failures, cancellationToken);
+
         var deviceSources = new Dictionary<IMethodSymbol, string>(SymbolEqualityComparer.Default);
         foreach (var device in devices)
         {
@@ -138,9 +138,10 @@ internal static class ManagedStackFormCollector
     }
 
     // The kernels and device functions that can have a stack form, each once (a partial method by its defining part),
-    // in the order of their first declaration
+    // in the order of their first declaration; a kernel whose warp collectives cannot run on its stack goes to
+    // <failures> with the reason (ManagedStackEligibility.GetWarpFailure)
     private static void CollectFunctions(Compilation compilation, List<IMethodSymbol> kernels,
-        List<IMethodSymbol> devices, CancellationToken cancellationToken)
+        List<IMethodSymbol> devices, ImmutableArray<string>.Builder failures, CancellationToken cancellationToken)
     {
         var seen = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         foreach (var tree in compilation.SyntaxTrees)
@@ -164,11 +165,16 @@ internal static class ManagedStackFormCollector
                 }
 
                 var isKernel = method.HasAttribute(KnownAttributes.GpuKernel);
-                if (isKernel &&
-                    KernelDeclaration.IsLaunchable(method, compilation, cancellationToken) &&
-                    ManagedStackEligibility.IsStackKernel(method, compilation))
+                if (isKernel && KernelDeclaration.IsLaunchable(method, compilation, cancellationToken))
                 {
-                    kernels.Add(method);
+                    if (ManagedStackEligibility.IsStackKernel(method, compilation))
+                    {
+                        kernels.Add(method);
+                    }
+                    else if (ManagedStackEligibility.GetWarpFailure(method, compilation) is { } reason)
+                    {
+                        failures.Add(GetDisplayName(method) + ": " + reason);
+                    }
                 }
                 else if (!isKernel &&
                          method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&

@@ -44,6 +44,7 @@ internal readonly record struct HostMirrorPlan(
             index++;
             fields.Add(new HostMirrorField(
                 member,
+                HostFieldAccess.GetStorageType(member, launcherAssembly),
                 fieldOffset,
                 GetCheck(member, predicted, launcherAssembly),
                 predicted ?? 0));

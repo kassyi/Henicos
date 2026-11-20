@@ -3,7 +3,8 @@ using Kassyi.GSharp.Core;
 namespace ManagedStackFallbackGeneratorCases;
 
 // A kernel that the stack model takes (a block barrier, no call of a function without a stack form) but whose stack
-// form cannot be made: it names ShuffleStep, which reaches a warp shuffle and has no stack form, as a method group
+// form cannot be made: it names ShuffleStep, which has no stack form (it reaches Warp.ActiveMask(), which the managed
+// stack model does not run), as a method group
 [SkipSnapshotConsistency("Input for ManagedStackModelGeneratorTests")]
 public static partial class FallbackKernels
 {
@@ -19,7 +20,8 @@ public static partial class FallbackKernels
     private static void ShuffleStep(int i)
     {
         Gpu.SyncThreads();
-        _ = Warp.ShuffleXorSync(0xFFFFFFFFu, i, 1);
+        uint mask = Warp.ActiveMask();
+        _ = Warp.ShuffleXorSync(mask, i, 1);
     }
 
     // A chain kernel -> Outer -> Middle -> Inner where only Inner's stack form cannot be made (it names ShuffleStep as

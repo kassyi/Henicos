@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 
 /// <summary>
 /// Decisions for an <see cref="Expressions.IrPropertyReference"/> node (#1561).
-/// <see cref="Form"/> value <see cref="IrMemberForm.DialectIntrinsic"/> is a native-dialect decision and is not read
-/// by managed writers.
+/// <see cref="Form"/> values <see cref="IrMemberForm.DialectIntrinsic"/> and <see cref="IrMemberForm.Getter"/> and
+/// <see cref="CopyType"/> are native-dialect decisions and are not read by managed writers.
 /// </summary>
 /// <param name="form">The classified member form.</param>
 /// <param name="receiverSite">
@@ -14,10 +14,16 @@ namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 /// The constant length when <paramref name="form"/> is <see cref="IrMemberForm.StackArrayLength"/>; otherwise
 /// <c>-1</c>.
 /// </param>
-internal sealed class IrMemberDecision(IrMemberForm form, IrErrorSite? receiverSite, int stackArrayLength) : IrDecision
+/// <param name="copyType">
+/// The struct type of the copy that a read calls the getter on when <paramref name="form"/> is
+/// <see cref="IrMemberForm.Getter"/>; otherwise <see langword="null"/>.
+/// </param>
+internal sealed class IrMemberDecision(IrMemberForm form, IrErrorSite? receiverSite, int stackArrayLength,
+    INamedTypeSymbol? copyType) : IrDecision
 {
     /// <summary>
-    /// The classified member form; <see cref="IrMemberForm.DialectIntrinsic"/> is a native-dialect decision.
+    /// The classified member form; <see cref="IrMemberForm.DialectIntrinsic"/> and <see cref="IrMemberForm.Getter"/>
+    /// are native-dialect decisions.
     /// </summary>
     public IrMemberForm Form { get; } = form;
 
@@ -29,4 +35,12 @@ internal sealed class IrMemberDecision(IrMemberForm form, IrErrorSite? receiverS
     /// <see cref="IrMemberForm.StackArrayLength"/>.
     /// </summary>
     public int StackArrayLength { get; } = stackArrayLength;
+
+    /// <summary>
+    /// The struct type of the copy of the receiver that a read calls the getter on (#610): a
+    /// <see cref="IrMemberForm.Getter"/> whose getter may change its receiver, read on a readonly variable;
+    /// <see langword="null"/> for a call on the receiver itself and for the target of an assignment or a step. A
+    /// native-dialect decision.
+    /// </summary>
+    public INamedTypeSymbol? CopyType { get; } = copyType;
 }

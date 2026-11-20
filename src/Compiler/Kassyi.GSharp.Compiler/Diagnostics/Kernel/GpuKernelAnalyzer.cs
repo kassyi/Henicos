@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Instantiation;
 using Kassyi.GSharp.Compiler.Targets;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
@@ -166,7 +167,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             walker.Visit(methodDeclaration);
         }
 
-        TranspilerFailureCheck.AddFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
+        AddDeclarationFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
 
         // A rule and the transpiler, or the signature and the body, find the same construct: one diagnostic per ID and location
         var reported = new HashSet<(string Id, Location Location)>();
@@ -178,6 +179,26 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
                 static (diagnostic, state) => !IsOutside(diagnostic.Location, state.methodDeclaration) ||
                                               state.reportedOutside.TryAdd((diagnostic.Id, diagnostic.Location), 0)
             ).Do(context, static (diagnostic, analysis) => analysis.ReportDiagnostic(diagnostic));
+    }
+
+    // What the generator could not emit for the declaration. It does not transpile a generic device function that uses
+    // its type parameters (GenericDefinitions): one diagnostic at its name says so, instead of one for each use of a
+    // type parameter that the transpiler meets
+    private static void AddDeclarationFailures(MethodDeclarationSyntax declaration, IMethodSymbol method,
+        SemanticModel model, ImmutableArray<Diagnostic>.Builder diagnostics)
+    {
+        if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+            GenericDefinitions.IsLeftOut(method, model.Compilation))
+        {
+            diagnostics.Add(Diagnostic.Create(
+                GSharpDiagnostics.GenericDeviceFunctionNotCompiled,
+                declaration.Identifier.GetLocation(),
+                method.Name,
+                GenericDefinitions.NotSupportedReason));
+            return;
+        }
+
+        TranspilerFailureCheck.AddFailures(declaration, method, model, diagnostics);
     }
 
     // A location in source that the declaration does not contain; a diagnostic without a location stays with its method

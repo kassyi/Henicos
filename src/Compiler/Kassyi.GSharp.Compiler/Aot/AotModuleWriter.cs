@@ -43,8 +43,47 @@ internal static class AotModuleWriter
         var splitPlan = NativeModuleSplitter.Plan(moduleStem, isCuda, partitionPlan);
         var moduleFiles = NativeModuleSplitter.Emit(
             splitPlan, requiredIncludes, preludeSource, commonDeviceSource, kernelSources);
+        if (isCuda)
+        {
+            moduleFiles = AddSpillSuppressionLine(moduleFiles, kernelMethods, imports);
+        }
+
         AotArtifactWriter.Write(target, config, moduleFiles, context, imports.FindFullName,
             symbolSites, partitionJson);
+    }
+
+    // The CUDA module (one unit) with the line that names the functions whose spills ptxas reports without GS0001
+    private static NativeModuleFiles AddSpillSuppressionLine(NativeModuleFiles moduleFiles,
+        ImmutableArray<TranspiledKernelResult> kernelMethods, ImportedDeviceCode imports)
+    {
+        var line = SpillSuppressionPlan.FormatLine(SpillSuppressionPlan.Create(CollectSpillScopes(kernelMethods,
+            imports)));
+        if (line.Length == 0)
+        {
+            return moduleFiles;
+        }
+
+        var unit = moduleFiles.Units[0];
+        return moduleFiles with
+        {
+            Units = moduleFiles.Units.SetItem(0, unit with { BodySource = line + unit.BodySource })
+        };
+    }
+
+    // What the spill warning of each kernel covers, with the functions that the imported functions it reaches call in
+    // their own assemblies
+    private static List<KernelSpillScope> CollectSpillScopes(ImmutableArray<TranspiledKernelResult> kernelMethods,
+        ImportedDeviceCode imports)
+    {
+        var scopes = new List<KernelSpillScope>(kernelMethods.Length);
+        var callsByCaller = DeviceImportAssembler.IndexCalls(imports.Calls);
+        kernelMethods
+            .AsStackEnumerable()
+            .Select(callsByCaller, static (kernel, calls) => kernel.Spill with
+            {
+                ReachedFunctions = DeviceImportAssembler.ExtendReach(kernel.Spill.ReachedFunctions, calls)
+            }).AddTo(scopes);
+        return scopes;
     }
 
     private static string BuildPreludeSource(GeneratorConfig config)

@@ -7,6 +7,7 @@ import * as fs from "node:fs";
 import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
+import { formatJobId } from "./job-id.ts";
 import { describeJob } from "./server-job.ts";
 import { JobServer } from "./server.ts";
 import { connectRaw, registration, removeDirectory, type RawClient } from "./self-test-support.ts";
@@ -243,19 +244,19 @@ export async function checkFailedSharedTurnIsLogged(assert: AssertModule): Promi
     assert.ok(a.granted !== null && (await b.client.until("granted")) !== null);
     await end(a.client, 1, assert);
     assert.ok(
-      lines.some((line) => line.endsWith(`end #${a.id}: failed (done; shared with #${b.id})`)),
+      lines.some((line) => line.endsWith(`end ${formatJobId(a.id)}: failed (done; shared with ${formatJobId(b.id)})`)),
       lines.join("\n"),
     );
     await end(b.client, 1, assert);
     assert.ok(
-      lines.some((line) => line.endsWith(`end #${b.id}: failed (done)`)),
+      lines.some((line) => line.endsWith(`end ${formatJobId(b.id)}: failed (done)`)),
       "alone: the line as before",
     );
     const c = await queueTurn(port, "C", {});
     assert.ok((await c.client.until("granted")) !== null);
     await end(c.client, 1, assert);
     assert.ok(
-      lines.some((line) => line.endsWith(`end #${c.id}: failed (done)`)),
+      lines.some((line) => line.endsWith(`end ${formatJobId(c.id)}: failed (done)`)),
       "exclusive: the line as before",
     );
     const d = await queueTurn(port, "D", { share: "shared" });
@@ -263,7 +264,7 @@ export async function checkFailedSharedTurnIsLogged(assert: AssertModule): Promi
     assert.ok(d.granted !== null && (await e.client.until("granted")) !== null);
     await end(d.client, 0, assert);
     assert.ok(
-      lines.some((line) => line.endsWith(`end #${d.id}: succeeded (done)`)),
+      lines.some((line) => line.endsWith(`end ${formatJobId(d.id)}: succeeded (done)`)),
       "a success: the line as before",
     );
     await end(e.client, 0, assert);

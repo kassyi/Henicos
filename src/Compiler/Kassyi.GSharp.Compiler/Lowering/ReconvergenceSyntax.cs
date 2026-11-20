@@ -180,7 +180,7 @@ internal static class ReconvergenceSyntax
         return false;
     }
 
-    private static bool EnclosingSwitchIs(SyntaxNode node, SwitchStatementSyntax switchStatement)
+    internal static bool EnclosingSwitchIs(SyntaxNode node, SwitchStatementSyntax switchStatement)
     {
         for (var current = node.Parent; current != null; current = current.Parent)
         {

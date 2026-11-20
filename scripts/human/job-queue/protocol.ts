@@ -56,6 +56,8 @@ export type ClientMessage =
   /** completed: the command ran to its own end (not stopped by a signal or a cancel). */
   | { type: "done"; completed: boolean; exitCode: number; cancelled?: boolean }
   | { type: "status" }
+  /** The full id of the newest job whose id ends in these 1 to 4 digits (an older scheduler answers with an error). */
+  | { type: "resolve"; digits: string }
   | { type: "cancel"; id?: number; all?: boolean }
   | { type: "stop" }
   | { type: "move"; id: number; first?: boolean; before?: number; reset?: boolean }
@@ -187,6 +189,7 @@ export type ServerMessage =
   | { type: "stopping"; running: number; waiting: number }
   | { type: "move-result"; id: number; position: number }
   | { type: "start-result"; id: number }
+  | { type: "resolved"; id: number }
   /** The answer of pause and resume: the queue's state now, and whether this call changed it. */
   | { type: "pause-result"; paused: boolean; changed: boolean; running: number; waiting: number; pausedAt: number }
   | { type: "ended"; id: number; outcome: Outcome }

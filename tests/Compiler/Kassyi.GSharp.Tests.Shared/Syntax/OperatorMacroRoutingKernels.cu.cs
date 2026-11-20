@@ -113,6 +113,8 @@ public static partial class OperatorMacroRoutingKernels
         return z.Value;
     }
 
+    // The recursion of SumTo spills on purpose
+#pragma warning disable GS0001
     [GpuKernel]
     public static void RecursionKernel(int[] result)
     {
@@ -120,6 +122,7 @@ public static partial class OperatorMacroRoutingKernels
         result[0] = SumTo(ref ctx, 4);
         result[1] = ctx.Calls;
     }
+#pragma warning restore GS0001
 
     [GpuKernel]
     public static void ExtensionKernel(int[] values, int[] result)

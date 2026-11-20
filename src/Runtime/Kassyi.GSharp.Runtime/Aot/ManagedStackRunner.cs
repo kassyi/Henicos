@@ -58,7 +58,29 @@ public static class ManagedStackRunner
     /// <param name="thread">The call of the kernel, given the linear index of the GPU thread.</param>
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void Run(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ,
-        uint sharedMemBytes, string kernelName, Action<long> thread)
+        uint sharedMemBytes, string kernelName, Action<long> thread) =>
+        Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, kernelName,
+            reachesWarpCollective: false, thread);
+
+    /// <summary>
+    /// Runs <paramref name="thread"/> once per GPU thread of the launch, as
+    /// <see cref="Run(uint, uint, uint, uint, uint, uint, uint, string, Action{long})"/> does; the threads of a kernel
+    /// that reaches a warp collective also meet there, in the rounds of the managed state-machine launcher. For
+    /// generated code only.
+    /// </summary>
+    /// <param name="gridDimX">The number of blocks in x.</param>
+    /// <param name="gridDimY">The number of blocks in y.</param>
+    /// <param name="gridDimZ">The number of blocks in z.</param>
+    /// <param name="blockDimX">The number of threads per block in x.</param>
+    /// <param name="blockDimY">The number of threads per block in y.</param>
+    /// <param name="blockDimZ">The number of threads per block in z.</param>
+    /// <param name="sharedMemBytes">The dynamic shared memory size of each block, in bytes.</param>
+    /// <param name="kernelName">The kernel name as <c>Type.Method</c>, for diagnostics.</param>
+    /// <param name="reachesWarpCollective">Whether the kernel reaches a warp collective.</param>
+    /// <param name="thread">The call of the kernel, given the linear index of the GPU thread.</param>
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void Run(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ,
+        uint sharedMemBytes, string kernelName, bool reachesWarpCollective, Action<long> thread)
     {
         ArgumentNullException.ThrowIfNull(thread);
         var geometry = new LaunchGeometry(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
@@ -71,6 +93,7 @@ public static class ManagedStackRunner
         var nested = t_activeLaunches > 0;
         var launch = nested ? new ManagedStackLaunch() : (t_launch ??= new ManagedStackLaunch());
         var outerState = nested ? ManagedGpuContext.SwapBlockState(new ManagedBlockState()) : null;
+        launch.ReachesWarpCollective = reachesWarpCollective;
         t_activeLaunches++;
         try
         {
@@ -115,7 +138,19 @@ public static class ManagedStackRunner
         }
         finally
         {
-            Unwind(launch, workers, threadsPerBlock);
+            try
+            {
+                Unwind(launch, workers, threadsPerBlock);
+            }
+            finally
+            {
+                // The scheduler took the block dimensions for the warp rendezvous; it leaves no GPU thread context
+                // behind, as the state-machine launcher clears its own at the end of a launch
+                if (launch.ReachesWarpCollective)
+                {
+                    ManagedGpuContext.ClearThreadContext();
+                }
+            }
         }
 
         first?.Throw();
@@ -218,8 +253,8 @@ public static class ManagedStackRunner
     }
 
     // The rounds of the blocks of one launch: the scheduler gives the baton to each thread of the block in turn (in
-    // index order, or the order of UseThreadOrder) until each has finished or reached the block barrier, then releases
-    // the barrier and runs the next round, until no thread waits at a barrier
+    // index order, or the order of UseThreadOrder) until each has finished, reached the block barrier or reached a warp
+    // collective, and runs the next round while a thread can go on; when none can, it releases the barrier
     private readonly struct BlockSchedule(
         LaunchGeometry geometry,
         ManagedStackLaunch launch,
@@ -241,8 +276,16 @@ public static class ManagedStackRunner
                 w.LinearThreadId = id;
                 w.Context = geometry.ContextOf(id);
                 w.AtBlockBarrier = false;
+                w.AtWarp = false;
+                w.WarpVisitCount = 0;
                 w.Done = false;
                 w.Failure = null;
+            }
+
+            if (launch.ReachesWarpCollective)
+            {
+                BindWarpScheduler();
+                ManagedGpuContext.ResetWarpExchange();
             }
         }
 
@@ -259,30 +302,76 @@ public static class ManagedStackRunner
             while (anyActive);
         }
 
-        // One round; whether a thread reached the barrier, so that another round follows
+        // One round, as the managed state-machine launcher runs it (ManagedFallbackEmitter.WriteManagedBarrierRounds):
+        // a thread that waits at a warp collective counts as one that can go on, and the threads at the block barrier
+        // pass it only when no thread can run; whether another round follows. A kernel without warp collectives brings
+        // every thread to the barrier or its end in one step, so the barrier is released after every round, as before
         private bool RunRound(long block, int round, ref ExceptionDispatchInfo? first)
         {
             var order = GetRoundOrder(block, round);
+            var warp = launch.ReachesWarpCollective;
+            var anyActive = false;
+            var stepped = false;
             for (var k = 0; k < threadsPerBlock; k++)
             {
-                var w = workers[order is null ? k : order[k]];
-                if (!w.Done && !w.AtBlockBarrier)
+                var t = order is null ? k : order[k];
+                var w = workers[t];
+                if (w.Done || w.AtBlockBarrier)
                 {
-                    Step(w, ref first);
+                    continue;
                 }
+
+                if (warp && !ManagedGpuContext.WarpCanRun(t, round))
+                {
+                    anyActive = true;
+                    continue;
+                }
+
+                stepped = true;
+                Step(w, ref first);
+                if (warp)
+                {
+                    // [WHY] A launch that a wait of this step ran on the scheduler's thread left its own dimensions there
+                    BindWarpScheduler();
+                    if (w.Done)
+                    {
+                        ManagedGpuContext.MarkWarpLaneExited(t);
+                    }
+                }
+
+                anyActive |= !w.Done && !w.AtBlockBarrier;
             }
 
-            var anyActive = false;
-            for (var t = 0; t < threadsPerBlock; t++)
+            // [WHY] A round in which no thread ran while some wait at a warp collective means that they wait for lanes
+            // that never reach the same call (#1468)
+            if (warp && anyActive && !stepped)
             {
-                if (workers[t].AtBlockBarrier)
+                throw ManagedGpuContext.WarpStall(threadsPerBlock);
+            }
+
+            if (!anyActive)
+            {
+                for (var t = 0; t < threadsPerBlock; t++)
                 {
-                    workers[t].AtBlockBarrier = false;
-                    anyActive = true;
+                    if (workers[t].AtBlockBarrier)
+                    {
+                        workers[t].AtBlockBarrier = false;
+                        anyActive = true;
+                    }
                 }
             }
 
             return anyActive;
+        }
+
+        // The warp rendezvous reads the block dimensions of the calling thread (WarpCanRun, WarpStall): the scheduler
+        // takes those of the launch, as the state-machine launcher does
+        private void BindWarpScheduler()
+        {
+            var dimensions = geometry.Dimensions(threadsPerBlock);
+            ManagedGpuContext.BlockDimX = (int)dimensions.BlockDimX;
+            ManagedGpuContext.BlockDimY = (int)dimensions.BlockDimY;
+            ManagedGpuContext.BlockDimZ = (int)dimensions.BlockDimZ;
         }
 
         private int[]? GetRoundOrder(long block, int round)
@@ -300,7 +389,7 @@ public static class ManagedStackRunner
             return GetOrder(orderProvider, roundInfo, seen);
         }
 
-        // Runs <w> until it finishes or reaches the block barrier
+        // Runs <w> until it finishes, reaches the block barrier or reaches a warp collective
         private void Step(ManagedStackThread w, ref ExceptionDispatchInfo? first)
         {
             ManagedBaton.HandOver(w.Go, launch.Scheduler);
@@ -310,11 +399,11 @@ public static class ManagedStackRunner
                 w.Failure = null;
             }
 
-            if (!w.Done && !w.AtBlockBarrier)
+            if (!w.Done && !w.AtBlockBarrier && !w.AtWarp)
             {
                 throw new InvalidOperationException(
                     "G#: a stack thread returned to the scheduler without finishing or reaching a block " +
-                    "barrier");
+                    "barrier or a warp collective");
             }
         }
     }

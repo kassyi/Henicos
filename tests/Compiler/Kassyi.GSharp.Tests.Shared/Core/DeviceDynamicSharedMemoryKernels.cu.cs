@@ -196,6 +196,8 @@ public static partial class DeviceDynamicSharedMemoryKernels
         return s[tid];
     }
 
+    // The recursion of Rec spills on purpose
+#pragma warning disable GS0001
     [GpuKernel]
     public static void RecursiveKernel(int[] output, int n)
     {
@@ -205,6 +207,7 @@ public static partial class DeviceDynamicSharedMemoryKernels
         int r = Rec(n, 2);
         output[tid] = outer[tid] + r;
     }
+#pragma warning restore GS0001
 
     // A dynamic declaration in an inner block followed by a second one in the enclosing block; the second round
     // reads back the inner buffer after the outer one was written, so the two must not overlap

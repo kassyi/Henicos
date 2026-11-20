@@ -943,4 +943,169 @@ public class WarpActiveMaskDifferentialTests
                 output, blockDimX: 32),
             expected);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoCaseJoin_ReconvergesAtTargetSection() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoCaseJoinKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 1) == 0, 0x55555555u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoCaseToEarlierSection_ReconvergesAtTargetSection() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoCaseToEarlierSectionKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoLabelJoin_ReconvergesAtTargetLabel() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLabelJoinKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoDefaultJoin_ReconvergesAtDefaultSection() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoDefaultJoinKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 1) == 0, 0x55555555u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoCaseChain_ReconvergesAtEachSection() =>
+        RunOnEveryPath(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoCaseChainKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => t % 3 == 0, 0x49249249u)
+                .Concat(PerLane(32, static t => t % 3 == 0, 0x49249249u))
+                .Concat(PerLane(32, static t => t % 3 != 2, 0xDB6DB6DBu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_TwoSourcesOneJoin_ReconvergesBothSourcesWithDirectLanes() =>
+        RunOnEveryPath(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchTwoSourcesOneJoinKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => t % 3 == 0, 0x49249249u)
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => t % 3 == 2, 0x24924924u))
+                .Concat(PerLane(32, static t => t % 3 == 2, 0x24924924u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ConditionalGotoCase_LeavesBreakLanesBeforeJoin() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchConditionalGotoCaseKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 3) == 0, 0x11111111u))
+                .Concat(PerLane(32, static t => (t & 3) != 0, 0xEEEEEEEEu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoCaseJoinShuffle_ShufflesAcrossAllLanes() =>
+        RunOnEveryPath(32,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoCaseJoinShuffleKernel(
+                output, 0, blockDimX: 32),
+            Enumerable.Range(0, 32).Select(static t => t ^ 1).ToArray());
+
+    // The CPU paths join the lanes that jump to case 1 with those that enter it from the switch (m1 = 0xD34D34D3). CUDA
+    // keeps them apart there: m1 is 0x41041041 for the lanes that jumped and 0x92492492 for the others, each a subset of
+    // the classic value that holds the calling lane; every other entry is the same on every path
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_SkippedJoinGotoCase_LeavesSkippedJoinOnOuterJump() =>
+        RunWithinClassicBounds(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchSkippedJoinGotoCaseKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => t % 3 == 0, 0x49249249u)
+                .Concat(PerLane(32, static t => t % 3 == 0 && (t & 1) == 1, 0x08208208u))
+                .Concat(PerLane(32, static t => t % 3 == 1 || (t % 3 == 0 && (t & 1) == 0), 0xD34D34D3u))
+                .Concat(PerLane(32, static t => t % 3 == 2 || (t % 3 == 0 && (t & 1) == 1), 0x2CB2CB2Cu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray(),
+            static i => i & 31);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_BackwardGotoToJoinLabel_ReconvergesOnceAtTheJoin() =>
+        RunOnEveryPath(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchBackwardGotoToJoinLabelKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 2u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
+
+    // t % 3 == 0 (A) and the lanes of section 1 that jump to case 0 (t & 4 == 0, t & 8 != 0) meet at case 0; the other
+    // lanes of section 1 and the default lanes meet at shared, those of section 1 by a forward goto. CUDA keeps the lanes
+    // that reach shared without a jump (0x00090002) apart from those that jump there (0xB4D269B4)
+    private static uint[] ForwardGotoToSwitchJoinLabelExpected() =>
+        PerLane(32, static t => t % 3 == 0 || (t % 3 == 1 && (t & 12) == 8), 0x4B249649u)
+            .Concat(PerLane(32, static t => t % 3 == 1 && (t & 12) == 0, 0x00090002u))
+            .Concat(PerLane(32, static t => t % 3 == 2 || (t % 3 == 1 && (t & 12) != 8), 0xB4DB69B6u))
+            .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+            .ToArray();
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ForwardGotoToSwitchJoinLabel_ArrivesAtTheRangeWithItsSwitchJoins() =>
+        RunWithinClassicBounds(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoToSwitchJoinLabelKernel(
+                output, 0, blockDimX: 32),
+            ForwardGotoToSwitchJoinLabelExpected(),
+            static i => i & 31);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_ForwardGotoToSwitchJoinLabelInDeviceFunction_ArrivesAtTheRangeWithItsSwitchJoins() =>
+        RunWithinClassicBounds(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchForwardGotoToSwitchJoinLabelInDeviceFunctionKernel(
+                output, 0, blockDimX: 32),
+            ForwardGotoToSwitchJoinLabelExpected(),
+            static i => i & 31);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_SelfGotoCaseRetry_LoopsBackToTheSectionHead() =>
+        RunOnEveryPath(128,
+            static output => WarpActiveMaskDifferentialKernels.LaunchSelfGotoCaseRetryKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 3) == 0, 0x55555555u)
+                .Zip(PerLane(32, static t => (t & 3) == 2, 0x44444444u), static (a, b) => a | b)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 1) == 1 ? 0u : 1u + (uint)((t >> 1) & 1)))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
 }

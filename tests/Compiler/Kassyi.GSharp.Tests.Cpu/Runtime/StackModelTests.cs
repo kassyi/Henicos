@@ -176,7 +176,7 @@ public class StackModelTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void WarpKernel_BuiltWithEitherModel_StaysOnStateMachine()
+    public void WarpKernel_BuiltWithEitherModel_RunsOnTheSchedulerOfItsModel()
     {
         const int n = 32;
         var input = CreateSequence(n);
@@ -185,7 +185,7 @@ public class StackModelTests
 
         RunManaged(() => StackModelKernels.LaunchWarpAndBarrierKernel(input, output, blockDimX: n));
 
-        Assert.Equal(0L, ManagedStackRunner.LaunchCountOnThisThread - before);
+        Assert.Equal(BuiltWithStackModel ? 1L : 0L, ManagedStackRunner.LaunchCountOnThisThread - before);
         for (int i = 0; i < n; i++)
         {
             Assert.Equal(input[i ^ 1], output[i]);

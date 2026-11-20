@@ -21,11 +21,21 @@ internal sealed class ManagedStackThread
 
     internal bool AtBlockBarrier { get; set; }
 
+    // Waits at a warp collective until the scheduler finds the lanes of its mask met there (WarpCanRun)
+    internal bool AtWarp { get; set; }
+
     internal bool Done { get; set; }
 
     internal bool Retire { get; set; }
 
     internal ExceptionDispatchInfo? Failure { get; set; }
+
+    // The visit counts of the warp collectives of the kernel this OS thread runs (ManagedGpuContext.StackWarp.cs):
+    // grown when a kernel needs more, and kept for the next GPU threads and launches of the thread
+    internal uint[] WarpVisits { get; set; } = [];
+
+    // The counts of WarpVisits that the kernel of the current GPU thread cleared (begin); 0 until it does
+    internal int WarpVisitCount { get; set; }
 }
 
 // What the threads of one launch share with their scheduler.
@@ -36,6 +46,9 @@ internal sealed class ManagedStackLaunch
     internal ManagedBlockState? State { get; set; }
 
     internal bool Cancelled { get; set; }
+
+    // Whether the kernel reaches a warp collective: the scheduler then runs the rounds of the warp rendezvous
+    internal bool ReachesWarpCollective { get; set; }
 }
 
 internal static class ManagedBaton
@@ -132,5 +145,5 @@ internal sealed class ManagedBatonSignal
 }
 
 internal sealed class ManagedLaunchCancelledException()
-    : Exception("G#: the launch ended while this GPU thread waited at a block barrier");
+    : Exception("G#: the launch ended while this GPU thread waited at a block barrier or a warp collective");
 #pragma warning restore SA1402

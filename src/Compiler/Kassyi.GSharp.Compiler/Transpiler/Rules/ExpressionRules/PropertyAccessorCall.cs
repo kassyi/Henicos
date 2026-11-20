@@ -38,10 +38,17 @@ internal static class PropertyAccessorCall
     /// property, CS0200 elsewhere), so the name is the backing field rather than the getter.
     /// </summary>
     public static bool WritesBackingField(SyntaxNode node, ISymbol? symbol, ITranspilerDialect dialect) =>
-        symbol is IPropertySymbol { SetMethod: null, ContainingType: { } type } property &&
+        symbol is IPropertySymbol property && WritesBackingField(property, dialect) && IsAssignmentTarget(node);
+
+    /// <summary>
+    /// Whether an assignment to <paramref name="property"/> writes its backing field: a property without a setter
+    /// whose accessors use the <c>field</c> keyword, of a struct that <paramref name="dialect"/> writes under its
+    /// encoded name.
+    /// </summary>
+    public static bool WritesBackingField(IPropertySymbol property, ITranspilerDialect dialect) =>
+        property is { SetMethod: null, ContainingType: { } type } &&
         GlobalCppNames.IsEncodedUserType(type, dialect) &&
-        StructAbiMembers.IsFieldBackedProperty(property) &&
-        IsAssignmentTarget(node);
+        StructAbiMembers.IsFieldBackedProperty(property);
 
     /// <summary><c>WritesBackingField</c> of the target <paramref name="expression"/> of an assignment or a
     /// step.</summary>
@@ -103,18 +110,33 @@ internal static class PropertyAccessorCall
         ITranspilerDialect dialect, INamedTypeSymbol? currentStruct)
     {
         if (IsAssignmentTarget(node) ||
-            !IsGetter(symbol, dialect) ||
             symbol is not IPropertySymbol property ||
-            IsConstGetter(property, model.Compilation) ||
+            !NeedsCopy(property, dialect, model.Compilation) ||
             model.GetSafeOperation(node) is not IPropertyReferenceOperation { Instance: { } receiver } ||
             !IsReadOnlyVariable(receiver))
         {
             return null;
         }
 
-        return StructTypeSubstitution.SubstituteTypeParameters(property.ContainingType, currentStruct,
-            model.Compilation) as INamedTypeSymbol;
+        return CopyTypeOf(property, currentStruct, model.Compilation);
     }
+
+    /// <summary>
+    /// Whether a read of <paramref name="property"/> on a readonly variable calls its getter on a copy: a property
+    /// with accessor functions (<see cref="IsGetter"/>) whose getter may change its receiver (not
+    /// <see cref="IsConstGetter"/>).
+    /// </summary>
+    public static bool NeedsCopy(IPropertySymbol property, ITranspilerDialect dialect, Compilation compilation) =>
+        IsGetter(property, dialect) && !IsConstGetter(property, compilation);
+
+    /// <summary>
+    /// The struct type of the copy that the getter of <paramref name="property"/> is called on: the containing type,
+    /// with the type arguments of <paramref name="currentStruct"/> in place of its type parameters.
+    /// </summary>
+    public static INamedTypeSymbol? CopyTypeOf(IPropertySymbol property, INamedTypeSymbol? currentStruct,
+        Compilation compilation) =>
+        StructTypeSubstitution.SubstituteTypeParameters(property.ContainingType, currentStruct, compilation) as
+            INamedTypeSymbol;
 
     /// <summary>
     /// <c>PlanCopyType</c> with the model, dialect and current struct of <paramref name="context"/>.

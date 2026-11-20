@@ -183,4 +183,127 @@ public static partial class ReconvergenceJumpKernels
 
         result[t] = m;
     }
+
+    [GpuKernel]
+    public static void SwitchSelfCycleKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        switch (t & 1)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto case 0;
+            case 1:
+                goto case 0;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void SwitchMutualCycleKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        uint m = 0u;
+        switch (t & 1)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto case 1;
+            case 1:
+                goto case 0;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void CrossSectionGotoIntoGotoLoopMiddleKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (u)
+        {
+            case 0:
+                if ((t & 1) == 0)
+                {
+                    goto mid;
+                }
+
+                break;
+            case 1:
+            top:
+                n++;
+            mid:
+                m = Warp.ActiveMask();
+                if ((t & 1) == 1 && n < 2)
+                {
+                    goto top;
+                }
+
+                break;
+        }
+
+        result[t] = m;
+    }
+
+    [GpuKernel]
+    public static void SwitchBackwardGotoAcrossJoinKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (t % 3)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                goto first;
+            case 1:
+            first:
+                n++;
+            second:
+                n++;
+                if (n < 4)
+                {
+                    goto first;
+                }
+
+                break;
+            default:
+                goto second;
+        }
+
+        result[t] = m;
+        result[t + 32] = (uint)n;
+        result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void SwitchSelfGotoCaseAfterJoinKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (t % 3)
+        {
+            case 0:
+                goto shared;
+            case 1:
+                m = Warp.ActiveMask();
+            shared:
+                n++;
+                if (n < 2 && (t & 1) != 0)
+                {
+                    goto case 1;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        result[t] = m;
+    }
 }

@@ -39,8 +39,22 @@ internal static class RemovedCalls
     /// The nodes under <paramref name="root"/> without the calls that C# removes and everything inside them, in
     /// document order; what runs of <paramref name="root"/>, for the analyses that follow calls.
     /// </summary>
-    public static IEnumerable<SyntaxNode> DescendantNodesThatRun(SyntaxNode root, SemanticModel model)
+    /// <param name="root">The node whose descendants are walked.</param>
+    /// <param name="model">The semantic model of the tree of <paramref name="root"/>.</param>
+    /// <param name="skipsBody">
+    /// A node left out with everything inside it (a local function or a lambda that lowering does not inline), checked
+    /// on <paramref name="root"/> too; <see langword="null"/> keeps every node.
+    /// </param>
+    public static IEnumerable<SyntaxNode> DescendantNodesThatRun(
+        SyntaxNode root,
+        SemanticModel model,
+        Func<SyntaxNode, SemanticModel, bool>? skipsBody = null)
     {
+        if (skipsBody != null && skipsBody(root, model))
+        {
+            yield break;
+        }
+
         // [WHY] A walk of its own decides each call once: the descend predicate of DescendantNodes and a filter on its
         // result would bind every call twice. The children are pushed last first, so they come out in document order
         var pending = new Stack<SyntaxNode>();
@@ -48,7 +62,7 @@ internal static class RemovedCalls
         while (pending.Count > 0)
         {
             var node = pending.Pop();
-            if (IsRemovedCall(node as ExpressionSyntax, model))
+            if (IsRemovedCall(node as ExpressionSyntax, model) || (skipsBody != null && skipsBody(node, model)))
             {
                 continue;
             }

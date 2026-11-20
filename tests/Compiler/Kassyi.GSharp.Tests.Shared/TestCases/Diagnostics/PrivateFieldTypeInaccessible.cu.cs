@@ -101,4 +101,61 @@ public static partial class PrivateFieldTypeInaccessibleKernels
     {
         holder.Data[0] = holder.First;
     }
+
+    // The private enum behind an array field: the launcher names the enum type for the elements, so it is reported
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HiddenEnumArrayKernel(HiddenEnumArrayHolder holder)
+    {
+        holder.Data[0] = holder.First;
+    }
+
+    // The private enum behind a Nullable<>: the shadow of the Nullable names the enum type, so it is reported
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HiddenEnumNullableKernel(HiddenEnumNullableHolder holder)
+    {
+        holder.Data[0] = holder.Value;
+    }
+
+    // The private enum as a field: declared as its underlying type, so it is not reported
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void HiddenEnumFieldKernel(HiddenEnumHolder holder)
+    {
+        holder.Data[0] = holder.Value;
+    }
+}
+
+// The private enum is the element type of an array field
+public struct HiddenEnumArrayHolder
+{
+    private enum Level { Low, High }
+
+    public int[] Data;
+    private Level[] _levels;
+
+    public readonly int First => (int)_levels[0];
+}
+
+// The private enum is the value of a Nullable<> field
+public struct HiddenEnumNullableHolder
+{
+    private enum Level { Low, High }
+
+    public int[] Data;
+    private Level? _level;
+
+    public readonly int Value => (int)(_level ?? Level.Low);
+}
+
+// The private enum is the type of a field
+public struct HiddenEnumHolder
+{
+    private enum Level { Low, High }
+
+    public int[] Data;
+    private Level _level;
+
+    public readonly int Value => (int)_level;
 }

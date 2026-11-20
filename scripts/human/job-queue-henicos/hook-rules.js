@@ -87,7 +87,7 @@ function denialText(reasons) {
     '  node scripts/human/job-queue.js run -- "<command>"\n' +
     '  node scripts/human/job-queue.js run --gpu -- "<command>"   (uses the GPU; replaces gpu-lock.js)\n' +
     'The queue waits for a free slot and then runs the command here. ' +
-    'It prints `queued #<id>` at once: keep the id and ' +
+    'It prints `queued j<nnnn>` at once: keep the id and ' +
     'read the expected start and end with `node scripts/human/job-queue.js status <id> --json` (`status` lists every ' +
     'job); `node scripts/human/job-queue.js wait <id>` run in the background calls you when it ends ' +
     '(exit 0 succeeded). Steps that belong together go into one job as one quoted string, ' +
@@ -105,9 +105,9 @@ function additionalContext(plan) {
     `check-queued-command.js sent this command through the job queue as: ${plan.command} . ` +
     (plan.split
       ? 'The build was queued as a job of its own, without --gpu, so that the GPU is held only for the ' +
-        'tests: two `queued #<id>` lines, the build first; the tests run only when the build succeeded. '
+        'tests: two `queued j<nnnn>` lines, the build first; the tests run only when the build succeeded. '
       : '') +
-    'Its output starts with `queued #<id>`; `node scripts/human/job-queue.js status <id>` and ' +
+    'Its output starts with `queued j<nnnn>`; `node scripts/human/job-queue.js status <id>` and ' +
     '`node scripts/human/job-queue.js wait <id>` follow the job.'
   );
 }
