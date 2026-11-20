@@ -37,7 +37,7 @@
   },
   "resources": {
     "gpu": {
-      "slots": 1,
+      "slots": 2,
       "probe": {
         "argv": ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
         "min": 3072,
