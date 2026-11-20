@@ -675,18 +675,25 @@ function checkDialectOf(assert: AssertModule): void {
 
 /**
  * Every recipe of sharedRecipes in the repository config is shared by name only, so its command in the justfile must
- * be one the share rules call shared: the `dotnet test` it queues under `--gpu`, with the just variables removed.
+ * be one the share rules call shared: the `dotnet test` it queues under `--gpu`, with each just variable assigned at
+ * the top level (`name := "value"`) replaced by its value and the others (recipe parameters) removed.
  */
 function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, configRoot: string, recipes: unknown): void {
   assert.ok(Array.isArray(recipes) && recipes.length > 0, "the repository config names shared recipes");
   const justfile = fs.readFileSync(path.join(configRoot, "justfile"), "utf8").replace(/\r\n/g, "\n");
+  const variables = new Map<string, string>();
+  for (const assignment of justfile.matchAll(/^(\w+)\s*:=\s*"([^"\n]*)"\s*$/gm)) {
+    variables.set(assignment[1] ?? "", assignment[2] ?? "");
+  }
   const ctx = contextFor(configRoot, configRoot);
   for (const recipe of recipes as string[]) {
     const body = new RegExp(`^${recipe} [^\\n]*:\\n((?:[ \\t]+[^\\n]*\\n)+)`, "m").exec(justfile);
     assert.ok(body !== null, `the justfile has the shared recipe ${recipe}`);
     const queued = /--gpu -- ([\s\S]*)$/.exec((body?.[1] ?? "").replace(/\\\n\s*/g, " "));
     assert.ok(queued !== null, `${recipe} queues its command with --gpu`);
-    const command = (queued?.[1] ?? "").replace(/\{\{\w+\}\}/g, "").trim();
+    const command = (queued?.[1] ?? "")
+      .replace(/\{\{(\w+)\}\}/g, (_, name: string) => variables.get(name) ?? "")
+      .trim();
     assert.strictEqual(
       host.classify(command, Gpu, ctx).share,
       "shared",
