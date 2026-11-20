@@ -37,22 +37,29 @@ export interface EnvironmentHash {
 const sha256 = (text: string): string => createHash("sha256").update(text).digest("hex");
 
 /**
- * The hash of `env` without the names in `leaveOut` (VolatileEnv and the plugins' names), compared without regard to
- * case on Windows, where the names of variables have none.
+ * The hash of `env` without the names in `leaveOut` (VolatileEnv and the plugins' names). On Windows, where the names
+ * of variables have no case (one process sees Path, another PATH), the names are kept in upper case.
  */
 export function environmentHash(env: Readonly<NodeJS.ProcessEnv>, leaveOut: Iterable<string>): EnvironmentHash {
   const fold = (name: string): string => (process.platform === "win32" ? name.toUpperCase() : name);
   const left = new Set([...leaveOut].map(fold));
   const names = Object.keys(env)
     .filter((name) => env[name] !== undefined && !left.has(fold(name)))
-    .sort()
+    .sort((a, b) => (fold(a) < fold(b) ? -1 : fold(a) > fold(b) ? 1 : 0))
     .slice(0, MaxEnvKeys);
   // Without a prototype, so that a variable named "__proto__" stays a plain key
   const keys = Object.create(null) as Record<string, string>;
   for (const name of names) {
-    keys[name] = sha256(String(env[name])).slice(0, 8);
+    keys[fold(name)] = sha256(String(env[name])).slice(0, 8);
   }
-  return { hash: sha256(names.map((name) => `${name}=${keys[name]}`).join("\n")).slice(0, 12), keys };
+  return {
+    hash: sha256(
+      Object.keys(keys)
+        .map((name) => `${name}=${keys[name]}`)
+        .join("\n"),
+    ).slice(0, 12),
+    keys,
+  };
 }
 
 /** The names whose value hashes differ between two environments, a name in only one of them included, sorted. */

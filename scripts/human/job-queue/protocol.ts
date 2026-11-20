@@ -101,6 +101,8 @@ export interface JobView {
   cwd: string;
   /** The worktree it takes its turns for (absent from older schedulers). */
   worktree?: string;
+  /** The client sent no worktree: `worktree` is its directory (status --here then looks for it below the worktree). */
+  worktreeFromCwd?: true;
   /** The agent chat that queued it, for the chat panel (absent when none was known, and from older schedulers). */
   session?: string;
   command: string;

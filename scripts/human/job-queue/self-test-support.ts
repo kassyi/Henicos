@@ -78,13 +78,27 @@ export type Client = ChildProcess & { done: Promise<number | null>; said?: () =>
  * The exit codes of `clients`, and what each printed (for the message of a check that compares the codes: a client
  * that ends otherwise than expected then says why).
  */
-export async function exitsOf(clients: Client[]): Promise<{ codes: (number | null)[]; said: string }> {
-  const codes = await Promise.all(clients.map((client) => client.done));
+export async function exitsOf(
+  clients: Client[],
+  limitMs = ClientExitMs,
+): Promise<{ codes: (number | null | "no exit")[]; said: string }> {
+  // A client that does not end within the limit counts as "no exit", so that the check fails instead of hanging
+  const codes = await Promise.all(
+    clients.map((client) =>
+      Promise.race([
+        client.done,
+        new Promise<"no exit">((resolve) => setTimeout(() => resolve("no exit"), limitMs).unref()),
+      ]),
+    ),
+  );
   const said = clients
     .map((client, i) => `client ${i} (exit ${String(codes[i])}): ${client.said?.() ?? ""}`)
     .join("\n");
   return { codes, said };
 }
+
+/** How long exitsOf waits for each client to end. */
+export const ClientExitMs = 120 * 1000;
 
 /** The pid of a process that has exited: a client or a command that is gone. */
 export function deadPid(): number {

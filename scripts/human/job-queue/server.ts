@@ -334,6 +334,7 @@ export class JobServer {
       cwd,
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
+      ...(String(message.worktree ?? "") === "" ? { worktreeFromCwd: true } : {}),
       ...(places !== undefined ? { places } : {}),
       ...(keys !== undefined ? { keys } : {}),
       ...(resource !== undefined ? { resource } : {}),

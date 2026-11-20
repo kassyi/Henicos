@@ -20,7 +20,7 @@ import { worktreeKey } from "./system.ts";
 import type { ResourceSpec } from "./resources.ts";
 import { Scheduler, type SchedulerJob } from "./scheduler.ts";
 import { job, times } from "./scheduler-checks.ts";
-import { connectRaw, registration, removeDirectory } from "./self-test-support.ts";
+import { connectRaw, exitsOf, registration, removeDirectory, type Client } from "./self-test-support.ts";
 import { JobServer } from "./server.ts";
 
 type AssertModule = typeof Assert;
@@ -203,7 +203,7 @@ async function checkWaitForMessages(assert: AssertModule): Promise<void> {
 
 /** status --here: a job of the worktree, by its worktree, or for an older client by its directory inside it. */
 function checkHere(assert: AssertModule): void {
-  const root = process.platform === "win32" ? "X:__dummy__" : "/__dummy__";
+  const root = process.platform === "win32" ? "X:\\__dummy__" : "/__dummy__";
   const here = worktreeKey(path.join(root, "repo"));
   const at = (worktree: string | undefined, cwd: string): StatusJob =>
     ({ worktree: worktree === undefined ? undefined : worktreeKey(worktree), cwd }) as unknown as StatusJob;
@@ -217,6 +217,10 @@ function checkHere(assert: AssertModule): void {
   assert.strictEqual(isJobHere(at(path.join(root, "repo2"), path.join(root, "repo2")), here), false, "a sibling");
   assert.strictEqual(isJobHere(at(undefined, inside), here), true, "an older client: its directory is inside");
   assert.strictEqual(isJobHere(at(undefined, path.join(root, "repo2")), here), false, "not a prefix match");
+  // A newer scheduler fills in an older client's directory as its worktree, and says so
+  const filled = { ...at(inside, inside), worktreeFromCwd: true } as StatusJob;
+  assert.strictEqual(isJobHere(filled, here), true, "an older client below the worktree, through a newer scheduler");
+  assert.strictEqual(isJobHere(at(inside, inside), here), false, "a job whose own worktree is the subdirectory");
   const parsed = parseArgs(["status", "--here", "--json"]);
   assert.deepStrictEqual([parsed.here, parsed.json], [true, true], "--here goes with --json");
 }
@@ -362,20 +366,21 @@ function checkEnvironmentHash(assert: AssertModule): void {
   const added = environmentHash({ ...env, EXTRA: "1" }, [...VolatileEnv, "CHAT"]);
   assert.deepStrictEqual(differingNames(base.keys, added.keys), ["EXTRA"], "a name in one of them only");
   if (process.platform === "win32") {
-    assert.deepStrictEqual(
-      Object.keys(environmentHash({ Path: "x", shlvl: "1" }, VolatileEnv).keys),
-      ["Path"],
-      "names without case on Windows",
-    );
+    const mixed = environmentHash({ Path: "x", ComSpec: "c", shlvl: "1" }, VolatileEnv);
+    const upper = environmentHash({ PATH: "x", COMSPEC: "c" }, VolatileEnv);
+    assert.deepStrictEqual(Object.keys(mixed.keys), ["COMSPEC", "PATH"], "names without case on Windows");
+    assert.strictEqual(mixed.hash, upper.hash, "Path and PATH are one variable");
+    assert.deepStrictEqual(differingNames(mixed.keys, upper.keys), []);
   }
 }
 
 /** The log line of a queued job: cwd, worktree and env; the next run of the same command names what differs. */
 async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
   await withServer(async (port, log) => {
-    const queue = async (command: string, envKeys: unknown): Promise<void> => {
+    const root = process.platform === "win32" ? "X:\\__dummy__" : "/__dummy__";
+    const queue = async (command: string, envKeys: unknown, worktree = path.join(root, "a")): Promise<void> => {
       const client = await connectRaw(port);
-      client.send({ ...registration(command, 1, process.pid), cwd: "here", envHash: "abc", envKeys });
+      client.send({ ...registration(command, 1, process.pid), cwd: "here", worktree, envHash: "abc", envKeys });
       await client.until("queued");
       client.close();
     };
@@ -387,9 +392,27 @@ async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
     assert.match(differs[0] ?? "", /^j\d{4}: env differs from j\d{4} \(same command and worktree\): EXTRA, PATH$/);
     await queue("A", { PATH: "33333333", HOME: "22222222", EXTRA: "44444444" });
     await queue("B", { PATH: "55555555" });
-    assert.strictEqual(log.filter((line) => line.includes("env differs")).length, 1, "the same, or another command");
+    await queue("A", { PATH: "66666666" }, path.join(root, "b"));
+    assert.strictEqual(
+      log.filter((line) => line.includes("env differs")).length,
+      1,
+      "the same, another command, or the same command in another worktree",
+    );
     await queue("C", { PATH: "not a hash" });
     assert.match(log.filter((line) => line.startsWith("queue")).at(-1) ?? "", /worktree \S+: C$/, "malformed: no env");
+    // A worktree the client sent is its own; none sent (an older client): its directory, marked
+    const older = await connectRaw(port);
+    older.send({ ...registration("D", 1, process.pid), cwd: "here" });
+    await older.until("queued");
+    const ask = await connectRaw(port);
+    ask.send({ type: "status" });
+    const status = await ask.until("status");
+    const jobs = [...((status?.running as StatusJob[]) ?? []), ...((status?.waiting as StatusJob[]) ?? [])];
+    assert.deepStrictEqual(
+      ["A", "D"].map((command) => jobs.find((j) => j.command === command)?.worktreeFromCwd),
+      [undefined, true],
+    );
+    [older, ask].forEach((client) => client.close());
   });
 }
 
@@ -488,6 +511,15 @@ async function checkReasonNotices(assert: AssertModule): Promise<void> {
   }
 }
 
+/** exitsOf: the exit codes and what each client said; one that does not end within the limit is "no exit". */
+async function checkExitsOf(assert: AssertModule): Promise<void> {
+  const ended = { done: Promise.resolve(4), said: () => "cancelled" } as unknown as Client;
+  const stuck = { done: new Promise<number>(() => {}), said: () => "still waiting" } as unknown as Client;
+  const { codes, said } = await exitsOf([ended, stuck], 50);
+  assert.deepStrictEqual(codes, [4, "no exit"]);
+  assert.deepStrictEqual(said.split("\n"), ["client 0 (exit 4): cancelled", "client 1 (exit no exit): still waiting"]);
+}
+
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkWaitFor,
   checkDescribeWaitFor,
@@ -498,4 +530,5 @@ export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Pr
   checkEnvironmentHash,
   checkEnvironmentLog,
   checkReasonNotices,
+  checkExitsOf,
 };

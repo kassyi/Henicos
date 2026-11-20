@@ -166,13 +166,14 @@ export async function resolveJobRef(
 }
 
 /**
- * True when the job was queued from the worktree `here` (a worktreeKey): its worktree, or for a job of an older client
- * (which sends none) its directory, is `here` or lies inside it.
+ * True when the job was queued from the worktree `here` (a worktreeKey): its worktree is `here`, or for a job of an
+ * older client (which sends none) its directory is `here` or lies inside it.
  */
 export function isJobHere(job: StatusJob, here: string): boolean {
   const own = worktreeKey(job.worktree ?? job.cwd);
   const relative = path.relative(here, own);
-  return job.worktree != null
+  // An older client sends no worktree: an older scheduler then sends none, a newer one its directory, marked
+  return job.worktree != null && job.worktreeFromCwd !== true
     ? own === here
     : relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
