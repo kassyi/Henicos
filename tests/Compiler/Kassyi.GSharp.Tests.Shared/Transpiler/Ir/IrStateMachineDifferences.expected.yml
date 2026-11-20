@@ -1541,6 +1541,8 @@
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.SyncWarpExchangeKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.VotesAfterExitKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.CallSiteFramesKernel", status: "Compared", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ContinuePastLocalKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.EndInsideBranchKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ForUnrollSkewedShuffleKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.MaybeShuffle", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ReadLane", status: "Compared", count: 1}

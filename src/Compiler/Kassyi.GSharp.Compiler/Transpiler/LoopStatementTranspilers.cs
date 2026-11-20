@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles the loop statements (for, foreach, while, do-while) to CUDA C++.</summary>
@@ -223,7 +225,7 @@ internal static class LoopStatementTranspilers
     {
         if (node.Declaration != null)
         {
-            var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Declaration.Type);
+            var typeSymbol = VariableDeclarationTranspilerRule.GetDeclaredType(node.Declaration.Type, ref context);
             var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
             DeclarationTranspilerHelper.TranspileCombinedDeclarations(
                 node.Declaration.Variables, typeSymbol, node.Declaration.Type.IsVar, isPointer, ref context);

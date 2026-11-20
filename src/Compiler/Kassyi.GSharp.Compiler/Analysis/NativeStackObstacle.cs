@@ -10,12 +10,6 @@ internal enum NativeStackObstacle
     ImportedSuspendingCall,
 
     /// <summary>
-    /// The kernel reaches <c>Warp.ActiveMask()</c>, whose reconvergence regions the native stack model does not place
-    /// yet.
-    /// </summary>
-    WarpActiveMask,
-
-    /// <summary>
     /// A warp collective or a call that reaches one has no place in the visit counts of the kernel
     /// (<see cref="WarpFrameLayout.TryGet"/> fails).
     /// </summary>

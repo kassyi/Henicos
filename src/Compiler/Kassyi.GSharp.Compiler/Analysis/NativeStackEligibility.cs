@@ -21,10 +21,9 @@ internal static class NativeStackEligibility
         None = 0,
         BlockBarrier = 1,
         WarpCollective = 2,
-        ActiveMask = 4,
-        GridSync = 8,
-        CaseWithoutLabel = 16,
-        WarpOperatorMacro = 32
+        GridSync = 4,
+        CaseWithoutLabel = 8,
+        WarpOperatorMacro = 16
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
@@ -118,7 +117,7 @@ internal static class NativeStackEligibility
 
         if ((facts & BodyFacts.WarpCollective) != 0)
         {
-            return ClassifyWarpFrame(method, compilation, (facts & BodyFacts.ActiveMask) != 0);
+            return ClassifyWarpFrame(method, compilation);
         }
 
         return (facts & BodyFacts.BlockBarrier) != 0 ? NativeStackObstacle.None : NativeStackObstacle.NoBlockBarrier;
@@ -127,14 +126,8 @@ internal static class NativeStackEligibility
     // [WHY] A method that reaches a warp collective runs on stacks only when every collective and every call that
     // reaches one has its place in the visit counts of the kernel, which each GPU thread keeps on its own stack; the
     // stack form is written from that placement and treats a missing place as a compiler bug
-    private static NativeStackObstacle ClassifyWarpFrame(IMethodSymbol? method, Compilation compilation,
-        bool hasActiveMask)
+    private static NativeStackObstacle ClassifyWarpFrame(IMethodSymbol? method, Compilation compilation)
     {
-        if (hasActiveMask)
-        {
-            return NativeStackObstacle.WarpActiveMask;
-        }
-
         if (method is null || !WarpFrameLayout.TryGet(method, compilation, out var layout))
         {
             return NativeStackObstacle.WarpLayout;
@@ -241,8 +234,6 @@ internal static class NativeStackEligibility
             {
                 SyncIntrinsicKind.GridBarrier => BodyFacts.GridSync,
                 SyncIntrinsicKind.BlockBarrier => BodyFacts.BlockBarrier,
-                _ when intrinsic.Shuffle == WarpShuffleKind.ActiveMask =>
-                    BodyFacts.WarpCollective | BodyFacts.ActiveMask,
                 _ => BodyFacts.WarpCollective
             };
         }

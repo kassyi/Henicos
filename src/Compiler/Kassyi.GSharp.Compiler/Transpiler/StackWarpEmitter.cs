@@ -54,6 +54,33 @@ internal static class StackWarpEmitter
         return new StackWarpFrame(layout, treeOrdinal);
     }
 
+    /// <summary>
+    /// The body that the native stack form of the method of <paramref name="plan"/> writes in place of its declaration
+    /// when it reaches <c>Warp.ActiveMask()</c>: the stack body, with the reconvergence regions where the state machine
+    /// puts them (<see cref="MethodEmissionPlan.StackBody"/>); <see langword="null"/> for any other method or dialect.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] <c>Warp.ActiveMask()</c> returns the lanes that reach it together, so the lanes that took different ways
+    /// through a thread-dependent branch must meet where it ends, as the state machine makes them; the regions are
+    /// placed on the body after the passes that turn <c>&amp;&amp;</c>, <c>||</c> and <c>?:</c> into statements, which the
+    /// declaration does not show.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// The method reaches <c>Warp.ActiveMask()</c> but has no stack body (a compiler bug: every kernel with a body and
+    /// every device function that reaches a warp collective is lowered).
+    /// </exception>
+    public static BlockSyntax? GetActiveMaskBody(in MethodEmissionPlan plan, ITranspilerDialect dialect)
+    {
+        if (plan.Symbol is not { } method || !dialect.RunsThreadsOnOwnStacks() ||
+            !SuspensionAnalysis.ReachesActiveMask(method, plan.SemanticModel.Compilation))
+        {
+            return null;
+        }
+
+        return plan.StackBody?.Body ?? throw InternalError(
+            $"{MessageText.Name(method)} reaches Warp.ActiveMask() and has no body with reconvergence regions");
+    }
+
     /// <summary>What the stack form adds to <paramref name="call"/> of <paramref name="callee"/>.</summary>
     /// <exception cref="InvalidOperationException">
     /// The call needs a place that the frame of the method being written does not have (a compiler bug).
@@ -72,11 +99,8 @@ internal static class StackWarpEmitter
         var intrinsic = SyncIntrinsicClassifier.Classify(callee);
         if (intrinsic.Kind == SyncIntrinsicKind.WarpShuffle)
         {
-            if (intrinsic.Shuffle == WarpShuffleKind.ActiveMask)
-            {
-                throw InternalError("Warp.ActiveMask() reached the native stack form, which does not place it yet");
-            }
-
+            // Warp.ActiveMask() included: it meets with the mask 0 at its site, and the reconvergence regions around it
+            // come from the stack body (WriteBody)
             var frame = RequireFrame(call, ref context);
             if (!frame.Layout.TryGetSite(call, frame.TreeOrdinal, out var site))
             {
