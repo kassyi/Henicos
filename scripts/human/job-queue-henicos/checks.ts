@@ -20,6 +20,7 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { checkNameFilter } from "./name-filter-checks.ts";
 import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
@@ -737,4 +738,5 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
+  await checkNameFilter(assert);
 }

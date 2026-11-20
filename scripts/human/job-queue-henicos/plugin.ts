@@ -8,9 +8,11 @@ import {
   type ClientContext,
   type QueuePlugin,
   type ResourceRequest,
+  type ShareMode,
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
+import { nameFilterShare } from "./name-filter.ts";
 import { shareOf } from "./share-rules.ts";
 
 const DefaultBudgetsFile = "tests/memory-budgets.yml";
@@ -86,6 +88,12 @@ const plugin = {
     );
     const memoryMb = testMemoryMb(command, true, budgets, (cmd) => selectsCategory(cmd, ["Stress", "Benchmark"]));
     return share !== undefined ? { test: true, memoryMb, share } : { test: true, memoryMb };
+  },
+
+  // A --gpu run whose filter names tests only is shared when the runner lists no Stress, Benchmark or GpuTrap test
+  // among them (name-filter.ts); asked only after classify answered anything but "shared"
+  checkShare(command: string, context: ClientContext): Promise<ShareMode | undefined> {
+    return nameFilterShare(command, context);
   },
 
   shortName(_command: string, short: string): string | undefined {

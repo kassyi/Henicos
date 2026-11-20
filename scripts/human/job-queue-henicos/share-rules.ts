@@ -178,16 +178,129 @@ export function shareOf(command: string, context: ClientContext): ShareMode | un
   ) {
     return "exclusive";
   }
-  // 4 and 5. No exclusive variable named in the command (its text, and its words without quotes and without the `\`
-  // escapes of bash) or set in the environment, in any case
-  const words = line.steps
+  // 4 and 5. No exclusive variable named or set
+  return usesExclusiveEnv(command, line.steps, options, context) ? "exclusive" : "shared";
+}
+
+/**
+ * Whether an exclusive variable is named in the command (its text, and its words without quotes and without the `\`
+ * escapes of bash) or set in the environment, in any case.
+ */
+function usesExclusiveEnv(
+  command: string,
+  steps: readonly ReadStep[],
+  options: ShareOptions,
+  context: ClientContext,
+): boolean {
+  const lower = command.toLowerCase();
+  const words = steps
     .flatMap((step) => step.words)
     .join(" ")
     .replaceAll("\\", "")
     .toLowerCase();
   const named = (name: string): boolean => lower.includes(name.toLowerCase()) || words.includes(name.toLowerCase());
-  if (options.exclusiveEnv.some((name) => named(name) || isSet(context.env, name))) {
-    return "exclusive";
+  return options.exclusiveEnv.some((name) => named(name) || isSet(context.env, name));
+}
+
+/** A `dotnet test` that selects tests by name alone, as `nameFilterCheck` reads it. */
+export interface NameFilterTest {
+  /** The project or directory the test run names, as written. */
+  project: string;
+  /** The `--filter` value: positive name terms joined by `|`. */
+  filter: string;
+  configuration?: string;
+  framework?: string;
+}
+
+// A word that can be put back into a command between double quotes in every shell
+const SafeWord = /^[\w.+\-/\\:]+$/;
+// Positive name terms only: no parentheses, `&` or `!`, and no character a shell reads inside double quotes
+const NameTerm = /^(?:FullyQualifiedName|Name|DisplayName)[~=][^&|()!"$`%\\\r\n]+$/;
+const FlagOptions = /^(?:--no-build|--no-restore|--nologo|--blame|--blame-crash|-nodeReuse:(?:false|true))$/i;
+const ValueOptions = new Set([
+  "-c",
+  "--configuration",
+  "-f",
+  "--framework",
+  "-v",
+  "--verbosity",
+  "-l",
+  "--logger",
+  "--results-directory",
+  "--blame-hang-timeout",
+  "--diag",
+]);
+
+/**
+ * The `dotnet test` of a command that has only positive name terms in its filter, or null. The command must read
+ * plainly (one step of work, no pipe, no expanded variable), name one project or directory (not a .dll, .exe or a
+ * solution: their tests would have to be listed assembly by assembly), have one `--filter` that is `|`-joined
+ * `FullyQualifiedName`, `Name` or `DisplayName` terms with `~` or `=`, use only options this knows do not change the
+ * selection, and neither name nor set an exclusive variable. A negated term or one on another property is left to
+ * `shareOf`: it stays exclusive.
+ */
+export function nameFilterCheck(command: string, context: ClientContext): NameFilterTest | null {
+  const options = shareOptions(context.options);
+  const line = readCommandLine(command);
+  if (options === null || line === null || line.piped) {
+    return null;
   }
-  return "shared";
+  const work = line.steps.filter((step) => !isTrivialStep(step));
+  const step = work[0];
+  if (
+    work.length !== 1 ||
+    step === undefined ||
+    line.steps.some((each, i) => isHidden(each, line.expands[i] === true)) ||
+    (context.shell === "cmd" && command.includes("%")) ||
+    programOf(step.words[0] ?? "") !== "dotnet" ||
+    step.words[1] !== "test" ||
+    usesExclusiveEnv(command, line.steps, options, context)
+  ) {
+    return null;
+  }
+  const words = step.words.slice(2);
+  const filters: string[] = [];
+  const positional: string[] = [];
+  let configuration: string | undefined;
+  let framework: string | undefined;
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i] as string;
+    const lower = word.toLowerCase();
+    if (lower === "--filter" || lower.startsWith("--filter=")) {
+      filters.push(lower === "--filter" ? (words[++i] ?? "") : word.slice("--filter=".length));
+    } else if (ValueOptions.has(lower)) {
+      const value = words[++i];
+      if (value === undefined || value.startsWith("-")) {
+        return null;
+      }
+      if (lower === "-c" || lower === "--configuration") {
+        configuration = value;
+      } else if (lower === "-f" || lower === "--framework") {
+        framework = value;
+      }
+    } else if (!FlagOptions.test(word)) {
+      if (word.startsWith("-") || /\.(dll|exe|sln|slnx|slnf)$/i.test(word) || !SafeWord.test(word)) {
+        return null;
+      }
+      positional.push(word);
+    }
+  }
+  const filter = filters[0];
+  const terms = filter?.split("|").map((term) => term.trim());
+  if (
+    filters.length !== 1 ||
+    positional.length !== 1 ||
+    filter === undefined ||
+    terms === undefined ||
+    !terms.every((term) => NameTerm.test(term)) ||
+    [configuration, framework].some((value) => value !== undefined && !SafeWord.test(value))
+  ) {
+    return null;
+  }
+  return {
+    project: positional[0] as string,
+    filter: terms.join("|"),
+    ...(configuration !== undefined ? { configuration } : {}),
+    ...(framework !== undefined ? { framework } : {}),
+  };
 }
