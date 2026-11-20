@@ -497,6 +497,49 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
       run.drop();
     });
   }
+  // The connection is lost while the downgrade is pending: no grant is ignored for ever; the turn registers again as
+  // exclusive under the same id, and the grant that follows (the restored scheduler may still say shared) starts it
+  // once, under an exclusive lock
+  await withScheduler(async (scheduler) => {
+    const run = await startRun(
+      scheduler,
+      0,
+      runOptions(),
+      false,
+      true,
+      hostFor(() => Promise.resolve(false)),
+    );
+    run.send({ type: "queued", id: 91, state: "waiting", position: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    run.send(modern(91));
+    await until("the turn asks to be downgraded", () =>
+      Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "downgrade")),
+    );
+    run.drop();
+    await until("the turn connects again", () => run.host.connects.length === 2);
+    run.host.connects[1]?.resolve(await scheduler.connect());
+    await until("the second registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
+    const again = scheduler.accepted[1]?.messages[0];
+    assert.deepStrictEqual(
+      [again?.type, again?.share, again?.id],
+      ["request", "exclusive", 91],
+      "registered again as exclusive, under the same id",
+    );
+    const second = scheduler.accepted[1];
+    if (second === undefined) {
+      throw new Error("no second connection");
+    }
+    FakeScheduler.send(second, modern(91)); // the restored scheduler grants it again, still as shared
+    await until("the turn takes the lock", () => run.host.locks.length === 1);
+    FakeScheduler.send(second, modern(91)); // and once more
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.deepStrictEqual(
+      [run.host.locks.length, run.host.locks[0]?.mode, run.host.locks[0]?.turn],
+      [1, "exclusive", 91],
+      "started once, exclusively",
+    );
+    run.drop();
+  });
   // A scheduler that does not know "downgrade" (its grant does not say so) is not asked: the grant is given back (a
   // "done" that records no run) and the turn queues again as a new exclusive job; one that refuses is treated the same
   for (const refused of [false, true]) {

@@ -638,6 +638,10 @@ export class QueuedRun {
     }
     if (this.state !== "done" && this.socket === current) {
       this.socket = null;
+      // A pending downgrade is lost with the connection. The turn is exclusive already (the re-check said so): it
+      // registers again as exclusive, and a grant that comes after the reconnect (also one that still says shared) is
+      // started at once, under an exclusive lock
+      this.downgrading = false;
       if (!this.registered) {
         return;
       }
