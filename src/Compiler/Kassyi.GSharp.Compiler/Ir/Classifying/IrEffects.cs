@@ -33,19 +33,28 @@ namespace Kassyi.GSharp.Compiler.Ir.Classifying;
 /// </para>
 /// <para>
 /// <see cref="ExpressionEffects.MayThrow"/> follows from <see cref="IrTraps"/> (the same cases as
-/// <see cref="ExpressionTraps"/>). The length of an array is counted as throwing until non-null proofs are added
-/// to the IR.
+/// <see cref="ExpressionTraps"/>). The length of an array is counted as throwing unless the overloads that take
+/// <see cref="IrTrapReading.Decided"/> read the non-null proofs of the decided tree (the sequence pass); the split
+/// plans run before the decisions and keep the conservative rule.
 /// </para>
 /// </remarks>
 internal static class IrEffects
 {
     /// <summary>The effects of evaluating <paramref name="expression"/> for its value.</summary>
     /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
-    public static ExpressionEffects Of(IrExpression expression, Compilation compilation)
+    public static ExpressionEffects Of(IrExpression expression, Compilation compilation) =>
+        Of(expression, compilation, IrTrapReading.Undecided);
+
+    /// <summary>
+    /// The effects of evaluating <paramref name="expression"/> for its value, with the trap rules of
+    /// <paramref name="reading"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
+    public static ExpressionEffects Of(IrExpression expression, Compilation compilation, IrTrapReading reading)
     {
         var walker = new IrEffectWalker(compilation);
         walker.AddValue(expression);
-        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression));
+        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression, reading));
     }
 
     /// <summary>
@@ -55,7 +64,15 @@ internal static class IrEffects
     /// </summary>
     /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
     public static ExpressionEffects OfLocation(IrExpression expression, Compilation compilation,
-        bool readsValue = false)
+        bool readsValue = false) =>
+        OfLocation(expression, compilation, readsValue, IrTrapReading.Undecided);
+
+    /// <summary>
+    /// <see cref="OfLocation(IrExpression, Compilation, bool)"/> with the trap rules of <paramref name="reading"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A call in the expression is not classified.</exception>
+    public static ExpressionEffects OfLocation(IrExpression expression, Compilation compilation, bool readsValue,
+        IrTrapReading reading)
     {
         var walker = new IrEffectWalker(compilation);
         var root = walker.AddLocation(expression);
@@ -64,7 +81,7 @@ internal static class IrEffects
             walker.ReadRoot(root);
         }
 
-        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression));
+        return walker.ToEffects().WithThrow(IrTraps.MayTrap(expression, reading));
     }
 
     /// <summary>
@@ -83,10 +100,34 @@ internal static class IrEffects
     /// The effects of evaluating <paramref name="target"/> to the location an assignment writes: the reads of its index
     /// and receiver, and whether evaluating the target may trap before the value is stored.
     /// </summary>
-    public static ExpressionEffects OfAssignmentTarget(IrExpression target, Compilation compilation)
+    public static ExpressionEffects OfAssignmentTarget(IrExpression target, Compilation compilation) =>
+        OfAssignmentTarget(target, compilation, IrTrapReading.Undecided);
+
+    /// <summary>
+    /// <see cref="OfAssignmentTarget(IrExpression, Compilation)"/> with the trap rules of <paramref name="reading"/>.
+    /// </summary>
+    public static ExpressionEffects OfAssignmentTarget(IrExpression target, Compilation compilation,
+        IrTrapReading reading)
     {
         var walker = new IrEffectWalker(compilation);
         walker.AddLocation(target);
-        return walker.ToEffects().WithThrow(IrTraps.MayTrapBeforeStore(target));
+        return walker.ToEffects().WithThrow(IrTraps.MayTrapBeforeStore(target, reading));
+    }
+
+    /// <summary>
+    /// The variable that the location <paramref name="location"/> belongs to, as a read of it alone (without the reads
+    /// of its indices and receivers): what reading the target of a compound assignment reads
+    /// (<see cref="ExpressionEffects.RootOf"/> over the IR).
+    /// </summary>
+    public static VariableSet RootOf(IrExpression location, Compilation compilation)
+    {
+        var walker = new IrEffectWalker(compilation);
+        var root = default(VariableSet);
+        if (walker.AddLocation(location) is { } effectRoot)
+        {
+            root.AddRoot(effectRoot);
+        }
+
+        return root;
     }
 }
