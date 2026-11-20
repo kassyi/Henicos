@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
@@ -11,6 +12,8 @@ namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 // for the gate is interrupted or fails: every thread must still go back to the pool
 public partial class ManagedStackPoolTests
 {
+    private const string RentFailureMessage = "the rent failed";
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Run_SchedulerInterruptedWhileWaitingForThePoolGate_ThrowsAndReturnsEveryThreadToThePool()
@@ -32,8 +35,7 @@ public partial class ManagedStackPoolTests
         {
             Assert.True(SpinWait.SpinUntil(() => BlockedOutsideTheContext(scheduler, context), s_blockTimeout),
                 "The scheduler did not block in its wait for the gate of the pool");
-            Assert.NotNull(scheduler);
-            scheduler.Interrupt();
+            InterruptAndWaitUntilThrown(scheduler);
         });
 
         var after = RunOnNewThread(() =>
@@ -105,12 +107,11 @@ public partial class ManagedStackPoolTests
     [InlineData(RentFailure.FailureThenInterruptedWhileReturning)]
     public void Run_RentFailsAfterStartingThreads_ThrowsOnceAndPoolsEveryThread(RentFailure failure)
     {
-        const int newThreads = 4;
-        Assert.Equal(ExpectedReverse(newThreads, 1), RunReverse(newThreads, 1));
-        int idleBefore = ManagedStackRunner.IdleThreadCount;
-        int createdBefore = ManagedStackRunner.CreatedThreadCount;
-        int threads = idleBefore + newThreads;
-        Assert.True(threads <= 1024, "The pool is too large for one block of new threads");
+        const int threads = 4;
+        Assert.Equal(ExpectedReverse(threads, 1), RunReverse(threads, 1));
+        var pool = ManagedStackThreadPool.Instance;
+        int idleBefore = pool.IdleThreadCount;
+        int createdBefore = pool.CreatedThreadCount;
         Thread? scheduler = null;
         using var holdRequested = new ManualResetEventSlim();
         using var gateHeld = new ManualResetEventSlim();
@@ -122,15 +123,26 @@ public partial class ManagedStackPoolTests
         {
             Assert.True(SpinWait.SpinUntil(() => started.IsSet && IsBlocked(scheduler), s_blockTimeout),
                 "The scheduler did not block in its wait for the gate of the pool");
-            Assert.NotNull(scheduler);
-            scheduler.Interrupt();
+            InterruptAndWaitUntilThrown(scheduler);
         });
 
-        var outcome = RunOnNewThread(() =>
+        // Every idle thread is out of the pool, so that the launch starts its threads
+        var borrowed = pool.Rent(idleBefore, nested: true);
+        RentOutcome outcome;
+        int idleAfterLaunch;
+        try
         {
-            scheduler = Thread.CurrentThread;
-            return RunWithFailingRent(threads, failure, holdRequested, gateHeld, started);
-        });
+            outcome = RunOnNewThread(() =>
+            {
+                scheduler = Thread.CurrentThread;
+                return RunWithFailingRent(threads, failure, holdRequested, gateHeld, started);
+            });
+            idleAfterLaunch = pool.IdleThreadCount;
+        }
+        finally
+        {
+            pool.Return(borrowed, idleBefore);
+        }
 
         holder.AssertEnded();
         Assert.False(outcome.KernelRan);
@@ -139,10 +151,11 @@ public partial class ManagedStackPoolTests
             : typeof(ThreadInterruptedException), outcome.Failure);
         // The interruption that came while the failure was on its way was dropped, not left for a later wait
         Assert.False(outcome.InterruptionPending);
-        Assert.Equal(idleBefore + newThreads, ManagedStackRunner.IdleThreadCount);
-        Assert.Equal(createdBefore + newThreads, ManagedStackRunner.CreatedThreadCount);
+        Assert.Equal(threads, idleAfterLaunch);
+        Assert.Equal(createdBefore + threads, pool.CreatedThreadCount);
         AssertLaterLaunches(RunLaterLaunches(threads, 10), threads, 10);
-        Assert.Equal(createdBefore + newThreads, ManagedStackRunner.CreatedThreadCount);
+        Assert.Equal(idleBefore + threads, pool.IdleThreadCount);
+        Assert.Equal(createdBefore + threads, pool.CreatedThreadCount);
     }
 
     /// <summary>How the rent of a launch fails after it has started new threads.</summary>
@@ -197,10 +210,25 @@ public partial class ManagedStackPoolTests
         switch (failure)
         {
             case RentFailure.InterruptionThenInterruptedWhileReturning:
-                throw new ThreadInterruptedException("the rent failed");
+                throw new ThreadInterruptedException(RentFailureMessage);
             case RentFailure.FailureThenInterruptedWhileReturning:
-                throw new InvalidOperationException("the rent failed");
+                throw new InvalidOperationException(RentFailureMessage);
         }
+    }
+
+    // Interrupts <scheduler>, which waits for the gate that the calling thread holds, and returns once the interruption
+    // has been thrown on it.
+    // [WHY] The gate goes when this returns. A blocked state does not prove that the wait for the gate has begun: an
+    // interruption that comes before it stays pending, and a gate released at once could then be taken without a wait,
+    // leaving the interruption for a later wait. While the gate is held, the scheduler's next wait that an interruption
+    // can end is the wait for the gate, so the interruption is thrown there before the gate goes
+    private static void InterruptAndWaitUntilThrown(Thread? scheduler)
+    {
+        Assert.NotNull(scheduler);
+        using var watch = new InterruptionWatch(scheduler);
+        scheduler.Interrupt();
+        Assert.True(SpinWait.SpinUntil(() => watch.Thrown, s_blockTimeout),
+            "The interruption was not thrown on the scheduler");
     }
 
     // Runs a launch of <threads> threads with <context> on the calling thread. Its last GPU thread asks for the gate
@@ -274,6 +302,33 @@ public partial class ManagedStackPoolTests
 
     // What a launch whose rent failed gave its launching thread
     private sealed record RentOutcome(Exception? Failure, bool InterruptionPending, bool KernelRan);
+
+    // Records that the runtime threw a ThreadInterruptedException on <thread> (first chance), other than the one that
+    // FailRent throws itself
+    private sealed class InterruptionWatch : IDisposable
+    {
+        private readonly Thread _thread;
+        private int _thrown;
+
+        public InterruptionWatch(Thread thread)
+        {
+            _thread = thread;
+            AppDomain.CurrentDomain.FirstChanceException += OnFirstChance;
+        }
+
+        public bool Thrown => Volatile.Read(ref _thrown) != 0;
+
+        public void Dispose() => AppDomain.CurrentDomain.FirstChanceException -= OnFirstChance;
+
+        private void OnFirstChance(object? sender, FirstChanceExceptionEventArgs e)
+        {
+            if (e.Exception is ThreadInterruptedException { Message: not RentFailureMessage } &&
+                Thread.CurrentThread == _thread)
+            {
+                Volatile.Write(ref _thrown, 1);
+            }
+        }
+    }
 
     // A thread that takes the pool's gate once <requested> is set, sets <held>, runs <whileHeld> and lets the gate go
     private sealed class GateHolder
