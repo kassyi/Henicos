@@ -261,9 +261,17 @@ one of three shapes:
   `R = max(2 * 1024, L)` (`L` the longest row: `M` up to 1024 points, else `max(N1, N2)`), the most any block size
   up to 1024 threads asks for, since the size is fixed before the block size is chosen: 8704 bytes up to `2^22` points,
   17152 at `2^23` and `2^24`, 34048 at `2^25`. The kernels add 13072 bytes of static shared memory (12672 bytes for the tiles and 400 bytes of other buffers).
+- **Block size**: the launcher (`CooperativeMegaKernelLauncher.ChooseBlockDim`) takes the smallest candidate `c` of
+  1024 / 768 / 512 / 256 threads, at most the largest that fits an SM, with `M <= 2 * SMs * c`, and else the largest
+  that fits. Under that bound every block transforms its rows in one batch (a block gets at most `2c` points, one
+  butterfly per thread), so a larger block would only make more warps wait at each barrier and put
+  the same work on fewer SMs; above it the grid is capped at one block per SM and a larger block runs fewer batches.
+  The rule is a pure function of `M`, the SM count, the largest block that fits and the candidates; the result does
+  not depend on the block size. ModPow runs on one block and applies `ChooseBlockDim` with one SM (256 threads up to
+  512 points, 512 at 1024, and the largest block that fits above, 768 on sm_86 with 66 registers per thread).
 - **Registers**: a block of 1024 threads fits an SM only with at most 64 registers per thread (56 for the inverse square
   root and the reciprocal). The occupancy test (`MegaKernelOccupancyTests`) asks the driver whether each mega-kernel
-  fits with 1024 threads (ModPow with its 256) at the least and the most shared memory, since the launcher otherwise
+  fits with 1024 threads (ModPow with 768) at the least and the most shared memory, since the launcher otherwise
   takes 768 threads without a word.
 
 ### Execution Strategy & Memory Management

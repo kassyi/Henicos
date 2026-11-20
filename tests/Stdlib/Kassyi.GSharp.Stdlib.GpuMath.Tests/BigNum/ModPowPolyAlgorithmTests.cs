@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -79,22 +81,21 @@ public class ModPowPolyAlgorithmTests : IDisposable
         Assert.Equal(expected, actual);
     }
 
-    // ModPowNttHostController launches ModPowNttMegaKernel with one block of 256 threads, and the kernel resolves the
+    // ModPowNttHostController launches ModPowNttMegaKernel with one block sized by ChooseBlockDim (256 up to 512
+    // points, 512 at 1024 points, and the largest block that fits above, 768 on sm_86). The kernel resolves the
     // carries of each product in chunks of one block (BlockDimension.X), writing one block carry per chunk into
     // BlockCarries. Its largest product (the Barrett step) has 2n + (3n + 16) = 5n + 16 words: n = 99 gives 511 words
-    // (2 chunks), n = 100 gives 516 words (3 chunks, one more than an allocation sized for 1024-word chunks holds) and
-    // n = 200 gives 1016 words (4 chunks). The product A * R of the Barrett step is below 2^(32 * (4n + 16)), so its top
-    // chunks are zero: only n = 200 carries a non-zero value across the second chunk boundary.
-    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs
-    //   NttWorkspaceBuffers `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;` (the #606 allocation)
-    //   input: numWords 100 and 200 (ThrowIfBlockCarriesTooSmall throws before the launch)
+    // (1 chunk of 512), n = 100 gives 516 words (1 chunk of 768), n = 200 gives 1016 words (2 chunks of 768, more than
+    // a 1024-word chunk allocation holds), and n = 3270 gives 16366 words (22 chunks of 768).
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/
+    //   CooperativeMegaKernelLauncher.cs:473 `ChunkSize = carryChunkSize;` -> `ChunkSize = 1024;`
+    //   input: numWords 200 and 3270 (ThrowIfBlockCarriesTooSmall throws before the launch)
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:88
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
-    //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
-    // The ModPow mega-kernel runs one block of 256 threads. numWords 99 transforms 1024 points as one shared-memory
-    // row, whose 512 butterflies each thread takes two of; numWords 100 and 200 transform 2048 points as 32 x 64,
-    // whose rows of 32 points the block batches 16 at a time (four batches) and whose rows of 64 points 8 at a time;
-    // numWords 3270 transforms 2^15 = 128 x 256 points (N1 != N2, column read).
+    //   input: numWords 3270 (the carries across chunks 1..20 are lost and the result differs from BigInteger.ModPow)
+    // numWords 99 transforms 1024 points as one shared-memory row on 512 threads (one butterfly per thread); numWords
+    // 100 and 200 transform 2048 points as 32 x 64 (768 threads batch 24 rows of 32 points and 12 rows of 64); numWords
+    // 3270 transforms 2^15 = 128 x 256 points (N1 != N2, column read).
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntNttKernels.cu.cs:377
     //   `args.ColumnStride = args.Grid.N2;` -> `args.Grid.N1`
     //   input: numWords 3270
@@ -114,7 +115,61 @@ public class ModPowPolyAlgorithmTests : IDisposable
         AssertModPowNttMatchesBigIntegerReference(numWords);
     }
 
-    // 6600 words transforms 2^17 = 256 x 512 points (N1 != N2) on one block of 256 threads through the transposes.
+    // ModPowNttHostController launches one block (smCount: 1), so ChooseBlockDim selects 256 threads for 48 words
+    // (M = 512 <= 2 * 1 * 256), 512 for 99 words (M = 1024 <= 2 * 1 * 512), and the largest block that fits for 100
+    // words (M = 2048; 768 on sm_86 with 66 registers per thread).
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:56
+    //   `gridDim: 1, blockDim: shape.BlockDim` -> `blockDim: 256`
+    //   input: numWords 99 and 100
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/ModPowNttHostController.cs:50
+    //   `smCount: 1` -> `smCount: null`
+    //   input: numWords 99 and 100 on a multi-SM GPU
+    // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/CooperativeMegaKernelLauncher.cs:321
+    //   `var blockDim = ChooseBlockDim(transformLength, effectiveSmCount, largestFitting, candidates);`
+    //   -> `largestFitting`
+    //   input: numWords 48 and 99
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(48, 256)]
+    [InlineData(99, 512)]
+    [InlineData(100, 0)]
+    public void ModPow_NttPath_ChoosesBlockSizeOfTheRule(int numWords, int expectedBlockSize)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var workspace = new GpuWorkspace(Math.Max(4096, numWords * 16), GpuExecutionEngine.GSharpAot);
+        workspace.PolyAlgorithmThreshold = numWords * 32;
+
+        var seed = 606 + numWords;
+        var random = new Random(seed);
+        var modValue = GenerateFullWidthBigInteger(random, numWords * 32) | BigInteger.One;
+        var baseValue = GenerateFullWidthBigInteger(random, numWords * 32) % modValue;
+        var expValue = GenerateFullWidthBigInteger(random, 64);
+
+        var expected = BigInteger.ModPow(baseValue, expValue, modValue);
+
+        using var gpuBase = GpuBigUInt.FromBigInteger(workspace, baseValue, numWords);
+        using var gpuExp = GpuBigUInt.FromBigInteger(workspace, expValue, 2);
+        using var gpuMod = GpuBigUInt.FromBigInteger(workspace, modValue, numWords);
+        using var gpuResult = new GpuBigUInt(workspace, numWords);
+
+        GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+        Assert.True(expected == gpuResult.ToBigInteger(), $"seed {seed} mismatch");
+        var sharedMemBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(
+            CooperativeMegaKernelLauncher.TransformLengthFor(5 * numWords + 16));
+        var expectedBlockDim = expectedBlockSize != 0
+            ? (uint)expectedBlockSize
+            : CooperativeMegaKernelLauncher.ResolveCooperativeBlockDim(
+                workspace,
+                static () => GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel(),
+                CooperativeMegaKernelLauncher.ModPowKernelName,
+                sharedMemBytes);
+        Assert.Equal(expectedBlockDim, workspace.LastModPowNttBlockDim);
+    }
+
+    // 6600 words transforms 2^17 = 256 x 512 points (N1 != N2) on one block of the largest fitting block size (768
+    // threads on sm_86) through the transposes.
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntNttKernels.cu.cs:425 / :469
     //   `TransposeTiles(buffer, temporaryBuffer, length2, length1);` -> `(..., length1, length2)`
     //   input: numWords 6600

@@ -40,10 +40,19 @@ internal static class ModPowNttHostController
         GpuBigIntMath.ShiftAndResize(reciprocalNorm, lz, reciprocalOfB);
 
         // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
+        // ModPow runs one block, so smCount is 1: ChooseBlockDim selects 256 up to 512 points, 512 at 1024, and the
+        // largest fitting block above.
+        var shape = CooperativeMegaKernelLauncher.PrepareLaunchShape(
+            workspace,
+            aActualWords + targetWords,
+            static () => GpuBigIntDivRemKernels.ResolveModPowNttMegaKernel(),
+            CooperativeMegaKernelLauncher.ModPowKernelName,
+            smCount: 1);
+
         GSharpKernelProvider.Instance.KernelAdvancedMath.ExecuteModPowNttMegaKernel(
             workspace,
             baseVal, resultBuffer, mod, reciprocalOfB, exp,
             n, targetBits,
-            gridDim: 1, blockDim: 256);
+            gridDim: 1, blockDim: shape.BlockDim);
     }
 }

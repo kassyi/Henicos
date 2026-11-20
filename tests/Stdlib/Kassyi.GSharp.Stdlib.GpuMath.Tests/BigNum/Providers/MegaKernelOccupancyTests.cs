@@ -5,9 +5,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
 // Properties checked here (property-test-design §1): a block of the largest size its launcher can use fits on an SM
 // for each cooperative mega-kernel (the CUDA driver's occupancy query is the oracle), with the least and the most
-// dynamic shared memory the launcher passes. InverseSqrt and Reciprocal choose among 1024, 768, 512 and 256 threads:
-// with more than 64 registers per thread 1024 does not fit, and the launcher then takes 768 without a word, so only
-// a query fixed to [1024] notices it. ModPow always launches one block of 256 threads.
+// dynamic shared memory the launcher passes. InverseSqrt and Reciprocal choose among 1024, 768, 512 and 256 threads;
+// ModPow chooses among the same candidates with 1 SM, fitting up to 768 threads on sm_86 (66 registers per thread).
+// With more than 64 registers per thread 1024 does not fit, and the launcher takes 768 without a word, so only a
+// query fixed to the expected maximum block size notices register bloat.
 [Collection(TestCollections.GlobalStateSequential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Category(TestCategory.Stdlib)]
@@ -22,7 +23,7 @@ public class MegaKernelOccupancyTests(ITestOutputHelper output)
     {
         { InverseSqrtKernelName, 1024 },
         { ReciprocalKernelName, 1024 },
-        { ModPowKernelName, 256 },
+        { ModPowKernelName, 768 },
     };
 
     // The failure message of ChooseBlockSize names the registers and the shared memory that do not fit.
