@@ -77,6 +77,7 @@ internal static class IrCoverageInputs
             foreach (var declaration in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
             {
                 if (model.GetDeclaredSymbol(declaration) is { } symbol && GpuExecutionSpace.IsGpuFunction(symbol) &&
+                    !IsUnlowerableGenericDeclaration(symbol, compilation) &&
                     declaration.GetBodyNode() is { } body &&
                     IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) is { } method)
                 {
@@ -85,6 +86,13 @@ internal static class IrCoverageInputs
             }
         }
     }
+
+    /// <summary>
+    /// Whether <paramref name="symbol"/> declares type parameters and waits at a barrier: its declaration cannot be
+    /// lowered (a type parameter is no type for a frame field), only its closed copies can (GenericCopiesTests).
+    /// </summary>
+    public static bool IsUnlowerableGenericDeclaration(IMethodSymbol symbol, Compilation compilation) =>
+        symbol.IsGenericMethod && SuspensionAnalysis.RequiresStateMachine(symbol, compilation);
 
     /// <summary>
     /// The bodies of the members of the structs that G# emits for the device, declared in <paramref name="trees"/>:

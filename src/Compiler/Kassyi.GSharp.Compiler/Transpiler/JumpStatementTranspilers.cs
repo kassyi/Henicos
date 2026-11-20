@@ -109,7 +109,9 @@ internal static class JumpStatementTranspilers
     /// </summary>
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
-        if (node.Statement is EmptyStatementSyntax)
+        // The declaration of a const local writes nothing, so its label needs the empty statement as well (a label
+        // before the closing brace is ill-formed C++ before C++23)
+        if (node.Statement is EmptyStatementSyntax or LocalDeclarationStatementSyntax { IsConst: true })
         {
             WriteLabelName(node, ref context);
             context.Emitter.Writer.AppendLine(":;");

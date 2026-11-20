@@ -421,13 +421,20 @@ public class IrNullDecisionTests
         }
     }
 
-    // Legacy parity only: #2152 ([Bug]: An array element at a nuint index above long.MaxValue throws
-    // IndexOutOfRangeException instead of OverflowException on the native CPU and checked CUDA paths).
+    // C# converts a nuint index to ulong, then checks it with conv.ovf.i.un
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public void Decide_ReadAtANUIntIndex_DoesNotNeedTheOverflowCheck()
+    public void Decide_ReadAtANUIntIndex_NeedsTheOverflowCheck()
     {
         var element = Assert.IsType<IrElementReference>(AssignedValue(DecideMethod("ReadNUIntIndex"), 0));
+        Assert.True(element.Decided.IndexNeedsOverflowCheck);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Decide_ReadAtANIntIndex_DoesNotNeedTheOverflowCheck()
+    {
+        var element = Assert.IsType<IrElementReference>(AssignedValue(DecideMethod("ReadNIntIndex"), 0));
         Assert.False(element.Decided.IndexNeedsOverflowCheck);
     }
 

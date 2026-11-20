@@ -29,11 +29,12 @@ internal static class OperatorMacroContext
         var contextType = targetMethod.Parameters[0].Type;
         var candidates = ImmutableArray.CreateBuilder<ISymbol>();
 
-        // A lowered node is looked up at its place in the user's source, where the semantic model has its scope
-        var location = semanticModel.GetReportLocation(assignment);
-        if (location.SourceTree == semanticModel.SyntaxTree)
+        // A lowered node is looked up at the node of the compilation it came from, where the semantic model has its
+        // scope: for a closed copy of a generic declaration that is the copy, not the user's source (GetReportLocation)
+        if (semanticModel.GetCompilationNode(assignment) is { } original &&
+            original.SyntaxTree == semanticModel.SyntaxTree)
         {
-            var position = location.SourceSpan.Start;
+            var position = original.SpanStart;
             semanticModel.LookupSymbols(position)
                 .AsStackEnumerable()
                 .Where((Type: contextType, Position: position), static (symbol, s) =>

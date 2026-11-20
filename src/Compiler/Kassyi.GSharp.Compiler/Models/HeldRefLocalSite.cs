@@ -53,13 +53,13 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
         {
             if (!held.IsReportedLive)
             {
-                sites.Add(Create(semanticModel.GetReportLocation(held.Declarator), semanticModel.Compilation));
+                sites.Add(Create(held.Declarator, semanticModel));
             }
         }
 
         foreach (var span in lowered.SpansAcrossStates)
         {
-            sites.Add(Create(semanticModel.GetReportLocation(span), semanticModel.Compilation) with
+            sites.Add(Create(span, semanticModel) with
             {
                 SpanName = span.Identifier.ValueText
             });
@@ -115,6 +115,18 @@ internal readonly record struct HeldRefLocalSite(string Path, int TreeOrdinal, T
         return trees
             .AsStackEnumerable()
             .FirstOrDefault(Path, static (tree, path) => tree.FilePath == path);
+    }
+
+    // The site of <node> at its report location. A node of a closed copy of a generic declaration reports in the user's
+    // tree, which the derived compilation of the copy does not hold: the ordinal is that of the copy's tree, which
+    // replaced the user's tree at the same position, so that a tree without a path is still found
+    private static HeldRefLocalSite Create(SyntaxNode node, SemanticModel semanticModel)
+    {
+        var site = Create(semanticModel.GetReportLocation(node), semanticModel.Compilation);
+        return site.TreeOrdinal < 0 && site.Path.Length == 0 &&
+               semanticModel.GetCompilationNode(node) is { SyntaxTree: var tree }
+            ? site with { TreeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(semanticModel.Compilation, tree) }
+            : site;
     }
 
     // The site of the declared identifier, as GSH0039 reports it: location is a declarator (<name> = <initializer>), or

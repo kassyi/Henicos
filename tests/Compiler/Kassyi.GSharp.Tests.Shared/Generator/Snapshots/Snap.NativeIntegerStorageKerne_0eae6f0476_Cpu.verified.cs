@@ -1420,7 +1420,7 @@ __gsharp_state = -1;return;
 }
 long long __gsharp_id_4_i = (long long)__gsharp_id_3_t;
 unsigned long long __gsharp_id_5_j = (unsigned long long)(__gsharp_sub_i32(__gsharp_sub_i32(__gsharp_id_2_n,1),__gsharp_id_3_t));
-__gsharp_array_at(__gsharp_id_1_dst, __gsharp_id_4_i, 290514196u)=__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_5_j, 451530599u);
+__gsharp_array_at(__gsharp_id_1_dst, __gsharp_id_4_i, 290514196u)=__gsharp_array_at(__gsharp_id_0_a, __gsharp_array_index_u64(__gsharp_id_5_j), 451530599u);
 __gsharp_state=-1;
 return;
 }

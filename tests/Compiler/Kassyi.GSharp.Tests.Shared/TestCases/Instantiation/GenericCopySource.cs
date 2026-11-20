@@ -315,6 +315,57 @@ namespace App
         public static int CallStaticGen<T>(double d) where T : IStaticGen => T.Create(d);
 
         public static int CallInstGen<T>(T x, double d) where T : IInstGen => x.Pick(d);
+
+        // Waits at a barrier: the lowering of its copy keeps 'kept' across the wait, in a frame field of the copy's
+        // type
+        [Kassyi.GSharp.Core.GpuDeviceFunction]
+        public static T AfterSync<T>(T value) where T : unmanaged
+        {
+            T kept = value;
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            return kept;
+        }
+
+        // An operator macro whose target takes a context: the context is looked up in the scope of the copy
+        public static void ContextMacro<T>(ref MacroState ctx, uint[] left, uint[] right, uint[] result, T tag)
+        {
+            MacroValue a = left;
+            MacroValue b = right;
+            MacroValue c = result;
+            c = a + b;
+        }
+
+        // Locals that are not zeroed: the copy reads the attribute from its own declaration
+        [System.Runtime.CompilerServices.SkipLocalsInit]
+        public static T SkipLocals<T>(T value)
+        {
+            T kept = value;
+            return kept;
+        }
+    }
+
+    public struct MacroState
+    {
+        public int State;
+    }
+
+    public static class MacroTargets
+    {
+        public static void Add(ref MacroState ctx, uint[] result, uint[] left, uint[] right)
+        {
+        }
+    }
+
+    public readonly ref struct MacroValue
+    {
+        public readonly uint[] Data;
+
+        public MacroValue(uint[] data) => Data = data;
+
+        [Kassyi.GSharp.Core.GpuOperatorMacro(typeof(MacroTargets), nameof(MacroTargets.Add))]
+        public static MacroValue operator +(MacroValue a, MacroValue b) => throw new InvalidOperationException();
+
+        public static implicit operator MacroValue(uint[] data) => new(data);
     }
 
     public static partial class Outer<T> where T : unmanaged

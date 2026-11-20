@@ -2979,7 +2979,6 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
 __gsharp_ctx->__gsharp_id_1_flag=__gsharp_in___gsharp_id_1_flag;
 }
-unsigned char __gsharp_id_3_Max = 255;
 switch(__gsharp_state)
 {
 case 0:
@@ -3004,7 +3003,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_id_4_x = __gsharp_id_3_Max;
+auto __gsharp_id_4_x = (unsigned char)255;
 __gsharp_id_4_x=(unsigned char)__gsharp_add_i32(__gsharp_id_4_x,1);
 __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 533796844u)=__gsharp_id_4_x;
 goto __gsharp_switch_1_state_4;
@@ -3013,9 +3012,9 @@ goto __gsharp_switch_1_state_3;
 case 3:
 __gsharp_switch_1_state_3:
 {
-auto __gsharp_id_5_y = __gsharp_id_3_Max;
+auto __gsharp_id_5_y = (unsigned char)255;
 __gsharp_id_5_y=(unsigned char)__gsharp_add_i32(__gsharp_id_5_y,1);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 540712016u)=__gsharp_id_5_y+__gsharp_id_3_Max;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 540712016u)=__gsharp_id_5_y+255;
 goto __gsharp_switch_1_state_4;
 goto __gsharp_switch_1_state_4;
 }
@@ -3373,7 +3372,6 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
 __gsharp_ctx->__gsharp_id_1_flag=__gsharp_in___gsharp_id_1_flag;
 }
-int __gsharp_id_4_Next = 1;
 switch(__gsharp_state)
 {
 case 0:
@@ -3386,7 +3384,7 @@ if(__gsharp_switch_temp_0==0)
 {
 goto __gsharp_switch_1_state_1;
 }
-if(__gsharp_switch_temp_0==__gsharp_id_4_Next)
+if(__gsharp_switch_temp_0==1)
 {
 goto __gsharp_switch_1_state_3;
 }
@@ -3830,8 +3828,6 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
 __gsharp_ctx->__gsharp_id_1_flag=__gsharp_in___gsharp_id_1_flag;
 }
-int __gsharp_id_3_A = 3;
-int __gsharp_id_4_B = 6;
 switch(__gsharp_state)
 {
 case 0:
@@ -3860,7 +3856,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 63353362u)=__gsharp_id_3_A;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 63353362u)=3;
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_3;
 }
@@ -3874,7 +3870,7 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 2097301532u)=__gsharp_id_4_B;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_2_tid, 2097301532u)=6;
 goto __gsharp_switch_1_state_6;
 goto __gsharp_switch_1_state_5;
 }
