@@ -31,9 +31,14 @@ internal static class IrNullDecider
             indexNeedsOverflow);
     }
 
-    /// <summary>Decides the element-store plan for <paramref name="assignment"/>.</summary>
+    /// <summary>Decides the element-store plan or the accessor store for <paramref name="assignment"/>.</summary>
     public static IrAssignmentDecision DecideAssignment(IrAssignment assignment, IrDecisionContext context)
     {
+        if (assignment is { IsRef: false, Target: IrPropertyReference { Property: var property } })
+        {
+            return new IrAssignmentDecision(null, IrAccessorDecider.DecideStore(property, context.NativeDialect));
+        }
+
         if (assignment.IsRef ||
             assignment.Target is not IrElementReference element ||
             ArrayNullCheck.IsIndexOrRangeType(element.Index.Type) ||
@@ -46,7 +51,7 @@ internal static class IrNullDecider
         var site = IrNonNullProof.NeedsCheck(element.Receiver, context)
             ? CreateArrayNullSite(element, element.Receiver)
             : (IrErrorSite?)null;
-        return new IrAssignmentDecision(new IrElementStore(bindsByRef, site));
+        return new IrAssignmentDecision(new IrElementStore(bindsByRef, site), IrAccessorStore.None);
     }
 
     /// <summary>
@@ -79,12 +84,15 @@ internal static class IrNullDecider
         return new IrCoalesceDecision(leftForm, castsToResult, leftIsView);
     }
 
-    /// <summary>Decides the member form, receiver site, and stack-array length for <paramref name="member"/>.</summary>
-    public static IrMemberDecision DecideMember(IrPropertyReference member, IrDecisionContext context)
+    /// <summary>
+    /// Decides the member form, receiver site, stack-array length, and receiver copy for <paramref name="member"/>;
+    /// <paramref name="isTarget"/> tells that it is the target of an assignment or a step.
+    /// </summary>
+    public static IrMemberDecision DecideMember(IrPropertyReference member, bool isTarget, IrDecisionContext context)
     {
         if (context.NativeDialect.TryMapIntrinsic(member.Property, out _))
         {
-            return new IrMemberDecision(IrMemberForm.DialectIntrinsic, null, -1);
+            return new IrMemberDecision(IrMemberForm.DialectIntrinsic, null, -1, null);
         }
 
         // [WHY] The syntax path writes the Length of a local whose declaration gives a size before any other member
@@ -95,24 +103,24 @@ internal static class IrNullDecider
             StackArrayLengthAccess.TryGetStackArraySize(local, context.Compilation, out var size))
         {
             return size.Count is { } length
-                ? new IrMemberDecision(IrMemberForm.StackArrayLength, null, length)
-                : new IrMemberDecision(IrMemberForm.Other, null, -1);
+                ? new IrMemberDecision(IrMemberForm.StackArrayLength, null, length, null)
+                : new IrMemberDecision(IrMemberForm.Other, null, -1, null);
         }
 
         if (member.Receiver is { } receiver && ArrayNullCheck.IsArrayMember(member.Property))
         {
             if (IrNonNullProof.IsStackArrayReference(receiver))
             {
-                return new IrMemberDecision(IrMemberForm.Other, null, -1);
+                return new IrMemberDecision(IrMemberForm.Other, null, -1, null);
             }
 
             var site = IrNonNullProof.NeedsCheck(receiver, context)
                 ? CreateArrayNullSite(member, receiver)
                 : (IrErrorSite?)null;
-            return new IrMemberDecision(IrMemberForm.ArrayMember, site, -1);
+            return new IrMemberDecision(IrMemberForm.ArrayMember, site, -1, null);
         }
 
-        return new IrMemberDecision(IrMemberForm.Other, null, -1);
+        return IrAccessorDecider.DecideMember(member, isTarget, context);
     }
 
     // The receiver as written, outer parentheses and ! included. A temporary that a spill put in its place carries the
