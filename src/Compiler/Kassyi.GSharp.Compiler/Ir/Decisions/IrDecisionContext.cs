@@ -20,6 +20,9 @@ internal sealed class IrDecisionContext(
     /// <summary>The native dialect used by the native emitter for target, member, and argument decisions.</summary>
     public ITranspilerDialect NativeDialect { get; } = nativeDialect;
 
+    /// <summary>The method being decided.</summary>
+    public IMethodSymbol Method { get; } = original.Symbol;
+
     /// <summary>The non-ref, non-const local initializers collected from the original pre-spill body.</summary>
     public IrLocalInitializers Initializers { get; } = IrLocalInitializers.Create(original);
 }

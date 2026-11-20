@@ -35,6 +35,36 @@ function recipeBodies(justfile, recipe) {
   return bodies;
 }
 
+/** The parameter names of the recipe (`test *args="":` gives args); empty if the recipe is absent. */
+function recipeParameters(justfile, recipe) {
+  const header = new RegExp(`^@?${recipe.replace(/[\\^$.*+?()[\]{}|-]/g, '\\$&')}(\\s[^\\n]*)?:\\s*$`, 'm');
+  const match = header.exec(justfile.replace(/\r\n/g, '\n'));
+  const names = [];
+  for (const word of (match?.[1] ?? '').trim().split(/\s+/)) {
+    const name = /^[*+$]*(\w+)/.exec(word);
+    if (name !== null) {
+      names.push(name[1]);
+    }
+  }
+  return names;
+}
+
+/**
+ * The top-level variables whose value is a string literal, as just evaluates them: `[export] name := "value"` (with
+ * the escapes \" \\ \n \t) or `'value'` (raw). A variable assigned an expression is left out, so its caller can tell
+ * that it cannot read it.
+ */
+function justVariables(justfile) {
+  const variables = new Map();
+  const pattern = /^(?:export\s+)?(\w+)\s*:=\s*(?:"((?:[^"\\\n]|\\.)*)"|'([^'\n]*)')\s*$/gm;
+  for (const match of justfile.replace(/\r\n/g, '\n').matchAll(pattern)) {
+    const escapes = { n: '\n', t: '\t', '"': '"', '\\': '\\' };
+    const value = match[2] !== undefined ? match[2].replace(/\\(.)/g, (all, c) => escapes[c] ?? all) : match[3];
+    variables.set(match[1], value);
+  }
+  return variables;
+}
+
 /** The queue options of a just recipe: { options, gpu } or { undecided: why }. */
 function recipeQueue(recipe, root, entry) {
   let justfile;
@@ -69,6 +99,8 @@ module.exports = {
   JustfileName,
   OptionsPattern,
   buildQueueLinePattern,
+  justVariables,
   recipeBodies,
+  recipeParameters,
   recipeQueue,
 };
