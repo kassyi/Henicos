@@ -146,12 +146,17 @@ function isSet(env: Readonly<NodeJS.ProcessEnv>, name: string): boolean {
 }
 
 /**
- * The share of a --gpu command: "shared" when every rule holds, "exclusive" when one fails, undefined (exclusive, the
- * core's default) when the plugin options are missing or malformed.
+ * The share of a --gpu command: "shared" when every rule holds, "exclusive" when one fails (a veto: checkShare is not
+ * asked), undefined (no opinion) when the plugin options are missing or malformed and for a command that
+ * nameFilterCheck reads, which the test list judges.
  */
 export function shareOf(command: string, context: ClientContext): ShareMode | undefined {
   const options = shareOptions(context.options);
   if (options === null) {
+    return undefined;
+  }
+  // 0. A command that nameFilterCheck reads is judged by the test list (checkShare), not here: no opinion
+  if (nameFilterCheck(command, context) !== null) {
     return undefined;
   }
   // 1. Readable, with no pipe outside quotes (readCommand leaves the stage after a pipe out)
@@ -216,7 +221,9 @@ export interface NameFilterTest {
 
 // The test step must start the command (after DiffEngine_Disabled=... alone): any other leading assignment, `export`,
 // `cd` or `$env:` changes what the list would read
-const StartsWithTest = /^\s*(?:DiffEngine_Disabled=\S*\s+)*(?:\S*[\\/])?dotnet(?:\.exe)?\s+test\s/i;
+// (the program: `dotnet`, `dotnet.exe` or an absolute path to one of them; no `;`, `&` or `|` inside a word)
+const StartsWithTest =
+  /^\s*(?:DiffEngine_Disabled=[^\s;&|]*\s+)*(?:(?:[A-Za-z]:[\\/]|[\\/])[^\s;&|]*[\\/])?dotnet(?:\.exe)?\s+test\s/i;
 // Unexpanded bash braces and globs: the shell would run other words than these
 const GlobOrBrace = /[{}*?[\]]/;
 

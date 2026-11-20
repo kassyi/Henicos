@@ -459,18 +459,17 @@ export class QueuedRun {
     };
   }
 
-  /** The classify answer for the share of this GPU turn: "shared" only when the plugins say exactly that. */
-  private classifyShare(plugins: PluginHost): ShareMode {
+  /** What the plugins' classify says of the share of this GPU turn; undefined when no plugin has an opinion. */
+  private classifyShare(plugins: PluginHost): ShareMode | undefined {
     const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
-    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share === "shared"
-      ? "shared"
-      : "exclusive";
+    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share;
   }
 
   /**
-   * Decides the share of a GPU turn before its first registration: classify (sync), and for an answer other than
-   * "shared" without --gpu-exclusive, the plugins' checkShare, which may take a while (a test list through the queue),
-   * so it runs before the connection is made, not during it. Once per run; a re-registration reuses the answer.
+   * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
+   * (an explicit "shared" or "exclusive" stands, a veto too) and neither --gpu-exclusive nor --after is set, the
+   * plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
+   * made, not during it. Once per run; a re-registration reuses the answer.
    */
   private async resolveShare(): Promise<void> {
     const plugins = this.plugins;
@@ -480,11 +479,10 @@ export class QueuedRun {
     let share = this.classifyShare(plugins);
     // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
     // job already waited), so a list now could read the old assembly
-    if (share === "exclusive" && this.options.gpuExclusive !== true && this.options.after === 0) {
-      share =
-        (await plugins.checkShare(this.options.command, this.contextOf(plugins))) === "shared" ? "shared" : "exclusive";
+    if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
+      share = await plugins.checkShare(this.options.command, this.contextOf(plugins));
     }
-    this.share = share;
+    this.share = share === "shared" ? "shared" : "exclusive";
   }
 
   /** Registers the job on a new connection: a request while it waits, an adopt once its command runs. */
@@ -515,7 +513,7 @@ export class QueuedRun {
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
         // Normally set by resolveShare before the connection; kept for a run that registers without it
-        this.share = this.classifyShare(this.plugins as PluginHost);
+        this.share = this.classifyShare(this.plugins as PluginHost) === "shared" ? "shared" : "exclusive";
       }
       share = this.share;
     }

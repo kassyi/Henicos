@@ -6,6 +6,7 @@
 import type * as Assert from "node:assert";
 import { parseArgs } from "./cli.ts";
 import type { RunOptions } from "./client.ts";
+import { runGpuTurn } from "./client.ts";
 import { QueuedRun } from "./client-queued-run.ts";
 import { gpuLockArguments } from "./client-run-host.ts";
 import { ProtocolVersion } from "./constants.ts";
@@ -239,13 +240,14 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
     const warnings: string[] = [];
     const hostOf = (
       checkShare: ((command: string) => Promise<unknown>) | undefined,
-      classifyShared = false,
+      classifyShared: boolean | "exclusive" = false,
       extra: QueuePlugin[] = [],
     ): PluginHost => {
       const plugin: QueuePlugin = {
         name: "late",
         apiVersion: PluginApiVersion,
-        classify: () => (classifyShared ? { share: "shared" } : {}),
+        classify: () =>
+          classifyShared === "exclusive" ? { share: "exclusive" } : classifyShared ? { share: "shared" } : {},
         ...(checkShare !== undefined
           ? {
               checkShare: (command: string) => {
@@ -331,7 +333,12 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       "exclusive",
       "--after: the predecessor may still build what a list would read",
     );
-    assert.deepStrictEqual(asked, [], "not asked when classify shared, --gpu-exclusive or --after");
+    assert.strictEqual(
+      await shareOf(hostOf(() => Promise.resolve("shared"), "exclusive")),
+      "exclusive",
+      "an explicit exclusive of classify is a veto",
+    );
+    assert.deepStrictEqual(asked, [], "not asked when classify answered, --gpu-exclusive or --after");
     const second: QueuePlugin = {
       name: "second",
       apiVersion: PluginApiVersion,
@@ -387,6 +394,73 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
   }
 }
 
+/**
+ * run --gpu with a build step: the share check of the turn (which reads what the build wrote) starts only after the
+ * build job has ended, and the turn then registers the command after the split (runGpuTurn, with a fake host).
+ */
+async function checkBuildBeforeShareCheck(assert: AssertModule): Promise<void> {
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  try {
+    const order: string[] = [];
+    const note = (text: string): number => order.push(text);
+    const plugin: QueuePlugin = {
+      name: "split",
+      apiVersion: PluginApiVersion,
+      splitBeforeTurn: (command) => ({
+        before: "dotnet build X",
+        after: `${command} --no-build`,
+        beforeRole: "build, no GPU",
+        afterRole: "tests",
+      }),
+      checkShare: (command) => {
+        order.push(`share check of: ${command}`);
+        return Promise.resolve("shared");
+      },
+    };
+    const plugins = new PluginHost([plugin], [undefined], process.cwd(), () => {});
+    const host = new FakeHost();
+    const context = {
+      cwd: process.cwd(),
+      worktree: process.cwd(),
+      configRoot: process.cwd(),
+      shell: "bash" as const,
+      env: {},
+      log: () => {},
+    };
+    const done = runGpuTurn(runOptions(), { weight: 1, pin: null, before: null }, host, plugins, context);
+    await until("the build job connects", () => host.connects.length === 1);
+    host.connects[0]?.resolve(await scheduler.connect());
+    await until("the build job registers", () => (scheduler.accepted[0]?.messages.length ?? 0) > 0);
+    const build = scheduler.accepted[0];
+    if (build === undefined) {
+      throw new Error("no build connection");
+    }
+    FakeScheduler.send(build, granted(80));
+    await until("the build command runs", () => host.commands.length === 1);
+    assert.strictEqual(host.commands[0]?.command, "dotnet build X");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.deepStrictEqual(order, [], "no share check while the build runs, and no turn registered yet");
+    assert.strictEqual(host.connects.length, 1, "the turn does not connect while the build runs");
+    note("build ended");
+    host.commands[0]?.end({ code: 0, signaled: false });
+    await until("the turn connects", () => host.connects.length === 2);
+    host.connects[1]?.resolve(await scheduler.connect());
+    await until("the turn registers", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
+    assert.deepStrictEqual(
+      order,
+      ["build ended", "share check of: dotnet test X --filter Name~Foo --no-build"],
+      "the share check runs after the build and reads the command after the split",
+    );
+    const turn = scheduler.accepted[1]?.messages[0];
+    assert.deepStrictEqual([turn?.resource, turn?.share], ["gpu", "shared"]);
+    scheduler.accepted[1]?.socket.destroy();
+    void done;
+  } finally {
+    scheduler.close();
+  }
+}
+
 /** gpu-lock.js gets --mode shared for a shared lock alone; without --mode it takes every seat. */
 function checkGpuLockArguments(assert: AssertModule): void {
   const options = runOptions({ timeoutMinutes: 5 });
@@ -409,6 +483,7 @@ export const ShareClientChecks: Record<string, (assert: AssertModule) => Promise
   checkOlderSchedulerLock: (assert) => quietly(() => checkOlderSchedulerLock(assert)),
   checkShareRegistrations: (assert) => quietly(() => checkShareRegistrations(assert)),
   checkCheckShare: (assert) => quietly(() => checkCheckShare(assert)),
+  checkBuildBeforeShareCheck: (assert) => quietly(() => checkBuildBeforeShareCheck(assert)),
   checkGpuExclusiveFlag: async (assert) => checkGpuExclusiveFlag(assert),
   checkGpuLockArguments: async (assert) => checkGpuLockArguments(assert),
 };

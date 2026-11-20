@@ -9,6 +9,9 @@ import {
   type QueuePlugin,
   type ResourceRequest,
   type ShareMode,
+  isTrivialStep,
+  programOf,
+  readCommandLine,
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
@@ -26,7 +29,21 @@ const HenicosTestPattern = new RegExp(
   ].join("|"),
 );
 
-const ListTests = /\s--list-tests(\s|$)/;
+/**
+ * Every step that does work is a `dotnet test` with `--list-tests`: it runs no test, so the Stress it names is not a
+ * stress run (a line that also runs a test, or that cannot be read, is judged as before).
+ */
+function onlyListsTests(command: string): boolean {
+  const line = readCommandLine(command);
+  const work = line === null || line.piped ? [] : line.steps.filter((step) => !isTrivialStep(step));
+  return (
+    work.length > 0 &&
+    work.every(
+      (step) =>
+        programOf(step.words[0] ?? "") === "dotnet" && step.words[1] === "test" && step.words.includes("--list-tests"),
+    )
+  );
+}
 
 export function isHenicosTest(command: string): boolean {
   return isDotnetTest(command) || HenicosTestPattern.test(command);
@@ -94,7 +111,7 @@ const plugin = {
       command,
       true,
       budgets,
-      (cmd) => !ListTests.test(cmd) && selectsCategory(cmd, ["Stress", "Benchmark"]),
+      (cmd) => !onlyListsTests(cmd) && selectsCategory(cmd, ["Stress", "Benchmark"]),
     );
     return share !== undefined ? { test: true, memoryMb, share } : { test: true, memoryMb };
   },

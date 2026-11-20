@@ -32,6 +32,8 @@ const Read: readonly [string, string, string][] = [
   ['DiffEngine_Disabled=true dotnet test tests/X --no-build --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
   ['dotnet.exe test tests/X --no-build --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
   [`${Plain} "Name~Foo"; echo done`, "tests/X", "Name~Foo"],
+  ['C:/PROGRA~1/dotnet/dotnet.exe test tests/X --no-build --filter "Name~Foo"', "tests/X", "Name~Foo"],
+  ['/usr/share/dotnet/dotnet test tests/X --no-build --filter "Name~Foo"', "tests/X", "Name~Foo"],
   [`${Plain} "Name~Foo" # rerun`, "tests/X", "Name~Foo"],
 ];
 
@@ -61,6 +63,13 @@ const NotRead: readonly string[] = [
   `${Plain} ""`,
   `${Plain} "Name~A" --filter "Name~B"`,
   "dotnet test tests/X --no-build",
+  // The program: dotnet, dotnet.exe or an absolute path to one; no assignment or step hidden inside a path word
+  'Configuration=Release;C:/PROGRA~1/dotnet/dotnet.exe test tests/X --no-build --filter "Name~Foo"',
+  'DiffEngine_Disabled=true;Configuration=Release;C:/x/dotnet test tests/X --no-build --filter "Name~Foo"',
+  'DiffEngine_Disabled=true;Configuration=Release dotnet test tests/X --no-build --filter "Name~Foo"',
+  'tools/dotnet test tests/X --no-build --filter "Name~Foo"',
+  './dotnet test tests/X --no-build --filter "Name~Foo"',
+  'tools\\dotnet.exe test tests/X --no-build --filter "Name~Foo"',
   // Without --no-build the run builds inside the turn, after the list read the old assembly
   'dotnet test tests/X --filter "Name~Foo"',
   `dotnet test tests/X --filter "Name~Foo"; echo done`,

@@ -80,6 +80,13 @@ const CharacterizationTable: readonly [string, boolean, number][] = [
     true,
     2496,
   ],
+  // Only when no step runs a test: one that does is a stress run
+  [
+    'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --list-tests --filter "Category=Stress" && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress"',
+    true,
+    6784,
+  ],
+  ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress" ; echo --list-tests', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category!=Stress|Category=Benchmark"', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter "Category != Stress&Category!=Benchmark"', true, 2880],
   ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter \"Category!='Stress'\"", true, 6720],
@@ -421,6 +428,15 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     for (const [command, expected] of ShareTable) {
       assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
     }
+    // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
+    const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
+    assert.strictEqual(host.classify(named, Gpu, ctx).share, undefined, "a readable name filter: no opinion");
+    assert.strictEqual(
+      host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
+      "exclusive",
+      "a negated name term is no name filter: exclusive",
+    );
+    assert.strictEqual(host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).share, "exclusive");
     const filtered = `dotnet test X --filter "${Kept}"`;
     assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
     assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
