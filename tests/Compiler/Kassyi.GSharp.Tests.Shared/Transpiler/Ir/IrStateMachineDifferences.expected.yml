@@ -1779,6 +1779,9 @@
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.SynthesizedDefaultKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.Widen", status: "NoStateMachine", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.WidenByAttribute", status: "NoStateMachine", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.ClassConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.LocalConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.NonConstantDividendKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContextualKeywordTypeKernels.cu.cs", method: "ContextualKeywordTypeKernels.KeywordTypesKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxFollowedByWriteKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxKernel", status: "Compared", count: 1}
@@ -2126,6 +2129,16 @@
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UlongConstMaskKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UshortConstConversionKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ZeroFloatConstDivisorsAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.AddIn", status: "NoStateMachine", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.ByteCaseLabelKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.CaseLabelKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.GotoCaseLocalConstKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.InArgumentLocalConstKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.LabeledConstAtBlockEndKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.LocalConstSharedMemoryCountKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.SharedSectionConstKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstSkippedByGotoKernels.cu.cs", method: "LocalConstSkippedByGotoKernels.ConstSkippedByGotoKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "Syntax/LocalConstSkippedByGotoKernels.cu.cs", method: "LocalConstSkippedByGotoKernels.ConstSkippedByGotoNoBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CalledBeforeDeclarationKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CapturesLocalAfterLastBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.ChainToStayingFunctionKernel", status: "OpaqueStatement", count: 1}
@@ -4065,6 +4078,10 @@
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.ExplicitLayoutInvalidKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalLocalKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalReturnKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.AcceptedBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InfiniteBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedInDevice", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/MultidimensionalParameterDiagnostics.cs", method: "MultidimensionalParameterDiagnostics.MatrixParamKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NameofString.cu.cs", method: "NameofStringKernels.NameofStringKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NameofString.cu.cs", method: "NameofStringKernels.NullConstantLengthKernel", status: "Compared", count: 1}

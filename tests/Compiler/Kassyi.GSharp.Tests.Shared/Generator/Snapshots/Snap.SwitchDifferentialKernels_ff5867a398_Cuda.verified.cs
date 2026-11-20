@@ -1515,23 +1515,21 @@ break;
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_7_col+0, 870874687u)=__gsharp_id_8_acc;
 int __gsharp_id_9_r1 = 0;
 {
-const int __gsharp_id_10_BaseOffset = 10;
-const int __gsharp_id_11_ScaledOffset = 30;
 int __gsharp_id_12_sharedLocal;
 switch(__gsharp_id_5_v&3)
 {
 case 0:
 __gsharp_switch_2_state_0:
 {
-__gsharp_id_12_sharedLocal = __gsharp_add_i32(__gsharp_id_6_w&0xFF,__gsharp_id_11_ScaledOffset);
+__gsharp_id_12_sharedLocal = __gsharp_add_i32(__gsharp_id_6_w&0xFF,30);
 __gsharp_id_9_r1=__gsharp_id_12_sharedLocal;
 break;
 }
 case 1:
 __gsharp_switch_2_state_1:
 {
-__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_w&0xFF,2),__gsharp_id_10_BaseOffset);
-__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_12_sharedLocal,__gsharp_id_11_ScaledOffset);
+__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_w&0xFF,2),10);
+__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_12_sharedLocal,30);
 break;
 }
 case 2:
@@ -1543,8 +1541,8 @@ goto __gsharp_switch_2_state_default;
 default:
 __gsharp_switch_2_state_default:
 {
-__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_id_10_BaseOffset,__gsharp_id_6_w&0xF);
-__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_9_r1,__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_12_sharedLocal,__gsharp_id_11_ScaledOffset),1));
+__gsharp_id_12_sharedLocal=__gsharp_add_i32(10,__gsharp_id_6_w&0xF);
+__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_9_r1,__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_12_sharedLocal,30),1));
 break;
 }
 }
@@ -3809,14 +3807,13 @@ break;
 }
 int __gsharp_id_10_iRes = 0;
 {
-const int __gsharp_id_11_FlatBase = 40;
 int __gsharp_id_12_sharedAcrossFlat;
 switch(__gsharp_id_8_uniformZero)
 {
 case 0:
 __gsharp_switch_2_state_0:
 {
-__gsharp_id_12_sharedAcrossFlat = __gsharp_add_i32(__gsharp_id_11_FlatBase,__gsharp_id_5_v&0xF);
+__gsharp_id_12_sharedAcrossFlat = __gsharp_add_i32(40,__gsharp_id_5_v&0xF);
 __syncthreads();
 if((__gsharp_id_5_v&3)==1)
 {
@@ -3843,7 +3840,7 @@ goto __gsharp_switch_2_state_2;
 case 2:
 __gsharp_switch_2_state_2:
 {
-__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_id_10_iRes,__gsharp_id_11_FlatBase);
+__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_id_10_iRes,40);
 break;
 }
 default:

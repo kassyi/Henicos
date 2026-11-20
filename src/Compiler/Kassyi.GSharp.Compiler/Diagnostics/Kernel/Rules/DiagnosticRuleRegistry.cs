@@ -18,6 +18,7 @@ internal static class DiagnosticRuleRegistry
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
         ManualUnmanagedAllocationRule.Instance,
+        MathClampBoundsRule.Instance,
         OversizedSharedMemoryTargetRule.Instance,
         ParallelAggregateRule.Instance,
         ParamsModifierNotSupportedRule.Instance,

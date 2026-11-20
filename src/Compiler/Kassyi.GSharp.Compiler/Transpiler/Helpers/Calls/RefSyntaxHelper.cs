@@ -209,7 +209,7 @@ internal static class RefSyntaxHelper
     private static CppLocation ClassifySymbol(ISymbol? symbol) =>
         symbol switch
         {
-            ILocalSymbol or IParameterSymbol => CppLocation.Storage,
+            ILocalSymbol { IsConst: false } or IParameterSymbol => CppLocation.Storage,
             IFieldSymbol { IsConst: false, IsStatic: false } => CppLocation.Storage,
             IPropertySymbol { RefKind: RefKind.Ref or RefKind.RefReadOnly } => CppLocation.Storage,
             IPropertySymbol { ContainingType: INamedTypeSymbol containingType } property

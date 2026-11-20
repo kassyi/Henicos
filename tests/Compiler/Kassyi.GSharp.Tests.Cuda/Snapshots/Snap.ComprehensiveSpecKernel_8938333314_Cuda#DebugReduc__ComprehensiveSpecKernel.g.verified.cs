@@ -202,7 +202,6 @@ __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_dsme
 __gsharp_dsmem_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_dsmem = &__gsharp_dsmem_storage;
 __gsharp_dsmem_init(__gsharp_dsmem);
 (*__gsharp_id_2_successFlag)=false;
-float __gsharp_id_6_Gravity = 9.8f;
 int __gsharp_id_7_tx = (int)threadIdx.x;
 int __gsharp_id_8_ty = (int)threadIdx.y;
 int __gsharp_id_9_tz = (int)threadIdx.z;
@@ -236,7 +235,7 @@ if(__gsharp_id_29_i==1)
 {
 continue;
 }
-__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_id_28_mag,__gsharp_id_23_p.__gsharp_mb_X*__gsharp_id_29_i+__gsharp_id_6_Gravity);
+__gsharp_id_28_mag=(float)__gsharp_max_f32(__gsharp_id_28_mag,__gsharp_id_23_p.__gsharp_mb_X*__gsharp_id_29_i+9.8f);
 }
 if(!__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(__gsharp_id_28_mag))
 {
