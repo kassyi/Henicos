@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler;
@@ -131,6 +132,39 @@ public class ManagedStackModelGeneratorTests
             StringComparison.Ordinal));
         Assert.Equal(kernelFile, Assert.Single(stack, static s => s.HintName.EndsWith("MacroKernels.g.cs",
             StringComparison.Ordinal)));
+    }
+
+    // The kernels whose locals the lowering for the stacks leaves out of the scope of their uses, untyped or not
+    // definitely assigned: under the stack model every one of them gets a stack form that compiles (Run checks that the
+    // output has no error) and runs on the stack scheduler, with no fallback
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void LocalsOutOfTheirScope_StackModel_CompileAndRunOnTheStacks()
+    {
+        var tree = CSharpSyntaxTree.ParseText(
+            File.ReadAllText(RepositoryPaths.Combine(
+                "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Runtime", "StackBodyLocalsKernels.cu.cs")),
+            s_parseOptions,
+            "StackBodyLocalsKernels.cu.cs");
+
+        var stack = Run(barrierModel: "Stack", tree);
+
+        Assert.DoesNotContain(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
+        var kernelFile = Assert.Single(stack, static s => s.HintName.EndsWith("__StackBodyLocalsKernels.g.cs",
+            StringComparison.Ordinal));
+        var kernels = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Where(static m => m.AttributeLists.SelectMany(static l => l.Attributes)
+                .Any(static a => a.Name is IdentifierNameSyntax { Identifier.ValueText: "GpuKernel" }))
+            .Select(static m => m.Identifier.ValueText)
+            .ToArray();
+        Assert.Equal(16, kernels.Length);
+        foreach (var kernel in kernels)
+        {
+            Assert.Contains($"sharedMemBytes, \"StackBodyLocalsKernels.{kernel}\", true,", kernelFile.SourceText,
+                StringComparison.Ordinal);
+        }
     }
 
     private static readonly SyntaxTree s_macroTree =
