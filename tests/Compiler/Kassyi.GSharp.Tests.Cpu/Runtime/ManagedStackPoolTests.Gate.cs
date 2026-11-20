@@ -140,12 +140,26 @@ public partial class ManagedStackPoolTests
         }
 
         holder.AssertEnded();
+        AssertFailedOnce(outcome, failure);
+        AssertNewThreadsPooled(threads, idleBefore, createdBefore, idleAfterLaunch);
+    }
+
+    // The launch threw the failure of its rent, its kernel never ran, and no interruption was left for a later wait
+    private static void AssertFailedOnce(RentOutcome outcome, RentFailure failure)
+    {
         Assert.False(outcome.KernelRan);
         Assert.IsType(failure == RentFailure.FailureThenInterruptedWhileReturning
             ? typeof(InvalidOperationException)
             : typeof(ThreadInterruptedException), outcome.Failure);
         // The interruption that came while the failure was on its way was dropped, not left for a later wait
         Assert.False(outcome.InterruptionPending);
+    }
+
+    // The <threads> new threads were counted and pooled (<idleAfterLaunch>, with the idle threads borrowed), and later
+    // launches start none
+    private static void AssertNewThreadsPooled(int threads, int idleBefore, int createdBefore, int idleAfterLaunch)
+    {
+        var pool = ManagedStackThreadPool.Instance;
         Assert.Equal(threads, idleAfterLaunch);
         Assert.Equal(createdBefore + threads, pool.CreatedThreadCount);
         AssertLaterLaunches(RunLaterLaunches(threads, 10), threads, 10);
@@ -181,8 +195,7 @@ public partial class ManagedStackPoolTests
         ManualResetEventSlim gateHeld, ManualResetEventSlim started)
     {
         var kernelRan = false;
-        var pool = ManagedStackThreadPool.Instance;
-        pool.ThreadsStartedForTest = () =>
+        ManagedStackThreadPool.ThreadsStartedForTest = () =>
         {
             holdRequested.Set();
             Assert.True(gateHeld.Wait(s_blockTimeout), "The holder did not take the gate");
@@ -197,7 +210,7 @@ public partial class ManagedStackPoolTests
         }
         finally
         {
-            pool.ThreadsStartedForTest = null;
+            ManagedStackThreadPool.ThreadsStartedForTest = null;
         }
     }
 

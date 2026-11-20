@@ -17,6 +17,9 @@ internal sealed class ManagedStackThreadPool
     [ThreadStatic]
     private static ManagedStackThread[]? t_rentedBuffer;
 
+    [ThreadStatic]
+    private static Action? t_threadsStartedForTest;
+
     internal int CreatedThreadCount
     {
         get
@@ -67,7 +70,7 @@ internal sealed class ManagedStackThreadPool
         try
         {
             StartThreads(workers, fromPool, count, ref created);
-            ThreadsStartedForTest?.Invoke();
+            t_threadsStartedForTest?.Invoke();
             CountCreated(created);
             return workers;
         }
@@ -113,8 +116,13 @@ internal sealed class ManagedStackThreadPool
         }
     }
 
-    // For tests only: runs on the renting thread after Rent has started its new threads and before it counts them
-    internal Action? ThreadsStartedForTest { get; set; }
+    // For tests only, per thread: runs on the thread that set it, only when its Rent starts new threads, after they
+    // have started and before they are counted
+    internal static Action? ThreadsStartedForTest
+    {
+        get => t_threadsStartedForTest;
+        set => t_threadsStartedForTest = value;
+    }
 
     internal void Return(ManagedStackThread[] workers, int count)
     {
