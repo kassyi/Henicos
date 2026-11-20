@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Marshaling;
@@ -73,6 +74,29 @@ public partial struct EnumFieldPrivateOuter
     public int Y;
 }
 
+// An explicit layout has a predicted host offset for every field, so the offset check of the mirror compares the
+// private enum with that offset, and the mirror declares the field as the underlying type there too
+[StructLayout(LayoutKind.Explicit)]
+public partial struct EnumFieldPrivateExplicit
+{
+    private enum Mode : short { Low = -7, High = 1000 }
+
+    [FieldOffset(4)]
+    private Mode _mode;
+
+    [FieldOffset(0)]
+    private int _count;
+
+    [FieldOffset(8)]
+    public int[] Data;
+
+    public static EnumFieldPrivateExplicit Create(bool low, int count, int[] data) =>
+        new() { _mode = low ? Mode.Low : Mode.High, _count = count, Data = data };
+
+    [GpuDeviceFunction]
+    public static int ValueOf(EnumFieldPrivateExplicit value) => (int)value._mode * 1000 + value._count;
+}
+
 // In a class of their own: a private enum type makes the generated context class and its pointer launchers private
 public static partial class EnumFieldPrivateKernels
 {
@@ -104,6 +128,12 @@ public static partial class EnumFieldPrivateKernels
     public static void ReadPrivateEnumArrayKernel(EnumFieldPrivateBlock[] blocks, int[] result)
     {
         result[ThreadIndex.X] = EnumFieldPrivateBlock.ModeOf(blocks[ThreadIndex.X]);
+    }
+
+    [GpuKernel]
+    public static void ReadPrivateEnumExplicitKernel(EnumFieldPrivateExplicit value)
+    {
+        value.Data[ThreadIndex.X] = EnumFieldPrivateExplicit.ValueOf(value);
     }
 
     [GpuKernel]

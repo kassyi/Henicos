@@ -18,9 +18,9 @@ internal static class HostFieldAccess
          field.ContainingAssembly.IsEqualTo(launcherAssembly));
 
     /// <summary>
-    /// Whether the launcher reads and writes <paramref name="member"/> only through the host mirror: the hidden field of
-    /// a captured primary constructor parameter, the backing field of a property whose accessors use the <c>field</c>
-    /// keyword, or a field or fixed buffer that <see cref="CanName"/> rejects.
+    /// Whether the launcher reads and writes <paramref name="member"/> only through the host mirror: the hidden field
+    /// of a captured primary constructor parameter, the backing field of a property whose accessors use the
+    /// <c>field</c> keyword, or a field or fixed buffer that <see cref="CanName"/> rejects.
     /// </summary>
     internal static bool ReadsThroughMirror(StructAbiMember member, IAssemblySymbol launcherAssembly) =>
         member.Kind is StructAbiMemberKind.CapturedParameter or StructAbiMemberKind.FieldBackedProperty ||

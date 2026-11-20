@@ -15,6 +15,9 @@ inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPriv
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock;
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock__ModeOf(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock __gsharp_id_0_block);
 
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit;
+inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__ValueOf(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit __gsharp_id_0_value);
+
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob
@@ -38,10 +41,10 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__En
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob,__gsharp_mb__ulongMode)==40,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateJob._ulongMode: offset"");
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__Read(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob __gsharp_id_0_job){
-__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 0, ""G#: a null array is read at EnumFieldPrivateKernels.cs(38,9)"")=(int)__gsharp_id_0_job.__gsharp_mb__mode;
-__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 1, ""G#: a null array is read at EnumFieldPrivateKernels.cs(39,9)"")=(__gsharp_id_0_job.__gsharp_mb__longMode==1099511627776LL?1:0);
-__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 2, ""G#: a null array is read at EnumFieldPrivateKernels.cs(40,9)"")=(int)__gsharp_id_0_job.__gsharp_mb__sbyteMode;
-__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 3, ""G#: a null array is read at EnumFieldPrivateKernels.cs(41,9)"")=(__gsharp_id_0_job.__gsharp_mb__ulongMode==9223372036854775809ULL?1:0);
+__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 0, ""G#: a null array is read at EnumFieldPrivateKernels.cs(39,9)"")=(int)__gsharp_id_0_job.__gsharp_mb__mode;
+__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 1, ""G#: a null array is read at EnumFieldPrivateKernels.cs(40,9)"")=(__gsharp_id_0_job.__gsharp_mb__longMode==1099511627776LL?1:0);
+__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 2, ""G#: a null array is read at EnumFieldPrivateKernels.cs(41,9)"")=(int)__gsharp_id_0_job.__gsharp_mb__sbyteMode;
+__gsharp_array_at(__gsharp_id_0_job.__gsharp_mb_Data, 3, ""G#: a null array is read at EnumFieldPrivateKernels.cs(42,9)"")=(__gsharp_id_0_job.__gsharp_mb__ulongMode==9223372036854775809ULL?1:0);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__
@@ -90,6 +93,26 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPriva
 return (int)__gsharp_id_0_block.__gsharp_mb__mode;
 }
 
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit
+{
+int __gsharp_mb__count;
+short __gsharp_mb__mode;
+unsigned char __gsharp_pad_0[2];
+GSharpArray<int> __gsharp_mb_Data;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit)==24,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit)==8,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb__mode)==4,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit._mode: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb__count)==0,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit._count: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit.Data: offset"");
+#endif
+inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__ValueOf(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit __gsharp_id_0_value){
+return __gsharp_add_i32((int)__gsharp_id_0_value.__gsharp_mb__mode*1000,__gsharp_id_0_value.__gsharp_mb__count);
+}
+
 ";
 }
 }
@@ -115,10 +138,11 @@ public partial class EnumFieldPrivateKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(165655559u, "EnumFieldPrivateKernels.cs", 100, 9, "ReadPrivateEnumBlockKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(782978555u, "EnumFieldPrivateKernels.cs", 106, 9, "ReadPrivateEnumArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(429410376u, "EnumFieldPrivateKernels.cs", 106, 62, "ReadPrivateEnumArrayKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1496336663u, "EnumFieldPrivateKernels.cs", 115, 13, "ReadPrivateEnumNestedKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(890352751u, "EnumFieldPrivateKernels.cs", 124, 9, "ReadPrivateEnumBlockKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2070541871u, "EnumFieldPrivateKernels.cs", 130, 9, "ReadPrivateEnumArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1094933242u, "EnumFieldPrivateKernels.cs", 130, 62, "ReadPrivateEnumArrayKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(935776787u, "EnumFieldPrivateKernels.cs", 136, 9, "ReadPrivateEnumExplicitKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(496770017u, "EnumFieldPrivateKernels.cs", 145, 13, "ReadPrivateEnumNestedKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -250,6 +274,107 @@ native = global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp
 public static unsafe void Unmarshal_EnumFieldPrivateBlock(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateBlock host, ref AotContexts.EnumFieldPrivateBlock native, global::System.IntPtr hStream = default)
 {
 host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.EnumFieldPrivateBlock, global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateBlock>(ref native);
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
+public unsafe partial struct EnumFieldPrivateExplicit
+{
+public const string DebugName__mode = "global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit.Mode";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int16 _mode;
+public const string DebugName__count = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 _count;
+public const string DebugName_Data = "global::System.Int32[]";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit)]
+public unsafe struct __gsharp_host_mirror
+{
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int16 _mode;
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 _count;
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Int32[] Data;
+public static readonly bool FieldOffsetsMatch = CheckFieldOffsets();
+private static bool CheckFieldOffsets()
+{
+global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit s = default;
+ref __gsharp_host_mirror m = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, __gsharp_host_mirror>(ref s);
+return true &&
+global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<__gsharp_host_mirror, byte>(ref m), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int16, byte>(ref m._mode)) == 4 &&
+global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<__gsharp_host_mirror, byte>(ref m), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref m._count)) == 0 &&
+global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, byte>(ref s), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32[], byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in s.Data))) == global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<__gsharp_host_mirror, byte>(ref m), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32[], byte>(ref m.Data));
+}
+}
+}
+public static unsafe void Marshal_EnumFieldPrivateExplicit(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, ref AotContexts.EnumFieldPrivateExplicit native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = default;
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref hostValue);
+native._mode = host._mode;
+native._count = host._count;
+if (host.Data != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Data, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Data.Data = handle.AddrOfPinnedObject();
+native.Data.Length = host.Data.Length;
+}
+}
+public static unsafe void Unmarshal_EnumFieldPrivateExplicit(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, ref AotContexts.EnumFieldPrivateExplicit native, global::System.IntPtr hStream = default)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref hostValue);
+host._mode = native._mode;
+host._count = native._count;
+if (native.Data.Data == global::System.IntPtr.Zero)
+{
+host.Data = default;
+}
+}
+public static void AliasHeldArrays_EnumFieldPrivateExplicit(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref hostValue);
+if (host.Data != null)
+{
+held.Add(host.Data, 4, 0, false);
+}
+}
+public static void CopyArrays_EnumFieldPrivateExplicit(ref global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref hostValue);
+_ = copies.Copy(ref host.Data);
+}
+public static bool HoldsArray_EnumFieldPrivateExplicit(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit hostValue, object array)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>() != global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>()) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit", global::System.Runtime.CompilerServices.Unsafe.SizeOf<AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(), global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit>());
+if (!AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror.FieldOffsetsMatch) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit");
+ref AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror host = ref global::System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit, AotContexts.EnumFieldPrivateExplicit.__gsharp_host_mirror>(ref hostValue);
+if (global::System.Object.ReferenceEquals(host.Data, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_EnumFieldPrivateExplicit(global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_EnumFieldPrivateExplicit(items[i], array))
+{
+return true;
+}
+}
+return false;
 }
 [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 56)]
 public unsafe partial struct EnumFieldPrivateOuter
@@ -1060,7 +1185,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_1_result, (int)threadIdx.x, 165655559u)=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock__ModeOf(__gsharp_id_0_block),__gsharp_id_0_block.__gsharp_mb_Count);
+__gsharp_array_at(__gsharp_id_1_result, (int)threadIdx.x, 890352751u)=__gsharp_add_i32(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock__ModeOf(__gsharp_id_0_block),__gsharp_id_0_block.__gsharp_mb_Count);
 __gsharp_state=-1;
 return;
 }
@@ -1385,7 +1510,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_1_result, (int)threadIdx.x, 782978555u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock__ModeOf(__gsharp_array_at(__gsharp_id_0_blocks, (int)threadIdx.x, 429410376u));
+__gsharp_array_at(__gsharp_id_1_result, (int)threadIdx.x, 2070541871u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateBlock__ModeOf(__gsharp_array_at(__gsharp_id_0_blocks, (int)threadIdx.x, 1094933242u));
 __gsharp_state=-1;
 return;
 }
@@ -1687,6 +1812,325 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
+public const string ReadPrivateEnumExplicitKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit
+{
+int __gsharp_mb__count;
+short __gsharp_mb__mode;
+unsigned char __gsharp_pad_0[2];
+GSharpArray<int> __gsharp_mb_Data;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit)==24,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit)==8,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb__mode)==4,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit._mode: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb__count)==0,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit._count: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit,__gsharp_mb_Data)==8,""Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit.Data: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel* __gsharp_all_contexts = nullptr;
+bool __gsharp_yielded_for_grid_sync = false;
+bool __gsharp_yielded_for_block_barrier = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit __gsharp_id_0_value, __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_array_at(__gsharp_id_0_value.__gsharp_mb_Data, (int)threadIdx.x, 935776787u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit__ValueOf(__gsharp_id_0_value);
+__gsharp_state=-1;
+return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+#undef __gsharp_yielded_for_block_barrier
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit* __gsharp_arg_0)
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateExplicit __gsharp_id_0_value = *__gsharp_arg_0;
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot __gsharp_launch_error;
+#pragma omp parallel for schedule(dynamic)
+for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+try
+{
+int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
+int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
+int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
+__gsharp_reset_smem(__gsharp_shared_mem_bytes);
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active)
+{
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+try
+{
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel(__gsharp_id_0_value, &__gsharp_contexts[__gsharp_ctx_tid]);
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel, which is not [GpuKernel(Cooperative = true)]"");
+}
+}
+catch (const __gsharp_step_abort&)
+{
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state = -1;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier = false;
+__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync = false;
+}
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_block_barrier && !__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
+{
+__gsharp_any_active = true;
+}
+}
+}
+if (!__gsharp_any_active)
+{
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+if (__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier)
+{
+__gsharp_contexts[__gsharp_thread_index].__gsharp_yielded_for_block_barrier = false;
+__gsharp_any_active = true;
+}
+}
+}
+}
+}
+catch (const __gsharp_step_abort&) {}
+catch (const std::bad_alloc&)
+{
+__gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
+}
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
+}
+}
+";
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_path;
+public uint __gsharp_number_warp_paths(uint next) {
+__gsharp_warp_path = next++;
+return next;
+}
+}
+[global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit value, __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel __gsharp_ctx) {
+{
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+value.Data[global::Kassyi.GSharp.Core.ThreadIndex.X] = global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit.ValueOf(value);
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+}
+}
+
+[global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
+private unsafe delegate void __gsharp_delegate_ReadPrivateEnumExplicitKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateExplicit* value);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchReadPrivateEnumExplicitKernel(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit value, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateExplicit __gsharp_csharp_arg_0 = value;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel(__gsharp_csharp_arg_0));
+return;
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+int __gsharp_context_count = global::Kassyi.GSharp.Runtime.LaunchLimits.GetManagedContextCount(__gsharp_launch_block_count, blockDimX, blockDimY, blockDimZ, "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+int __gsharp_total_blocks = (int)__gsharp_launch_block_count;
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+__gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel[] __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel[__gsharp_context_count];
+for (int __gsharp_context_index = 0; __gsharp_context_index < __gsharp_contexts.Length; __gsharp_context_index++)
+{
+__gsharp_contexts[__gsharp_context_index] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks, sharedMemBytes, false);
+bool[] __gsharp_thread_at_block_barrier = new bool[__gsharp_contexts.Length];
+global::System.Runtime.ExceptionServices.ExceptionDispatchInfo? __gsharp_first_failure = null;
+bool __gsharp_any_grid_active = true;
+try
+{
+while (__gsharp_any_grid_active)
+{
+__gsharp_any_grid_active = false;
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
+{
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
+bool __gsharp_any_block_active = true;
+while (__gsharp_any_block_active)
+{
+__gsharp_any_block_active = false;
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
+{
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_grid_active = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel(value, __gsharp_contexts[__gsharp_linear_tid]);
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
+{
+throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+}
+if (global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested)
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = true;
+}
+}
+catch (global::System.Exception __gsharp_failure)
+{
+__gsharp_first_failure ??= global::System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(__gsharp_failure);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetTypeKeyScope();
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_state = -1;
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+}
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1 && !__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_any_block_active = true;
+}
+}
+}
+if (!__gsharp_any_block_active)
+{
+for (int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block; __gsharp_linear_tid < (__gsharp_block_index + 1) * __gsharp_threads_per_block; __gsharp_linear_tid++)
+{
+if (__gsharp_thread_at_block_barrier[__gsharp_linear_tid])
+{
+__gsharp_thread_at_block_barrier[__gsharp_linear_tid] = false;
+__gsharp_any_block_active = true;
+}
+}
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+}
+catch (global::System.Exception) when (__gsharp_first_failure is not null)
+{
+__gsharp_first_failure.Throw();
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
+}
+__gsharp_first_failure?.Throw();
+return;
+}
+__gsharp_delegate_ReadPrivateEnumExplicitKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_ReadPrivateEnumExplicitKernel>("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateExplicit __gsharp_native_0 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+try
+{
+global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.Marshal_EnumFieldPrivateExplicit(ref value, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.Unmarshal_EnumFieldPrivateExplicit(ref value, ref __gsharp_native_0, hStream);
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+private static unsafe void LaunchReadPrivateEnumExplicitKernelPtr(global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateExplicit value, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel");
+if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
+{
+throw global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.CannotRun("EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel", "LaunchReadPrivateEnumExplicitKernelPtr takes the arguments in the form the device uses, and the C# execution runs only through LaunchReadPrivateEnumExplicitKernel");
+}
+string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+string __gsharp_dll_name = $"Kassyi.GSharp.Kernels_SnapshotTest{__gsharp_arch_suffix}.dll";
+string __gsharp_dll_path = global::System.IO.Path.Combine(global::System.AppContext.BaseDirectory, __gsharp_dll_name);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(__gsharp_dll_path))
+{
+throw new global::System.NotSupportedException("LaunchReadPrivateEnumExplicitKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchReadPrivateEnumExplicitKernel, which runs on both paths.");
+}
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateExplicit*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Marshaling.EnumFieldPrivateKernels.AotContexts.EnumFieldPrivateExplicit*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateKernels__ReadPrivateEnumExplicitKernel", __gsharp_dll_path);
+if (s_errorSites.Length > 0)
+{
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
+}
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &value);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+}
+#pragma warning restore CS8500
 public const string ReadPrivateEnumNestedKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob
@@ -1741,7 +2185,7 @@ __gsharp_switch_1_state_0:
 if((int)threadIdx.x==0)
 {
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Marshaling__EnumFieldPrivateJob__Read(__gsharp_id_0_outer.__gsharp_mb_Inner);
-__gsharp_array_at(__gsharp_id_0_outer.__gsharp_mb_Inner.__gsharp_mb_Data, 4, 1496336663u)=__gsharp_id_0_outer.__gsharp_mb_Y;
+__gsharp_array_at(__gsharp_id_0_outer.__gsharp_mb_Inner.__gsharp_mb_Data, 4, 496770017u)=__gsharp_id_0_outer.__gsharp_mb_Y;
 }
 __gsharp_state=-1;
 return;

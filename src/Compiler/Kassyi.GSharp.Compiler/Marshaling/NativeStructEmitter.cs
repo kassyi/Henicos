@@ -28,22 +28,7 @@ internal static class NativeStructEmitter
 
         using (writer.Scope())
         {
-            foreach (var (field, offset, fieldLayout) in structLayout.DeviceFields)
-            {
-                // [WHY] A reference type other than an array has no device layout: GSH0078 reports it, and the shadow
-                // leaves it out so that the generated code still compiles.
-                if (IsOmittedFromShadow(field))
-                {
-                    continue;
-                }
-
-                writer.Append($"public const string DebugName_{field.Name} = \"");
-                writer.AppendFullyQualifiedCsharpName(field.Type);
-                writer.AppendLine("\";");
-                writer.AppendLine($"[{HostTypeNames.FieldOffset}({offset})]");
-
-                MapToNativeField(writer, field, fieldLayout.Size, dialect, launcherAssembly);
-            }
+            WriteShadowFields(writer, structLayout, dialect, launcherAssembly);
 
             if (NeedsHostMirror(s, structLayout, launcherAssembly))
             {
@@ -57,6 +42,28 @@ internal static class NativeStructEmitter
         }
 
         writer.AppendLine();
+    }
+
+    // The debug name, the offset and the declaration of each field of the shadow struct
+    private static void WriteShadowFields(SourceWriter writer, StructLayoutInfo structLayout,
+        ITranspilerDialect dialect, IAssemblySymbol launcherAssembly)
+    {
+        foreach (var (field, offset, fieldLayout) in structLayout.DeviceFields)
+        {
+            // [WHY] A reference type other than an array has no device layout: GSH0078 reports it, and the shadow
+            // leaves it out so that the generated code still compiles.
+            if (IsOmittedFromShadow(field))
+            {
+                continue;
+            }
+
+            writer.Append($"public const string DebugName_{field.Name} = \"");
+            writer.AppendFullyQualifiedCsharpName(field.Type);
+            writer.AppendLine("\";");
+            writer.AppendLine($"[{HostTypeNames.FieldOffset}({offset})]");
+
+            MapToNativeField(writer, field, fieldLayout.Size, dialect, launcherAssembly);
+        }
     }
 
     /// <summary>The name of the host mirror nested in the shadow struct (<see cref="NeedsHostMirror"/>).</summary>
@@ -179,25 +186,40 @@ internal static class NativeStructEmitter
                     continue;
                 }
 
-                var name = field.Member.Name.ToCSharpIdentifier();
                 writer.AppendLine(" &&");
                 if (field.Check == HostMirrorOffsetCheck.PredictedOffset)
                 {
-                    WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
-                    writer.Append($" == {field.ExpectedOffset}");
-                    continue;
+                    WritePredictedOffsetCheck(writer, field);
                 }
-
-                writer.Append($"{Unsafe}.ByteOffset(ref {Unsafe}.As<");
-                writer.AppendFullyQualifiedCsharpName(s);
-                writer.Append($", byte>(ref s), ref {Unsafe}.As<");
-                writer.AppendFullyQualifiedCsharpName(field.Member.Type);
-                writer.Append($", byte>(ref {Unsafe}.AsRef(in s.{name}))) == ");
-                WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
+                else
+                {
+                    WriteStructFieldOffsetCheck(writer, s, field);
+                }
             }
 
             writer.AppendLine(";");
         }
+    }
+
+    // Unsafe.ByteOffset(<mirror field>) == <the host offset that the compiler predicts>
+    private static void WritePredictedOffsetCheck(SourceWriter writer, HostMirrorField field)
+    {
+        var name = field.Member.Name.ToCSharpIdentifier();
+        WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
+        writer.Append($" == {field.ExpectedOffset}");
+    }
+
+    // Unsafe.ByteOffset(<struct field>) == Unsafe.ByteOffset(<mirror field>)
+    private static void WriteStructFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, HostMirrorField field)
+    {
+        const string Unsafe = HostTypeNames.Unsafe;
+        var name = field.Member.Name.ToCSharpIdentifier();
+        writer.Append($"{Unsafe}.ByteOffset(ref {Unsafe}.As<");
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.Append($", byte>(ref s), ref {Unsafe}.As<");
+        writer.AppendFullyQualifiedCsharpName(field.Member.Type);
+        writer.Append($", byte>(ref {Unsafe}.AsRef(in s.{name}))) == ");
+        WriteByteOffset(writer, $"{HostMirrorName}, byte>(ref m)", field.StorageType, $"ref m.{name}");
     }
 
     // Unsafe.ByteOffset(ref Unsafe.As<<origin>, ref Unsafe.As<<type>, byte>(<field ref>))

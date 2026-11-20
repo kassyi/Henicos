@@ -29,10 +29,8 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
     }
 
     // A field of a private enum type is declared as the underlying type of the enum in the shadow struct and the host
-    // mirror, which the launcher can always name: it is not refused (GSH0108), and the generated C# builds
-    // mutant: LauncherTypeAccess.FindInMember without the enum `return null` -> GSH0108 is reported
-    // mutant: HostFieldAccess.GetStorageType `-> member.Type` always -> the shadow and the mirror name the private
-    // enum (CS0122)
+    // mirror, which the launcher can always name: it is not refused (GSH0108), and the generated C# builds (a shadow
+    // or a mirror that named the private enum would give CS0122)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -260,6 +258,22 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
         Run(forceManaged, () => EnumFieldPrivateKernels.LaunchReadPrivateEnumNestedKernel(outer, blockDimX: 1));
 
         Assert.Equal([300, 1, -1, 1, 9], data);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumExplicitKernel_NegativeShortAtAnOffset_ReachesTheDevice(bool forceManaged)
+    {
+        var data = new int[1];
+        var value = EnumFieldPrivateExplicit.Create(low: true, count: 5, data);
+
+        Run(forceManaged, () =>
+            EnumFieldPrivateKernels.LaunchReadPrivateEnumExplicitKernel(value, blockDimX: 1));
+
+        Assert.Equal([-6995], data);
     }
 
     private void Run(bool forceManaged, Action launch)
