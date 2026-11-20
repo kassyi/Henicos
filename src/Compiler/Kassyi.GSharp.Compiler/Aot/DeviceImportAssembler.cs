@@ -129,7 +129,92 @@ internal static class DeviceImportAssembler
         AppendFunctionBodies(source, functions, isCuda);
 
         return new ImportedDeviceCode(source.ToString(), CollectIncludes(structs, functions, isCuda),
-            CollectFullNames(structs, functions), CollectErrorSites(functions));
+            CollectFullNames(structs, functions), CollectErrorSites(functions),
+            CollectCalls(records, byName, reached, isCuda));
+    }
+
+    /// <summary>
+    /// The calls of <see cref="ImportedDeviceCode.Calls"/> by caller, built once per module for
+    /// <see cref="ExtendReach"/>.
+    /// </summary>
+    public static Dictionary<string, List<string>> IndexCalls(EquatableArray<(string Name, string Callee)> calls)
+    {
+        var byCaller = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var (caller, callee) in calls)
+        {
+            if (!byCaller.TryGetValue(caller, out var callees))
+            {
+                callees = [];
+                byCaller[caller] = callees;
+            }
+
+            callees.Add(callee);
+        }
+
+        return byCaller;
+    }
+
+    /// <summary>
+    /// <paramref name="names"/> with the names of other assemblies that they reach through the placed records (the
+    /// calls of <see cref="IndexCalls"/>): what an imported function or struct member calls in its own assembly, which
+    /// the module's own call graph does not see.
+    /// </summary>
+    public static EquatableArray<string> ExtendReach(EquatableArray<string> names,
+        Dictionary<string, List<string>> callsByCaller)
+    {
+        if (names.IsDefaultOrEmpty || callsByCaller.Count == 0)
+        {
+            return names;
+        }
+
+        var reached = new SortedSet<string>(names, StringComparer.Ordinal);
+        var pending = new Stack<string>(names);
+        while (pending.Count > 0)
+        {
+            if (!callsByCaller.TryGetValue(pending.Pop(), out var callees))
+            {
+                continue;
+            }
+
+            foreach (var callee in callees)
+            {
+                if (reached.Add(callee))
+                {
+                    pending.Push(callee);
+                }
+            }
+        }
+
+        return reached.Count == names.Length ? names : reached.ToImmutableArray().AsEquatableArray();
+    }
+
+    // The name of each placed record with each name that its text refers to and that a placed record defines, looked
+    // up as Reach looks it up, a struct's type name included; and each name a struct record defines (a constructor,
+    // conversion or truth operator) with the struct's name, which stands for all of its members
+    private static EquatableArray<(string Name, string Callee)> CollectCalls(
+        EquatableArray<ImportedDeviceRecord> records, Dictionary<string, ImmutableArray<int>.Builder> byName,
+        HashSet<int> reached, bool isCuda)
+    {
+        var calls = ImmutableArray.CreateBuilder<(string Name, string Callee)>();
+        foreach (var index in reached)
+        {
+            var record = records[index];
+            var caller = record.Record.Names.CppName;
+            record.Record.Names.DefinedNames
+                .AsStackEnumerable()
+                .Select(caller, static (name, owner) => (name, owner))
+                .AddTo(calls);
+            foreach (var reference in record.Record.GetDialect(isCuda).References)
+            {
+                if (byName.TryGetValue(reference, out var indices) &&
+                    reached.Contains(Choose(records, indices, record.AssemblyName)))
+                {
+                    calls.Add((caller, reference));
+                }
+            }
+        }
+
+        return calls.ToImmutable().AsEquatableArray();
     }
 
     // The sites of the throws of the placed functions, in the order of the functions

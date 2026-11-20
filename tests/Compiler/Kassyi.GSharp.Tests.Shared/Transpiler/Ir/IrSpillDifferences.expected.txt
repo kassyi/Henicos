@@ -202,6 +202,18 @@
   IrSpillPlannerCases.cs Cases.TargetIndexWrittenByTheValue: r[t + 1] = SuspendWith(Inc(ref t), 0);
     ir:     spill(t + 1) spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
     syntax: spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LambdaMiddleGotoKernel: result[tid] = Warp.ActiveMask() ^ run(tid);
+    ir:     spill(result) spill(tid) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LocalFunctionMiddleGotoKernel: result[tid] = Warp.ActiveMask() ^ Run(tid);
+    ir:     spill(result) spill(tid) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.MiddleGotoAroundLocalFunctionSplitKernel: result[tid] = LocalSplit() ^ lambdaSplit() ^ Warp.ActiveMask();
+    ir:     spill(result) spill(tid) spill(LocalSplit() ^ lambdaSplit()) split(Warp.ActiveMask())
+    syntax: spill(LocalSplit() ^ lambdaSplit()) split(Warp.ActiveMask())
 #991 a part of a target location that the split may change + #991 the read of a compound assignment target
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.ShuffleKernel: (Pick(b)!)[0] += Warp.ShuffleSync(m, v, 1);
     ir:     spill(Pick(b)) spill((Pick(b)!)[0]) split(Warp.ShuffleSync(m, v, 1))
@@ -214,6 +226,10 @@
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.ShuffleKernel: Gpu.NotNull(a)[1] += Warp.ShuffleSync(m, v, 1);
     ir:     spill(Gpu.NotNull(a)) spill(Gpu.NotNull(a)[1]) split(Warp.ShuffleSync(m, v, 1))
     syntax: split(Warp.ShuffleSync(m, v, 1))
+#991 an earlier operand of an operation that does not split
+  GenericDeviceFunction.cu.cs GenericDeviceFunctionCases.K: xs[tid] = Pick(xs[tid], AfterSync(tid), true) + GenericDeviceFunctionHolder<long>.Twice(tid);
+    ir:     spill(xs[tid]) split(AfterSync(tid))
+    syntax: split(AfterSync(tid))
 #991 an earlier operand of an operation that does not split
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.ParenthesizedSpillKernel: r[0] = (PickH(h).Data)[Bar()];
     ir:     spill(PickH(h).Data) split(Bar())

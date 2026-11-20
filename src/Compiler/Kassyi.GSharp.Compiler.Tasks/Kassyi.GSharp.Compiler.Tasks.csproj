@@ -33,6 +33,7 @@
     <Compile Include="..\..\Shared\Cuda\CudaArchitectureList.cs" Link="Cuda\CudaArchitectureList.cs" />
     <Compile Include="..\..\Shared\Cuda\NvccGencode.cs" Link="Cuda\NvccGencode.cs" />
     <Compile Include="..\..\Shared\Cuda\NvccMinimum.cs" Link="Cuda\NvccMinimum.cs" />
+    <Compile Include="..\..\Shared\Cuda\SpillSuppressionLine.cs" Link="Cuda\SpillSuppressionLine.cs" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Integration" />

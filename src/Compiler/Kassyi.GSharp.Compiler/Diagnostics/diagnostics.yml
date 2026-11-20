@@ -860,7 +860,7 @@
 - name: GotoEntersReconvergenceRegionMiddle
   id: GSH0120
   title: "A goto jumps into the middle of a reconvergence region"
-  messageFormat: "'goto {0}' jumps into the statements between '{1}:' and a goto to it that hold a warp collective or barrier, in a method that reaches Warp.ActiveMask(); the CPU paths cannot tell which lanes run together there. Move the label '{0}' out of that range, or write the loop as a while or for statement."
+  messageFormat: "'goto {0}' jumps {1}, in a method that reaches Warp.ActiveMask(); the CPU paths cannot tell which lanes run together there. {2}"
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true
@@ -877,6 +877,14 @@
   id: GSH0122
   title: "Math.Clamp is called with a constant min greater than its constant max"
   messageFormat: "Math.Clamp is called with min {0} greater than max {1}, so the call always throws ArgumentException. If the bounds are swapped, write Math.Clamp(value, {1}, {0})."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
+- name: GenericDeviceFunctionNotCompiled
+  id: GSH0123
+  title: "A generic device function cannot be compiled for the GPU"
+  messageFormat: "'{0}' cannot be compiled for the GPU: {1}."
   category: GSharpTranspiler
   defaultSeverity: Error
   isEnabledByDefault: true

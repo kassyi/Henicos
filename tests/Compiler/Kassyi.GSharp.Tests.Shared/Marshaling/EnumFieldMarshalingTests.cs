@@ -28,25 +28,80 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
         Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
     }
 
-    // GSH0108 refuses a struct whose field has a private enum type, although the field could be copied: #2195 (GSH0108
-    // refuses a struct field whose enum type is private, although the field can be copied). The launcher throws and
-    // no marshal method is written, so the build stays clean
+    // A field of a private enum type is declared as the underlying type of the enum in the shadow struct and the host
+    // mirror, which the launcher can always name: it is not refused (GSH0108), and the generated C# builds (a shadow
+    // or a mirror that named the private enum would give CS0122)
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.Boundary)]
-    public async Task Generator_StructWithPrivateEnumField_RefusesTheLaunchWithoutBuildErrors(string dialect)
+    public async Task Generator_StructWithPrivateEnumField_GeneratesALauncherWithoutBuildErrors(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Marshaling/EnumFieldMarshalSource.cs", dialect);
 
-        Assert.Equal([(Analyzer, 63, 34, 63, 43)], diagnostics.Ranges("GSH0108"));
+        Assert.Empty(diagnostics.Ranges("GSH0108"));
         var (_, output, generatorDiagnostics) = GeneratorTestRunner.RunGenerator(s_source, dialect);
         Assert.DoesNotContain(generatorDiagnostics, static d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Empty(output.GetDiagnostics().Where(static d => d.Severity == DiagnosticSeverity.Error));
         var kernels = output.GetTypeByMetadataName("EnumFields.JobKernels") ?? throw new InvalidOperationException();
         var launcher = (MethodDeclarationSyntax)kernels.GetMembers("LaunchRunHidden").Single()
             .DeclaringSyntaxReferences.Single().GetSyntax();
         var body = launcher.Body ?? throw new InvalidOperationException("The launcher has no body.");
-        Assert.Collection(body.Statements, static statement => Assert.IsType<ThrowStatementSyntax>(statement));
+        Assert.DoesNotContain(body.Statements, static statement => statement is ThrowStatementSyntax);
+    }
+
+    [Theory]
+    [InlineData("_byteLevel", SpecialType.System_Byte)]
+    [InlineData("_longLevel", SpecialType.System_Int64)]
+    [InlineData("_ulongLevel", SpecialType.System_UInt64)]
+    [InlineData("_privateMode", SpecialType.System_Int32)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GetStorageType_PrivateEnumField_IsTheUnderlyingType(string member, SpecialType expected)
+    {
+        var (abiMember, assembly) = FindStorageProbeMember(member);
+
+        var storage = HostFieldAccess.GetStorageType(abiMember, assembly);
+
+        Assert.Equal(expected, storage.SpecialType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void GetStorageType_PublicEnumField_IsTheEnum()
+    {
+        var (abiMember, assembly) = FindStorageProbeMember("PublicMode");
+
+        var storage = HostFieldAccess.GetStorageType(abiMember, assembly);
+
+        Assert.Equal(TypeKind.Enum, storage.TypeKind);
+        Assert.Equal("Mode", storage.Name);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void GetStorageType_PrivateIntField_IsTheField()
+    {
+        var (abiMember, assembly) = FindStorageProbeMember("_count");
+
+        var storage = HostFieldAccess.GetStorageType(abiMember, assembly);
+
+        Assert.Equal(SpecialType.System_Int32, storage.SpecialType);
+    }
+
+    private static (StructAbiMember Member, IAssemblySymbol Assembly) FindStorageProbeMember(string name)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(s_source);
+        var symbol = compilation.GetTypeByMetadataName("EnumFields.StorageProbe")
+            ?? throw new InvalidOperationException("EnumFields.StorageProbe");
+        foreach (var member in StructAbiMembers.Get(symbol))
+        {
+            if (member.Name == name)
+            {
+                return (member, compilation.Assembly);
+            }
+        }
+
+        throw new InvalidOperationException($"The struct has no member '{name}'.");
     }
 
     [Theory]
@@ -122,6 +177,103 @@ public class EnumFieldMarshalingTests : TranspilerTestBase
         Assert.Equal(EnumFieldMode.C, job.Nested.Mode);
         Assert.Equal(EnumFieldSByteMode.Negative, job.SByteMode);
         Assert.Equal(EnumFieldULongMode.Top, job.ULongMode);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumFieldsKernel_EnumsBehindTheMirror_ReachTheDevice(bool forceManaged)
+    {
+        var job = EnumFieldPrivateJob.Create(new int[4]);
+
+        Run(forceManaged, () => EnumFieldPrivateKernels.LaunchReadPrivateEnumFieldsKernel(job, blockDimX: 1));
+
+        Assert.Equal([300, 1, -1, 1], job.Data);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WritePrivateEnumFieldsKernel_EnumsBehindTheMirror_ReachTheHost(bool forceManaged)
+    {
+        var job = EnumFieldPrivateJob.Create(new int[4]);
+        Assert.False(job.IsFlipped);
+
+        Run(forceManaged, () => EnumFieldPrivateKernels.LaunchWritePrivateEnumFieldsKernel(ref job, blockDimX: 1));
+
+        Assert.True(job.IsFlipped);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumBlockKernel_IdenticalStruct_ReachesTheDevice(bool forceManaged)
+    {
+        var block = EnumFieldPrivateBlock.Create(count: 5, raised: true);
+        var result = new int[1];
+
+        Run(forceManaged, () =>
+            EnumFieldPrivateKernels.LaunchReadPrivateEnumBlockKernel(block, result, blockDimX: 1));
+
+        Assert.Equal([205], result);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumArrayKernel_StructArray_ReachesTheDevice(bool forceManaged)
+    {
+        EnumFieldPrivateBlock[] blocks =
+        [
+            EnumFieldPrivateBlock.Create(0, raised: false),
+            EnumFieldPrivateBlock.Create(0, raised: true),
+            EnumFieldPrivateBlock.Create(0, raised: false),
+        ];
+        var result = new int[3];
+
+        Run(forceManaged, () =>
+            EnumFieldPrivateKernels.LaunchReadPrivateEnumArrayKernel(blocks, result, blockDimX: 3));
+
+        Assert.Equal([0, 200, 0], result);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumNestedKernel_NestedStruct_ReachesTheDevice(bool forceManaged)
+    {
+        var data = new int[5];
+        var outer = new EnumFieldPrivateOuter { Inner = EnumFieldPrivateJob.Create(data), Y = 9 };
+
+        Run(forceManaged, () => EnumFieldPrivateKernels.LaunchReadPrivateEnumNestedKernel(outer, blockDimX: 1));
+
+        Assert.Equal([300, 1, -1, 1, 9], data);
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadPrivateEnumExplicitKernel_NegativeShortAtAnOffset_ReachesTheDevice(bool forceManaged)
+    {
+        var data = new int[1];
+        var value = EnumFieldPrivateExplicit.Create(low: true, count: 5, data);
+
+        Run(forceManaged, () =>
+            EnumFieldPrivateKernels.LaunchReadPrivateEnumExplicitKernel(value, blockDimX: 1));
+
+        Assert.Equal([-6995], data);
     }
 
     private void Run(bool forceManaged, Action launch)

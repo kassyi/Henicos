@@ -45,7 +45,7 @@ public class ManagedStackModelGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task BarrierModel_Stack_EmitsStackFormAndKeepsShuffleAsStateMachine()
+    public Task BarrierModel_Stack_EmitsStackFormsForBarriersAndWarpCollectives()
     {
         var sources = Run(barrierModel: "Stack");
         var combined = string.Join(
@@ -88,6 +88,34 @@ public class ManagedStackModelGeneratorTests
             unset,
             stack.Where(static s => s.HintName != ManagedStackPipeline.FailuresHintName).ToArray());
     }
+
+    // An operator macro whose target reaches a warp collective, after a block barrier and in a kernel that has a
+    // collective of its own: the stack forms of both kernels cannot be made, the build still compiles (Run checks it),
+    // the stack model lists the reason, and the kernels keep the launchers of the default build
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void OperatorMacroReachingAWarpCollective_StackModel_KeepsTheKernelsOnTheStateMachine()
+    {
+        var unset = Run(barrierModel: null, s_macroTree);
+        var stack = Run(barrierModel: "Stack", s_macroTree);
+
+        Assert.DoesNotContain(unset, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
+        var failures = Assert.Single(stack, static s => s.HintName == ManagedStackPipeline.FailuresHintName);
+        Assert.Contains("MacroKernels.MacroAfterBarrierKernel: InvalidOperationException", failures.SourceText,
+            StringComparison.Ordinal);
+        Assert.Contains("MacroKernels.MacroAndShuffleKernel: InvalidOperationException", failures.SourceText,
+            StringComparison.Ordinal);
+        Assert.Contains("through an operator macro", failures.SourceText, StringComparison.Ordinal);
+        Assert.DoesNotContain(stack, static s => s.SourceText.Contains("ManagedStackRunner.Run(",
+            StringComparison.Ordinal));
+        var kernelFile = Assert.Single(unset, static s => s.HintName.EndsWith("MacroKernels.g.cs",
+            StringComparison.Ordinal));
+        Assert.Equal(kernelFile, Assert.Single(stack, static s => s.HintName.EndsWith("MacroKernels.g.cs",
+            StringComparison.Ordinal)));
+    }
+
+    private static readonly SyntaxTree s_macroTree =
+        RoslynTestUtility.GetTestCaseContext("Generators/ManagedStackOperatorMacroCases.cs").Tree;
 
     private static readonly SyntaxTree s_fallbackTree =
         RoslynTestUtility.GetTestCaseContext("Generators/ManagedStackFallbackCases.cs").Tree;

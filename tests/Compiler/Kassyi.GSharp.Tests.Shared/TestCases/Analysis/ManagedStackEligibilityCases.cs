@@ -143,3 +143,89 @@ public partial class InstanceEligibilityTarget
         return value + 1;
     }
 }
+
+// Warp collectives on the managed stack model: which kernels run them on their stacks, and the limit of the visit
+// counts of a GPU thread (WarpFrameLayout.MaxSize = 4096). The Chain functions double the counts of the one before:
+// Chain0 takes 2, ChainN takes 1 + 2 * Chain(N - 1), so Chain10 takes 3071
+[SkipSnapshotConsistency("Input for ManagedStackEligibilityTests")]
+public static partial class WarpEligibilityKernels
+{
+    [GpuKernel]
+    public static void WarpOnly(int[] data)
+    {
+        data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[ThreadIndex.X], 1);
+    }
+
+    [GpuKernel]
+    public static void CallsRecursiveShuffle(int[] data)
+    {
+        data[ThreadIndex.X] = RecursiveShuffle(data[ThreadIndex.X], 2);
+    }
+
+    [GpuDeviceFunction]
+    public static int RecursiveShuffle(int value, int depth) =>
+        depth == 0 ? Warp.ShuffleXorSync(0xFFFFFFFFu, value, 1) : RecursiveShuffle(value, depth - 1);
+
+    [GpuKernel]
+    public static void PassesShuffleGroup(int[] data)
+    {
+        Gpu.SyncWarp();
+        Gpu.ForUnroll(0, 2, data.ShuffleAt);
+    }
+
+    [GpuDeviceFunction]
+    public static void ShuffleAt(this int[] data, int i)
+    {
+        data[i] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[i], 1);
+    }
+
+    // 1 + 1 + 3071 + 767 + 191 + 47 + 11 + 5 + 2 = 4096 visit counts
+    [GpuKernel]
+    public static void AtTheVisitLimit(int[] data)
+    {
+        int v = Warp.ShuffleXorSync(0xFFFFFFFFu, data[ThreadIndex.X], 1);
+        data[ThreadIndex.X] = Chain10(v) + Chain8(v) + Chain6(v) + Chain4(v) + Chain2(v) + Chain1(v) + Chain0(v);
+    }
+
+    // One collective more: 4097 visit counts
+    [GpuKernel]
+    public static void OverTheVisitLimit(int[] data)
+    {
+        int v = Warp.ShuffleXorSync(0xFFFFFFFFu, data[ThreadIndex.X], 1);
+        v = Warp.ShuffleXorSync(0xFFFFFFFFu, v, 2);
+        data[ThreadIndex.X] = Chain10(v) + Chain8(v) + Chain6(v) + Chain4(v) + Chain2(v) + Chain1(v) + Chain0(v);
+    }
+
+    [GpuDeviceFunction]
+    public static int Chain0(int v) => Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);
+
+    [GpuDeviceFunction]
+    public static int Chain1(int v) => Chain0(v) + Chain0(v);
+
+    [GpuDeviceFunction]
+    public static int Chain2(int v) => Chain1(v) + Chain1(v);
+
+    [GpuDeviceFunction]
+    public static int Chain3(int v) => Chain2(v) + Chain2(v);
+
+    [GpuDeviceFunction]
+    public static int Chain4(int v) => Chain3(v) + Chain3(v);
+
+    [GpuDeviceFunction]
+    public static int Chain5(int v) => Chain4(v) + Chain4(v);
+
+    [GpuDeviceFunction]
+    public static int Chain6(int v) => Chain5(v) + Chain5(v);
+
+    [GpuDeviceFunction]
+    public static int Chain7(int v) => Chain6(v) + Chain6(v);
+
+    [GpuDeviceFunction]
+    public static int Chain8(int v) => Chain7(v) + Chain7(v);
+
+    [GpuDeviceFunction]
+    public static int Chain9(int v) => Chain8(v) + Chain8(v);
+
+    [GpuDeviceFunction]
+    public static int Chain10(int v) => Chain9(v) + Chain9(v);
+}

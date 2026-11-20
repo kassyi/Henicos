@@ -253,11 +253,11 @@ internal static class GenericCopyPlanner
             {
                 case ConstrainedMember.IdentityConstant constant:
                     Rewrites[index] = new CopyRewrite.IdentityConstant(index, constant.ClosedType, constant.Value,
-                        IsOperandOfConstantOperation(access));
+                        ConstantOperandForms.IsOperandOfConstantOperation(access, model, ResolveStatic));
                     break;
                 case ConstrainedMember.StaticMember member:
                     Rewrites[index] = new CopyRewrite.StaticMember(index, member.ClosedType, member.Name,
-                        IsOperandOfConstantOperation(access));
+                        ConstantOperandForms.IsOperandOfConstantOperation(access, model, ResolveStatic));
                     break;
                 case ConstrainedMember.Unsupported unsupported:
                     Problems.Add(new CopyProblem(index, unsupported.Reason));
@@ -404,34 +404,6 @@ internal static class GenericCopyPlanner
         // Whether the access is the callee of a call (T.Abs(x), not the method group T.Abs)
         private static bool IsCalled(MemberAccessExpressionSyntax access) =>
             access.Parent is InvocationExpressionSyntax invocation && invocation.Expression == access;
-
-        // An operator on two constants is folded at compile time, where the copy needs the run-time exception of the
-        // declaration for a division by zero or an overflow: such an operand is written so that C# cannot fold it
-        private bool IsOperandOfConstantOperation(MemberAccessExpressionSyntax access)
-        {
-            SyntaxNode operand = access;
-            while (operand.Parent is ParenthesizedExpressionSyntax parenthesized)
-            {
-                operand = parenthesized;
-            }
-
-            if (operand.Parent is not BinaryExpressionSyntax binary ||
-                binary.Kind() is not (SyntaxKind.AddExpression or SyntaxKind.SubtractExpression or
-                    SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.ModuloExpression))
-            {
-                return false;
-            }
-
-            return IsConstantLike(binary.Left == operand ? binary.Right : binary.Left);
-        }
-
-        private bool IsConstantLike(ExpressionSyntax expression)
-        {
-            expression = expression.UnwrapParentheses();
-            return model.GetConstantValue(expression).HasValue ||
-                   (expression is MemberAccessExpressionSyntax access &&
-                    ResolveStatic(access) is ConstrainedMember.IdentityConstant or ConstrainedMember.StaticMember);
-        }
 
         // A form that reads or evaluates it any number of times gives what it gives once
         private static bool IsSideEffectFree(SyntaxNode node) =>

@@ -23,6 +23,26 @@ public static partial class StackModelKernels
         output[tid] = Warp.ShuffleXorSync(0xFFFFFFFFu, input[tid], 1);
     }
 
+    // Two calls of a device function that reaches a warp collective: each passes the offset of its own frame
+    [GpuKernel]
+    public static void WarpCallKernel(int[] input, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int v = HalfThenFull(input[tid], tid & 31);
+        output[tid] = HalfThenFull(v, tid & 31) + Warp.ReduceAddSync(0xFFFFFFFFu, tid);
+    }
+
+    [GpuDeviceFunction]
+    private static int HalfThenFull(int v, int lane)
+    {
+        if (lane >= 16)
+        {
+            v += Warp.ShuffleXorSync(0xFFFF0000u, v, 1);
+        }
+
+        return v + Warp.ShuffleXorSync(mask: 0xFFFFFFFFu, laneMask: 16, var: v);
+    }
+
     [GpuDeviceFunction]
     private static int WaitAndRead(int value, int tid)
     {

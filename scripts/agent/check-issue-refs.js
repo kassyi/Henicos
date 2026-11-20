@@ -13,11 +13,13 @@
 // Fails (exit 1) when a number does not exist, or when a closing keyword (Fixes / Closes / Resolves #n) names a pull
 // request or an issue that is already closed. In --hook mode the same failures deny the command; otherwise the table
 // is passed back to the agent as additional context, and the command goes on to the normal permission check.
+// The hook also denies a `gh issue create` with the `bug` label that has no `found-by:` label (foundByProblem).
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const shellReader = require('./check-queued-command/shell-reader.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
@@ -33,7 +35,20 @@ const branchPattern = /\bissue-(\d{1,6})\b/g;
 // The issue or PR a gh command acts on (gh issue comment 1234)
 const targetPattern = /\bgh\s+(?:issue|pr)\s+(?:comment|edit|close|review|merge)\s+(\d{1,6})\b/g;
 // Commands whose text is published: issue and PR bodies and comments, commits, new branches and worktrees.
-const publishingCommand = /\bgh\s+(?:issue|pr)\s+(?:create|comment|edit|close|review|merge)\b|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b/;
+// `gh -R owner/repo issue create`, `gh.exe` and the alias `gh issue new` publish too. One reading per word in the
+// repository flag (`[^\s=]\S*`), so that a failed match does not backtrack exponentially.
+const publishingCommand = new RegExp(
+    String.raw`\bgh(?:\.exe)?\s+(?:(?:-R|--repo)(?:=|\s+)?[^\s=]\S*\s+)*`
+    + String.raw`(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
+    + String.raw`|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b`);
+
+const foundByLabels = [
+    'found-by:audit',
+    'found-by:matrix',
+    'found-by:differential',
+    'found-by:review',
+    'found-by:operation',
+];
 
 function fail(message) {
     console.error(message);
@@ -167,6 +182,107 @@ function check(text, repo, lookUpNumbers = lookUp) {
     return { lines, problems };
 }
 
+// The `gh issue create` flags that take a value: the value is skipped, so that a title such as "-lfound-by:audit"
+// is not read as a label. -l / --label is read on its own.
+const valueFlags = new Set([
+    '-t', '--title', '-b', '--body', '-F', '--body-file', '-m', '--milestone', '-a', '--assignee', '-p', '--project',
+    '-T', '--template', '-R', '--repo',
+]);
+
+// The labels given to the `gh issue create` (or `gh issue new`) that starts a word list, or null when the list is
+// another command. `gh -R owner/repo issue create` is read too.
+function createLabels(list) {
+    let i = 1;
+    if (list.length === 0 || shellReader.programName(list[0]) !== 'gh') return null;
+    // -R v, --repo v (two words), --repo=v and -Rv (one word)
+    while (i < list.length && /^(-R|--repo)(=.*|.+)?$/.test(list[i])) i += /^(-R|--repo)$/.test(list[i]) ? 2 : 1;
+    if (list[i] !== 'issue' || !['create', 'new'].includes(list[i + 1])) return null;
+    const labels = [];
+    for (i += 2; i < list.length; i++) {
+        const w = list[i];
+        if (w === '--label' || w === '-l') {
+            if (i + 1 < list.length) labels.push(list[++i]);
+        } else if (w.startsWith('--label=')) {
+            labels.push(w.slice('--label='.length));
+        } else if (/^-l[^-]/.test(w)) {
+            labels.push(w.slice(2).replace(/^=/, ''));
+        } else if (valueFlags.has(w)) {
+            i++;
+        }
+    }
+    return labels;
+}
+
+// The bodies of the backtick substitutions of a bash segment (outside single quotes, also inside double quotes).
+function backtickBodies(segment) {
+    const bodies = [];
+    let quote = '';
+    let start = -1;
+    for (let i = 0; i < segment.length; i++) {
+        const ch = segment[i];
+        if (ch === '\\' && quote !== "'") i++;
+        else if (start >= 0) {
+            if (ch === '`') { bodies.push(segment.slice(start, i)); start = -1; }
+        } else if (ch === "'" && quote !== '"') quote = quote === "'" ? '' : "'";
+        else if (ch === '"' && quote !== "'") quote = quote === '"' ? '' : '"';
+        else if (ch === '`' && quote !== "'") start = i + 1;
+    }
+    return bodies;
+}
+
+// The index of the command a shell wrapper runs (cmd /c, also //c from Git Bash; pwsh -Command; bash -c), or -1.
+function wrapperCommandIndex(reader, name, raw) {
+    if (name === 'cmd') {
+        const flag = raw.findIndex((word, i) => i > 0 && /^\/\/?[ck]$/i.test(reader.unquote(word)));
+        return flag < 0 ? -1 : flag + 1;
+    }
+    return reader.shellCommandIndex(name, raw);
+}
+
+// The reader dialect of the command string a shell wrapper (bash -c, pwsh -Command, cmd /c) runs.
+function wrapperDialect(name) {
+    if (name === 'cmd') return 'cmd';
+    return /^(bash|sh|zsh)$/.test(name) ? 'bash' : 'pwsh';
+}
+
+// The denial text when a command contains a `gh issue create` with the `bug` label (any milestone, or none) and no
+// `found-by:` label, else null. A `tracking` issue (a table of sub-issues) is exempt. The command is read by the shell
+// reader of check-queued-command (continued lines, heredoc bodies and redirections) in the dialect of its tool; command
+// substitutions (url=$(gh issue create ...)) and the command string of a shell wrapper (bash -c "...") are read too.
+function foundByProblem(command, dialect) {
+    const reader = shellReader.createReader(dialect);
+    for (const segment of reader.splitSegments(command)) {
+        const raw = reader.dropPrefixes(reader.words(segment));
+        const labels = createLabels(raw.map(word => reader.argumentText(word)));
+        if (labels !== null) {
+            const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
+            const exempt = !names.includes('bug') || names.includes('tracking');
+            if (!exempt && !names.some(l => foundByLabels.includes(l))) {
+                return 'A bug issue needs a found-by label: '
+                    + `${foundByLabels.join(', ')}. Add the label of how the bug was found; `
+                    + 'in M1 or M2, also add the issue to its tracking table.';
+            }
+        }
+        const inner = reader.substitutions(segment).map(body => ({ body, dialect }));
+        if (dialect === 'bash') inner.push(...backtickBodies(segment).map(body => ({ body, dialect })));
+        const name = raw.length > 0 ? reader.programName(raw[0]) : '';
+        const at = wrapperCommandIndex(reader, name, raw);
+        if (at >= 0 && at < raw.length) {
+            // cmd and PowerShell take the rest of the words as the command (cmd /c gh issue create ..., a script
+            // block { ... }); the bash family takes one word.
+            const wrapper = wrapperDialect(name);
+            const rest = raw.slice(at);
+            const joined = wrapper === 'bash' || rest.length === 1 ? reader.argumentText(rest[0]) : rest.join(' ');
+            inner.push({ body: joined, dialect: wrapper });
+        }
+        for (const item of inner) {
+            const problem = foundByProblem(item.body, item.dialect);
+            if (problem !== null) return problem;
+        }
+    }
+    return null;
+}
+
 // Files a command reads its message or body from: --body-file <f>, -F <f>, --file <f>, -F<f> is not used by gh/git.
 function referencedFiles(command, cwd) {
     const texts = [];
@@ -207,13 +323,17 @@ function hookAnswer(input, env) {
         ? String((input.toolCall.args && input.toolCall.args.CommandLine) || '')
         : (input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '');
     if (!publishingCommand.test(command)) return null;
+    // PowerShell reads ` as its escape, bash ; Antigravity's run_command runs PowerShell on Windows.
+    const dialect = antigravity || input.tool_name === 'PowerShell' ? 'pwsh' : 'bash';
+    const foundBy = foundByProblem(command, dialect);
     const cwd = commandDirectory(input, antigravity, env.processCwd);
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
     const repo = env.repo || defaultRepo(cwd);
     const { lines, problems } = check(text, repo, env.lookUp);
-    if (lines.length === 0) return null;
-    const table = `Issue / PR numbers in this command:\n${lines.join('\n')}`;
-    const reason = `${problems.join('\n')}\n${table}\nFix the number and run the command again.`;
+    if (foundBy !== null) problems.unshift(foundBy);
+    if (lines.length === 0 && problems.length === 0) return null;
+    const table = lines.length > 0 ? `\nIssue / PR numbers in this command:\n${lines.join('\n')}` : '';
+    const reason = `${problems.join('\n')}${table}\nFix the problem and run the command again.`;
     if (antigravity) {
         // An Antigravity "allow" would skip the permission prompt, so an allowed command gets no output.
         return problems.length > 0 ? { decision: 'deny', reason } : null;
@@ -229,7 +349,8 @@ function hookAnswer(input, env) {
         : {
             hookSpecificOutput: {
                 hookEventName: 'PreToolUse',
-                additionalContext: `${table}\nCheck that each title is the one you meant.`,
+                additionalContext: `Issue / PR numbers in this command:\n${lines.join('\n')}\n`
+                    + 'Check that each title is the one you meant.',
             },
         };
 }
@@ -298,6 +419,171 @@ function selfTest() {
             const payload = { cwd: root, tool_input: { command: `${create} --body-file tmp/good.md` } };
             const answer = hookAnswer(payload, env);
             assert.match(answer.hookSpecificOutput.additionalContext, /#1\tissue\tOPEN/);
+        });
+        const hook = (command, tool = 'Bash') =>
+            hookAnswer({ cwd: root, tool_name: tool, tool_input: { command } }, env);
+        const denied = (command, tool = 'Bash') => {
+            const answer = hook(command, tool);
+            const reason = answer === null ? '' : answer.hookSpecificOutput.permissionDecisionReason;
+            return answer !== null && answer.hookSpecificOutput.permissionDecision === 'deny'
+                && reason.includes('found-by:audit, found-by:matrix, found-by:differential, found-by:review, '
+                    + 'found-by:operation')
+                && reason.includes('in M1 or M2, also add the issue to its tracking table');
+        };
+        const issueCreate = ['gh', 'issue', 'create'].join(' ');
+        const m1 = '"M1 Wrong Results"';
+        const m2 = '"M2 Build Failures & Missing Diagnostics"';
+        test('found-by: M1 bug with a found-by label is allowed', () => {
+            assert.strictEqual(
+                hook(`${issueCreate} --title x --milestone ${m1} --label bug --label found-by:audit`), null);
+        });
+        test('found-by: M2 bug without a found-by label is denied', () => {
+            assert.ok(denied(`${issueCreate} --title x --milestone ${m2} --label bug`));
+        });
+        test('found-by: M4 bug without a found-by label is denied, with no milestone too', () => {
+            assert.ok(denied(`${issueCreate} --title x --milestone "M4 Bug-Finding Infrastructure" --label bug`));
+            assert.ok(denied(`${issueCreate} --title x --label bug`));
+        });
+        test('found-by: a feature without a found-by label is allowed, also in M1', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --milestone Future --label feature`), null);
+            assert.strictEqual(hook(`${issueCreate} --title x -m M1 --label documentation`), null);
+            assert.strictEqual(hook(`${issueCreate} --title x`), null);
+        });
+        test('found-by: a tracking issue is exempt', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug,tracking`), null);
+            assert.strictEqual(
+                hook(`${issueCreate} --title 'x y' --label 'bug, tracking' --milestone 'M1 Wrong Results'`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug,documentation`));
+            assert.ok(denied(`${issueCreate} --title 'x y' --label 'bug, test' --milestone 'M1 Wrong Results'`));
+        });
+        test('found-by: comma-separated labels count', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug,found-by:matrix`), null);
+            assert.strictEqual(hook(`${issueCreate} --title x --label found-by:operation,bug`), null);
+        });
+        test('found-by: -l short form (stuck and separate) and = form', () => {
+            assert.ok(denied(`${issueCreate} -t x -m M1 -l bug`));
+            assert.ok(denied(`${issueCreate} -t x -lbug`));
+            assert.strictEqual(hook(`${issueCreate} -t x -lbug,found-by:audit`), null);
+            assert.strictEqual(hook(`${issueCreate} -t x -m M2 -l bug,found-by:review`), null);
+            assert.ok(denied(`${issueCreate} -t x --label=bug`));
+        });
+        test('found-by: labels are compared in lower case', () => {
+            assert.ok(denied(`${issueCreate} --title x --label Bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label Bug --label Found-By:Audit`), null);
+        });
+        test('found-by: only the five found-by labels count', () => {
+            assert.ok(denied(`${issueCreate} --title x --label bug,found-by:`));
+            assert.ok(denied(`${issueCreate} --title x --label bug --label found-by:fuzz`));
+        });
+        test('found-by: --body-file without labels is denied for a bug', () => {
+            assert.ok(denied(`${issueCreate} --title x --body-file tmp/good.md --label bug`));
+        });
+        test('found-by: a later command or line is not mixed in', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x && echo -l bug`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug\necho -l found-by:audit`));
+            assert.ok(denied(`${issueCreate} --title x --label bug && echo --label found-by:audit`));
+        });
+        test('found-by: a bash line continuation is one command', () => {
+            assert.ok(denied(`${issueCreate} --title x \\\n  --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug \\\n  --label found-by:audit`), null);
+        });
+        test('found-by: a PowerShell backtick continuation is one command', () => {
+            assert.ok(denied(`${issueCreate} --title x \`\n  --label bug`, 'PowerShell'));
+            assert.strictEqual(
+                hook(`${issueCreate} --title x --label bug \`\n  --label found-by:audit`, 'PowerShell'), null);
+        });
+        test('found-by: a heredoc body that quotes a command is data', () => {
+            const body = `${issueCreate} --title y --label bug`;
+            const feature = `${issueCreate} --title x --label feature --body-file - <<'EOF'`;
+            assert.strictEqual(hook(`${feature}\n${body}\nEOF`), null);
+            const bug = `${issueCreate} --title x --label bug --body-file - <<'EOF'`;
+            assert.ok(denied(`${bug}\n--label found-by:audit\nEOF`));
+        });
+        test('found-by: a PowerShell array of labels', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label "bug","found-by:audit"`, 'PowerShell'), null);
+        });
+        test('found-by: -R / --repo before the subcommand, and the alias new', () => {
+            assert.ok(denied('gh -R owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh --repo owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh issue new --title x --label bug'));
+            assert.ok(denied('gh --repo=owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh -Rowner/name issue create --title x --label bug'));
+            assert.strictEqual(hook('gh --repo=owner/name issue create --title x --label bug,found-by:audit'), null);
+            assert.strictEqual(hook('gh issue new --title x --label bug,found-by:review'), null);
+        });
+        test('found-by: a redirection between the flags does not cut the command', () => {
+            assert.ok(denied(`${issueCreate} --title x 2>&1 --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug 2>&1 --label found-by:audit`), null);
+        });
+        test('found-by: the value of a flag that takes one is not a label', () => {
+            assert.ok(denied(`${issueCreate} --title "-lfound-by:audit" --label bug`));
+            assert.ok(denied(`${issueCreate} --body "--label found-by:audit" --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title "-lbug" --label feature`), null);
+        });
+        test('found-by: the dialect of the tool decides how a quote is read', () => {
+            // PowerShell: the backslash is no escape, the title ends at the second quote and --label bug counts.
+            // bash: \" is an escaped quote, so the rest is part of the title and the issue has no label.
+            const command = `${issueCreate} --title "a \\" --label bug`;
+            assert.ok(denied(command, 'PowerShell'));
+            assert.strictEqual(hook(command, 'Bash'), null);
+            assert.strictEqual(hookAnswer(antigravity(command), env).decision, 'deny');
+        });
+        test('found-by: a command substitution, a shell wrapper and gh.exe are read', () => {
+            assert.ok(denied(`url=$(${issueCreate} --title x --label bug)`));
+            assert.strictEqual(hook(`url=$(${issueCreate} --title x --label bug,found-by:audit)`), null);
+            assert.ok(denied(`echo "$(${issueCreate} --title x --label bug)"`));
+            assert.ok(denied(`bash -c "${issueCreate} --title x --label bug"`));
+            assert.strictEqual(hook(`bash -c "${issueCreate} --title x --label bug,found-by:review"`), null);
+            assert.ok(denied(`pwsh -Command "${issueCreate} --title x --label bug"`, 'PowerShell'));
+            assert.ok(denied('gh.exe issue create --title x --label bug', 'PowerShell'));
+            assert.ok(denied('gh.exe -R o/n issue new --title x --label bug', 'PowerShell'));
+        });
+        test('found-by: a bash backtick substitution is read', () => {
+            assert.ok(denied(`url=\`${issueCreate} --title x --label bug\``));
+            assert.ok(denied(`echo "\`${issueCreate} --title x --label bug\`"`));
+            assert.strictEqual(hook(`url=\`${issueCreate} --title x --label bug,found-by:audit\``), null);
+            assert.strictEqual(hook(`echo '\`${issueCreate} --title x --label bug\`'`), null);
+            // an apostrophe inside double quotes does not open a single-quoted span
+            assert.ok(denied(`echo "it's \`${issueCreate} --title x --label bug\`"`));
+        });
+        test('found-by: an escaped backtick is text, not a substitution', () => {
+            assert.strictEqual(hook(`echo "a \\\` ${issueCreate} --title x --label bug \\\`"`), null);
+        });
+        test('found-by: after bash -c the words behind the command string are arguments', () => {
+            assert.strictEqual(hook(`bash -c "echo hi" ${issueCreate} --title x --label bug`), null);
+            assert.strictEqual(hook(`bash -c gh issue create --title x --label bug`), null);
+        });
+        test('found-by: an unquoted cmd /c, cmd //c and pwsh -Command are read', () => {
+            assert.ok(denied(`cmd /c ${issueCreate} --title x --label bug`));
+            assert.ok(denied(`cmd //c ${issueCreate} --title "x y" --label bug`));
+            assert.strictEqual(hook(`cmd /c ${issueCreate} --title x --label bug,found-by:audit`), null);
+            assert.ok(denied(`pwsh -Command ${issueCreate} --title x --label bug`, 'PowerShell'));
+            assert.ok(denied(`powershell -NoProfile -c ${issueCreate} --title x --label bug`, 'PowerShell'));
+            assert.strictEqual(hook(`pwsh -Command ${issueCreate} --title x --label bug,found-by:review`), null);
+        });
+        test('found-by: a PowerShell script block is read', () => {
+            assert.ok(denied(`pwsh -Command { ${issueCreate} --title x --label bug }`, 'PowerShell'));
+            assert.strictEqual(
+                hook(`pwsh -Command { ${issueCreate} --title x --label bug,found-by:audit }`, 'PowerShell'), null);
+        });
+        test('found-by: the denial also reports a number problem', () => {
+            const answer = hook(`${issueCreate} --title "see ${missing}" --label bug`);
+            const reason = answer.hookSpecificOutput.permissionDecisionReason;
+            assert.ok(reason.includes('needs a found-by label'));
+            assert.ok(reason.includes(`${missing} does not exist`));
+        });
+        test('found-by: the repository flag does not backtrack exponentially', () => {
+            const started = Date.now();
+            assert.strictEqual(publishingCommand.test(`gh ${'-R=x '.repeat(1000)}foo`), false);
+            assert.strictEqual(publishingCommand.test(`gh ${'-R=x '.repeat(24)}foo`), false);
+            assert.ok(Date.now() - started < 1000, 'the match took too long');
+            for (const form of ['-R o/n', '--repo o/n', '--repo=o/n', '-Ro/n', '-R=o/n']) {
+                assert.ok(publishingCommand.test(`gh ${form} issue create`), form);
+            }
+        });
+        test('found-by: Antigravity denies a bug without a label', () => {
+            const answer = hookAnswer(antigravity(`${issueCreate} --title x -l bug`), env);
+            assert.strictEqual(answer && answer.decision, 'deny');
         });
         let failed = 0;
         for (const { name, body } of cases) {

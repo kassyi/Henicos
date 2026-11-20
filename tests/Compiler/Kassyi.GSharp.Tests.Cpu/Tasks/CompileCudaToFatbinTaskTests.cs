@@ -124,17 +124,65 @@ public class CompileCudaToFatbinTaskTests
         Assert.False(task.Execute());
     }
 
+    // ptxas lines of nvcc 13.4 for two overloads of a recursive device function
+    private const string SpilledInFibO0 =
+        "ptxas warning : Registers are spilled to local memory in function " +
+        "'_Z39__gsharp_fn_SpillProbe__Kernels__Fib_o0i', 12 bytes spill stores, 12 bytes spill loads\n" +
+        "ptxas info    : Function properties for _Z39__gsharp_fn_SpillProbe__Kernels__Fib_o0i\n" +
+        "    16 bytes stack frame, 12 bytes spill stores, 12 bytes spill loads\n";
+
+    private const string SpilledInFibO1 =
+        "ptxas warning : Registers are spilled to local memory in function " +
+        "'_Z39__gsharp_fn_SpillProbe__Kernels__Fib_o1x', 12 bytes spill stores, 12 bytes spill loads\n" +
+        "ptxas info    : Function properties for _Z39__gsharp_fn_SpillProbe__Kernels__Fib_o1x\n" +
+        "    16 bytes stack frame, 12 bytes spill stores, 12 bytes spill loads\n";
+
+    private const string FibO0Line = "// gsharp:suppress GS0001 __gsharp_fn_SpillProbe__Kernels__Fib_o0\n";
+
     [Fact]
-    public void CompileCudaToFatbinTask_SuppressGs0001Marker_LogsNoSpillWarning()
+    [Scenario(TestScenario.HappyPath)]
+    public void CompileCudaToFatbinTask_SuppressionLineNamesTheFunction_LogsNoGs0001()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel1.cu", FibO0Line + "int __gsharp_fn_SpillProbe__Kernels__Fib_o0(int x);\n");
+        ctx.Runner.NextStandardError = SpilledInFibO0;
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], null);
+
+        Assert.True(task.Execute());
+        Assert.DoesNotContain("GS0001", ctx.BuildEngine.LoggedWarningCodes);
+    }
+
+    // Another overload of the listed function (a kernel without the pragma reaching it is the same case)
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void CompileCudaToFatbinTask_SpillOfAFunctionNotOnTheLine_LogsGs0001()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel1.cu", FibO0Line + "int __gsharp_fn_SpillProbe__Kernels__Fib_o0(int x);\n");
+        ctx.Runner.NextStandardError = SpilledInFibO0 + SpilledInFibO1;
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], null);
+
+        Assert.True(task.Execute());
+        Assert.Single(ctx.BuildEngine.LoggedWarningCodes, static code => code == "GS0001");
+    }
+
+    // The marker without names, as the generator wrote it before it listed names, silences nothing
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void CompileCudaToFatbinTask_MarkerWithoutNames_LogsGs0001()
     {
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel1.cu", "// gsharp:suppress GS0001\ndummy");
-
-        ctx.Runner.NextStandardError = "ptxas warning : 10 bytes spill\nFunction properties for _Z3foo";
+        ctx.Runner.NextStandardError =
+            "ptxas warning : Registers are spilled to local memory in function '_Z3fooi', 8 bytes spill stores, " +
+            "8 bytes spill loads\nptxas info    : Function properties for _Z3fooi\n";
 
         var task = ctx.CreateCudaTask(["kernel1.cu"], null);
+
         Assert.True(task.Execute());
-        Assert.DoesNotContain(ctx.BuildEngine.LoggedWarnings, w => w.Contains("GS0001"));
+        Assert.Single(ctx.BuildEngine.LoggedWarningCodes, static code => code == "GS0001");
     }
 
     [Fact]

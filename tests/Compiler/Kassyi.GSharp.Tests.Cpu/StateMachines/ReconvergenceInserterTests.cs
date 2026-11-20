@@ -66,10 +66,82 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         Assert.Equal(new[] { "Mark(17)" }, lowered);
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("GotoCaseJoinKernel", "Mark(20)", "Mark(21)")]
+    [InlineData("GotoLabelJoinKernel", "Mark(22)", "Mark(23)")]
+    public void Insert_ThreadVariantSwitchCrossSectionJump_ReconvergesAtJoinAndSwitchEnd(string kernel,
+        params string[] expected)
+    {
+        var (lowered, _) = LowerAndAnalyze(kernel);
+        Assert.Equal(expected, lowered);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("ThreadVariantSwitchNoCrossJumpKernel")]
+    [InlineData("UniformSwitchGotoCaseNoJoinKernel")]
+    [InlineData("WhenSwitchNoJoinKernel")]
+    public void Insert_SwitchWithoutSecondEntryJoin_ReconvergesOnlyAtSwitchEnd(string kernel)
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, kernel);
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException($"{kernel} has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+
+        // The join labels become states of the state machine, so count the reconvergence points instead: the switch
+        // region is the only one; a join would add its own
+        Assert.Single(
+            lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public Task Lower_BackwardGotoLoop_EmitsRegionAroundLoop() =>
         VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoop.cs");
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_SwitchSecondEntryJoin_EmitsSwitchJoinRegion() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceSwitchJoin.cs");
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_SwitchSecondEntryChain_EmitsOrderedSwitchJoins() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceSwitchJoinChain.cs");
+
+    // The label of a forward goto in a thread-dependent switch section is also where lanes of another section join, and
+    // the lanes of the forward goto hold the join of an earlier section that another goto of theirs reaches: the goto
+    // goes to the join of its range and keeps every region below the range, that switch join included
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_ForwardGotoToSwitchJoinLabel_LeavesNoRegionBelowItsRange()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "ForwardGotoToSwitchJoinLabelKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("ForwardGotoToSwitchJoinLabelKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+
+        // if ((t & 4) != 0) goto shared;
+        var forwardGoto = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<IfStatementSyntax>()
+            .Single(static branch => branch.Condition is BinaryExpressionSyntax
+            {
+                Left: ParenthesizedExpressionSyntax
+                {
+                    Expression: BinaryExpressionSyntax { Right: LiteralExpressionSyntax { Token.ValueText: "4" } }
+                }
+            });
+        Assert.DoesNotContain(
+            forwardGoto.Statement.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionLeave));
+    }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]

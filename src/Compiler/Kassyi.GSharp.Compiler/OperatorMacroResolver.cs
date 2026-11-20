@@ -108,8 +108,7 @@ internal static class OperatorMacroResolver
                 : OperatorMacroMessages.Lifted(op));
         }
 
-        if (macroAttr.ConstructorArguments[0].Value is not INamedTypeSymbol targetType ||
-            macroAttr.ConstructorArguments[1].Value is not string targetMethodName)
+        if (!TryGetTargetName(macroAttr, out var targetType, out var targetMethodName))
         {
             return Failed(operatorCall, null);
         }
@@ -147,6 +146,35 @@ internal static class OperatorMacroResolver
 
         return new OperatorMacro(operatorCall, method, hasContext, null, target, operatorMethod.ReturnType,
             nested?.ToImmutable() ?? default) { Test = test };
+    }
+
+    /// <summary>
+    /// The device function that a call of the <c>[GpuOperatorMacro]</c> operator <paramref name="operatorMethod"/>
+    /// runs instead of the operator's body; false when the operator is no operator macro or its target does not
+    /// resolve (the analyzer's GSH0003).
+    /// </summary>
+    internal static bool TryGetTarget(IMethodSymbol? operatorMethod, Compilation compilation,
+        [NotNullWhen(true)] out IMethodSymbol? target)
+    {
+        if (operatorMethod != null && GetMacroAttribute(operatorMethod) is { } macroAttr &&
+            TryGetTargetName(macroAttr, out var targetType, out var targetMethodName) &&
+            ResolveOverload(targetType, targetMethodName, operatorMethod, compilation, out _) is var (method, _))
+        {
+            target = method;
+            return true;
+        }
+
+        target = null;
+        return false;
+    }
+
+    // The type and the method name that the attribute names as the target
+    private static bool TryGetTargetName(AttributeData macroAttr, [NotNullWhen(true)] out INamedTypeSymbol? targetType,
+        [NotNullWhen(true)] out string? targetMethodName)
+    {
+        targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
+        targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
+        return targetType != null && targetMethodName != null;
     }
 
     // The operator macro that <operand> (an operand of <operatorCall>, of the operator's parameter type <operandType>)

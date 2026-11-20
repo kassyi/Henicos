@@ -21,7 +21,9 @@ public class PrivateFieldTypeDiagnosticsTests
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync(TestCase, dialect);
 
         // A converted struct, a struct copied as one block, a private nested type that is converted itself, the same
-        // type one struct deeper, and a private element type of an array field
+        // type one struct deeper, and a private element type of an array field; then a private enum as the element of
+        // an array field and as the value of a Nullable<> field (a private enum as a field is not reported: the
+        // launcher declares it as its underlying type)
         // mutant: LauncherTypeAccess.FindInMember `!compilation.IsSymbolAccessibleWithin(...)` -> `false` -> nothing
         // is reported
         Assert.Equal(
@@ -31,6 +33,8 @@ public class PrivateFieldTypeDiagnosticsTests
                 (DiagnosticOrigin.Analyzer, 86, 50, 86, 75),
                 (DiagnosticOrigin.Analyzer, 93, 46, 93, 61),
                 (DiagnosticOrigin.Analyzer, 100, 44, 100, 63),
+                (DiagnosticOrigin.Analyzer, 108, 46, 108, 67),
+                (DiagnosticOrigin.Analyzer, 116, 49, 116, 73),
             ],
             diagnostics.Ranges(Gsh0108));
     }

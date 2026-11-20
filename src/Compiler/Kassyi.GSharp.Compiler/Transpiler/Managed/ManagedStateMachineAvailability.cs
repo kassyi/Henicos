@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Instantiation;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -11,7 +13,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// built on main (CUDA, without kernels) must not stop building for them. A state machine is left out, and its record
 /// says so (<c>DeviceExportRecord.ManagedStateMachine</c>, GSH0089 for a consumer on the C++ dialect), when it could not
 /// compile: a containing type that is not partial, a file-local type that its body names, that its frame would hold
-/// or that contains it (<see cref="FileLocalNames"/>), or a suspending callee that has no state machine.
+/// or that contains it (<see cref="FileLocalNames"/>), a suspending callee that has no state machine, or a generic
+/// function that uses its type parameters, whose declaration is not transpiled (GSH0123).
 /// </para>
 /// <para>
 /// The frame is as visible as the function (public or internal), narrowed to what the types it holds allow
@@ -200,7 +203,8 @@ internal static class ManagedStateMachineAvailability
             return imported.Record.Traits.PrivateManagedFrame ? Accessibility.Private : widest;
         }
 
-        if (!AreContainingTypesPartial(method) ||
+        if (GenericDefinitions.IsLeftOut(method, compilation) ||
+            !AreContainingTypesPartial(method) ||
             FileLocalNames.BlocksCopy(method, compilation) ||
             !TryGetFrameTypes(method, compilation, out var body, out var frameTypes) ||
             frameTypes

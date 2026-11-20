@@ -121,8 +121,8 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(61873079u, "SwitchSectionS
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1054034139u, "SwitchSectionSharedNamesKernels.cs", 200, 17, "SharedFunctionUsedAboveDeclarationKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1124816167u, "SwitchSectionSharedNamesKernels.cs", 213, 17, "FunctionCallsLaterSectionFunctionKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1607338151u, "SwitchSectionSharedNamesKernels.cs", 217, 17, "FunctionCallsLaterSectionFunctionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2123978041u, "SwitchSectionSharedNamesKernels.cs", 230, 17, "SharedRecursiveFunctionKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1891725859u, "SwitchSectionSharedNamesKernels.cs", 233, 17, "SharedRecursiveFunctionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(9757115u, "SwitchSectionSharedNamesKernels.cs", 231, 17, "SharedRecursiveFunctionKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1662488641u, "SwitchSectionSharedNamesKernels.cs", 234, 17, "SharedRecursiveFunctionKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1914,13 +1914,13 @@ switch(__gsharp_id_1_mode)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 2123978041u)=__gsharp_id_2_Factorial(3);
+__gsharp_array_at(__gsharp_id_0_output, 0, 9757115u)=__gsharp_id_2_Factorial(3);
 break;
 }
 default:
 __gsharp_switch_1_state_default:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 1891725859u)=__gsharp_id_2_Factorial(4);
+__gsharp_array_at(__gsharp_id_0_output, 0, 1662488641u)=__gsharp_id_2_Factorial(4);
 break;
 }
 }

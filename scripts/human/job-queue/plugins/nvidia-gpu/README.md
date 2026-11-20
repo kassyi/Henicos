@@ -22,7 +22,7 @@ Set `GSHARP_GPU_HOLD_WATCH=0` or `GSHARP_GPU_POOL_WATCH=0` to disable either wat
 ```json
 "resources": {
   "gpu": {
-    "slots": 1,
+    "slots": 2,
     "lock": {
       "seats": ["tmp/gpu-test-lock", "tmp/gpu-test-lock-seat1"]
     },

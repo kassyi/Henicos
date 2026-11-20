@@ -94,6 +94,7 @@ internal static class SwitchStatementFlattener
                     new SwitchCaseTarget(
                         semanticModel?.GetDeclaredSymbol<ILabelSymbol>(caseLabel),
                         caseLabel.Value,
+                        i,
                         sectionLabels[i]
                     )
                 );
@@ -152,10 +153,4 @@ internal static class SwitchStatementFlattener
         ImmutableArray<SwitchCaseTarget> CaseTargets,
         string? DefaultLabel,
         string EndLabel);
-
-    /// <summary>A case label of a flattened switch: its label symbol, its value and the label of its section.</summary>
-    /// <param name="Symbol">The label symbol that a <c>goto case</c> binds to, or <see langword="null"/> without a semantic model.</param>
-    /// <param name="Value">The case value, matched by equivalence when a symbol does not resolve.</param>
-    /// <param name="Label">The label of the section that holds the case.</param>
-    internal readonly record struct SwitchCaseTarget(ILabelSymbol? Symbol, ExpressionSyntax Value, string Label);
 }
