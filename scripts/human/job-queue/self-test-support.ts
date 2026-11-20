@@ -70,8 +70,20 @@ export function removeDirectory(directory: string): void {
   }
 }
 
-/** A child process with a promise of its exit code. */
-export type Client = ChildProcess & { done: Promise<number | null> };
+/** A child process with a promise of its exit code, and for a `run` client what it printed to stderr so far. */
+export type Client = ChildProcess & { done: Promise<number | null>; said?: () => string };
+
+/**
+ * The exit codes of `clients`, and what each printed (for the message of a check that compares the codes: a client
+ * that ends otherwise than expected then says why).
+ */
+export async function exitsOf(clients: Client[]): Promise<{ codes: (number | null)[]; said: string }> {
+  const codes = await Promise.all(clients.map((client) => client.done));
+  const said = clients
+    .map((client, i) => `client ${i} (exit ${String(codes[i])}): ${client.said?.() ?? ""}`)
+    .join("\n");
+  return { codes, said };
+}
 
 /** The pid of a process that has exited: a client or a command that is gone. */
 export function deadPid(): number {
@@ -266,8 +278,16 @@ export class QueueFixture {
   // --slots: a scheduler that a client restarts gets the same capacity as the test one.
   readonly client = (port: number, command: string, extra: string[] = []): Client => {
     const args = [EntryScript, "run", "--port", String(port), "--slots", "2", "--weight", "1", ...extra, "--", command];
-    const child = spawn(process.execPath, args, { stdio: "ignore", windowsHide: true, env: this.env }) as Client;
+    const child = spawn(process.execPath, args, {
+      stdio: ["ignore", "ignore", "pipe"],
+      windowsHide: true,
+      env: this.env,
+    }) as Client;
     this.children.push(child);
+    // Read all along, so that the pipe never fills and holds the client up
+    let said = "";
+    child.stderr?.on("data", (data: Buffer) => (said += data.toString()));
+    child.said = () => said;
     child.done = new Promise((resolve) => child.on("close", resolve));
     return child;
   };

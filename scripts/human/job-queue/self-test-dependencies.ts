@@ -9,7 +9,7 @@ import { request } from "./client-connect.ts";
 import { type Incoming, type StatusJob } from "./protocol.ts";
 import { ProcessTable } from "./system.ts";
 import { formatJobId } from "./job-id.ts";
-import { delay, type Client, registration, type QueueFixture, type RawClient } from "./self-test-support.ts";
+import { delay, exitsOf, type Client, registration, type QueueFixture, type RawClient } from "./self-test-support.ts";
 
 export async function checkPlacementAndDependencies(fixture: QueueFixture, port: number): Promise<void> {
   const { env, client, sleeper, exiting, gated, open, dir, ports, startScheduler } = fixture;
@@ -94,7 +94,8 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   assert.strictEqual(secondJob.state, "waiting", "waits although a slot is free");
   assert.strictEqual(secondJob.blockedBy, firstJob.id);
   open(firstGate);
-  assert.deepStrictEqual(await Promise.all([first.done, second.done]), [0, 0], "runs after the predecessor succeeded");
+  const afterSuccess = await exitsOf([first, second]);
+  assert.deepStrictEqual(afterSuccess.codes, [0, 0], `runs after the predecessor succeeded\n${afterSuccess.said}`);
   // A failed predecessor cancels its dependents, along the chain; --keep-if-failed runs anyway
   const failingGate = path.join(dir, "gate-10b");
   const failing = client(port, gated(5, failingGate));
@@ -106,7 +107,8 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   await jobWith(port, exiting(0, 3));
   await jobWith(port, exiting(0, 4));
   open(failingGate);
-  assert.deepStrictEqual(await Promise.all([failing.done, dependent.done, chained.done, kept.done]), [5, 4, 4, 0]);
+  const chain = await exitsOf([failing, dependent, chained, kept]);
+  assert.deepStrictEqual(chain.codes, [5, 4, 4, 0], `a failed predecessor cancels its chain\n${chain.said}`);
   // --after is refused inside a queued job and inside the GPU lock, --gpu or not: waiting there could deadlock
   const refused = (variable: string, extra: string[]) =>
     spawnSync(
@@ -233,10 +235,11 @@ export async function checkPlacementAndDependencies(fixture: QueueFixture, port:
   await jobWith(port, exiting(0, 11));
   await request(port, { type: "stop" });
   open(reconnectGate); // the clients start the next scheduler themselves; the command ends meanwhile
+  const acrossRestart = await exitsOf([ending, following]);
   assert.deepStrictEqual(
-    await Promise.all([ending.done, following.done]),
+    acrossRestart.codes,
     [0, 0],
-    "the job after one that ended during a restart runs",
+    `the job after one that ended during a restart runs\n${acrossRestart.said}`,
   );
   // and its outcome stays "succeeded": no job is queued again under its id once it ended
   const endingOutcome = await request(port, { type: "await", id: endingJob.id });
