@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
+using static Kassyi.GSharp.Tests.Cpu.Runtime.ManagedStackPoolContexts;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
@@ -17,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 [Collection(TestCollections.DeviceExclusive)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Runtime)]
-public class ManagedStackPoolTests
+public partial class ManagedStackPoolTests
 {
     private static readonly TimeSpan s_joinTimeout = TimeSpan.FromSeconds(60);
 
@@ -462,107 +463,5 @@ public class ManagedStackPoolTests
         Assert.Null(failure);
         Assert.NotNull(result);
         return result;
-    }
-
-    // Asks for wait notification and records that its Wait was entered
-    private abstract class EnteredWaitContext : SynchronizationContext
-    {
-        private int _entered;
-
-        protected EnteredWaitContext() => SetWaitNotificationRequired();
-
-        public bool Entered => Volatile.Read(ref _entered) != 0;
-
-        protected void MarkEntered() => Volatile.Write(ref _entered, 1);
-    }
-
-    // Fails a wait as <mode> says: the first wait runs <inner> (which throws) before or
-    // after it waits, or every wait throws WaitFailure
-    private sealed class ThrowingContext : EnteredWaitContext
-    {
-        public const string WaitFailure = "the wait of the context failed";
-
-        private readonly WaitFailureMode _mode;
-        private readonly Action _inner;
-        private bool _ranInner;
-
-        public ThrowingContext(WaitFailureMode mode, Action inner)
-        {
-            _mode = mode;
-            _inner = inner;
-        }
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            MarkEntered();
-            if (_mode == WaitFailureMode.EveryWait)
-            {
-                throw new InvalidOperationException(WaitFailure);
-            }
-
-            if (_ranInner)
-            {
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-
-            _ranInner = true;
-            if (_mode == WaitFailureMode.InnerLaunchBeforeTheWait)
-            {
-                _inner();
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-
-            int result = WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            _inner();
-            return result;
-        }
-    }
-
-    // Asks for wait notification and counts the waits that an interruption ended
-    private sealed class FailedWaitContext : SynchronizationContext
-    {
-        private int _failedWaits;
-
-        public FailedWaitContext() => SetWaitNotificationRequired();
-
-        public int FailedWaits => Volatile.Read(ref _failedWaits);
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            try
-            {
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-            catch (ThreadInterruptedException)
-            {
-                Interlocked.Increment(ref _failedWaits);
-                throw;
-            }
-        }
-    }
-
-    // Asks for wait notification, as the WPF dispatcher does, and runs <inner> inside the first wait
-    private sealed class ReentrantContext : EnteredWaitContext
-    {
-        private readonly Action _inner;
-
-        public ReentrantContext(Action inner)
-        {
-            _inner = inner;
-        }
-
-        public bool RanInner { get; private set; }
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            MarkEntered();
-            if (!RanInner)
-            {
-                RanInner = true;
-                _inner();
-            }
-
-            return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-        }
     }
 }
