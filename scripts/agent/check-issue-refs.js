@@ -546,6 +546,13 @@ function selfTest() {
             // an apostrophe inside double quotes does not open a single-quoted span
             assert.ok(denied(`echo "it's \`${issueCreate} --title x --label bug\`"`));
         });
+        test('found-by: an escaped backtick is text, not a substitution', () => {
+            assert.strictEqual(hook(`echo "a \\\` ${issueCreate} --title x --label bug \\\`"`), null);
+        });
+        test('found-by: after bash -c the words behind the command string are arguments', () => {
+            assert.strictEqual(hook(`bash -c "echo hi" ${issueCreate} --title x --label bug`), null);
+            assert.strictEqual(hook(`bash -c gh issue create --title x --label bug`), null);
+        });
         test('found-by: an unquoted cmd /c, cmd //c and pwsh -Command are read', () => {
             assert.ok(denied(`cmd /c ${issueCreate} --title x --label bug`));
             assert.ok(denied(`cmd //c ${issueCreate} --title "x y" --label bug`));
