@@ -21,6 +21,9 @@ public class ManagedStackPoolTests
 {
     private static readonly TimeSpan s_joinTimeout = TimeSpan.FromSeconds(60);
 
+    // Shorter than the join of RunOnNewThread, so that a scheduler that never blocks is reported by its own message
+    private static readonly TimeSpan s_blockTimeout = TimeSpan.FromSeconds(10);
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Run_ManyLaunches_ReusesTheThreads()
@@ -100,28 +103,19 @@ public class ManagedStackPoolTests
                     int local = ManagedGpuContext.ThreadIdxX;
                     if (local == 0)
                     {
-                        // The scheduler waits for this thread now: the interruption ends that wait
-                        scheduler?.Interrupt();
+                        // The interruption ends the scheduler's wait for this thread
+                        InterruptOnceBlocked(scheduler);
                     }
 
                     ManagedGpuContext.__gsharp_stack_block_barrier();
                     interruptedOutput[local] = 1;
                 }));
 
-            var afterOutputs = new int[3][];
-            for (int i = 0; i < afterOutputs.Length; i++)
-            {
-                afterOutputs[i] = RunReverse(threads, 100 * (i + 1));
-            }
-
-            return afterOutputs;
+            return RunLaterLaunches(threads, 100);
         });
 
         Assert.Equal(new int[threads], interruptedOutput);
-        for (int i = 0; i < results.Length; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 100 * (i + 1)), results[i]);
-        }
+        AssertLaterLaunches(results, threads, 100);
 
         // The pooled threads that ran the interrupted launch run a launch of another thread too
         Assert.Equal(ExpectedReverse(64, 7), RunReverse(64, 7));
@@ -163,7 +157,7 @@ public class ManagedStackPoolTests
                             Interlocked.Increment(ref unwound);
                             if (local == 0)
                             {
-                                scheduler?.Interrupt();
+                                InterruptOnceBlocked(scheduler);
                             }
                         }
                     }));
@@ -180,25 +174,25 @@ public class ManagedStackPoolTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData(WaitFailureMode.InnerLaunchBeforeTheWait, 0)]
-    [InlineData(WaitFailureMode.InnerLaunchAfterTheWait, 0)]
-    [InlineData(WaitFailureMode.InnerLaunchAfterTheWait, 3)]
-    [InlineData(WaitFailureMode.EveryWait, 0)]
-    [InlineData(WaitFailureMode.EveryWait, 3)]
+    [InlineData(WaitFailureMode.InnerLaunchBeforeTheWait, false)]
+    [InlineData(WaitFailureMode.InnerLaunchAfterTheWait, false)]
+    [InlineData(WaitFailureMode.InnerLaunchAfterTheWait, true)]
+    [InlineData(WaitFailureMode.EveryWait, false)]
+    [InlineData(WaitFailureMode.EveryWait, true)]
     public void Run_WaitOfTheSchedulerThrows_ThrowsAndLaterLaunchesOfTheThreadGiveTheirResults(WaitFailureMode mode,
-        int launchesBefore)
+        bool launchesFirst)
     {
         const int threads = 8;
         Exception? caught = null;
         bool everyWait = mode == WaitFailureMode.EveryWait;
-        var before = new int[launchesBefore][];
+        int[][] before = [];
 
         var results = RunOnNewThread(() =>
         {
             // Launches of the thread before the failure, so that the failure is not in the thread's first launch
-            for (int i = 0; i < before.Length; i++)
+            if (launchesFirst)
             {
-                before[i] = RunReverse(threads, 1000 * (i + 1));
+                before = RunLaterLaunches(threads, 1000);
             }
 
             // The first wait runs a launch whose kernel fails, before or after it has taken the signal it waited for,
@@ -212,20 +206,14 @@ public class ManagedStackPoolTests
             SynchronizationContext.SetSynchronizationContext(context);
             try
             {
-                caught = Record.Exception(() => RunReverse(threads, 40));
+                caught = Record.Exception(() => RunReverse(threads, 40, () => context.Entered));
             }
             finally
             {
                 SynchronizationContext.SetSynchronizationContext(null);
             }
 
-            var afterOutputs = new int[3][];
-            for (int i = 0; i < afterOutputs.Length; i++)
-            {
-                afterOutputs[i] = RunReverse(threads, 100 * (i + 1));
-            }
-
-            return afterOutputs;
+            return RunLaterLaunches(threads, 100);
         });
 
         if (everyWait)
@@ -237,15 +225,8 @@ public class ManagedStackPoolTests
             Assert.Equal("inner failure", Assert.IsType<ArgumentException>(caught).Message);
         }
 
-        for (int i = 0; i < before.Length; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 1000 * (i + 1)), before[i]);
-        }
-
-        for (int i = 0; i < results.Length; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 100 * (i + 1)), results[i]);
-        }
+        AssertLaterLaunches(before, threads, 1000);
+        AssertLaterLaunches(results, threads, 100);
     }
 
     [Fact]
@@ -258,32 +239,33 @@ public class ManagedStackPoolTests
         var results = RunOnNewThread(() =>
         {
             scheduler = Thread.CurrentThread;
-            // The only GPU thread interrupts the scheduler, which waits for it, then again while the scheduler still
-            // waits for its answer; the launch has no wait after that one
-            Assert.Throws<ThreadInterruptedException>(() =>
-                ManagedStackRunner.Run(1, 1, 1, 1, 1, 1, 0, "Test.InterruptTwice", _ =>
-                {
-                    scheduler?.Interrupt();
-                    Thread.Sleep(100);
-                    scheduler?.Interrupt();
-                }));
+            var context = new FailedWaitContext();
+            SynchronizationContext.SetSynchronizationContext(context);
+            try
+            {
+                // The only GPU thread interrupts the scheduler, which waits for it, then again while the scheduler
+                // still waits for its answer; the launch has no wait after that one
+                Assert.Throws<ThreadInterruptedException>(() =>
+                    ManagedStackRunner.Run(1, 1, 1, 1, 1, 1, 0, "Test.InterruptTwice", _ =>
+                    {
+                        InterruptOnceBlocked(scheduler);
+                        // The first interruption has ended the scheduler's wait; its next wait is the one for the answer
+                        Assert.True(SpinWait.SpinUntil(() => context.FailedWaits > 0, s_blockTimeout),
+                            "The first interruption did not end the scheduler's wait");
+                        InterruptOnceBlocked(scheduler);
+                    }));
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(null);
+            }
 
             // The second interruption came while the scheduler still waited for the answer: it was dropped
             Assert.Equal(1, ManagedStackRunner.DiscardedInterruptsOnThisThread);
-
-            var afterOutputs = new int[3][];
-            for (int i = 0; i < afterOutputs.Length; i++)
-            {
-                afterOutputs[i] = RunReverse(threads, 10 * (i + 1));
-            }
-
-            return afterOutputs;
+            return RunLaterLaunches(threads, 10);
         });
 
-        for (int i = 0; i < results.Length; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 10 * (i + 1)), results[i]);
-        }
+        AssertLaterLaunches(results, threads, 10);
     }
 
     /// <summary>How the <see cref="SynchronizationContext.Wait"/> of the scheduler fails.</summary>
@@ -325,10 +307,7 @@ public class ManagedStackPoolTests
                 }
             }));
 
-        for (int i = 0; i < 3; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 10 * (i + 1)), RunReverse(threads, 10 * (i + 1)));
-        }
+        AssertLaterLaunches(RunLaterLaunches(threads, 10), threads, 10);
     }
 
     [Fact]
@@ -352,10 +331,7 @@ public class ManagedStackPoolTests
 
         Assert.True(SpinWait.SpinUntil(
             () => ManagedStackRunner.AbsorbedInterruptCount - absorbedBefore >= threads, s_joinTimeout));
-        for (int i = 0; i < 3; i++)
-        {
-            Assert.Equal(ExpectedReverse(threads, 10 * (i + 1)), RunReverse(threads, 10 * (i + 1)));
-        }
+        AssertLaterLaunches(RunLaterLaunches(threads, 10), threads, 10);
 
         Assert.Equal(createdBefore, ManagedStackRunner.CreatedThreadCount);
     }
@@ -377,7 +353,7 @@ public class ManagedStackPoolTests
             SynchronizationContext.SetSynchronizationContext(context);
             try
             {
-                return RunReverse(threads, 20);
+                return RunReverse(threads, 20, () => context.Entered);
             }
             finally
             {
@@ -395,19 +371,47 @@ public class ManagedStackPoolTests
         Assert.Equal(ExpectedReverse(threads, 500), inner);
     }
 
-    // Each thread writes <offset> + its index, waits at a barrier, and reads the value of the mirrored thread
-    private static int[] RunReverse(int threads, int offset)
+    // Each thread writes <offset> + its index, waits at a barrier, and reads the value of the mirrored thread.
+    // [WHY] With <entered>, thread 0 first waits until it holds: the scheduler cannot take the answer of thread 0
+    // before its wait, so that wait must block and enter the synchronization context that <entered> watches
+    private static int[] RunReverse(int threads, int offset, Func<bool>? entered = null)
     {
         var scratch = new int[threads];
         var output = new int[threads];
         ManagedStackRunner.Run(1, 1, 1, (uint)threads, 1, 1, 0, "Test.Reverse", _ =>
         {
             int local = ManagedGpuContext.ThreadIdxX;
+            if (local == 0 && entered is not null)
+            {
+                Assert.True(SpinWait.SpinUntil(entered, s_blockTimeout),
+                    "The scheduler's wait did not enter the synchronization context");
+            }
+
             scratch[local] = offset + local;
             ManagedGpuContext.__gsharp_stack_block_barrier();
             output[local] = scratch[threads - 1 - local];
         });
         return output;
+    }
+
+    // Three launches of the calling thread, at the offsets <step>, 2 * <step> and 3 * <step>
+    private static int[][] RunLaterLaunches(int threads, int step)
+    {
+        var outputs = new int[3][];
+        for (int i = 0; i < outputs.Length; i++)
+        {
+            outputs[i] = RunReverse(threads, step * (i + 1));
+        }
+
+        return outputs;
+    }
+
+    private static void AssertLaterLaunches(int[][] outputs, int threads, int step)
+    {
+        for (int i = 0; i < outputs.Length; i++)
+        {
+            Assert.Equal(ExpectedReverse(threads, step * (i + 1)), outputs[i]);
+        }
     }
 
     private static int[] ExpectedReverse(int threads, int offset)
@@ -419,6 +423,19 @@ public class ManagedStackPoolTests
         }
 
         return expected;
+    }
+
+    // Interrupts <scheduler> once it is blocked in its wait for the calling GPU thread.
+    // [WHY] An interruption of a thread that is not blocked stays pending until the thread next blocks, and the
+    // scheduler does not block for a thread whose answer has already come (ManagedBatonSignal.Wait). Interrupted before
+    // it blocks, it would take the interruption in its wait for a later thread, or in none
+    private static void InterruptOnceBlocked(Thread? scheduler)
+    {
+        Assert.NotNull(scheduler);
+        Assert.True(
+            SpinWait.SpinUntil(() => (scheduler.ThreadState & ThreadState.WaitSleepJoin) != 0, s_blockTimeout),
+            "The scheduler did not block in its wait for this GPU thread");
+        scheduler.Interrupt();
     }
 
     private static T RunOnNewThread<T>(Func<T> body) where T : class
@@ -447,9 +464,21 @@ public class ManagedStackPoolTests
         return result;
     }
 
-    // Asks for wait notification and fails a wait as <mode> says: the first wait runs <inner> (which throws) before or
+    // Asks for wait notification and records that its Wait was entered
+    private abstract class EnteredWaitContext : SynchronizationContext
+    {
+        private int _entered;
+
+        protected EnteredWaitContext() => SetWaitNotificationRequired();
+
+        public bool Entered => Volatile.Read(ref _entered) != 0;
+
+        protected void MarkEntered() => Volatile.Write(ref _entered, 1);
+    }
+
+    // Fails a wait as <mode> says: the first wait runs <inner> (which throws) before or
     // after it waits, or every wait throws WaitFailure
-    private sealed class ThrowingContext : SynchronizationContext
+    private sealed class ThrowingContext : EnteredWaitContext
     {
         public const string WaitFailure = "the wait of the context failed";
 
@@ -461,11 +490,11 @@ public class ManagedStackPoolTests
         {
             _mode = mode;
             _inner = inner;
-            SetWaitNotificationRequired();
         }
 
         public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
         {
+            MarkEntered();
             if (_mode == WaitFailureMode.EveryWait)
             {
                 throw new InvalidOperationException(WaitFailure);
@@ -489,21 +518,44 @@ public class ManagedStackPoolTests
         }
     }
 
+    // Asks for wait notification and counts the waits that an interruption ended
+    private sealed class FailedWaitContext : SynchronizationContext
+    {
+        private int _failedWaits;
+
+        public FailedWaitContext() => SetWaitNotificationRequired();
+
+        public int FailedWaits => Volatile.Read(ref _failedWaits);
+
+        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
+        {
+            try
+            {
+                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
+            }
+            catch (ThreadInterruptedException)
+            {
+                Interlocked.Increment(ref _failedWaits);
+                throw;
+            }
+        }
+    }
+
     // Asks for wait notification, as the WPF dispatcher does, and runs <inner> inside the first wait
-    private sealed class ReentrantContext : SynchronizationContext
+    private sealed class ReentrantContext : EnteredWaitContext
     {
         private readonly Action _inner;
 
         public ReentrantContext(Action inner)
         {
             _inner = inner;
-            SetWaitNotificationRequired();
         }
 
         public bool RanInner { get; private set; }
 
         public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
         {
+            MarkEntered();
             if (!RanInner)
             {
                 RanInner = true;

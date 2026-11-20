@@ -40,9 +40,9 @@ function defaultMessages(entry) {
       `check-queued-command.js sent this command through the job queue as: ${plan.command} . ` +
       (plan.split
         ? 'The build was queued as a job of its own, without --gpu, so that the GPU is held only for the ' +
-          'tests: two `queued #<id>` lines, the build first; the tests run only when the build succeeded. '
+          'tests: two `queued j<nnnn>` lines, the build first; the tests run only when the build succeeded. '
         : '') +
-      `Its output starts with \`queued #<id>\`; \`node ${entry} status <id>\` and ` +
+      `Its output starts with \`queued j<nnnn>\`; \`node ${entry} status <id>\` and ` +
       `\`node ${entry} wait <id>\` follow the job.`,
     undecidedNote: (undecided) =>
       'The hook did not queue it by itself, since it cannot tell whether the command uses the GPU ' +

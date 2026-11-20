@@ -143,7 +143,7 @@ async function checkStateFileFormats(fixture: QueueFixture, port: number): Promi
   const afterStub = await rawClient(port);
   afterStub.send({ ...registration("F-after-stub", 1, process.pid), after: 7 });
   assert.ok((await afterStub.until("queued")) !== null);
-  assert.match(String((await unknown.until("cancelled"))?.reason), /#5 lost/, "and counts as lost after it");
+  assert.match(String((await unknown.until("cancelled"))?.reason), /j0005 lost/, "and counts as lost after it");
   // The job of the stub comes back under its id, and its outcome reaches wait and its dependent
   const back = await rawClient(port);
   back.send({ ...registration("F-stub", 1, process.pid), id: 7 });
