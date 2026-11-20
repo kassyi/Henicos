@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const shellReader = require('./check-queued-command/shell-reader.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 
@@ -34,9 +35,18 @@ const branchPattern = /\bissue-(\d{1,6})\b/g;
 // The issue or PR a gh command acts on (gh issue comment 1234)
 const targetPattern = /\bgh\s+(?:issue|pr)\s+(?:comment|edit|close|review|merge)\s+(\d{1,6})\b/g;
 // Commands whose text is published: issue and PR bodies and comments, commits, new branches and worktrees.
-const publishingCommand = /\bgh\s+(?:issue|pr)\s+(?:create|comment|edit|close|review|merge)\b|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b/;
+// `gh -R owner/repo issue create` and the alias `gh issue new` publish too.
+const publishingCommand = new RegExp(
+    String.raw`\bgh\s+(?:(?:-R|--repo)[\s=]\S+\s+)*(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
+    + String.raw`|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b`);
 
-const foundByLabels = ['found-by:audit', 'found-by:matrix', 'found-by:differential', 'found-by:review', 'found-by:operation'];
+const foundByLabels = [
+    'found-by:audit',
+    'found-by:matrix',
+    'found-by:differential',
+    'found-by:review',
+    'found-by:operation',
+];
 
 function fail(message) {
     console.error(message);
@@ -170,65 +180,51 @@ function check(text, repo, lookUpNumbers = lookUp) {
     return { lines, problems };
 }
 
-// Splits a shell command into words (single and double quotes, backslash escapes inside double quotes) and keeps the
-// separators && || ; | and newlines as their own words, so that the arguments of one gh command can be cut out.
-function shellWords(command) {
-    const words = [];
-    let current = '';
-    let inWord = false;
-    const push = () => { if (inWord) words.push(current); current = ''; inWord = false; };
-    for (let i = 0; i < command.length; i++) {
-        const c = command[i];
-        if (c === "'" || c === '"') {
-            inWord = true;
-            for (i++; i < command.length && command[i] !== c; i++) {
-                if (c === '"' && command[i] === '\\' && i + 1 < command.length && '"\\$`'.includes(command[i + 1])) i++;
-                current += command[i];
-            }
-        } else if (/\s/.test(c)) {
-            push();
-            if (c === '\n') words.push(';');
-        } else if (c === ';' || c === '|' || c === '&') {
-            push();
-            let separator = c;
-            if ((c === '|' || c === '&') && command[i + 1] === c) { separator += c; i++; }
-            words.push(separator);
-        } else {
-            inWord = true;
-            current += c;
+// The `gh issue create` flags that take a value: the value is skipped, so that a title such as "-lfound-by:audit"
+// is not read as a label. -l / --label is read on its own.
+const valueFlags = new Set([
+    '-t', '--title', '-b', '--body', '-F', '--body-file', '-m', '--milestone', '-a', '--assignee', '-p', '--project',
+    '-T', '--template', '-R', '--repo',
+]);
+
+// The labels given to the `gh issue create` (or `gh issue new`) that starts a word list, or null when the list is
+// another command. `gh -R owner/repo issue create` is read too.
+function createLabels(list) {
+    let i = 0;
+    if (list.length === 0 || shellReader.programName(list[0]) !== 'gh') return null;
+    for (i = 1; i < list.length && /^(-R|--repo)$/.test(list[i]); i += 2);
+    if (list[i] !== 'issue' || !['create', 'new'].includes(list[i + 1])) return null;
+    const labels = [];
+    for (i += 2; i < list.length; i++) {
+        const w = list[i];
+        if (w === '--label' || w === '-l') {
+            if (i + 1 < list.length) labels.push(list[++i]);
+        } else if (w.startsWith('--label=')) {
+            labels.push(w.slice('--label='.length));
+        } else if (/^-l[^-]/.test(w)) {
+            labels.push(w.slice(2).replace(/^=/, ''));
+        } else if (valueFlags.has(w)) {
+            i++;
         }
     }
-    push();
-    return words;
+    return labels;
 }
 
 // The denial text when a command contains a `gh issue create` with the `bug` label (any milestone, or none) and no
-// `found-by:` label, else null. A `tracking` issue (a table of sub-issues) is exempt. --label / -l is read as `--label v`, `--label=v` and `-lv`; labels may repeat or be comma
-// separated.
-function foundByProblem(command) {
-    const words = shellWords(command);
-    const separators = ['&&', '||', ';', '|', '&'];
-    for (let start = 0; start + 2 < words.length; start++) {
-        if (words[start] !== 'gh' || words[start + 1] !== 'issue' || words[start + 2] !== 'create') continue;
-        const labels = [];
-        for (let i = start + 3; i < words.length && !separators.includes(words[i]); i++) {
-            const w = words[i];
-            const take = (long, short, target) => {
-                if (w === long || w === short) {
-                    if (i + 1 < words.length) target.push(words[++i]);
-                    return true;
-                }
-                if (w.startsWith(`${long}=`)) { target.push(w.slice(long.length + 1)); return true; }
-                if (w.startsWith(short) && !w.startsWith('--')) { target.push(w.slice(2).replace(/^=/, '')); return true; }
-                return false;
-            };
-            take('--label', '-l', labels);
-        }
+// `found-by:` label, else null. A `tracking` issue (a table of sub-issues) is exempt. The command is read by the shell
+// reader of check-queued-command (continued lines, heredoc bodies and redirections) in the dialect of its tool.
+function foundByProblem(command, dialect) {
+    const reader = shellReader.createReader(dialect);
+    for (const segment of reader.splitSegments(command)) {
+        const words = reader.dropPrefixes(reader.words(segment)).map(word => reader.argumentText(word));
+        const labels = createLabels(words);
+        if (labels === null) continue;
         const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
         if (!names.includes('bug') || names.includes('tracking')) continue;
         if (names.some(l => foundByLabels.includes(l))) continue;
         return 'A bug issue needs a found-by label: '
-            + `${foundByLabels.join(', ')}. Add the label of how the bug was found; add the issue to its tracking table.`;
+            + `${foundByLabels.join(', ')}. Add the label of how the bug was found; `
+            + 'in M1 or M2, also add the issue to its tracking table.';
     }
     return null;
 }
@@ -273,11 +269,19 @@ function hookAnswer(input, env) {
         ? String((input.toolCall.args && input.toolCall.args.CommandLine) || '')
         : (input.tool_input && typeof input.tool_input.command === 'string' ? input.tool_input.command : '');
     if (!publishingCommand.test(command)) return null;
-    const foundBy = foundByProblem(command);
+    // PowerShell reads ` as its escape, bash ; Antigravity's run_command runs PowerShell on Windows.
+    const dialect = antigravity || input.tool_name === 'PowerShell' ? 'pwsh' : 'bash';
+    const foundBy = foundByProblem(command, dialect);
     if (foundBy !== null) {
         return antigravity
             ? { decision: 'deny', reason: foundBy }
-            : { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: foundBy } };
+            : {
+                hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'deny',
+                    permissionDecisionReason: foundBy,
+                },
+            };
     }
     const cwd = commandDirectory(input, antigravity, env.processCwd);
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
@@ -371,19 +375,22 @@ function selfTest() {
             const answer = hookAnswer(payload, env);
             assert.match(answer.hookSpecificOutput.additionalContext, /#1\tissue\tOPEN/);
         });
-        const hook = command => hookAnswer({ cwd: root, tool_input: { command } }, env);
-        const denied = command => {
-            const answer = hook(command);
+        const hook = (command, tool = 'Bash') =>
+            hookAnswer({ cwd: root, tool_name: tool, tool_input: { command } }, env);
+        const denied = (command, tool = 'Bash') => {
+            const answer = hook(command, tool);
             const reason = answer === null ? '' : answer.hookSpecificOutput.permissionDecisionReason;
             return answer !== null && answer.hookSpecificOutput.permissionDecision === 'deny'
-                && reason.includes('found-by:audit, found-by:matrix, found-by:differential, found-by:review, found-by:operation')
-                && reason.includes('add the issue to its tracking table');
+                && reason.includes('found-by:audit, found-by:matrix, found-by:differential, found-by:review, '
+                    + 'found-by:operation')
+                && reason.includes('in M1 or M2, also add the issue to its tracking table');
         };
         const issueCreate = ['gh', 'issue', 'create'].join(' ');
         const m1 = '"M1 Wrong Results"';
         const m2 = '"M2 Build Failures & Missing Diagnostics"';
         test('found-by: M1 bug with a found-by label is allowed', () => {
-            assert.strictEqual(hook(`${issueCreate} --title x --milestone ${m1} --label bug --label found-by:audit`), null);
+            assert.strictEqual(
+                hook(`${issueCreate} --title x --milestone ${m1} --label bug --label found-by:audit`), null);
         });
         test('found-by: M2 bug without a found-by label is denied', () => {
             assert.ok(denied(`${issueCreate} --title x --milestone ${m2} --label bug`));
@@ -394,30 +401,75 @@ function selfTest() {
         });
         test('found-by: a feature without a found-by label is allowed, also in M1', () => {
             assert.strictEqual(hook(`${issueCreate} --title x --milestone Future --label feature`), null);
-            assert.strictEqual(hook(`${issueCreate} --title x -m M1 --label tracking`), null);
+            assert.strictEqual(hook(`${issueCreate} --title x -m M1 --label documentation`), null);
             assert.strictEqual(hook(`${issueCreate} --title x`), null);
+        });
+        test('found-by: a tracking issue is exempt', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug,tracking`), null);
+            assert.strictEqual(
+                hook(`${issueCreate} --title 'x y' --label 'bug, tracking' --milestone 'M1 Wrong Results'`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug,documentation`));
+            assert.ok(denied(`${issueCreate} --title 'x y' --label 'bug, test' --milestone 'M1 Wrong Results'`));
         });
         test('found-by: comma-separated labels count', () => {
             assert.strictEqual(hook(`${issueCreate} --title x --label bug,found-by:matrix`), null);
             assert.strictEqual(hook(`${issueCreate} --title x --label found-by:operation,bug`), null);
-            assert.strictEqual(hook(`${issueCreate} --title x --label bug,tracking`), null);
-            assert.ok(denied(`${issueCreate} --title x --label bug,documentation`));
         });
-        test('found-by: -l short form and = form', () => {
+        test('found-by: -l short form (stuck and separate) and = form', () => {
             assert.ok(denied(`${issueCreate} -t x -m M1 -l bug`));
+            assert.ok(denied(`${issueCreate} -t x -lbug`));
+            assert.strictEqual(hook(`${issueCreate} -t x -lbug,found-by:audit`), null);
             assert.strictEqual(hook(`${issueCreate} -t x -m M2 -l bug,found-by:review`), null);
             assert.ok(denied(`${issueCreate} -t x --label=bug`));
         });
-        test('found-by: a quoted label list with spaces, single quotes', () => {
-            assert.ok(denied(`${issueCreate} --title 'x y' --label 'bug, test' --milestone 'M1 Wrong Results'`));
-            assert.strictEqual(hook(`${issueCreate} --title 'x y' --label 'bug, tracking' --milestone 'M1 Wrong Results'`), null);
-            assert.strictEqual(hook(`${issueCreate} --title 'x y' --label 'bug, found-by:audit'`), null);
+        test('found-by: labels are compared in lower case', () => {
+            assert.ok(denied(`${issueCreate} --title x --label Bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label Bug --label Found-By:Audit`), null);
+        });
+        test('found-by: only the five found-by labels count', () => {
+            assert.ok(denied(`${issueCreate} --title x --label bug,found-by:`));
+            assert.ok(denied(`${issueCreate} --title x --label bug --label found-by:fuzz`));
         });
         test('found-by: --body-file without labels is denied for a bug', () => {
             assert.ok(denied(`${issueCreate} --title x --body-file tmp/good.md --label bug`));
         });
-        test('found-by: a later command is not mixed in', () => {
+        test('found-by: a later command or line is not mixed in', () => {
             assert.strictEqual(hook(`${issueCreate} --title x && echo -l bug`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug\necho -l found-by:audit`));
+            assert.ok(denied(`${issueCreate} --title x --label bug && echo --label found-by:audit`));
+        });
+        test('found-by: a bash line continuation is one command', () => {
+            assert.ok(denied(`${issueCreate} --title x \\\n  --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug \\\n  --label found-by:audit`), null);
+        });
+        test('found-by: a PowerShell backtick continuation is one command', () => {
+            assert.ok(denied(`${issueCreate} --title x \`\n  --label bug`, 'PowerShell'));
+            assert.strictEqual(
+                hook(`${issueCreate} --title x --label bug \`\n  --label found-by:audit`, 'PowerShell'), null);
+        });
+        test('found-by: a heredoc body that quotes a command is data', () => {
+            const body = `${issueCreate} --title y --label bug`;
+            const feature = `${issueCreate} --title x --label feature --body-file - <<'EOF'`;
+            assert.strictEqual(hook(`${feature}\n${body}\nEOF`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug --body-file - <<'EOF'\n--label found-by:audit\nEOF`));
+        });
+        test('found-by: a PowerShell array of labels', () => {
+            assert.strictEqual(hook(`${issueCreate} --title x --label "bug","found-by:audit"`, 'PowerShell'), null);
+        });
+        test('found-by: -R / --repo before the subcommand, and the alias new', () => {
+            assert.ok(denied('gh -R owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh --repo owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh issue new --title x --label bug'));
+            assert.strictEqual(hook('gh issue new --title x --label bug,found-by:review'), null);
+        });
+        test('found-by: a redirection between the flags does not cut the command', () => {
+            assert.ok(denied(`${issueCreate} --title x 2>&1 --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug 2>&1 --label found-by:audit`), null);
+        });
+        test('found-by: the value of a flag that takes one is not a label', () => {
+            assert.ok(denied(`${issueCreate} --title "-lfound-by:audit" --label bug`));
+            assert.ok(denied(`${issueCreate} --body "--label found-by:audit" --label bug`));
+            assert.strictEqual(hook(`${issueCreate} --title "-lbug" --label feature`), null);
         });
         test('found-by: Antigravity denies a bug without a label', () => {
             const answer = hookAnswer(antigravity(`${issueCreate} --title x -l bug`), env);
