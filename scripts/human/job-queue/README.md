@@ -133,7 +133,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
-| `lib/seat-lock.js` | Generic 1-or-2-seat directory lock (`exclusive` and `shared` acquisition, per-seat stale takeover including `acquiring`, `stage` transitions, cleanup) |
+| `lib/seat-lock.js` | Generic 1-or-2-seat directory lock (`exclusive` and `shared` acquisition, per-seat stale takeover including `acquiring`, `stage` transitions, cleanup; an exclusive waiter's intent directory `<seat 0>.exclusive-wait` stops new shared seats so that overlapping shared holders cannot starve it) |
 | `lib/resource-lock.js` | Generic resource lock CLI/runner (`--resource`, `--mode`, 10 s jitter wait backoff, `holderWatch` lifecycle, shared failure overlap report, signal handling) |
 | `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
 | `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js` and `process-liveness.js`) |
@@ -192,8 +192,9 @@ sequenceDiagram
   second shared turn also needs a probe result that is ok, at most `ProbeFreshMs` old and of the current generation
   (the generation grows with every grant, so one result serves one grant); the first needs none, and neither does a
   resource without a probe. A resource the configuration does not name gets one slot and no probe. The forecast
-  assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the running shared
-  turns have run `settleMs`; the server that runs it comes later.
+  assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the command of each
+  running shared turn has held the lock for `settleMs` (from the latest start of its holders, not from the grant; a
+  turn whose command holds nothing yet has not settled). A holder counts on the resource of the turn that started it.
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 

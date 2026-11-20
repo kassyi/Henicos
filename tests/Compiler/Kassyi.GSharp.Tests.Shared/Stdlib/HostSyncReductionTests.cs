@@ -3,6 +3,7 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
+using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
@@ -31,6 +32,8 @@ public class HostSyncReductionTests
     public void ReciprocalMega_DoesNotWaitForQueuedWorkOnOwnStream()
     {
         CudaCapability.EnsureGpuAvailable();
+        Skip.If(DiffPaths.IsCudaCheckedBuild,
+            "The checked build synchronizes the stream after every launch, so the launch itself drains the stream.");
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);

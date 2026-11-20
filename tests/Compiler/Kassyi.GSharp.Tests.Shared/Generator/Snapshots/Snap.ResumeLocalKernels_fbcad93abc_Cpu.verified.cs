@@ -1558,7 +1558,6 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 }
 int __gsharp_id_2_s[4];
-int __gsharp_id_1_Size = 4;
 switch(__gsharp_state)
 {
 case 0:
@@ -3955,7 +3954,6 @@ if(__gsharp_state==0){
 __gsharp_ctx->__gsharp_id_0_a=__gsharp_in___gsharp_id_0_a;
 }
 int __gsharp_id_2_s[4];
-int __gsharp_id_1_Half = 2;
 switch(__gsharp_state)
 {
 case 0:

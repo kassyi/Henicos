@@ -44,7 +44,7 @@ These BCL members are also supported in kernels:
 | `BitOperations.Log2`, `BitOperations.RotateLeft`, `BitOperations.RotateRight` | `uint`, `ulong`, `nuint` |
 | `BitOperations.IsPow2` | `int`, `uint`, `long`, `nint`, `ulong`, `nuint` |
 | `BitOperations.RoundUpToPowerOf2` | `uint`, `ulong`, `nuint` |
-| `Math.Clamp` | `float`, `double`, `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `nint`, `nuint` (`min > max` throws `ArgumentException` in C#; the native CPU build and CUDA do not check it yet, #718) |
+| `Math.Clamp` | `float`, `double`, `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `nint`, `nuint` (`min > max` throws `ArgumentException` in C#; constant bounds with `min > max` are [GSH0122](../diagnostics/GSH0122.md), and the native CPU build and CUDA do not check bounds known only at run time yet, #718) |
 | `Math.Sign` | `sbyte`, `short`, `int`, `long`, `nint` |
 | `Math.Floor`, `Math.Ceiling`, `Math.Round` / `MathF.Floor`, `MathF.Ceiling`, `MathF.Round` | `double` / `float` (one-argument `Round`, which rounds half to even) |
 | `Math.Pow` / `MathF.Pow` | `double` / `float` |
