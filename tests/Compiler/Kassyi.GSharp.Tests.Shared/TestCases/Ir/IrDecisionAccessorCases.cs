@@ -58,6 +58,8 @@ public static class Accessors
     public static void ReadBumpOfRefReadonlyReturn(Holder h, int[] r) { r[0] = Pick(h).Bump; }
     public static void ReadBumpOfRefReadonlyProperty(int[] r) { r[0] = Shared.Counter.Bump; }
     public static void StoreReadonlySetterOfIn(in Counter c) { c.W = 3; }
+    public static void CompoundOfReadonlySetterOfIn(in Counter c) { c.W += 1; }
+    public static void IncrementOfReadonlySetterOfIn(in Counter c) { c.W++; }
     public static void InitializerSetter(int[] r) { var c = new Counter { V = 3 }; r[0] = c.V; }
     public static void ReadIndexer(Counter c, int[] r) { r[0] = c[1]; }
     public static void ReadStaticProperty(int[] r) { r[0] = Counter.Zero; }

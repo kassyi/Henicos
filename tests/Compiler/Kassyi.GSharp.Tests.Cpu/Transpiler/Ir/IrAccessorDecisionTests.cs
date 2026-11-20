@@ -183,6 +183,30 @@ public class IrAccessorDecisionTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Decide_CompoundOfAReadonlySetterOfAnInParameter_TargetHasNoCopy()
+    {
+        var statement = Assert.IsType<IrExpressionStatement>(
+            IrTestCases.Statement(DecideMethod("CompoundOfReadonlySetterOfIn"), 0));
+        var compound = Assert.IsType<IrCompoundAssignment>(statement.Expression);
+        var target = Assert.IsType<IrPropertyReference>(compound.Target);
+        Assert.Equal(IrMemberForm.Getter, target.Decided.Form);
+        Assert.Null(target.Decided.CopyType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Decide_IncrementOfAReadonlySetterOfAnInParameter_TargetHasNoCopy()
+    {
+        var statement = Assert.IsType<IrExpressionStatement>(
+            IrTestCases.Statement(DecideMethod("IncrementOfReadonlySetterOfIn"), 0));
+        var increment = Assert.IsType<IrIncrement>(statement.Expression);
+        var target = Assert.IsType<IrPropertyReference>(increment.Target);
+        Assert.Equal(IrMemberForm.Getter, target.Decided.Form);
+        Assert.Null(target.Decided.CopyType);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Decide_ElementStore_HasNoAccessor()
     {
         var assignment = StatementAssignment(DecideMethod("StoreElement"), 0);

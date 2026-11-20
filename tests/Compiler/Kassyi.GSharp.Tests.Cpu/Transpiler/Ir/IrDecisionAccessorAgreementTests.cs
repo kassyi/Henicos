@@ -45,6 +45,29 @@ public class IrDecisionAccessorAgreementTests(ITestOutputHelper output)
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void EveryStructMember_AccessorDecisionsAgreeWithSyntax()
+    {
+        var counts = new Counts();
+        IrCoverageInputs.ForEach((compilation, trees) =>
+        {
+            foreach (var (_, symbol, built) in IrCoverageInputs.StructMembers(compilation, trees))
+            {
+                ComparePreSplit(compilation, symbol, built, counts);
+            }
+        });
+
+        output.WriteLine(
+            $"Compared struct member accessor decisions: member {counts.Members}, Getter {counts.Getters}, " +
+            $"CopyType {counts.Copies}, assignment {counts.Assignments}, CallsSetter {counts.Setters}, " +
+            $"WritesBackingField {counts.BackingFields}");
+        Assert.True(counts.Members > 0 && counts.BackingFields > 0,
+            "Expected property references and backing field stores in struct members.");
+        Assert.True(counts.Mismatches.IsEmpty,
+            string.Join("\n", counts.Mismatches.OrderBy(static m => m, StringComparer.Ordinal).Take(100)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void EverySplitMethod_PostSplitAccessorDecisionsAgreeWithPreSplit()
     {
         var counts = new Counts();
