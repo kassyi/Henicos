@@ -27,6 +27,15 @@ public static partial class ActionLocalKernels
         void Set() => dst[t] = t + 3;
     }
 
+    // An Action with a type argument stays System_Action<int>: only the one without type arguments is System_Action<>
+    [GpuKernel]
+    public static void ActionOfIntLocalKernel(int[] dst)
+    {
+        int t = ThreadIndex.X;
+        Action<int> f = v => dst[t] = v + 1;
+        f(t);
+    }
+
     // The local is held across the barrier, so the CPU state machine keeps it in its frame
     [GpuKernel]
     public static void ActionAcrossBarrierKernel(int[] dst)

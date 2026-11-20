@@ -83,7 +83,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return true;
         }
 
-        if (TryAppendDelegateType(ref context, typeSymbol))
+        if (TryAppendParameterlessAction(ref context, typeSymbol) || TryAppendDelegateType(ref context, typeSymbol))
         {
             return true;
         }
@@ -107,20 +107,30 @@ public abstract class YamlDialectBase : ITranspilerDialect
                TryAppendMappedType(ref context, typeSymbol);
     }
 
-    // A delegate type that is not Func or Action of System (those are the Prelude aliases) is the std::function of its
-    // Invoke signature on the CPU: MyFn(int) returning int is std::function<int(int)>. A delegate with a ref, out or in
-    // parameter keeps its name. The Action without type arguments is System_Action<>, the alias with an empty argument
-    // list.
-    private bool TryAppendDelegateType(ref TranspileContext context, ITypeSymbol typeSymbol)
+    // System_Action of the Prelude is a variadic alias template, which C++17 names only with its argument list: the
+    // Action of System without type arguments is System_Action<>, the alias with an empty argument list
+    private static bool TryAppendParameterlessAction(ref TranspileContext context, ITypeSymbol typeSymbol)
     {
-        // System_Action of the Prelude is a variadic alias template, which C++17 names only with its argument list
-        if (typeSymbol is INamedTypeSymbol { TypeKind: TypeKind.Delegate, IsGenericType: false, Name: "Action" } action &&
-            action.ContainingNamespace.IsSystemNamespace())
+        if (typeSymbol is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Delegate,
+                IsGenericType: false,
+                Name: "Action"
+            } action ||
+            !action.ContainingNamespace.IsSystemNamespace())
         {
-            context.Emitter.Writer.Append("System_Action<>");
-            return true;
+            return false;
         }
 
+        context.Emitter.Writer.Append("System_Action<>");
+        return true;
+    }
+
+    // A delegate type that is not Func or Action of System (those are the Prelude aliases) is the std::function of its
+    // Invoke signature on the CPU: MyFn(int) returning int is std::function<int(int)>. A delegate with a ref, out or in
+    // parameter keeps its name.
+    private bool TryAppendDelegateType(ref TranspileContext context, ITypeSymbol typeSymbol)
+    {
         if (typeSymbol is not INamedTypeSymbol
             {
                 TypeKind: TypeKind.Delegate,
