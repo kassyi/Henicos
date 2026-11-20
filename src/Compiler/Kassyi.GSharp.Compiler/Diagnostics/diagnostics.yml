@@ -881,6 +881,14 @@
   defaultSeverity: Error
   isEnabledByDefault: true
 
+- name: GenericDeviceFunctionNotCompiled
+  id: GSH0123
+  title: "A generic device function cannot be compiled for the GPU"
+  messageFormat: "'{0}' cannot be compiled for the GPU: {1}."
+  category: GSharpTranspiler
+  defaultSeverity: Error
+  isEnabledByDefault: true
+
 - name: StackLinqChainTooDeep
   id: SLQ0001
   title: "StackLinq method chain is too deep"
