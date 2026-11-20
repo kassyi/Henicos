@@ -14,6 +14,13 @@ internal enum IrMemberForm
     /// <summary>Constant <c>Length</c> of a direct stack array local reference.</summary>
     StackArrayLength,
 
+    /// <summary>
+    /// An instance property with accessor functions of a struct that the native <see cref="ITranspilerDialect"/>
+    /// writes under its encoded name, wherever the property is used (a read, or the target of an assignment or a
+    /// step); a read calls its getter.
+    /// </summary>
+    Getter,
+
     /// <summary>Not handled as one of the forms above (fallback or later passes).</summary>
     Other
 }
