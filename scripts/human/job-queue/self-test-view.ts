@@ -291,6 +291,17 @@ function checkGpuPairsAndReasons(): void {
       .map((j) => j.reason),
     ["mem full", "in line", "after j0911"],
   );
+  // The scheduler's own answer wins over the guess from the totals (which would say "mem full" and "in line")
+  const told: StatusReply = {
+    ...roomy,
+    waiting: [job(912, { memoryMb: 200, waitFor: "in-line" }), job(913, { memoryMb: 50, waitFor: "restart" })],
+  };
+  assert.deepStrictEqual(
+    screenJobs(told)
+      .filter((j) => j.state === "waiting")
+      .map((j) => j.reason),
+    ["in line", "restart"],
+  );
   const lines = renderScreen(
     reply,
     { ...initialViewState(), selectedId: 900 },

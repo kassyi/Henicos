@@ -12,6 +12,7 @@ import { request } from "./client-connect.ts";
 import { RunHistory } from "./history.ts";
 import { type StatusJob, type StatusReply } from "./protocol.ts";
 import { JobIdChecks } from "./job-id-checks.ts";
+import { QueueHintChecks } from "./queue-hint-checks.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
 import { ResourceChecks } from "./resource-checks.ts";
@@ -36,6 +37,8 @@ import { runPluginChecks } from "./plugin-host.ts";
 // How long a test waits for the slot of a lost client to come back: the orphan poll reads the processes through
 // PowerShell on Windows, which can take seconds on a busy machine (a CI runner)
 const OrphanReleaseMs = 30000;
+/** How long a waiting run may take to print its queued line (it prints it as soon as the scheduler answers). */
+const QueuedLineMs = 30000;
 
 /** Checks of the pure helpers: quoting and machine hardware defaults. */
 function checkShellHelpers(): void {
@@ -113,6 +116,7 @@ export async function selfTest(): Promise<void> {
     await named("checkShellHelpers", checkShellHelpers);
     for (const [name, check] of Object.entries({
       ...JobServerChecks,
+      ...QueueHintChecks,
       ...SharedServerChecks,
       ...ProbeChecks,
       ...ClientChecks,
@@ -191,18 +195,28 @@ export async function selfTest(): Promise<void> {
       },
     );
     children.push(asking);
+    // A limit, so that a line that no longer matches fails here with what was printed instead of waiting for ever (the
+    // client waits until the gate below opens)
+    let printed = "";
     const queuedId = await new Promise<number>((resolve) => {
-      let text = "";
+      const limit = setTimeout(() => resolve(0), QueuedLineMs);
       asking.stderr.on("data", (data: Buffer) => {
-        text += data.toString();
-        const match = /queued j(\d+): (\d+) ahead, expected start/.exec(text);
+        printed += data.toString();
+        const match = /queued j(\d+): (\d+) ahead, expected start/.exec(printed);
         if (match) {
+          clearTimeout(limit);
           resolve(Number(match[1]));
         }
       });
-      asking.on("close", () => resolve(0));
+      asking.on("close", () => {
+        clearTimeout(limit);
+        resolve(0);
+      });
     });
-    assert.ok(queuedId > 0, 'run prints "queued j<nnnn>: <n> ahead, expected start ..." while it waits');
+    assert.ok(
+      queuedId > 0,
+      `run prints "queued j<nnnn>: <n> ahead, expected start ..." while it waits; within ${QueuedLineMs} ms it printed: ${JSON.stringify(printed)}`,
+    );
     const one = spawnSync(
       process.execPath,
       [EntryScript, "status", String(queuedId), "--json", "--port", String(port)],

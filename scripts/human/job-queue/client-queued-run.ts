@@ -7,21 +7,25 @@ import { type ChildProcess } from "node:child_process";
 import {
   CancelledExitCode,
   CpusVariable,
+  DigestVariable,
   ForecastNoticeMs,
   JobVariable,
   NoticeIntervalMs,
+  ReasonNoticeMs,
   BaseProtocolVersion,
   TimedOutExitCode,
   TurnVariable,
   UsageExitCode,
 } from "./constants.ts";
-import { describeOutlook } from "./client-commands.ts";
+import { describeOutlook, describeWaitFor } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
+import { environmentHash, VolatileEnv, type EnvironmentHash } from "./environment-hash.ts";
 import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
+import type { ContentDigest } from "./plugin-api.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import {
   numberField,
@@ -37,6 +41,11 @@ import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
 import { formatJobId } from "./job-id.ts";
+
+/** The non-empty notes joined by "; ". */
+function joinNotes(...notes: string[]): string {
+  return notes.filter((note) => note !== "").join("; ");
+}
 
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
@@ -73,6 +82,20 @@ export class QueuedRun {
   private lastNotice = -Infinity;
   private lastPosition = 0;
   private lastStartAt: number | null = null;
+  /** What the job was last told it waits for (Outlook.waitFor): a change is told at once. */
+  private lastWaitFor: unknown = undefined;
+  /** The latest waiting notice whose new reason came too soon after the last notice, and the timer that tells it. */
+  private laterWaiting: Incoming | null = null;
+  private laterTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The digest of the worktree's content when the job was queued (plugins' contentDigest), taken once without waiting
+   * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
+   */
+  private queuedDigest: Promise<ContentDigest | undefined> | null = null;
+  /** The digest at the queue has come (whatever its answer): only then is one taken at the start. */
+  private queuedDigestDone = false;
+  /** The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first registration. */
+  private environment: EnvironmentHash | null = null;
   /** The pause was told (once per run). */
   private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
@@ -218,6 +241,8 @@ export class QueuedRun {
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
+    // Taken beside the start, never before it: the notice must not delay the command
+    void this.tellWorktreeChange(jobId);
     if (this.gpuTurn) {
       // Shared only when this turn asked for "shared" and the scheduler echoes exactly that: an older scheduler, or
       // one that counts the turn as exclusive, sends no echo, and the lock is then taken exclusively
@@ -257,6 +282,38 @@ export class QueuedRun {
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
+  }
+
+  /**
+   * Compares the digest of the worktree's content at the start with the one at the queue, and says so in one line when
+   * they differ: the job runs on what is there now, not on what was there when it was queued. Silent when either has
+   * no digest.
+   */
+  private async tellWorktreeChange(jobId: number): Promise<void> {
+    const queued = this.queuedDigest;
+    // A job granted before its first digest came (a free queue) has nothing to compare: no second git run
+    if (queued === null || !this.queuedDigestDone || this.plugins === undefined) {
+      return;
+    }
+    const now = await this.plugins.contentDigest(this.digestContext(this.plugins));
+    const then = await queued;
+    if (now !== undefined && then !== undefined && now.digest !== then.digest) {
+      const at = new Date(this.queuedAt).toTimeString().slice(0, 5);
+      prefix(`${formatJobId(jobId)}: the worktree changed after it was queued (${at}); it builds what is there now`);
+    }
+  }
+
+  /** The context of the digest hooks: the worktree resolved at the first registration. */
+  private digestContext(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: this.worktree ?? resolveWorktree(cwd),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
   }
 
   private onMessage(message: Incoming): void {
@@ -299,10 +356,12 @@ export class QueuedRun {
   private onQueued(message: Incoming): void {
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
-    const outlook = message.state === "waiting" ? describeOutlook(message, Date.now()) : "";
+    const outlook =
+      message.state === "waiting" ? joinNotes(describeOutlook(message, Date.now()), describeWaitFor(message)) : "";
     // The first waiting notice says the same: skip it
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
+    this.lastWaitFor = message.waitFor;
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
     prefix(
@@ -327,11 +386,39 @@ export class QueuedRun {
     const startAt = typeof message.startAt === "number" ? message.startAt : null;
     const position = numberField(message, "position");
     const moved = Math.abs((startAt ?? 0) - (this.lastStartAt ?? 0)) >= ForecastNoticeMs;
-    if (position !== this.lastPosition || moved || now - this.lastNotice >= NoticeIntervalMs) {
+    // A new reason is told, but no sooner than ReasonNoticeMs after the last notice: a reason that flips back and forth
+    // (slots, in line) as jobs come and go would otherwise print a line each time
+    const changed = message.waitFor !== this.lastWaitFor;
+    const reason = changed && now - this.lastNotice >= ReasonNoticeMs;
+    if (!changed) {
+      this.laterWaiting = null; // back to the reason told: nothing to tell later
+    }
+    if (changed && !reason) {
+      // Told once the limit has passed, if it still holds then (the latest notice is looked at again)
+      this.laterWaiting = message;
+      this.laterTimer ??= setTimeout(
+        () => {
+          this.laterTimer = null;
+          const later = this.laterWaiting;
+          this.laterWaiting = null;
+          if (later !== null && this.state === "waiting") {
+            this.onWaiting(later);
+          }
+        },
+        ReasonNoticeMs - (now - this.lastNotice),
+      ).unref();
+    }
+    if (position !== this.lastPosition || moved || reason || now - this.lastNotice >= NoticeIntervalMs) {
       this.lastPosition = position;
       this.lastStartAt = startAt;
+      this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
-      const outlook = describeOutlook(message, now);
+      // This notice tells the latest reason: a reason kept for later is moot, and its timer counted from the last notice
+      if (this.laterTimer !== null) {
+        clearTimeout(this.laterTimer);
+        this.laterTimer = null;
+      }
+      const outlook = joinNotes(describeOutlook(message, now), describeWaitFor(message));
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(
         `waiting ${formatJobId(this.jobId)}: position ${position}, ${slots} ` +
@@ -486,6 +573,24 @@ export class QueuedRun {
       }
       share = this.share;
     }
+    // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
+    // its own
+    const digests = process.env[DigestVariable] !== "0";
+    if (
+      digests &&
+      this.queuedDigest === null &&
+      this.state === "waiting" &&
+      !this.inGpuLock &&
+      this.plugins !== undefined
+    ) {
+      this.queuedDigest = this.plugins.contentDigest(this.digestContext(this.plugins));
+      void this.queuedDigest.then(() => (this.queuedDigestDone = true));
+    }
+    // Without the variables that differ per run by nature, the core's and the plugins' (a chat session id)
+    const environment = (this.environment ??= environmentHash(process.env, [
+      ...VolatileEnv,
+      ...(this.plugins?.volatileEnv(context(this.plugins)) ?? []),
+    ]));
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -500,6 +605,8 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
+      envHash: environment.hash,
+      envKeys: environment.keys,
       // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
       session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,

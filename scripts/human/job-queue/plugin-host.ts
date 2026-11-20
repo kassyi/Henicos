@@ -14,6 +14,7 @@ import {
   type CheckResult,
   type Classification,
   type ClientContext,
+  type ContentDigest,
   type GrantInfo,
   type PreparedCommand,
   type QueuePlugin,
@@ -214,13 +215,19 @@ export class PluginHost {
       if (elapsed > this.slowHookMs) {
         this.warn(`[job-queue] plugin ${plugin.name}.${hookName} took ${Math.round(elapsed)} ms`);
       }
-      const key = `${pluginIndex}\0${plugin.name}\0${hookName}`;
-      if (!this.warnedFailures.has(key)) {
-        this.warnedFailures.add(key);
-        const message = errorMessage(error);
-        this.warn(`[job-queue] plugin ${plugin.name}.${hookName} failed: ${message}; continuing without it`);
-      }
+      this.warnFailure(pluginIndex, hookName, error);
       return undefined;
+    }
+  }
+
+  /** Warns once per plugin and hook that it failed. */
+  private warnFailure(pluginIndex: number, hookName: string, error: unknown): void {
+    const plugin = this.plugins[pluginIndex] as QueuePlugin;
+    const key = `${pluginIndex}\0${plugin.name}\0${hookName}`;
+    if (!this.warnedFailures.has(key)) {
+      this.warnedFailures.add(key);
+      const message = errorMessage(error);
+      this.warn(`[job-queue] plugin ${plugin.name}.${hookName} failed: ${message}; continuing without it`);
     }
   }
 
@@ -330,6 +337,22 @@ export class PluginHost {
     return undefined;
   }
 
+  /** [all] The names every plugin gives for volatileEnv, in plugin order. */
+  volatileEnv(context: BaseClientContext): string[] {
+    const names: string[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.volatileEnv !== "function") {
+        continue;
+      }
+      const res = this.callHook(i, "volatileEnv", (p) => p.volatileEnv?.(this.contextFor(i, context)));
+      if (Array.isArray(res)) {
+        names.push(...res.filter((name): name is string => typeof name === "string" && name !== ""));
+      }
+    }
+    return names;
+  }
+
   /** [sequential] Chains command rewrites, merges env later-wins, and joins non-empty notes with ", ". */
   prepareCommand(
     command: string,
@@ -384,6 +407,31 @@ export class PluginHost {
       }
     }
     return current;
+  }
+
+  /**
+   * [first, asynchronous] The first valid digest of the worktree's content; undefined when no plugin gives one. A
+   * rejected promise counts as no answer (warned once), like a hook that throws.
+   */
+  async contentDigest(context: BaseClientContext): Promise<ContentDigest | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.contentDigest !== "function") {
+        continue;
+      }
+      const pending = this.callHook(i, "contentDigest", (p) => p.contentDigest?.(this.contextFor(i, context)));
+      let res: unknown;
+      try {
+        res = await pending;
+      } catch (error) {
+        this.warnFailure(i, "contentDigest", error);
+        continue;
+      }
+      if (isPlainObject(res) && typeof res.digest === "string" && res.digest !== "" && typeof res.ms === "number") {
+        return { digest: res.digest, ms: res.ms };
+      }
+    }
+    return undefined;
   }
 
   /** [first] Returns the first valid ViewPanel. */

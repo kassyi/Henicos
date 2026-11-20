@@ -112,6 +112,12 @@ export interface ViewPanel {
   help(data: unknown): LegendEntry[];
 }
 
+/** A digest of a worktree's content (contentDigest) and how long it took. */
+export interface ContentDigest {
+  digest: string;
+  ms: number;
+}
+
 export interface PanelJob {
   readonly id: number;
   readonly worktree: string;
@@ -136,6 +142,12 @@ export interface QueuePlugin {
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;
 
+  /**
+   * [all] Names of environment variables whose values differ from run to run by nature (a chat session id), left out
+   * of the environment hash the scheduler logs per job.
+   */
+  volatileEnv?(context: ClientContext): readonly string[] | undefined;
+
   /** [first] Returns the agent chat session id for the job. */
   session?(context: ClientContext): string | undefined;
 
@@ -144,6 +156,13 @@ export interface QueuePlugin {
 
   /** [sequential] Shortens a command label for the watch view. */
   shortName?(command: string, short: string): string | undefined;
+
+  /**
+   * [first, asynchronous] A digest of the content of context.worktree, taken when a job is queued and again when it
+   * starts: when the two differ, the job says that its worktree changed after it was queued. Undefined: no digest (not
+   * a worktree this plugin knows, or it failed); the job then says nothing.
+   */
+  contentDigest?(context: ClientContext): Promise<ContentDigest | undefined>;
 
   /** [first] Provides the lower panel for the watch view. */
   panel?(context: ClientContext): ViewPanel | undefined;

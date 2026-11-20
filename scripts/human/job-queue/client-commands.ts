@@ -12,7 +12,7 @@ import {
   type StatusReply,
 } from "./protocol.ts";
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
-import { prefix, resolveStateDirectory } from "./system.ts";
+import { prefix, resolveStateDirectory, worktreeKey } from "./system.ts";
 import * as path from "node:path";
 import { formatJobId, type JobRef } from "./job-id.ts";
 
@@ -35,12 +35,21 @@ function formatJob(job: StatusJob, now: number): string {
     job.after != null ? ` after ${formatJobId(job.after)}${job.keepIfFailed ? " (even if it fails)" : ""}` : "",
   ].join("");
   const outlook = describeOutlook(job, now);
-  const blocked = job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end; ` : "";
-  const detail = outlook || blocked ? `\n      ${blocked}${outlook}` : "";
+  // An older scheduler says only what a job waits for after another (blockedBy)
+  const waits = describeWaitFor(job) || (job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end` : "");
+  const detail = outlook || waits ? `\n      ${outlook}${waits && outlook ? "; " : ""}${waits}` : "";
   return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 
-/** "2 ahead, start ~20:31 (in 6m), end ~20:35 (in 10m)" for a waiting job, "end ~20:35 (in 4m)" for a running one. */
+/** The latest end is told when it is this much after the expected end: a shorter gap says nothing new. */
+const LatestEndNoticeMs = 60 * 1000;
+
+/**
+ * "2 ahead, expected start ~20:31 (in 6m), expected end ~20:35 (in 10m)" for a waiting job, "expected end ~20:35 (in
+ * 4m)" for a running one. When its longest recorded run would end a minute or more later, a running job adds ", at
+ * the latest ~20:52"; a waiting one ", if it runs its longest ~20:52", since the jobs ahead of it may take longer
+ * too.
+ */
 export function describeOutlook(outlook: object, now: number): string {
   const view = outlook as Partial<Record<string, unknown>>;
   const { startAt, endAt } = view;
@@ -54,11 +63,49 @@ export function describeOutlook(outlook: object, now: number): string {
   }
   const clock = (time: number): string => new Date(time).toTimeString().slice(0, 5);
   const minutes = (ms: number): string => `${Math.max(0, Math.round(ms / 60000))}m`;
-  const end = `expected end ~${clock(endAt)} (in ${minutes(endAt - now)})`;
+  const { latestEndAt } = view;
+  const latest =
+    typeof latestEndAt === "number" && Number.isFinite(latestEndAt) && latestEndAt - endAt >= LatestEndNoticeMs
+      ? `, ${view.state === "running" ? "at the latest" : "if it runs its longest"} ~${clock(latestEndAt)}`
+      : "";
+  const end = `expected end ~${clock(endAt)} (in ${minutes(endAt - now)})${latest}`;
   if (view.state === "running") {
     return end;
   }
   return `${String(view.ahead)} ahead, expected start ~${clock(startAt)} (in ${minutes(startAt - now)}), ${end}`;
+}
+
+/**
+ * What a waiting job waits for (Outlook.waitFor) in words: "waits for CPU slots", "waits for a turn at gpu", "waits
+ * for j0821 to end"; "" when the scheduler did not say (a running job, an older scheduler).
+ */
+export function describeWaitFor(outlook: object): string {
+  const view = outlook as Partial<Record<string, unknown>>;
+  const resource = typeof view.waitResource === "string" ? view.waitResource : "gpu";
+  switch (view.waitFor) {
+    case "after":
+      return typeof view.blockedBy === "number"
+        ? `waits for ${formatJobId(view.blockedBy)} to end`
+        : "waits for its predecessor";
+    case "away":
+      return "waits for its client to come back";
+    case "restart":
+      return "waits for the running jobs to re-register after a scheduler restart";
+    case "paused":
+      return "waits for the queue to resume";
+    case "gpu":
+      return `waits for a turn at ${resource}`;
+    case "gpu-memory":
+      return `waits for free memory on ${resource}`;
+    case "slots":
+      return "waits for CPU slots";
+    case "memory":
+      return "waits for the memory budget of the test runs";
+    case "in-line":
+      return "waits for the jobs that go first";
+    default:
+      return "";
+  }
 }
 
 function printReplyError(reply: Incoming): void {
@@ -118,13 +165,36 @@ export async function resolveJobRef(
   return process.exit(failCode);
 }
 
-export async function status(port: number, id: number, json: boolean): Promise<void> {
+/**
+ * True when the job was queued from the worktree `here` (a worktreeKey): its worktree is `here`, or for a job of an
+ * older client (which sends none) its directory is `here` or lies inside it.
+ */
+export function isJobHere(job: StatusJob, here: string): boolean {
+  const own = worktreeKey(job.worktree ?? job.cwd);
+  const relative = path.relative(here, own);
+  // An older client sends no worktree: an older scheduler then sends none, a newer one its directory, marked
+  return job.worktree != null && job.worktreeFromCwd !== true
+    ? own === here
+    : relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+/** status: every job, one job (`id`), or with `here` (status --here) the jobs of that worktree only. */
+export async function status(port: number, id: number, json: boolean, here: string | null = null): Promise<void> {
   const raw = await request(port, { type: "status" });
   if (raw !== null && raw.type !== "status") {
     printReplyError(raw);
     return;
   }
-  const reply = raw as StatusReply | null;
+  const all = raw as StatusReply | null;
+  // A filter only: the header keeps the scheduler's totals
+  const reply =
+    all === null || here === null
+      ? all
+      : {
+          ...all,
+          running: all.running.filter((job) => isJobHere(job, here)),
+          waiting: all.waiting.filter((job) => isJobHere(job, here)),
+        };
   if (id > 0) {
     // One job: its state, place and expected times; exit 1 when the scheduler does not know it (ended or never queued)
     const job = reply === null ? undefined : reply.running.concat(reply.waiting).find((j) => j.id === id);
@@ -166,9 +236,10 @@ export async function status(port: number, id: number, json: boolean): Promise<v
         "starts below count from a resume now",
     );
   }
-  lines.push(`running (${reply.running.length}):`);
+  const where = here !== null ? ` in ${here}` : "";
+  lines.push(`running${where} (${reply.running.length}):`);
   reply.running.forEach((job) => lines.push(formatJob(job, now)));
-  lines.push(`waiting (${reply.waiting.length}):`);
+  lines.push(`waiting${where} (${reply.waiting.length}):`);
   reply.waiting.forEach((job) => lines.push(formatJob(job, now)));
   process.stdout.write(`${lines.join("\n")}\n`);
 }

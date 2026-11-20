@@ -2,8 +2,10 @@
 
 import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
+import { MaxEnvKeys } from "./environment-hash.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
 import { isResourceName, type ShareMode } from "./resources.ts";
+import type { WaitFor } from "./scheduler.ts";
 
 export const MaxMemoryMb = 2 ** 20;
 export const MaxKeyLength = 2000;
@@ -48,6 +50,9 @@ export interface JobRequest {
   resource?: string;
   /** "shared": the turn may run beside other shared turns; anything else, and absent, is exclusive. */
   share?: ShareMode;
+  /** The hash of the client's environment and the hash of each variable's value by name (environment-hash.ts). */
+  envHash?: string;
+  envKeys?: Record<string, string>;
 }
 
 export type ClientMessage =
@@ -96,6 +101,8 @@ export interface JobView {
   cwd: string;
   /** The worktree it takes its turns for (absent from older schedulers). */
   worktree?: string;
+  /** The client sent no worktree: `worktree` is its directory (status --here then looks for it below the worktree). */
+  worktreeFromCwd?: true;
   /** The agent chat that queued it, for the chat panel (absent when none was known, and from older schedulers). */
   session?: string;
   command: string;
@@ -125,8 +132,14 @@ export interface Outlook {
   position: number;
   startAt: number | null;
   endAt: number | null;
+  /** The end at its longest recorded run time (absent without a record, and from older schedulers). */
+  latestEndAt?: number;
   /** The predecessor (--after) it waits for, while that one has not ended. */
   blockedBy: number | null;
+  /** What a waiting job waits for (Scheduler.waitFor; absent once it runs, and from older schedulers). */
+  waitFor?: WaitFor;
+  /** The turn resource a job that waits for a turn ("gpu", "gpu-memory") waits for. */
+  waitResource?: string;
 }
 
 export type StatusJob = JobView & Outlook;
@@ -336,6 +349,30 @@ export function keysField(message: Incoming): CommandKeys | undefined {
 /** The `resource` of a JobRequest; undefined when missing or not shaped like a resource name. */
 export function resourceField(message: Incoming): string | undefined {
   return isResourceName(message.resource) ? message.resource : undefined;
+}
+
+/** The `envHash` and `envKeys` of a JobRequest; undefined when missing or not shaped as environment-hash.ts makes them. */
+export function environmentField(message: Incoming): { hash: string; keys: Record<string, string> } | undefined {
+  const { envHash, envKeys } = message;
+  if (typeof envHash !== "string" || !/^[0-9a-f]{1,64}$/.test(envHash)) {
+    return undefined;
+  }
+  if (typeof envKeys !== "object" || envKeys === null || Array.isArray(envKeys)) {
+    return undefined;
+  }
+  const entries = Object.entries(envKeys as Record<string, unknown>);
+  if (entries.length > MaxEnvKeys) {
+    return undefined;
+  }
+  // Without a prototype, so that a variable named "__proto__" stays a plain key
+  const keys = Object.create(null) as Record<string, string>;
+  for (const [name, value] of entries) {
+    if (name.length > 256 || typeof value !== "string" || !/^[0-9a-f]{1,64}$/.test(value)) {
+      return undefined;
+    }
+    keys[name] = value;
+  }
+  return { hash: envHash, keys };
 }
 
 /** The `share` of a JobRequest: "shared" for exactly that string, undefined (exclusive) for anything else. */
