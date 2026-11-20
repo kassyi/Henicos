@@ -98,45 +98,89 @@ internal sealed class ManagedStackThreadPool
         }
         catch
         {
-            if (created > 0)
+            // [WHY] The failure of the rent is what the caller sees. An interruption of the wait for the gate here is
+            // not dropped either: the thread interrupts itself again, so that its next wait throws it, as .NET code does
+            // with an interruption it cannot throw where it arrived
+            if (ReturnTakingTheGate(workers, fromPool + created, created) is not null)
             {
-                lock (_gate)
-                {
-                    _createdThreadCount += created;
-                }
+                Thread.CurrentThread.Interrupt();
             }
 
-            Return(workers, fromPool + created);
             throw;
         }
     }
 
     internal void Return(ManagedStackThread[] workers, int count)
     {
-        lock (_gate)
+        if (ReturnTakingTheGate(workers, count, created: 0) is { } interrupted)
         {
-            for (var i = 0; i < count; i++)
+            ExceptionDispatchInfo.Throw(interrupted);
+        }
+    }
+
+    // Returns <count> workers, and counts <created> threads that Rent started for them, and gives back the interruption
+    // that ended a wait for the gate, for the caller to throw once the workers are back.
+    // [WHY] A contended wait for the gate throws ThreadInterruptedException without the gate. Thrown from here, it
+    // would leave the workers out of the pool, waiting forever for a launch, and the next launch would start new
+    // threads. So the wait is taken again until it gets the gate, as ManagedBaton.HandOver throws only once the two
+    // threads are in step. Every later interruption is waited through as well, since any number of them can come: the
+    // first is the one thrown, and the later ones ask for the same
+    private ThreadInterruptedException? ReturnTakingTheGate(ManagedStackThread[] workers, int count, int created)
+    {
+        ThreadInterruptedException? interrupted = null;
+        while (true)
+        {
+            try
             {
-                // Every worker has left the kernel: the launch unwinds them all before it returns them
-                // (ManagedStackRunner.CancelWaiting)
-                var w = workers[i];
-                w.Launch = null;
-                w.Body = null;
-                w.Failure = null;
-                w.Context = default;
-                if (_idle.Count < MaxIdleThreads)
+                lock (_gate)
                 {
-                    _idle.Push(w);
+                    _createdThreadCount += created;
+                    PushIdle(workers, count);
                 }
-                else
-                {
-                    w.Retire = true;
-                    w.Go.Set();
-                }
+
+                break;
+            }
+            catch (ThreadInterruptedException ex)
+            {
+                // Only the wait for the gate throws it: the body of the lock does not wait
+                interrupted ??= ex;
             }
         }
 
         Array.Clear(workers, 0, count);
+        return interrupted;
+    }
+
+    // Under the gate
+    private void PushIdle(ManagedStackThread[] workers, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            // Every worker has left the kernel: the launch unwinds them all before it returns them
+            // (ManagedStackRunner.CancelWaiting)
+            var w = workers[i];
+            w.Launch = null;
+            w.Body = null;
+            w.Failure = null;
+            w.Context = default;
+            if (_idle.Count < MaxIdleThreads)
+            {
+                _idle.Push(w);
+            }
+            else
+            {
+                w.Retire = true;
+                w.Go.Set();
+            }
+        }
+    }
+
+    // For tests only: holds the gate until the scope is disposed, on the thread that took it, so that a test can make
+    // Rent or Return wait for the gate
+    internal IDisposable HoldGateForTest()
+    {
+        Monitor.Enter(_gate);
+        return new GateScope(_gate);
     }
 
     private static void WorkerLoop(ManagedStackThread self)
@@ -204,5 +248,10 @@ internal sealed class ManagedStackThreadPool
                 Interlocked.Increment(ref _absorbedInterruptCount);
             }
         }
+    }
+
+    private sealed class GateScope(object gate) : IDisposable
+    {
+        public void Dispose() => Monitor.Exit(gate);
     }
 }
