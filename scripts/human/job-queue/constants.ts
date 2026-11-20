@@ -67,6 +67,8 @@ export const GpuLockHeldVariable = "GSHARP_GPU_LOCK_HELD";
 export const CommandVariable = "GSHARP_JOB_QUEUE_COMMAND";
 export const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 export const CpusVariable = "GSHARP_JOB_QUEUE_CPUS";
+/** "0": run takes no digest of the worktree (contentDigest), as for the self-test's clients in a developer's worktree. */
+export const DigestVariable = "GSHARP_JOB_QUEUE_DIGEST";
 export const StateDirectoryVariable = "GSHARP_JOB_QUEUE_STATE_DIR";
 export const ShellVariable = "GSHARP_JOB_QUEUE_SHELL";
 export const PolicyVariable = "GSHARP_JOB_QUEUE_POLICY";

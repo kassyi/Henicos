@@ -7,6 +7,7 @@ import { type ChildProcess } from "node:child_process";
 import {
   CancelledExitCode,
   CpusVariable,
+  DigestVariable,
   ForecastNoticeMs,
   JobVariable,
   NoticeIntervalMs,
@@ -87,6 +88,8 @@ export class QueuedRun {
    * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
    */
   private queuedDigest: Promise<ContentDigest | undefined> | null = null;
+  /** The digest at the queue has come (whatever its answer): only then is one taken at the start. */
+  private queuedDigestDone = false;
   /** The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first registration. */
   private environment: EnvironmentHash | null = null;
   /** The pause was told (once per run). */
@@ -284,7 +287,8 @@ export class QueuedRun {
    */
   private async tellWorktreeChange(jobId: number): Promise<void> {
     const queued = this.queuedDigest;
-    if (queued === null || this.plugins === undefined) {
+    // A job granted before its first digest came (a free queue) has nothing to compare: no second git run
+    if (queued === null || !this.queuedDigestDone || this.plugins === undefined) {
       return;
     }
     const now = await this.plugins.contentDigest(this.digestContext(this.plugins));
@@ -541,8 +545,16 @@ export class QueuedRun {
     }
     // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
     // its own
-    if (this.queuedDigest === null && this.state === "waiting" && !this.inGpuLock && this.plugins !== undefined) {
+    const digests = process.env[DigestVariable] !== "0";
+    if (
+      digests &&
+      this.queuedDigest === null &&
+      this.state === "waiting" &&
+      !this.inGpuLock &&
+      this.plugins !== undefined
+    ) {
       this.queuedDigest = this.plugins.contentDigest(this.digestContext(this.plugins));
+      void this.queuedDigest.then(() => (this.queuedDigestDone = true));
     }
     // Without the variables that differ per run by nature, the core's and the plugins' (a chat session id)
     const environment = (this.environment ??= environmentHash(process.env, [

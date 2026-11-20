@@ -17,6 +17,7 @@ import {
   ProtocolVersion,
   ShellVariable,
   StateDirectoryVariable,
+  DigestVariable,
   TurnVariable,
 } from "./constants.ts";
 import { connect, request } from "./client-connect.ts";
@@ -209,6 +210,7 @@ export class QueueFixture {
     env.GSHARP_GPU_LOCK_PATH = path.join(this.dir, "gpu-lock");
     env.GSHARP_GPU_POOL_WATCH = "0";
     env.GSHARP_GPU_HOLD_WATCH = "0";
+    env[DigestVariable] = "0"; // the clients run in the developer's worktree: no git add -A over it for every job
     this.env = env;
   }
 

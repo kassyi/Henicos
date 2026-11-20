@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 import type { AssertModule, ClientContext } from "../../plugin-api.ts";
 import plugin, { worktreeDigest } from "./plugin.ts";
 
@@ -65,6 +66,8 @@ async function checkDigest(assert: AssertModule): Promise<void> {
     fs.mkdirSync(path.join(repo, "ignored"));
     fs.writeFileSync(path.join(repo, "ignored", "x.txt"), "x\n");
     assert.strictEqual(await worktreeDigest(repo, env), untracked, "an ignored file does not");
+    fs.writeFileSync(path.join(repo, "a.received.txt"), "a failed snapshot\n");
+    assert.strictEqual(await worktreeDigest(repo, env), untracked, "nor does a Verify *.received.* file");
     assert.deepStrictEqual(
       snapshot(path.join(repo, ".git")),
       before,
@@ -92,6 +95,70 @@ async function checkDigest(assert: AssertModule): Promise<void> {
   }
 }
 
+/**
+ * A repository whose settings write into .git on `git add`: a split index (a shared index next to the index) and a
+ * required clean filter (as Git LFS, which stores objects under .git/lfs; here one that leaves a mark in .git). The
+ * digest still works and leaves .git as it was.
+ */
+async function checkWritingSettings(assert: AssertModule): Promise<void> {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-git-settings-"));
+  try {
+    git(repo, "init", "-q");
+    const mark = path.join(repo, ".git", "filtered");
+    const filter = `"${process.execPath.replace(/\\/g, "/")}" -e "require('fs').writeFileSync('.git/filtered','');process.stdin.pipe(process.stdout)"`;
+    git(repo, "config", "filter.mark.clean", filter);
+    git(repo, "config", "filter.mark.required", "true");
+    git(repo, "config", "core.splitIndex", "true");
+    fs.writeFileSync(path.join(repo, ".gitattributes"), "*.txt filter=mark\n");
+    fs.writeFileSync(path.join(repo, "a.txt"), "one\n");
+    git(repo, "add", "-A");
+    git(repo, "-c", "commit.gpgsign=false", "commit", "-q", "-m", "first");
+    assert.ok(fs.existsSync(mark), "the filter runs on a plain git add");
+    assert.ok(
+      fs.readdirSync(path.join(repo, ".git")).some((name) => name.startsWith("sharedindex.")),
+      "the index is split",
+    );
+    fs.rmSync(mark);
+    fs.writeFileSync(path.join(repo, "a.txt"), "two\n");
+    const before = snapshot(path.join(repo, ".git"));
+    assert.match((await worktreeDigest(repo, { ...process.env })) ?? "", /^[0-9a-f]{40,64}$/, "a digest all the same");
+    assert.ok(!fs.existsSync(mark), "the clean filter does not run");
+    assert.deepStrictEqual(snapshot(path.join(repo, ".git")), before, "no shared index or other file is added");
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+}
+
+/** A process that exits during a digest (process.exit, which runs no finally) leaves no scratch folder behind. */
+function checkExitCleansUp(assert: AssertModule): void {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-git-exit-"));
+  try {
+    git(repo, "init", "-q");
+    fs.writeFileSync(path.join(repo, "a.txt"), "one\n");
+    const pluginUrl = pathToFileURL(path.join(import.meta.dirname, "plugin.ts")).href;
+    // Exits as soon as its digest has made a scratch folder, and says which one
+    const script =
+      `import * as fs from "node:fs"; import * as os from "node:os";` +
+      `const before = new Set(fs.readdirSync(os.tmpdir()));` +
+      `const { worktreeDigest } = await import(${JSON.stringify(pluginUrl)});` +
+      `void worktreeDigest(${JSON.stringify(repo)}, process.env);` +
+      `const timer = setInterval(() => { const made = fs.readdirSync(os.tmpdir()).find((n) => n.startsWith("job-queue-digest-") && !before.has(n));` +
+      ` if (made !== undefined) { process.stdout.write(made); process.exit(0); } }, 2);` +
+      `setTimeout(() => { clearInterval(timer); process.exit(3); }, 20000);`;
+    const run = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    assert.strictEqual(run.status, 0, `the digest made a scratch folder: ${run.stderr}`);
+    assert.ok(run.stdout.startsWith("job-queue-digest-"));
+    assert.ok(!fs.existsSync(path.join(os.tmpdir(), run.stdout)), "removed at exit");
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkDigest(assert);
+  await checkWritingSettings(assert);
+  checkExitCleansUp(assert);
 }

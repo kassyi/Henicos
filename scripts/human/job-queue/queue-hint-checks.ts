@@ -10,7 +10,7 @@ import { parseArgs } from "./cli.ts";
 import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
 import type { RunOptions } from "./client.ts";
 import { QueuedRun } from "./client-queued-run.ts";
-import { JobVariable, ProtocolVersion } from "./constants.ts";
+import { DigestVariable, JobVariable, ProtocolVersion } from "./constants.ts";
 import { differingNames, environmentHash, VolatileEnv } from "./environment-hash.ts";
 import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
 import { PluginHost } from "./plugin-host.ts";
@@ -248,16 +248,29 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
   await scheduler.listen();
   process.env.JOB_QUEUE_CHECK_SESSION = "a session";
   try {
-    const cases: [(string | undefined)[], boolean, boolean][] = [
-      [["a", "b"], false, true],
-      [["a", "a"], false, false],
-      [["a", undefined], false, false],
-      [[undefined, "b"], false, false],
-      [["a", "b"], true, false],
+    // slow: the digest at the queue comes only after the grant; off: GSHARP_JOB_QUEUE_DIGEST=0
+    const cases: {
+      digests: (string | undefined)[];
+      inGpuLock?: boolean;
+      told: boolean;
+      calls: number;
+      slow?: boolean;
+      off?: boolean;
+    }[] = [
+      { digests: ["a", "b"], told: true, calls: 2 },
+      { digests: ["a", "a"], told: false, calls: 2 },
+      { digests: ["a", undefined], told: false, calls: 2 },
+      { digests: [undefined, "b"], told: false, calls: 2 },
+      { digests: ["a", "b"], inGpuLock: true, told: false, calls: 0 },
+      { digests: ["a", "b"], slow: true, told: false, calls: 1 },
+      { digests: ["a", "b"], off: true, told: false, calls: 0 },
     ];
-    for (const [index, [digests, inGpuLock, told]] of cases.entries()) {
+    for (const [index, { digests, inGpuLock = false, told, calls: expected, slow, off }] of cases.entries()) {
       const calls: number[] = [];
-      // The digest at the start resolves only once the command has started
+      if (off === true) {
+        process.env[DigestVariable] = "0";
+      }
+      // The digest at the start (or with slow, the one at the queue) resolves only once the command has started
       let release = (): void => {};
       const started = new Promise<void>((resolve) => (release = resolve));
       const plugin: QueuePlugin = {
@@ -266,7 +279,7 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
         volatileEnv: () => ["JOB_QUEUE_CHECK_SESSION"],
         contentDigest: async () => {
           const call = calls.push(calls.length) - 1;
-          if (call === 1) {
+          if (call === (slow === true ? 0 : 1)) {
             await started;
           }
           const digest = digests[call];
@@ -299,19 +312,19 @@ async function checkWorktreeChange(assert: AssertModule): Promise<void> {
         FakeScheduler.send(accepted, { type: "granted", id: 18739, cpus: 1, capacity: 2, protocol: ProtocolVersion });
         await until("the command starts before the digest", () => host.commands.length === 1);
         release();
-        if (!inGpuLock) {
+        if (expected === 2) {
           await until("both digests were taken", () => calls.length === 2);
         }
         await new Promise((resolve) => setTimeout(resolve, 50));
+        delete process.env[DigestVariable];
         accepted.socket.destroy();
         // The client notices the drop and tries to come back (to a host that never connects): keep its note here
         await new Promise((resolve) => setTimeout(resolve, 100));
       });
       const line = /j8739: the worktree changed after it was queued \(\d\d:\d\d\); it builds what is there now/;
-      assert.strictEqual(line.test(text), told, `case ${index}: ${JSON.stringify(digests)}, in the lock ${inGpuLock}`);
-      if (inGpuLock) {
-        assert.deepStrictEqual(calls, [], "a GPU holder takes no digest");
-      }
+      assert.strictEqual(line.test(text), told, `case ${index}: the notice`);
+      // A GPU holder takes none (its turn did), nor does a job whose first digest had not come when it was granted
+      assert.strictEqual(calls.length, expected, `case ${index}: the digests taken`);
     }
   } finally {
     delete process.env.JOB_QUEUE_CHECK_SESSION;
