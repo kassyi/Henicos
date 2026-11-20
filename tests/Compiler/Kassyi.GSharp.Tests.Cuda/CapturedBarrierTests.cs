@@ -3,6 +3,7 @@ using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Tests.Shared.Runtime;
+using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Cuda;
 
@@ -36,6 +37,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_WholeBlockFailsBeforeGridBarrier_WaitersLeaveAtEveryReplay()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         var failing = new int[GraphBlocks * GraphThreads];
         Array.Fill(failing, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
 
@@ -50,6 +52,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_ThreadFailsBeforeMBarrier_WaitersLeaveAtEveryReplay()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         var failing = new int[BlockSize];
         failing[5] = DeviceErrorExitKernels.FailKey;
 
@@ -66,6 +69,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_LateMBarrierArrivalAfterFailedReplay_EveryThreadPassesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         const int Threads = 64;
         long cycles = 20L * GpuClock.RateKilohertz();
         var failing = new int[Threads];
@@ -82,6 +86,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_HealthyGridBarrier_EveryReplayPassesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         return AssertHealthyReplaysAsync(GraphBlocks * GraphThreads,
             static (keys, result, stream) => GridBarrierKernels.LaunchWholeBlockFailsBeforeGridSyncKernelPtr(keys,
                 result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
@@ -92,6 +97,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_HealthyMBarrier_EveryReplayPassesTheBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         return AssertHealthyReplaysAsync(BlockSize,
             static (keys, result, stream) => DeviceErrorExitKernels.LaunchMBarrierFailKernelPtr(keys, result,
                 blockDimX: BlockSize, hStream: stream));
@@ -104,6 +110,7 @@ public sealed class CapturedBarrierTests
     public void GraphLaunch_ThreadsFailBeforeGridBarrier_EveryBlockLeavesBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         AssertEveryBlockLeavesBarrierOfGraph(GridBarrierKernels.FailKey,
             static (keys, rounds, values, result, stream) => GridBarrierKernels.LaunchGridSyncAfterFailKernelPtr(keys,
                 rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
@@ -116,6 +123,7 @@ public sealed class CapturedBarrierTests
     public void GraphLaunch_ThreadsFailBeforeFastGridBarrier_EveryBlockLeavesBarrier()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         AssertEveryBlockLeavesBarrierOfGraph(GridSyncModeKernels.FailKey,
             static (keys, rounds, values, result, stream) => GridSyncModeKernels.LaunchFastSyncAfterFailKernelPtr(keys,
                 rounds, values, result, gridDimX: GraphBlocks, blockDimX: GraphThreads, hStream: stream));
@@ -129,6 +137,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_TwoFailingCooperativeNodes_OneErrorAndUsableContext()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         var failing = new int[GraphBlocks * GraphThreads];
         failing[5] = GridBarrierKernels.FailKey;
         return AssertTwoFailingNodesAsync(failing,
@@ -142,6 +151,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_TwoFailingGridBarrierNodes_OneErrorAndUsableContext()
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         var failing = new int[GraphBlocks * GraphThreads];
         Array.Fill(failing, GridBarrierKernels.FailKey, GraphThreads, GraphThreads);
         return AssertTwoFailingNodesAsync(failing,
@@ -161,6 +171,7 @@ public sealed class CapturedBarrierTests
     public Task GraphLaunch_MixedFailingAndHealthyReplays_EveryReplayIsExact(bool fast, int seed)
     {
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
         return Task.Run(() => AssertMixedReplays(fast, seed)).WaitAsync(TimeSpan.FromMinutes(3));
     }
 

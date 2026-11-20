@@ -394,7 +394,7 @@ internal static class ArrayNullCheck
         }
 
         var location = model.GetReportLocation(node);
-        var memberName = ErrorSiteTable.GetSourceMemberName(location, model.Compilation) ?? currentMemberName ?? "";
+        var memberName = ErrorSiteTable.GetSourceMemberName(node, model) ?? currentMemberName ?? "";
         return new NullCheckSite(table.Register(location, memberName, message, trapKind), "");
     }
 

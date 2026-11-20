@@ -9,8 +9,20 @@ namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 /// </summary>
 internal static class IrDecisionInvariants
 {
-    /// <summary>The violations of a decided tree rooted at <paramref name="root"/>; empty when all hold.</summary>
-    public static ImmutableArray<string> Verify(IrNode root)
+    /// <summary>
+    /// The violations of a decided tree rooted at <paramref name="root"/>; empty when all hold. The rules that read
+    /// through the temporaries of the tree are left out (<see cref="Verify(IrNode, IrTemporaryInitializers)"/>).
+    /// </summary>
+    public static ImmutableArray<string> Verify(IrNode root) => Collect(root, temporaries: null);
+
+    /// <summary>
+    /// The violations of a decided tree rooted at <paramref name="root"/>, the rules that read a temporary as its
+    /// initializer in <paramref name="temporaries"/> included; empty when all hold.
+    /// </summary>
+    public static ImmutableArray<string> Verify(IrNode root, IrTemporaryInitializers temporaries) =>
+        Collect(root, temporaries);
+
+    private static ImmutableArray<string> Collect(IrNode root, IrTemporaryInitializers? temporaries)
     {
         var violations = ImmutableArray.CreateBuilder<string>();
         foreach (var node in IrNodeChildren.DescendantsAndSelf(root))
@@ -45,13 +57,13 @@ internal static class IrDecisionInvariants
                 continue;
             }
 
-            CheckFields(expression, decision, violations);
+            CheckFields(expression, decision, temporaries, violations);
         }
 
         return violations.ToImmutable();
     }
 
-    private static void CheckFields(IrExpression node, IrDecision decision,
+    private static void CheckFields(IrExpression node, IrDecision decision, IrTemporaryInitializers? temporaries,
         ImmutableArray<string>.Builder violations)
     {
         switch (node, decision)
@@ -76,6 +88,7 @@ internal static class IrDecisionInvariants
                 break;
             case (IrAssignment assignment, IrAssignmentDecision assignmentDecision):
                 IrNullDecisionInvariants.CheckAssignment(assignment, assignmentDecision, violations);
+                IrAccessorDecisionInvariants.CheckAssignment(assignment, assignmentDecision, violations);
                 break;
             case (IrNullTest nullTest, IrNullTestDecision nullTestDecision):
                 IrNullDecisionInvariants.CheckNullTest(nullTest, nullTestDecision, violations);
@@ -85,6 +98,12 @@ internal static class IrDecisionInvariants
                 break;
             case (IrPropertyReference member, IrMemberDecision memberDecision):
                 IrNullDecisionInvariants.CheckMember(member, memberDecision, violations);
+                IrAccessorDecisionInvariants.CheckMember(member, memberDecision, violations);
+                if (temporaries is not null)
+                {
+                    IrAccessorDecisionInvariants.CheckCopiedReceiver(member, memberDecision, temporaries, violations);
+                }
+
                 break;
             case (IrCall call, IrCallDecision callDecision):
                 IrCallDecisionInvariants.CheckCall(call, callDecision, violations);

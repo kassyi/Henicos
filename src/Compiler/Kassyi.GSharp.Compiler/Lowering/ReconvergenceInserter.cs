@@ -45,6 +45,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private readonly UniformityAnalysis? _uniformity;
     private readonly MethodDeclarationSyntax? _declaration;
     private readonly bool _isDeviceFunction;
+    private readonly bool _stackForm;
 
     // The regions the statement being rewritten is inside, outermost first
     private readonly ImmutableArray<Region>.Builder _open = ImmutableArray.CreateBuilder<Region>();
@@ -53,12 +54,13 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private readonly ImmutableArray<JumpTarget>.Builder _targets = ImmutableArray.CreateBuilder<JumpTarget>();
 
     private ReconvergenceInserter(SemanticModel? model, UniformityAnalysis? uniformity,
-        MethodDeclarationSyntax? declaration, bool isDeviceFunction)
+        MethodDeclarationSyntax? declaration, bool isDeviceFunction, bool stackForm)
     {
         _model = model;
         _uniformity = uniformity;
         _declaration = declaration;
         _isDeviceFunction = isDeviceFunction;
+        _stackForm = stackForm;
     }
 
     /// <summary>
@@ -77,7 +79,14 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     /// Whether <paramref name="owner"/> is a device function: its parameters count as thread-dependent (a caller may pass
     /// each thread its own value), and its end returns to the caller instead of ending the thread.
     /// </param>
-    public static ReconvergenceInserter? TryCreate(SemanticModel? model, IMethodSymbol? owner, bool isDeviceFunction)
+    /// <param name="stackForm">
+    /// Whether the body runs on a stack of its own (the CPU stack models) rather than as a state machine: the regions
+    /// take the warp frame of the stack (<c>__gsharp_warp_frame</c>) instead of the root and the context, and a lane
+    /// arrives at, waits at and passes the end of a region in one call (<c>__gsharp_stack_warp_reconverge</c>), which
+    /// the state machine splits into an arrive, a state and a pass.
+    /// </param>
+    public static ReconvergenceInserter? TryCreate(SemanticModel? model, IMethodSymbol? owner, bool isDeviceFunction,
+        bool stackForm = false)
     {
         if (model == null || owner == null || !SuspensionAnalysis.ReachesActiveMask(owner, model.Compilation))
         {
@@ -96,7 +105,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             }
         }
 
-        return new ReconvergenceInserter(model, uniformity, declaration, isDeviceFunction);
+        return new ReconvergenceInserter(model, uniformity, declaration, isDeviceFunction, stackForm);
     }
 
     /// <inheritdoc />
@@ -317,7 +326,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         var range = new Region(RegionCount++, statements[index], region, statements, includesFirstLabels);
         _open.Add(range);
         ranges.Add(range);
-        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, range.Site));
+        rewritten.Add(CreateRegionCall(RegionCall.Enter, range.Site));
     }
 
     // __gsharp_ReconvergeJoin_<site>: ; (for ForwardRange) and __gsharp_warp_reconverge_arrive(...); where a jump
@@ -358,7 +367,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             return;
         }
 
-        statements.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, region.Site));
+        statements.Add(CreateRegionCall(RegionCall.Enter, region.Site));
         var rewritten = RewriteStatement(statement, endsThread: false);
         _open.RemoveAt(_open.Count - 1);
         statements.Add(rewritten);
@@ -502,7 +511,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         if (bodyRegion != null && continueLabel != null)
         {
             var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
-            statements.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, bodyRegion.Site));
+            statements.Add(CreateRegionCall(RegionCall.Enter, bodyRegion.Site));
             var bodyStatements = body is BlockSyntax block ? block.Statements : SyntaxFactory.SingletonList(body);
             statements.AddRange(RewriteList(bodyStatements, isKernelBody: false));
             statements.Add(LoweringSyntax.EmptyLabel(continueLabel));
@@ -644,7 +653,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
         for (var i = _open.Count - 1; i >= leaveFrom; i--)
         {
-            statements.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionLeave, _open[i].Site));
+            statements.Add(CreateRegionCall(RegionCall.Leave, _open[i].Site));
         }
 
         statements.Add(jump);
@@ -901,16 +910,27 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         return _uniformity.IsThreadVariant(original);
     }
 
-    // <function>(__gsharp_root, __gsharp_ctx, <site>);
-    private static ExpressionStatementSyntax CreateRegionCall(string function, int site) =>
-        SyntaxFactory.ExpressionStatement(
+    // __gsharp_warp_region_enter(__gsharp_root, __gsharp_ctx, <site>); or, in the stack form,
+    // __gsharp_stack_warp_region_enter(__gsharp_warp_frame, <site>); (leave alike)
+    private ExpressionStatementSyntax CreateRegionCall(RegionCall call, int site)
+    {
+        var function = (call, _stackForm) switch
+        {
+            (RegionCall.Enter, false) => GSharpInternalNames.Prelude.WarpRegionEnter,
+            (RegionCall.Leave, false) => GSharpInternalNames.Prelude.WarpRegionLeave,
+            (RegionCall.Enter, true) => GSharpInternalNames.StackWarp.RegionEnter,
+            _ => GSharpInternalNames.StackWarp.RegionLeave
+        };
+        return SyntaxFactory.ExpressionStatement(
             SyntaxFactory.InvocationExpression(
                 SyntaxFactory.IdentifierName(function),
                 SyntaxFactory.ArgumentList(CreateRegionArguments(site))
             )
         );
+    }
 
-    // __gsharp_warp_reconverge_arrive(__gsharp_root, __gsharp_ctx, <site>, "<place>"); a split point
+    // __gsharp_warp_reconverge_arrive(__gsharp_root, __gsharp_ctx, <site>, "<place>"); a split point, or, in the stack
+    // form, __gsharp_stack_warp_reconverge(__gsharp_warp_frame, <site>, "<place>"); which arrives, waits and passes
     private ExpressionStatementSyntax CreateArrive(int site, SyntaxNode construct)
     {
         var place = SyntaxFactory.LiteralExpression(
@@ -918,7 +938,9 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             SyntaxFactory.Literal(SourcePlace.Format(_model, construct))
         );
         var arrive = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpReconvergeArrive),
+            SyntaxFactory.IdentifierName(_stackForm
+                ? GSharpInternalNames.StackWarp.Reconverge
+                : GSharpInternalNames.Prelude.WarpReconvergeArrive),
             SyntaxFactory.ArgumentList(CreateRegionArguments(site).Add(SyntaxFactory.Argument(place)))
         ).WithAdditionalAnnotations(
             new SyntaxAnnotation(LoweringAnnotations.SyncIntrinsicAnnotationKind, LoweringAnnotations.ReconvergeAnnotationData)
@@ -926,16 +948,31 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         return SyntaxFactory.ExpressionStatement(arrive);
     }
 
-    // __gsharp_root, __gsharp_ctx, <site>
-    private static SeparatedSyntaxList<ArgumentSyntax> CreateRegionArguments(int site) =>
-        SyntaxFactory.SeparatedList<ArgumentSyntax>(
-        [
-            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)),
-            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context)),
-            SyntaxFactory.Argument(
-                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(site))
-            )
-        ]);
+    // __gsharp_root, __gsharp_ctx, <site>; or, in the stack form, __gsharp_warp_frame, <site>
+    private SeparatedSyntaxList<ArgumentSyntax> CreateRegionArguments(int site)
+    {
+        var siteArgument = SyntaxFactory.Argument(
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(site))
+        );
+        return _stackForm
+            ? SyntaxFactory.SeparatedList<ArgumentSyntax>(
+            [
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StackWarp.Frame)),
+                siteArgument
+            ])
+            : SyntaxFactory.SeparatedList<ArgumentSyntax>(
+            [
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)),
+                SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context)),
+                siteArgument
+            ]);
+    }
+
+    private enum RegionCall
+    {
+        Enter,
+        Leave
+    }
 
     // A region: its number (the warp site of its entry count) and the statement it covers
     private sealed record Region(

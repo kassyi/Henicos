@@ -162,6 +162,21 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return true;
         }
 
+        // A floating-point division by a constant zero is the value C# folds it to (an infinity or NaN): MSVC rejects
+        // a constant division by zero (C2124), and the operator would give the same IEEE value at run time
+        if (operation is
+            {
+                OperatorKind: BinaryOperatorKind.Divide,
+                ConstantValue: { HasValue: true } folded,
+                Type: { SpecialType: SpecialType.System_Single or SpecialType.System_Double } floatType,
+                RightOperand.ConstantValue: { HasValue: true, Value: { } divisor }
+            } &&
+            Convert.ToDouble(divisor, CultureInfo.InvariantCulture) == 0)
+        {
+            ConstantAtUse.Append(node, floatType, folded.Value, ref context);
+            return true;
+        }
+
         if (operation is not { ConstantValue: { HasValue: true, Value: bool value }, Type: { } type } ||
             !GpuCodeConstraints.IsString(operation.LeftOperand.Type))
         {

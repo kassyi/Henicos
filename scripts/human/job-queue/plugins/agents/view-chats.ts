@@ -3,6 +3,7 @@
 // view.ts: watch.ts reads the chats and passes them in, so that the self-test draws the panel from fixed records.
 
 import { ScreenLine, type LegendEntry, displayWidth, duration, fit, fitEnd } from "../../screen-line.ts";
+import { formatJobId } from "../../job-id.ts";
 
 /** A chat as listChats() of chat-status.js returns it (the fields the panel reads). */
 export interface ChatRecord {
@@ -214,7 +215,7 @@ export function chatRow(
     line.add(
       `${ids
         .slice(0, MaxJobIds)
-        .map((id) => `#${id}`)
+        .map((id) => `${formatJobId(id)}`)
         .join(" ")} ${more}`,
       "wait",
     );
@@ -303,7 +304,7 @@ export function chatLegend(view: ChatView | null): LegendEntry[] {
     { sample: "…?", style: "warn", text: "a reply that leaves a question open" },
     { sample: "reply", style: "dim", text: "its turn ended with a question" },
     { sample: "(+n)", style: "dim", text: "more questions still open" },
-    { sample: "#n", style: "wait", text: "a job it queued (or of its worktree)" },
+    { sample: "jnnnn", style: "wait", text: "a job it queued (or of its worktree)" },
   ];
   const state = view?.summaries;
   if (state === undefined || state === null) {

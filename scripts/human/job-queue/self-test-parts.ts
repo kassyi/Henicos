@@ -5,6 +5,7 @@ import * as assert from "node:assert";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { formatJobId } from "./job-id.ts";
 import { spawnSync } from "node:child_process";
 import { EntryScript, RegrantMs, StartupGraceMs, StateDirectoryVariable } from "./constants.ts";
 import { request } from "./client-connect.ts";
@@ -230,7 +231,7 @@ export async function checkStart(fixture: QueueFixture, port: number): Promise<v
     windowsHide: true,
   });
   assert.strictEqual(started.status, 0, started.stdout + started.stderr);
-  assert.strictEqual(started.stdout.trim(), `#${queuedJob.id} started over the pool`);
+  assert.strictEqual(started.stdout.trim(), `${formatJobId(queuedJob.id)} started over the pool`);
   await runningWith(port, gated(0, queuedGate));
   assert.strictEqual((await statusOf(port)).used, 2, "it runs beside the first job, over the one slot");
   const unknown = await request(port, { type: "start", id: 999999 });

@@ -485,12 +485,11 @@ int __gsharp_id_3_local = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Differentia
 int __gsharp_id_4_lane = __gsharp_id_3_local&31;
 int __gsharp_id_5_v = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_2_gid, 257973195u);
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_2_gid,17);
-unsigned int __gsharp_id_7_FullMask = 0xFFFFFFFFu;
 bool __gsharp_id_8_allPredicate = (__gsharp_id_5_v&1)==0||((__gsharp_id_3_local>>5)&1)==0;
 bool __gsharp_id_9_anyPredicate = (__gsharp_id_5_v&15)==0&&((__gsharp_id_3_local>>5)&1)==0;
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_6_o+0, 1515035576u)=__ballot_sync(__gsharp_id_7_FullMask,(__gsharp_id_5_v&1)!=0);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,1), 852532226u)=(__all_sync(__gsharp_id_7_FullMask,__gsharp_id_8_allPredicate)?1u:0u);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,2), 1355887588u)=(__any_sync(__gsharp_id_7_FullMask,__gsharp_id_9_anyPredicate)?1u:0u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_6_o+0, 1515035576u)=__ballot_sync(4294967295U,(__gsharp_id_5_v&1)!=0);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,1), 852532226u)=(__all_sync(4294967295U,__gsharp_id_8_allPredicate)?1u:0u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,2), 1355887588u)=(__any_sync(4294967295U,__gsharp_id_9_anyPredicate)?1u:0u);
 unsigned int __gsharp_id_10_halfMask = (__gsharp_id_4_lane<16?0x0000FFFFu:0xFFFF0000u);
 if(__gsharp_id_4_lane<16)
 {
@@ -504,16 +503,16 @@ __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,3), 177
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,4), 59729245u)=(__all_sync(0xFFFF0000u,__gsharp_id_8_allPredicate)?1u:0u);
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,5), 1829421605u)=(__any_sync(0xFFFF0000u,__gsharp_id_9_anyPredicate)?1u:0u);
 }
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,6), 1890267132u)=(unsigned int)__reduce_add_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,7), 793499688u)=(unsigned int)__reduce_min_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,8), 685355360u)=(unsigned int)__reduce_max_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,9), 1750297356u)=(unsigned int)__reduce_and_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v|0x10);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,10), 572188156u)=(unsigned int)__reduce_or_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v&0x0F0F0F0F);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,11), 1470370912u)=(unsigned int)__reduce_xor_sync(__gsharp_id_7_FullMask,__gsharp_id_5_v);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,6), 1890267132u)=(unsigned int)__reduce_add_sync(4294967295U,__gsharp_id_5_v);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,7), 793499688u)=(unsigned int)__reduce_min_sync(4294967295U,__gsharp_id_5_v);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,8), 685355360u)=(unsigned int)__reduce_max_sync(4294967295U,__gsharp_id_5_v);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,9), 1750297356u)=(unsigned int)__reduce_and_sync(4294967295U,__gsharp_id_5_v|0x10);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,10), 572188156u)=(unsigned int)__reduce_or_sync(4294967295U,__gsharp_id_5_v&0x0F0F0F0F);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,11), 1470370912u)=(unsigned int)__reduce_xor_sync(4294967295U,__gsharp_id_5_v);
 unsigned int __gsharp_id_11_u = (unsigned int)__gsharp_id_5_v;
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,12), 993984652u)=__reduce_add_sync(__gsharp_id_7_FullMask,__gsharp_id_11_u);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,13), 435701832u)=__reduce_min_sync(__gsharp_id_7_FullMask,__gsharp_id_11_u);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,14), 383666380u)=__reduce_max_sync(__gsharp_id_7_FullMask,__gsharp_id_11_u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,12), 993984652u)=__reduce_add_sync(4294967295U,__gsharp_id_11_u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,13), 435701832u)=__reduce_min_sync(4294967295U,__gsharp_id_11_u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,14), 383666380u)=__reduce_max_sync(4294967295U,__gsharp_id_11_u);
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,15), 1342354244u)=(unsigned int)__reduce_add_sync(__gsharp_id_10_halfMask,__gsharp_id_5_v);
 __gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_6_o,16), 1760570076u)=__reduce_min_sync(__gsharp_id_10_halfMask,__gsharp_id_11_u);
 }

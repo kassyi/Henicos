@@ -7,7 +7,7 @@ import { request } from "./client-connect.ts";
 import { usageError } from "./client.ts";
 import type { PluginHost } from "./plugin-host.ts";
 import type { ViewPanel } from "./plugin-api.ts";
-import type { ClientMessage, Incoming, StatusReply } from "./protocol.ts";
+import { numberField, type ClientMessage, type Incoming, type StatusReply } from "./protocol.ts";
 import { CommandShell } from "./shell.ts";
 import { resolveWorktree } from "./system.ts";
 import {
@@ -19,6 +19,7 @@ import {
   type Style,
   type ViewState,
 } from "./view.ts";
+import { formatJobId, pickSuffixMatch } from "./job-id.ts";
 
 const RefreshMs = 1000;
 const PanelRefreshMs = 2000;
@@ -77,9 +78,22 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
       if (value <= 0) {
         return { state: note(state, "give a positive number", now) };
       }
+      let before = value;
+      if (prompt.kind === "move" && prompt.digits.length <= 4) {
+        // The digits are the end of a job id shown as j8739: the jobs on screen say which one
+        const picked = pickSuffixMatch(
+          prompt.digits,
+          jobs.map((job) => ({ id: job.id, state: job.state })),
+          [],
+        );
+        if ("error" in picked) {
+          return { state: note(state, picked.error, now) };
+        }
+        before = picked.id;
+      }
       const message: ClientMessage =
         prompt.kind === "move"
-          ? { type: "move", id: prompt.id, before: value }
+          ? { type: "move", id: prompt.id, before }
           : { type: "set-weight", id: prompt.id, weight: value };
       return { state: { ...state, prompt: null }, action: message };
     }
@@ -137,9 +151,9 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
     if (key === "s" && selected.state === "waiting") {
       // what start refuses, said before asking
       const refusal = selected.gpuTurn
-        ? `#${selected.id} waits for the GPU, one job at a time; m f puts it next`
+        ? `${formatJobId(selected.id)} waits for the GPU, one job at a time; m f puts it next`
         : selected.blockedBy != null
-          ? `#${selected.id} waits for #${selected.blockedBy} to end`
+          ? `${formatJobId(selected.id)} waits for ${formatJobId(selected.blockedBy)} to end`
           : null;
       return refusal === null
         ? { state: { ...state, help: 0, prompt: { kind: "start", id: selected.id } } }
@@ -147,7 +161,7 @@ export function reduceKey(state: ViewState, key: string, reply: StatusReply | nu
     }
     if (selected.state !== "waiting") {
       return {
-        state: note(state, `#${selected.id} already runs; only a waiting job can ${Verbs[key]}`, now),
+        state: note(state, `${formatJobId(selected.id)} already runs; only a waiting job can ${Verbs[key]}`, now),
       };
     }
     return {
@@ -168,11 +182,14 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
   if (reply.type === "cancel-result" && Array.isArray(reply.cancelled)) {
     const cancelled = reply.cancelled as number[];
     return cancelled.length > 0
-      ? { text: `cancelled ${cancelled.map((id) => `#${id}`).join(" ")}`, style: "run" }
-      : { text: `no job #${message.type === "cancel" ? String(message.id) : "?"}`, style: "warn" };
+      ? { text: `cancelled ${cancelled.map((id) => formatJobId(id)).join(" ")}`, style: "run" }
+      : {
+          text: `no job ${message.type === "cancel" && message.id !== undefined ? formatJobId(message.id) : "?"}`,
+          style: "warn",
+        };
   }
   if (reply.type === "start-result") {
-    return { text: `#${String(reply.id)} started over the pool`, style: "run" };
+    return { text: `${formatJobId(numberField(reply, "id"))} started over the pool`, style: "run" };
   }
   if (reply.type === "pause-result") {
     const paused = reply.paused === true;
@@ -182,7 +199,10 @@ export function describeResult(message: ClientMessage, reply: Incoming | null): 
   if (reply.type === "move-result") {
     const position = Number(reply.position);
     return {
-      text: position > 0 ? `#${String(reply.id)} is now at position ${position}` : `#${String(reply.id)} was granted`,
+      text:
+        position > 0
+          ? `${formatJobId(numberField(reply, "id"))} is now at position ${position}`
+          : `${formatJobId(numberField(reply, "id"))} was granted`,
       style: "run",
     };
   }

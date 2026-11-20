@@ -71,9 +71,8 @@ public static class Nulls
     {
         r[0] = (pick ?? b)[i];
     }
-    // Legacy parity only: #2152 ([Bug]: An array element at a nuint index above long.MaxValue throws
-    // IndexOutOfRangeException instead of OverflowException on the native CPU and checked CUDA paths).
     public static void ReadNUIntIndex(int[] a, nuint i, int[] r) { r[0] = a[i]; }
+    public static void ReadNIntIndex(int[] a, nint i, int[] r) { r[0] = a[i]; }
     public static void LengthOfParenthesizedNullForgiven(int[]? a, int[] r) { r[0] = (a!).Length; }
 
     private static int[] Pick(int[] a, int unused) => a;

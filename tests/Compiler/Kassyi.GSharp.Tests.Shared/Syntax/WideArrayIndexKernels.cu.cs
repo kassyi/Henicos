@@ -463,4 +463,67 @@ public static partial class WideArrayIndexKernels
             a[index] = Side(side);
         }
     }
+
+    [GpuKernel]
+    public static void ReadNUIntIndexKernel(int[] a, nuint index, int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = a[index];
+        }
+    }
+
+    [GpuKernel]
+    public static void WriteNUIntIndexKernel(int[] a, nuint index, int value)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[index] = value;
+        }
+    }
+
+    // A warp shuffle on the right side: lowering spills the target's array and nuint index before the shuffle
+    [GpuKernel]
+    public static void WriteNUIntIndexShuffleKernel(int[] a, nuint index, int value)
+    {
+        a[index] = Warp.ShuffleSync(1u, value, 0);
+    }
+
+    [GpuDeviceFunction]
+    private static int ReadUncheckedNUIntDevice(int[] a, nuint index) => a[index];
+
+    [GpuKernel]
+    public static void ReadUncheckedNUIntIndexKernel(int[] a, nuint index, int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = ReadUncheckedNUIntDevice(a, index);
+        }
+    }
+
+    [GpuKernel]
+    public static void ReadConvertedULongIndexKernel(int[] a, WideULongIndex index, int[] o)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            o[0] = a[index];
+        }
+    }
+
+    [GpuKernel]
+    public static void WriteConvertedULongIndexKernel(int[] a, WideULongIndex index, int value)
+    {
+        if (ThreadIndex.X == 0)
+        {
+            a[index] = value;
+        }
+    }
+}
+
+/// <summary>An index wrapper that C# converts to <see cref="ulong"/> through a user-defined implicit conversion.</summary>
+public struct WideULongIndex
+{
+    public ulong Value;
+
+    public static implicit operator ulong(WideULongIndex index) => index.Value;
 }

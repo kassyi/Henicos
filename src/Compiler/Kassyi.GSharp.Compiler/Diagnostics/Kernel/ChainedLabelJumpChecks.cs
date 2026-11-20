@@ -78,8 +78,8 @@ internal static class ChainedLabelJumpChecks
     /// The one definition for the analyzer and the generator, so both report the same diagnostics; the generator
     /// reports GSH0040 too for the gotos across a barrier, as the analyzer does, since a build without the analyzers
     /// would otherwise pass with the managed body left out. The goto of the
-    /// lowered body is found again in the user's source by its reported place, and its label by name among the labels
-    /// of the method, as GSH0040 finds it. The barriers are the calls that run (<see cref="RemovedCalls"/>) and
+    /// lowered body is found again in the user's source by its reported place, and its label as GSH0040 finds it
+    /// (<see cref="CrossBarrierChecks.FindTargetLabel"/>). The barriers are the calls that run (<see cref="RemovedCalls"/>) and
     /// <see cref="KernelConstructChecks.IsBarrierCall"/> accepts; in a device iterator, where the scan collects none
     /// and reports each split point as GSH0072, a goto across one is left to that error.
     /// </remarks>
@@ -98,18 +98,18 @@ internal static class ChainedLabelJumpChecks
         {
             var location = semanticModel.GetReportLocation(jump.Goto);
             var crossesBarrier = false;
-            if (location.SourceTree is { } tree &&
-                tree.GetRoot().FindNode(location.SourceSpan).FirstAncestorOrSelf<GotoStatementSyntax>() is { } sourceGoto)
+            // The goto of the compilation, beside the barriers and labels of <method>: for a closed copy of a generic
+            // declaration the report location is in the user's tree, not the copy's
+            if (semanticModel.GetCompilationNode(jump.Goto)?.FirstAncestorOrSelf<GotoStatementSyntax>() is
+                { } sourceGoto)
             {
                 if (barriers is null || labels is null)
                 {
                     (barriers, labels) = CollectBarriersAndLabels(method, semanticModel);
                 }
 
-                crossesBarrier = labels
-                        .AsStackEnumerable()
-                        .FirstOrDefault(jump.Label, static (label, name) => label.Identifier.ValueText == name) is
-                        { } target &&
+                crossesBarrier =
+                    CrossBarrierChecks.FindTargetLabel(labels, sourceGoto, semanticModel) is { } target &&
                     CrossBarrierChecks.IsCrossBarrierGoto(barriers, sourceGoto, target);
             }
 

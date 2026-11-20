@@ -5472,7 +5472,6 @@ __gsharp_ctx->__gsharp_id_2_c=__gsharp_in___gsharp_id_2_c;
 __gsharp_ctx->__gsharp_id_3_counter=__gsharp_in___gsharp_id_3_counter;
 __gsharp_ctx->__gsharp_id_4_n=__gsharp_in___gsharp_id_4_n;
 }
-int __gsharp_id_10_k = 5;
 switch(__gsharp_state)
 {
 case 0:
@@ -5552,7 +5551,7 @@ __gsharp_switch_1_state_7:
 {
 if(!__gsharp_ctx->__gsharp_sg_done_0)
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),__gsharp_id_10_k);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_b, __gsharp_ctx->__gsharp_id_5_tid, 1920185642u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_6_v,__gsharp_ctx->__gsharp_id_9_y),5);
 }
 __gsharp_yielded_for_grid_sync=true;
 __gsharp_state=8;
