@@ -464,4 +464,79 @@ public static class ReconvergenceCases
         r[t] = odd ? 1u : 0u;
         r[t + 32] = Warp.ActiveMask();
     }
+
+    // A goto loop whose last statement is a block ends right after the if that holds its last goto back to top: the
+    // lanes meet again before Mark(28), inside the block
+    [GpuKernel]
+    public static void GotoLoopInBlockKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        {
+            if ((t & 1) == 1 && n++ < 1)
+            {
+                goto top;
+            }
+
+            Mark(28);
+            r[t + 32] = Warp.ActiveMask();
+        }
+
+        Mark(29);
+    }
+
+    // The block of a goto loop holds a second goto loop (again) around the statement with the last goto back to top:
+    // again closes inside its own block, right after its goto (before Mark(30)), but top would close inside again's
+    // statement, so it closes after its block, before Mark(31)
+    [GpuKernel]
+    public static void GotoLoopInBlockAroundInnerLoopKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int m = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        {
+        again:
+            {
+                if ((t & 2) != 0 && m++ < 1)
+                {
+                    goto again;
+                }
+
+                Mark(30);
+                if ((t & 1) == 1 && n++ < 1)
+                {
+                    goto top;
+                }
+
+                r[t + 32] = Warp.ActiveMask();
+            }
+        }
+
+        Mark(31);
+    }
+
+    // A goto loop whose last statement is a thread-dependent if: the if ends first, then the loop, both before Mark(32)
+    [GpuKernel]
+    public static void GotoLoopInIfKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        if ((t & 2) != 0)
+        {
+            if ((t & 1) == 1 && n++ < 1)
+            {
+                goto top;
+            }
+
+            r[t + 32] = Warp.ActiveMask();
+        }
+
+        Mark(32);
+    }
 }
