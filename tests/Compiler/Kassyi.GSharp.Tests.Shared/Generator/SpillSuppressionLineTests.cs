@@ -197,6 +197,9 @@ public class SpillSuppressionLineTests
     [InlineData("MutualKernel")]
     [InlineData("NewTypeParameterKernel")]
     [InlineData("ConstrainedMemberKernel")]
+    [InlineData("DisposeCarriedKernel")]
+    [InlineData("DisposeCarriedDeclarationKernel")]
+    [InlineData("DisposeCarriedExpressionKernel")]
     public async Task GetReachedFunctionNames_PolymorphicRecursionOfAGenericStruct_Ends(string kernelName)
     {
         var compilation = RoslynTestUtility.CreateCompilation(

@@ -145,6 +145,76 @@ namespace PolymorphicRecursion
         public int Value => new GI<VI<VI<U>>>(0).N;
     }
 
+    // Carried by the Dispose of a using: GD<T> disposes a T, and VD<U>.Dispose creates GD<VD<VD<U>>>, whose using
+    // runs VD<VD<U>>.Dispose, ... The three forms of a using name the disposed type in three different ways
+    public struct GD<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GD(int n)
+        {
+            using (var r = default(T))
+            {
+                N = Kernels.Step(n);
+            }
+        }
+    }
+
+    public struct VD<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GD<VD<VD<U>>>(0).N;
+        }
+    }
+
+    public struct GDV<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GDV(int n)
+        {
+            using var r = default(T);
+            N = Kernels.Step(n);
+        }
+    }
+
+    public struct VDV<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GDV<VDV<VDV<U>>>(0).N;
+        }
+    }
+
+    public struct GDE<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GDE(int n)
+        {
+            T r = default;
+            using (r)
+            {
+                N = Kernels.Step(n);
+            }
+        }
+    }
+
+    public struct VDE<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GDE<VDE<VDE<U>>>(0).N;
+        }
+    }
+
     public static partial class Kernels
     {
         [GpuDeviceFunction]
@@ -184,6 +254,24 @@ namespace PolymorphicRecursion
         public static void MutualKernel(int[] d)
         {
             d[0] = new M<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedKernel(int[] d)
+        {
+            d[0] = new GD<VD<int>>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedDeclarationKernel(int[] d)
+        {
+            d[0] = new GDV<VDV<int>>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedExpressionKernel(int[] d)
+        {
+            d[0] = new GDE<VDE<int>>(d[1]).N;
         }
     }
 }
