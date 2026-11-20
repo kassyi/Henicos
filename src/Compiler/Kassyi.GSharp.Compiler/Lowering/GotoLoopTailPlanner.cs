@@ -126,6 +126,10 @@ internal static class GotoLoopTailPlanner
                 return false;
             }
 
+            // A safety net: JumpRegionPlanner does not produce such a region today. It widens a forward range that
+            // leaves the loop back to the loop's first statement, which orders it before the loop, and it rejects a
+            // goto loop that crosses the loop. A plan that broke this would leave the region above the loop where the
+            // loop closes inside its last statement
             if (opensAfterLoop && region.First <= loop.Last && IsOpenAfter(region, loop.Last, closesAfter: false))
             {
                 return false;

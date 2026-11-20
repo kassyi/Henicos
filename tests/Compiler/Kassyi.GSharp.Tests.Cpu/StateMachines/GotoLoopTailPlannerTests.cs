@@ -1,4 +1,5 @@
 #nullable enable
+using System.Collections.Immutable;
 using System.Linq;
 using Kassyi.GSharp.Compiler.Lowering;
 using Microsoft.CodeAnalysis;
@@ -49,6 +50,7 @@ public class GotoLoopTailPlannerTests
     [InlineData("top: Split(); unsafe { if (x) goto top; Split(); }", new[] { 0 })]
     [InlineData("top: Split(); tail: { if (x) goto top; Split(); }", new[] { 0 })]
     [InlineData("top: Split(); { Split(); { if (x) goto top; } Split(); }", new[] { 1, 0 })]
+    [InlineData("top: Split(); { M: Split(); if (x) goto top; else if (a) goto M; Rest(); }", new[] { 1 })]
     public void FindInnerClose_LastStatementIsBlock_ClosesAfterTheLastGotoToTheLoop(string code, int[] expected) =>
         Assert.Equal(expected, FindInnerClose(code, "top"));
 
@@ -73,5 +75,19 @@ public class GotoLoopTailPlannerTests
 
         Assert.Empty(FindInnerClose(Code, "top"));
         Assert.Equal(new[] { 0 }, FindInnerClose(Code, "inner"));
+    }
+
+    // A forward range that opens after the loop in the plan and is still open at its last statement would sit above the
+    // loop where it closes; the planner never orders a range that way, so the plan is built by hand
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindInnerClose_RangeOpensAfterTheLoopAcrossItsEnd_ClosesAfterTheLastStatement()
+    {
+        var statements = ParseStatements("top: Split(); { if (x) goto top; Split(); }");
+        var loop = new JumpRegion(JumpRegionKind.GotoLoop, LabelIndex: 0, First: 0, Last: 1);
+        var range = new JumpRegion(JumpRegionKind.ForwardRange, LabelIndex: 2, First: 1, Last: 1);
+        var plan = new JumpRegionPlan(ImmutableArray.Create(loop, range), ImmutableArray<GotoStatementSyntax>.Empty);
+
+        Assert.Empty(GotoLoopTailPlanner.FindInnerClose(statements, plan, loop, HoldsSplit));
     }
 }
