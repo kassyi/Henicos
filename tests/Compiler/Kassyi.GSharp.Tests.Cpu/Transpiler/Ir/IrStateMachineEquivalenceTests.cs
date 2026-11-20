@@ -60,7 +60,8 @@ public class IrStateMachineEquivalenceTests(ITestOutputHelper output)
                 foreach (var declaration in tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
                 {
                     if (model.GetDeclaredSymbol(declaration) is not { } symbol ||
-                        !GpuExecutionSpace.IsGpuFunction(symbol))
+                        !GpuExecutionSpace.IsGpuFunction(symbol) ||
+                        IrCoverageInputs.IsUnlowerableGenericDeclaration(symbol, compilation))
                     {
                         continue;
                     }

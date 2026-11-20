@@ -12,13 +12,26 @@ import {
   Shells,
   SlotsVariable,
   CommandVariable,
+  UsageExitCode,
   isPolicy,
   isShellName,
   type Policy,
   type ShellName,
 } from "./constants.ts";
+import { parseJobRef, type JobRef } from "./job-id.ts";
 import { run, usageError, type RunOptions } from "./client.ts";
-import { accuracy, cancel, pause, place, resume, startNow, status, stop, wait } from "./client-commands.ts";
+import {
+  accuracy,
+  cancel,
+  pause,
+  place,
+  resolveJobRef,
+  resume,
+  startNow,
+  status,
+  stop,
+  wait,
+} from "./client-commands.ts";
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
@@ -44,6 +57,10 @@ const Usage = [
   "                                        [--gpu-slots <n>] [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
   "  node scripts/human/job-queue.js --screenshots <dir>",
+  "",
+  "An <id> is the full number, or the last four digits as the queue shows them: 8739, j8739 or 18739 (the digits name",
+  "the running or waiting job that ends so, else the newest that ended; two running or waiting jobs that do, and the",
+  "scheduler asks for the full number).",
   "",
   "run         Waits for a slot of the job queue, runs the command in this directory, gives the slot back.",
   "            --weight <n>           Slots the job takes (default 1; a test run also takes its memory budget).",
@@ -124,9 +141,14 @@ interface Options extends RunOptions {
   untilIdle: boolean;
   /** serve --gpu-slots: the shared slots of the GPU resource; 0 for the configuration's. */
   gpuSlots: number;
-  /** The job a mode acts on (status, cancel, move, set-weight, start); 0 for none. */
+  /** What was typed for the job a mode acts on (status, wait, cancel, move, set-weight, start); null for none. */
+  jobRef: JobRef | null;
+  /** The full id of jobRef: set by parseArgs for a full number, by main (resolveJobRef) for the last digits; 0 for none. */
   jobId: number;
+  /** run --after: what was typed; `after` holds the full id once main has resolved it. */
+  afterRef: JobRef | null;
   moveFirst: boolean;
+  beforeRef: JobRef | null;
   moveBefore: number;
   moveReset: boolean;
   newWeight: number;
@@ -140,6 +162,15 @@ function parsePositive(name: string, text: string | undefined, allowZero = false
     usageError(`${name} needs a ${allowZero ? "non-negative" : "positive"} integer.`);
   }
   return value;
+}
+
+/** A job id typed as j8739, 8739 or the full number; the last digits are resolved later (resolveJobRef). */
+function parseRef(name: string, text: string | undefined): JobRef {
+  const ref = text === undefined ? null : parseJobRef(text);
+  if (ref === null) {
+    usageError(`${name} needs a job id: the full number, or its last four digits as in j8739.`);
+  }
+  return ref;
 }
 
 function isMode(text: string): text is (typeof Modes)[number] {
@@ -169,10 +200,13 @@ export function parseArgs(argv: string[]): Options {
     watch: false,
     accuracy: false,
     untilIdle: false,
+    jobRef: null,
     jobId: 0,
     after: 0,
+    afterRef: null,
     keepIfFailed: false,
     moveFirst: false,
+    beforeRef: null,
     moveBefore: 0,
     moveReset: false,
     newWeight: 0,
@@ -190,15 +224,17 @@ export function parseArgs(argv: string[]): Options {
       }
       options.mode = arg;
       if (arg === "wait" || arg === "cancel" || arg === "move" || arg === "set-weight" || arg === "start") {
-        options.jobId = parsePositive(arg, own[++i]);
+        options.jobRef = parseRef(arg, own[++i]);
+        options.jobId = options.jobRef.kind === "exact" ? options.jobRef.id : 0;
       }
       if (arg === "set-weight") {
         options.newWeight = parsePositive("set-weight <id>", own[++i]);
       }
       continue;
     }
-    if (options.mode === "status" && options.jobId === 0 && /^\d+$/.test(arg)) {
-      options.jobId = parsePositive("status", arg); // status <id>, before or after the options
+    if (options.mode === "status" && options.jobRef === null && parseJobRef(arg) !== null) {
+      options.jobRef = parseRef("status", arg); // status <id>, before or after the options
+      options.jobId = options.jobRef.kind === "exact" ? options.jobRef.id : 0;
       continue;
     }
     switch (arg) {
@@ -228,7 +264,8 @@ export function parseArgs(argv: string[]): Options {
         options.gpuExclusive = true;
         break;
       case "--after":
-        options.after = parsePositive("--after", own[++i]);
+        options.afterRef = parseRef("--after", own[++i]);
+        options.after = options.afterRef.kind === "exact" ? options.afterRef.id : 0;
         break;
       case "--keep-if-failed":
         options.keepIfFailed = true;
@@ -237,7 +274,8 @@ export function parseArgs(argv: string[]): Options {
         options.moveFirst = true;
         break;
       case "--before":
-        options.moveBefore = parsePositive("--before", own[++i]);
+        options.beforeRef = parseRef("--before", own[++i]);
+        options.moveBefore = options.beforeRef.kind === "exact" ? options.beforeRef.id : 0;
         break;
       case "--reset":
         options.moveReset = true;
@@ -306,20 +344,20 @@ export function parseArgs(argv: string[]): Options {
   }
   if (
     options.mode === "move" &&
-    Number(options.moveFirst) + Number(options.moveBefore > 0) + Number(options.moveReset) !== 1
+    Number(options.moveFirst) + Number(options.beforeRef !== null) + Number(options.moveReset) !== 1
   ) {
     usageError("move needs one of --first, --before <id> or --reset.");
   }
-  if (options.watch && (options.mode !== "status" || options.json || options.jobId > 0)) {
+  if (options.watch && (options.mode !== "status" || options.json || options.jobRef !== null)) {
     usageError("--watch goes with status alone (no <id>, no --json).");
   }
-  if (options.accuracy && (options.mode !== "status" || options.watch || options.jobId > 0)) {
+  if (options.accuracy && (options.mode !== "status" || options.watch || options.jobRef !== null)) {
     usageError("--accuracy goes with status alone (no <id>, no --watch).");
   }
   if (options.untilIdle && options.mode !== "pause") {
     usageError("--until-idle goes with pause alone.");
   }
-  if (options.keepIfFailed && options.after === 0) {
+  if (options.keepIfFailed && options.afterRef === null) {
     usageError("--keep-if-failed needs --after <id>.");
   }
   if (options.commandFromEnv) {
@@ -368,6 +406,19 @@ export async function main(argv: string[]): Promise<void> {
     }
   }
   try {
+    // The last digits of an id are resolved by the scheduler, which knows the jobs; wait ends 2 for an unknown job
+    const failCode = options.mode === "wait" ? UsageExitCode : 1;
+    // wait and run start the scheduler when none listens, as they do for a full number
+    const start = options.mode === "wait" || options.mode === "run";
+    if (options.jobRef !== null) {
+      options.jobId = await resolveJobRef(options, options.jobRef, failCode, start);
+    }
+    if (options.beforeRef !== null) {
+      options.moveBefore = await resolveJobRef(options, options.beforeRef, failCode);
+    }
+    if (options.afterRef !== null) {
+      options.after = await resolveJobRef(options, options.afterRef, failCode, start);
+    }
     switch (options.mode) {
       case "run":
         if (plugins === undefined) {

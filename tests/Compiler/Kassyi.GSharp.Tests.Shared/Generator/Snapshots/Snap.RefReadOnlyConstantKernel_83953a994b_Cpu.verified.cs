@@ -61,9 +61,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_1_localConstant = 3;
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_2_tid, 842636013u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(&__gsharp_id_1_localConstant);
+__gsharp_array_at(__gsharp_id_0_r, __gsharp_id_2_tid, 842636013u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefReadOnlyConstantKernels__ReadOnlyId(__gsharp_temp_address<int>(3));
 __gsharp_state=-1;
 return;
 }

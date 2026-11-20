@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Instantiation;
+
 namespace Kassyi.GSharp.Compiler.Extensions;
 
 /// <summary>Provides zero-allocation extension methods for Roslyn <see cref="SemanticModel"/> queries.</summary>
@@ -190,33 +192,70 @@ internal static class SemanticModelExtensions
             : null;
 
     /// <summary>
-    /// Gets the original location for the specified syntax node, or null if unmapped.
+    /// Gets the original location for the specified syntax node, or null if unmapped. The location of a node of a
+    /// closed copy of a generic declaration is that of the declaration node it came from
+    /// (<see cref="GenericCopyOrigins"/>).
     /// </summary>
-    public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node)
+    /// <remarks>For reporting only, as <see cref="GetReportLocation"/>.</remarks>
+    public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node) =>
+        FindCompilationNode(semanticModel, node) is { } compilationNode ? GetUserLocation(compilationNode) : null;
+
+    /// <summary>
+    /// The node of a tree of <paramref name="semanticModel"/>'s compilation that <paramref name="node"/> is, or that it
+    /// or its nearest mapped ancestor was derived from by lowering; null when none is mapped.
+    /// </summary>
+    /// <remarks>
+    /// The node to ask the semantic model about (a position for <see cref="SemanticModel.LookupSymbols"/>, the member
+    /// around it). For a node of a closed copy of a generic declaration it is the node of the copy, in the derived
+    /// compilation, where <see cref="GetReportLocation"/> gives the place in the user's source, which that compilation
+    /// does not hold.
+    /// </remarks>
+    public static SyntaxNode? GetCompilationNode(this SemanticModel semanticModel, SyntaxNode node)
     {
-        var loc = GetLocationForNode(semanticModel, node);
-        if (loc != null)
+        if (semanticModel.Compilation.ContainsSyntaxTree(node.SyntaxTree))
         {
-            return loc;
+            return node;
         }
 
-        if (node is VariableDeclaratorSyntax { Initializer.Value: { } initValue })
+        for (var current = node; current != null; current = current.Parent)
         {
-            return GetLocationForNode(semanticModel, initValue);
+            if (FindCompilationNode(semanticModel, current) is { } found)
+            {
+                return found;
+            }
         }
 
         return null;
+    }
 
-        static Location? GetLocationForNode(SemanticModel model, SyntaxNode n)
+    // The node of the compilation tree that <node> is or was derived from by lowering, or that its initializer value is
+    // for a declarator; null when unmapped
+    private static SyntaxNode? FindCompilationNode(SemanticModel semanticModel, SyntaxNode node)
+    {
+        if (FindForNode(semanticModel, node) is { } found)
+        {
+            return found;
+        }
+
+        return node is VariableDeclaratorSyntax { Initializer.Value: { } initValue }
+            ? FindForNode(semanticModel, initValue)
+            : null;
+
+        static SyntaxNode? FindForNode(SemanticModel model, SyntaxNode n)
         {
             if (IsInSameTree(model, n))
             {
-                return n.GetLocation();
+                return n;
             }
 
-            return TryFindOriginalNode(model, n, out _, out var orig) ? orig.GetLocation() : null;
+            return TryFindOriginalNode(model, n, out _, out var orig) ? orig : null;
         }
     }
+
+    // The location of <node>, a node of a compilation tree, in the user's source: a node of a closed copy goes back to
+    // the generic declaration
+    private static Location GetUserLocation(SyntaxNode node) =>
+        GenericCopyOrigins.TryGetLocation(node, out var location) ? location : node.GetLocation();
 
     /// <summary>
     /// Gets the location at which a diagnostic about <paramref name="node"/> is reported: its own location when it is in
@@ -229,24 +268,20 @@ internal static class SemanticModelExtensions
     /// (<see cref="LoweringAnnotations.OriginalSpanAnnotationKind"/>). A node with no annotated ancestor is reported
     /// without a location, and the generator treats all location-less diagnostics with the same ID as one when it drops
     /// the C++ diagnostics that the CUDA run already reported, so such a C++-only diagnostic can be lost.
+    /// <para>
+    /// A node of a closed copy of a generic declaration, also one that lowering derived from it, is reported at the
+    /// declaration node it came from in the user's compilation (<see cref="GenericCopyOrigins"/>): the copy is in a
+    /// derived compilation, whose trees a generator of the user's compilation cannot report in either.
+    /// </para>
+    /// <para>
+    /// For reporting only: the location may be in a tree that <paramref name="semanticModel"/>'s compilation does not
+    /// hold. A semantic lookup takes the node of the compilation from <see cref="GetCompilationNode"/>.
+    /// </para>
     /// </remarks>
-    public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node)
-    {
-        if (semanticModel.Compilation.ContainsSyntaxTree(node.SyntaxTree))
-        {
-            return node.GetLocation();
-        }
-
-        for (var current = node; current != null; current = current.Parent)
-        {
-            if (semanticModel.GetOriginalLocation(current) is { } location)
-            {
-                return location;
-            }
-        }
-
-        return Location.None;
-    }
+    public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node) =>
+        semanticModel.GetCompilationNode(node) is { } compilationNode
+            ? GetUserLocation(compilationNode)
+            : Location.None;
 
     /// <summary>
     /// Whether the locals at <paramref name="node"/> start zeroed: <see cref="SymbolExtensions.AreLocalsZeroed"/> of the
@@ -259,15 +294,14 @@ internal static class SemanticModelExtensions
     /// </remarks>
     public static bool AreLocalsZeroedAt(this SemanticModel semanticModel, SyntaxNode node)
     {
-        for (var current = node; current != null; current = current.Parent)
+        // The node in the compilation, not its place in the user's source: a closed copy is a member of the derived
+        // compilation, and its own declaration carries the attributes of the generic one
+        if (semanticModel.GetCompilationNode(node) is { SyntaxTree: var tree } found &&
+            semanticModel.Compilation.ContainsSyntaxTree(tree))
         {
-            if (semanticModel.GetOriginalLocation(current) is { SourceTree: { } tree } location &&
-                semanticModel.Compilation.ContainsSyntaxTree(tree))
-            {
-                return GetSemanticModelForTree(semanticModel, tree)
-                    .GetEnclosingSymbol(location.SourceSpan.Start)
-                    .AreLocalsZeroed();
-            }
+            return GetSemanticModelForTree(semanticModel, tree)
+                .GetEnclosingSymbol(found.SpanStart)
+                .AreLocalsZeroed();
         }
 
         return true;

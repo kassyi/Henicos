@@ -8,6 +8,7 @@ import { idField, type Incoming, type Outcome } from "./protocol.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { Phase } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
+import { formatJobId } from "./job-id.ts";
 
 const Outcomes: readonly string[] = ["succeeded", "failed", "cancelled", "lost"];
 
@@ -105,7 +106,7 @@ export class JobStore {
       job.provisionalAt = Date.now();
     }
     server.log(
-      `restored #${id} ${job.stub ? "(id only)" : `${phase} weight ${job.weight} pid ${job.pid}`}: ${job.command}`,
+      `restored ${formatJobId(id)} ${job.stub ? "(id only)" : `${phase} weight ${job.weight} pid ${job.pid}`}: ${job.command}`,
     );
   }
 

@@ -465,13 +465,26 @@ public static class LoweringAnnotations
     public static TNode AnnotateOriginalSpans<TNode>(TNode node, Compilation? compilation = null) where TNode : SyntaxNode
     {
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, node.SyntaxTree);
-        var annotator = treeOrdinal >= 0 ? new SpanAnnotator(treeOrdinal) : s_spanAnnotator;
+        var annotator = treeOrdinal >= 0 ? new SpanAnnotator(treeOrdinal, OriginalSpanAnnotationKind) : s_spanAnnotator;
         return annotator.Visit(node) as TNode ?? node;
     }
 
-    private static readonly SpanAnnotator s_spanAnnotator = new(-1);
+    /// <summary>
+    /// Attaches an annotation of <paramref name="annotationKind"/> with the data of the original-span annotation
+    /// (<see cref="FormatOriginalSpanData(SyntaxNode, int, int)"/>) to every descendant node of
+    /// <paramref name="node"/> that does not already carry one, as <see cref="AnnotateOriginalSpans"/> does for its
+    /// kind.
+    /// </summary>
+    public static TNode AnnotateSpans<TNode>(TNode node, Compilation? compilation, string annotationKind)
+        where TNode : SyntaxNode
+    {
+        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, node.SyntaxTree);
+        return new SpanAnnotator(treeOrdinal, annotationKind).Visit(node) as TNode ?? node;
+    }
 
-    private sealed class SpanAnnotator(int treeOrdinal) : CSharpSyntaxRewriter
+    private static readonly SpanAnnotator s_spanAnnotator = new(-1, OriginalSpanAnnotationKind);
+
+    private sealed class SpanAnnotator(int treeOrdinal, string annotationKind) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -481,10 +494,10 @@ public static class LoweringAnnotations
             }
 
             var visited = base.Visit(node);
-            return node.HasAnnotations(OriginalSpanAnnotationKind)
+            return node.HasAnnotations(annotationKind)
                 ? visited
                 : visited.WithAdditionalAnnotations(
-                    new SyntaxAnnotation(OriginalSpanAnnotationKind, FormatOriginalSpanData(node, treeOrdinal)));
+                    new SyntaxAnnotation(annotationKind, FormatOriginalSpanData(node, treeOrdinal)));
         }
     }
 }

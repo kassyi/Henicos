@@ -690,8 +690,7 @@ finally
 #pragma warning restore CS8500
 public const string LocalConstKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SmallConstantVarKernels__LocalConstKernel(GSharpArray<int> __gsharp_id_0_output, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-unsigned char __gsharp_id_1_localMax = 255;
-auto __gsharp_id_2_x = __gsharp_id_1_localMax;
+auto __gsharp_id_2_x = (unsigned char)255;
 __gsharp_id_2_x=(unsigned char)__gsharp_add_i32(__gsharp_id_2_x,1);
 __gsharp_array_at(__gsharp_id_0_output, 0, 1805465861u)=__gsharp_id_2_x;
 }

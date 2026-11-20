@@ -8,14 +8,17 @@ namespace Kassyi.GSharp.Tests.Infrastructure;
 /// </summary>
 /// <remarks>
 /// The first sample above the budget records the tests running at that moment; each of them fails when it finishes.
-/// The peak is a high-water mark, so the test that caused the growth is always among them: either a sample sees the
-/// breach while it runs, or its own <see cref="TestFinished"/> sample does. Growth outside any test (fixture
-/// construction, disposal) is reported by <see cref="WholeRunFailure"/>.
+/// When the reading is a high-water mark kept by the kernel (Windows), the test that caused the growth is always among
+/// them: either a sample sees the breach while it runs, or its own <see cref="TestFinished"/> sample does. When it is
+/// a current value (Linux, see <see cref="ProcessMemory"/>), the peak is the maximum of the samples, and growth that
+/// is released again between two samples is not seen. Growth outside any test (fixture construction, disposal) is
+/// reported by <see cref="WholeRunFailure"/>.
 /// </remarks>
 /// <param name="assemblyName">The test assembly name, shown in failure messages.</param>
 /// <param name="budgetBytes">The budget in bytes; <c>0</c> when the assembly has no budget.</param>
 /// <param name="peakMetricName">The name of the metric <paramref name="readPeakBytes"/> returns.</param>
-/// <param name="readPeakBytes">Reads the memory high-water mark of the process.</param>
+/// <param name="readPeakBytes">Reads the memory of the process: a high-water mark, or a current value whose maximum
+/// over the samples is the peak.</param>
 /// <param name="readGcHeapBytes">Reads the current managed heap size.</param>
 /// <param name="collectSnapshot">Writes a memory snapshot and describes it in one sentence; started once, on the first
 /// breach.</param>
@@ -186,7 +189,7 @@ public sealed class MemoryWatchdog(
     /// Gets the tests that raised the peak the most, largest first (at most 20).
     /// </summary>
     /// <remarks>
-    /// The growth is the rise of the high-water mark between the start and the end of a test. Under parallel execution
+    /// The growth is the rise of the peak (on Linux the largest sample) between the start and the end of a test. Under parallel execution
     /// it includes what the tests running beside it allocated, so it names candidates rather than proving a cause.
     /// </remarks>
     public IReadOnlyList<PeakGrowth> TopGrowth
@@ -389,7 +392,7 @@ public sealed class MemoryWatchdog(
 }
 
 /// <summary>
-/// The rise of the memory high-water mark during one test.
+/// The rise of the memory peak during one test.
 /// </summary>
 /// <param name="TestName">The test name.</param>
 /// <param name="GrowthBytes">The rise of the peak between the start and the end of the test, in bytes.</param>

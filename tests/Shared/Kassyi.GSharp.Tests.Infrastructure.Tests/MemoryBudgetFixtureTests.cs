@@ -39,6 +39,10 @@ public class MemoryBudgetFixtureTests
                 Marshal.WriteByte((nint)block + (nint)offset, 1);
                 touched += PageSize;
             }
+
+            // On Linux the watchdog reads the current private memory, not a kernel high-water mark: sample while the
+            // block is held, so the breach does not depend on the background sampler running during the touch
+            MemoryBudget.Current?.Sample();
         }
         finally
         {

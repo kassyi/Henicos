@@ -14,9 +14,10 @@ internal static class IrNullDecider
     /// <summary>Decides the null check, site, and index overflow check for <paramref name="element"/>.</summary>
     public static IrElementDecision DecideElement(IrElementReference element, IrDecisionContext context)
     {
+        // C# converts the index to ulong (from ulong, nuint or a user-defined implicit conversion) and then checks it
+        // with conv.ovf.i.un
         var indexNeedsOverflow =
-            IrNumericFacts.SourceType(element.Index, context.TemporaryInitializers)?.SpecialType ==
-            SpecialType.System_UInt64 &&
+            element.Index.Type?.SpecialType == SpecialType.System_UInt64 &&
             element.Receiver.Type is IArrayTypeSymbol { Rank: 1 };
         if (ArrayNullCheck.IsIndexOrRangeType(element.Index.Type) ||
             !IrNonNullProof.NeedsCheck(element.Receiver, context))
