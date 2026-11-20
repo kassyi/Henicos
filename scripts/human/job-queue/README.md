@@ -221,19 +221,39 @@ The turn of a `--gpu` run (`QueuedRun` with `gpuTurn`) classifies its command on
 the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exclusive`), and sends `resource: "gpu"`
 and `share` (`"shared"` only for exactly that answer, else `"exclusive"`) with `request` and `adopt`. Without plugins
 it sends no `share`; the GPU holder and a job without a turn send neither. The repository's rules are in
-`../job-queue-henicos/share-rules.ts` (job-queue-reference.md lists them).
-
-When no plugin's classify gives a share (an explicit `"exclusive"` is a veto, as is `--gpu-exclusive`) and `--after` is not set, `QueuedRun` awaits the plugins' `checkShare`
-(async, `PluginHost.checkShare`) once, before it connects, so that a slow answer does not hold an idle connection; the
-answer is kept for the re-registrations. The henicos plugin answers for a `dotnet test` whose `--filter` is positive name
-terms alone (`nameFilterCheck`): it runs `dotnet test <project> --no-build --list-tests --filter "(<names>)&(Category=<each
-exclusive category>)"` as a CPU job of the queue (`job-queue.js run`, without `--gpu`, output read from its standard
-output) and answers `"shared"` only for exit code 0, the runner's `No test matches the given testcase filter` line and no
-test name in the output. Anything else (a failure, a missing build, a time out) is exclusive. The list runner is a
-parameter of `nameFilterShare`, so the self-test never starts a real `dotnet test`. The list must read the assembly the run reads, so the check reads only a command of one `dotnet test` step with `--no-build`, started by nothing but `DiffEngine_Disabled=...` and run by `dotnet`, `dotnet.exe` or an absolute path to one (no `cd`, `export`, other leading assignment or other step except `echo`), whose project is a `.csproj` or a directory with exactly one `.csproj` and no solution, with no brace or glob character; with `--after` it is not asked at all (the predecessor may still build). The check runs after the build job that `run --gpu` splits off has ended (`runGpuTurn` in `client.ts` awaits `runBuildStep` before the turn's `QueuedRun.run()`; the self-test drives it with a fake host), and the client is not in the GPU line meanwhile (180 s at most). A rebuild by someone else in the same worktree while the turn waits is not seen. The list job's process tree is killed on a time out (`ProcessTable.killTree`), and a command whose every test step is a `--list-tests` takes the normal memory budget, not the stress one. For a command `nameFilterCheck` reads, the henicos `classify` has no opinion on the share, so only `checkShare` judges it. Once granted, the turn runs `gpu-lock.js
+`../job-queue-henicos/share-rules.ts` (job-queue-reference.md lists them). Once granted, the turn runs `gpu-lock.js
 --mode shared` only when it asked for `"shared"` and `granted.share` is exactly `"shared"`: the scheduler and the lock
 then agree on every shared turn, and every other case (no echo from an older scheduler, an echo it did not ask for,
 the direct lock under a scheduler without turns) takes the lock exclusively.
+
+When no plugin's classify gives a share (an explicit `"exclusive"` is a veto, as is `--gpu-exclusive`) and `--after` is
+not set, `QueuedRun` awaits the plugins' `checkShare` (async, `PluginHost.checkShare`) once, before it connects, so that
+a slow answer does not hold an idle connection; the answer is kept for the re-registrations. The check runs after the
+build job that `run --gpu` splits off has ended (`runGpuTurn` in `client.ts` awaits `runBuildStep` before the turn's
+`QueuedRun.run()`; the self-test drives it with a fake host), and the client is not in the GPU line meanwhile (180 s at
+most). An answer may be a `ShareAnswer`: `"shared"` with a `stillValid` that the client calls once the shared turn is
+granted and before it takes the lock (`requeueIfStale`). When it says no, throws or takes more than 30 s, the client
+gives the grant back (a `done` that records no run) and queues the turn again as exclusive, with a new id and the place
+of a new job. The check sits before the lock, so the short wait for the lock and a command already running at an
+`adopt` after a scheduler restart are not covered; a turn that queues again after a lost connection is checked at its
+next grant.
+
+The henicos plugin answers for a `dotnet test` whose `--filter` is positive name terms alone (`nameFilterCheck`). The
+list must read the assembly the run reads, so only a command of one `dotnet test` step with `--no-build`, started by
+nothing but `DiffEngine_Disabled=...` and run by `dotnet`, `dotnet.exe` or an absolute path to one (no `cd`, `export`,
+other leading assignment or other step except `echo`), whose project is a `.csproj` or a directory with exactly one
+`.csproj` and no solution, with no brace or glob character, is read. It runs `dotnet test <project> --no-build
+--list-tests --filter "(<names>)&(Category=<each exclusive category>)"` as a CPU job of the queue (`job-queue.js run`,
+without `--gpu`, output read from its standard output) and answers `"shared"` only for exit code 0, the runner's `No
+test matches the given testcase filter` line and no test name in the output. Anything else (a failure, a missing build,
+a time out) is exclusive. The assemblies are the `Test run for <path> (<framework>)` lines of the output, one per target
+framework: none named, one missing or one written after the list job started (it changed during the list) is exclusive;
+otherwise the SHA-256 of each is the fingerprint, and the `stillValid` of the answer hashes them again, so a rebuild
+while the turn waited sends it back as exclusive. The list runner and the files are parameters of `nameFilterShare`, so
+the self-test never starts a real `dotnet test` and stays offline. The list job's process tree is killed on a time out
+(`ProcessTable.killTree`), and a command whose every test step is a `--list-tests` takes the normal memory budget, not
+the stress one. For a command `nameFilterCheck` reads, the henicos `classify` has no opinion on the share, so only
+`checkShare` judges it.
 
 ## Job records
 

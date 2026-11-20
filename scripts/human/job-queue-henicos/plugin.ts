@@ -8,7 +8,7 @@ import {
   type ClientContext,
   type QueuePlugin,
   type ResourceRequest,
-  type ShareMode,
+  type ShareAnswer,
   isTrivialStep,
   programOf,
   readCommandLine,
@@ -118,7 +118,7 @@ const plugin = {
 
   // A --gpu run whose filter names tests only is shared when the runner lists no Stress, Benchmark or GpuTrap test
   // among them (name-filter.ts); asked only after classify answered anything but "shared"
-  checkShare(command: string, context: ClientContext): Promise<ShareMode | undefined> {
+  checkShare(command: string, context: ClientContext): Promise<ShareAnswer | undefined> {
     return nameFilterShare(command, context);
   },
 

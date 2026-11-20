@@ -33,6 +33,7 @@ import {
   type Incoming,
   type Placement,
 } from "./protocol.ts";
+import type { ShareAnswer } from "./plugin-api.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
@@ -50,7 +51,7 @@ export class QueuedRun {
   private readonly gpuTurn: boolean;
   private readonly host: RunHost;
   private readonly plugins?: PluginHost;
-  private readonly queuedAt = Date.now();
+  private queuedAt = Date.now(); // new when the turn queues again as exclusive
   private state: "waiting" | "running" | "done" = "waiting";
   private child: ChildProcess | null = null;
   private jobId = 0;
@@ -69,6 +70,8 @@ export class QueuedRun {
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
    */
   private share: ShareMode | null = null;
+  /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
+  private stillValid: ShareAnswer | null = null;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -214,8 +217,49 @@ export class QueuedRun {
     }
   }
 
+  /**
+   * A shared turn that rests on a measurement (ShareAnswer.stillValid) is checked again once it is granted, before the
+   * lock is taken: when the measurement no longer holds, the grant is given back (a "done" that records no run) and
+   * the turn queues again as exclusive, with a new id and the place of a new job. Returns true when the turn queued
+   * again, so that start has nothing more to do.
+   */
+  private async requeueIfStale(granted: Incoming): Promise<boolean> {
+    const answer = this.stillValid;
+    if (answer === null || this.share !== "shared" || shareField(granted) !== "shared" || this.plugins === undefined) {
+      return false;
+    }
+    const valid = await this.plugins.stillValid(answer);
+    if (this.ended()) {
+      return true; // cancelled or interrupted meanwhile: finish has dealt with it
+    }
+    if (valid) {
+      return false;
+    }
+    prefix(
+      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} no longer holds; queueing again as exclusive`,
+    );
+    this.share = "exclusive";
+    this.stillValid = null;
+    const old = this.socket;
+    this.socket = null; // its close is then no loss of the scheduler
+    if (old !== null && !old.destroyed) {
+      send(old, { version: BaseProtocolVersion, type: "done", completed: false, exitCode: 0, cancelled: true });
+      old.end();
+    }
+    this.jobId = 0;
+    this.queuedAt = Date.now();
+    this.lastPosition = 0;
+    this.lastStartAt = null;
+    this.lastNotice = -Infinity;
+    await this.attach();
+    return true;
+  }
+
   private async start(granted: Incoming): Promise<void> {
     const { options, placement } = this;
+    if (await this.requeueIfStale(granted)) {
+      return;
+    }
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
@@ -480,7 +524,9 @@ export class QueuedRun {
     // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
     // job already waited), so a list now could read the old assembly
     if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
-      share = await plugins.checkShare(this.options.command, this.contextOf(plugins));
+      const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
+      share = answer?.share;
+      this.stillValid = answer?.share === "shared" && answer.stillValid !== undefined ? answer : null;
     }
     this.share = share === "shared" ? "shared" : "exclusive";
   }

@@ -26,6 +26,17 @@ export const PluginApiVersion = 1;
 
 export type ShareMode = "shared" | "exclusive";
 
+/**
+ * The answer of checkShare. `stillValid` is for a "shared" answer that rests on something that can change while the
+ * turn waits (an assembly that is rebuilt): the client calls it once the scheduler has granted the shared turn and
+ * before the GPU lock is taken, and when it resolves to anything but true, throws or takes too long, the client gives
+ * the grant back and queues the turn again as exclusive (it loses its place).
+ */
+export interface ShareAnswer {
+  readonly share: ShareMode;
+  readonly stillValid?: () => Promise<boolean>;
+}
+
 /** Read-only client context passed to client/view hooks. */
 export interface ClientContext {
   /** Working directory of the job (process.cwd()). */
@@ -139,9 +150,10 @@ export interface QueuePlugin {
    * once, before the turn is first registered: may take a measurement that classify cannot (it runs before the turn
    * registers, so a slow answer delays the registration). "shared" or "exclusive" ends the asking; undefined passes it
    * to the next plugin. A throw, a time out or any other value takes the GPU exclusively. A plugin answers "shared" only
-   * for what it measured, and answers undefined from classify for the shapes it will measure.
+   * for what it measured, and answers undefined from classify for the shapes it will measure. A plain ShareMode is
+   * the same as a ShareAnswer without `stillValid`.
    */
-  checkShare?(command: string, context: ClientContext): Promise<ShareMode | undefined>;
+  checkShare?(command: string, context: ClientContext): Promise<ShareMode | ShareAnswer | undefined>;
 
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;

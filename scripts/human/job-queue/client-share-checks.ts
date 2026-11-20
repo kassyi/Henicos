@@ -303,9 +303,33 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       () => new Promise<never>(() => {}),
       () => Promise.resolve(true),
     ]) {
-      assert.strictEqual(await hostOf(hook).checkShare("c", direct), "exclusive");
+      assert.strictEqual((await hostOf(hook).checkShare("c", direct))?.share, "exclusive");
     }
     assert.strictEqual(await hostOf(() => Promise.resolve(undefined)).checkShare("c", direct), undefined);
+    // An answer may be an object: a shared one keeps its stillValid; an exclusive one, or one that is no function, drops it
+    const valid = (): Promise<boolean> => Promise.resolve(true);
+    const kept = await hostOf(() => Promise.resolve({ share: "shared", stillValid: valid })).checkShare("c", direct);
+    assert.deepStrictEqual([kept?.share, kept?.stillValid === valid], ["shared", true]);
+    const dropped = await hostOf(() => Promise.resolve({ share: "exclusive", stillValid: valid })).checkShare(
+      "c",
+      direct,
+    );
+    assert.deepStrictEqual([dropped?.share, dropped?.stillValid], ["exclusive", undefined]);
+    const noFunction = await hostOf(() => Promise.resolve({ share: "shared", stillValid: 5 })).checkShare("c", direct);
+    assert.deepStrictEqual([noFunction?.share, noFunction?.stillValid], ["shared", undefined]);
+    // host.stillValid: only exactly true holds; a throw, a time out and any other value do not
+    const judge = hostOf(undefined);
+    judge.stillValidTimeoutMs = 100;
+    for (const [check, expected] of [
+      [valid, true],
+      [() => Promise.resolve(false), false],
+      [() => Promise.resolve(1 as unknown as boolean), false],
+      [() => Promise.reject(new Error("no file")), false],
+      [() => new Promise<boolean>(() => {}), false],
+    ] as const) {
+      assert.strictEqual(await judge.stillValid({ share: "shared", stillValid: check }), expected);
+    }
+    assert.strictEqual(await judge.stillValid({ share: "shared" }), true, "nothing to check: valid");
     asked.length = 0;
     assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("shared"), true)), "shared", "classify shared");
     // A failing or invalid answer ends the asking: a later plugin that would say "shared" is not asked
@@ -392,6 +416,113 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
   } finally {
     scheduler.close();
   }
+}
+
+/**
+ * The re-check of a shared answer (ShareAnswer.stillValid): called once the shared turn is granted (not before, and not
+ * for a grant the scheduler does not echo as shared), before the lock is taken. When it says no, throws or takes too
+ * long, the turn gives the grant back (a "done" that records no run) and queues again as exclusive under a new id; after
+ * a lost connection the turn is checked again at its next grant.
+ */
+async function checkStillValid(assert: AssertModule): Promise<void> {
+  const hostFor = (stillValid: () => Promise<boolean>): PluginHost => {
+    const plugin: QueuePlugin = {
+      name: "fingerprint",
+      apiVersion: PluginApiVersion,
+      checkShare: () => Promise.resolve({ share: "shared", stillValid }),
+    };
+    const host = new PluginHost([plugin], [undefined], process.cwd(), () => {});
+    host.stillValidTimeoutMs = 100;
+    return host;
+  };
+  const withScheduler = async (body: (scheduler: FakeScheduler) => Promise<void>): Promise<void> => {
+    const scheduler = new FakeScheduler();
+    await scheduler.listen();
+    try {
+      await body(scheduler);
+    } finally {
+      scheduler.close();
+    }
+  };
+  const count = (calls: { n: number }, answer: boolean) => (): Promise<boolean> => {
+    calls.n++;
+    return Promise.resolve(answer);
+  };
+  // Holds: the lock is taken as shared, after the grant
+  await withScheduler(async (scheduler) => {
+    const calls = { n: 0 };
+    const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(count(calls, true)));
+    assert.deepStrictEqual([run.registration.share, calls.n], ["shared", 0], "not checked while the turn waits");
+    run.send(granted(90, "shared"));
+    await until("the turn takes the GPU lock", () => run.host.locks.length === 1);
+    assert.deepStrictEqual([run.host.locks[0]?.mode, calls.n], ["shared", 1], "checked once, then shared");
+    run.drop();
+  });
+  // Does not hold, throws, times out: the grant goes back and the turn queues again as exclusive
+  const stale: [string, () => Promise<boolean>][] = [
+    ["says no", () => Promise.resolve(false)],
+    ["throws", () => Promise.reject(new Error("file gone"))],
+    ["takes too long", () => new Promise<boolean>(() => {})],
+  ];
+  for (const [name, check] of stale) {
+    await withScheduler(async (scheduler) => {
+      const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(check));
+      const firstQueuedAt = run.registration.queuedAt;
+      run.send(granted(91, "shared"));
+      await until(`the turn connects again (${name})`, () => run.host.connects.length === 2);
+      assert.strictEqual(run.host.locks.length, 0, `${name}: the lock is not taken`);
+      const given = scheduler.accepted[0]?.messages.find((message) => message.type === "done");
+      assert.deepStrictEqual(
+        [given?.completed, given?.exitCode, given?.cancelled],
+        [false, 0, true],
+        `${name}: the grant is given back as a run that did not happen`,
+      );
+      run.host.connects[1]?.resolve(await scheduler.connect());
+      await until("the new registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
+      const again = scheduler.accepted[1]?.messages[0];
+      assert.deepStrictEqual(
+        [again?.type, again?.resource, again?.share, again?.id],
+        ["request", "gpu", "exclusive", 0],
+        `${name}: queued again as exclusive, as a new job`,
+      );
+      assert.notStrictEqual(again?.queuedAt, firstQueuedAt, `${name}: a new client identity`);
+      const second = scheduler.accepted[1];
+      if (second === undefined) {
+        throw new Error("no second connection");
+      }
+      FakeScheduler.send(second, granted(92, "shared"));
+      await until("the exclusive turn takes the lock", () => run.host.locks.length === 1);
+      assert.strictEqual(run.host.locks[0]?.mode, "exclusive", `${name}: the lock is exclusive`);
+      run.drop();
+    });
+  }
+  // A grant that is not echoed as shared (an older scheduler) is not checked: the lock is exclusive anyway
+  await withScheduler(async (scheduler) => {
+    const calls = { n: 0 };
+    const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(count(calls, false)));
+    run.send(granted(93));
+    await until("the turn takes the GPU lock", () => run.host.locks.length === 1);
+    assert.deepStrictEqual([run.host.locks[0]?.mode, calls.n], ["exclusive", 0]);
+    run.drop();
+  });
+  // After a lost connection the waiting turn registers again as shared and is checked at its next grant
+  await withScheduler(async (scheduler) => {
+    const calls = { n: 0 };
+    const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(count(calls, true)));
+    run.drop();
+    await until("the turn connects again", () => run.host.connects.length === 2);
+    run.host.connects[1]?.resolve(await scheduler.connect());
+    await until("the second registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
+    assert.deepStrictEqual([scheduler.accepted[1]?.messages[0]?.share, calls.n], ["shared", 0]);
+    const second = scheduler.accepted[1];
+    if (second === undefined) {
+      throw new Error("no second connection");
+    }
+    FakeScheduler.send(second, granted(94, "shared"));
+    await until("the turn takes the GPU lock", () => run.host.locks.length === 1);
+    assert.deepStrictEqual([run.host.locks[0]?.mode, calls.n], ["shared", 1]);
+    second.socket.destroy();
+  });
 }
 
 /**
@@ -483,6 +614,7 @@ export const ShareClientChecks: Record<string, (assert: AssertModule) => Promise
   checkOlderSchedulerLock: (assert) => quietly(() => checkOlderSchedulerLock(assert)),
   checkShareRegistrations: (assert) => quietly(() => checkShareRegistrations(assert)),
   checkCheckShare: (assert) => quietly(() => checkCheckShare(assert)),
+  checkStillValid: (assert) => quietly(() => checkStillValid(assert)),
   checkBuildBeforeShareCheck: (assert) => quietly(() => checkBuildBeforeShareCheck(assert)),
   checkGpuExclusiveFlag: async (assert) => checkGpuExclusiveFlag(assert),
   checkGpuLockArguments: async (assert) => checkGpuLockArguments(assert),

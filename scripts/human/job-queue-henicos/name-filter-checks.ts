@@ -2,7 +2,15 @@
 // of the runner's output, and nameFilterShare with a fake list runner (the self-test never runs a real dotnet test).
 
 import type { AssertModule, ClientContext, ShareMode } from "../job-queue/plugin-api.ts";
-import { listCommandOf, listVerdict, nameFilterShare, type ListResult } from "./name-filter.ts";
+import * as path from "node:path";
+import {
+  assembliesOf,
+  listCommandOf,
+  listVerdict,
+  nameFilterShare,
+  type AssemblyFiles,
+  type ListResult,
+} from "./name-filter.ts";
 import { nameFilterCheck, type DirectoryEntries } from "./share-rules.ts";
 
 const Options = {
@@ -201,7 +209,9 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     };
   const logging = contextWith({}, (text) => lines.push(text));
   const command = `${Plain} "FullyQualifiedName~PoolStressTests"`;
-  assert.strictEqual(await nameFilterShare(command, logging, answer(NoMatch), Entries), "shared");
+  const files = fakeFiles({ "X.dll": ["aaa", 0] });
+  const shared = await nameFilterShare(command, logging, answer(NoMatch), Entries, files);
+  assert.strictEqual(shared?.share, "shared");
   assert.strictEqual(calls.length, 1, "one list job");
   assert.match(calls[0] as string, /--list-tests --filter "\(FullyQualifiedName~PoolStressTests\)&\(Category=Stress\|/);
   assert.match(
@@ -209,9 +219,10 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     /^GPU share: shared \(list of exclusive tests: 0, /,
     "one line says what was decided",
   );
-  assert.strictEqual(await nameFilterShare(command, logging, answer(Listed), Entries), "exclusive");
+  assert.strictEqual((await nameFilterShare(command, logging, answer(Listed), Entries, files))?.share, "exclusive");
   assert.match(lines[1] as string, /^GPU share: exclusive \(list of exclusive tests: 2, /);
-  assert.strictEqual(await nameFilterShare(command, logging, answer(new Error("spawn failed")), Entries), "exclusive");
+  const failed = await nameFilterShare(command, logging, answer(new Error("spawn failed")), Entries, files);
+  assert.strictEqual(failed?.share, "exclusive");
   assert.match(lines[2] as string, /list failed: spawn failed/);
   const before = calls.length;
   assert.strictEqual(
@@ -220,4 +231,68 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
   );
   assert.strictEqual(await nameFilterShare("echo hi", logging, answer(NoMatch), Entries), undefined);
   assert.strictEqual(calls.length, before, "a command that is not read starts no list job");
+
+  // The fingerprint of the assemblies the list read: unchanged, rebuilt while the turn waited, gone
+  assert.strictEqual(await shared?.stillValid?.(), true, "the same assembly: still valid");
+  files.hashes.set(resolved("X.dll"), "bbb");
+  assert.strictEqual(await shared?.stillValid?.(), false, "rebuilt while the turn waited");
+  files.hashes.set(resolved("X.dll"), null);
+  assert.strictEqual(await shared?.stillValid?.(), false, "gone while the turn waited");
+
+  const named = { exitCode: 0, output: NoMatch.output };
+  const verdictOf = async (output: ListResult, fake: ReturnType<typeof fakeFiles>) =>
+    nameFilterShare(
+      command,
+      contextWith({}, (text) => lines.push(text)),
+      answer(output),
+      Entries,
+      fake,
+    );
+  const noLine = await verdictOf({ exitCode: 0, output: "No test matches the given testcase filter `x`\n" }, files);
+  assert.strictEqual(noLine?.share, "exclusive", "no Test run line: the assembly is unknown");
+  assert.match(lines.at(-1) as string, /named no assembly/);
+  const during = await verdictOf(named, fakeFiles({ "X.dll": ["aaa", Date.now() + 60_000] }));
+  assert.strictEqual(during?.share, "exclusive", "written after the list started");
+  assert.match(lines.at(-1) as string, /written during the list/);
+  const missing = await verdictOf(named, fakeFiles({}));
+  assert.strictEqual(missing?.share, "exclusive", "an assembly that is not there");
+  const two = {
+    exitCode: 0,
+    output:
+      "Test run for X.dll (.NETCoreApp,Version=v8.0)\nTest run for Y.dll (.NETCoreApp,Version=v10.0)\n" +
+      "No test matches the given testcase filter `x`\n",
+  };
+  const both = fakeFiles({ "X.dll": ["aaa", 0], "Y.dll": ["ccc", 0] });
+  const frameworks = await verdictOf(two, both);
+  assert.strictEqual(frameworks?.share, "shared");
+  assert.strictEqual(await frameworks?.stillValid?.(), true);
+  both.hashes.set(resolved("Y.dll"), "ddd");
+  assert.strictEqual(await frameworks?.stillValid?.(), false, "the second framework's assembly changed");
+  assert.strictEqual(
+    assembliesOf("Test run for X.dll (a)\nTest run for X.dll (b)\n", ".").length,
+    1,
+    "the same assembly of two lines counts once",
+  );
+}
+
+/** The absolute path under which a fake assembly is kept. */
+function resolved(name: string): string {
+  return path.resolve(".", name);
+}
+
+/** Fake assembly files: name -> [hash, mtime ms]; a missing name is a file that is not there. */
+function fakeFiles(entries: Record<string, [string, number]>): AssemblyFiles & {
+  hashes: Map<string, string | null>;
+} {
+  const hashes = new Map<string, string | null>();
+  const times = new Map<string, number>();
+  for (const [name, [hash, time]] of Object.entries(entries)) {
+    hashes.set(resolved(name), hash);
+    times.set(resolved(name), time);
+  }
+  return {
+    hashes,
+    mtimeMs: (file) => times.get(file) ?? null,
+    sha256: (file) => hashes.get(file) ?? null,
+  };
 }

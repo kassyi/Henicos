@@ -4,9 +4,12 @@
 // queue, without the GPU); the run shares only when the runner says that there are none.
 
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { EntryScript } from "../job-queue/constants.ts";
 import { ProcessTable } from "../job-queue/system.ts";
-import { errorMessage, type ClientContext, type ShareMode } from "../job-queue/plugin-api.ts";
+import { errorMessage, type ClientContext, type ShareAnswer, type ShareMode } from "../job-queue/plugin-api.ts";
 import { nameFilterCheck, shareOptions, type DirectoryEntries, type NameFilterTest } from "./share-rules.ts";
 
 /** What the list job printed (its standard output) and how it ended; exitCode is null when it did not end by itself. */
@@ -73,16 +76,76 @@ export const runListJob: ListRunner = (listCommand, context) =>
     child.on("close", (code) => end(code));
   });
 
+/** The files of the test assemblies, as far as the fingerprint reads them; a self-test replaces it to stay offline. */
+export interface AssemblyFiles {
+  /** The modification time in ms, or null when the file cannot be read. */
+  mtimeMs(file: string): number | null;
+  /** The SHA-256 of the content as hex, or null when the file cannot be read. */
+  sha256(file: string): string | null;
+}
+
+export const realFiles: AssemblyFiles = {
+  mtimeMs(file) {
+    try {
+      return fs.statSync(file).mtimeMs;
+    } catch {
+      // A file that is not there (or not readable) cannot be fingerprinted: the caller takes the GPU exclusively
+      return null;
+    }
+  },
+  sha256(file) {
+    try {
+      return createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+    } catch {
+      return null;
+    }
+  },
+};
+
 /**
- * The checkShare answer of the henicos plugin: undefined when the command is not a name-only filtered test run,
- * else "shared" or "exclusive" from the listed tests, with one line saying which and how many exclusive tests it saw.
+ * The assemblies the runner says it ran the list for: one `Test run for <path> (<framework>)` line per target
+ * framework, as absolute paths (a relative one is taken from `cwd`), without repeats.
+ */
+export function assembliesOf(output: string, cwd: string): string[] {
+  const found = new Set<string>();
+  for (const line of output.split(/\r?\n/)) {
+    const match = /^Test run for (.+) \([^()]*\)\s*$/.exec(line);
+    if (match !== null) {
+      found.add(path.resolve(cwd, match[1] as string));
+    }
+  }
+  return [...found];
+}
+
+/** The hash of each assembly, in order, or null when one is missing or was written after `sinceMs`. */
+function fingerprintOf(files: AssemblyFiles, assemblies: readonly string[], sinceMs: number): string[] | null {
+  const hashes: string[] = [];
+  for (const file of assemblies) {
+    // Hashed first, then its time read: a write at any moment after the list started shows in the time
+    const hash = files.sha256(file);
+    const modified = files.mtimeMs(file);
+    if (hash === null || modified === null || modified > sinceMs) {
+      return null;
+    }
+    hashes.push(hash);
+  }
+  return hashes;
+}
+
+/**
+ * The checkShare answer of the henicos plugin: undefined when the command is not a name-only filtered test run, else
+ * "shared" or "exclusive" from the listed tests, with one line saying which and how many exclusive tests it saw.
+ * "shared" also needs the assemblies the list read: the runner must name them, none may have been written since the
+ * list job started, and the answer carries a `stillValid` that hashes them again when the turn is granted, so a
+ * rebuild while the turn waited sends it back as exclusive.
  */
 export async function nameFilterShare(
   command: string,
   context: ClientContext,
   run: ListRunner = runListJob,
   entries?: DirectoryEntries,
-): Promise<ShareMode | undefined> {
+  files: AssemblyFiles = realFiles,
+): Promise<ShareAnswer | undefined> {
   const test = nameFilterCheck(command, context, entries);
   const options = shareOptions(context.options);
   if (test === null || options === null) {
@@ -90,17 +153,45 @@ export async function nameFilterShare(
   }
   const listCommand = listCommandOf(test, options.exclusiveCategories);
   if (listCommand === null) {
-    return "exclusive";
+    return { share: "exclusive" };
   }
+  const startedAt = Date.now();
   const started = performance.now();
-  let verdict: { share: ShareMode; listed: number };
+  let result: ListResult;
   try {
-    verdict = listVerdict(await run(listCommand, context));
+    result = await run(listCommand, context);
   } catch (error) {
     context.log(`GPU share: exclusive (the test list failed: ${errorMessage(error)})`);
-    return "exclusive";
+    return { share: "exclusive" };
   }
+  const verdict = listVerdict(result);
   const seconds = ((performance.now() - started) / 1000).toFixed(1);
-  context.log(`GPU share: ${verdict.share} (list of exclusive tests: ${verdict.listed}, ${seconds} s)`);
-  return verdict.share;
+  const say = (share: ShareMode, why: string): ShareAnswer => {
+    context.log(`GPU share: ${share} (list of exclusive tests: ${verdict.listed}, ${seconds} s${why})`);
+    return { share };
+  };
+  if (verdict.share === "exclusive") {
+    return say("exclusive", "");
+  }
+  const assemblies = assembliesOf(result.output, context.cwd);
+  if (assemblies.length === 0) {
+    return say("exclusive", "; the runner named no assembly");
+  }
+  const hashes = fingerprintOf(files, assemblies, startedAt);
+  if (hashes === null) {
+    return say("exclusive", "; an assembly is missing or was written during the list");
+  }
+  context.log(
+    `GPU share: shared (list of exclusive tests: 0, ${seconds} s, ${assemblies.length} assembl${assemblies.length === 1 ? "y" : "ies"} fingerprinted)`,
+  );
+  return {
+    share: "shared",
+    stillValid: () =>
+      Promise.resolve(
+        assemblies.every((file, n) => {
+          const now = files.sha256(file);
+          return now !== null && now === hashes[n];
+        }),
+      ),
+  };
 }

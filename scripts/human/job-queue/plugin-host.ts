@@ -18,7 +18,7 @@ import {
   type PreparedCommand,
   type QueuePlugin,
   type ResourceRequest,
-  type ShareMode,
+  type ShareAnswer,
   type SplitPlan,
   type StepContext,
   type StepKeys,
@@ -33,6 +33,8 @@ const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
 /** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
 export const CheckShareTimeoutMs = 180_000;
+/** How long the `stillValid` of a shared answer may take (it should only compare what was measured). */
+export const StillValidTimeoutMs = 30_000;
 export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -111,6 +113,8 @@ export class PluginHost {
   private readonly warnedFailures = new Set<string>();
   /** The time limit of one checkShare call; a field so that a self-test can shorten it. */
   checkShareTimeoutMs = CheckShareTimeoutMs;
+  /** The time limit of one `stillValid` call; a field so that a self-test can shorten it. */
+  stillValidTimeoutMs = StillValidTimeoutMs;
 
   constructor(
     plugins: readonly QueuePlugin[],
@@ -310,7 +314,7 @@ export class PluginHost {
    * "shared" or "exclusive" wins and undefined passes on. A throw, a time out (checkShareTimeoutMs) or any other value
    * is "exclusive" and ends the asking, with one line saying why. Undefined when no plugin answers.
    */
-  async checkShare(command: string, context: BaseClientContext): Promise<ShareMode | undefined> {
+  async checkShare(command: string, context: BaseClientContext): Promise<ShareAnswer | undefined> {
     for (let i = 0; i < this.plugins.length; i++) {
       const plugin = this.plugins[i] as QueuePlugin;
       if (typeof plugin.checkShare !== "function") {
@@ -329,20 +333,57 @@ export class PluginHost {
           continue;
         }
         if (res === "shared" || res === "exclusive") {
-          return res;
+          return { share: res };
+        }
+        if (isPlainObject(res) && (res.share === "shared" || res.share === "exclusive")) {
+          // An exclusive answer needs no re-check; a stillValid that is no function is ignored (the client then has none)
+          const stillValid =
+            res.share === "shared" && typeof res.stillValid === "function"
+              ? (res.stillValid as () => Promise<boolean>)
+              : undefined;
+          return stillValid !== undefined ? { share: "shared", stillValid } : { share: res.share };
         }
         this.warn(`[job-queue] plugin ${plugin.name}.checkShare returned an invalid value; taking the GPU exclusively`);
-        return "exclusive";
+        return { share: "exclusive" };
       } catch (error) {
         this.warn(
           `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
         );
-        return "exclusive";
+        return { share: "exclusive" };
       } finally {
         clearTimeout(timer);
       }
     }
     return undefined;
+  }
+
+  /**
+   * Runs the `stillValid` of a shared answer: true only when it resolves to exactly true within stillValidTimeoutMs.
+   * A throw, a time out or any other value is false, with one line saying why.
+   */
+  async stillValid(answer: ShareAnswer): Promise<boolean> {
+    if (answer.stillValid === undefined) {
+      return true;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const limit = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`timed out after ${this.stillValidTimeoutMs} ms`)),
+          this.stillValidTimeoutMs,
+        );
+      });
+      const valid = await Promise.race([answer.stillValid(), limit]);
+      if (valid !== true) {
+        this.warn("[job-queue] the check that the shared GPU turn still holds says no");
+      }
+      return valid === true;
+    } catch (error) {
+      this.warn(`[job-queue] the check that the shared GPU turn still holds failed: ${errorMessage(error)}`);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** [first] Returns the first valid StepKeys. */
