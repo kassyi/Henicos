@@ -72,6 +72,8 @@ export class QueuedRun {
   private share: ShareMode | null = null;
   /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
   private stillValid: ShareAnswer | null = null;
+  /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
+  private starting = false;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -257,7 +259,12 @@ export class QueuedRun {
 
   private async start(granted: Incoming): Promise<void> {
     const { options, placement } = this;
+    if (this.starting) {
+      return; // a grant that arrives twice (or while the re-check runs) starts the turn once
+    }
+    this.starting = true;
     if (await this.requeueIfStale(granted)) {
+      this.starting = false; // the turn queued again: its next grant starts it
       return;
     }
     this.state = "running";

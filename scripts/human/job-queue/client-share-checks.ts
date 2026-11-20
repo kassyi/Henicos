@@ -454,6 +454,7 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
     const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(count(calls, true)));
     assert.deepStrictEqual([run.registration.share, calls.n], ["shared", 0], "not checked while the turn waits");
     run.send(granted(90, "shared"));
+    run.send(granted(90, "shared")); // twice: the turn still starts, and is checked, once
     await until("the turn takes the GPU lock", () => run.host.locks.length === 1);
     assert.deepStrictEqual([run.host.locks[0]?.mode, calls.n], ["shared", 1], "checked once, then shared");
     run.drop();
@@ -468,9 +469,15 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
     await withScheduler(async (scheduler) => {
       const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(check));
       const firstQueuedAt = run.registration.queuedAt;
+      // The scheduler has told the id of the job (queued), which the new registration must not keep
+      run.send({ type: "queued", id: 91, state: "waiting", position: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 50));
       run.send(granted(91, "shared"));
       await until(`the turn connects again (${name})`, () => run.host.connects.length === 2);
       assert.strictEqual(run.host.locks.length, 0, `${name}: the lock is not taken`);
+      await until(`the grant is given back (${name})`, () =>
+        Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "done")),
+      );
       const given = scheduler.accepted[0]?.messages.find((message) => message.type === "done");
       assert.deepStrictEqual(
         [given?.completed, given?.exitCode, given?.cancelled],
