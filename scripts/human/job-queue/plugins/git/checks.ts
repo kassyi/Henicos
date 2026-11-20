@@ -90,8 +90,8 @@ async function checkDigest(assert: AssertModule): Promise<void> {
     assert.strictEqual(hooked?.digest, untracked, "the hook gives the same digest");
     assert.ok(typeof hooked?.ms === "number" && hooked.ms >= 0, "and how long it took");
   } finally {
-    fs.rmSync(repo, { recursive: true, force: true });
-    fs.rmSync(outside, { recursive: true, force: true });
+    fs.rmSync(repo, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+    fs.rmSync(outside, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 }
 
@@ -125,11 +125,14 @@ async function checkWritingSettings(assert: AssertModule): Promise<void> {
     assert.ok(!fs.existsSync(mark), "the clean filter does not run");
     assert.deepStrictEqual(snapshot(path.join(repo, ".git")), before, "no shared index or other file is added");
   } finally {
-    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(repo, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 }
 
-/** A process that exits during a digest (process.exit, which runs no finally) leaves no scratch folder behind. */
+/**
+ * A process that exits during a digest (process.exit, which runs no finally) leaves no scratch folder behind. The git
+ * it stops may hold the repository for a moment on Windows: the folders are removed with retries.
+ */
 function checkExitCleansUp(assert: AssertModule): void {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-git-exit-"));
   try {
@@ -153,7 +156,7 @@ function checkExitCleansUp(assert: AssertModule): void {
     assert.ok(run.stdout.startsWith("job-queue-digest-"));
     assert.ok(!fs.existsSync(path.join(os.tmpdir(), run.stdout)), "removed at exit");
   } finally {
-    fs.rmSync(repo, { recursive: true, force: true });
+    fs.rmSync(repo, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 }
 

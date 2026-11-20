@@ -6,7 +6,7 @@
 // or when git fails, there is no digest. A client that exits during a digest removes its scratch folder and stops its
 // git at exit.
 
-import { execFile, type ChildProcess } from "node:child_process";
+import { execFile, spawnSync, type ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -28,7 +28,12 @@ const underWay = { folders: new Set<string>(), children: new Set<ChildProcess>()
 /** At exit (process.exit included, which runs no finally), synchronously: stop the gits and remove the folders. */
 function cleanUpAtExit(): void {
   for (const child of underWay.children) {
-    child.kill();
+    // On Windows git.exe starts the real git and ends with it: only the whole tree stops it
+    if (process.platform === "win32" && child.pid !== undefined) {
+      spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    } else {
+      child.kill();
+    }
   }
   for (const folder of underWay.folders) {
     fs.rmSync(folder, { recursive: true, force: true });
