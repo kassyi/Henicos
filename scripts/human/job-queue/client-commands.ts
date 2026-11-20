@@ -37,7 +37,7 @@ function formatJob(job: StatusJob, now: number): string {
   const outlook = describeOutlook(job, now);
   // An older scheduler says only what a job waits for after another (blockedBy)
   const waits = describeWaitFor(job) || (job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end` : "");
-  const detail = outlook || waits ? `\n      ${waits}${waits && outlook ? "; " : ""}${outlook}` : "";
+  const detail = outlook || waits ? `\n      ${outlook}${waits && outlook ? "; " : ""}${waits}` : "";
   return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 

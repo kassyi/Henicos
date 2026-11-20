@@ -349,7 +349,7 @@ export class QueuedRun {
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
     const outlook =
-      message.state === "waiting" ? joinNotes(describeWaitFor(message), describeOutlook(message, Date.now())) : "";
+      message.state === "waiting" ? joinNotes(describeOutlook(message, Date.now()), describeWaitFor(message)) : "";
     // The first waiting notice says the same: skip it
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
@@ -384,7 +384,7 @@ export class QueuedRun {
       this.lastStartAt = startAt;
       this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
-      const outlook = joinNotes(describeWaitFor(message), describeOutlook(message, now));
+      const outlook = joinNotes(describeOutlook(message, now), describeWaitFor(message));
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(
         `waiting ${formatJobId(this.jobId)}: position ${position}, ${slots} ` +
