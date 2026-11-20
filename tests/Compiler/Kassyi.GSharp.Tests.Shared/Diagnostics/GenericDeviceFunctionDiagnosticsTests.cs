@@ -101,4 +101,77 @@ public class GenericDeviceFunctionDiagnosticsTests
             StringComparison.Ordinal));
         Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
     }
+
+    private const string ForwarderCase = "Diagnostics/GenericForwarderChain.cu.cs";
+
+    // Far above a linear analysis of the case (well under a second); a walk that re-reads each callee wherever it meets
+    // it needs about three times as long per forwarder, 43 s for a chain of 12, and never finishes a chain of 30
+    private static readonly TimeSpan s_forwarderBudget = TimeSpan.FromSeconds(60);
+
+    private static string LeftOutMessage(string name) =>
+        $"'{name}' cannot be compiled for the GPU: generic device functions are not supported yet.";
+
+    private static async Task<IReadOnlyList<string>> ReportedForwardersAsync(string dialect)
+    {
+        var diagnostics = await Task.Run(() => KernelDiagnostics.RunTestCaseAsync(ForwarderCase, dialect))
+            .WaitAsync(s_forwarderBudget);
+        return diagnostics
+            .Where(static d => d.Id == GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id)
+            .Select(static d => d.Message)
+            .ToList();
+    }
+
+    // Thirty generic functions that only pass T on (Fi<T> calls Fi+1<T>), and twenty that call the next one twice:
+    // none uses its type parameter, so each is compiled once, and the analysis answers in time
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Forwarders_ChainAndDiamondOfPhantomForwarders_ReportNothingInTime(string dialect)
+    {
+        var reported = await ReportedForwardersAsync(dialect);
+
+        Assert.DoesNotContain(reported, static m => m.StartsWith("'F", StringComparison.Ordinal));
+        Assert.DoesNotContain(reported, static m => m.StartsWith("'D", StringComparison.Ordinal));
+    }
+
+    // A chain whose last function uses T leaves out every function that passes T on to it, each reported once at its
+    // name; in a cycle, Ping and Pong only pass T to each other and are compiled once, while A is left out with B,
+    // which uses T
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Forwarders_PassingOnToAFunctionThatUsesT_ReportsEachForwarder(string dialect)
+    {
+        var reported = await ReportedForwardersAsync(dialect);
+
+        string[] expected =
+        [
+            .. Enumerable.Range(0, 10).Select(static i => LeftOutMessage($"U{i}")),
+            LeftOutMessage("A"),
+            LeftOutMessage("B"),
+        ];
+        Assert.Equal(expected.Order(StringComparer.Ordinal), reported.Order(StringComparer.Ordinal));
+    }
+
+    // Every function the generator leaves out is stated as #error where the analyzer reports GSH0123
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Forwarders_LeftOutForwarders_GeneratorStatesThemWhereTheAnalyzerReports(string dialect)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(RoslynTestUtility.ReadTestCase(ForwarderCase));
+
+        var run = await Task.Run(() => KernelDiagnostics.RunCompilationAsync(compilation, dialect))
+            .WaitAsync(s_forwarderBudget);
+
+        var stated = KernelDiagnostics.FindStatedFailures(run)
+            .Where(static f => f.Failure.EndsWith(GSharpDiagnostics.GenericDeviceFunctionNotCompiled.Id,
+                StringComparison.Ordinal))
+            .ToList();
+        Assert.Equal(12, stated.Count);
+        Assert.All(stated, static f => Assert.True(f.IsReported, f.Failure));
+    }
 }
