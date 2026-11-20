@@ -11,6 +11,7 @@ import {
   ForecastNoticeMs,
   JobVariable,
   NoticeIntervalMs,
+  ReasonNoticeMs,
   BaseProtocolVersion,
   TimedOutExitCode,
   TurnVariable,
@@ -83,6 +84,9 @@ export class QueuedRun {
   private lastStartAt: number | null = null;
   /** What the job was last told it waits for (Outlook.waitFor): a change is told at once. */
   private lastWaitFor: unknown = undefined;
+  /** The latest waiting notice whose new reason came too soon after the last notice, and the timer that tells it. */
+  private laterWaiting: Incoming | null = null;
+  private laterTimer: ReturnType<typeof setTimeout> | null = null;
   /**
    * The digest of the worktree's content when the job was queued (plugins' contentDigest), taken once without waiting
    * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
@@ -382,12 +386,38 @@ export class QueuedRun {
     const startAt = typeof message.startAt === "number" ? message.startAt : null;
     const position = numberField(message, "position");
     const moved = Math.abs((startAt ?? 0) - (this.lastStartAt ?? 0)) >= ForecastNoticeMs;
-    const reason = message.waitFor !== this.lastWaitFor;
+    // A new reason is told, but no sooner than ReasonNoticeMs after the last notice: a reason that flips back and forth
+    // (slots, in line) as jobs come and go would otherwise print a line each time
+    const changed = message.waitFor !== this.lastWaitFor;
+    const reason = changed && now - this.lastNotice >= ReasonNoticeMs;
+    if (!changed) {
+      this.laterWaiting = null; // back to the reason told: nothing to tell later
+    }
+    if (changed && !reason) {
+      // Told once the limit has passed, if it still holds then (the latest notice is looked at again)
+      this.laterWaiting = message;
+      this.laterTimer ??= setTimeout(
+        () => {
+          this.laterTimer = null;
+          const later = this.laterWaiting;
+          this.laterWaiting = null;
+          if (later !== null && this.state === "waiting") {
+            this.onWaiting(later);
+          }
+        },
+        ReasonNoticeMs - (now - this.lastNotice),
+      ).unref();
+    }
     if (position !== this.lastPosition || moved || reason || now - this.lastNotice >= NoticeIntervalMs) {
       this.lastPosition = position;
       this.lastStartAt = startAt;
       this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
+      // This notice tells the latest reason: a reason kept for later is moot, and its timer counted from the last notice
+      if (this.laterTimer !== null) {
+        clearTimeout(this.laterTimer);
+        this.laterTimer = null;
+      }
       const outlook = joinNotes(describeOutlook(message, now), describeWaitFor(message));
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(

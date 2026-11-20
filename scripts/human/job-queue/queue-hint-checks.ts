@@ -10,7 +10,7 @@ import { parseArgs } from "./cli.ts";
 import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
 import type { RunOptions } from "./client.ts";
 import { QueuedRun } from "./client-queued-run.ts";
-import { DigestVariable, JobVariable, ProtocolVersion } from "./constants.ts";
+import { DigestVariable, JobVariable, ProtocolVersion, ReasonNoticeMs } from "./constants.ts";
 import { differingNames, environmentHash, VolatileEnv } from "./environment-hash.ts";
 import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
 import { PluginHost } from "./plugin-host.ts";
@@ -190,7 +190,14 @@ async function checkWaitForMessages(assert: AssertModule): Promise<void> {
     );
     const ran = (status?.running as { grantedAt: number; latestEndAt?: number }[] | undefined) ?? [];
     assert.strictEqual(ran[0]?.latestEndAt, (ran[0]?.grantedAt ?? 0) + 300000, "the latest end of the running job");
-    [first, second, ask].forEach((client) => client.close());
+    // A new reason alone is told to the waiting client: the pause changes neither its place nor its start
+    const pauser = await connectRaw(port);
+    pauser.send({ type: "pause" });
+    await pauser.until("pause-result");
+    await until("the waiting client is told its new reason", () =>
+      second.messages.some((m) => m.type === "waiting" && m.waitFor === "paused"),
+    );
+    [first, second, ask, pauser].forEach((client) => client.close());
   });
 }
 
@@ -386,6 +393,101 @@ async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
   });
 }
 
+/**
+ * The client tells a new wait reason at once when the last notice is ReasonNoticeMs old, else once that much has
+ * passed, if it still holds then: a reason that flips back and forth prints no line for each flip.
+ */
+async function checkReasonNotices(assert: AssertModule): Promise<void> {
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  const realNow = Date.now;
+  let clock = realNow();
+  Date.now = () => clock;
+  try {
+    const host = new FakeHost();
+    const options: RunOptions = {
+      port: 0,
+      slots: 2,
+      memoryMb: 1024,
+      policy: "hrrn",
+      command: "dotnet build X",
+      commandWords: null,
+      weight: 1,
+      gpu: false,
+      shell: "",
+      timeoutMinutes: 0,
+      after: 0,
+      keepIfFailed: false,
+    };
+    const text = await stderrOf(async () => {
+      void new QueuedRun(options, { weight: 1, pin: null, before: null }, false, false, host, undefined).run();
+      await until("the client connects", () => host.connects.length === 1);
+      host.connects[0]?.resolve(await scheduler.connect());
+      await until("the registration arrives", () => (scheduler.accepted[0]?.messages.length ?? 0) > 0);
+      const accepted = scheduler.accepted[0];
+      if (accepted === undefined) {
+        throw new Error("no connection");
+      }
+      const start = clock;
+      const outlook = { id: 9, state: "waiting", ahead: 1, position: 2, startAt: start + 60000, endAt: start + 120000 };
+      // Each message is read at its own time: the clock stays while the client reads it
+      const send = (type: string, waitFor: string, at: number): Promise<void> => {
+        clock = start + at;
+        FakeScheduler.send(accepted, { type, ...outlook, waitFor, used: 2, capacity: 2 });
+        return new Promise((resolve) => setTimeout(resolve, 40));
+      };
+      const settle = (at: number): Promise<void> => {
+        clock = start + at;
+        return new Promise((resolve) => setTimeout(resolve, 80));
+      };
+      const L = ReasonNoticeMs;
+      await send("queued", "slots", 0);
+      await settle(0);
+      // Too soon, and back before the limit: nothing is told, then or later
+      await send("waiting", "in-line", L - 10);
+      await send("waiting", "slots", L - 10);
+      await settle(L + 100);
+      // The limit has passed since the last notice: told at once (at 35 s, where a notice left over would come at 30 s)
+      await send("waiting", "in-line", L + 5000);
+      await send("waiting", "slots", 2 * L + 5100);
+      // Too soon: told once the limit has passed, as it still holds then
+      await send("waiting", "in-line", 3 * L + 5090);
+      await settle(3 * L + 5200);
+      // A notice in between (a new place) tells the latest reason: the change kept for later is dropped with its timer
+      await send("waiting", "slots", 4 * L + 5190);
+      FakeScheduler.send(accepted, {
+        type: "waiting",
+        ...outlook,
+        position: 1,
+        waitFor: "memory",
+        used: 2,
+        capacity: 2,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      await settle(5 * L + 5400);
+      accepted.socket.destroy();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    const waiting = text.split(/\r?\n/).filter((line) => line.includes("waiting j0009"));
+    assert.deepStrictEqual(
+      waiting.map(
+        (line) =>
+          `${/\((\d+)s\)/.exec(line)?.[1]} ${/waits for (CPU slots|the jobs that go first|the memory budget of the test runs)$/.exec(line)?.[1]}`,
+      ),
+      [
+        "35 the jobs that go first",
+        "65 CPU slots",
+        "95 the jobs that go first",
+        "125 the memory budget of the test runs",
+      ],
+      JSON.stringify(text),
+    );
+  } finally {
+    Date.now = realNow;
+    scheduler.close();
+  }
+}
+
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkWaitFor,
   checkDescribeWaitFor,
@@ -395,4 +497,5 @@ export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Pr
   checkWorktreeChange,
   checkEnvironmentHash,
   checkEnvironmentLog,
+  checkReasonNotices,
 };
