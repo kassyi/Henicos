@@ -1054,4 +1054,17 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .ToArray(),
             static i => i & 31);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_BackwardGotoToJoinLabel_ReconvergesOnceAtTheJoin() =>
+        RunOnEveryPath(160,
+            static output => WarpActiveMaskDifferentialKernels.LaunchBackwardGotoToJoinLabelKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0x55555555u)
+                .Concat(PerLane(32, static t => (t & 1) == 1, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 2u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .ToArray());
 }

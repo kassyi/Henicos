@@ -1435,6 +1435,7 @@
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.AfterSyncWarpKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.AlternatingBranchInLoopKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.BackwardGotoKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.BackwardGotoToJoinLabelKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.BallotWithActiveMaskKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.BothSidesKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.BreakInLoopKernel", status: "Reconvergence", count: 1}

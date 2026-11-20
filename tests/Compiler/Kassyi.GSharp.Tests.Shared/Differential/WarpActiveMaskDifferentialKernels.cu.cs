@@ -1511,4 +1511,39 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 96] = m2;
         result[t + 128] = Warp.ActiveMask();
     }
+
+    // Thread-dependent switch whose join label is also the target of a backward goto inside its own section: the lanes
+    // that loop back pass the label again but not the join, which lies in front of it
+    [GpuKernel]
+    public static void BackwardGotoToJoinLabelKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m0 = 0u;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                goto again;
+            case 1:
+                m1 = Warp.ActiveMask();
+            again:
+                n++;
+                if (n < 2)
+                {
+                    goto again;
+                }
+
+                m2 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m1;
+        result[t + 64] = m2;
+        result[t + 96] = (uint)n;
+        result[t + 128] = Warp.ActiveMask();
+    }
 }

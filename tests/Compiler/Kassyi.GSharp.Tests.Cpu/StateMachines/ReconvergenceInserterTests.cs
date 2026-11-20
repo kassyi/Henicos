@@ -82,7 +82,7 @@ public class ReconvergenceInserterTests : StateMachineTestBase
     [InlineData("ThreadVariantSwitchNoCrossJumpKernel")]
     [InlineData("UniformSwitchGotoCaseNoJoinKernel")]
     [InlineData("WhenSwitchNoJoinKernel")]
-    public void Insert_SwitchWithoutSecondEntryJoin_AddsNoJoinLabel(string kernel)
+    public void Insert_SwitchWithoutSecondEntryJoin_ReconvergesOnlyAtSwitchEnd(string kernel)
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
         var method = FindMethod(tree, kernel);
@@ -91,13 +91,11 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
         var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
 
-        var hasJoinLabel = lowered.LoweredBody
-            .DescendantNodes()
-            .OfType<LabeledStatementSyntax>()
-            .Any(static label => label.Identifier.ValueText.StartsWith(
-                GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix,
-                StringComparison.Ordinal));
-        Assert.False(hasJoinLabel);
+        // The join labels become states of the state machine, so count the reconvergence points instead: the switch
+        // region is the only one; a join would add its own
+        Assert.Single(
+            lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive));
     }
 
     [Fact]
