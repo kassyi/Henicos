@@ -421,4 +421,35 @@ public static class ReconvergenceCases
 
         Mark(26);
     }
+
+    [GpuKernel]
+    public static void ForwardGotoToSwitchJoinLabelKernel(uint[] r, int u)
+    {
+        int t = ThreadIndex.X;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                r[t] = Warp.ActiveMask();
+                break;
+            case 1:
+                if ((t & 4) != 0)
+                {
+                    goto shared;
+                }
+
+                if ((t & 8) != 0)
+                {
+                    goto case 0;
+                }
+
+                r[t + 32] = Warp.ActiveMask();
+            shared:
+                r[t + 64] = Warp.ActiveMask();
+                break;
+            default:
+                goto shared;
+        }
+
+        Mark(27);
+    }
 }

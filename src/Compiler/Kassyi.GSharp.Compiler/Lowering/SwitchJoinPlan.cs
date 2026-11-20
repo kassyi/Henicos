@@ -76,7 +76,14 @@ internal static class SwitchJoinPlanner
         var adjacency = BuildJoinGraph(joinCount, sectionNodes, resolvedJumps);
 
         var rejected = FindCyclicJumps(joinCount, resolvedJumps, sectionNodes, adjacency);
-        AddBackJumpsAcrossJoins(rejected, switchStatement, nodes, sectionNodes, canonicalIndices, isIncluded);
+        AddBackJumpsAcrossJoins(
+            rejected,
+            switchStatement,
+            sectionOfGotoCase,
+            nodes,
+            sectionNodes,
+            canonicalIndices,
+            isIncluded);
         if (rejected.Count > 0)
         {
             return new SwitchJoinPlan(
@@ -169,7 +176,24 @@ internal static class SwitchJoinPlanner
             }
         }
 
-        return jumps.ToImmutable();
+        // A goto case to its own section is a plain loop back to the section head and needs no join; only when lanes of
+        // another section also jump to that head does it loop through the join there
+        var collected = ImmutableArray.CreateBuilder<CollectedJump>(jumps.Count);
+        foreach (var jump in jumps)
+        {
+            if (jump.SourceSection != jump.TargetSection ||
+                jump.TargetPosition != 0 ||
+                jumps
+                    .AsStackEnumerable()
+                    .Any(jump.TargetSection, static (other, section) =>
+                        other.TargetSection == section && other.TargetPosition == 0 && other.SourceSection != section
+                    ))
+            {
+                collected.Add(jump);
+            }
+        }
+
+        return collected.ToImmutable();
     }
 
     private static ImmutableArray<(int Section, int Position)> BuildSortedJoinNodes(
@@ -321,10 +345,12 @@ internal static class SwitchJoinPlanner
 
     // A goto back to a label of its own section that lies before one of the section's joins passes that join again:
     // its lanes arrive there a second time with the switch region on top, so they form a loop through the join just as
-    // a cycle of cross-section jumps does
+    // a cycle of cross-section jumps does. A goto case or goto default to its own section goes back to the section head
+    // and so does the same past every join of the section before it
     private static void AddBackJumpsAcrossJoins(
         ImmutableArray<GotoStatementSyntax>.Builder rejected,
         SwitchStatementSyntax switchStatement,
+        Func<GotoStatementSyntax, int> sectionOfGotoCase,
         ImmutableArray<(int Section, int Position)> nodes,
         ImmutableArray<int>[] sectionNodes,
         int[][] canonicalIndices,
@@ -343,20 +369,18 @@ internal static class SwitchJoinPlanner
                 foreach (var node in statements[k].DescendantNodesAndSelf(static n =>
                              n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
                 {
-                    if (node is not GotoStatementSyntax gotoStmt ||
-                        !gotoStmt.IsKind(SyntaxKind.GotoStatement) ||
-                        (isIncluded != null && !isIncluded(gotoStmt)) ||
-                        gotoStmt.Expression is not IdentifierNameSyntax { Identifier.ValueText: var labelName } ||
-                        ReconvergenceSyntax.FindLabel(gotoStmt, labelName) is not { } targetLabel)
+                    if (node is not GotoStatementSyntax gotoStmt || (isIncluded != null && !isIncluded(gotoStmt)))
                     {
                         continue;
                     }
 
-                    var l = JumpRegionPlanner.FindCanonicalStatementIndexForLabel(
-                        statements,
-                        targetLabel,
+                    var l = FindTargetInOwnSection(
+                        switchStatement,
+                        s,
+                        gotoStmt,
+                        sectionOfGotoCase,
                         canonicalIndices[s]);
-                    if (l >= 0 &&
+                    if (l >= -1 &&
                         l <= k &&
                         CountJoinsUpTo(nodes, sectionNodes[s], l) < CountJoinsUpTo(nodes, sectionNodes[s], k) &&
                         !rejected.Contains(gotoStmt))
@@ -366,6 +390,36 @@ internal static class SwitchJoinPlanner
                 }
             }
         }
+    }
+
+    // The canonical index in section s of the label that gotoStmt goes to, -1 for the head of section s (a goto case or
+    // goto default to it), -2 when the goto leaves section s
+    private static int FindTargetInOwnSection(
+        SwitchStatementSyntax switchStatement,
+        int s,
+        GotoStatementSyntax gotoStmt,
+        Func<GotoStatementSyntax, int> sectionOfGotoCase,
+        int[] canonicalIndices)
+    {
+        if (gotoStmt.IsKind(SyntaxKind.GotoCaseStatement, SyntaxKind.GotoDefaultStatement))
+        {
+            return ReconvergenceSyntax.EnclosingSwitchIs(gotoStmt, switchStatement) && sectionOfGotoCase(gotoStmt) == s
+                ? -1
+                : -2;
+        }
+
+        if (gotoStmt.IsKind(SyntaxKind.GotoStatement) &&
+            gotoStmt.Expression is IdentifierNameSyntax { Identifier.ValueText: var labelName } &&
+            ReconvergenceSyntax.FindLabel(gotoStmt, labelName) is { } targetLabel)
+        {
+            var l = JumpRegionPlanner.FindCanonicalStatementIndexForLabel(
+                switchStatement.Sections[s].Statements,
+                targetLabel,
+                canonicalIndices);
+            return l >= 0 ? l : -2;
+        }
+
+        return -2;
     }
 
     // The segment of statement statementIndex: the joins of its section placed before it or at its labels

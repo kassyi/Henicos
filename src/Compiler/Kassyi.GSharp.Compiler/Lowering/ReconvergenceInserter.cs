@@ -562,6 +562,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 leaveFrom = _isDeviceFunction ? 0 : _open.Count;
                 break;
             case GotoStatementSyntax gotoStatement when gotoStatement.IsKind(SyntaxKind.GotoStatement):
+                leaveFrom = -1;
                 if (gotoStatement.Expression is IdentifierNameSyntax { Identifier.ValueText: var targetName } &&
                     ReconvergenceSyntax.FindLabel(gotoStatement, targetName) is { } targetLabel)
                 {
@@ -575,6 +576,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                                     $"{GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix}{_open[r].Site}")
                                 .WithTriviaFrom(statement)
                                 .WithOriginalSpanFrom(statement);
+
+                            // The lane arrives at the join of the range, so it keeps the range and every region below
+                            // it, the switch joins it still holds included
+                            leaveFrom = r + 1;
                             rewroteToJoin = true;
                             break;
                         }
@@ -601,7 +606,11 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                     }
                 }
 
-                leaveFrom = FindLabelDepth(gotoStatement);
+                if (leaveFrom < 0)
+                {
+                    leaveFrom = FindLabelDepth(gotoStatement);
+                }
+
                 break;
             case GotoStatementSyntax gotoCase when FindSwitch() is { } target:
                 leaveFrom = target.BreakDepth;

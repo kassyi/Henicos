@@ -1455,6 +1455,8 @@
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ForwardGotoOverNestedBlockKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ForwardGotoShuffleKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ForwardGotoToLoopHeadKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ForwardGotoToSwitchJoinLabelInDeviceFunctionKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ForwardGotoToSwitchJoinLabelKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoBackToRangeStartKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoBackToRangeStartWithoutSplitKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoCaseChainKernel", status: "Reconvergence", count: 1}
@@ -1493,8 +1495,10 @@
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ReenteredDeviceFunctionInLoopKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ReenteredInnerLoopInLoopKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ReenteredSwitchInLoopKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.SelfGotoCaseRetryKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ShuffleOutsideActiveMaskKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.SkippedJoinGotoCaseKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.SwitchJoinAtForwardGotoLabel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.SwitchKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.ThreeLevelReenteredBranchKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.TwoBackwardGotosKernel", status: "Reconvergence", count: 1}
@@ -3275,6 +3279,7 @@
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchBackwardGotoAcrossJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchMutualCycleKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchSelfCycleKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpKernels.cu.cs", method: "ReconvergenceJumpKernels.SwitchSelfGotoCaseAfterJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", method: "ReconvergenceJumpNestedFunctionKernels.LambdaMiddleGotoKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", method: "ReconvergenceJumpNestedFunctionKernels.LocalFunctionMiddleGotoKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpNestedFunctionKernels.cu.cs", method: "ReconvergenceJumpNestedFunctionKernels.MiddleGotoAroundLocalFunctionSplitKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
@@ -3286,6 +3291,7 @@
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.GotoIntoLoopWithoutSplitPointKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.GotoIntoMiddleWithoutActiveMaskKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.GotoToGotoLoopHeadKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.SwitchSelfGotoCaseRetryKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.ThreadVariantSwitchCycleWithoutSplitKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReconvergenceJumpValidKernels.cu.cs", method: "ReconvergenceJumpValidKernels.UniformSwitchGotoCaseCycleKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/RecursiveDeviceFunctionBarrierKernels.cu.cs", method: "RecursiveDeviceFunctionBarrierKernels.DirectRecursionKernel", status: "Compared", count: 1}
@@ -5004,6 +5010,7 @@
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ForwardGotoKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ForwardGotoNoSplitKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ForwardGotoOverNestedBlockKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ForwardGotoToSwitchJoinLabelKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoCaseJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLabelJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLoopAtKernelEndKernel", status: "Reconvergence", count: 1}

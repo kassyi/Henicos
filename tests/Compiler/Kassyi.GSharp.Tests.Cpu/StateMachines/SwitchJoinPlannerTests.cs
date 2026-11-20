@@ -160,6 +160,68 @@ public class SwitchJoinPlannerTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoCaseToOwnSection_PlansNoJoin()
+    {
+        var sw = ParseSwitch(@"
+            switch (x)
+            {
+                case 0:
+                    a();
+                    if (c) goto case 0;
+                    break;
+                case 1:
+                    break;
+            }");
+
+        Assert.Same(SwitchJoinPlan.Empty, Plan(sw));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_GotoCaseToOwnSectionAlsoEnteredFromAnother_RejectsTheLoopBack()
+    {
+        var sw = ParseSwitch(@"
+            switch (x)
+            {
+                case 0:
+                    a();
+                    if (c) goto case 0;
+                    break;
+                case 1:
+                    goto case 0;
+            }");
+
+        var plan = Plan(sw);
+        Assert.Empty(plan.Joins);
+        var rejected = Assert.Single(plan.Rejected);
+        Assert.Same(sw.Sections[0], rejected.FirstAncestorOrSelf<SwitchSectionSyntax>());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Plan_GotoCaseToOwnSectionAfterItsJoin_RejectsTheLoopBack()
+    {
+        var sw = ParseSwitch(@"
+            switch (x)
+            {
+                case 0:
+                    goto shared;
+                case 1:
+                    a();
+                shared:
+                    b();
+                    if (c) goto case 1;
+                    break;
+            }");
+
+        var plan = Plan(sw);
+        Assert.Empty(plan.Joins);
+        var rejected = Assert.Single(plan.Rejected);
+        Assert.True(rejected.IsKind(SyntaxKind.GotoCaseStatement));
+    }
+
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Plan_CyclicGotoCase_RejectsCyclicJumpsWithNoJoins()
     {

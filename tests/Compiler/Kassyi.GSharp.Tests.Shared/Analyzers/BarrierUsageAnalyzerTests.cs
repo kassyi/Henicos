@@ -476,7 +476,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 ("GSH0120", 213, 17, 213, 29),
                 ("GSH0120", 215, 17, 215, 29),
                 ("GSH0120", 232, 21, 232, 30),
-                ("GSH0120", 270, 21, 270, 32)
+                ("GSH0120", 270, 21, 270, 32),
+                ("GSH0120", 299, 21, 299, 33)
             ],
             actual);
     }
@@ -505,7 +506,8 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 (DiagnosticOrigin.Analyzer, 213, 17, 213, 29),
                 (DiagnosticOrigin.Analyzer, 215, 17, 215, 29),
                 (DiagnosticOrigin.Analyzer, 232, 21, 232, 30),
-                (DiagnosticOrigin.Analyzer, 270, 21, 270, 32)
+                (DiagnosticOrigin.Analyzer, 270, 21, 270, 32),
+                (DiagnosticOrigin.Analyzer, 299, 21, 299, 33)
             ],
             run.Analyzer
                 .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
@@ -513,7 +515,7 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
                 .Ranges("GSH0120")
                 .OrderBy(static r => r.StartLine)
                 .ToList());
-        Assert.Equal(12, run.Analyzer.Length);
+        Assert.Equal(13, run.Analyzer.Length);
         Assert.Empty(run.Generator);
         Assert.Empty(KernelDiagnostics.FindStatedFailures(run));
         var inputTrees = run.Input.SyntaxTrees.ToHashSet();

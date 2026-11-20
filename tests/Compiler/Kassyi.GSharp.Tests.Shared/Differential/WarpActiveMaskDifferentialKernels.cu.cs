@@ -1546,4 +1546,117 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 96] = (uint)n;
         result[t + 128] = Warp.ActiveMask();
     }
+
+    // Thread-dependent switch whose forward-goto label is also a join of lanes from another section, while the lanes of
+    // the forward goto still hold the join of an earlier section that a goto case of theirs reaches
+    [GpuKernel]
+    public static void ForwardGotoToSwitchJoinLabelKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        uint m0 = 0u;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                break;
+            case 1:
+                if ((t & 4) != 0)
+                {
+                    goto shared;
+                }
+
+                if ((t & 8) != 0)
+                {
+                    goto case 0;
+                }
+
+                m1 = Warp.ActiveMask();
+            shared:
+                m2 = Warp.ActiveMask();
+                break;
+            default:
+                goto shared;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m1;
+        result[t + 64] = m2;
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    // The same switch in a device function
+    [GpuKernel]
+    public static void ForwardGotoToSwitchJoinLabelInDeviceFunctionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        SwitchJoinAtForwardGotoLabel(result, t, u);
+        result[t + 96] = Warp.ActiveMask();
+    }
+
+    [GpuDeviceFunction]
+    public static void SwitchJoinAtForwardGotoLabel(uint[] result, int t, int u)
+    {
+        uint m0 = 0u;
+        uint m1 = 0u;
+        uint m2 = 0u;
+        switch ((t % 3) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                break;
+            case 1:
+                if ((t & 4) != 0)
+                {
+                    goto shared;
+                }
+
+                if ((t & 8) != 0)
+                {
+                    goto case 0;
+                }
+
+                m1 = Warp.ActiveMask();
+            shared:
+                m2 = Warp.ActiveMask();
+                break;
+            default:
+                goto shared;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m1;
+        result[t + 64] = m2;
+    }
+
+    // Thread-dependent switch with a goto case to its own section: a retry loop back to the section head, no join
+    [GpuKernel]
+    public static void SelfGotoCaseRetryKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m0 = 0u;
+        uint m1 = 0u;
+        switch ((t & 1) + u)
+        {
+            case 0:
+                m0 = Warp.ActiveMask();
+                n++;
+                if (n < 1 + ((t >> 1) & 1))
+                {
+                    goto case 0;
+                }
+
+                break;
+            default:
+                m1 = Warp.ActiveMask();
+                break;
+        }
+
+        result[t] = m0;
+        result[t + 32] = m1;
+        result[t + 64] = (uint)n;
+        result[t + 96] = Warp.ActiveMask();
+    }
 }

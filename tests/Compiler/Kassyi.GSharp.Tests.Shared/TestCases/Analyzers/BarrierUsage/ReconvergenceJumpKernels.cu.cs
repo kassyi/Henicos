@@ -195,7 +195,7 @@ public static partial class ReconvergenceJumpKernels
                 m = Warp.ActiveMask();
                 goto case 0;
             case 1:
-                break;
+                goto case 0;
         }
 
         result[t] = m;
@@ -278,5 +278,32 @@ public static partial class ReconvergenceJumpKernels
         result[t] = m;
         result[t + 32] = (uint)n;
         result[t + 64] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void SwitchSelfGotoCaseAfterJoinKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (t % 3)
+        {
+            case 0:
+                goto shared;
+            case 1:
+                m = Warp.ActiveMask();
+            shared:
+                n++;
+                if (n < 2 && (t & 1) != 0)
+                {
+                    goto case 1;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        result[t] = m;
     }
 }

@@ -199,4 +199,28 @@ public static partial class ReconvergenceJumpValidKernels
 
         result[t] = m;
     }
+
+    [GpuKernel]
+    public static void SwitchSelfGotoCaseRetryKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        uint m = 0u;
+        switch (t & 1)
+        {
+            case 0:
+                m = Warp.ActiveMask();
+                n++;
+                if (n < 2)
+                {
+                    goto case 0;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        result[t] = m;
+    }
 }
