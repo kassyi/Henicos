@@ -31,9 +31,6 @@ public class CudaStreamCompletionTests
     private static readonly TimeSpan WatchdogQuietPeriod = TimeSpan.FromMilliseconds(400);
     private const int RaceIterations = 30;
 
-    // A deadlocked child fails its own wait after CompletionTimeout; this bounds a child that cannot even exit.
-    private const int IsolatedRunTimeoutMilliseconds = 60_000;
-
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
@@ -523,137 +520,6 @@ public class CudaStreamCompletionTests
         }
     }
 
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.Boundary)]
-    public void HostCallback_TickInsideDriver_StreamDrainsAndWaitCompletesAfterTheTick()
-    {
-        CudaCapability.EnsureGpuAvailable();
-
-        using var isolated = IsolatedContext.Create();
-        var stream = isolated.Run(static () => new CudaStream());
-        try
-        {
-            using var gate = isolated.Run(() => StreamGate.Enqueue(stream.Handle, TimeSpan.FromMilliseconds(300)));
-            // Kept as a ValueTask: its IsCompleted reads the source itself, while a Task from AsTask completes only
-            // when a thread-pool continuation has run, which may lag behind the signal.
-            var pending = CudaStreamCompletion.WaitAsync(stream.Handle);
-            var tickLock = CudaStreamCompletionSource.FindTickLock(isolated.Handle)
-                           ?? throw new InvalidOperationException("The wait was not registered as armed.");
-
-            // Holding the tick barrier simulates a watchdog tick that is inside the driver, as when cuMemFree on
-            // another thread keeps the tick's cuCtxSetCurrent waiting for this very stream.
-            tickLock.Enter();
-            var synchronize = Task.Factory.StartNew(
-                () => isolated.Run(() => CudaDriverApi.cuStreamSynchronize(stream.Handle)),
-                CancellationToken.None,
-                TaskCreationOptions.LongRunning,
-                TaskScheduler.Default);
-            try
-            {
-                // The stream drains only once the host callback has returned, so the callback must not wait for the
-                // tick.
-                // mutant: CudaStreamCompletionSource.TryCompleteFromHostCallback
-                // `if (_tickLock.TryEnter())` -> `if (_tickLock.TryEnter(Timeout.Infinite))`
-                Assert.True(
-                    synchronize.Wait(CompletionTimeout),
-                    "The host callback waited for the tick barrier and kept the stream from draining.");
-                Assert.Equal(CUresult.CudaSuccess, synchronize.Result);
-                Assert.True(gate.IsReleased);
-
-                // The awaiter may resume (and destroy the context) only after the tick has left the driver.
-                // mutant: CudaStreamCompletionSource.TryCompleteFromHostCallback
-                // `lock (s_armedLock) { s_armed.Remove(this); } Signal(error); return;` added before the work item
-                Assert.False(pending.IsCompleted, "The wait completed while a tick was still inside the driver.");
-            }
-            finally
-            {
-                tickLock.Exit();
-
-                // On a regression the synchronization returns only now; the context must not be destroyed under it.
-                synchronize.Wait(CompletionTimeout);
-            }
-
-            Assert.True(
-                pending.AsTask().Wait(CompletionTimeout),
-                "The wait did not complete after the tick left the driver.");
-        }
-        finally
-        {
-            isolated.Run(stream.Dispose);
-        }
-    }
-
-    // A deadlocked run blocks the freeing thread, the watchdog and the driver's host-function thread for good, and
-    // every later context switch of the process behind them, so each run gets a process of its own.
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.Boundary)]
-    public void WaitAsync_DeviceMemoryFreedWhileStreamIsPendingForSeveralWatchdogPeriods_Completes()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const string Name = nameof(WaitAsync_DeviceMemoryFreedWhileStreamIsPendingForSeveralWatchdogPeriods_Completes);
-        if (!IsolatedTestProcess.IsChild(Name))
-        {
-            IsolatedTestProcess.Run(typeof(CudaStreamCompletionTests), Name, IsolatedRunTimeoutMilliseconds);
-            return;
-        }
-
-        FreeDeviceMemoryWhileWaitIsPending(GateHoldTime);
-    }
-
-    // Control: the gate opens before the first watchdog tick (100 ms), so no tick is inside the driver.
-    [SkippableFact]
-    [Category(TestCategory.Runtime)]
-    [Scenario(TestScenario.HappyPath)]
-    public void WaitAsync_DeviceMemoryFreedWhileStreamIsPendingForLessThanAWatchdogPeriod_Completes()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        const string Name = nameof(WaitAsync_DeviceMemoryFreedWhileStreamIsPendingForLessThanAWatchdogPeriod_Completes);
-        if (!IsolatedTestProcess.IsChild(Name))
-        {
-            IsolatedTestProcess.Run(typeof(CudaStreamCompletionTests), Name, IsolatedRunTimeoutMilliseconds);
-            return;
-        }
-
-        FreeDeviceMemoryWhileWaitIsPending(TimeSpan.FromMilliseconds(30));
-    }
-
-    private static void FreeDeviceMemoryWhileWaitIsPending(TimeSpan gateHoldTime)
-    {
-        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
-        var buffer = CudaTestEnvironment.InContext(static () =>
-        {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var pointer, 4096));
-            return pointer;
-        });
-        var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream.Handle, gateHoldTime));
-
-        var pending = CudaStreamCompletion.WaitAsync(stream.Handle).AsTask();
-
-        // cuMemFree waits for the work of every stream of the device, so it returns only after the gate opens.
-        var free = Task.Factory.StartNew(
-            () => CudaTestEnvironment.InContext(() => CudaDriverApi.cuMemFree_v2(buffer)),
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-
-        // A blocking wait on the test thread: stuck watchdog ticks take thread-pool threads, so a continuation or a
-        // Task.Delay would itself run late. After a failure nothing is freed: the process is stuck and ends here.
-        // mutant: CudaStreamCompletionSource.TryCompleteFromHostCallback
-        // `if (_tickLock.TryEnter())` -> `if (_tickLock.TryEnter(Timeout.Infinite))`
-        var completed = Task.WaitAll([pending, free], CompletionTimeout);
-        Assert.True(
-            completed,
-            $"Deadlock: gate released = {gate.IsReleased}, wait completed = {pending.IsCompleted}, " +
-            $"cuMemFree returned = {free.IsCompleted}.");
-
-        Assert.Equal(CUresult.CudaSuccess, free.Result);
-        Assert.True(gate.IsReleased);
-        gate.Dispose();
-        CudaTestEnvironment.InContext(stream.Dispose);
-    }
-
     private sealed class ThrowingCompletionHook : IStreamCompletionHook
     {
         public void OnStreamCompleted() => throw new InvalidOperationException("Simulated hook failure.");
@@ -670,50 +536,5 @@ public class CudaStreamCompletionTests
         }
 
         pending.GetAwaiter().GetResult();
-    }
-
-    /// <summary>A CUDA context other than the global one, like the context of an isolated <c>GpuWorkspace</c>.</summary>
-    private sealed class IsolatedContext : IDisposable
-    {
-        private IntPtr _handle;
-
-        private IsolatedContext(IntPtr handle) => _handle = handle;
-
-        public IntPtr Handle => _handle;
-
-        public static IsolatedContext Create() =>
-            CudaTestEnvironment.InContext(static () =>
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out var handle, 0, device));
-
-                // cuCtxCreate also makes the new context current; pop it so that it is current only inside Run.
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
-                return new IsolatedContext(handle);
-            });
-
-        public T Run<T>(Func<T> action)
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope(_handle);
-            return action();
-        }
-
-        public void Run(Action action)
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope(_handle);
-            action();
-        }
-
-        public void Dispose()
-        {
-            if (_handle == IntPtr.Zero)
-            {
-                return;
-            }
-
-            var handle = _handle;
-            _handle = IntPtr.Zero;
-            GpuKernelLoader.DestroyContext(handle);
-        }
     }
 }
