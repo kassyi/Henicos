@@ -141,6 +141,9 @@ async function checkWritingSettings(assert: AssertModule): Promise<void> {
  */
 function checkExitCleansUp(assert: AssertModule): void {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-git-exit-"));
+  // The child's own temporary directory: a digest of any other process (another self-test, a real job) makes its
+  // scratch folders elsewhere, so that every scratch folder here is the child's
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-git-exit-temp-"));
   try {
     git(repo, "init", "-q");
     fs.writeFileSync(path.join(repo, "a.txt"), "one\n");
@@ -148,21 +151,26 @@ function checkExitCleansUp(assert: AssertModule): void {
     // Exits as soon as its digest has made a scratch folder, and says which one
     const script =
       `import * as fs from "node:fs"; import * as os from "node:os";` +
-      `const before = new Set(fs.readdirSync(os.tmpdir()));` +
       `const { worktreeDigest } = await import(${JSON.stringify(pluginUrl)});` +
       `void worktreeDigest(${JSON.stringify(repo)}, process.env);` +
-      `const timer = setInterval(() => { const made = fs.readdirSync(os.tmpdir()).find((n) => n.startsWith("job-queue-digest-") && !before.has(n));` +
+      `const timer = setInterval(() => { const made = fs.readdirSync(os.tmpdir()).find((n) => n.startsWith("job-queue-digest-"));` +
       ` if (made !== undefined) { process.stdout.write(made); process.exit(0); } }, 2);` +
       `setTimeout(() => { clearInterval(timer); process.exit(3); }, 20000);`;
     const run = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
       encoding: "utf8",
       windowsHide: true,
+      env: { ...process.env, TEMP: temp, TMP: temp, TMPDIR: temp },
     });
     assert.strictEqual(run.status, 0, `the digest made a scratch folder: ${run.stderr}`);
     assert.ok(run.stdout.startsWith("job-queue-digest-"));
-    assert.ok(!fs.existsSync(path.join(os.tmpdir(), run.stdout)), "removed at exit");
+    assert.deepStrictEqual(
+      fs.readdirSync(temp).filter((name) => name.startsWith("job-queue-digest-")),
+      [],
+      "removed at exit",
+    );
   } finally {
     fs.rmSync(repo, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+    fs.rmSync(temp, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 }
 
