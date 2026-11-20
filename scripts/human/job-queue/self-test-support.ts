@@ -83,13 +83,17 @@ export async function exitsOf(
   limitMs = ClientExitMs,
 ): Promise<{ codes: (number | null | "no exit")[]; said: string }> {
   // A client that does not end within the limit counts as "no exit", so that the check fails instead of hanging
+  // The timer keeps the process alive until the client ends or the limit passes, and is cleared then
   const codes = await Promise.all(
-    clients.map((client) =>
-      Promise.race([
-        client.done,
-        new Promise<"no exit">((resolve) => setTimeout(() => resolve("no exit"), limitMs).unref()),
-      ]),
-    ),
+    clients.map(async (client) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const limit = new Promise<"no exit">((resolve) => (timer = setTimeout(() => resolve("no exit"), limitMs)));
+      try {
+        return await Promise.race([client.done, limit]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }),
   );
   const said = clients
     .map((client, i) => `client ${i} (exit ${String(codes[i])}): ${client.said?.() ?? ""}`)

@@ -14,7 +14,7 @@ import { DigestVariable, JobVariable, ProtocolVersion, ReasonNoticeMs } from "./
 import { differingNames, environmentHash, VolatileEnv } from "./environment-hash.ts";
 import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
 import { PluginHost } from "./plugin-host.ts";
-import type { StatusJob } from "./protocol.ts";
+import type { Incoming, StatusJob } from "./protocol.ts";
 import { FakeHost, FakeScheduler, until } from "./self-test-client.ts";
 import { worktreeKey } from "./system.ts";
 import type { ResourceSpec } from "./resources.ts";
@@ -436,13 +436,17 @@ async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
  * passed, if it still holds then: a reason that flips back and forth prints no line for each flip.
  */
 async function checkReasonNotices(assert: AssertModule): Promise<void> {
-  const scheduler = new FakeScheduler();
-  await scheduler.listen();
   const realNow = Date.now;
   let clock = realNow();
   Date.now = () => clock;
+  // What the client prints, as it prints it (its timer prints between the steps below)
+  let text = "";
+  const write = process.stderr.write;
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    text += String(chunk);
+    return true;
+  }) as typeof process.stderr.write;
   try {
-    const host = new FakeHost();
     const options: RunOptions = {
       port: 0,
       slots: 2,
@@ -457,58 +461,36 @@ async function checkReasonNotices(assert: AssertModule): Promise<void> {
       after: 0,
       keepIfFailed: false,
     };
-    const text = await stderrOf(async () => {
-      void new QueuedRun(options, { weight: 1, pin: null, before: null }, false, false, host, undefined).run();
-      await until("the client connects", () => host.connects.length === 1);
-      host.connects[0]?.resolve(await scheduler.connect());
-      await until("the registration arrives", () => (scheduler.accepted[0]?.messages.length ?? 0) > 0);
-      const accepted = scheduler.accepted[0];
-      if (accepted === undefined) {
-        throw new Error("no connection");
-      }
-      const start = clock;
-      const outlook = { id: 9, state: "waiting", ahead: 1, position: 2, startAt: start + 60000, endAt: start + 120000 };
-      // Each message is read at its own time: the clock stays while the client reads it
-      const send = (type: string, waitFor: string, at: number): Promise<void> => {
-        clock = start + at;
-        FakeScheduler.send(accepted, { type, ...outlook, waitFor, used: 2, capacity: 2 });
-        return new Promise((resolve) => setTimeout(resolve, 40));
-      };
-      const settle = (at: number): Promise<void> => {
-        clock = start + at;
-        return new Promise((resolve) => setTimeout(resolve, 80));
-      };
-      const L = ReasonNoticeMs;
-      await send("queued", "slots", 0);
-      await settle(0);
-      // Too soon, and back before the limit: nothing is told, then or later
-      await send("waiting", "in-line", L - 10);
-      await send("waiting", "slots", L - 10);
-      await settle(L + 100);
-      // The limit has passed since the last notice: told at once (at 35 s, where a notice left over would come at 30 s)
-      await send("waiting", "in-line", L + 5000);
-      await send("waiting", "slots", 2 * L + 5100);
-      // Too soon: told once the limit has passed, as it still holds then
-      await send("waiting", "in-line", 3 * L + 5090);
-      await settle(3 * L + 5200);
-      // A notice in between (a new place) tells the latest reason: the change kept for later is dropped with its timer
-      await send("waiting", "slots", 4 * L + 5190);
-      FakeScheduler.send(accepted, {
-        type: "waiting",
-        ...outlook,
-        position: 1,
-        waitFor: "memory",
-        used: 2,
-        capacity: 2,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 40));
-      await settle(5 * L + 5400);
-      accepted.socket.destroy();
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    });
-    const waiting = text.split(/\r?\n/).filter((line) => line.includes("waiting j0009"));
+    // The messages go to the client's handler directly, each at the time the clock says: no socket, no race with the
+    // clock; the only wait is for its own timer (a reason kept for later), on what it printed or its pending timer
+    const run = new QueuedRun(options, { weight: 1, pin: null, before: null }, false, false, new FakeHost(), undefined);
+    const client = run as unknown as { onMessage(message: Incoming): void; laterTimer: unknown };
+    const start = clock;
+    const outlook = { id: 9, state: "waiting", ahead: 1, position: 2, startAt: start + 60000, endAt: start + 120000 };
+    const notices = (): string[] => text.split(/\r?\n/).filter((line) => line.includes("waiting j0009"));
+    const deliver = (type: string, waitFor: string, at: number, extra: object = {}): void => {
+      clock = start + at;
+      client.onMessage({ type, ...outlook, waitFor, used: 2, capacity: 2, ...extra });
+    };
+    const L = ReasonNoticeMs;
+    deliver("queued", "slots", 0);
+    // Too soon, and back before the limit: nothing is told, then or later (the timer ends without a notice)
+    deliver("waiting", "in-line", L - 10);
+    deliver("waiting", "slots", L - 10);
+    await until("the timer of the dropped reason has run", () => client.laterTimer === null);
+    // The limit has passed since the last notice: told at once (at 35 s, where a notice left over would come at 30 s)
+    deliver("waiting", "in-line", L + 5000);
+    deliver("waiting", "slots", 2 * L + 5100);
+    // Too soon: told once the limit has passed, as it still holds then
+    deliver("waiting", "in-line", 3 * L + 5090);
+    clock = start + 3 * L + 5200;
+    await until("the kept reason is told", () => notices().length === 3);
+    // A notice in between (a new place) tells the latest reason: the change kept for later is dropped with its timer
+    deliver("waiting", "slots", 4 * L + 5190);
+    deliver("waiting", "memory", 4 * L + 5195, { position: 1 });
+    assert.strictEqual(client.laterTimer, null, "no reason is kept once a notice told the latest");
     assert.deepStrictEqual(
-      waiting.map(
+      notices().map(
         (line) =>
           `${/\((\d+)s\)/.exec(line)?.[1]} ${/waits for (CPU slots|the jobs that go first|the memory budget of the test runs)$/.exec(line)?.[1]}`,
       ),
@@ -521,8 +503,8 @@ async function checkReasonNotices(assert: AssertModule): Promise<void> {
       JSON.stringify(text),
     );
   } finally {
+    process.stderr.write = write;
     Date.now = realNow;
-    scheduler.close();
   }
 }
 
@@ -530,7 +512,9 @@ async function checkReasonNotices(assert: AssertModule): Promise<void> {
 async function checkExitsOf(assert: AssertModule): Promise<void> {
   const ended = { done: Promise.resolve(4), said: () => "cancelled" } as unknown as Client;
   const stuck = { done: new Promise<number>(() => {}), said: () => "still waiting" } as unknown as Client;
+  const started = Date.now();
   const { codes, said } = await exitsOf([ended, stuck], 50);
+  assert.ok(Date.now() - started < 5000, "within the limit, not when the stuck client ends");
   assert.deepStrictEqual(codes, [4, "no exit"]);
   assert.deepStrictEqual(said.split("\n"), ["client 0 (exit 4): cancelled", "client 1 (exit no exit): still waiting"]);
 }
