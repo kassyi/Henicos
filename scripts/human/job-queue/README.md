@@ -114,6 +114,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `server-probe.ts` | The probe of a turn resource: `runProbe` runs the program of `resources.<name>.probe` without a shell (ok on exit 0 and a first number of at least `min`; a timeout, a failure to start or no number is not ok), `ProbeRunner` keeps one per resource, five seconds apart, and kills them when the scheduler stops |
 | `server-shared-checks.ts`, `server-probe-checks.ts` | Self-test checks of shared turns against a scheduler in the test's own process (the `share` of a grant, the probe before a second shared turn, restore, `status` resources, the log of a failed shared turn) and of `runProbe` and the `serve --gpu-slots` range |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
+| `job-id.ts` | `formatJobId` (`j` and the last four digits, for every printed id), `parseJobRef` (what a person typed: a full id or the last digits), `pickSuffixMatch` (the scheduler's `resolve`: a live match, else the newest ended one); lib/resource-lock.js keeps a copy of the one-line formatter |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read (`readCommandLine` also says whether a `|` stands outside quotes); pure |
 | `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
@@ -133,7 +134,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
-| `lib/seat-lock.js` | Generic 1-or-2-seat directory lock (`exclusive` and `shared` acquisition, per-seat stale takeover including `acquiring`, `stage` transitions, cleanup) |
+| `lib/seat-lock.js` | Generic 1-or-2-seat directory lock (`exclusive` and `shared` acquisition, per-seat stale takeover including `acquiring`, `stage` transitions, cleanup; an exclusive waiter's intent directory `<seat 0>.exclusive-wait` stops new shared seats so that overlapping shared holders cannot starve it) |
 | `lib/resource-lock.js` | Generic resource lock CLI/runner (`--resource`, `--mode`, 10 s jitter wait backoff, `holderWatch` lifecycle, shared failure overlap report, signal handling) |
 | `lib/types.ts` | Pure TypeScript interfaces for the shared `lib/` modules |
 | `lib-checks.ts` | Checks of the shared `lib/` modules (`main-checkout.js` and `process-liveness.js`) |
@@ -192,8 +193,9 @@ sequenceDiagram
   second shared turn also needs a probe result that is ok, at most `ProbeFreshMs` old and of the current generation
   (the generation grows with every grant, so one result serves one grant); the first needs none, and neither does a
   resource without a probe. A resource the configuration does not name gets one slot and no probe. The forecast
-  assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the running shared
-  turns have run `settleMs`; the server that runs it comes later.
+  assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the command of each
+  running shared turn has held the lock for `settleMs` (from the latest start of its holders, not from the grant; a
+  turn whose command holds nothing yet has not settled). A holder counts on the resource of the turn that started it.
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 

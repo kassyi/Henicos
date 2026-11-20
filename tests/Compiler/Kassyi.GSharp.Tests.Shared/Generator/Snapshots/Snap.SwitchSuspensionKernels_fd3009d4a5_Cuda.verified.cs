@@ -1092,15 +1092,13 @@ finally
 public const string SectionConstantAcrossBarrierKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SectionConstantAcrossBarrierKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = (int)threadIdx.x;
-{
-const unsigned char __gsharp_id_3_Max = 255;
 switch(__gsharp_id_1_flag)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __syncthreads();
-auto __gsharp_id_4_x = __gsharp_id_3_Max;
+auto __gsharp_id_4_x = (unsigned char)255;
 __gsharp_id_4_x=(unsigned char)__gsharp_add_i32(__gsharp_id_4_x,1);
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 533796844u)=__gsharp_id_4_x;
 break;
@@ -1108,11 +1106,10 @@ break;
 default:
 __gsharp_switch_1_state_default:
 {
-auto __gsharp_id_5_y = __gsharp_id_3_Max;
+auto __gsharp_id_5_y = (unsigned char)255;
 __gsharp_id_5_y=(unsigned char)__gsharp_add_i32(__gsharp_id_5_y,1);
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 540712016u)=__gsharp_id_5_y+__gsharp_id_3_Max;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 540712016u)=__gsharp_id_5_y+255;
 break;
-}
 }
 }
 }
@@ -1241,8 +1238,6 @@ public const string SectionConstantCaseLabelKernel_Source = @"extern ""C"" __glo
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_value = __gsharp_id_2_tid;
-{
-const int __gsharp_id_4_Next = 1;
 switch(__gsharp_id_1_flag)
 {
 case 0:
@@ -1251,7 +1246,7 @@ __gsharp_switch_1_state_0:
 __gsharp_id_3_value=__shfl_xor_sync(4294967295U,__gsharp_id_3_value,1,32);
 break;
 }
-case __gsharp_id_4_Next:
+case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_id_3_value=__gsharp_add_i32(__shfl_xor_sync(4294967295U,__gsharp_id_3_value,2,32),100);
@@ -1262,7 +1257,6 @@ __gsharp_switch_1_state_default:
 {
 __gsharp_id_3_value=__gsharp_add_i32(__gsharp_id_3_value,1000);
 break;
-}
 }
 }
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 477597374u)=__gsharp_id_3_value;
@@ -1391,23 +1385,20 @@ finally
 public const string SectionConstantChainKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SwitchSuspensionKernels__SectionConstantChainKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_flag, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = (int)threadIdx.x;
-{
-const int __gsharp_id_3_A = 3;
-const int __gsharp_id_4_B = 6;
 switch(__gsharp_id_1_flag)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 63353362u)=__gsharp_id_3_A;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 63353362u)=3;
 break;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 2097301532u)=__gsharp_id_4_B;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 2097301532u)=6;
 break;
 }
 default:
@@ -1415,7 +1406,6 @@ __gsharp_switch_1_state_default:
 {
 __gsharp_array_at(__gsharp_id_0_output, __gsharp_id_2_tid, 488945396u)=9;
 break;
-}
 }
 }
 }

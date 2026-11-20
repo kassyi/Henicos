@@ -41,7 +41,7 @@ public class MemoryBudgetBreachTests
             output,
             StringComparison.Ordinal
         );
-        Assert.Contains($"{ProcessMemory.PeakMetricName} ", output, StringComparison.Ordinal);
+        Assert.Contains($"{ProcessMemory.MetricName} ", output, StringComparison.Ordinal);
         Assert.Contains($"budget {SmallBudgetMegabytes} MB", output, StringComparison.Ordinal);
         Assert.Contains($"Tests running when the breach was seen: {s_fixtureTest}", output, StringComparison.Ordinal);
         Assert.Contains(

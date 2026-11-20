@@ -1271,6 +1271,7 @@
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.ImplicitThisGetterKernel", status: "Compared", count: 1}
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.Pair", status: "NoStateMachine", count: 1}
 - {file: "Differential/ReceiverGetterOrderDifferentialKernels.cu.cs", method: "ReceiverGetterOrderDifferentialKernels.ReceiverGetterKernel", status: "Compared", count: 1}
+- {file: "Differential/SameNameLabelDifferentialKernels.cu.cs", method: "SameNameLabelDifferentialKernels.SiblingLabelsKernel", status: "OpaqueStatement", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.Bump", status: "NoStateMachine", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.ConditionalRefWriteDevice", status: "Compared", count: 1}
 - {file: "Differential/SpillOrderMutatingGetterKernels.cu.cs", method: "SpillOrderMutatingGetterKernels.MutateByRef", status: "NoStateMachine", count: 1}
@@ -1782,6 +1783,9 @@
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.SynthesizedDefaultKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.Widen", status: "NoStateMachine", count: 1}
 - {file: "Syntax/ConstFieldLiteralKernels.cu.cs", method: "ConstFieldLiteralKernels.WidenByAttribute", status: "NoStateMachine", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.ClassConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.LocalConstZeroDivisorKernel", status: "Compared", count: 1}
+- {file: "Syntax/ConstZeroDivisorKernels.cu.cs", method: "ConstZeroDivisorKernels.NonConstantDividendKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContextualKeywordTypeKernels.cu.cs", method: "ContextualKeywordTypeKernels.KeywordTypesKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxFollowedByWriteKernel", status: "Compared", count: 1}
 - {file: "Syntax/ContractsAndPtxKernels.cu.cs", method: "ContractsAndPtxKernels.InlinePtxKernel", status: "Compared", count: 1}
@@ -2129,6 +2133,16 @@
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UlongConstMaskKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.UshortConstConversionKernel", status: "Compared", count: 1}
 - {file: "Syntax/LocalConstAcrossBarrierKernels.cu.cs", method: "LocalConstAcrossBarrierKernels.ZeroFloatConstDivisorsAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.AddIn", status: "NoStateMachine", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.ByteCaseLabelKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.CaseLabelKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.GotoCaseLocalConstKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.InArgumentLocalConstKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.LabeledConstAtBlockEndKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.LocalConstSharedMemoryCountKernel", status: "Compared", count: 1}
+- {file: "Syntax/LocalConstCaseLabelKernels.cu.cs", method: "LocalConstCaseLabelKernels.SharedSectionConstKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/LocalConstSkippedByGotoKernels.cu.cs", method: "LocalConstSkippedByGotoKernels.ConstSkippedByGotoKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "Syntax/LocalConstSkippedByGotoKernels.cu.cs", method: "LocalConstSkippedByGotoKernels.ConstSkippedByGotoNoBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CalledBeforeDeclarationKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.CapturesLocalAfterLastBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/LocalFunctionAcrossStatesKernels.cu.cs", method: "LocalFunctionAcrossStatesKernels.ChainToStayingFunctionKernel", status: "OpaqueStatement", count: 1}
@@ -2717,7 +2731,9 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ExerciseULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ExerciseUShortIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.MutateAndReturn", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadConvertedULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadLongIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNullWithLongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNullWithULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadReceiverSideEffectWithULongIndexKernel", status: "Compared", count: 1}
@@ -2726,6 +2742,8 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedLongDevice", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedLongIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedNUIntDevice", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedNUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedUIntDevice", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedULongDevice", status: "NoStateMachine", count: 1}
@@ -2740,8 +2758,11 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedUInt", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedULong", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedUShort", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteConvertedULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteLongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteLongIndexWithSideEffectKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteNUIntIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteNUIntIndexShuffleKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteULongIndexShuffleKernel", status: "Compared", count: 1}
@@ -3287,6 +3308,10 @@
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.LambdaWriteKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.ReturnUnderBranch", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ReturnAndLambdaVarianceKernels.cu.cs", method: "ReturnAndLambdaVarianceKernels.ReturnUnderBranchKernel", status: "Compared", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingChainedLabelsKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingLabelsForwardKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingLabelsKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs", method: "SameNameLabelGotoKernels.SiblingLabelsOwnBarrierKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs", method: "ShortCircuitSuspendingCallKernels.ShortCircuitCallKernel", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/ShortCircuitSuspendingCallKernels.cu.cs", method: "ShortCircuitSuspendingCallKernels.WaitAndConfirm", status: "Compared", count: 1}
 - {file: "TestCases/Analyzers/BarrierUsage/SuspendingCallAfterConditionalAccessKernels.cu.cs", method: "SuspendingCallAfterConditionalAccessKernels.AcceptedFormsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
@@ -4142,6 +4167,10 @@
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.ExplicitLayoutInvalidKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalLocalKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/MarshalingBoundaryDiagnostics.cs", method: "MarshalingBoundaryDiagnostics.MultidimensionalReturnKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.AcceptedBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InfiniteBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedBoundsKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/MathClampInvertedBounds.cu.cs", method: "MathClampInvertedBoundsKernels.InvertedInDevice", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/MultidimensionalParameterDiagnostics.cs", method: "MultidimensionalParameterDiagnostics.MatrixParamKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NameofString.cu.cs", method: "NameofStringKernels.NameofStringKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NameofString.cu.cs", method: "NameofStringKernels.NullConstantLengthKernel", status: "Compared", count: 1}
@@ -5052,6 +5081,7 @@
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.ForUnrollBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.GridStrideBarrierKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "TestCases/StateMachines/PreLoweringMacroSpans.cs", method: "PreLoweringMacroSpans.SyncGridBodyKernel", status: "Fallback:OpaqueOperand", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.ActiveMaskInAndAlsoKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BackwardGotoKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BackwardGotoNoSplitKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.BreakKernel", status: "Reconvergence", count: 1}

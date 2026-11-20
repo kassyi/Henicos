@@ -83,17 +83,39 @@ export function resourceOf(job: Pick<ResourceJob, "resource">): string {
 }
 
 /**
- * The use of resource `name`. A turn without share "shared" is exclusive. So is a holder that no running turn of the
- * resource started (turn null or absent, or a turn that has ended): it is the GPU lock taken by hand, by an older
- * client, or what remains of a turn whose client died.
+ * The use of resource `name`. A turn without share "shared" is exclusive. So is a holder that no running turn started
+ * (turn null or absent, or a turn that has ended): it is the GPU lock taken by hand, by an older client, or what
+ * remains of a turn whose client died. A holder belongs to the resource of the running turn that started it (holders
+ * send no resource of their own); an untied one to its own resource, "gpu" when it names none.
  */
 export function usageOf<J extends ResourceJob>(running: readonly J[], name: string): ResourceUsage<J> {
-  const turns = running.filter((job) => job.gpuTurn === true && resourceOf(job) === name);
-  const holders = running.filter((job) => job.gpu && job.gpuTurn !== true && resourceOf(job) === name);
-  const untied = holders.filter((holder) => !turns.some((turn) => turn.id === holder.turn));
+  const allTurns = running.filter((job) => job.gpuTurn === true);
+  const turnOf = (holder: J): J | undefined => allTurns.find((turn) => turn.id === holder.turn);
+  const turns = allTurns.filter((job) => resourceOf(job) === name);
+  const holders = running.filter((job) => job.gpu && job.gpuTurn !== true && resourceOf(turnOf(job) ?? job) === name);
+  const untied = holders.filter((holder) => turnOf(holder) === undefined);
   const sharedTurns = turns.filter((job) => job.share === "shared");
   const exclusiveBusy = turns.some((job) => job.share !== "shared") || untied.length > 0;
   return { turns, holders, untied, sharedTurns, exclusiveBusy };
+}
+
+/**
+ * Whether every shared turn of `usage` has used the resource for settleMs: counted from the latest start of the
+ * holders it started (its command under the lock), not from its grant, since the command may start well after the
+ * grant. A turn whose command holds nothing yet has not settled. With settleMs 0 every turn has settled.
+ */
+export function sharedTurnsSettled<J extends ResourceJob>(
+  usage: ResourceUsage<J>,
+  settleMs: number,
+  now: number,
+): boolean {
+  if (settleMs <= 0) {
+    return true;
+  }
+  return usage.sharedTurns.every((turn) => {
+    const tied = usage.holders.filter((holder) => holder.turn === turn.id);
+    return tied.length > 0 && tied.every((holder) => now - holder.grantedAt >= settleMs);
+  });
 }
 
 /**

@@ -32,6 +32,14 @@ internal static class IdentifierNameTranspiler
             return;
         }
 
+        // A const local has no storage in C++ (its declaration writes nothing): a reference is its value, so a case
+        // label is a constant expression and a goto past the declaration skips nothing
+        if (symbol is ILocalSymbol { IsConst: true, HasConstantValue: true } constLocal)
+        {
+            ConstantAtUse.Append(node, constLocal.Type, constLocal.ConstantValue, ref context);
+            return;
+        }
+
         if (IsDereferencedReference(symbol, ref context))
         {
             using (context.Emitter.Writer.Parentheses())
