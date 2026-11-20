@@ -1138,8 +1138,8 @@ public class WarpActiveMaskDifferentialTests
     // The lanes with (t & 3) == 1 (B) take the first goto, those with (t & 3) == 2 (C) the second, the others (A) none.
     // Between the two gotos the loop has not ended: A and C pass it together the first time (0xDDDDDDDD), B and C
     // alone the second time. Every lane meets after the second goto (slot 4). Slot 1 is not compared: B and C come back
-    // to L1 by different backward gotos and meet there on CUDA (0x66666666) but not on the CPU paths, a separate
-    // divergence
+    // to L1 by different backward gotos and meet there on CUDA (0x66666666) but not on the CPU paths: #2263 (Lanes
+    // that come back to a goto loop's label by different backward gotos do not meet there on the CPU paths)
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void ActiveMask_GotoLoopEndingInBlockWithTwoGotos_ReconvergesAfterTheLastGoto() =>
