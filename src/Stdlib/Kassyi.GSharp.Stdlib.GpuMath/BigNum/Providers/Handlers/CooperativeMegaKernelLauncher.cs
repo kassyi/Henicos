@@ -157,19 +157,27 @@ internal static class CooperativeMegaKernelLauncher
         return constant;
     }
 
+    // The most threads a block can have on any CUDA device, and so the largest block size the launcher can choose.
+    private const int MaxThreadsPerBlock = 1024;
+
     internal static uint ComputeMegaKernelSharedMemoryBytes(int transformLength)
     {
-        var n2 = 1;
-        while (n2 * n2 < transformLength)
+        var maxL = transformLength;
+        if (transformLength > GpuBigIntNttKernels.SharedRowMaxTransformLength)
         {
-            n2 *= 2;
+            var n2 = 1;
+            while (n2 * n2 < transformLength)
+            {
+                n2 *= 2;
+            }
+
+            maxL = Math.Max(transformLength / n2, n2);
         }
 
-        var n1 = transformLength / n2;
-        var maxL = transformLength <= 512 ? transformLength : Math.Max(n1, n2);
-        var sharedMemBytesNtt = (uint)((maxL + (maxL >> 5)) * 4 + 256);
-        const uint SharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
-        return Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
+        // ExecuteNttSharedRow holds rowsPerBatch rows: at most 2 * blockDim points (one thread per butterfly), or one
+        // longer row. Sized for the largest block, so that the size does not depend on the block size chosen after it.
+        var rowWords = Math.Max(2 * MaxThreadsPerBlock, maxL);
+        return (uint)((rowWords + (rowWords >> 5)) * 4 + 256);
     }
 
     internal static uint ComputeClampedGridDim(int transformLength, uint blockDim, int deviceSmCount)

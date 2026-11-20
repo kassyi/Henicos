@@ -37,7 +37,7 @@ public static partial class GpuBigIntDivRemKernels
         }
 
         int n1 = m / n2;
-        if (m <= 512)
+        if (m <= GpuBigIntNttKernels.SharedRowMaxTransformLength)
         {
             n1 = m;
             n2 = 1;

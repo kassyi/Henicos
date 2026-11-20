@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
 /// <summary>
 /// Verifies that cooperative mega-kernel results for <c>InverseSqrtMega</c>, <c>Sqrt</c>, and <c>ReciprocalMega</c>
-/// are bit-for-bit identical across block sizes <c>768</c>, <c>512</c>, and <c>256</c> (including inputs crossing the
-/// 1024-word carry-chunk boundary), honor <c>CandidateBlockSizesOverride</c> with <c>AsyncLocal</c> isolation, and
-/// match the CPU oracle.
+/// are bit-for-bit identical across block sizes <c>1024</c>, <c>768</c>, <c>512</c>, and <c>256</c> (including inputs
+/// crossing the 1024-word carry-chunk boundary), honor <c>CandidateBlockSizesOverride</c> with <c>AsyncLocal</c>
+/// isolation, and match the CPU oracle.
 /// </summary>
 [Collection(TestCollections.GlobalStateSequential)]
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -16,17 +16,57 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 {
     private const string InverseSqrtKernelName = "GpuBigIntSqrtKernels.InverseSqrtNewtonRaphsonMegaKernel";
-    private static readonly int[] CandidateBlockSizes = [768, 512, 256];
+    private static readonly int[] CandidateBlockSizes = [1024, 768, 512, 256];
 
+    // The product of InverseSqrt has 4 * numWords + 3 * marginWords words and its transform M = the power of two that
+    // holds twice as many points. A transform of L-point rows runs rowsPerBatch = max(1, B / (L / 2)) rows at once per
+    // block, on G = min(smCount, ceil(M / B)) blocks; smCount 0 keeps the SM count of the machine. The rows of a block
+    // per batch, for the block sizes named:
+    // - (50, 8, 0): M = 512, one row. B = 256 gives G = 2, and block 1 has no row.
+    // - (60, 6, 0): M = 1024, one row. B = 256 has L / 2 = 512 > B (each thread takes two butterflies); B = 768 leaves
+    //   256 threads idle.
+    // - (250, 8, 1): M = 2048 = 32 x 64 (N1 != N2: a column stride mixed up with the row length shows), G = 1.
+    //   B = 768: columns [48, 16], rows [24, 8] (the rows do not divide by rowsPerBatch). B = 256: four batches.
+    // - (250, 8, 3): B = 256, G = 3: block 0 [16, 6] / [8, 3], block 2 [16, 5] / [8, 2] (the last batch is short and
+    //   differs per block). B = 1024 gives G = 2.
+    // - (600, 10, 3): M = 8192 = 64 x 128. B = 1024, G = 3: [32, 11] / [32, 10] and [16, 6] / [16, 5] (several batches
+    //   with the largest block). B = 768: [24, 19] and [12, 10].
+    // - (8000, 4000, 3): M = 131072 = 256 x 512, above StridedColumnMaxTransformLength: the transposes (N1 != N2: the
+    //   width and height of a transpose mixed up show). G = 3; B = 1024: rows of 256 points 8 at a time (171 rows of
+    //   block 0, the last batch short), tiles 3 at a time (43 of the 128 tiles in block 0, the last batch short);
+    //   B = 256: one tile at a time, rows of 512 points one per batch.
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(16, 4)]
-    [InlineData(1024, 16)]
-    [InlineData(1025, 16)]
-    public void InverseSqrtMega_AcrossCandidateBlockSizes_MatchesCpuOracleBitForBit(int numWords, int marginWords)
+    [InlineData(16, 4, 0)]
+    [InlineData(1024, 16, 0)]
+    [InlineData(1025, 16, 0)]
+    [InlineData(50, 8, 0)]
+    [InlineData(60, 6, 0)]
+    [InlineData(250, 8, 1)]
+    [InlineData(250, 8, 3)]
+    [InlineData(600, 10, 3)]
+    [InlineData(8000, 4000, 3)]
+    public void InverseSqrtMega_AcrossCandidateBlockSizes_MatchesCpuOracleBitForBit(
+        int numWords, int marginWords, int smCount)
     {
         CudaCapability.EnsureGpuAvailable();
+        AssertInverseSqrtMegaMatchesCpuOracle(numWords, marginWords, smCount, CandidateBlockSizes);
+    }
 
+    // (30000, 15000, 0): M = 524288 = 512 x 1024. B = 256 transforms the rows of 1024 points with L / 2 > B (each
+    // thread takes two butterflies of one row); B = 1024 batches two such rows.
+    [SkippableFact]
+    [Category(TestCategory.Stress)]
+    [Scenario(TestScenario.Boundary)]
+    public void InverseSqrtMega_RowsLongerThanTwiceTheBlock_MatchesCpuOracleBitForBit()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        AssertInverseSqrtMegaMatchesCpuOracle(30000, 15000, 0, [1024, 256]);
+    }
+
+    private static void AssertInverseSqrtMegaMatchesCpuOracle(
+        int numWords, int marginWords, int smCount, int[] blockSizes)
+    {
         var operandWords = CreateNormalizedWords(seed: 7100 + numWords, numWords);
         var operand = FromWords(operandWords);
         var precisionBits = (numWords + marginWords) * 32;
@@ -53,10 +93,15 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
 
         try
         {
-            foreach (var blockSize in CandidateBlockSizes)
+            foreach (var blockSize in blockSizes)
             {
                 CooperativeMegaKernelLauncher.CandidateBlockSizesOverride = [blockSize];
                 using var gpuWorkspace = new GpuWorkspace(resultWords * 8, GpuExecutionEngine.GSharpAot);
+                if (smCount > 0)
+                {
+                    gpuWorkspace.DeviceSmCount = smCount;
+                }
+
                 using var gpuOperand = new GpuBigUInt(gpuWorkspace, operandWords);
                 using var gpuResult = new GpuBigUInt(gpuWorkspace, resultWords);
                 GpuBigIntDivRem.InverseSqrt(gpuOperand, gpuResult, marginWords);
@@ -162,12 +207,16 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
         }
     }
 
+    // (200, 16000, 3): the product has 200 + 2 * 500 words, M = 4096 = 64 x 64, the six-step transform of the
+    // Reciprocal kernel. B = 512, G = 3: [16, 6] / [16, 5]; B = 256: [8, 8, 6] / [8, 8, 5].
     [SkippableTheory]
     [Scenario(TestScenario.Boundary)]
-    [InlineData(16, 1024)]
-    [InlineData(1024, 2 * 1024 * 32 + 512)]
-    [InlineData(1025, 2 * 1025 * 32 + 512)]
-    public void ReciprocalMega_AcrossCandidateBlockSizes_MatchesCpuOracleBitForBit(int numWords, int targetBits)
+    [InlineData(16, 1024, 0)]
+    [InlineData(1024, 2 * 1024 * 32 + 512, 0)]
+    [InlineData(1025, 2 * 1025 * 32 + 512, 0)]
+    [InlineData(200, 16000, 3)]
+    public void ReciprocalMega_AcrossCandidateBlockSizes_MatchesCpuOracleBitForBit(
+        int numWords, int targetBits, int smCount)
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -200,6 +249,11 @@ public class MegaKernelBlockSizeInvarianceTests(ITestOutputHelper output)
             {
                 CooperativeMegaKernelLauncher.CandidateBlockSizesOverride = [blockSize];
                 using var gpuWorkspace = new GpuWorkspace(resultWords * 4, GpuExecutionEngine.GSharpAot);
+                if (smCount > 0)
+                {
+                    gpuWorkspace.DeviceSmCount = smCount;
+                }
+
                 using var gpuDivisor = new GpuBigUInt(gpuWorkspace, divisorWords);
                 using var gpuResult = new GpuBigUInt(gpuWorkspace, resultWords);
                 GpuBigIntDivRem.Reciprocal(gpuDivisor, gpuResult, targetBits);

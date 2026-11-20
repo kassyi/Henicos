@@ -91,6 +91,9 @@ public class ModPowPolyAlgorithmTests : IDisposable
     // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntDivRemKernels.ModPow.cu.cs:99
     //   `int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;` -> `int numBlocks = 1;`
     //   input: numWords 200 (the carry out of the second chunk is lost and the result differs from BigInteger.ModPow)
+    // The ModPow mega-kernel runs one block of 256 threads. numWords 99 transforms 1024 points as one shared-memory
+    // row, whose 512 butterflies each thread takes two of; numWords 100 and 200 transform 2048 points as 32 x 64,
+    // whose rows of 32 points the block batches 16 at a time (four batches) and whose rows of 64 points 8 at a time.
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.Boundary)]
