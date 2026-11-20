@@ -31,6 +31,12 @@ internal sealed partial class ManagedExecutionRewriter(
     /// <summary>What the body is emitted as.</summary>
     public ManagedBodyKind BodyKind => bodyKind;
 
+    /// <summary>
+    /// The sites of the warp collectives and the frame offsets of the calls that reach one, for a stack form that
+    /// reaches a warp collective; <see langword="null"/> for any other body.
+    /// </summary>
+    public ManagedStackWarpLayout? WarpLayout { get; init; }
+
     private readonly ImmutableArray<ManagedCallFrame> _callFrames =
         callFrames.IsDefault ? ImmutableArray<ManagedCallFrame>.Empty : callFrames;
 

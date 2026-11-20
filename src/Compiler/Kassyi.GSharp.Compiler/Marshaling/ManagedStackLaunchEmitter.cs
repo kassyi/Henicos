@@ -18,7 +18,7 @@ internal static class ManagedStackLaunchEmitter
         }
 
         var kernelNameLiteral = SymbolDisplay.FormatLiteral(kernel.MessageName, quote: true);
-        CSharpExecutionEmitter.WriteStackRun(writer, plan, kernelNameLiteral);
+        CSharpExecutionEmitter.WriteStackRun(writer, plan, kernelNameLiteral, kernel.ReachesWarpShuffle);
         AutoResultEmitter.WriteReturn(writer, kernel);
         if (!kernel.ReturnsValue)
         {

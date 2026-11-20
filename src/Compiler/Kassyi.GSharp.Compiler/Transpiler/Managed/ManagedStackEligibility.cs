@@ -27,7 +27,8 @@ internal static class ManagedStackEligibility
             return false;
         }
 
-        if (SuspensionAnalysis.ReachesWarpShuffle(kernel, compilation))
+        if (SuspensionAnalysis.ReachesActiveMask(kernel, compilation) ||
+            GetWarpFailure(kernel, compilation) is not null)
         {
             return false;
         }
@@ -47,7 +48,7 @@ internal static class ManagedStackEligibility
         }
 
         var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        var hasBlockBarrier = false;
+        var waits = false;
         foreach (var node in RemovedCalls.DescendantNodesThatRun(body, semanticModel))
         {
             if (node is not InvocationExpressionSyntax invocation ||
@@ -62,14 +63,15 @@ internal static class ManagedStackEligibility
                 return false;
             }
 
-            if (intrinsic.Kind == SyncIntrinsicKind.BlockBarrier ||
+            // A thread waits in its body at a block barrier, a warp collective or a call that reaches one
+            if (intrinsic.Kind is SyncIntrinsicKind.BlockBarrier or SyncIntrinsicKind.WarpShuffle ||
                 SuspensionAnalysis.IsSuspendingFunction(callee, compilation))
             {
-                hasBlockBarrier = true;
+                waits = true;
             }
         }
 
-        if (!hasBlockBarrier)
+        if (!waits)
         {
             return false;
         }
@@ -77,6 +79,40 @@ internal static class ManagedStackEligibility
         return SuspensionAnalysis.GetSuspendingCallees(body, compilation)
             .AsStackEnumerable()
             .All(compilation, static (callee, comp) => IsStackFunction(callee, comp));
+    }
+
+    /// <summary>
+    /// Why <paramref name="kernel"/>, which reaches a warp collective other than <c>Warp.ActiveMask()</c>, cannot run
+    /// its collectives on the managed stack model, for the build output (<c>GSharp.ManagedStackFailures.g.cs</c>);
+    /// <see langword="null"/> when it can, or when it reaches none or reaches <c>Warp.ActiveMask()</c>, which the stack
+    /// model does not run yet.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The stack form finds the visit counts of every collective and call through
+    /// <see cref="WarpFrameLayout"/>; a kernel whose counts cannot be placed keeps its state machine here, so that the
+    /// stack form never meets a collective without a site (<see cref="ManagedStackWarpLayout"/>).
+    /// </remarks>
+    public static string? GetWarpFailure(IMethodSymbol kernel, Compilation compilation)
+    {
+        if (!SuspensionAnalysis.ReachesWarpShuffle(kernel, compilation) ||
+            SuspensionAnalysis.ReachesActiveMask(kernel, compilation))
+        {
+            return null;
+        }
+
+        if (!WarpFrameLayout.TryGet(kernel, compilation, out var layout))
+        {
+            return "the visit counts of its warp collectives cannot be placed (a device function of another " +
+                   "assembly or a recursive one reaches a collective)";
+        }
+
+        if (layout.Size > WarpFrameLayout.MaxSize)
+        {
+            return $"its warp collectives need {layout.Size} visit counts per thread, more than " +
+                   $"{WarpFrameLayout.MaxSize}";
+        }
+
+        return null;
     }
 
     private static bool ComputeIsStackFunction(IMethodSymbol function, Compilation compilation)
@@ -88,11 +124,17 @@ internal static class ManagedStackEligibility
         }
 
         if (!SuspensionAnalysis.RequiresStateMachine(function, compilation) ||
-            SuspensionAnalysis.ReachesWarpShuffle(function, compilation) ||
+            SuspensionAnalysis.ReachesActiveMask(function, compilation) ||
             SuspensionAnalysis.ReachesGridBarrier(function, compilation) ||
             !function.IsStatic ||
             !ManagedStateMachineAvailability.AreContainingTypesPartial(function) ||
             FileLocalNames.BlocksCopy(function, compilation))
+        {
+            return false;
+        }
+
+        if (SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
+            !WarpFrameLayout.TryGet(function, compilation, out _))
         {
             return false;
         }

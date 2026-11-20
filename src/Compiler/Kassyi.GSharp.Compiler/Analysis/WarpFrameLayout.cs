@@ -29,6 +29,8 @@ namespace Kassyi.GSharp.Compiler.Analysis;
 /// </remarks>
 internal sealed class WarpFrameLayout
 {
+    internal const int MaxSize = 4096;
+
     private static readonly PerCompilationSymbolCache<IMethodSymbol, WarpFrameLayout?> s_layouts = new();
 
     private readonly Dictionary<TextSpan, int> _sites;
