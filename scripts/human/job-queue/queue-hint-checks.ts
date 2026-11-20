@@ -41,6 +41,21 @@ function checkWaitFor(assert: AssertModule): void {
   s.enqueue(a, 0);
   s.enqueue(b, 0);
   assert.strictEqual(s.waitFor(a, 0), undefined, "a running job waits for nothing");
+  // A job the next grant takes waits for nothing either: the answer to its request comes before that grant
+  const empty = new Scheduler<SchedulerJob>(2, 0, "fifo", 1000);
+  const [lone, holder, started] = [
+    job(11, 1, 1),
+    job(12, 1, 2, true),
+    Object.assign(job(13, 2, 3), { startNow: true }),
+  ];
+  [lone, holder, started].forEach((j) => empty.add(j));
+  assert.deepStrictEqual(
+    [empty.waitFor(lone, 0), empty.waitFor(holder, 0), empty.waitFor(started, 0)],
+    [undefined, undefined, undefined],
+    "the first job that fits, a GPU holder, a job started by hand",
+  );
+  empty.paused = true;
+  assert.deepStrictEqual([empty.waitFor(lone, 0), empty.waitFor(holder, 0)], ["paused", undefined], "while paused");
   assert.strictEqual(s.waitFor(b, 0), "slots", "every slot in use");
   c.after = 1;
   s.enqueue(c, 0);
@@ -71,7 +86,10 @@ function checkWaitFor(assert: AssertModule): void {
 
   const turns = new Scheduler<SchedulerJob>(4, 0, "fifo", Infinity, [gpu(2, true)]);
   const [t1, t2, t3, t4] = [turn(1, "shared"), turn(2, "shared"), turn(3, "exclusive"), turn(4, "shared")];
-  [t1, t2, t3, t4].forEach((t) => turns.enqueue(t, 0));
+  turns.add(t1);
+  assert.strictEqual(turns.waitFor(t1, 0), undefined, "a turn the next grant takes");
+  turns.grant(0);
+  [t2, t3, t4].forEach((t) => turns.enqueue(t, 0));
   assert.strictEqual(turns.waitFor(t2, 0), "gpu-memory", "the first waiting shared turn waits for the probe");
   assert.strictEqual(turns.waitFor(t3, 0), "gpu", "a turn behind the first waits for the GPU");
   assert.strictEqual(turns.waitFor(t4, 0), "gpu", "so does a shared one: only the first is measured for");
@@ -144,6 +162,11 @@ async function checkWaitForMessages(assert: AssertModule): Promise<void> {
     const first = await connectRaw(port);
     first.send(registration("A", 1, process.pid));
     const granted = await first.until("granted");
+    assert.strictEqual(
+      first.messages.find((m) => m.type === "queued")?.waitFor,
+      undefined,
+      "an empty queue: no reason",
+    );
     const running = server.records.get(Number(granted?.id));
     assert.ok(running);
     running.estimate = times(60, 300);

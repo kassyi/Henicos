@@ -322,7 +322,8 @@ export class Scheduler<J extends SchedulerJob> {
   /**
    * What a waiting job waits for (WaitFor), by the same rules as grant: a turn waits for its resource, whose first
    * grantable turn waits for a probe ("gpu-memory") or for the turns that run ("gpu"); a job that takes slots waits for
-   * slots, then for the memory pool, else for the jobs ordered before it. Undefined for a job that does not wait.
+   * slots, then for the memory pool, else for the jobs ordered before it. Undefined for a job that does not wait, and
+   * for one the next grant takes (the answer to a request comes before the settle that grants it).
    */
   waitFor(job: J, now = Date.now()): WaitFor | undefined {
     if (!this.waiting.includes(job)) {
@@ -337,6 +338,10 @@ export class Scheduler<J extends SchedulerJob> {
     if (now < this.holdUntil) {
       return "restart";
     }
+    // A GPU holder and a job started by hand are granted at once, also while paused
+    if ((job.gpu || job.startNow === true) && job.gpuTurn !== true) {
+      return undefined;
+    }
     if (this.paused) {
       return "paused";
     }
@@ -344,12 +349,17 @@ export class Scheduler<J extends SchedulerJob> {
       const name = resourceOf(job);
       const head = this.headTurns().get(name);
       const verdict = head === job ? turnVerdict(job, usageOf(this.running, name), this.stateOf(name), now) : "behind";
-      return verdict === "probe" ? "gpu-memory" : "gpu";
+      return verdict === "grant" ? undefined : verdict === "probe" ? "gpu-memory" : "gpu";
     }
     if (this.used + job.weight > this.capacity) {
       return "slots";
     }
-    return this.fitsMemory(job) ? "in-line" : "memory";
+    if (!this.fitsMemory(job)) {
+      return "memory";
+    }
+    // The first job that takes slots and fits is granted by the next settle: it waits for nothing
+    const first = this.waiting.find((other) => !other.gpuTurn && !this.isBlocked(other));
+    return first === job ? undefined : "in-line";
   }
 
   /** move --first: ahead of every waiting job, the pinned ones included. */
