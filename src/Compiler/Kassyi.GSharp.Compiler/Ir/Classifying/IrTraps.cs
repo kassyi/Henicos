@@ -72,12 +72,18 @@ internal static class IrTraps
             !MayFailCompoundDivision(c),
         IrIncrement i => i.OperatorMethod == null && !i.IsChecked,
         IrUnary u => u.Operator is { Method: null, IsChecked: false },
+        // An implicit numeric conversion never overflows, so it is checked only in name
         IrConversion c =>
-            c.Conversion is { Method: null, IsChecked: false } &&
+            c.Conversion.Method is null && (!c.Conversion.IsChecked || IsImplicitNumeric(c)) &&
             !ExpressionTraps.UnwrapsNullable(c.Operand.Type, c.Type),
         IrCall call => ExpressionTraps.IsFloatingPointMath(call.Method),
         _ => false
     };
+
+    // A numeric conversion of a kind C# makes implicitly, whether the source writes a cast or not
+    private static bool IsImplicitNumeric(IrConversion conversion) =>
+        conversion.Conversion.Kind == IrConversionKind.Numeric &&
+        IrImplicitNumericConversions.Exists(conversion.Operand.Type, conversion.Type);
 
     private static bool MayFailDivision(IrBinary binary)
     {

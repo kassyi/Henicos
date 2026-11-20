@@ -1,10 +1,13 @@
 #nullable enable
+using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Ir;
+using Kassyi.GSharp.Compiler.Ir.Building;
 using Kassyi.GSharp.Compiler.Ir.Classifying;
 using Kassyi.GSharp.Compiler.Ir.Decisions;
 using Kassyi.GSharp.Compiler.Ir.Expressions;
 using Kassyi.GSharp.Compiler.Ir.Sequencing;
 using Kassyi.GSharp.Compiler.Ir.Statements;
+using Kassyi.GSharp.Compiler.Transpiler;
 using static Kassyi.GSharp.Tests.Shared.Transpiler.Ir.IrSequenceTestCases;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler.Ir;
@@ -401,6 +404,61 @@ public class IrSequenceFormsTests
         Assert.Equal(1, sequence.Parentheses);
         Assert.Equal(0, binary.Parentheses);
         Assert.Same(First<IrBinary>(decided.Body).Decision, binary.Decision);
+    }
+
+    [Theory]
+    [InlineData("NullPatternOperand")]
+    [InlineData("NotNullPatternOperand")]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_NullPatternOperand_DoesNotThrowOnEitherPath(string name)
+    {
+        var compilation = IrTestCases.Compile(Forms);
+        var (decided, sequenced) = Run(name);
+
+        Assert.NotEmpty(IrNodeChildren.DescendantsAndSelf(decided.Body).OfType<IrNullTest>());
+        Assert.Empty(SequencesOf(sequenced.Body));
+        Assert.Empty(SyntaxPathTemporaries(compilation, IrTestCases.FindMethod(compilation, FormsType, name)).Firsts);
+    }
+
+    [Theory]
+    [InlineData("ImplicitWidening")]
+    [InlineData("NestedWidening")]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_ImplicitWideningUnderOverflowChecks_DoesNotThrowOnEitherPath(string name)
+    {
+        var plain = IrTestCases.Compile(Forms);
+        var compilation = plain.WithOptions(((CSharpCompilationOptions)plain.Options).WithOverflowChecks(true));
+        var symbol = IrTestCases.FindMethod(compilation, FormsType, name);
+        var built = IrBuilder.TryBuild(symbol, compilation, CancellationToken.None) ??
+                    throw new InvalidOperationException($"{name} has no IR.");
+        var decided = Decide(compilation, built);
+        var sequenced = Sequence(compilation, decided);
+
+        Assert.Contains(IrNodeChildren.DescendantsAndSelf(decided.Body).OfType<IrConversion>(),
+            static conversion => conversion.IsImplicit && conversion.Conversion.IsChecked);
+        Assert.Empty(SequencesOf(sequenced.Body));
+        Assert.Empty(SyntaxPathTemporaries(compilation, symbol).Firsts);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Sequence_LengthOfALocalProvenNonNull_DoesNotThrow()
+    {
+        var (decided, sequenced) = Run("LengthOfANotNullLocal");
+        var length = First<IrPropertyReference>(decided.Body);
+
+        Assert.Equal(IrMemberForm.ArrayMember, length.Decided.Form);
+        Assert.Null(length.Decided.ReceiverSite);
+        Assert.Empty(SequencesOf(sequenced.Body));
+    }
+
+    // The temporaries the syntax path writes for <symbol>
+    private static IrSequenceTemporaries SyntaxPathTemporaries(Compilation compilation, IMethodSymbol symbol)
+    {
+        var declaration = (MethodDeclarationSyntax)symbol.DeclaringSyntaxReferences[0].GetSyntax();
+        return IrSequenceTemporaries.Of(MethodTranspiler.GenerateCudaSource(declaration,
+            compilation.GetSemanticModel(declaration.SyntaxTree), null, isDevice: true, new GSharpCudaDialect(),
+            out _));
     }
 
     private static void AssertDeclaration(IrLocalDeclaration declaration, SpecialType type, IrDeclaredTypeForm form,

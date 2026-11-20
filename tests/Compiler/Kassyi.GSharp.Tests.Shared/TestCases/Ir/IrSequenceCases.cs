@@ -1,4 +1,6 @@
 #nullable enable
+using Kassyi.GSharp.Core;
+
 namespace IrSequenceCases;
 
 public struct Cell { public int V; }
@@ -37,6 +39,15 @@ public static class Forms
     public static void ConvertedAssignmentValue(int i, long[] r) { r[Bump(ref i)] = i; }
     public static void RemainderWithFloat(float f, double[] d) { d[0] = NextF(ref f) % f; }
     public static void EnumAssignmentValue(int i, Color[] c) { c[Bump(ref i)] = (Color)i; }
+    public static void NullPatternOperand(int[]? p, int[] r) { r[0] = (r[1] = 1) + (p is null ? 1 : 0); }
+    public static void NotNullPatternOperand(int[]? p, int[] r) { r[0] = (r[1] = 1) + (p is not null ? 1 : 0); }
+    public static void ImplicitWidening(int i, long[] r) { r[0] = i + (r[1] = 5L); }
+    public static void NestedWidening(bool c, int i, long l, long[] r) { r[0] = (r[1] = 5L) + (c ? i : l); }
+    public static void LengthOfANotNullLocal(int[] a, int[] m, int[] r)
+    {
+        int[] b = Gpu.NotNull(a);
+        r[0] = Touch(m) + b.Length;
+    }
 }
 
 public enum Color { A, B }

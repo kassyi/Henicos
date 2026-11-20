@@ -76,6 +76,62 @@ public class IrInvariantsTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void I3_SequenceOfTheCategoryOfItsValue_IsALocation()
+    {
+        var method = IrTestCases.BuildCase("RefArgument");
+        var call = (IrCall)IrTestCases.Result(method);
+        var variable = call.Arguments[0].Value;
+        var sequence = new IrSequence([], [], variable, IrCategory.Location, variable.Source);
+
+        Assert.Empty(IrInvariants.Verify(WithResult(method, ReplaceArgument(call, 0, sequence)), Compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void I3_SequenceOfAnotherCategoryThanItsValue_IsNotALocation()
+    {
+        var method = IrTestCases.BuildCase("RefArgument");
+        var call = (IrCall)IrTestCases.Result(method);
+        var variable = (IrVariableReference)call.Arguments[0].Value;
+        var read = new IrVariableReference(variable.Variable, false, IrCategory.Value, default, variable.Source);
+        var sequence = new IrSequence([], [], read, IrCategory.Location, variable.Source);
+
+        AssertViolates("I3", WithResult(method, ReplaceArgument(call, 0, sequence)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void I3_SequenceEndingInAReferenceTemporary_IsALocation()
+    {
+        var method = IrTestCases.BuildCase("RefArgument");
+        var call = (IrCall)IrTestCases.Result(method);
+        var variable = call.Arguments[0].Value;
+        var temporary = IrVariable.CreateTemporary(variable.Type, RefKind.Ref, "seq", variable.Source);
+        var bound = new IrVariableReference(temporary, false, IrCategory.Location, default, variable.Source);
+        var sequence = new IrSequence([temporary], [new IrLocalDeclaration(temporary, variable, variable.Source)],
+            bound, IrCategory.Location, variable.Source);
+
+        Assert.Empty(IrInvariants.Verify(WithResult(method, ReplaceArgument(call, 0, sequence)), Compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void I3_SequenceEndingInAValueTemporary_IsNotALocation()
+    {
+        var method = IrTestCases.BuildCase("RefArgument");
+        var call = (IrCall)IrTestCases.Result(method);
+        var variable = (IrVariableReference)call.Arguments[0].Value;
+        var temporary = IrVariable.CreateTemporary(variable.Type, RefKind.None, "seq", variable.Source);
+        var copied = new IrVariableReference(variable.Variable, false, IrCategory.Value, default, variable.Source);
+        var written = new IrVariableReference(temporary, false, IrCategory.Location, default, variable.Source);
+        var sequence = new IrSequence([temporary], [new IrLocalDeclaration(temporary, copied, variable.Source)],
+            written, IrCategory.Location, variable.Source);
+
+        AssertViolates("I3", WithResult(method, ReplaceArgument(call, 0, sequence)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void I10_TemporaryDeclaredInASequence_IsAccepted()
     {
         var method = IrTestCases.BuildCase("Literal");

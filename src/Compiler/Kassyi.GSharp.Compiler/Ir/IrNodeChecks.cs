@@ -97,8 +97,23 @@ internal static class IrNodeChecks
                                         (isWriteTarget && property.Category == IrCategory.Location),
         IrCall call => call.Method.RefKind != RefKind.None,
         IrConditional conditional => conditional.IsRef,
-        IrSequence sequence => IsLocation(sequence.Value, isWriteTarget),
+        IrSequence sequence => IsLocationOfSequence(sequence, isWriteTarget),
         _ => false
+    };
+
+    // A sequence names the location its value names, of the same category, unless that location lies in one of its
+    // own value temporaries, which no one sees after the sequence
+    private static bool IsLocationOfSequence(IrSequence sequence, bool isWriteTarget) =>
+        sequence.Value.Category == sequence.Category &&
+        IsLocation(sequence.Value, isWriteTarget) &&
+        !(RootVariable(sequence.Value) is { RefKind: RefKind.None } root && sequence.Locals.Contains(root));
+
+    // The variable a location of fields of a struct variable belongs to, or null
+    private static IrVariable? RootVariable(IrExpression location) => location switch
+    {
+        IrVariableReference reference => reference.Variable,
+        IrFieldReference { Receiver: { Type.IsValueType: true } receiver } => RootVariable(receiver),
+        _ => null
     };
 
     private static string? Target(IrExpression target) =>
