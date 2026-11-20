@@ -469,6 +469,261 @@ public class ManagedStackRunnerTests
         }
     }
 
+    // The warp collectives of the stack model, called as a stack form calls them: begin(<counts>) at the start of the
+    // kernel, then __gsharp_stack_warp_<kind>(<frame>, <site>, "<place>", <arguments>)
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RunWarp_FullMaskShuffleInTwoBlocks_ReadsTheLanesOfItsOwnBlock()
+    {
+        const uint blocks = 2;
+        const uint threads = 32;
+        var output = new int[blocks * threads];
+
+        RunWarp(blocks, threads, "Test.TwoBlockShuffle", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            int value = ManagedGpuContext.BlockIdxX * 100 + ManagedGpuContext.ThreadIdxX;
+            output[tid] = ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0xFFFFFFFFu,
+                value, 1);
+        });
+
+        for (int b = 0; b < blocks; b++)
+        {
+            for (int lane = 0; lane < threads; lane++)
+            {
+                Assert.Equal(b * 100 + (lane ^ 1), output[b * threads + lane]);
+            }
+        }
+    }
+
+    // In block 0 only lane 0 reaches the call (mask 0x1, it reads its own value); in block 1 both lanes reach it with
+    // mask 0x3. The pooled OS thread of lane 0 runs both blocks: its count of the call must start again at 0, or it
+    // would wait for a second visit of lane 1 that never comes
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RunWarp_OneLaneReachedTheCallInTheBlockBefore_CountsStartAgainInEachBlock()
+    {
+        var output = new int[4];
+
+        RunWarp(2, 2, "Test.StaleVisits", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            int block = ManagedGpuContext.BlockIdxX;
+            int lane = ManagedGpuContext.ThreadIdxX;
+            int value = block * 10 + lane + 1;
+            if (block != 0 || lane == 0)
+            {
+                value += ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)",
+                    block == 0 ? 0x1u : 0x3u, value, block == 0 ? 0 : 1);
+            }
+
+            output[tid] = value;
+        });
+
+        Assert.Equal([2, 2, 23, 23], output);
+    }
+
+    // The rendezvous decides from what the lanes published in earlier rounds, never from the order within a round, so
+    // the order of UseThreadOrder changes no value
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void RunWarp_ShuffledOrderOfEveryRound_GivesTheValuesOfTheIndexOrder()
+    {
+        const int threads = 64;
+        var expected = ReferenceMixedCollectives(threads);
+        Assert.Equal(expected, RunMixedCollectives(threads));
+        for (var seed = 1; seed <= 8; seed++)
+        {
+            var random = new Random(seed);
+            using (ManagedStackRunner.UseThreadOrder(round =>
+                   {
+                       var order = Enumerable.Range(0, round.ThreadCount).ToArray();
+                       random.Shuffle(order);
+                       return order;
+                   }))
+            {
+                Assert.Equal(expected, RunMixedCollectives(threads));
+            }
+        }
+    }
+
+    // Lanes 0 to 2 wait at a shuffle for lane 3, which waits at the block barrier: no thread can run, the launch fails
+    // with the stall, and the threads that wait at the shuffle and at the barrier leave through their finally blocks
+    // and go back to the pool
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void RunWarp_LaneWaitsAtTheBarrierWhileTheOthersShuffle_UnwindsTheWaitingThreads()
+    {
+        const uint threads = 4;
+        var finallyCounts = new int[threads];
+        var afterCounts = new int[threads];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            RunWarp(1, threads, "Test.WarpStall", _ =>
+            {
+                int lane = ManagedGpuContext.ThreadIdxX;
+                try
+                {
+                    ManagedGpuContext.__gsharp_stack_warp_begin(2);
+                    if (lane == 3)
+                    {
+                        ManagedGpuContext.__gsharp_stack_block_barrier();
+                    }
+                    else
+                    {
+                        ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(7,9)", 0xFu, lane, 1);
+                    }
+
+                    afterCounts[lane]++;
+                }
+                finally
+                {
+                    finallyCounts[lane]++;
+                }
+            }));
+
+        Assert.Contains("Test(7,9)", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("never reach the same call", ex.Message, StringComparison.Ordinal);
+        Assert.Equal([1, 1, 1, 1], finallyCounts);
+        Assert.Equal([0, 0, 0, 0], afterCounts);
+
+        var next = new int[threads];
+        RunWarp(1, threads, "Test.NextAfterStall", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            next[tid] = ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0xFu, (int)tid, 1);
+        });
+        Assert.Equal([1, 0, 3, 2], next);
+    }
+
+    // The first failure of a GPU thread wins over the stall that follows it, as on the state machine
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void RunWarp_ThreadFailsThenTheOthersStall_RethrowsTheThreadFailure()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunWarp(1, 4, "Test.FailThenStall", _ =>
+            {
+                ManagedGpuContext.__gsharp_stack_warp_begin(2);
+                int lane = ManagedGpuContext.ThreadIdxX;
+                if (lane == 2)
+                {
+                    throw new ArgumentException("thread failed first");
+                }
+
+                if (lane == 3)
+                {
+                    ManagedGpuContext.__gsharp_stack_block_barrier();
+                }
+                else
+                {
+                    ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0xBu, lane, 1);
+                }
+            }));
+
+        Assert.Equal("thread failed first", ex.Message);
+    }
+
+    // A lane that has finished no longer takes part: the vote of the others goes on without it
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void RunWarp_LaneFinishedBeforeTheVote_VoteOfTheOthersGoesOn()
+    {
+        var output = new uint[4];
+
+        RunWarp(1, 4, "Test.VoteAfterExit", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(2);
+            if (tid == 1)
+            {
+                return;
+            }
+
+            output[tid] = ManagedGpuContext.__gsharp_stack_warp_ballot_sync(0, 0, "Test(1,1)", 0xFu, true);
+        });
+
+        Assert.Equal([0xDu, 0u, 0xDu, 0xDu], output);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void StackWarpBegin_OutsideALaunch_ThrowsInvalidOperation()
+    {
+        Assert.Throws<InvalidOperationException>(() => ManagedGpuContext.__gsharp_stack_warp_begin(2));
+    }
+
+    private static void RunWarp(uint blocks, uint threads, string name, Action<long> body) =>
+        ManagedStackRunner.Run(blocks, 1, 1, threads, 1, 1, 0, name, reachesWarpCollective: true, body);
+
+    // Lanes 0 to 15 of each warp add the value of their xor neighbor, lanes 16 to 31 take the ballot of their half;
+    // the warp meets at Gpu.SyncWarp, then adds the sum of the warp
+    private static int[] RunMixedCollectives(int threads)
+    {
+        var output = new int[threads];
+        RunWarp(1, (uint)threads, "Test.MixedCollectives", tid =>
+        {
+            ManagedGpuContext.__gsharp_stack_warp_begin(5);
+            int lane = (int)tid & 31;
+            int v = (int)tid * 3 + 1;
+            if (lane < 16)
+            {
+                v += ManagedGpuContext.__gsharp_stack_warp_shuffle_xor_sync(0, 0, "Test(1,1)", 0x0000FFFFu, v, 1);
+            }
+            else
+            {
+                v ^= (int)ManagedGpuContext.__gsharp_stack_warp_ballot_sync(0, 1, "Test(2,1)", 0xFFFF0000u,
+                    (v & 2) != 0);
+            }
+
+            ManagedGpuContext.__gsharp_stack_warp_syncwarp(0, 2, "Test(3,1)");
+            v += ManagedGpuContext.__gsharp_stack_warp_reduce_add_sync(0, 3, "Test(4,1)", 0xFFFFFFFFu, v);
+            output[tid] = v;
+        });
+        return output;
+    }
+
+    private static int[] ReferenceMixedCollectives(int threads)
+    {
+        var first = new int[threads];
+        for (int tid = 0; tid < threads; tid++)
+        {
+            int lane = tid & 31;
+            int warpBase = tid & ~31;
+            int v = tid * 3 + 1;
+            if (lane < 16)
+            {
+                first[tid] = v + ((tid ^ 1) * 3 + 1);
+                continue;
+            }
+
+            uint ballot = 0;
+            for (int other = 16; other < 32; other++)
+            {
+                if ((((warpBase + other) * 3 + 1) & 2) != 0)
+                {
+                    ballot |= 1u << other;
+                }
+            }
+
+            first[tid] = v ^ (int)ballot;
+        }
+
+        var output = new int[threads];
+        for (int tid = 0; tid < threads; tid++)
+        {
+            int sum = 0;
+            for (int lane = 0; lane < 32; lane++)
+            {
+                sum += first[(tid & ~31) + lane];
+            }
+
+            output[tid] = first[tid] + sum;
+        }
+
+        return output;
+    }
+
     private static readonly AsyncLocal<string?> s_callerValue = new();
 
     // Runs <inner> while a launch on another thread holds a full block of pooled workers, so that the launch of

@@ -653,7 +653,7 @@ StackWarp:
     Frame: __gsharp_warp_frame
     # The counts of a kernel, a local array of its stack form
     Visits: __gsharp_stack_warp_visits
-    Begin: __gsharp_stack_warp_begin
+    Begin: { Value: __gsharp_stack_warp_begin, Managed: ManagedGpuContext.StackWarp.cs }
     # Publish, leave the stack for the scheduler, read: one collective
     Meet: __gsharp_stack_warp_meet
     Yield: __gsharp_stack_yield
@@ -664,22 +664,22 @@ StackWarp:
     FrameType: __gsharp_stack_warp_frame
     # One function per collective (WarpShuffleShape.StackFunction): the frame, the site and the place come first, then
     # the arguments of the C# call
-    ShuffleSync: __gsharp_stack_warp_shuffle_sync
-    ShuffleUpSync: __gsharp_stack_warp_shuffle_up_sync
-    ShuffleDownSync: __gsharp_stack_warp_shuffle_down_sync
-    ShuffleXorSync: __gsharp_stack_warp_shuffle_xor_sync
-    BallotSync: __gsharp_stack_warp_ballot_sync
-    AllSync: __gsharp_stack_warp_all_sync
-    AnySync: __gsharp_stack_warp_any_sync
-    ReduceAddSync: __gsharp_stack_warp_reduce_add_sync
-    ReduceMinSync: __gsharp_stack_warp_reduce_min_sync
-    ReduceMaxSync: __gsharp_stack_warp_reduce_max_sync
-    ReduceAndSync: __gsharp_stack_warp_reduce_and_sync
-    ReduceOrSync: __gsharp_stack_warp_reduce_or_sync
-    ReduceXorSync: __gsharp_stack_warp_reduce_xor_sync
-    MatchAnySync: __gsharp_stack_warp_match_any_sync
-    MatchAllSync: __gsharp_stack_warp_match_all_sync
-    SyncWarp: __gsharp_stack_warp_syncwarp
+    ShuffleSync: { Value: __gsharp_stack_warp_shuffle_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ShuffleUpSync: { Value: __gsharp_stack_warp_shuffle_up_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ShuffleDownSync: { Value: __gsharp_stack_warp_shuffle_down_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ShuffleXorSync: { Value: __gsharp_stack_warp_shuffle_xor_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    BallotSync: { Value: __gsharp_stack_warp_ballot_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    AllSync: { Value: __gsharp_stack_warp_all_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    AnySync: { Value: __gsharp_stack_warp_any_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceAddSync: { Value: __gsharp_stack_warp_reduce_add_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceMinSync: { Value: __gsharp_stack_warp_reduce_min_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceMaxSync: { Value: __gsharp_stack_warp_reduce_max_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceAndSync: { Value: __gsharp_stack_warp_reduce_and_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceOrSync: { Value: __gsharp_stack_warp_reduce_or_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    ReduceXorSync: { Value: __gsharp_stack_warp_reduce_xor_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    MatchAnySync: { Value: __gsharp_stack_warp_match_any_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    MatchAllSync: { Value: __gsharp_stack_warp_match_all_sync, Managed: ManagedGpuContext.StackWarp.cs }
+    SyncWarp: { Value: __gsharp_stack_warp_syncwarp, Managed: ManagedGpuContext.StackWarp.cs }
     ActiveMask: __gsharp_stack_warp_active_mask
     # The reconvergence regions of a method that reaches Warp.ActiveMask() (ReconvergenceInserter): enter, leave by a
     # jump, and arrive at the end, wait for the other lanes and pass it, in one call

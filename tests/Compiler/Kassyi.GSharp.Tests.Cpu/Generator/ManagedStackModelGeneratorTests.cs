@@ -45,7 +45,7 @@ public class ManagedStackModelGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
-    public Task BarrierModel_Stack_EmitsStackFormAndKeepsShuffleAsStateMachine()
+    public Task BarrierModel_Stack_EmitsStackFormsForBarriersAndWarpCollectives()
     {
         var sources = Run(barrierModel: "Stack");
         var combined = string.Join(

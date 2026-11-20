@@ -77,6 +77,7 @@ internal sealed partial class ManagedExecutionRewriter
             semanticModel.GetSymbol(node) is IMethodSymbol symbol &&
             ManagedRouting.GetBoundExtension(symbol, semanticModel.Compilation, bodyKind) is var (extension, extPrefix))
         {
+            ThrowIfStackWarpGroup(node.Name, symbol);
             var receiver = (visited as MemberAccessExpressionSyntax)?.Expression ?? node.Expression;
             return SpellBindCall(receiver, symbol, extension, extPrefix, typeArguments).WithTriviaFrom(node);
         }
@@ -146,8 +147,23 @@ internal sealed partial class ManagedExecutionRewriter
             return false;
         }
 
+        ThrowIfStackWarpGroup(node, symbol);
         method = symbol;
         prefix = targetPrefix;
         return true;
+    }
+
+    // [WHY] The stack form of a device function that reaches a warp collective takes the offset of its frame first,
+    // which a delegate cannot pass, and the layout of the caller counts only calls (WarpFrameLayout). The form of the
+    // caller cannot be made; the collector states why and the caller keeps its state machine
+    private void ThrowIfStackWarpGroup(ExpressionSyntax node, IMethodSymbol method)
+    {
+        if (bodyKind == ManagedBodyKind.StackBody &&
+            CallTargetClassifier.IsMethodGroup(node) &&
+            SuspensionAnalysis.ReachesWarpShuffle(method.ReducedFrom ?? method, semanticModel.Compilation))
+        {
+            throw new InvalidOperationException(
+                $"A stack form cannot pass '{method.Name}', which reaches a warp collective, as a method group.");
+        }
     }
 }

@@ -234,7 +234,11 @@ internal static class ManagedCSharpTranspiler
         var semanticModel = plan.SemanticModel;
         var accessors = new ManagedAccessorSet(methodSymbol, semanticModel.Compilation,
             isStackForm: bodyKind == ManagedBodyKind.StackBody);
-        var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors);
+        var isKernel = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
+        var warpLayout = bodyKind == ManagedBodyKind.StackBody
+            ? ManagedStackWarpLayout.Create(methodSymbol, declaration, semanticModel.Compilation, isKernel)
+            : null;
+        var rewriter = new ManagedExecutionRewriter(semanticModel, bodyKind, accessors) { WarpLayout = warpLayout };
 
         // <modifiers> static <return type> <prefix><path><type parameters>(<parameters>) <constraints> <body>
         // The signature is the user's, with every name written in full (the generated file has none of the user's using
@@ -247,9 +251,16 @@ internal static class ManagedCSharpTranspiler
             .WithIdentifier(SyntaxFactory.Identifier(
                 GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol)))
             .WithTypeParameterList(GetManagedVersionTypeParameters(declaration.TypeParameterList))
-            .WithParameterList(GetManagedVersionParameters(declaration.ParameterList, semanticModel))
+            .WithParameterList(WithWarpFrameParameter(
+                GetManagedVersionParameters(declaration.ParameterList, semanticModel), warpLayout, isKernel))
             .WithConstraintClauses(GetManagedVersionConstraints(declaration.ConstraintClauses, semanticModel));
-        method = WriteBody(method, declaration, rewriter, semanticModel).WithoutTrivia();
+        method = WriteBody(method, declaration, rewriter, semanticModel);
+        if (warpLayout is not null && isKernel)
+        {
+            method = WithWarpBegin(method, warpLayout.Size, methodSymbol.ReturnsVoid);
+        }
+
+        method = method.WithoutTrivia();
 
         using var writer = new SourceWriter();
         writer.AppendLine(ManagedStateMachineEmitter.EditorBrowsableNever);
@@ -319,6 +330,70 @@ internal static class ManagedCSharpTranspiler
             ).AddTo(result);
         return qualified.WithParameters(SyntaxFactory.SeparatedList(result.MoveToImmutable()));
     }
+
+    // The stack form of a device function that reaches a warp collective takes the offset of its frame in the visit
+    // counts first (int __gsharp_warp_frame, <parameters>): first, because C# allows no required parameter after an
+    // optional one. A kernel declares it as a local instead (WithWarpBegin)
+    private static ParameterListSyntax WithWarpFrameParameter(ParameterListSyntax parameters,
+        ManagedStackWarpLayout? warpLayout, bool isKernel)
+    {
+        if (warpLayout is null || isKernel)
+        {
+            return parameters;
+        }
+
+        var frame = SyntaxFactory.Parameter(SyntaxFactory.Identifier(GSharpInternalNames.StackWarp.Frame))
+            .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)));
+        return parameters.WithParameters(parameters.Parameters.Insert(0, frame));
+    }
+
+    // The stack form of a kernel that reaches a warp collective clears the visit counts of its GPU thread and puts its
+    // frame at 0 before its body:
+    // { global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_begin(<size>); const int __gsharp_warp_frame
+    //     = 0; <body> }
+    // An expression body becomes the statement or return that ends the block
+    private static MethodDeclarationSyntax WithWarpBegin(MethodDeclarationSyntax method, int size, bool returnsVoid)
+    {
+        var sizeArgument = SyntaxFactory.Argument(
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(size))
+        );
+        var begin = SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.InvocationExpression(
+                ManagedNames.CreateMemberAccess(GSharpInternalNames.StackWarp.Begin),
+                SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(sizeArgument))
+            )
+        );
+        var zero = SyntaxFactory.EqualsValueClause(
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0))
+        );
+        var declarator = SyntaxFactory.VariableDeclarator(GSharpInternalNames.StackWarp.Frame).WithInitializer(zero);
+        var frame = SyntaxFactory.LocalDeclarationStatement(
+            SyntaxFactory.VariableDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
+                SyntaxFactory.SingletonSeparatedList(declarator)
+            )
+        ).WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ConstKeyword)));
+
+        var statements = method.Body is { } body
+            ? body.Statements
+            : SyntaxFactory.SingletonList(ExpressionBodyStatement(
+                method.ExpressionBody?.Expression ??
+                throw new InvalidOperationException("A stack form of a kernel has neither a body nor an expression."),
+                returnsVoid));
+        return method
+            .WithExpressionBody(null)
+            .WithSemicolonToken(default)
+            .WithBody(SyntaxFactory.Block(statements.Insert(0, frame).Insert(0, begin)));
+    }
+
+    // <expression>; for a void method, throw <exception>; for a throw expression, return <expression>; otherwise
+    private static StatementSyntax ExpressionBodyStatement(ExpressionSyntax expression, bool returnsVoid) =>
+        expression switch
+        {
+            ThrowExpressionSyntax throwExpression => SyntaxFactory.ThrowStatement(throwExpression.Expression),
+            _ when returnsVoid => SyntaxFactory.ExpressionStatement(expression),
+            _ => SyntaxFactory.ReturnStatement(expression)
+        };
 
     private static SyntaxTokenList RemoveThis(SyntaxTokenList modifiers)
     {

@@ -41,7 +41,7 @@ public class ManagedStackRoutingTests
     [Scenario(TestScenario.SadPath)]
     public void GetTargetPrefix_SuspendingFunctionWithoutAStackForm_Throws()
     {
-        var method = GetMethod("EligibilityKernels", "ShuffleDeviceWait");
+        var method = GetMethod("WarpEligibilityKernels", "RecursiveShuffle");
 
         Assert.Throws<InvalidOperationException>(() =>
             ManagedRouting.GetTargetPrefix(method, s_compilation, ManagedBodyKind.StackBody));
