@@ -2727,7 +2727,9 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ExerciseULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ExerciseUShortIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.MutateAndReturn", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadConvertedULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadLongIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNullWithLongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadNullWithULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadReceiverSideEffectWithULongIndexKernel", status: "Compared", count: 1}
@@ -2736,6 +2738,8 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedLongDevice", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedLongIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedNUIntDevice", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedNUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedUIntDevice", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.ReadUncheckedULongDevice", status: "NoStateMachine", count: 1}
@@ -2750,8 +2754,11 @@
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedUInt", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedULong", status: "NoStateMachine", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.UncheckedUShort", status: "NoStateMachine", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteConvertedULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteLongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteLongIndexWithSideEffectKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteNUIntIndexKernel", status: "Compared", count: 1}
+- {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteNUIntIndexShuffleKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteUIntIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteULongIndexKernel", status: "Compared", count: 1}
 - {file: "Syntax/WideArrayIndexKernels.cu.cs", method: "WideArrayIndexKernels.WriteULongIndexShuffleKernel", status: "Compared", count: 1}

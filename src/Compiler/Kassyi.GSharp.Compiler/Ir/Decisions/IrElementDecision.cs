@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Ir.Decisions;
 /// <param name="check">Whether the array receiver needs a null check.</param>
 /// <param name="site">The error site when <paramref name="check"/> is <see cref="IrElementCheck.NullChecked"/>.</param>
 /// <param name="indexNeedsOverflowCheck">
-/// Whether a pre-conversion <see cref="ulong"/> index needs an overflow check (matching
+/// Whether an index that C# converts to <see cref="ulong"/> needs an overflow check (matching
 /// <see cref="ArrayElementIndex.NeedsOverflowCheck"/>).
 /// </param>
 internal sealed class IrElementDecision(IrElementCheck check, IrErrorSite? site, bool indexNeedsOverflowCheck)
@@ -17,7 +17,7 @@ internal sealed class IrElementDecision(IrElementCheck check, IrErrorSite? site,
     public IrErrorSite? Site { get; } = site;
 
     /// <summary>
-    /// Whether a pre-conversion <see cref="ulong"/> index needs a runtime overflow check (matching
+    /// Whether an index that C# converts to <see cref="ulong"/> needs a runtime overflow check (matching
     /// <see cref="ArrayElementIndex.NeedsOverflowCheck"/>).
     /// </summary>
     public bool IndexNeedsOverflowCheck { get; } = indexNeedsOverflowCheck;
