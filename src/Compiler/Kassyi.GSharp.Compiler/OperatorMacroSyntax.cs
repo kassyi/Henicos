@@ -67,7 +67,7 @@ internal static class OperatorMacroSyntax
 
     // T.false of x && y and T.true of x || y, T being the type that declares the & or | (C# spec §12.14.3): the
     // operator of T that takes T
-    private static IMethodSymbol? FindTest(IBinaryOperation conditional)
+    internal static IMethodSymbol? FindTest(IBinaryOperation conditional)
     {
         if (conditional.OperatorMethod is not { ContainingType: { } type, ReturnType: var operandType })
         {

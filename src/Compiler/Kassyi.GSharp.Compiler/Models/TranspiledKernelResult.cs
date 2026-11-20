@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Aot;
+
 namespace Kassyi.GSharp.Compiler.Models;
 
 /// <summary>The transpiled outputs of one <c>[GpuKernel]</c>, for both native dialects and the managed fallback.</summary>
@@ -24,6 +26,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 /// The unlowered stack form of the kernel for the managed stack model, or empty; attached after the transpilation
 /// under <c>GSharpManagedBarrierModel=Stack</c> only (<see cref="Transpiler.ManagedStackFormCollector"/>).
 /// </param>
+/// <param name="Spill">
+/// What the spill warning (GS0001) of the kernel covers (<see cref="SpillSuppressionPlan"/>).
+/// </param>
 internal readonly record struct TranspiledKernelResult(
     HostClassHeader Class,
     KernelHostModel Host,
@@ -36,7 +41,8 @@ internal readonly record struct TranspiledKernelResult(
     EquatableArray<DeviceExportRecord> StructExports = default,
     EquatableArray<ErrorSiteEntry> ErrorSites = default,
     EquatableArray<HeldRefLocalSite> HeldRefLocalSites = default,
-    string ManagedStackSource = "")
+    string ManagedStackSource = "",
+    KernelSpillScope Spill = default)
 {
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
 

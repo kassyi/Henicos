@@ -219,7 +219,8 @@ public static partial class SwitchSectionSharedNamesKernels
         }
     }
 
-    // A recursive function that two sections use
+    // A recursive function that two sections use; the recursion spills on purpose
+#pragma warning disable GS0001
     [GpuKernel]
     public static void SharedRecursiveFunctionKernel(int[] output, int mode)
     {
@@ -234,4 +235,5 @@ public static partial class SwitchSectionSharedNamesKernels
                 break;
         }
     }
+#pragma warning restore GS0001
 }
