@@ -51,6 +51,17 @@ public partial class WarpStackModelTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void CallSiteFrames_SameFunctionFromTwoCallSites_CountsEachCallSiteApart()
+    {
+        int[] input = [10, 20];
+        // Lane 0: 10 + 1, then reads lane 1 (20); lane 1 reads lane 0 (11)
+        RunOnEveryPath(2,
+            output => WarpStackModelKernels.LaunchCallSiteFramesKernel(input, output, blockDimX: 2),
+            [20, 11]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void StaleVisits_TwoBlocks_EachBlockCountsFromZero()
     {
         int[] input = [10, 20, 30, 40];

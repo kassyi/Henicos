@@ -21,6 +21,7 @@ public partial class WarpStackModelTests
             WarpStackModelKernels.SkewedCallsKernel_Source,
             WarpStackModelKernels.ForUnrollSkewedShuffleKernel_Source,
             WarpStackModelKernels.StaleVisitsKernel_Source,
+            WarpStackModelKernels.CallSiteFramesKernel_Source,
             WarpRendezvousDifferentialKernels.SubWarpShuffleInDeviceFunctionKernel_Source,
             WarpCollectiveDifferentialKernels.WarpVoteAndReduceKernel_Source,
             M1DiffWarpExtraKernels.WarpMatchAnyAndAllSyncKernel_Source,

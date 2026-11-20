@@ -251,6 +251,85 @@ public class NativeStackModelGeneratorTests
             StringComparison.Ordinal);
     }
 
+    // A warp collective, or a call that reaches one, in a struct member is the user's GSH0062 under either model: the
+    // stack form does not treat the missing frame there as a bug of its own
+    [Theory]
+    [InlineData("StateMachine")]
+    [InlineData("Stack")]
+    [Scenario(TestScenario.SadPath)]
+    public void WarpCollectiveInStructMember_EitherModel_ReportsGsh0062(string model)
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace WarpStructMemberTest;
+
+            public struct Guard : System.IDisposable
+            {
+                public int V;
+
+                public int Shuffled => Warp.ShuffleXorSync(0xFFFFFFFFu, V, 1);
+
+                public void Dispose()
+                {
+                    V = Ops.PairSum(V);
+                }
+
+                public static implicit operator int(Guard g) => Ops.PairSum(g.V);
+            }
+
+            public static partial class Ops
+            {
+                [GpuDeviceFunction]
+                public static int PairSum(int v) => v + Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);
+
+                [GpuKernel]
+                public static void PropertyKernel(int[] data)
+                {
+                    int t = ThreadIndex.X;
+                    var g = new Guard { V = data[t] };
+                    Gpu.SyncThreads();
+                    data[t] = g.Shuffled;
+                }
+
+                [GpuKernel]
+                public static void ConversionKernel(int[] data)
+                {
+                    int t = ThreadIndex.X;
+                    var g = new Guard { V = data[t] };
+                    Gpu.SyncThreads();
+                    int v = g;
+                    data[t] = v;
+                }
+
+                [GpuKernel]
+                public static void UsingKernel(int[] data)
+                {
+                    int t = ThreadIndex.X;
+                    Gpu.SyncThreads();
+                    using (var g = new Guard { V = data[t] })
+                    {
+                        data[t] = g.V;
+                    }
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source).WithAssemblyName("WarpStructMemberTest");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu",
+            new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = model });
+
+        var combined = string.Join("\n", driver.GetRunResult().GeneratedTrees
+            .Where(static t => !t.FilePath.Contains("GSharpSharedCpuPrelude", StringComparison.Ordinal))
+            .Select(static t => t.GetText().ToString()));
+        Assert.DoesNotContain("internal error", combined, StringComparison.Ordinal);
+        Assert.Contains("GSH0062: 'ShuffleXorSync' is a warp shuffle, so it cannot be called in a property accessor",
+            combined, StringComparison.Ordinal);
+        Assert.Contains("GSH0062: 'PairSum' is a device function that reaches Gpu.SyncThreads() or a warp shuffle, " +
+            "so it cannot be called in a conversion operator", combined, StringComparison.Ordinal);
+        Assert.Contains("so it cannot be called in a method of a struct", combined, StringComparison.Ordinal);
+    }
+
     private static string GetPreludeText(GeneratorDriverRunResult result) =>
         result.GeneratedTrees
             .Single(static t => Path.GetFileName(t.FilePath) == "GSharpSharedCpuPrelude.g.cs")

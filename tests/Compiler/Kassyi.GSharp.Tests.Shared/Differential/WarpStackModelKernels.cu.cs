@@ -53,6 +53,27 @@ public static partial class WarpStackModelKernels
         output[t] = v;
     }
 
+    // The lanes of mask read lane source
+    [GpuDeviceFunction]
+    public static int ReadLane(int v, uint mask, int source) => Warp.ShuffleSync(mask, v, source);
+
+    // Lane 0 alone reads itself at one call site, then both lanes read each other at another call site of the same
+    // function: each call site has a frame of its own, so the second call is the first visit of both lanes there. With
+    // the two frames at one offset, lane 1 would meet the first call of lane 0
+    [GpuKernel]
+    public static void CallSiteFramesKernel(int[] input, int[] output)
+    {
+        int t = ThreadIndex.X;
+        int v = input[t];
+        if (t == 0)
+        {
+            v = ReadLane(v, 0x1u, 0) + 1;
+        }
+
+        v = ReadLane(v, 0x3u, t ^ 1);
+        output[t] = v;
+    }
+
     // Both lanes of each block read each other, then lane 0 of block 0 alone reads itself at the same site once more,
     // so that block 0 ends with counts that differ between its lanes; block 1 starts from counts of its own
     [GpuKernel]

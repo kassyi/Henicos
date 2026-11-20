@@ -60,8 +60,10 @@ internal static class StackWarpEmitter
     /// </exception>
     public static StackWarpCall Plan(InvocationExpressionSyntax call, IMethodSymbol callee, ref TranspileContext context)
     {
+        // [WHY] A struct member (a property, a conversion, Dispose) has no frame: a collective or a call that reaches one
+        // there is the user's GSH0062, which StructMemberSuspendingCall has reported, not a missing place
         var dialect = context.Emitter.Dialect;
-        if (!dialect.RunsThreadsOnOwnStacks())
+        if (!dialect.RunsThreadsOnOwnStacks() || context.Emitter.CurrentStructType != null)
         {
             return StackWarpCall.None;
         }

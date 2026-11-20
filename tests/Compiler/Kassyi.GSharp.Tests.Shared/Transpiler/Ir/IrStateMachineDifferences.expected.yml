@@ -1522,8 +1522,10 @@
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.SubWarpShuffleInNestedDeviceFunctionKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.SyncWarpExchangeKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.VotesAfterExitKernel", status: "Compared", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.CallSiteFramesKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ForUnrollSkewedShuffleKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.MaybeShuffle", status: "Compared", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ReadLane", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.SkewedCallsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.StaleVisitsKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Generator/AotContextNameKernels.cu.cs", method: "AotContextNameKernels.First", status: "Compared", count: 1}
