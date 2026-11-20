@@ -35,9 +35,13 @@ internal static class NativeStackEligibility
         var compilation = semanticModel.Compilation;
         var hasBlockBarrier = false;
         var hasWarpCollective = false;
+        var hasActiveMask = false;
         var hasGridSync = false;
+        var hasCaseWithoutLabel = false;
+        var hasWarpMacro = false;
 
-        ScanBody(declaration, semanticModel, ref hasBlockBarrier, ref hasWarpCollective, ref hasGridSync);
+        ScanBody(declaration, semanticModel, ref hasBlockBarrier, ref hasWarpCollective, ref hasActiveMask,
+            ref hasGridSync, ref hasCaseWithoutLabel, ref hasWarpMacro);
 
         var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var queue = new Queue<IMethodSymbol>();
@@ -59,7 +63,8 @@ internal static class NativeStackEligibility
             }
 
             var calleeModel = compilation.GetCachedSemanticModel(calleeDeclaration.SyntaxTree);
-            ScanBody(calleeDeclaration, calleeModel, ref hasBlockBarrier, ref hasWarpCollective, ref hasGridSync);
+            ScanBody(calleeDeclaration, calleeModel, ref hasBlockBarrier, ref hasWarpCollective, ref hasActiveMask,
+                ref hasGridSync, ref hasCaseWithoutLabel, ref hasWarpMacro);
             EnqueueSuspendingCallees(calleeDeclaration, compilation, visited, queue);
         }
 
@@ -68,13 +73,63 @@ internal static class NativeStackEligibility
             return NativeStackObstacle.GridSync;
         }
 
+        if (hasWarpMacro)
+        {
+            return NativeStackObstacle.WarpOperatorMacro;
+        }
+
+        if ((hasBlockBarrier || hasWarpCollective) && hasCaseWithoutLabel)
+        {
+            return NativeStackObstacle.CaseValueWithoutLabel;
+        }
+
         if (hasWarpCollective)
         {
-            return NativeStackObstacle.WarpCollective;
+            return ClassifyWarpFrame(declaration, semanticModel, hasActiveMask);
         }
 
         return hasBlockBarrier ? NativeStackObstacle.None : NativeStackObstacle.NoBlockBarrier;
     }
+
+    // [WHY] A method that reaches a warp collective runs on stacks only when every collective and every call that
+    // reaches one has its place in the visit counts of the kernel, which each GPU thread keeps on its own stack; the
+    // stack form is written from that placement and treats a missing place as a compiler bug
+    private static NativeStackObstacle ClassifyWarpFrame(MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel, bool hasActiveMask)
+    {
+        if (hasActiveMask)
+        {
+            return NativeStackObstacle.WarpActiveMask;
+        }
+
+        if (semanticModel.GetDeclaredSymbol(declaration) is not IMethodSymbol method ||
+            !WarpFrameLayout.TryGet(method, semanticModel.Compilation, out var layout))
+        {
+            return NativeStackObstacle.WarpLayout;
+        }
+
+        return layout.Size > WarpFrameLayout.MaxSize ? NativeStackObstacle.WarpFrameTooLarge : NativeStackObstacle.None;
+    }
+
+    // [WHY] The expansion of an operator macro ([GpuOperatorMacro]) calls its target without the frame of the stack
+    // model: WarpFrameLayout places only the calls written as calls, so a target that reaches a warp collective would be
+    // called with no offset or not at all. Every overload of the name counts, so the check does not depend on the
+    // overload resolution of the expansion
+    private static bool IsWarpOperatorMacro(ExpressionSyntax operatorCall, SemanticModel semanticModel)
+    {
+        var (method, _, _, test) = OperatorMacroSyntax.GetOperator(operatorCall, semanticModel);
+        return MacroTargetReachesWarp(method, semanticModel.Compilation) ||
+               MacroTargetReachesWarp(test, semanticModel.Compilation);
+    }
+
+    private static bool MacroTargetReachesWarp(IMethodSymbol? operatorMethod, Compilation compilation) =>
+        OperatorMacroSyntax.GetMacroAttribute(operatorMethod) is { } attribute &&
+        attribute.ConstructorArguments[0].Value is INamedTypeSymbol targetType &&
+        attribute.ConstructorArguments[1].Value is string targetName &&
+        targetType.GetMembers(targetName)
+            .AsStackEnumerable()
+            .Any(compilation, static (member, c) =>
+                member is IMethodSymbol target && SuspensionAnalysis.ReachesWarpShuffle(target, c));
 
     private static void EnqueueSuspendingCallees(
         MethodDeclarationSyntax declaration,
@@ -96,10 +151,26 @@ internal static class NativeStackEligibility
         SemanticModel semanticModel,
         ref bool hasBlockBarrier,
         ref bool hasWarpCollective,
-        ref bool hasGridSync)
+        ref bool hasActiveMask,
+        ref bool hasGridSync,
+        ref bool hasCaseWithoutLabel,
+        ref bool hasWarpMacro)
     {
         foreach (var node in RemovedCalls.DescendantNodesThatRun(declaration, semanticModel))
         {
+            if (node is BinaryExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax &&
+                IsWarpOperatorMacro((ExpressionSyntax)node, semanticModel))
+            {
+                hasWarpMacro = true;
+                continue;
+            }
+
+            if (node is CaseSwitchLabelSyntax label && !SwitchStateLabel.NamesLabel(label.Value, semanticModel))
+            {
+                hasCaseWithoutLabel = true;
+                continue;
+            }
+
             if (node is not InvocationExpressionSyntax invocation ||
                 semanticModel.GetSymbol(invocation) is not IMethodSymbol callee)
             {
@@ -123,6 +194,7 @@ internal static class NativeStackEligibility
             else
             {
                 hasWarpCollective = true;
+                hasActiveMask |= intrinsic.Shuffle == WarpShuffleKind.ActiveMask;
             }
         }
     }

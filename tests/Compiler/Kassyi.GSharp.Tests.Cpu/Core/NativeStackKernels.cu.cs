@@ -200,7 +200,7 @@ public static partial class NativeStackKernels
         output[tid] = ShuffleDeviceHelper(tid + 10);
     }
 
-    // Kept in the same kernel class so generator snapshot tests verify that ineligible kernels stay state machines.
+    // A warp collective and a block barrier in one kernel, both on the stacks of its threads
     [GpuKernel]
     public static void ShuffleAndBarrierKernel(int[] output)
     {

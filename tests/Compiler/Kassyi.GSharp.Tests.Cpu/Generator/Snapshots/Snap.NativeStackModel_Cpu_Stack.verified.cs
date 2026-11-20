@@ -20,6 +20,7 @@ inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__Out
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper;
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(int __gsharp_id_0_x, __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result);
+inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(int __gsharp_id_0_x, uint32_t __gsharp_warp_frame);
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier;
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker, __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier* __gsharp_ctx, TRoot* __gsharp_root);
@@ -179,6 +180,9 @@ return false;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
+}
+inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(int __gsharp_id_0_x, uint32_t __gsharp_warp_frame){
+return __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(47,16)"",0xFFFFFFFFu,__gsharp_id_0_x,1,32);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder__
@@ -4701,60 +4705,23 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
-public const string ShuffleDeviceFallbackKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel {
-int __gsharp_state = 0;
-__gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel* __gsharp_all_contexts = nullptr;
-__gsharp_warp_record __gsharp_warp_records[2] = {};
-uint32_t __gsharp_warp_record_next = 0;
-uint32_t __gsharp_warp_round = 0;
-bool __gsharp_warp_waiting = false;
-bool __gsharp_yielded_for_grid_sync = false;
-bool __gsharp_yielded_for_block_barrier = false;
-GSharpArray<int> __gsharp_id_0_output;
-int __gsharp_id_1_tid;
-int __gsharp_arg_temp_0;
-int __gsharp_call_temp_1;
-__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper __gsharp_call_frame_0;
-};
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel* __gsharp_ctx){
-#define __gsharp_state __gsharp_ctx->__gsharp_state
-#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
-#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
-auto* __gsharp_root = __gsharp_ctx;
-if(__gsharp_state==0){
-__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
-}
-switch(__gsharp_state)
-{
-case 0:
-__gsharp_switch_1_state_0:
-{
-__gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_tid,10);
-goto __gsharp_switch_1_state_1;
-}
-case 1:
-__gsharp_switch_1_state_1:
-{
-if(!__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(__gsharp_ctx->__gsharp_arg_temp_0,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root,&(__gsharp_ctx->__gsharp_call_temp_1)))
-{
-__gsharp_state=1;
-return;
-}
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_1_tid, 1226312526u)=__gsharp_ctx->__gsharp_call_temp_1;
-__gsharp_state=-1;
-return;
-}
-}
-#undef __gsharp_state
-#undef __gsharp_yielded_for_grid_sync
-#undef __gsharp_yielded_for_block_barrier
+public const string ShuffleDeviceFallbackKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(GSharpArray<int> __gsharp_id_0_output){
+uint32_t __gsharp_stack_warp_visits[3] = {};
+__gsharp_stack_warp_begin(__gsharp_stack_warp_visits, 3u);
+constexpr uint32_t __gsharp_warp_frame = 0u;
+int __gsharp_id_1_tid = (int)threadIdx.x;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1226312526u)=__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(__gsharp_add_i32(__gsharp_id_1_tid,10),__gsharp_warp_frame+1u);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-#pragma omp parallel for schedule(dynamic)
+auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(__gsharp_id_0_output);};
+const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
+#pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
+{
+__gsharp_stack_pool __gsharp_stack_stacks(__gsharp_stack_fp);
+#pragma omp for schedule(dynamic)
 for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 try
@@ -4763,11 +4730,9 @@ int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
 int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
-std::vector<__gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
-__gsharp_launch_ctx.__gsharp_state = 0;
-__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
-}
+__gsharp_active_error_slot = &__gsharp_launch_error;
+__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_warp_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 uint32_t __gsharp_round = 0;
 while (__gsharp_any_active)
@@ -4791,11 +4756,7 @@ __gsharp_stepped = true;
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(__gsharp_id_0_output, &__gsharp_contexts[__gsharp_ctx_tid]);
-if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
-{
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in NativeStackKernels.ShuffleDeviceFallbackKernel, which is not [GpuKernel(Cooperative = true)]"");
-}
+__gsharp_stack_resume(__gsharp_contexts[__gsharp_ctx_tid]);
 }
 catch (const __gsharp_step_abort&)
 {
@@ -4831,6 +4792,7 @@ catch (const __gsharp_step_abort&) {}
 catch (const std::bad_alloc&)
 {
 __gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 if (__gsharp_launch_error.HasError()) {
@@ -5075,65 +5037,25 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
-public const string ShuffleAndBarrierKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel {
-int __gsharp_state = 0;
-__gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel* __gsharp_all_contexts = nullptr;
-__gsharp_warp_record __gsharp_warp_records[2] = {};
-uint32_t __gsharp_warp_record_next = 0;
-uint32_t __gsharp_warp_round = 0;
-bool __gsharp_warp_waiting = false;
-bool __gsharp_yielded_for_grid_sync = false;
-bool __gsharp_yielded_for_block_barrier = false;
-uint32_t __gsharp_warp_visits[1] = {};
-GSharpArray<int> __gsharp_id_0_output;
-int __gsharp_id_1_tid;
-int __gsharp_warp_temp_0;
-int __gsharp_id_2_shuffled;
-};
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(GSharpArray<int> __gsharp_in___gsharp_id_0_output, __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel* __gsharp_ctx){
-#define __gsharp_state __gsharp_ctx->__gsharp_state
-#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
-#define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
-auto* __gsharp_root = __gsharp_ctx;
-if(__gsharp_state==0){
-__gsharp_ctx->__gsharp_id_0_output=__gsharp_in___gsharp_id_0_output;
-}
-switch(__gsharp_state)
-{
-case 0:
-__gsharp_switch_1_state_0:
-{
-__gsharp_ctx->__gsharp_id_1_tid=(int)threadIdx.x;
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_tid,""Warp.ShuffleXorSync"",""NativeStackKernels.cu.cs(208,24)"");
-__gsharp_state=1;
-return;
-}
-case 1:
-__gsharp_switch_1_state_1:
-{
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_1_tid,1,32,""NativeStackKernels.cu.cs(208,24)"");
-__gsharp_ctx->__gsharp_id_2_shuffled=__gsharp_ctx->__gsharp_warp_temp_0;
-__gsharp_yielded_for_block_barrier=true;
-__gsharp_state=2;
-return;
-}
-case 2:
-__gsharp_switch_1_state_2:
-{
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_output, __gsharp_ctx->__gsharp_id_1_tid, 1814130790u)=__gsharp_ctx->__gsharp_id_2_shuffled;
-__gsharp_state=-1;
-return;
-}
-}
-#undef __gsharp_state
-#undef __gsharp_yielded_for_grid_sync
-#undef __gsharp_yielded_for_block_barrier
+public const string ShuffleAndBarrierKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(GSharpArray<int> __gsharp_id_0_output){
+uint32_t __gsharp_stack_warp_visits[2] = {};
+__gsharp_stack_warp_begin(__gsharp_stack_warp_visits, 2u);
+constexpr uint32_t __gsharp_warp_frame = 0u;
+int __gsharp_id_1_tid = (int)threadIdx.x;
+int __gsharp_id_2_shuffled = __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(208,24)"",0xFFFFFFFFu,__gsharp_id_1_tid,1,32);
+__gsharp_stack_barrier();
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1814130790u)=__gsharp_id_2_shuffled;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-#pragma omp parallel for schedule(dynamic)
+auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(__gsharp_id_0_output);};
+const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
+#pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
+{
+__gsharp_stack_pool __gsharp_stack_stacks(__gsharp_stack_fp);
+#pragma omp for schedule(dynamic)
 for (int64_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 try
@@ -5142,11 +5064,9 @@ int32_t __gsharp_bx = (int32_t)(__gsharp_block_index % __gsharp_grid_dim_x);
 int32_t __gsharp_by = (int32_t)((__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y);
 int32_t __gsharp_bz = (int32_t)(__gsharp_block_index / ((int64_t)__gsharp_grid_dim_x * __gsharp_grid_dim_y));
 __gsharp_reset_smem(__gsharp_shared_mem_bytes);
-std::vector<__gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
-for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
-__gsharp_launch_ctx.__gsharp_state = 0;
-__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
-}
+__gsharp_active_error_slot = &__gsharp_launch_error;
+__gsharp_stack_warp_block __gsharp_stack(__gsharp_stack_stacks, __gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_stack_body);
+__gsharp_stack_warp_thread* __gsharp_contexts = __gsharp_stack.threads.data();
 std::atomic<bool> __gsharp_any_active{true};
 uint32_t __gsharp_round = 0;
 while (__gsharp_any_active)
@@ -5170,11 +5090,7 @@ __gsharp_stepped = true;
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(__gsharp_id_0_output, &__gsharp_contexts[__gsharp_ctx_tid]);
-if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
-{
-__gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in NativeStackKernels.ShuffleAndBarrierKernel, which is not [GpuKernel(Cooperative = true)]"");
-}
+__gsharp_stack_resume(__gsharp_contexts[__gsharp_ctx_tid]);
 }
 catch (const __gsharp_step_abort&)
 {
@@ -5210,6 +5126,7 @@ catch (const __gsharp_step_abort&) {}
 catch (const std::bad_alloc&)
 {
 __gsharp_launch_error.Report(GSharpErrorCode::InvalidOperation, ""G#: the native CPU path could not allocate memory for a kernel step"");
+}
 }
 }
 if (__gsharp_launch_error.HasError()) {

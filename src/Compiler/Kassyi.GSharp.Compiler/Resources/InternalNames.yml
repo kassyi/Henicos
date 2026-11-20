@@ -648,38 +648,40 @@ StackWarp:
     Warp collectives on the CPU stack models: each GPU thread keeps the visit counts of the collectives of its kernel in
     one array on its own stack, and every frame finds its counts at an offset fixed at compile time (WarpFrameLayout).
   Names:
-    # No entry is marked with Prelude or Managed until a runtime declares it: the build checks every marked name.
+    # The build checks every name marked with Prelude or Managed. Frame and Visits are names of the generated code;
+    # the managed entry points and the names of Warp.ActiveMask() and the reconvergence regions are marked once a runtime
+    # declares them.
     # The hidden parameter of a function that reaches a collective: the offset of its frame in the counts
     Frame: __gsharp_warp_frame
     # The counts of a kernel, a local array of its stack form
     Visits: __gsharp_stack_warp_visits
-    Begin: __gsharp_stack_warp_begin
+    Begin: { Value: __gsharp_stack_warp_begin, Prelude: StackThreads.hpp }
     # Publish, leave the stack for the scheduler, read: one collective
-    Meet: __gsharp_stack_warp_meet
-    Yield: __gsharp_stack_yield
-    Self: __gsharp_stack_warp_self
-    FrameAt: __gsharp_stack_warp_frame_at
-    ThreadType: __gsharp_stack_warp_thread
-    BlockType: __gsharp_stack_warp_block
-    FrameType: __gsharp_stack_warp_frame
+    Meet: { Value: __gsharp_stack_warp_meet, Prelude: StackThreads.hpp }
+    Yield: { Value: __gsharp_stack_yield, Prelude: StackThreads.hpp }
+    Self: { Value: __gsharp_stack_warp_self, Prelude: StackThreads.hpp }
+    FrameAt: { Value: __gsharp_stack_warp_frame_at, Prelude: StackThreads.hpp }
+    ThreadType: { Value: __gsharp_stack_warp_thread, Prelude: StackThreads.hpp }
+    BlockType: { Value: __gsharp_stack_warp_block, Prelude: StackThreads.hpp }
+    FrameType: { Value: __gsharp_stack_warp_frame, Prelude: StackThreads.hpp }
     # One function per collective (WarpShuffleShape.StackFunction): the frame, the site and the place come first, then
     # the arguments of the C# call
-    ShuffleSync: __gsharp_stack_warp_shuffle_sync
-    ShuffleUpSync: __gsharp_stack_warp_shuffle_up_sync
-    ShuffleDownSync: __gsharp_stack_warp_shuffle_down_sync
-    ShuffleXorSync: __gsharp_stack_warp_shuffle_xor_sync
-    BallotSync: __gsharp_stack_warp_ballot_sync
-    AllSync: __gsharp_stack_warp_all_sync
-    AnySync: __gsharp_stack_warp_any_sync
-    ReduceAddSync: __gsharp_stack_warp_reduce_add_sync
-    ReduceMinSync: __gsharp_stack_warp_reduce_min_sync
-    ReduceMaxSync: __gsharp_stack_warp_reduce_max_sync
-    ReduceAndSync: __gsharp_stack_warp_reduce_and_sync
-    ReduceOrSync: __gsharp_stack_warp_reduce_or_sync
-    ReduceXorSync: __gsharp_stack_warp_reduce_xor_sync
-    MatchAnySync: __gsharp_stack_warp_match_any_sync
-    MatchAllSync: __gsharp_stack_warp_match_all_sync
-    SyncWarp: __gsharp_stack_warp_syncwarp
+    ShuffleSync: { Value: __gsharp_stack_warp_shuffle_sync, Prelude: StackThreads.hpp }
+    ShuffleUpSync: { Value: __gsharp_stack_warp_shuffle_up_sync, Prelude: StackThreads.hpp }
+    ShuffleDownSync: { Value: __gsharp_stack_warp_shuffle_down_sync, Prelude: StackThreads.hpp }
+    ShuffleXorSync: { Value: __gsharp_stack_warp_shuffle_xor_sync, Prelude: StackThreads.hpp }
+    BallotSync: { Value: __gsharp_stack_warp_ballot_sync, Prelude: StackThreads.hpp }
+    AllSync: { Value: __gsharp_stack_warp_all_sync, Prelude: StackThreads.hpp }
+    AnySync: { Value: __gsharp_stack_warp_any_sync, Prelude: StackThreads.hpp }
+    ReduceAddSync: { Value: __gsharp_stack_warp_reduce_add_sync, Prelude: StackThreads.hpp }
+    ReduceMinSync: { Value: __gsharp_stack_warp_reduce_min_sync, Prelude: StackThreads.hpp }
+    ReduceMaxSync: { Value: __gsharp_stack_warp_reduce_max_sync, Prelude: StackThreads.hpp }
+    ReduceAndSync: { Value: __gsharp_stack_warp_reduce_and_sync, Prelude: StackThreads.hpp }
+    ReduceOrSync: { Value: __gsharp_stack_warp_reduce_or_sync, Prelude: StackThreads.hpp }
+    ReduceXorSync: { Value: __gsharp_stack_warp_reduce_xor_sync, Prelude: StackThreads.hpp }
+    MatchAnySync: { Value: __gsharp_stack_warp_match_any_sync, Prelude: StackThreads.hpp }
+    MatchAllSync: { Value: __gsharp_stack_warp_match_all_sync, Prelude: StackThreads.hpp }
+    SyncWarp: { Value: __gsharp_stack_warp_syncwarp, Prelude: StackThreads.hpp }
     ActiveMask: __gsharp_stack_warp_active_mask
     # The reconvergence regions of a method that reaches Warp.ActiveMask() (ReconvergenceInserter): enter, leave by a
     # jump, and arrive at the end, wait for the other lanes and pass it, in one call

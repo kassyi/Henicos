@@ -196,6 +196,61 @@ public class NativeStackModelGeneratorTests
         Assert.DoesNotContain("#error", combined, StringComparison.Ordinal);
     }
 
+    // An operator macro whose target reaches a warp collective: its expansion has no frame of the stack model, so the
+    // kernel keeps its state machine instead of a stack form that calls the target without one
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void WarpOperatorMacroKernel_StackModelBuild_StaysOnTheStateMachine()
+    {
+        const string Source = """
+            using Kassyi.GSharp.Core;
+
+            namespace WarpMacroStackTest;
+
+            public struct WarpSum
+            {
+                public int V;
+
+                [GpuOperatorMacro(typeof(WarpSumOps), nameof(WarpSumOps.Add))]
+                public static WarpSum operator +(WarpSum left, WarpSum right) => throw new GpuOnlyException();
+            }
+
+            public static partial class WarpSumOps
+            {
+                [GpuDeviceFunction]
+                public static void Add(ref WarpSum result, WarpSum left, WarpSum right)
+                {
+                    result.V = left.V + Warp.ShuffleXorSync(0xFFFFFFFFu, right.V, 1);
+                }
+            }
+
+            public static partial class Kernels
+            {
+                [GpuKernel]
+                public static void MacroAfterBarrierKernel(int[] data)
+                {
+                    var x = new WarpSum { V = data[ThreadIndex.X] };
+                    Gpu.SyncThreads();
+                    WarpSum z;
+                    z = x + x;
+                    data[ThreadIndex.X] = z.V;
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(Source).WithAssemblyName("WarpMacroStackTest");
+        var (driver, _, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu",
+            new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = "Stack" });
+
+        var combined = string.Join("\n", driver.GetRunResult().GeneratedTrees
+            .Where(static t => !t.FilePath.Contains("GSharpSharedCpuPrelude", StringComparison.Ordinal))
+            .Select(static t => t.GetText().ToString()));
+        Assert.DoesNotContain(GSharpInternalNames.NativeStack.Resume, combined, StringComparison.Ordinal);
+        Assert.DoesNotContain(GSharpInternalNames.StackWarp.Begin, combined, StringComparison.Ordinal);
+        Assert.Contains("__gsharp_context_WarpMacroStackTest__Kernels__MacroAfterBarrierKernel", combined,
+            StringComparison.Ordinal);
+    }
+
     private static string GetPreludeText(GeneratorDriverRunResult result) =>
         result.GeneratedTrees
             .Single(static t => Path.GetFileName(t.FilePath) == "GSharpSharedCpuPrelude.g.cs")
