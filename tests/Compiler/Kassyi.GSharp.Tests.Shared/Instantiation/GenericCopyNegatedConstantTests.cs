@@ -47,6 +47,7 @@ public class GenericCopyNegatedConstantTests
         { "CheckedNegateComplementMaxValue", "System.Int64" },
         { "CheckedNegateUnaryPlusMinValue", "System.Int32" },
         { "CheckedComplementMaxValueMinusOne", "System.Int32" },
+        { "CheckedComplementMaxValueMinusComplementMinValue", "System.Int32" },
         { "OneModuloComplementMaxValue", "System.UInt32" },
     };
 
@@ -76,6 +77,7 @@ public class GenericCopyNegatedConstantTests
         { "CheckedNegateComplementMaxValue", "System.Int64" },
         { "CheckedNegateUnaryPlusMinValue", "System.Int32" },
         { "CheckedComplementMaxValueMinusOne", "System.Int32" },
+        { "CheckedComplementMaxValueMinusComplementMinValue", "System.Int32" },
         { "OneModuloComplementMaxValue", "System.UInt32" },
     };
 

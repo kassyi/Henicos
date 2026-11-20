@@ -366,6 +366,10 @@ namespace App
             where T : ISubtractionOperators<T, T, T>, IBitwiseOperators<T, T, T>, IMinMaxValue<T>, INumberBase<T> =>
             checked(~T.MaxValue - T.One);
 
+        public static T CheckedComplementMaxValueMinusComplementMinValue<T>()
+            where T : ISubtractionOperators<T, T, T>, IBitwiseOperators<T, T, T>, IMinMaxValue<T> =>
+            checked(~T.MaxValue - ~T.MinValue);
+
         public static T OneModuloComplementMaxValue<T>()
             where T : IModulusOperators<T, T, T>, IBitwiseOperators<T, T, T>, IMinMaxValue<T>, INumberBase<T> =>
             T.One % ~T.MaxValue;

@@ -411,14 +411,18 @@ internal static class GenericCopyPlanner
         // operand is written so that C# cannot fold it
         private bool IsOperandOfConstantOperation(MemberAccessExpressionSyntax access)
         {
+            // The operators between the constant and the operation that may overflow: parentheses, checked and
+            // unchecked, and the unary operators, which keep the expression constant
             SyntaxNode operand = access;
-            while (operand.Parent is ParenthesizedExpressionSyntax or CheckedExpressionSyntax)
+            var negated = false;
+            while (operand.Parent is { } parent && IsConstantPreserving(parent))
             {
-                operand = operand.Parent;
+                negated |= parent.IsKind(SyntaxKind.UnaryMinusExpression);
+                operand = parent;
             }
 
             // -c overflows for MinValue and for an unsigned c other than 0
-            if (operand.Parent is PrefixUnaryExpressionSyntax { RawKind: (int)SyntaxKind.UnaryMinusExpression })
+            if (negated)
             {
                 return true;
             }
@@ -433,9 +437,28 @@ internal static class GenericCopyPlanner
             return IsConstantLike(binary.Left == operand ? binary.Right : binary.Left);
         }
 
+        // An operator that keeps a constant expression constant and may be the one that overflows (the unary minus) or
+        // lies between the constant and it: parentheses, checked and unchecked, unary +, - and ~
+        private static bool IsConstantPreserving(SyntaxNode node) =>
+            node is ParenthesizedExpressionSyntax or CheckedExpressionSyntax or PrefixUnaryExpressionSyntax
+            {
+                RawKind: (int)SyntaxKind.UnaryMinusExpression or (int)SyntaxKind.UnaryPlusExpression or
+                    (int)SyntaxKind.BitwiseNotExpression
+            };
+
         private bool IsConstantLike(ExpressionSyntax expression)
         {
             expression = expression.UnwrapParentheses();
+            if (expression is PrefixUnaryExpressionSyntax unary && IsConstantPreserving(unary))
+            {
+                return IsConstantLike(unary.Operand);
+            }
+
+            if (expression is CheckedExpressionSyntax checkedExpression)
+            {
+                return IsConstantLike(checkedExpression.Expression);
+            }
+
             return model.GetConstantValue(expression).HasValue ||
                    (expression is MemberAccessExpressionSyntax access &&
                     ResolveStatic(access) is ConstrainedMember.IdentityConstant or ConstrainedMember.StaticMember);
