@@ -5,8 +5,9 @@
 
 import { spawn } from "node:child_process";
 import { EntryScript } from "../job-queue/constants.ts";
+import { ProcessTable } from "../job-queue/system.ts";
 import { errorMessage, type ClientContext, type ShareMode } from "../job-queue/plugin-api.ts";
-import { nameFilterCheck, shareOptions, type NameFilterTest } from "./share-rules.ts";
+import { nameFilterCheck, shareOptions, type DirectoryEntries, type NameFilterTest } from "./share-rules.ts";
 
 /** What the list job printed (its standard output) and how it ended; exitCode is null when it did not end by itself. */
 export interface ListResult {
@@ -59,10 +60,11 @@ export const runListJob: ListRunner = (listCommand, context) =>
       cwd: context.cwd,
       env: { ...context.env, DOTNET_CLI_UI_LANGUAGE: "en" },
       stdio: ["ignore", "pipe", "ignore"],
+      detached: process.platform !== "win32", // its own process group, for killTree
     });
     const chunks: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-    const timer = setTimeout(() => child.kill(), ListTimeoutMs);
+    const timer = setTimeout(() => ProcessTable.killTree(child.pid), ListTimeoutMs);
     const end = (exitCode: number | null): void => {
       clearTimeout(timer);
       resolve({ exitCode, output: Buffer.concat(chunks).toString("utf8") });
@@ -79,8 +81,9 @@ export async function nameFilterShare(
   command: string,
   context: ClientContext,
   run: ListRunner = runListJob,
+  entries?: DirectoryEntries,
 ): Promise<ShareMode | undefined> {
-  const test = nameFilterCheck(command, context);
+  const test = nameFilterCheck(command, context, entries);
   const options = shareOptions(context.options);
   if (test === null || options === null) {
     return undefined;

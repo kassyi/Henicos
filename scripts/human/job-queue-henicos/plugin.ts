@@ -26,6 +26,8 @@ const HenicosTestPattern = new RegExp(
   ].join("|"),
 );
 
+const ListTests = /\s--list-tests(\s|$)/;
+
 export function isHenicosTest(command: string): boolean {
   return isDotnetTest(command) || HenicosTestPattern.test(command);
 }
@@ -86,7 +88,14 @@ const plugin = {
       optionString(context, "budgetsFile", DefaultBudgetsFile),
       context.log,
     );
-    const memoryMb = testMemoryMb(command, true, budgets, (cmd) => selectsCategory(cmd, ["Stress", "Benchmark"]));
+    // The test list of the name-filter share names the exclusive categories to look for; it runs no test, so it takes the
+    // normal budget
+    const memoryMb = testMemoryMb(
+      command,
+      true,
+      budgets,
+      (cmd) => !ListTests.test(cmd) && selectsCategory(cmd, ["Stress", "Benchmark"]),
+    );
     return share !== undefined ? { test: true, memoryMb, share } : { test: true, memoryMb };
   },
 

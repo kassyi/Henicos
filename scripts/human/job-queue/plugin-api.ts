@@ -137,7 +137,10 @@ export interface QueuePlugin {
    * [first, async] Asked only for a GPU turn that classify did not answer "shared" and that did not ask for --gpu-exclusive,
    * once, before the turn is first registered: may take a measurement that classify cannot (it runs before the turn
    * registers, so a slow answer delays the registration). "shared" or "exclusive" ends the asking; undefined passes it
-   * to the next plugin. A throw, a time out or any other value takes the GPU exclusively.
+   * to the next plugin. A throw, a time out or any other value takes the GPU exclusively. The "exclusive" of classify is
+   * no veto: a plugin answers it for every command it cannot prove shared (the henicos plugin does for a name filter,
+   * which only a measurement can judge), so checkShare may turn it into "shared"; --gpu-exclusive is the one veto, and
+   * a plugin must answer "shared" only for what it measured.
    */
   checkShare?(command: string, context: ClientContext): Promise<ShareMode | undefined>;
 
