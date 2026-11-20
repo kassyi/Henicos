@@ -37,7 +37,7 @@ const targetPattern = /\bgh\s+(?:issue|pr)\s+(?:comment|edit|close|review|merge)
 // Commands whose text is published: issue and PR bodies and comments, commits, new branches and worktrees.
 // `gh -R owner/repo issue create` and the alias `gh issue new` publish too.
 const publishingCommand = new RegExp(
-    String.raw`\bgh\s+(?:(?:-R|--repo)[\s=]\S+\s+)*(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
+    String.raw`\bgh\s+(?:(?:-R|--repo)(?:\s+|=)?\S+\s+)*(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
     + String.raw`|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b`);
 
 const foundByLabels = [
@@ -190,9 +190,10 @@ const valueFlags = new Set([
 // The labels given to the `gh issue create` (or `gh issue new`) that starts a word list, or null when the list is
 // another command. `gh -R owner/repo issue create` is read too.
 function createLabels(list) {
-    let i = 0;
+    let i = 1;
     if (list.length === 0 || shellReader.programName(list[0]) !== 'gh') return null;
-    for (i = 1; i < list.length && /^(-R|--repo)$/.test(list[i]); i += 2);
+    // -R v, --repo v (two words), --repo=v and -Rv (one word)
+    while (i < list.length && /^(-R|--repo)(=.*|.+)?$/.test(list[i])) i += /^(-R|--repo)$/.test(list[i]) ? 2 : 1;
     if (list[i] !== 'issue' || !['create', 'new'].includes(list[i + 1])) return null;
     const labels = [];
     for (i += 2; i < list.length; i++) {
@@ -460,6 +461,9 @@ function selfTest() {
             assert.ok(denied('gh -R owner/name issue create --title x --label bug'));
             assert.ok(denied('gh --repo owner/name issue create --title x --label bug'));
             assert.ok(denied('gh issue new --title x --label bug'));
+            assert.ok(denied('gh --repo=owner/name issue create --title x --label bug'));
+            assert.ok(denied('gh -Rowner/name issue create --title x --label bug'));
+            assert.strictEqual(hook('gh --repo=owner/name issue create --title x --label bug,found-by:audit'), null);
             assert.strictEqual(hook('gh issue new --title x --label bug,found-by:review'), null);
         });
         test('found-by: a redirection between the flags does not cut the command', () => {
