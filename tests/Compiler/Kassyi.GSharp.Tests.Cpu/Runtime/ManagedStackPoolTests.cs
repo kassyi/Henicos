@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Aot;
+using static Kassyi.GSharp.Tests.Cpu.Runtime.ManagedStackPoolContexts;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
@@ -17,7 +18,7 @@ namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 [Collection(TestCollections.DeviceExclusive)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Runtime)]
-public class ManagedStackPoolTests
+public partial class ManagedStackPoolTests
 {
     private static readonly TimeSpan s_joinTimeout = TimeSpan.FromSeconds(60);
 
@@ -169,86 +170,6 @@ public class ManagedStackPoolTests
         Assert.Equal(ExpectedReverse(threads, 30), after);
         Assert.Equal(threads, Volatile.Read(ref unwound));
         Assert.Equal(0, Volatile.Read(ref resumedAfterBarrier));
-        Assert.Equal(createdBefore, ManagedStackRunner.CreatedThreadCount);
-    }
-
-    [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public void Run_SchedulerInterruptedWhileWaitingForThePoolGate_ThrowsAndReturnsEveryThreadToThePool()
-    {
-        const int threads = 4;
-        Thread? scheduler = null;
-        Exception? holderFailure = null;
-        var context = new GateWaitContext();
-        using var holdRequested = new ManualResetEventSlim();
-        using var gateHeld = new ManualResetEventSlim();
-
-        // The pool holds a block of idle threads, so that the launch below takes them instead of starting new ones
-        Assert.Equal(ExpectedReverse(threads, 1), RunReverse(threads, 1));
-        int createdBefore = ManagedStackRunner.CreatedThreadCount;
-        int idleBefore = ManagedStackRunner.IdleThreadCount;
-        int idleAfterInterrupt = -1;
-
-        // Holds the gate of the pool from inside the last GPU thread of the launch until the scheduler, which has
-        // taken the last answer, blocks in Return's wait for the gate; interrupts it there, then lets the gate go
-        var holder = new Thread(() =>
-        {
-            try
-            {
-                Assert.True(holdRequested.Wait(s_blockTimeout), "The last GPU thread did not ask for the gate");
-                using (ManagedStackThreadPool.Instance.HoldGateForTest())
-                {
-                    gateHeld.Set();
-                    InterruptOnceBlockedAtTheGate(scheduler, context);
-                }
-            }
-            catch (Exception ex)
-            {
-                holderFailure = ex;
-            }
-        })
-        {
-            IsBackground = true
-        };
-        holder.Start();
-
-        var after = RunOnNewThread(() =>
-        {
-            scheduler = Thread.CurrentThread;
-            SynchronizationContext.SetSynchronizationContext(context);
-            try
-            {
-                Assert.Throws<ThreadInterruptedException>(() =>
-                    ManagedStackRunner.Run(1, 1, 1, threads, 1, 1, 0, "Test.InterruptGateWait", _ =>
-                    {
-                        int local = ManagedGpuContext.ThreadIdxX;
-                        if (local == 0)
-                        {
-                            Assert.True(SpinWait.SpinUntil(context.TryMarkSchedulerWait, s_blockTimeout),
-                                "The scheduler's wait did not enter the synchronization context");
-                        }
-
-                        // The threads run in index order and none waits at a barrier: this is the last step
-                        if (local == threads - 1)
-                        {
-                            holdRequested.Set();
-                            Assert.True(gateHeld.Wait(s_blockTimeout), "The holder did not take the gate");
-                        }
-                    }));
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(null);
-            }
-
-            idleAfterInterrupt = ManagedStackRunner.IdleThreadCount;
-            return RunReverse(threads, 30);
-        });
-
-        Assert.True(holder.Join(s_joinTimeout));
-        Assert.Null(holderFailure);
-        Assert.Equal(idleBefore, idleAfterInterrupt);
-        Assert.Equal(ExpectedReverse(threads, 30), after);
         Assert.Equal(createdBefore, ManagedStackRunner.CreatedThreadCount);
     }
 
@@ -518,21 +439,6 @@ public class ManagedStackPoolTests
         scheduler.Interrupt();
     }
 
-    // Interrupts <scheduler> once it is blocked in its wait for the pool's gate, a wait of <context> on another handle
-    // than the scheduler's waits for its GPU threads.
-    // [WHY] A blocked state alone may still be the scheduler's wait for the last answer, and the interruption would end
-    // that wait instead. The count of the gate's waits is read first: the wait for the answer has then ended, and a
-    // blocked state read after it belongs to the wait for the gate
-    private static void InterruptOnceBlockedAtTheGate(Thread? scheduler, GateWaitContext context)
-    {
-        Assert.NotNull(scheduler);
-        Assert.True(SpinWait.SpinUntil(
-                () => context.InOtherWait && (scheduler.ThreadState & ThreadState.WaitSleepJoin) != 0,
-                s_blockTimeout),
-            "The scheduler did not block in its wait for the gate of the pool");
-        scheduler.Interrupt();
-    }
-
     private static T RunOnNewThread<T>(Func<T> body) where T : class
     {
         T? result = null;
@@ -557,162 +463,5 @@ public class ManagedStackPoolTests
         Assert.Null(failure);
         Assert.NotNull(result);
         return result;
-    }
-
-    // Asks for wait notification and records that its Wait was entered
-    private abstract class EnteredWaitContext : SynchronizationContext
-    {
-        private int _entered;
-
-        protected EnteredWaitContext() => SetWaitNotificationRequired();
-
-        public bool Entered => Volatile.Read(ref _entered) != 0;
-
-        protected void MarkEntered() => Volatile.Write(ref _entered, 1);
-    }
-
-    // Fails a wait as <mode> says: the first wait runs <inner> (which throws) before or
-    // after it waits, or every wait throws WaitFailure
-    private sealed class ThrowingContext : EnteredWaitContext
-    {
-        public const string WaitFailure = "the wait of the context failed";
-
-        private readonly WaitFailureMode _mode;
-        private readonly Action _inner;
-        private bool _ranInner;
-
-        public ThrowingContext(WaitFailureMode mode, Action inner)
-        {
-            _mode = mode;
-            _inner = inner;
-        }
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            MarkEntered();
-            if (_mode == WaitFailureMode.EveryWait)
-            {
-                throw new InvalidOperationException(WaitFailure);
-            }
-
-            if (_ranInner)
-            {
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-
-            _ranInner = true;
-            if (_mode == WaitFailureMode.InnerLaunchBeforeTheWait)
-            {
-                _inner();
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-
-            int result = WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            _inner();
-            return result;
-        }
-    }
-
-    // Asks for wait notification and counts the waits that an interruption ended
-    private sealed class FailedWaitContext : SynchronizationContext
-    {
-        private int _failedWaits;
-
-        public FailedWaitContext() => SetWaitNotificationRequired();
-
-        public int FailedWaits => Volatile.Read(ref _failedWaits);
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            try
-            {
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-            catch (ThreadInterruptedException)
-            {
-                Interlocked.Increment(ref _failedWaits);
-                throw;
-            }
-        }
-    }
-
-    // Asks for wait notification and tells the scheduler's waits for its GPU threads from its other waits. A contended
-    // Monitor wait, such as the wait for the pool's gate, goes through the context as well, so the waits are told apart
-    // by their handle: the wait in progress while a GPU thread runs is the scheduler's wait for it
-    private sealed class GateWaitContext : SynchronizationContext
-    {
-        private IntPtr _currentHandle;
-        private IntPtr _schedulerHandle;
-        private int _inWait;
-        private int _otherWaitsEntered;
-        private int _otherWaitsLeft;
-
-        public GateWaitContext() => SetWaitNotificationRequired();
-
-        // A wait on another handle than the marked one has started and not ended
-        public bool InOtherWait => Volatile.Read(ref _otherWaitsEntered) > Volatile.Read(ref _otherWaitsLeft);
-
-        // For a GPU thread: marks the handle of the scheduler's wait in progress, once there is one
-        public bool TryMarkSchedulerWait()
-        {
-            if (Volatile.Read(ref _inWait) == 0)
-            {
-                return false;
-            }
-
-            Volatile.Write(ref _schedulerHandle, Volatile.Read(ref _currentHandle));
-            return true;
-        }
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            IntPtr handle = waitHandles.Length == 1 ? waitHandles[0] : IntPtr.Zero;
-            IntPtr scheduler = Volatile.Read(ref _schedulerHandle);
-            bool other = scheduler != IntPtr.Zero && handle != scheduler;
-            if (other)
-            {
-                Interlocked.Increment(ref _otherWaitsEntered);
-            }
-
-            Volatile.Write(ref _currentHandle, handle);
-            Volatile.Write(ref _inWait, 1);
-            try
-            {
-                return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-            }
-            finally
-            {
-                Volatile.Write(ref _inWait, 0);
-                if (other)
-                {
-                    Interlocked.Increment(ref _otherWaitsLeft);
-                }
-            }
-        }
-    }
-
-    // Asks for wait notification, as the WPF dispatcher does, and runs <inner> inside the first wait
-    private sealed class ReentrantContext : EnteredWaitContext
-    {
-        private readonly Action _inner;
-
-        public ReentrantContext(Action inner)
-        {
-            _inner = inner;
-        }
-
-        public bool RanInner { get; private set; }
-
-        public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-        {
-            MarkEntered();
-            if (!RanInner)
-            {
-                RanInner = true;
-                _inner();
-            }
-
-            return WaitHelper(waitHandles, waitAll, millisecondsTimeout);
-        }
     }
 }

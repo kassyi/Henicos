@@ -57,15 +57,7 @@ internal sealed class ManagedStackThreadPool
             t_rentedBuffer = workers;
         }
 
-        var fromPool = 0;
-        lock (_gate)
-        {
-            while (fromPool < count && _idle.Count > 0)
-            {
-                workers[fromPool++] = _idle.Pop();
-            }
-        }
-
+        var fromPool = PopIdle(workers, count);
         if (fromPool == count)
         {
             return workers;
@@ -74,41 +66,55 @@ internal sealed class ManagedStackThreadPool
         var created = 0;
         try
         {
-            for (var i = fromPool; i < count; i++)
-            {
-                var self = new ManagedStackThread();
-                // [WHY] The default stack size of the platform, as the thread that ran the state machine had: a smaller
-                // stack would turn a deep recursion that ran before into a StackOverflow, which no handler can catch
-                var thread = new Thread(() => WorkerLoop(self))
-                {
-                    IsBackground = true,
-                    Name = "G# managed GPU thread"
-                };
-                thread.UnsafeStart();
-                workers[i] = self;
-                created++;
-            }
-
-            lock (_gate)
-            {
-                _createdThreadCount += created;
-            }
-
+            StartThreads(workers, fromPool, count, ref created);
+            ThreadsStartedForTest?.Invoke();
+            CountCreated(created);
             return workers;
         }
         catch
         {
-            // [WHY] The failure of the rent is what the caller sees. An interruption of the wait for the gate here is
-            // not dropped either: the thread interrupts itself again, so that its next wait throws it, as .NET code does
-            // with an interruption it cannot throw where it arrived
-            if (ReturnTakingTheGate(workers, fromPool + created, created) is not null)
-            {
-                Thread.CurrentThread.Interrupt();
-            }
-
+            // [WHY] The failure of the rent is what the caller sees; an interruption of the wait for the gate here
+            // comes while that failure is already on its way, and is dropped (see ReturnTakingTheGate)
+            ReturnTakingTheGate(workers, fromPool + created, created);
             throw;
         }
     }
+
+    // Takes up to <count> idle threads into workers[0..]; how many it took
+    private int PopIdle(ManagedStackThread[] workers, int count)
+    {
+        var fromPool = 0;
+        EnterGate();
+        try
+        {
+            while (fromPool < count && _idle.Count > 0)
+            {
+                workers[fromPool++] = _idle.Pop();
+            }
+        }
+        finally
+        {
+            Monitor.Exit(_gate);
+        }
+
+        return fromPool;
+    }
+
+    private void CountCreated(int created)
+    {
+        EnterGate();
+        try
+        {
+            _createdThreadCount += created;
+        }
+        finally
+        {
+            Monitor.Exit(_gate);
+        }
+    }
+
+    // For tests only: runs on the renting thread after Rent has started its new threads and before it counts them
+    internal Action? ThreadsStartedForTest { get; set; }
 
     internal void Return(ManagedStackThread[] workers, int count)
     {
@@ -118,13 +124,58 @@ internal sealed class ManagedStackThreadPool
         }
     }
 
+    // Starts the threads of workers[<from>..<count>), counting each one that has started in <created>
+    private static void StartThreads(ManagedStackThread[] workers, int from, int count, ref int created)
+    {
+        for (var i = from; i < count; i++)
+        {
+            var self = new ManagedStackThread();
+            // [WHY] The default stack size of the platform, as the thread that ran the state machine had: a smaller
+            // stack would turn a deep recursion that ran before into a StackOverflow, which no handler can catch
+            var thread = new Thread(() => WorkerLoop(self))
+            {
+                IsBackground = true,
+                Name = "G# managed GPU thread"
+            };
+            thread.UnsafeStart();
+            workers[i] = self;
+            created++;
+        }
+    }
+
+    // [WHY] A contended wait for the gate is a wait of the thread: it goes through a SynchronizationContext that asks
+    // for wait notification (as a UI dispatcher does), and that context may fail the wait with any exception. The
+    // context is cleared for the wait, as ManagedBatonSignal.WaitAfterFailure does, so that only an interruption can
+    // end it without the gate
+    private void EnterGate()
+    {
+        var context = SynchronizationContext.Current;
+        if (context is null)
+        {
+            Monitor.Enter(_gate);
+            return;
+        }
+
+        SynchronizationContext.SetSynchronizationContext(null);
+        try
+        {
+            Monitor.Enter(_gate);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+        }
+    }
+
     // Returns <count> workers, and counts <created> threads that Rent started for them, and gives back the interruption
     // that ended a wait for the gate, for the caller to throw once the workers are back.
     // [WHY] A contended wait for the gate throws ThreadInterruptedException without the gate. Thrown from here, it
     // would leave the workers out of the pool, waiting forever for a launch, and the next launch would start new
     // threads. So the wait is taken again until it gets the gate, as ManagedBaton.HandOver throws only once the two
-    // threads are in step. Every later interruption is waited through as well, since any number of them can come: the
-    // first is the one thrown, and the later ones ask for the same
+    // threads are in step. The policy for the interruptions, the same as ManagedBatonSignal.WaitAfterFailure: one
+    // exception per failure of the thread. Return throws the first interruption, and the later ones ask for the same
+    // and are dropped; Rent, already failing, drops them all. Raising one again would fail the next, unrelated wait of
+    // the thread after the launch it was meant for has ended
     private ThreadInterruptedException? ReturnTakingTheGate(ManagedStackThread[] workers, int count, int created)
     {
         ThreadInterruptedException? interrupted = null;
@@ -132,19 +183,24 @@ internal sealed class ManagedStackThreadPool
         {
             try
             {
-                lock (_gate)
-                {
-                    _createdThreadCount += created;
-                    PushIdle(workers, count);
-                }
-
+                EnterGate();
                 break;
             }
             catch (ThreadInterruptedException ex)
             {
-                // Only the wait for the gate throws it: the body of the lock does not wait
                 interrupted ??= ex;
             }
+        }
+
+        // The body does not wait, so no interruption can stop it halfway
+        try
+        {
+            _createdThreadCount += created;
+            PushIdle(workers, count);
+        }
+        finally
+        {
+            Monitor.Exit(_gate);
         }
 
         Array.Clear(workers, 0, count);
