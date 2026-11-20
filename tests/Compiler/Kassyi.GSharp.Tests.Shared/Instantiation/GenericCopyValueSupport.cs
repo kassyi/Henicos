@@ -110,8 +110,8 @@ internal static class GenericCopyValueSupport
     }
 
     internal static IEnumerable<object> Values(Type type) =>
-        SmallIntegerValues(type) ?? WideIntegerValues(type) ?? RealValues(type) ??
-        throw new InvalidOperationException($"No inputs for {type}.");
+        SmallIntegerValues(type) ?? UnsignedValues(type) ?? SignedValues(type) ?? NativeIntegerValues(type) ??
+        RealValues(type) ?? throw new InvalidOperationException($"No inputs for {type}.");
 
     // Every value of a byte-sized type, a spread of the 16-bit ones; null for another type
     private static IEnumerable<object>? SmallIntegerValues(Type type)
@@ -139,8 +139,8 @@ internal static class GenericCopyValueSupport
         return type == typeof(char) ? Spread().Select(i => (object)(char)i) : null;
     }
 
-    // The corners of each width; null for another type
-    private static IEnumerable<object>? WideIntegerValues(Type type)
+    // The corners of uint and ulong, and a spread; null for another type
+    private static IEnumerable<object>? UnsignedValues(Type type)
     {
         if (type == typeof(uint))
         {
@@ -148,12 +148,15 @@ internal static class GenericCopyValueSupport
                 .Concat(Enumerable.Range(0, 200).Select(i => (object)(uint)(i * 21474836)));
         }
 
-        if (type == typeof(ulong))
-        {
-            return new ulong[] { 0, 1, 2, long.MaxValue, 1UL << 63, ulong.MaxValue }.Select(v => (object)v)
-                .Concat(Enumerable.Range(0, 200).Select(i => (object)(ulong)(i * 92233720368547758L)));
-        }
+        return type == typeof(ulong)
+            ? new ulong[] { 0, 1, 2, long.MaxValue, 1UL << 63, ulong.MaxValue }.Select(v => (object)v)
+                .Concat(Enumerable.Range(0, 200).Select(i => (object)(ulong)(i * 92233720368547758L)))
+            : null;
+    }
 
+    // The corners of int and long; null for another type
+    private static IEnumerable<object>? SignedValues(Type type)
+    {
         if (type == typeof(int))
         {
             return new[]
@@ -163,12 +166,15 @@ internal static class GenericCopyValueSupport
             }.Select(v => (object)v);
         }
 
-        if (type == typeof(long))
-        {
-            return new[] { long.MinValue, int.MinValue - 1L, -2L, -1L, 0L, 1L, 2L, 63L, 64L, 65L, int.MaxValue + 1L,
-                long.MaxValue - 1, long.MaxValue }.Select(v => (object)v);
-        }
+        return type == typeof(long)
+            ? new[] { long.MinValue, int.MinValue - 1L, -2L, -1L, 0L, 1L, 2L, 63L, 64L, 65L, int.MaxValue + 1L,
+                long.MaxValue - 1, long.MaxValue }.Select(v => (object)v)
+            : null;
+    }
 
+    // The corners of nint and nuint; null for another type
+    private static IEnumerable<object>? NativeIntegerValues(Type type)
+    {
         if (type == typeof(nint))
         {
             return new nint[] { nint.MinValue, -2, -1, 0, 1, 2, 63, 64, 65, nint.MaxValue - 1, nint.MaxValue }

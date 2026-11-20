@@ -162,7 +162,6 @@ internal static class NativeStructEmitter
     // the mirror is first used.
     private static void WriteFieldOffsetCheck(SourceWriter writer, INamedTypeSymbol s, HostMirrorPlan plan)
     {
-        const string Unsafe = HostTypeNames.Unsafe;
         writer.AppendLine($"public static readonly bool {HostMirrorOffsetsMatch} = CheckFieldOffsets();");
         writer.AppendLine("private static bool CheckFieldOffsets()");
         using (writer.Scope())
@@ -173,31 +172,44 @@ internal static class NativeStructEmitter
                 return;
             }
 
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.AppendLine(" s = default;");
-            writer.Append($"ref {HostMirrorName} m = ref {Unsafe}.As<");
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.AppendLine($", {HostMirrorName}>(ref s);");
+            WriteOffsetCheckLocals(writer, s);
             writer.Append("return true");
             foreach (var field in plan.Fields)
             {
-                if (field.Check == HostMirrorOffsetCheck.None)
-                {
-                    continue;
-                }
-
-                writer.AppendLine(" &&");
-                if (field.Check == HostMirrorOffsetCheck.PredictedOffset)
-                {
-                    WritePredictedOffsetCheck(writer, field);
-                }
-                else
-                {
-                    WriteStructFieldOffsetCheck(writer, s, field);
-                }
+                WriteOffsetCheckOf(writer, s, field);
             }
 
             writer.AppendLine(";");
+        }
+    }
+
+    // <S> s = default; ref <mirror> m = ref Unsafe.As<S, <mirror>>(ref s);
+    private static void WriteOffsetCheckLocals(SourceWriter writer, INamedTypeSymbol s)
+    {
+        const string Unsafe = HostTypeNames.Unsafe;
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.AppendLine(" s = default;");
+        writer.Append($"ref {HostMirrorName} m = ref {Unsafe}.As<");
+        writer.AppendFullyQualifiedCsharpName(s);
+        writer.AppendLine($", {HostMirrorName}>(ref s);");
+    }
+
+    // && <the check of the field>, nothing for a field that is left to the size check
+    private static void WriteOffsetCheckOf(SourceWriter writer, INamedTypeSymbol s, HostMirrorField field)
+    {
+        if (field.Check == HostMirrorOffsetCheck.None)
+        {
+            return;
+        }
+
+        writer.AppendLine(" &&");
+        if (field.Check == HostMirrorOffsetCheck.PredictedOffset)
+        {
+            WritePredictedOffsetCheck(writer, field);
+        }
+        else
+        {
+            WriteStructFieldOffsetCheck(writer, s, field);
         }
     }
 

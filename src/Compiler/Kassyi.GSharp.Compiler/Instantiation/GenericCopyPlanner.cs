@@ -253,11 +253,11 @@ internal static class GenericCopyPlanner
             {
                 case ConstrainedMember.IdentityConstant constant:
                     Rewrites[index] = new CopyRewrite.IdentityConstant(index, constant.ClosedType, constant.Value,
-                        IsOperandOfConstantOperation(access));
+                        ConstantOperandForms.IsOperandOfConstantOperation(access, model, ResolveStatic));
                     break;
                 case ConstrainedMember.StaticMember member:
                     Rewrites[index] = new CopyRewrite.StaticMember(index, member.ClosedType, member.Name,
-                        IsOperandOfConstantOperation(access));
+                        ConstantOperandForms.IsOperandOfConstantOperation(access, model, ResolveStatic));
                     break;
                 case ConstrainedMember.Unsupported unsupported:
                     Problems.Add(new CopyProblem(index, unsupported.Reason));
@@ -404,65 +404,6 @@ internal static class GenericCopyPlanner
         // Whether the access is the callee of a call (T.Abs(x), not the method group T.Abs)
         private static bool IsCalled(MemberAccessExpressionSyntax access) =>
             access.Parent is InvocationExpressionSyntax invocation && invocation.Expression == access;
-
-        // An operator on constants is folded at compile time, where the copy needs the run-time result of the
-        // declaration: the exception of a division by zero or an overflow, or the wrapped value of an unchecked
-        // negation (C# reports an overflow of a constant expression outside an explicit unchecked context). Such an
-        // operand is written so that C# cannot fold it
-        private bool IsOperandOfConstantOperation(MemberAccessExpressionSyntax access)
-        {
-            // The operators between the constant and the operation that may overflow: parentheses, checked and
-            // unchecked, and the unary operators, which keep the expression constant
-            SyntaxNode operand = access;
-            var negated = false;
-            while (operand.Parent is { } parent && IsConstantPreserving(parent))
-            {
-                negated |= parent.IsKind(SyntaxKind.UnaryMinusExpression);
-                operand = parent;
-            }
-
-            // -c overflows for MinValue and for an unsigned c other than 0
-            if (negated)
-            {
-                return true;
-            }
-
-            if (operand.Parent is not BinaryExpressionSyntax binary ||
-                binary.Kind() is not (SyntaxKind.AddExpression or SyntaxKind.SubtractExpression or
-                    SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.ModuloExpression))
-            {
-                return false;
-            }
-
-            return IsConstantLike(binary.Left == operand ? binary.Right : binary.Left);
-        }
-
-        // An operator that keeps a constant expression constant and may be the one that overflows (the unary minus) or
-        // lies between the constant and it: parentheses, checked and unchecked, unary +, - and ~
-        private static bool IsConstantPreserving(SyntaxNode node) =>
-            node is ParenthesizedExpressionSyntax or CheckedExpressionSyntax or PrefixUnaryExpressionSyntax
-            {
-                RawKind: (int)SyntaxKind.UnaryMinusExpression or (int)SyntaxKind.UnaryPlusExpression or
-                    (int)SyntaxKind.BitwiseNotExpression
-            };
-
-        private bool IsConstantLike(ExpressionSyntax expression)
-        {
-            expression = expression.UnwrapParentheses();
-            if (expression is PrefixUnaryExpressionSyntax unary && IsConstantPreserving(unary))
-            {
-                return IsConstantLike(unary.Operand);
-            }
-
-            if (expression is CheckedExpressionSyntax checkedExpression)
-            {
-                return IsConstantLike(checkedExpression.Expression);
-            }
-
-            return model.GetConstantValue(expression).HasValue ||
-                   (expression is MemberAccessExpressionSyntax access &&
-                    ResolveStatic(access) is ConstrainedMember.IdentityConstant or ConstrainedMember.StaticMember);
-        }
 
         // A form that reads or evaluates it any number of times gives what it gives once
         private static bool IsSideEffectFree(SyntaxNode node) =>
