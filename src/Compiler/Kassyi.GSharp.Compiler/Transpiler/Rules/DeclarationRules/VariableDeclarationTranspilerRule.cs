@@ -95,6 +95,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         var hasEmittedAny = false;
         foreach (var v in variables)
         {
+            // A const local writes nothing: every reference is its value (IdentifierNameTranspiler)
+            if (IsConst(v))
+            {
+                continue;
+            }
+
             if (TryTranspileIteratorLocal(v, typeSymbol, ref hasEmittedAny, ref context))
             {
                 continue;
@@ -106,12 +112,12 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             }
 
             // A local that another switch section uses or jumps into is declared in a block around the switch
-            // (SwitchSectionLocals), a const with its value; a struct with a C++ constructor that a goto jumps past is
-            // declared at the start of its C++ scope (JumpedOverDeclarations)
+            // (SwitchSectionLocals); a struct with a C++ constructor that a goto jumps past is declared at the start
+            // of its C++ scope (JumpedOverDeclarations)
             var declaredAhead =
                 SwitchSectionLocals.IsDeclaredBeforeSwitch(v, context.Query.SemanticModel) ||
                 JumpedOverDeclarations.IsDeclaredAtScopeStart(v, context.Query.SemanticModel);
-            if (declaredAhead && (v.Initializer == null || IsConst(v)))
+            if (declaredAhead && v.Initializer == null)
             {
                 continue;
             }
@@ -284,9 +290,9 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     // declaration and the initialization become two statements. Only a type that C++ can declare without an initializer
     // and assign later is split: a primitive, an enum, a pointer or a struct that is not a ref struct (a struct with a
     // C++ default constructor is declared at the start of its list instead, JumpedOverDeclarations). A const local is
-    // emitted as a plain variable, so it is split too. A ref local, a using declaration and a ref struct local (a Span
-    // that is not a stackalloc, which TryWriteFixedSizeArray handles) keep their form: a goto past them stays ill-formed
-    // C++.
+    // not declared in C++ at all (its references are its value), so it never gets here. A ref local, a using
+    // declaration and a ref struct local (a Span that is not a stackalloc, which TryWriteFixedSizeArray handles) keep
+    // their form: a goto past them stays ill-formed C++.
     private static bool IsJumpedOverInitialization(VariableDeclaratorSyntax declarator, ITypeSymbol? typeSymbol) =>
         declarator.Initializer != null &&
         IsAssignableAfterDeclaration(typeSymbol) &&

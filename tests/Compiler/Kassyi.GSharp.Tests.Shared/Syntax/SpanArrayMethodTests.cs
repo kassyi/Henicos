@@ -160,7 +160,9 @@ public partial class SpanArrayMethodTests : SpanKernelPathTestBase
         var oracle = Record.Exception(() => Array.Reverse(new int[length], index, count));
         Assert.IsType(pastEnd ? typeof(ArgumentException) : typeof(ArgumentOutOfRangeException), oracle);
 
-        var actual = Record.Exception(() => Run(managed,
+        // Recorded inside Run, so that the skip of Run reaches xUnit instead of being taken for the launch's exception
+        Exception? actual = null;
+        Run(managed, () => actual = Record.Exception(
             () => SpanWriteKernels.LaunchArrayReverseRangeKernel(a, index, count, gridDimX: 1, blockDimX: 1)));
 
         Assert.Equal(oracle.GetType(), actual?.GetType());

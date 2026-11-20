@@ -36,6 +36,7 @@ import {
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
+import { formatJobId } from "./job-id.ts";
 
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
@@ -222,7 +223,7 @@ export class QueuedRun {
       // one that counts the turn as exclusive, sends no echo, and the lock is then taken exclusively
       const mode: ShareMode = this.share === "shared" && shareField(granted) === "shared" ? "shared" : "exclusive";
       const waited = Math.round((Date.now() - this.queuedAt) / 1000);
-      prefix(`the GPU turn of #${jobId} came after ${waited}s; taking the GPU lock (${mode})`);
+      prefix(`the GPU turn of ${formatJobId(jobId)} came after ${waited}s; taking the GPU lock (${mode})`);
       const result = await this.host.runUnderGpuLock(placement.weight, jobId, mode, (c) => this.started(c));
       const end = commandEnd(result, this.cancelRequested);
       this.finish(end.exitCode, end.completed, end.cancelled);
@@ -245,7 +246,7 @@ export class QueuedRun {
     const command = prepared?.command ?? options.command;
     const note = prepared?.note ?? `${cpus} cpus`;
     const waited = Math.round((Date.now() - this.queuedAt) / 1000);
-    prefix(`granted #${jobId} after ${waited}s (weight ${placement.weight}, ${note})`);
+    prefix(`granted ${formatJobId(jobId)} after ${waited}s (weight ${placement.weight}, ${note})`);
     const env = {
       ...process.env,
       ...prepared?.env,
@@ -304,7 +305,9 @@ export class QueuedRun {
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
-    prefix(`queued #${jobId}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${jobId}" shows it`);
+    prefix(
+      `queued ${formatJobId(jobId)}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${formatJobId(jobId)}" shows it`,
+    );
     if (message.paused === true) {
       this.tellPaused();
     }
@@ -314,7 +317,7 @@ export class QueuedRun {
   private tellPaused(): void {
     if (!this.pauseTold) {
       this.pauseTold = true;
-      prefix(`the queue is paused: #${this.jobId} starts after "job-queue.js resume"`);
+      prefix(`the queue is paused: ${formatJobId(this.jobId)} starts after "job-queue.js resume"`);
     }
   }
 
@@ -331,7 +334,7 @@ export class QueuedRun {
       const outlook = describeOutlook(message, now);
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(
-        `waiting #${this.jobId}: position ${position}, ${slots} ` +
+        `waiting ${formatJobId(this.jobId)}: position ${position}, ${slots} ` +
           `(${Math.round((now - this.queuedAt) / 1000)}s)${outlook ? `; ${outlook}` : ""}`,
       );
     }
@@ -341,7 +344,7 @@ export class QueuedRun {
     this.receipts = numberField(message, "protocol") >= 3;
     const id = numberField(message, "id", this.jobId);
     if (id !== this.jobId) {
-      prefix(`re-registered the running job as #${id} (was #${this.jobId})`);
+      prefix(`re-registered the running job as ${formatJobId(id)} (was ${formatJobId(this.jobId)})`);
     }
     this.jobId = id;
   }
@@ -363,7 +366,7 @@ export class QueuedRun {
     this.cancelRequested = true;
     const reason = message.reason ? ` (${String(message.reason)})` : "";
     prefix(
-      `job #${numberField(message, "id", this.jobId)} was cancelled${reason}` +
+      `job ${formatJobId(numberField(message, "id", this.jobId))} was cancelled${reason}` +
         (this.state === "running" ? "; stopping the command" : ""),
     );
     if (this.state === "waiting") {

@@ -3,16 +3,28 @@ namespace Kassyi.GSharp.Compiler.Instantiation;
 /// <summary>
 /// Writes the closed copy of a generic declaration from its <see cref="GenericCopyPlan"/>: the declaration without its
 /// type parameters and constraints, under the copy name, with each planned node written as the plan says. It decides
-/// nothing; every node keeps the original-span annotation and the node number of the node it came from.
+/// nothing; every node keeps the copy-origin annotation and the node number of the node it came from.
 /// </summary>
 internal static class GenericCopyEmitter
 {
     /// <summary>The annotation kind that marks the declaration of a copy.</summary>
     public const string CopyAnnotationKind = "GSharpGenericCopy";
 
+    /// <summary>
+    /// The annotation kind that ties a node of a copy to the node of the declaration it came from, with the data of the
+    /// original-span annotation (<see cref="LoweringAnnotations.FormatOriginalSpanData(SyntaxNode, int, int)"/>).
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Not the original-span annotation itself: the lowering reads a node's semantics through that annotation,
+    /// and for a node of a copy it would read the generic declaration (a type parameter, another parameter symbol)
+    /// instead of the copy. The copy is a node of the derived compilation, so the lowering annotates it as its own;
+    /// only a diagnostic goes back to the declaration (<see cref="GenericCopyOrigins"/>).
+    /// </remarks>
+    public const string CopyOriginAnnotationKind = "GSharpGenericCopyOrigin";
+
     /// <summary>Writes the copy.</summary>
     /// <param name="declaration">
-    /// The generic declaration with its nodes annotated (<see cref="LoweringAnnotations.AnnotateOriginalSpans"/> and
+    /// The generic declaration with its nodes annotated (<see cref="CopyOriginAnnotationKind"/> and
     /// <see cref="CopyNodeIndex.Annotate"/>).
     /// </param>
     /// <param name="plan">What to write differently.</param>
@@ -39,7 +51,7 @@ internal static class GenericCopyEmitter
     /// Writes the helpers that the copy calls (<see cref="GenericCopyPlan.Helpers"/>): one generic method each, to be
     /// added beside the copy.
     /// </summary>
-    /// <param name="declaration">The generic declaration, with the original spans annotated.</param>
+    /// <param name="declaration">The generic declaration, with the copy origins annotated.</param>
     /// <param name="plan">The plan of the copy.</param>
     /// <param name="name">The name of the copy, which the names of the helpers derive from.</param>
     public static ImmutableArray<MethodDeclarationSyntax> EmitHelpers(
@@ -47,7 +59,7 @@ internal static class GenericCopyEmitter
         GenericCopyPlan plan,
         string name)
     {
-        var spans = declaration.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+        var spans = declaration.GetAnnotations(CopyOriginAnnotationKind);
         var helpers = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(plan.Helpers.Length);
         for (var i = 0; i < plan.Helpers.Length; i++)
         {
@@ -356,19 +368,19 @@ internal static class GenericCopyEmitter
         private static ParenthesizedExpressionSyntax Parenthesize(ExpressionSyntax expression) =>
             expression as ParenthesizedExpressionSyntax ?? SyntaxFactory.ParenthesizedExpression(expression);
 
-        // The node number of original at the root of what replaces it; its original span on every node written anew
+        // The node number of original at the root of what replaces it; its copy origin on every node written anew
         private static TNode Stamp<TNode>(TNode written, SyntaxNode original) where TNode : SyntaxNode
         {
-            var spans = original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+            var spans = original.GetAnnotations(CopyOriginAnnotationKind);
             var stamped = written.ReplaceNodes(
                 written.DescendantNodes(),
-                (_, rewritten) => rewritten.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                (_, rewritten) => rewritten.HasAnnotations(CopyOriginAnnotationKind)
                     ? rewritten
                     : rewritten.WithAdditionalAnnotations(spans)
             );
             var root = stamped
                 .WithoutAnnotations(CopyNodeIndex.AnnotationKind)
-                .WithoutAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                .WithoutAnnotations(CopyOriginAnnotationKind)
                 .WithAdditionalAnnotations(spans);
             return CopyNodeIndex.TryGet(original, out var index)
                 ? root.WithAdditionalAnnotations(CopyNodeIndex.Create(index))

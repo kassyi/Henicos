@@ -24,7 +24,7 @@ internal static class IrTestCases
          throw new InvalidOperationException($"Type '{type}' not found."))
         .GetMembers(name)
         .OfType<IMethodSymbol>()
-        .Single();
+        .Single(static method => !method.IsImplicitlyDeclared); // a struct also has the implicit parameterless .ctor
 
     public static IrMethod Build(string testCase, string type, string name)
     {

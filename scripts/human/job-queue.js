@@ -38,7 +38,7 @@
 // scheduler keeps the outcomes of the last 500 jobs, also across a restart. `wait <id>` blocks until a job ends and
 // exits with its outcome, so that an agent running it in the background is called when the job ends.
 //
-// Job ids: `run` prints `queued #<id>` as soon as the scheduler took the job, with the jobs ahead of it and its
+// Job ids: `run` prints `queued j<nnnn>` as soon as the scheduler took the job, with the jobs ahead of it and its
 // expected start and end; `status <id> [--json]` tells them again at any time. Ids count up and are never reused while
 // the state directory lives (the next id is saved in jobs-<port>.json and history.json).
 //

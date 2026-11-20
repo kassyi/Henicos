@@ -183,7 +183,7 @@ internal sealed class IrSpillPlanner
                 Fail(IrSpillFallback.LocationNotRebuildable);
                 return;
             case IrPropertyReference property when IrReadOnlyReceivers.IsCopiedBeforeTheCall(property.Receiver,
-                property.Property.GetMethod) && HoldsAny(property.Arguments):
+                property.Property.GetMethod, enclosing: null) && HoldsAny(property.Arguments):
                 Fail(IrSpillFallback.ReadOnlyVariableReceiver);
                 return;
         }
@@ -199,7 +199,10 @@ internal sealed class IrSpillPlanner
     // evaluates the operands before its last split-holding one before the split
     private void PlanCall(IrCall call, ImmutableArray<IrSpillStep>.Builder steps)
     {
-        if (IrReadOnlyReceivers.IsCopiedBeforeTheCall(call.Receiver, call.Method) && HoldsAny(call.Arguments))
+        // Without the enclosing method a readonly field a constructor writes counts as copied too: such a call only
+        // falls back to the syntax-based lowering
+        if (IrReadOnlyReceivers.IsCopiedBeforeTheCall(call.Receiver, call.Method, enclosing: null) &&
+            HoldsAny(call.Arguments))
         {
             Fail(IrSpillFallback.ReadOnlyVariableReceiver);
             return;

@@ -7,12 +7,11 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 /// <remarks>
 /// [WHY] In C# the switch block is one scope: a local declared in one section can be assigned and read in a later
 /// section, and the jump to that section skips the declaration (definite assignment makes sure that the section assigns
-/// it before reading it; a const needs no assignment). The C++ braces each section, so such a local is declared in an
-/// extra block around the switch, <c>{ &lt;declarations&gt; switch (...) { ... } }</c>, and its declaration in the section
-/// becomes an assignment. No jump crosses the declaration there, so a type with a C++ default constructor (a struct with
-/// an array field) and an array alias work too. A const is declared there with its initializer and type
-/// (<c>const &lt;type&gt; &lt;name&gt; = &lt;value&gt;;</c>) and writes nothing in its section; so is a const that such a const
-/// reads. A local that cannot be declared before its initialization (a span, a ref local, a stack array) is GSH0003.
+/// it before reading it). The C++ braces each section, so such a local is declared in an extra block around the switch,
+/// <c>{ &lt;declarations&gt; switch (...) { ... } }</c>, and its declaration in the section becomes an assignment. No
+/// jump crosses the declaration there, so a type with a C++ default constructor (a struct with an array field) and an
+/// array alias work too. A const is not declared in C++ at all: its references are its value. A local that cannot be
+/// declared before its initialization (a span, a ref local, a stack array) is GSH0003.
 /// Roslyn binds the switch block the same way: one scope (its SwitchBinder) declares the locals of every section.
 /// A <c>goto</c> from another section to a label of the section enters its braces past every declaration before the
 /// label (<see cref="GotoJumpAnalysis.IsEnteredFromOtherSection"/>), the default construction at the start of the
@@ -23,7 +22,7 @@ internal static class SwitchSectionLocals
 {
     /// <summary>
     /// Whether the block around the switch of <paramref name="declarator"/> declares it: a local of a switch section
-    /// that another section names or jumps into, or a const that such a const reads.
+    /// that another section names or jumps into.
     /// </summary>
     public static bool IsDeclaredBeforeSwitch(VariableDeclaratorSyntax declarator, SemanticModel semanticModel) =>
         declarator.Parent is VariableDeclarationSyntax { Parent: LocalDeclarationStatementSyntax statement } &&
@@ -46,7 +45,7 @@ internal static class SwitchSectionLocals
                 continue;
             }
 
-            // A const can always be declared before the switch, so only a variable is left here
+            // A const has no declaration in C++, so only a variable is left here
             if (!declaration.IsConst && IsNamedInOtherSection(declarator, section, model))
             {
                 context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declarator,
@@ -58,9 +57,8 @@ internal static class SwitchSectionLocals
     }
 
     /// <summary>
-    /// Declares the locals that the sections of <paramref name="switchStatement"/> share, in the order of the source so
-    /// that a const follows the consts it reads: <c>&lt;type&gt; &lt;name&gt;;</c> or
-    /// <c>const &lt;type&gt; &lt;name&gt; = &lt;value&gt;;</c>.
+    /// Declares the locals that the sections of <paramref name="switchStatement"/> share, in the order of the source:
+    /// <c>&lt;type&gt; &lt;name&gt;;</c>.
     /// </summary>
     public static void WriteDeclarations(SwitchStatementSyntax switchStatement, ref TranspileContext context)
     {
@@ -70,11 +68,6 @@ internal static class SwitchSectionLocals
             if (!IsDeclaredBeforeSwitch(declarator, declaration, section, model))
             {
                 continue;
-            }
-
-            if (declaration.IsConst)
-            {
-                context.Emitter.Writer.Append("const ");
             }
 
             // A ref local is the pointer to its target, declared first and assigned where it is declared
@@ -89,11 +82,6 @@ internal static class SwitchSectionLocals
             }
 
             CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
-            if (declaration.IsConst)
-            {
-                DeclarationTranspilerHelper.WriteDeclaratorInitializer(declarator, ref context);
-            }
-
             context.Emitter.Writer.AppendLine(";");
         }
 
@@ -113,43 +101,7 @@ internal static class SwitchSectionLocals
                    CanDeclareBeforeSwitch(declaration, declarator, model);
         }
 
-        if (IsNamedInOtherSection(declarator, section, model))
-        {
-            return true;
-        }
-
-        // A const declared before the switch is written ahead of this section, so a const of this section that it
-        // reads goes there too (a const of another section that reads it names it from another section, above). A
-        // const under a label or in a nested block is not in the list; a jump past it splits it instead.
-        var index = section.Statements.IndexOf(declaration);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        var local = LocalIdentity.Of(declarator, model);
-        for (var i = index; i < section.Statements.Count; i++)
-        {
-            if (section.Statements[i] is not LocalDeclarationStatementSyntax { IsConst: true } later)
-            {
-                continue;
-            }
-
-            foreach (var reader in later.Declaration.Variables)
-            {
-                if (reader != declarator &&
-                    reader.Initializer is { } initializer &&
-                    initializer
-                        .DescendantNodes()
-                        .AsStackEnumerable()
-                        .Any(local, static (node, l) => l.IsReferencedBy(node)) &&
-                    IsDeclaredBeforeSwitch(reader, later, section, model))
-                {
-                    return true;
-                }
-            }
-        }
-
+        // A const is not declared in C++: its references are its value
         return false;
     }
 

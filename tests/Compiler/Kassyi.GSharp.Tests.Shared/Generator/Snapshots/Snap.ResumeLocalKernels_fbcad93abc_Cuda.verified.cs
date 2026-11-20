@@ -779,7 +779,6 @@ finally
 #pragma warning restore CS8500
 public const string ConstSizeKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeKernel(GSharpArray<int> __gsharp_id_0_a, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_Size = 4;
 int __gsharp_id_2_s[4]{};
 __gsharp_id_2_s[3]=1;
 __gsharp_array_at(__gsharp_id_0_a, 0, 195696418u)=__gsharp_id_2_s[3];
@@ -1670,7 +1669,6 @@ finally
 #pragma warning restore CS8500
 public const string ConstSizeLengthKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ResumeLocalKernels__ConstSizeLengthKernel(GSharpArray<int> __gsharp_id_0_a, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
-int __gsharp_id_1_Half = 2;
 int __gsharp_id_2_s[4]{};
 __gsharp_array_at(__gsharp_id_0_a, 0, 1205836686u)=4;
 __syncthreads();

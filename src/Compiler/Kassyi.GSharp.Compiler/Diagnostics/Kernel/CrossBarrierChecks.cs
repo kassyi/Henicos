@@ -43,23 +43,8 @@ internal static class CrossBarrierChecks
 
         foreach (var gotoStmt in scan.Gotos)
         {
-            if (gotoStmt.Expression is not IdentifierNameSyntax gotoId)
-            {
-                continue;
-            }
-
-            var labelName = gotoId.Identifier.ValueText;
-
-            var targetLabel = scan.Labels
-                .AsStackEnumerable()
-                .FirstOrDefault(labelName, static (l, name) => l.Identifier.ValueText == name);
-
-            if (targetLabel == null)
-            {
-                continue;
-            }
-
-            if (IsCrossBarrierGoto(scan.Barriers, gotoStmt, targetLabel))
+            if (FindTargetLabel(scan.Labels, gotoStmt, scan.SemanticModel) is { } targetLabel &&
+                IsCrossBarrierGoto(scan.Barriers, gotoStmt, targetLabel))
             {
                 scan.Context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierGotoProhibited,
@@ -67,6 +52,24 @@ internal static class CrossBarrierChecks
             }
         }
     }
+
+    /// <summary>
+    /// The label among <paramref name="labels"/> that <paramref name="gotoStmt"/> jumps to: the one C# binds the goto to,
+    /// since sibling blocks may declare the same label name; <see langword="null"/> for <c>goto case</c> and
+    /// <c>goto default</c>.
+    /// </summary>
+    /// <remarks>The one lookup of GSH0040 and of GSH0121 (<see cref="ChainedLabelJumpChecks.FindReported"/>).</remarks>
+    internal static LabeledStatementSyntax? FindTargetLabel(IReadOnlyList<LabeledStatementSyntax> labels,
+        GotoStatementSyntax gotoStmt, SemanticModel semanticModel) =>
+        gotoStmt.IsKind(SyntaxKind.GotoStatement) &&
+        semanticModel.GetSymbol(gotoStmt.Expression) is ILabelSymbol target
+            ? labels
+                .AsStackEnumerable()
+                .FirstOrDefault((target, semanticModel), static (label, state) =>
+                    SymbolEqualityComparer.Default.Equals(
+                        state.semanticModel.GetDeclaredSymbol<ILabelSymbol>(label), state.target)
+                )
+            : null;
 
     /// <summary>
     /// Whether a goto to <paramref name="targetLabel"/> crosses one of <paramref name="barriers"/> (GSH0040): one that
