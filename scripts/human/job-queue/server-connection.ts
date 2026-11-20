@@ -10,6 +10,7 @@ import { JobMessages } from "./server-job-messages.ts";
 import { planClose } from "./server-job-state.ts";
 import type { JobServer } from "./server.ts";
 import { ProcessTable } from "./system.ts";
+import { formatJobId } from "./job-id.ts";
 
 /** Handles one message of a connection. The settle step after it is the connection's, not the handler's. */
 export type MessageHandler = (connection: Connection, message: Incoming) => void;
@@ -84,8 +85,8 @@ export class Connection {
       server.unbind(job);
       server.log(
         job.phase === "running"
-          ? `client of #${job.id} is away; holding its slots${job.commandPid > 0 ? ` (command ${job.commandPid})` : ""}`
-          : `client of #${job.id} is away; it keeps its place`,
+          ? `client of ${formatJobId(job.id)} is away; holding its slots${job.commandPid > 0 ? ` (command ${job.commandPid})` : ""}`
+          : `client of ${formatJobId(job.id)} is away; it keeps its place`,
       );
       return;
     }

@@ -33,7 +33,7 @@ const plain = (lines: string[]): string[] => lines;
 
 function checkLayout(plugins: ShortNameProvider): void {
   const reply = sampleReply();
-  // The pane of a split VS Code panel: 70 columns, 13 rows; #812 selected
+  // The pane of a split VS Code panel: 70 columns, 13 rows; j0812 selected
   const state: ViewState = { ...initialViewState(), selectedId: 812 };
   const lines = plain(renderScreen(reply, state, { columns: 70, rows: 13, now: Now }, false, null, plugins));
   assert.strictEqual(lines.length, 13, "the screen fills the rows exactly, so nothing scrolls");
@@ -49,14 +49,14 @@ function checkLayout(plugins: ShortNameProvider): void {
     first.slice(0, nowColumn).includes("█") && first.slice(nowColumn + 1).includes("▓"),
     "run left, rest right",
   );
-  assert.match(lines[0] ?? "", /CPU ■■■■□□□□ 4\/8 {2}MEM ■□□□□□□ 19% {2}GPU #812 \+1/);
-  assert.match(lines[2] ?? "", /^▸812g test-category Runtime/, "running jobs first, the shared GPU turn flagged g");
+  assert.match(lines[0] ?? "", /CPU ■■■■□□□□ 4\/8 {2}MEM ■□□□□□□ 19% {2}GPU j0812 \+1/);
+  assert.match(lines[2] ?? "", /^▸j0812g test-category Runtime/, "running jobs first, the shared GPU turn flagged g");
   assert.ok((lines[2] ?? "").includes("█") && (lines[2] ?? "").includes("▓"), "run so far and the expected rest");
   assert.ok((lines[4] ?? "").includes("?"), "a job without history shows no expected rest");
   assert.ok((lines[6] ?? "").includes("⋯") && (lines[6] ?? "").includes("▒"), "waits for the GPU, then runs");
   assert.ok(!(lines[5] ?? "").includes("⋯"), "a job that only waits for slots shows no ⋯");
   assert.match(lines[7] ?? "", /⋯▒+ +$/, "the window reaches the last expected end");
-  assert.match(lines[12] ?? "", /^ #812 70% ends ~\d\d:\d\d {2}w2 6\.0GB gpu {2}just test-category Runtime/);
+  assert.match(lines[12] ?? "", /^ j0812 70% ends ~\d\d:\d\d {2}w2 6\.0GB gpu {2}just test-category Runtime/);
 
   // Colors: the selected line in reverse video, the late job in red; no color codes without color
   const selected812: ViewState = { ...initialViewState(), selectedId: 812 };
@@ -70,7 +70,7 @@ function checkLayout(plugins: ShortNameProvider): void {
   const none = renderScreen(reply, initialViewState(), full, false);
   assert.ok(!none.join("").includes("▸"), "no job is marked");
   assert.ok(!renderScreen(reply, initialViewState(), full, true).join("").includes("\x1b[7"), "no reverse video");
-  assert.match(none[12] ?? "", /^ 3 running, 3 waiting; next end ~\d\d:\d\d #817 {2}red = longer than usual/);
+  assert.match(none[12] ?? "", /^ 3 running, 3 waiting; next end ~\d\d:\d\d j0817 {2}red = longer than usual/);
   assert.ok(
     (renderScreen(reply, initialViewState(), full, true)[12] ?? "").includes("\x1b[31m  red = longer than usual"),
     "the legend of the red bar is red itself",
@@ -85,7 +85,7 @@ function checkLayout(plugins: ShortNameProvider): void {
   const scrolled: ViewState = { ...initialViewState(), selectedId: 822 };
   const short = renderScreen(reply, scrolled, { columns: 70, rows: 7, now: Now }, false);
   assert.strictEqual(short.length, 7);
-  assert.match(short[4] ?? "", /^▸822/, "the selected job stays on screen");
+  assert.match(short[4] ?? "", /^▸j0822/, "the selected job stays on screen");
   assert.match(short[5] ?? "", /^── \+3 more /);
   assert.strictEqual(scrolled.offset, 3);
 
@@ -93,8 +93,8 @@ function checkLayout(plugins: ShortNameProvider): void {
   const narrow = renderScreen(reply, initialViewState(), { columns: 40, rows: 13, now: Now }, false);
   narrow.forEach((line) => assert.ok(displayWidth(line) <= 40, line));
   assert.ok(!narrow.join("").includes("▒"), "no timeline at 40 columns");
-  assert.match(narrow[3] ?? "", /815.*14m \+4m/);
-  assert.match(narrow[7] ?? "", /822.*after #821/);
+  assert.match(narrow[3] ?? "", /j0815.*14m \+4m/);
+  assert.match(narrow[7] ?? "", /j0822.*after j0821/);
 
   // Very short: the header and the bottom line only; no scheduler
   assert.strictEqual(renderScreen(reply, initialViewState(), { columns: 70, rows: 3, now: Now }, false).length, 2);
@@ -190,7 +190,7 @@ function checkKeys(): void {
   press("g");
   press("m");
   assert.strictEqual(state.prompt, null);
-  assert.match(state.message?.text ?? "", /#812 already runs/);
+  assert.match(state.message?.text ?? "", /j0812 already runs/);
 
   // ? pages through the help (two pages on a narrow screen) and closes it after the last one; Esc closes it at once
   assert.strictEqual(press("?").state.help, 1);
@@ -224,11 +224,11 @@ function checkKeys(): void {
 
   assert.strictEqual(
     describeResult({ type: "cancel", id: 1 }, { type: "cancel-result", cancelled: [1] }).text,
-    "cancelled #1",
+    "cancelled j0001",
   );
   assert.strictEqual(
     describeResult({ type: "cancel", id: 9 }, { type: "cancel-result", cancelled: [] }).text,
-    "no job #9",
+    "no job j0009",
   );
   assert.match(
     describeResult({ type: "move", id: 1, first: true }, { type: "error", message: "x" }).text,
@@ -289,7 +289,7 @@ function checkGpuPairsAndReasons(): void {
     screenJobs(roomy)
       .filter((j) => j.state === "waiting")
       .map((j) => j.reason),
-    ["mem full", "in line", "after #911"],
+    ["mem full", "in line", "after j0911"],
   );
   const lines = renderScreen(
     reply,
@@ -297,11 +297,11 @@ function checkGpuPairsAndReasons(): void {
     { columns: 70, rows: 9, now: Now },
     false,
   );
-  assert.match(lines[0] ?? "", /GPU #900 \+1/, "the GPU belongs to #900; one job waits for its turn");
-  assert.match(lines[2] ?? "", /^▸900G/);
-  assert.match(lines[4] ?? "", /^ 910G.*GPU busy [│┃]/, "a waiting line names what it waits for, left of now");
-  assert.match(lines[5] ?? "", /^ 911 .*CPU full [│┃]/);
-  assert.match(lines[8] ?? "", /^ #900 .* runs as #901 /);
+  assert.match(lines[0] ?? "", /GPU j0900 \+1/, "the GPU belongs to j0900; one job waits for its turn");
+  assert.match(lines[2] ?? "", /^▸j0900G/);
+  assert.match(lines[4] ?? "", /^ j0910G.*GPU busy [│┃]/, "a waiting line names what it waits for, left of now");
+  assert.match(lines[5] ?? "", /^ j0911 .*CPU full [│┃]/);
+  assert.match(lines[8] ?? "", /^ j0900 .* runs as j0901 /);
   // A --gpu job whose holder has not registered yet (the lock is being taken) is still a GPU line
   const alone = screenJobs({ ...reply, running: [turn] });
   assert.deepStrictEqual(
@@ -358,20 +358,20 @@ export function checkSharedView(): void {
     [resource([900, 901], [])],
   );
   const lines = screen(both);
-  assert.match(lines[0] ?? "", /GPU #900 #901 \+1/, "every running turn of the resource, then the waiting ones");
+  assert.match(lines[0] ?? "", /GPU j0900 j0901 \+1/, "every running turn of the resource, then the waiting ones");
   assert.ok(
-    lines.some((line) => /^[ ▸]900g /.test(line)),
+    lines.some((line) => /^[ ▸]j0900g /.test(line)),
     `a shared turn is g: ${lines.join("|")}`,
   );
   const exclusive = reply([turn(902, undefined)], [], [resource([], [902])]);
   assert.ok(
-    screen(exclusive).some((line) => /^[ ▸]902G /.test(line)),
+    screen(exclusive).some((line) => /^[ ▸]j0902G /.test(line)),
     "an exclusive turn is G",
   );
-  assert.match(screen(exclusive)[0] ?? "", /GPU #902(?! #)/);
+  assert.match(screen(exclusive)[0] ?? "", /GPU j0902(?! j)/);
   // Without `resources` (an older scheduler): the header and the mark as before
   const older = reply([turn(900, "shared")], [waitingTurn(910, "shared")]);
-  assert.match(screen(older)[0] ?? "", /GPU #900 \+1/);
+  assert.match(screen(older)[0] ?? "", /GPU j0900 \+1/);
   // What a waiting turn waits for: memory (the probe) only when a shared turn could take the free slot
   assert.strictEqual(reasonOf(both, 910), "GPU busy", "both slots are taken");
   const room = reply([turn(900, "shared")], [waitingTurn(910, "shared")], [resource([900], [])]);
@@ -438,13 +438,13 @@ function checkStartKey(): void {
   assert.deepStrictEqual(reduceKey(asked, "y", reply, Now).action, { type: "start", id: 820 });
   assert.strictEqual(reduceKey(asked, "n", reply, Now).action, undefined);
   const lines = renderScreen(reply, asked, { columns: 90, rows: 13, now: Now }, false);
-  assert.match(lines[12] ?? "", /start #820 now, over the pool \(it waits: in line\)\? y\/n/);
-  assert.match(reduceKey(at(821), "s", reply, Now).state.message?.text ?? "", /#821 waits for the GPU/);
-  assert.match(reduceKey(at(822), "s", reply, Now).state.message?.text ?? "", /#822 waits for #821 to end/);
-  assert.match(reduceKey(at(812), "s", reply, Now).state.message?.text ?? "", /#812 already runs; .* can start/);
+  assert.match(lines[12] ?? "", /start j0820 now, over the pool \(it waits: in line\)\? y\/n/);
+  assert.match(reduceKey(at(821), "s", reply, Now).state.message?.text ?? "", /j0821 waits for the GPU/);
+  assert.match(reduceKey(at(822), "s", reply, Now).state.message?.text ?? "", /j0822 waits for j0821 to end/);
+  assert.match(reduceKey(at(812), "s", reply, Now).state.message?.text ?? "", /j0812 already runs; .* can start/);
   assert.strictEqual(
     describeResult({ type: "start", id: 820 }, { type: "start-result", id: 820 }).text,
-    "#820 started over the pool",
+    "j0820 started over the pool",
   );
 }
 
@@ -471,7 +471,7 @@ function checkPauseKey(): void {
   const stopped = renderScreen(paused, state, size, false);
   assert.ok(!(normal[0] ?? "").includes("paused") && (stopped[0] ?? "").includes("|| paused"), "the header says it");
   assert.ok(
-    stopped.some((line) => /820 .*paused [│┃]/.test(line)),
+    stopped.some((line) => /j0820 .*paused [│┃]/.test(line)),
     "a waiting job waits because it is paused",
   );
   assert.ok(!normal.some((line) => /paused/.test(line)), "nothing of it while running as usual");
@@ -551,7 +551,7 @@ function checkHelp(): void {
   assert.match(first[11] ?? "", /── help 1\/\d, \? next/);
   const last = plain(renderScreen(reply, { ...state, help: state.helpPages }, small, false, samplePanel(null)));
   assert.ok(
-    last.some((line) => /#n +a job it queued/.test(line)),
+    last.some((line) => /jnnnn +a job it queued/.test(line)),
     "the last page ends the legend",
   );
   const colored = helpLines(100, chatPart).map((line) => line.render(true));
@@ -610,7 +610,7 @@ function checkTerminalLook(): void {
     { columns: 70, rows: 13, now: Now },
     true,
   )[2] as string;
-  assert.ok(line.includes(`${esc}[7;1m812${esc}[0m`), "the id is in reverse video");
+  assert.ok(line.includes(`${esc}[7;1mj0812${esc}[0m`), "the id is in reverse video");
   assert.ok(line.includes(`${esc}[7mjust test-category`), "the command is in reverse video");
   assert.ok(line.includes(`${esc}[48;5;237;32m█${esc}[0m`), "the bar keeps its green on the highlight");
   assert.ok(!line.includes(`${esc}[7;32m█`), "the bar is not reversed");
@@ -623,7 +623,7 @@ function checkTerminalLook(): void {
       { ...initialViewState(), selectedId: id },
       { columns: 120, rows: 17, now: Now },
       true,
-    ).find((l) => l.includes(`${esc}[7m${id}`)) as string;
+    ).find((l) => l.includes(`${esc}[7mj0${id}`)) as string;
     const reversed = [...waiting.matchAll(/\[7(?:;[\d;]*)?m([^]*)\[0m/g)].map((m) => m[1] ?? "");
     assert.ok(
       reversed.length > 0 && !reversed.slice(-1)[0]?.includes("│"),
@@ -635,22 +635,22 @@ function checkTerminalLook(): void {
     );
     assert.ok(waiting.includes(`${esc}[48;5;237;2m`), `#${id}: dim timeline cells on the highlight`);
   }
-  // The first timeline cell is not always blank: at 50 columns the bar of #815 starts in it, and stays unreversed
+  // The first timeline cell is not always blank: at 50 columns the bar of j0815 starts in it, and stays unreversed
   const firstCell = renderScreen(
     sampleReply(),
     { ...initialViewState(), selectedId: 815 },
     { columns: 50, rows: 13, now: Now },
     true,
-  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
-  assert.ok(firstCell.includes(`${esc}[48;5;237;31m█`), "#815: the first timeline cell keeps its red");
-  assert.ok(!firstCell.includes(`${esc}[7;31m█`), "#815: the first timeline cell is not reversed");
+  ).find((l) => l.includes(`${esc}[7;1mj0815`)) as string;
+  assert.ok(firstCell.includes(`${esc}[48;5;237;31m█`), "j0815: the first timeline cell keeps its red");
+  assert.ok(!firstCell.includes(`${esc}[7;31m█`), "j0815: the first timeline cell is not reversed");
   // Without a timeline (a narrow screen) the progress text of a late job is reversed like the other columns
   const narrowSelected = renderScreen(
     sampleReply(),
     { ...initialViewState(), selectedId: 815 },
     { columns: 40, rows: 13, now: Now },
     true,
-  ).find((l) => l.includes(`${esc}[7;1m815`)) as string;
+  ).find((l) => l.includes(`${esc}[7;1mj0815`)) as string;
   assert.ok(!narrowSelected.includes(`${esc}[48;5;237;31m`), "no highlight on the progress text of a narrow line");
   assert.ok(narrowSelected.includes(`${esc}[7;31m`), "the late progress text is reversed");
   const selected = terminalSvg([line], 70);
