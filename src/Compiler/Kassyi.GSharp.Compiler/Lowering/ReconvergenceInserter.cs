@@ -261,7 +261,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 SwitchJoin: join,
                 OwnerSwitch: switchJoins.SwitchStatement,
                 SwitchJoinPlan: switchJoins.Plan));
-        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionEnter, site));
+        rewritten.Add(CreateRegionCall(RegionCall.Enter, site));
     }
 
     private void CloseSwitchJoin(
@@ -311,7 +311,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             throw new InvalidOperationException("A held switch join is not on top of the open region stack.");
         }
 
-        rewritten.Add(CreateRegionCall(GSharpInternalNames.Prelude.WarpRegionLeave, _open[_open.Count - 1].Site));
+        rewritten.Add(CreateRegionCall(RegionCall.Leave, _open[_open.Count - 1].Site));
         _open.RemoveAt(_open.Count - 1);
     }
 
