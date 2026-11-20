@@ -127,10 +127,9 @@ public partial class ManagedStackPoolTests
         });
 
         // Every idle thread is out of the pool, so that the launch starts its threads
-        var borrowed = pool.Rent(idleBefore, nested: true);
         RentOutcome outcome;
         int idleAfterLaunch;
-        try
+        using (pool.BorrowIdleThreadsForTest())
         {
             outcome = RunOnNewThread(() =>
             {
@@ -138,10 +137,6 @@ public partial class ManagedStackPoolTests
                 return RunWithFailingRent(threads, failure, holdRequested, gateHeld, started);
             });
             idleAfterLaunch = pool.IdleThreadCount;
-        }
-        finally
-        {
-            pool.Return(borrowed, idleBefore);
         }
 
         holder.AssertEnded();
@@ -154,7 +149,8 @@ public partial class ManagedStackPoolTests
         Assert.Equal(threads, idleAfterLaunch);
         Assert.Equal(createdBefore + threads, pool.CreatedThreadCount);
         AssertLaterLaunches(RunLaterLaunches(threads, 10), threads, 10);
-        Assert.Equal(idleBefore + threads, pool.IdleThreadCount);
+        // A full pool retires the threads past its limit when the borrowed ones come back
+        Assert.Equal(Math.Min(idleBefore + threads, ManagedStackThreadPool.MaxIdleThreads), pool.IdleThreadCount);
         Assert.Equal(createdBefore + threads, pool.CreatedThreadCount);
     }
 

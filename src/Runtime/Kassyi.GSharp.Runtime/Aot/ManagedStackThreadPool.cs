@@ -239,6 +239,14 @@ internal sealed class ManagedStackThreadPool
         return new GateScope(_gate);
     }
 
+    // For tests only: takes every idle thread out of the pool until the scope is disposed, so that a launch has to
+    // start its threads whatever the pool held
+    internal IDisposable BorrowIdleThreadsForTest()
+    {
+        var workers = new ManagedStackThread[IdleThreadCount];
+        return new BorrowScope(this, workers, PopIdle(workers, workers.Length));
+    }
+
     private static void WorkerLoop(ManagedStackThread self)
     {
         while (true)
@@ -309,5 +317,10 @@ internal sealed class ManagedStackThreadPool
     private sealed class GateScope(object gate) : IDisposable
     {
         public void Dispose() => Monitor.Exit(gate);
+    }
+
+    private sealed class BorrowScope(ManagedStackThreadPool pool, ManagedStackThread[] workers, int count) : IDisposable
+    {
+        public void Dispose() => pool.Return(workers, count);
     }
 }
