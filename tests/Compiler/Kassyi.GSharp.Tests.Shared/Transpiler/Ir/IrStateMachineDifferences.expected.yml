@@ -1555,6 +1555,16 @@
 - {file: "Marshaling/CpuPointerLaunchKernels.cu.cs", method: "CpuPointerLaunchKernels.StructsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/EnumFieldMarshalingKernels.cu.cs", method: "EnumFieldMarshalingKernels.ReadEnumFieldsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/EnumFieldMarshalingKernels.cu.cs", method: "EnumFieldMarshalingKernels.WriteEnumFieldsKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateBlock.ModeOf", status: "NoStateMachine", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateExplicit.ValueOf", status: "NoStateMachine", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateJob.Flip", status: "NoStateMachine", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateJob.Read", status: "NoStateMachine", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.ReadPrivateEnumArrayKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.ReadPrivateEnumBlockKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.ReadPrivateEnumExplicitKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.ReadPrivateEnumFieldsKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.ReadPrivateEnumNestedKernel", status: "Compared", count: 1}
+- {file: "Marshaling/EnumFieldPrivateKernels.cu.cs", method: "EnumFieldPrivateKernels.WritePrivateEnumFieldsKernel", status: "Compared", count: 1}
 - {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "Kernels.ScaleKernel", status: "Compared", count: 1}
 - {file: "Marshaling/ProtectedNestedLaunchKernels.cu.cs", method: "ProtectedNestedLaunchBase.DirectScaleKernel", status: "Compared", count: 1}
 - {file: "Runtime/AutoAllocateReturnArraysKernels.cu.cs", method: "AutoAllocateReturnArraysKernels.AutoLayoutResultKernel", status: "Compared", count: 1}
@@ -1704,6 +1714,10 @@
 - {file: "Stdlib/BigIntRefOperatorKernels.cu.cs", method: "BigIntRefOperatorKernels.ShiftKernel", status: "Compared", count: 1}
 - {file: "Stdlib/CrossAssemblyStdlibKernels.cu.cs", method: "CrossAssemblyStdlibKernels.MontgomeryMuKernel", status: "Compared", count: 1}
 - {file: "Stdlib/CrossAssemblyStdlibKernels.cu.cs", method: "CrossAssemblyStdlibKernels.WarpScanKernel", status: "Reconvergence", count: 1}
+- {file: "Syntax/ActionLocalKernels.cu.cs", method: "ActionLocalKernels.ActionAcrossBarrierKernel", status: "Compared", count: 1}
+- {file: "Syntax/ActionLocalKernels.cu.cs", method: "ActionLocalKernels.ActionLocalKernel", status: "Compared", count: 1}
+- {file: "Syntax/ActionLocalKernels.cu.cs", method: "ActionLocalKernels.ActionMethodGroupKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/ActionLocalKernels.cu.cs", method: "ActionLocalKernels.ActionOfIntLocalKernel", status: "Compared", count: 1}
 - {file: "Syntax/AdvancedMemoryKernels.cu.cs", method: "AdvancedMemoryKernels.FixedBufferKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/AdvancedMemoryKernels.cu.cs", method: "AdvancedMemoryKernels.PointerComplexAssignmentKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/AdvancedMemoryKernels.cu.cs", method: "AdvancedMemoryKernels.PointerDecrementKernel", status: "OpaqueStatement", count: 1}
@@ -4278,6 +4292,9 @@
 - {file: "TestCases/Diagnostics/PrimaryConstructorCapturedConverted.cu.cs", method: "PrimaryConstructorCapturedConvertedKernels.NestedCapturedConvertedKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenConvertedTypeKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenElementKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenEnumArrayKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenEnumFieldKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenEnumNullableKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenTypeIdenticalKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenTypeKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/PrivateFieldTypeInaccessible.cu.cs", method: "PrivateFieldTypeInaccessibleKernels.HiddenTypeOuterKernel", status: "Compared", count: 1}
