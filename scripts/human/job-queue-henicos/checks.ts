@@ -631,7 +631,7 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
         },
       },
     ]);
-    assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 1);
+    assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 2);
     assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);
     assert.deepStrictEqual(repoConfig.config.resources?.gpu?.probe, {
       argv: ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
