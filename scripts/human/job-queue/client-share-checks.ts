@@ -425,6 +425,8 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
  * a lost connection the turn is checked again at its next grant.
  */
 async function checkStillValid(assert: AssertModule): Promise<void> {
+  // A grant of a scheduler that knows "downgrade" says so
+  const modern = (id: number): Record<string, unknown> => ({ ...granted(id, "shared"), downgrade: true });
   const hostFor = (stillValid: () => Promise<boolean>): PluginHost => {
     const plugin: QueuePlugin = {
       name: "fingerprint",
@@ -459,7 +461,7 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
     assert.deepStrictEqual([run.host.locks[0]?.mode, calls.n], ["shared", 1], "checked once, then shared");
     run.drop();
   });
-  // Does not hold, throws, times out: the grant goes back and the turn queues again as exclusive
+  // Does not hold, throws, times out: the turn asks to be downgraded and, under the same id, waits again as exclusive
   const stale: [string, () => Promise<boolean>][] = [
     ["says no", () => Promise.resolve(false)],
     ["throws", () => Promise.reject(new Error("file gone"))],
@@ -468,38 +470,90 @@ async function checkStillValid(assert: AssertModule): Promise<void> {
   for (const [name, check] of stale) {
     await withScheduler(async (scheduler) => {
       const run = await startRun(scheduler, 0, runOptions(), false, true, hostFor(check));
-      const firstQueuedAt = run.registration.queuedAt;
-      // The scheduler has told the id of the job (queued), which the new registration must not keep
       run.send({ type: "queued", id: 91, state: "waiting", position: 1 });
       await new Promise((resolve) => setTimeout(resolve, 50));
-      run.send(granted(91, "shared"));
-      await until(`the turn connects again (${name})`, () => run.host.connects.length === 2);
+      run.send(modern(91));
+      await until(`the turn asks to be downgraded (${name})`, () =>
+        Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "downgrade")),
+      );
+      assert.strictEqual(run.host.connects.length, 1, `${name}: the same connection, the same job`);
       assert.strictEqual(run.host.locks.length, 0, `${name}: the lock is not taken`);
-      await until(`the grant is given back (${name})`, () =>
+      assert.ok(
+        !scheduler.accepted[0]?.messages.some((message) => message.type === "done"),
+        `${name}: nothing is ended or cancelled`,
+      );
+      run.send(modern(91)); // the old grant again, before the answer: not started
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      assert.strictEqual(run.host.locks.length, 0, `${name}: the old grant is not started`);
+      run.send({ type: "queued", id: 91, state: "waiting", position: 1 }); // the scheduler's answer
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      run.send(granted(91)); // granted again, now as an exclusive turn
+      await until(`the exclusive turn takes the lock (${name})`, () => run.host.locks.length === 1);
+      assert.deepStrictEqual(
+        [run.host.locks[0]?.mode, run.host.locks[0]?.turn],
+        ["exclusive", 91],
+        `${name}: exclusive, under the same id`,
+      );
+      run.drop();
+    });
+  }
+  // A scheduler that does not know "downgrade" (its grant does not say so) is not asked: the grant is given back (a
+  // "done" that records no run) and the turn queues again as a new exclusive job; one that refuses is treated the same
+  for (const refused of [false, true]) {
+    await withScheduler(async (scheduler) => {
+      const run = await startRun(
+        scheduler,
+        0,
+        runOptions(),
+        false,
+        true,
+        hostFor(() => Promise.resolve(false)),
+      );
+      const firstQueuedAt = run.registration.queuedAt;
+      run.send({ type: "queued", id: 91, state: "waiting", position: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      run.send(refused ? modern(91) : granted(91, "shared"));
+      if (refused) {
+        await until("the turn asks to be downgraded", () =>
+          Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "downgrade")),
+        );
+        // The refusal and, behind it on the same connection, a grant: the connection is replaced by then, so it is not read
+        run.send({ type: "error", code: "not-downgradable", message: "no" });
+        run.send(granted(91, "shared"));
+      }
+      await until("the turn connects again", () => run.host.connects.length === 2);
+      assert.strictEqual(
+        scheduler.accepted[0]?.messages.some((message) => message.type === "downgrade"),
+        refused,
+        "an older scheduler is not asked",
+      );
+      assert.strictEqual(run.host.locks.length, 0, "the lock is not taken");
+      await until("the grant is given back", () =>
         Boolean(scheduler.accepted[0]?.messages.some((message) => message.type === "done")),
       );
       const given = scheduler.accepted[0]?.messages.find((message) => message.type === "done");
-      assert.deepStrictEqual(
-        [given?.completed, given?.exitCode, given?.cancelled],
-        [false, 0, true],
-        `${name}: the grant is given back as a run that did not happen`,
-      );
+      assert.deepStrictEqual([given?.completed, given?.exitCode, given?.cancelled], [false, 0, true]);
       run.host.connects[1]?.resolve(await scheduler.connect());
       await until("the new registration arrives", () => (scheduler.accepted[1]?.messages.length ?? 0) > 0);
       const again = scheduler.accepted[1]?.messages[0];
       assert.deepStrictEqual(
         [again?.type, again?.resource, again?.share, again?.id],
         ["request", "gpu", "exclusive", 0],
-        `${name}: queued again as exclusive, as a new job`,
+        "queued again as exclusive, as a new job",
       );
-      assert.notStrictEqual(again?.queuedAt, firstQueuedAt, `${name}: a new client identity`);
+      assert.notStrictEqual(again?.queuedAt, firstQueuedAt, "a new client identity");
+      // The old connection has closed by now (the client ended it): that must not start a third connection
+      await until("the old connection closes", () => scheduler.accepted[0]?.closed === true);
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      assert.strictEqual(run.host.connects.length, 2, "the close of the replaced connection is no lost scheduler");
+      assert.strictEqual(run.host.locks.length, 0, "a grant of the replaced connection starts nothing");
       const second = scheduler.accepted[1];
       if (second === undefined) {
         throw new Error("no second connection");
       }
       FakeScheduler.send(second, granted(92, "shared"));
       await until("the exclusive turn takes the lock", () => run.host.locks.length === 1);
-      assert.strictEqual(run.host.locks[0]?.mode, "exclusive", `${name}: the lock is exclusive`);
+      assert.strictEqual(run.host.locks[0]?.mode, "exclusive", "the lock is exclusive");
       run.drop();
     });
   }

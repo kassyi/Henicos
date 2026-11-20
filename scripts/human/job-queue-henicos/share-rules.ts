@@ -230,7 +230,7 @@ const GlobOrBrace = /[{}*?[\]]/;
 /** The names in a directory, or null when it cannot be read; a parameter of nameFilterCheck so that a test stays offline. */
 export type DirectoryEntries = (directory: string) => string[] | null;
 
-function readEntries(directory: string): string[] | null {
+export function readEntries(directory: string): string[] | null {
   try {
     return fs.readdirSync(directory);
   } catch {

@@ -10,7 +10,13 @@ import * as path from "node:path";
 import { EntryScript } from "../job-queue/constants.ts";
 import { ProcessTable } from "../job-queue/system.ts";
 import { errorMessage, type ClientContext, type ShareAnswer, type ShareMode } from "../job-queue/plugin-api.ts";
-import { nameFilterCheck, shareOptions, type DirectoryEntries, type NameFilterTest } from "./share-rules.ts";
+import {
+  nameFilterCheck,
+  readEntries,
+  shareOptions,
+  type DirectoryEntries,
+  type NameFilterTest,
+} from "./share-rules.ts";
 
 /** What the list job printed (its standard output) and how it ended; exitCode is null when it did not end by itself. */
 export interface ListResult {
@@ -82,6 +88,8 @@ export interface AssemblyFiles {
   mtimeMs(file: string): number | null;
   /** The SHA-256 of the content as hex, or null when the file cannot be read. */
   sha256(file: string): string | null;
+  /** The files called `fileName` anywhere under `directory` (none when it is not there). */
+  findNamed(directory: string, fileName: string): string[];
 }
 
 export const realFiles: AssemblyFiles = {
@@ -92,6 +100,28 @@ export const realFiles: AssemblyFiles = {
       // A file that is not there (or not readable) cannot be fingerprinted: the caller takes the GPU exclusively
       return null;
     }
+  },
+  findNamed(directory, fileName) {
+    const found: string[] = [];
+    const walk = (current: string, depth: number): void => {
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(current, { withFileTypes: true });
+      } catch {
+        // Not a directory (a build output that is not there): nothing to find
+        return;
+      }
+      for (const entry of entries) {
+        const full = path.join(current, entry.name);
+        if (entry.isDirectory() && depth < 8) {
+          walk(full, depth + 1);
+        } else if (entry.isFile() && entry.name.toLowerCase() === fileName.toLowerCase()) {
+          found.push(full);
+        }
+      }
+    };
+    walk(directory, 0);
+    return found;
   },
   sha256(file) {
     try {
@@ -117,14 +147,64 @@ export function assembliesOf(output: string, cwd: string): string[] {
   return [...found];
 }
 
-/** The hash of each assembly, in order, or null when one is missing or was written after `sinceMs`. */
-function fingerprintOf(files: AssemblyFiles, assemblies: readonly string[], sinceMs: number): string[] | null {
+/** The key under which a file is looked up: Windows compares paths without regard to case. */
+function keyOf(file: string): string {
+  const full = path.resolve(file);
+  return process.platform === "win32" ? full.toLowerCase() : full;
+}
+
+/**
+ * Where the project's assembly lies: `<project folder>/bin` and `<project name>.dll`, from the .csproj it names (or
+ * the one in the directory it names). Null when the project file cannot be told.
+ */
+function projectDll(
+  project: string,
+  cwd: string,
+  entries: DirectoryEntries,
+): { binDir: string; fileName: string } | null {
+  const full = path.resolve(cwd, project);
+  const csproj = /\.csproj$/i.test(full) ? path.basename(full) : entries(full)?.find((name) => /\.csproj$/i.test(name));
+  if (csproj === undefined) {
+    return null;
+  }
+  const directory = /\.csproj$/i.test(full) ? path.dirname(full) : full;
+  return { binDir: path.join(directory, "bin"), fileName: `${csproj.replace(/\.csproj$/i, "")}.dll` };
+}
+
+/**
+ * The hash of every `<project name>.dll` under the project's bin, taken before the list job starts (null when one
+ * cannot be read). The list may only name files that are in it and still hash the same afterwards: MSBuild copies a
+ * build from obj to bin and keeps the compile time as the file's time, so a copy that lands while the list runs shows
+ * in neither the time nor a hash taken after the list alone.
+ */
+function snapshotOf(files: AssemblyFiles, where: { binDir: string; fileName: string }): Map<string, string> | null {
+  const snapshot = new Map<string, string>();
+  for (const file of files.findNamed(where.binDir, where.fileName)) {
+    const hash = files.sha256(file);
+    if (hash === null) {
+      return null;
+    }
+    snapshot.set(keyOf(file), hash);
+  }
+  return snapshot;
+}
+
+/**
+ * The hash of each listed assembly, in order, or null when one is not in the snapshot, differs from it, is missing or
+ * was written after `sinceMs`.
+ */
+function fingerprintOf(
+  files: AssemblyFiles,
+  assemblies: readonly string[],
+  snapshot: ReadonlyMap<string, string>,
+  sinceMs: number,
+): string[] | null {
   const hashes: string[] = [];
   for (const file of assemblies) {
     // Hashed first, then its time read: a write at any moment after the list started shows in the time
     const hash = files.sha256(file);
     const modified = files.mtimeMs(file);
-    if (hash === null || modified === null || modified > sinceMs) {
+    if (hash === null || modified === null || modified > sinceMs || snapshot.get(keyOf(file)) !== hash) {
       return null;
     }
     hashes.push(hash);
@@ -155,6 +235,12 @@ export async function nameFilterShare(
   if (listCommand === null) {
     return { share: "exclusive" };
   }
+  const where = projectDll(test.project, context.cwd, entries ?? readEntries);
+  const snapshot = where === null ? null : snapshotOf(files, where);
+  if (snapshot === null || snapshot.size === 0) {
+    context.log("GPU share: exclusive (no built assembly of the project to fingerprint)");
+    return { share: "exclusive" };
+  }
   const startedAt = Date.now();
   const started = performance.now();
   let result: ListResult;
@@ -177,9 +263,9 @@ export async function nameFilterShare(
   if (assemblies.length === 0) {
     return say("exclusive", "; the runner named no assembly");
   }
-  const hashes = fingerprintOf(files, assemblies, startedAt);
+  const hashes = fingerprintOf(files, assemblies, snapshot, startedAt);
   if (hashes === null) {
-    return say("exclusive", "; an assembly is missing or was written during the list");
+    return say("exclusive", "; an assembly is not the one built before the list, or was written during it");
   }
   context.log(
     `GPU share: shared (list of exclusive tests: 0, ${seconds} s, ${assemblies.length} assembl${assemblies.length === 1 ? "y" : "ies"} fingerprinted)`,

@@ -131,14 +131,14 @@ const NotRead: readonly string[] = [
 const NoMatch: ListResult = {
   exitCode: 0,
   output:
-    "Test run for X.dll (.NETCoreApp,Version=v10.0)\r\n" +
+    "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\r\n" +
     "VSTest version 18.0.0 (x64)\r\n\r\n" +
     "No test matches the given testcase filter `(Name~A)&(Category=Stress)` in X.dll\r\n",
 };
 const Listed: ListResult = {
   exitCode: 0,
   output:
-    "Test run for X.dll (.NETCoreApp,Version=v10.0)\n" +
+    "Test run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" +
     "The following Tests are available:\n    N.PoolStressTests.A\n    N.PoolStressTests.B\n",
 };
 
@@ -150,7 +150,7 @@ const Verdicts: readonly [string, ListResult, ShareMode, number][] = [
   ["no exit code (timeout)", { exitCode: null, output: NoMatch.output }, "exclusive", 0],
   ["empty output", { exitCode: 0, output: "" }, "exclusive", 0],
   ["no build: error text", { exitCode: 1, output: "error: The test source file does not exist.\n" }, "exclusive", 0],
-  ["text with no marks", { exitCode: 0, output: "Test run for X.dll\n" }, "exclusive", 0],
+  ["text with no marks", { exitCode: 0, output: "Test run for tests/X/bin/Debug/net10.0/X.dll\n" }, "exclusive", 0],
 ];
 
 export async function checkNameFilter(assert: AssertModule): Promise<void> {
@@ -209,7 +209,7 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     };
   const logging = contextWith({}, (text) => lines.push(text));
   const command = `${Plain} "FullyQualifiedName~PoolStressTests"`;
-  const files = fakeFiles({ "X.dll": ["aaa", 0] });
+  const files = fakeFiles({ [Dll]: ["aaa", 0] });
   const shared = await nameFilterShare(command, logging, answer(NoMatch), Entries, files);
   assert.strictEqual(shared?.share, "shared");
   assert.strictEqual(calls.length, 1, "one list job");
@@ -234,9 +234,9 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
 
   // The fingerprint of the assemblies the list read: unchanged, rebuilt while the turn waited, gone
   assert.strictEqual(await shared?.stillValid?.(), true, "the same assembly: still valid");
-  files.hashes.set(resolved("X.dll"), "bbb");
+  files.hashes.set(resolved(Dll), "bbb");
   assert.strictEqual(await shared?.stillValid?.(), false, "rebuilt while the turn waited");
-  files.hashes.set(resolved("X.dll"), null);
+  files.hashes.set(resolved(Dll), null);
   assert.strictEqual(await shared?.stillValid?.(), false, "gone while the turn waited");
 
   const named = { exitCode: 0, output: NoMatch.output };
@@ -248,25 +248,48 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
       Entries,
       fake,
     );
-  const noLine = await verdictOf({ exitCode: 0, output: "No test matches the given testcase filter `x`\n" }, files);
+  const noLine = await verdictOf(
+    { exitCode: 0, output: "No test matches the given testcase filter `x`\n" },
+    fakeFiles({ [Dll]: ["aaa", 0] }),
+  );
   assert.strictEqual(noLine?.share, "exclusive", "no Test run line: the assembly is unknown");
   assert.match(lines.at(-1) as string, /named no assembly/);
-  const during = await verdictOf(named, fakeFiles({ "X.dll": ["aaa", Date.now() + 60_000] }));
+  const during = await verdictOf(named, fakeFiles({ [Dll]: ["aaa", Date.now() + 60_000] }));
   assert.strictEqual(during?.share, "exclusive", "written after the list started");
-  assert.match(lines.at(-1) as string, /written during the list/);
+  assert.match(lines.at(-1) as string, /or was written during it/);
+  const beforeMissing = calls.length;
   const missing = await verdictOf(named, fakeFiles({}));
-  assert.strictEqual(missing?.share, "exclusive", "an assembly that is not there");
+  assert.strictEqual(missing?.share, "exclusive", "no built assembly: nothing to fingerprint");
+  assert.strictEqual(calls.length, beforeMissing, "and no list job is started for it");
+  // MSBuild copies obj to bin and keeps the compile time: a copy that lands while the list runs has an old time
+  const copied = fakeFiles({ [Dll]: ["old", 0] });
+  const copiedDuring = await nameFilterShare(
+    command,
+    contextWith({}, (text) => lines.push(text)),
+    (listCommand) => {
+      copied.hashes.set(resolved(Dll), "new");
+      return answer(named)(listCommand);
+    },
+    Entries,
+    copied,
+  );
+  assert.strictEqual(copiedDuring?.share, "exclusive", "the file changed during the list, with an old time");
+  // An assembly the project does not build under that name (a custom AssemblyName) is not in the snapshot
+  const other = fakeFiles({ [Dll]: ["aaa", 0], "tests/X/bin/Debug/net10.0/Other.dll": ["aaa", 0] });
+  const named2 = { exitCode: 0, output: named.output.replace("/X.dll (", "/Other.dll (") };
+  const renamed = await verdictOf(named2, other);
+  assert.strictEqual(renamed?.share, "exclusive", "the listed assembly is not <project>.dll");
   const two = {
     exitCode: 0,
     output:
-      "Test run for X.dll (.NETCoreApp,Version=v8.0)\nTest run for Y.dll (.NETCoreApp,Version=v10.0)\n" +
+      "Test run for tests/X/bin/Debug/net8.0/X.dll (.NETCoreApp,Version=v8.0)\nTest run for tests/X/bin/Debug/net10.0/X.dll (.NETCoreApp,Version=v10.0)\n" +
       "No test matches the given testcase filter `x`\n",
   };
-  const both = fakeFiles({ "X.dll": ["aaa", 0], "Y.dll": ["ccc", 0] });
+  const both = fakeFiles({ [Dll8]: ["ccc", 0], [Dll]: ["aaa", 0] });
   const frameworks = await verdictOf(two, both);
   assert.strictEqual(frameworks?.share, "shared");
   assert.strictEqual(await frameworks?.stillValid?.(), true);
-  both.hashes.set(resolved("Y.dll"), "ddd");
+  both.hashes.set(resolved(Dll8), "ddd");
   assert.strictEqual(await frameworks?.stillValid?.(), false, "the second framework's assembly changed");
   assert.strictEqual(
     assembliesOf("Test run for X.dll (a)\nTest run for X.dll (b)\n", ".").length,
@@ -274,6 +297,10 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     "the same assembly of two lines counts once",
   );
 }
+
+/** The assemblies of the project tests/X that the fake files hold, for two target frameworks. */
+const Dll = "tests/X/bin/Debug/net10.0/X.dll";
+const Dll8 = "tests/X/bin/Debug/net8.0/X.dll";
 
 /** The absolute path under which a fake assembly is kept. */
 function resolved(name: string): string {
@@ -294,5 +321,10 @@ function fakeFiles(entries: Record<string, [string, number]>): AssemblyFiles & {
     hashes,
     mtimeMs: (file) => times.get(file) ?? null,
     sha256: (file) => hashes.get(file) ?? null,
+    findNamed: (directory, fileName) =>
+      [...hashes.keys()].filter(
+        (file) =>
+          file.startsWith(path.resolve(directory)) && path.basename(file).toLowerCase() === fileName.toLowerCase(),
+      ),
   };
 }

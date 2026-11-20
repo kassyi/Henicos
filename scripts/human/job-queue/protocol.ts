@@ -68,6 +68,12 @@ export type ClientMessage =
   | { type: "pause" }
   | { type: "resume" }
   /**
+   * A granted shared GPU turn gives up its share (the client's check that it may share no longer holds): the same
+   * job, under the same id, waits again as an exclusive turn. Answered with "queued", or an error when the job is not
+   * a granted shared turn (an older scheduler answers "unknown message type").
+   */
+  | { type: "downgrade" }
+  /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
   | { type: "await"; id: number }
@@ -178,8 +184,18 @@ export type ServerMessage =
   /**
    * protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). share:
    * "shared" only when the turn was asked to share and the scheduler counts it as shared (an older one never says it).
+   * downgrade: true on such a grant, when the scheduler knows the "downgrade" message (an older one never says it, and
+   * closes the connection of a message it does not know).
    */
-  | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number; share?: "shared" }
+  | {
+      type: "granted";
+      id: number;
+      cpus: number;
+      capacity: number;
+      protocol?: number;
+      share?: "shared";
+      downgrade?: true;
+    }
   | { type: "adopted"; id: number; protocol?: number }
   | { type: "cancelled"; id: number; reason?: string }
   | ({ type: "updated"; id: number } & Placement)
@@ -211,6 +227,7 @@ export function wireVersion(message: ClientMessage): number {
     case "start":
     case "pause":
     case "resume":
+    case "downgrade":
     case "await":
     case "report":
       return ProtocolVersion;

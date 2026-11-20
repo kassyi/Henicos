@@ -74,6 +74,8 @@ export class QueuedRun {
   private stillValid: ShareAnswer | null = null;
   /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
   private starting = false;
+  /** A "downgrade" was sent and not yet answered: the grants that arrive meanwhile are the old shared one. */
+  private downgrading = false;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -221,9 +223,10 @@ export class QueuedRun {
 
   /**
    * A shared turn that rests on a measurement (ShareAnswer.stillValid) is checked again once it is granted, before the
-   * lock is taken: when the measurement no longer holds, the grant is given back (a "done" that records no run) and
-   * the turn queues again as exclusive, with a new id and the place of a new job. Returns true when the turn queued
-   * again, so that start has nothing more to do.
+   * lock is taken: when the measurement no longer holds, the turn asks the scheduler to downgrade it ("downgrade": the
+   * same job, under the same id, waits again as an exclusive turn, so that `wait` and `--after` on its id still see
+   * the run). Only a scheduler that says so in the grant (`downgrade`) is asked; for an older one, and when the scheduler
+   * refuses, the turn takes the older way (requeueAsNewJob). Returns true when the turn waits again, so that start has nothing more to do.
    */
   private async requeueIfStale(granted: Incoming): Promise<boolean> {
     const answer = this.stillValid;
@@ -238,10 +241,30 @@ export class QueuedRun {
       return false;
     }
     prefix(
-      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} no longer holds; queueing again as exclusive`,
+      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} no longer holds; waiting again as exclusive`,
     );
     this.share = "exclusive";
     this.stillValid = null;
+    if (granted.downgrade !== true) {
+      // A scheduler that does not know "downgrade" would close the connection at the message: the older way
+      await this.requeueAsNewJob();
+      return true;
+    }
+    // Grants that arrive until the scheduler answers are the old shared one: ignored
+    this.downgrading = true;
+    const message: ClientMessage = { type: "downgrade" };
+    send(this.socket, { version: wireVersion(message), ...message });
+    return true;
+  }
+
+  /**
+   * The older way back to exclusive, for a scheduler without "downgrade": the grant is given back (a "done" that
+   * records no run, under which the old id ends as cancelled) and the turn queues again as a new job.
+   */
+  private async requeueAsNewJob(): Promise<void> {
+    prefix("the scheduler cannot downgrade the turn; queueing it again as a new exclusive job");
+    this.downgrading = false;
+    this.starting = false;
     const old = this.socket;
     this.socket = null; // its close is then no loss of the scheduler
     if (old !== null && !old.destroyed) {
@@ -254,7 +277,6 @@ export class QueuedRun {
     this.lastStartAt = null;
     this.lastNotice = -Infinity;
     await this.attach();
-    return true;
   }
 
   private async start(granted: Incoming): Promise<void> {
@@ -324,7 +346,7 @@ export class QueuedRun {
         break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
-        if (this.state === "waiting") {
+        if (this.state === "waiting" && !this.downgrading) {
           void this.start(message);
         }
         break;
@@ -349,6 +371,7 @@ export class QueuedRun {
   }
 
   private onQueued(message: Incoming): void {
+    this.downgrading = false; // also the answer to a "downgrade"
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
     const outlook = message.state === "waiting" ? describeOutlook(message, Date.now()) : "";
@@ -435,6 +458,10 @@ export class QueuedRun {
   }
 
   private onError(message: Incoming): void {
+    if (this.downgrading && this.state === "waiting") {
+      void this.requeueAsNewJob(); // an older scheduler, or a job that is not a granted shared turn
+      return;
+    }
     if (this.gpuTurn && message.code === "version" && this.state === "waiting" && this.options.after === 0) {
       // A scheduler of an older checkout has no GPU turns: take the GPU lock as such schedulers expect (the command
       // then registers as a GPU holder), without the fair order
@@ -492,7 +519,12 @@ export class QueuedRun {
       return;
     }
     this.register(current);
-    onMessages(current, (message) => this.onMessage(message));
+    // Only the current connection speaks for the job: what a replaced one still delivers is not read
+    onMessages(current, (message) => {
+      if (current === this.socket) {
+        this.onMessage(message);
+      }
+    });
     current.on("error", () => current.destroy());
     current.on("close", () => this.onClose(current));
   }

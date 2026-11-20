@@ -229,7 +229,7 @@ export class JobServer {
       capacity: this.scheduler.capacity,
       protocol: ProtocolVersion,
       // Told only of a turn that counts as shared: the client then takes the lock as shared, so that both agree
-      ...(job.gpuTurn === true && job.share === "shared" ? { share: "shared" as const } : {}),
+      ...(job.gpuTurn === true && job.share === "shared" ? { share: "shared" as const, downgrade: true as const } : {}),
     };
   }
 

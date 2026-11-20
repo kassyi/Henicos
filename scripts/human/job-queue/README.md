@@ -233,8 +233,13 @@ build job that `run --gpu` splits off has ended (`runGpuTurn` in `client.ts` awa
 `QueuedRun.run()`; the self-test drives it with a fake host), and the client is not in the GPU line meanwhile (180 s at
 most). An answer may be a `ShareAnswer`: `"shared"` with a `stillValid` that the client calls once the shared turn is
 granted and before it takes the lock (`requeueIfStale`). When it says no, throws or takes more than 30 s, the client
-gives the grant back (a `done` that records no run) and queues the turn again as exclusive, with a new id and the place
-of a new job. The check sits before the lock, so the short wait for the lock and a command already running at an
+sends `downgrade`: the scheduler takes the granted shared turn out of the running turns and queues the same job, under
+the same id and queue time, as an exclusive turn (`wait <id>` and `--after <id>` still see the one run). The client
+asks only when the grant says `downgrade: true` (an older scheduler closes the connection at a message it does not
+know); for an older one, and when the scheduler refuses (a non-ending `not-downgradable` error), the client
+gives the grant back (a `done` that records no run, under which the old id ends as cancelled) and queues the turn again
+as a new exclusive job. Grants that arrive between the message and the answer are the old shared one and are not
+started; messages of a replaced connection are not read. The check sits before the lock, so the short wait for the lock and a command already running at an
 `adopt` after a scheduler restart are not covered; a turn that queues again after a lost connection is checked at its
 next grant.
 
@@ -247,7 +252,10 @@ other leading assignment or other step except `echo`), whose project is a `.cspr
 without `--gpu`, output read from its standard output) and answers `"shared"` only for exit code 0, the runner's `No
 test matches the given testcase filter` line and no test name in the output. Anything else (a failure, a missing build,
 a time out) is exclusive. The assemblies are the `Test run for <path> (<framework>)` lines of the output, one per target
-framework: none named, one missing or one written after the list job started (it changed during the list) is exclusive;
+framework: none named, one missing, one written after the list job started, or one that is not among the
+`<project name>.dll` files under the project's `bin` that were hashed before the list job started (or whose hash changed
+since: MSBuild copies a build from `obj` to `bin` and keeps the compile time, so the time alone does not show a copy
+that lands during the list; a custom assembly name is not in that snapshot either) is exclusive;
 otherwise the SHA-256 of each is the fingerprint, and the `stillValid` of the answer hashes them again, so a rebuild
 while the turn waited sends it back as exclusive. The list runner and the files are parameters of `nameFilterShare`, so
 the self-test never starts a real `dotnet test` and stays offline. The list job's process tree is killed on a time out
@@ -315,7 +323,7 @@ A shared GPU turn is the same kind of addition: `share` and `resource` in `reque
 optional and need no new version, and each falls back to the stricter reading when it is ignored: an older client sends
 no `share`, so its turn is exclusive; an older scheduler never sends `share` in `granted`, so a client takes the lock
 exclusively; an older scheduler that reads a state file with two running shared turns restores both as running turns
-and grants no other turn until both end; a view that gets no `resources` draws the header and the marks as before.
+and grants no other turn until both end; a view that gets no `resources` draws the header and the marks as before. `downgrade` (a granted shared turn waits again as an exclusive one under its id) is a version 3 message like `pause`; the grant of a shared turn says `downgrade: true`, and a client asks only then, so an older scheduler is never sent it.
 
 The optional fields `turn` (in `request` and `adopt`) and `pid` / `queuedAt` (in `report`) need no new version: an
 older scheduler ignores them, and an older client that sends none is matched by its pid and command, and its report is
