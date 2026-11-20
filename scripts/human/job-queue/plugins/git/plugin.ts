@@ -23,20 +23,26 @@ const StaleScratchMs = 60 * 60 * 1000;
 const LeftOut = ":(exclude,glob)**/*.received.*";
 
 /** The digests under way in this process: their scratch folders and git processes, cleaned up at exit. */
-const underWay = { folders: new Set<string>(), children: new Set<ChildProcess>(), hooked: false };
+const underWay = { folders: new Set<string>(), children: new Map<ChildProcess, boolean>(), hooked: false };
 
 /** At exit (process.exit included, which runs no finally), synchronously: stop the gits and remove the folders. */
 function cleanUpAtExit(): void {
-  for (const child of underWay.children) {
-    // On Windows git.exe starts the real git and ends with it: only the whole tree stops it
-    if (process.platform === "win32" && child.pid !== undefined) {
+  for (const [child, inScratch] of underWay.children) {
+    // On Windows git.exe starts the real git and ends with it: only the whole tree stops it. That takes taskkill, which
+    // costs up to a second, so only for a git that works in a scratch folder (add, write-tree), which the git would
+    // hold; a rev-parse or a config left behind ends by itself within milliseconds
+    if (process.platform === "win32" && inScratch && child.pid !== undefined) {
       spawnSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
     } else {
       child.kill();
     }
   }
   for (const folder of underWay.folders) {
-    fs.rmSync(folder, { recursive: true, force: true });
+    try {
+      fs.rmSync(folder, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    } catch {
+      // still held (EBUSY): an exit listener must not throw; the next digest removes it once it is an hour old
+    }
   }
 }
 
@@ -60,8 +66,11 @@ function removeStaleScratch(now: number): void {
   }
 }
 
-/** Runs git in `cwd`; resolves to its trimmed output, or null when it fails. Never rejects. */
-function git(cwd: string, args: string[], env: NodeJS.ProcessEnv): Promise<string | null> {
+/**
+ * Runs git in `cwd`; resolves to its trimmed output, or null when it fails. Never rejects. `inScratch`: it works in a
+ * scratch folder, so that an exit stops its whole process tree (cleanUpAtExit).
+ */
+function git(cwd: string, args: string[], env: NodeJS.ProcessEnv, inScratch = false): Promise<string | null> {
   return new Promise((resolve) => {
     const child = execFile(
       "git",
@@ -72,7 +81,7 @@ function git(cwd: string, args: string[], env: NodeJS.ProcessEnv): Promise<strin
         resolve(error ? null : stdout.trim());
       },
     );
-    underWay.children.add(child);
+    underWay.children.set(child, inScratch);
   });
 }
 
@@ -141,10 +150,10 @@ export async function worktreeDigest(worktree: string, env: NodeJS.ProcessEnv): 
       GIT_OBJECT_DIRECTORY: path.join(scratch, "objects"),
       GIT_ALTERNATE_OBJECT_DIRECTORIES: objects,
     };
-    if ((await git(worktree, [...options, "add", "-A", "--", ".", LeftOut], isolated)) === null) {
+    if ((await git(worktree, [...options, "add", "-A", "--", ".", LeftOut], isolated, true)) === null) {
       return undefined;
     }
-    const tree = await git(worktree, [...options, "write-tree"], isolated);
+    const tree = await git(worktree, [...options, "write-tree"], isolated, true);
     return tree !== null && /^[0-9a-f]{40,64}$/.test(tree) ? tree : undefined;
   } finally {
     underWay.folders.delete(scratch);
