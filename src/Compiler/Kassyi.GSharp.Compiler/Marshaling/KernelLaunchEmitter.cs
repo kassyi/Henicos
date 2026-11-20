@@ -23,8 +23,9 @@ internal static class KernelLaunchEmitter
 
     /// <summary>
     /// Whether the launcher reads the device error record of its launch itself: the managed-array launcher after its
-    /// copy-back, and every launcher of the checked build after its stream synchronization. Such a launcher owns its
-    /// launch epoch until it reads the record or the launch ends (LaunchErrorRecords).
+    /// copy-back, and every launcher of the checked build in SynchronizeAndThrowIfLaunchError, which neither synchronizes
+    /// nor reads while the stream is being captured. Such a launcher owns its launch epoch until it reads the record or
+    /// the launch ends (LaunchErrorRecords).
     /// </summary>
     internal static bool ReadsOwnRecord(bool isDevicePtr, bool isCheckedBuild) => isCheckedBuild || !isDevicePtr;
 
@@ -120,15 +121,16 @@ internal static class KernelLaunchEmitter
         }
 
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel.Host);
-        writer.AppendLineIf(isCheckedBuild,
-            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
         // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
         // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
         // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing
-        // synchronizes first, so that it finds its record.
+        // synchronizes first, so that it finds its record. The checked build synchronizes and reads in one runtime
+        // call, which does neither while the stream is being captured into a CUDA graph.
+        writer.AppendLineIf(isCheckedBuild,
+            $"{LaunchErrorRecordsType}.SynchronizeAndThrowIfLaunchError(hStream, {LaunchEpoch});");
         writer.AppendLineIf(!isDevicePtr && !isCheckedBuild && !CopyBackAlwaysSynchronizes(kernel.Host),
             $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
-        writer.AppendLineIf(ReadsOwnRecord(isDevicePtr, isCheckedBuild),
+        writer.AppendLineIf(!isCheckedBuild && ReadsOwnRecord(isDevicePtr, isCheckedBuild),
             $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});");
     }
 
