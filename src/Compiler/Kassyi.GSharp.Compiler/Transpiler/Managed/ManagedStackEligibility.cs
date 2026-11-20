@@ -27,8 +27,7 @@ internal static class ManagedStackEligibility
             return false;
         }
 
-        if (SuspensionAnalysis.ReachesActiveMask(kernel, compilation) ||
-            GetWarpFailure(kernel, compilation) is not null)
+        if (GetWarpFailure(kernel, compilation) is not null)
         {
             return false;
         }
@@ -82,10 +81,9 @@ internal static class ManagedStackEligibility
     }
 
     /// <summary>
-    /// Why <paramref name="kernel"/>, which reaches a warp collective other than <c>Warp.ActiveMask()</c>, cannot run
+    /// Why <paramref name="kernel"/>, which reaches a warp collective (<c>Warp.ActiveMask()</c> included), cannot run
     /// its collectives on the managed stack model, for the build output (<c>GSharp.ManagedStackFailures.g.cs</c>);
-    /// <see langword="null"/> when it can, or when it reaches none or reaches <c>Warp.ActiveMask()</c>, which the stack
-    /// model does not run yet.
+    /// <see langword="null"/> when it can, or when it reaches none.
     /// </summary>
     /// <remarks>
     /// [WHY] The stack form finds the visit counts of every collective and call through
@@ -94,8 +92,7 @@ internal static class ManagedStackEligibility
     /// </remarks>
     public static string? GetWarpFailure(IMethodSymbol kernel, Compilation compilation)
     {
-        if (!SuspensionAnalysis.ReachesWarpShuffle(kernel, compilation) ||
-            SuspensionAnalysis.ReachesActiveMask(kernel, compilation))
+        if (!SuspensionAnalysis.ReachesWarpShuffle(kernel, compilation))
         {
             return null;
         }
@@ -124,7 +121,6 @@ internal static class ManagedStackEligibility
         }
 
         if (!SuspensionAnalysis.RequiresStateMachine(function, compilation) ||
-            SuspensionAnalysis.ReachesActiveMask(function, compilation) ||
             SuspensionAnalysis.ReachesGridBarrier(function, compilation) ||
             !function.IsStatic ||
             !ManagedStateMachineAvailability.AreContainingTypesPartial(function) ||

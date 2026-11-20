@@ -52,13 +52,6 @@ internal sealed partial class ManagedExecutionRewriter
         var layout = WarpLayout ?? throw new InvalidOperationException(
             $"G#: internal error: a stack form without a warp layout reaches {method.Name} " +
             "(please report this G# bug).");
-        if (intrinsic.Shuffle == WarpShuffleKind.ActiveMask)
-        {
-            throw new InvalidOperationException(
-                "G#: internal error: a stack form reaches Warp.ActiveMask(), which the managed stack model does not " +
-                "run (please report this G# bug).");
-        }
-
         var shape = WarpShuffleShape.ForKind(intrinsic.Shuffle);
         var site = layout.GetSite(node);
         var place = SourcePlace.Format(semanticModel, node);

@@ -193,6 +193,25 @@ public class StackModelTests
     }
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMaskKernel_BuiltWithEitherModel_RunsOnTheSchedulerOfItsModel()
+    {
+        const int n = 32;
+        var inBranch = new uint[n];
+        var afterBranch = new uint[n];
+        long before = ManagedStackRunner.LaunchCountOnThisThread;
+
+        RunManaged(() => StackModelKernels.LaunchActiveMaskKernel(inBranch, afterBranch, blockDimX: n));
+
+        Assert.Equal(BuiltWithStackModel ? 1L : 0L, ManagedStackRunner.LaunchCountOnThisThread - before);
+        for (int i = 0; i < n; i++)
+        {
+            Assert.Equal(i % 2 == 0 ? 0x55555555u : 0u, inBranch[i]);
+            Assert.Equal(0xFFFFFFFFu, afterBranch[i]);
+        }
+    }
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void CooperativeKernel_BuiltWithEitherModel_StaysOnStateMachine()
     {

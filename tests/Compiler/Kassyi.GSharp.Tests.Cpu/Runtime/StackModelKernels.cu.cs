@@ -118,6 +118,21 @@ public static partial class StackModelKernels
         output[tid] = Warp.ShuffleXorSync(0xFFFFFFFFu, s[tid], 1);
     }
 
+    // The even lanes ask for the active mask inside a branch, every lane after it, where the lanes meet again
+    [GpuKernel]
+    public static void ActiveMaskKernel(uint[] inBranch, uint[] afterBranch)
+    {
+        int tid = ThreadIndex.X;
+        uint mask = 0u;
+        if (tid % 2 == 0)
+        {
+            mask = Warp.ActiveMask();
+        }
+
+        inBranch[tid] = mask;
+        afterBranch[tid] = Warp.ActiveMask();
+    }
+
     [GpuKernel(Cooperative = true)]
     public static void CooperativeBarrierKernel(int[] input, int[] output, int n)
     {
