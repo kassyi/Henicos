@@ -35,9 +35,11 @@ const branchPattern = /\bissue-(\d{1,6})\b/g;
 // The issue or PR a gh command acts on (gh issue comment 1234)
 const targetPattern = /\bgh\s+(?:issue|pr)\s+(?:comment|edit|close|review|merge)\s+(\d{1,6})\b/g;
 // Commands whose text is published: issue and PR bodies and comments, commits, new branches and worktrees.
-// `gh -R owner/repo issue create` and the alias `gh issue new` publish too.
+// `gh -R owner/repo issue create`, `gh.exe` and the alias `gh issue new` publish too. One reading per word in the
+// repository flag (`[^\s=]\S*`), so that a failed match does not backtrack exponentially.
 const publishingCommand = new RegExp(
-    String.raw`\bgh\s+(?:(?:-R|--repo)(?:\s+|=)?\S+\s+)*(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
+    String.raw`\bgh(?:\.exe)?\s+(?:(?:-R|--repo)(?:=|\s+)?[^\s=]\S*\s+)*`
+    + String.raw`(?:issue|pr)\s+(?:create|new|comment|edit|close|review|merge)\b`
     + String.raw`|\bgit\s+(?:commit|switch|checkout|branch|worktree)\b`);
 
 const foundByLabels = [
@@ -211,21 +213,40 @@ function createLabels(list) {
     return labels;
 }
 
+// The reader dialect of the command string a shell wrapper (bash -c, pwsh -Command, cmd /c) runs.
+function wrapperDialect(name) {
+    if (name === 'cmd') return 'cmd';
+    return /^(bash|sh|zsh)$/.test(name) ? 'bash' : 'pwsh';
+}
+
 // The denial text when a command contains a `gh issue create` with the `bug` label (any milestone, or none) and no
 // `found-by:` label, else null. A `tracking` issue (a table of sub-issues) is exempt. The command is read by the shell
-// reader of check-queued-command (continued lines, heredoc bodies and redirections) in the dialect of its tool.
+// reader of check-queued-command (continued lines, heredoc bodies and redirections) in the dialect of its tool; command
+// substitutions (url=$(gh issue create ...)) and the command string of a shell wrapper (bash -c "...") are read too.
 function foundByProblem(command, dialect) {
     const reader = shellReader.createReader(dialect);
     for (const segment of reader.splitSegments(command)) {
-        const words = reader.dropPrefixes(reader.words(segment)).map(word => reader.argumentText(word));
-        const labels = createLabels(words);
-        if (labels === null) continue;
-        const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
-        if (!names.includes('bug') || names.includes('tracking')) continue;
-        if (names.some(l => foundByLabels.includes(l))) continue;
-        return 'A bug issue needs a found-by label: '
-            + `${foundByLabels.join(', ')}. Add the label of how the bug was found; `
-            + 'in M1 or M2, also add the issue to its tracking table.';
+        const raw = reader.dropPrefixes(reader.words(segment));
+        const labels = createLabels(raw.map(word => reader.argumentText(word)));
+        if (labels !== null) {
+            const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
+            const exempt = !names.includes('bug') || names.includes('tracking');
+            if (!exempt && !names.some(l => foundByLabels.includes(l))) {
+                return 'A bug issue needs a found-by label: '
+                    + `${foundByLabels.join(', ')}. Add the label of how the bug was found; `
+                    + 'in M1 or M2, also add the issue to its tracking table.';
+            }
+        }
+        const inner = reader.substitutions(segment).map(body => ({ body, dialect }));
+        const name = raw.length > 0 ? reader.programName(raw[0]) : '';
+        const at = reader.shellCommandIndex(name, raw);
+        if (at >= 0 && at < raw.length) {
+            inner.push({ body: reader.argumentText(raw[at]), dialect: wrapperDialect(name) });
+        }
+        for (const item of inner) {
+            const problem = foundByProblem(item.body, item.dialect);
+            if (problem !== null) return problem;
+        }
     }
     return null;
 }
@@ -273,24 +294,14 @@ function hookAnswer(input, env) {
     // PowerShell reads ` as its escape, bash ; Antigravity's run_command runs PowerShell on Windows.
     const dialect = antigravity || input.tool_name === 'PowerShell' ? 'pwsh' : 'bash';
     const foundBy = foundByProblem(command, dialect);
-    if (foundBy !== null) {
-        return antigravity
-            ? { decision: 'deny', reason: foundBy }
-            : {
-                hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'deny',
-                    permissionDecisionReason: foundBy,
-                },
-            };
-    }
     const cwd = commandDirectory(input, antigravity, env.processCwd);
     const text = [command, ...referencedFiles(command, cwd)].join('\n');
     const repo = env.repo || defaultRepo(cwd);
     const { lines, problems } = check(text, repo, env.lookUp);
-    if (lines.length === 0) return null;
-    const table = `Issue / PR numbers in this command:\n${lines.join('\n')}`;
-    const reason = `${problems.join('\n')}\n${table}\nFix the number and run the command again.`;
+    if (foundBy !== null) problems.unshift(foundBy);
+    if (lines.length === 0 && problems.length === 0) return null;
+    const table = lines.length > 0 ? `\nIssue / PR numbers in this command:\n${lines.join('\n')}` : '';
+    const reason = `${problems.join('\n')}${table}\nFix the problem and run the command again.`;
     if (antigravity) {
         // An Antigravity "allow" would skip the permission prompt, so an allowed command gets no output.
         return problems.length > 0 ? { decision: 'deny', reason } : null;
@@ -306,7 +317,8 @@ function hookAnswer(input, env) {
         : {
             hookSpecificOutput: {
                 hookEventName: 'PreToolUse',
-                additionalContext: `${table}\nCheck that each title is the one you meant.`,
+                additionalContext: `Issue / PR numbers in this command:\n${lines.join('\n')}\n`
+                    + 'Check that each title is the one you meant.',
             },
         };
 }
@@ -452,7 +464,8 @@ function selfTest() {
             const body = `${issueCreate} --title y --label bug`;
             const feature = `${issueCreate} --title x --label feature --body-file - <<'EOF'`;
             assert.strictEqual(hook(`${feature}\n${body}\nEOF`), null);
-            assert.ok(denied(`${issueCreate} --title x --label bug --body-file - <<'EOF'\n--label found-by:audit\nEOF`));
+            const bug = `${issueCreate} --title x --label bug --body-file - <<'EOF'`;
+            assert.ok(denied(`${bug}\n--label found-by:audit\nEOF`));
         });
         test('found-by: a PowerShell array of labels', () => {
             assert.strictEqual(hook(`${issueCreate} --title x --label "bug","found-by:audit"`, 'PowerShell'), null);
@@ -474,6 +487,39 @@ function selfTest() {
             assert.ok(denied(`${issueCreate} --title "-lfound-by:audit" --label bug`));
             assert.ok(denied(`${issueCreate} --body "--label found-by:audit" --label bug`));
             assert.strictEqual(hook(`${issueCreate} --title "-lbug" --label feature`), null);
+        });
+        test('found-by: the dialect of the tool decides how a quote is read', () => {
+            // PowerShell: the backslash is no escape, the title ends at the second quote and --label bug counts.
+            // bash: \" is an escaped quote, so the rest is part of the title and the issue has no label.
+            const command = `${issueCreate} --title "a \\" --label bug`;
+            assert.ok(denied(command, 'PowerShell'));
+            assert.strictEqual(hook(command, 'Bash'), null);
+            assert.strictEqual(hookAnswer(antigravity(command), env).decision, 'deny');
+        });
+        test('found-by: a command substitution, a shell wrapper and gh.exe are read', () => {
+            assert.ok(denied(`url=$(${issueCreate} --title x --label bug)`));
+            assert.strictEqual(hook(`url=$(${issueCreate} --title x --label bug,found-by:audit)`), null);
+            assert.ok(denied(`echo "$(${issueCreate} --title x --label bug)"`));
+            assert.ok(denied(`bash -c "${issueCreate} --title x --label bug"`));
+            assert.strictEqual(hook(`bash -c "${issueCreate} --title x --label bug,found-by:review"`), null);
+            assert.ok(denied(`pwsh -Command "${issueCreate} --title x --label bug"`, 'PowerShell'));
+            assert.ok(denied('gh.exe issue create --title x --label bug', 'PowerShell'));
+            assert.ok(denied('gh.exe -R o/n issue new --title x --label bug', 'PowerShell'));
+        });
+        test('found-by: the denial also reports a number problem', () => {
+            const answer = hook(`${issueCreate} --title "see ${missing}" --label bug`);
+            const reason = answer.hookSpecificOutput.permissionDecisionReason;
+            assert.ok(reason.includes('needs a found-by label'));
+            assert.ok(reason.includes(`${missing} does not exist`));
+        });
+        test('found-by: the repository flag does not backtrack exponentially', () => {
+            const started = Date.now();
+            assert.strictEqual(publishingCommand.test(`gh ${'-R=x '.repeat(1000)}foo`), false);
+            assert.strictEqual(publishingCommand.test(`gh ${'-R=x '.repeat(24)}foo`), false);
+            assert.ok(Date.now() - started < 1000, 'the match took too long');
+            for (const form of ['-R o/n', '--repo o/n', '--repo=o/n', '-Ro/n', '-R=o/n']) {
+                assert.ok(publishingCommand.test(`gh ${form} issue create`), form);
+            }
         });
         test('found-by: Antigravity denies a bug without a label', () => {
             const answer = hookAnswer(antigravity(`${issueCreate} --title x -l bug`), env);
