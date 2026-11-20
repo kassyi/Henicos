@@ -318,11 +318,11 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             // A kernel whose failing thread recorded an error and exited completes normally; reading the pinned
             // host-mapped slot calls no CUDA API
             DeviceErrorSlot.ThrowIfDeviceError();
-            source.TryCompleteFromHostCallback(error: null);
+            source.CompleteFromHostCallback(error: null);
         }
         catch (Exception ex)
         {
-            source.TryCompleteFromHostCallback(ex);
+            source.CompleteFromHostCallback(ex);
         }
         finally
         {
@@ -332,9 +332,9 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 
     private void OnWatchdogTick()
     {
-        // Held across the pending check and the driver calls; see "Context lifetime" in the type remarks.
-        // TryComplete below re-enters it on this thread, which Lock permits. Taken only when free: a holder is either
-        // an earlier tick (possibly stuck in the driver) or a winner passing the barrier, and both make this tick moot.
+        // Held across the pending check and the driver calls; see "Context lifetime" in the type remarks. Taken only
+        // when free: a holder is either an earlier tick (possibly stuck in the driver) or a winner passing the barrier,
+        // and both make this tick moot.
         if (!_tickLock.TryEnter())
         {
             return;
@@ -342,42 +342,49 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 
         try
         {
-            var version = Volatile.Read(ref _armedVersion);
-            if (Volatile.Read(ref _pendingVersion) != version)
-            {
-                return;
-            }
-
-            var context = Volatile.Read(ref _context);
-            var stream = Volatile.Read(ref _stream);
-
-            CUresult status;
-            try
-            {
-                using var scope = new GpuKernelLoader.CudaContextScope(context);
-
-                // Also observes work enqueued after the completion signal. That is harmless because only fault codes
-                // are acted upon; success is always left to the host callback, which owns the reuse handshake.
-                status = CudaDriverApi.cuStreamQuery(stream);
-            }
-            catch (CudaException ex)
-            {
-                // The owning context can no longer be made current; surface it instead of hanging.
-                TryComplete(version, ex);
-                return;
-            }
-
-            if (status is CUresult.CudaSuccess or CUresult.CudaErrorNotReady)
-            {
-                return;
-            }
-
-            TryComplete(version, GpuKernelLoader.CreateExceptionForDriverError(status, $"CUDA stream faulted while awaiting completion: {status}"));
+            QueryStreamUnderBarrier();
         }
         finally
         {
             _tickLock.Exit();
         }
+    }
+
+    // Runs with _tickLock held. TryComplete below re-enters it on this thread, which Lock permits.
+    private void QueryStreamUnderBarrier()
+    {
+        var version = Volatile.Read(ref _armedVersion);
+        if (Volatile.Read(ref _pendingVersion) != version)
+        {
+            return;
+        }
+
+        var context = Volatile.Read(ref _context);
+        var stream = Volatile.Read(ref _stream);
+
+        CUresult status;
+        try
+        {
+            using var scope = new GpuKernelLoader.CudaContextScope(context);
+
+            // Also observes work enqueued after the completion signal. That is harmless because only fault codes
+            // are acted upon; success is always left to the host callback, which owns the reuse handshake.
+            status = CudaDriverApi.cuStreamQuery(stream);
+        }
+        catch (CudaException ex)
+        {
+            // The owning context can no longer be made current; surface it instead of hanging.
+            TryComplete(version, ex);
+            return;
+        }
+
+        if (status is CUresult.CudaSuccess or CUresult.CudaErrorNotReady)
+        {
+            return;
+        }
+
+        TryComplete(version, GpuKernelLoader.CreateExceptionForDriverError(
+            status, $"CUDA stream faulted while awaiting completion: {status}"));
     }
 
     private bool TryComplete(int version, Exception? error)
@@ -393,7 +400,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 
     // The completion of the host callback, which runs on the driver thread and blocks its stream until it returns.
     // Never waits for the tick barrier: a tick holding it may be waiting inside the driver for this very stream.
-    private void TryCompleteFromHostCallback(Exception? error)
+    private void CompleteFromHostCallback(Exception? error)
     {
         var version = _armedVersion;
         if (Interlocked.CompareExchange(ref _pendingVersion, NotArmed, version) != version)
