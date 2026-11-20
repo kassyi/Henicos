@@ -1,4 +1,5 @@
-// Built-in agents plugin: the chat session id of a job (`session`, from the agent's environment variables) and the lower
+// Built-in agents plugin: the chat session id of a job (`session`, from the agent's environment variables, which
+// `volatileEnv` also names so that the environment hash leaves them out) and the lower
 // panel of the live view with the chats that wait for the person (`panel`). The PreToolUse hook rules are in
 // hook-io.js and hook-checks.js.
 //
@@ -27,6 +28,11 @@ const plugin = {
       }
     }
     return undefined;
+  },
+
+  /** The session variables differ for every chat: the environment hash leaves them out. */
+  volatileEnv(context: ClientContext): readonly string[] {
+    return strings(context.options.sessionEnv, DefaultSessionEnv);
   },
 
   panel(context: ClientContext): ViewPanel | undefined {

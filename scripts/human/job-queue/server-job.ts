@@ -30,6 +30,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   cwd: string;
   /** The round-robin key: the root of the job's worktree, resolved once by its client (or its cwd). */
   worktree: string;
+  /** The client sent no worktree (an older client): `worktree` is its directory, maybe below the worktree's root. */
+  worktreeFromCwd?: boolean;
   /** Where its project and script arguments lie (JobRequest.places), for the estimate keys; absent when none came. */
   places?: Record<string, PathPlace>;
   /** Estimate fallback keys sent by the client (JobRequest.keys); absent when none came. */
@@ -40,6 +42,8 @@ export interface ServerJob extends SchedulerJob, JobFacts {
   keepIfFailed: boolean;
   lastPosition: number;
   lastStartAt: number | null;
+  /** What it was last told it waits for (Outlook.waitFor), so that a change is told. */
+  lastWaitFor?: string;
   done: boolean;
   completed: boolean;
   /** The command's exit code from "done"; null when the client did not send one (protocol 2, or no "done"). */
@@ -57,6 +61,7 @@ export function describeJob(job: ServerJob): JobView {
     orphan: job.connection === null,
     cwd: job.cwd,
     worktree: job.worktree,
+    ...(job.worktreeFromCwd === true ? { worktreeFromCwd: true as const } : {}),
     session: job.session,
     command: job.command,
     queuedAt: job.queuedAt,

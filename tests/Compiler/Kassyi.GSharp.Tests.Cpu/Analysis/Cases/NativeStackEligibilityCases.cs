@@ -182,6 +182,50 @@ namespace NativeStackEligibilityCases
         }
 
         [GpuKernel]
+        public static void ShuffleOnlyKernel(int[] data)
+        {
+            data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, ThreadIndex.X, 1);
+        }
+
+        // A kernel called like a function has no frame in the visit counts of its caller
+        [GpuKernel]
+        public static void ShuffleCallingShuffleKernel(int[] data)
+        {
+            ShuffleOnlyKernel(data);
+            data[0] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[0], 1);
+        }
+
+        // Only the state machine flattens a switch whose case values name no C++ label
+        [GpuKernel]
+        public static void FloatSwitchShuffleKernel(int[] data, float selector)
+        {
+            int value = ThreadIndex.X;
+            switch (selector)
+            {
+                case 1f:
+                    value = Warp.ShuffleXorSync(0xFFFFFFFFu, value, 1);
+                    break;
+                default:
+                    value += 1;
+                    break;
+            }
+
+            data[ThreadIndex.X] = value;
+        }
+
+        [GpuDeviceFunction]
+        public static uint ActiveMaskHelper()
+        {
+            return Warp.ActiveMask();
+        }
+
+        [GpuKernel]
+        public static void ActiveMaskDeviceFunctionKernel(int[] data)
+        {
+            data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, (int)ActiveMaskHelper(), 1);
+        }
+
+        [GpuKernel]
         public static void GridSyncDeviceFunctionKernel(int[] data)
         {
             GridSyncHelper(data);
@@ -242,6 +286,70 @@ namespace NativeStackUsingStaticCases
         {
             SyncThreads();
             data[0] = 1;
+        }
+    }
+}
+
+namespace NativeStackOperatorMacroCases
+{
+    // An operator macro whose target reaches a warp collective: the expansion calls the target without the frame of the
+    // stack model, which WarpFrameLayout gives only to the calls written as calls
+    public struct WarpSum
+    {
+        public int V;
+
+        [GpuOperatorMacro(typeof(WarpSumOps), nameof(WarpSumOps.Add))]
+        public static WarpSum operator +(WarpSum left, WarpSum right) => throw new GpuOnlyException();
+
+        [GpuOperatorMacro(typeof(WarpSumOps), "Subtract")]
+        public static WarpSum operator -(WarpSum left, WarpSum right) => throw new GpuOnlyException();
+    }
+
+    public static partial class WarpSumOps
+    {
+        [GpuDeviceFunction]
+        public static void Add(ref WarpSum result, WarpSum left, WarpSum right)
+        {
+            result.V = left.V + Warp.ShuffleXorSync(0xFFFFFFFFu, right.V, 1);
+        }
+
+        // A target the kernel cannot name in C# (the managed path calls it through an accessor stub)
+        [GpuDeviceFunction]
+        private static void Subtract(ref WarpSum result, WarpSum left, WarpSum right)
+        {
+            result.V = left.V - Warp.ShuffleXorSync(0xFFFFFFFFu, right.V, 1);
+        }
+    }
+
+    public static partial class Kernels
+    {
+        [GpuKernel]
+        public static void MacroAfterBarrierKernel(int[] data)
+        {
+            var x = new WarpSum { V = data[ThreadIndex.X] };
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            WarpSum z;
+            z = x + x;
+            data[ThreadIndex.X] = z.V;
+        }
+
+        [GpuKernel]
+        public static void MacroAndShuffleKernel(int[] data)
+        {
+            var x = new WarpSum { V = Warp.ShuffleXorSync(0xFFFFFFFFu, data[ThreadIndex.X], 2) };
+            WarpSum z;
+            z = x + x;
+            data[ThreadIndex.X] = z.V;
+        }
+
+        [GpuKernel]
+        public static void PrivateMacroTargetKernel(int[] data)
+        {
+            var x = new WarpSum { V = data[ThreadIndex.X] };
+            Kassyi.GSharp.Core.Gpu.SyncThreads();
+            WarpSum z;
+            z = x - x;
+            data[ThreadIndex.X] = z.V;
         }
     }
 }

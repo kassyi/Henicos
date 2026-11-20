@@ -1,0 +1,277 @@
+using Kassyi.GSharp.Core;
+
+// Generic structs whose constructors construct a struct with a type argument that holds their own type parameter
+// (polymorphic recursion): every step is a new construction. Kept out of the *.cs test cases, which the IR tests
+// compile and walk, because the generator itself does not handle this form yet
+namespace PolymorphicRecursion
+{
+    public struct Wrap<T> where T : struct
+    {
+        public T Inner;
+    }
+
+    // Deep<T> -> Deep<Wrap<T>>
+    public struct Deep<T> where T : struct
+    {
+        public int N;
+
+        public Deep(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new Deep<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    // A<T> -> B<Wrap<T>> -> A<Wrap<T>>
+    public struct A<T> where T : struct
+    {
+        public int N;
+
+        public A(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new B<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    public struct B<T> where T : struct
+    {
+        public int N;
+
+        public B(int n)
+        {
+            N = n;
+            if (n > 0)
+            {
+                N += new A<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    // S<T, U> -> S<U, Wrap<T>>
+    public struct S<T, U> where T : struct where U : struct
+    {
+        public int N;
+
+        public S(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new S<U, Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    // M<T> -> P<Wrap<T>> -> M<U>: the expansive call and the call back form the cycle
+    public struct M<T> where T : struct
+    {
+        public int N;
+
+        public M(int n)
+        {
+            N = Kernels.Step(n);
+            if (n > 0)
+            {
+                N += new P<Wrap<T>>(n - 1).N;
+            }
+        }
+    }
+
+    public struct P<U> where U : struct
+    {
+        public int N;
+
+        public P(int n)
+        {
+            N = n;
+            if (n > 0)
+            {
+                N += new M<U>(n - 1).N;
+            }
+        }
+    }
+
+    // Carried by new T(): G<T> creates T, and V<U>() creates G<V<V<U>>>, whose new T() runs V<V<U>>(), ...
+    public struct G<T> where T : struct
+    {
+        public T Value;
+        public int N;
+
+        public G(int n)
+        {
+            Value = new T();
+            N = Kernels.Step(n);
+        }
+    }
+
+    public struct V<U> where U : struct
+    {
+        public int A;
+
+        public V()
+        {
+            A = new G<V<V<U>>>(0).N;
+        }
+    }
+
+    // Carried by a member of an interface reached through T: GI<T> reads default(T).Value, and VI<U>.Value creates
+    // GI<VI<VI<U>>>, whose read runs VI<VI<U>>.Value, ...
+    public interface IVal
+    {
+        int Value { get; }
+    }
+
+    public struct GI<T> where T : struct, IVal
+    {
+        public int N;
+
+        public GI(int n)
+        {
+            N = default(T).Value + Kernels.Step(n);
+        }
+    }
+
+    public struct VI<U> : IVal where U : struct
+    {
+        public int A;
+
+        public int Value => new GI<VI<VI<U>>>(0).N;
+    }
+
+    // Carried by the Dispose of a using: GD<T> disposes a T, and VD<U>.Dispose creates GD<VD<VD<U>>>, whose using
+    // runs VD<VD<U>>.Dispose, ... The three forms of a using name the disposed type in three different ways
+    public struct GD<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GD(int n)
+        {
+            using (var r = default(T))
+            {
+                N = Kernels.Step(n);
+            }
+        }
+    }
+
+    public struct VD<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GD<VD<VD<U>>>(0).N;
+        }
+    }
+
+    public struct GDV<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GDV(int n)
+        {
+            using var r = default(T);
+            N = Kernels.Step(n);
+        }
+    }
+
+    public struct VDV<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GDV<VDV<VDV<U>>>(0).N;
+        }
+    }
+
+    public struct GDE<T> where T : struct, System.IDisposable
+    {
+        public int N;
+
+        public GDE(int n)
+        {
+            T r = default;
+            using (r)
+            {
+                N = Kernels.Step(n);
+            }
+        }
+    }
+
+    public struct VDE<U> : System.IDisposable where U : struct
+    {
+        public int A;
+
+        public void Dispose()
+        {
+            A = new GDE<VDE<VDE<U>>>(0).N;
+        }
+    }
+
+    public static partial class Kernels
+    {
+        [GpuDeviceFunction]
+        public static int Step(int x) => x + 1;
+
+        [GpuKernel]
+        public static void DeepKernel(int[] d)
+        {
+            d[0] = new Deep<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void AlternatingKernel(int[] d)
+        {
+            d[0] = new A<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void SwapKernel(int[] d)
+        {
+            d[0] = new S<int, long>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void NewTypeParameterKernel(int[] d)
+        {
+            d[0] = new V<int>().A;
+        }
+
+        [GpuKernel]
+        public static void ConstrainedMemberKernel(int[] d)
+        {
+            d[0] = new GI<VI<int>>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void MutualKernel(int[] d)
+        {
+            d[0] = new M<int>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedKernel(int[] d)
+        {
+            d[0] = new GD<VD<int>>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedDeclarationKernel(int[] d)
+        {
+            d[0] = new GDV<VDV<int>>(d[1]).N;
+        }
+
+        [GpuKernel]
+        public static void DisposeCarriedExpressionKernel(int[] d)
+        {
+            d[0] = new GDE<VDE<int>>(d[1]).N;
+        }
+    }
+}

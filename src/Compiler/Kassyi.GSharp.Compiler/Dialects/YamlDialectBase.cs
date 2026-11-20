@@ -83,7 +83,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return true;
         }
 
-        if (TryAppendDelegateType(ref context, typeSymbol))
+        if (TryAppendParameterlessAction(ref context, typeSymbol) || TryAppendDelegateType(ref context, typeSymbol))
         {
             return true;
         }
@@ -105,6 +105,25 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         return WmmaTypeSyntaxHelper.TryAppendType(ref context, typeSymbol) ||
                TryAppendMappedType(ref context, typeSymbol);
+    }
+
+    // System_Action of the Prelude is a variadic alias template, which C++17 names only with its argument list: the
+    // Action of System without type arguments is System_Action<>, the alias with an empty argument list
+    private static bool TryAppendParameterlessAction(ref TranspileContext context, ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol is not INamedTypeSymbol
+            {
+                TypeKind: TypeKind.Delegate,
+                IsGenericType: false,
+                Name: "Action"
+            } action ||
+            !action.ContainingNamespace.IsSystemNamespace())
+        {
+            return false;
+        }
+
+        context.Emitter.Writer.Append("System_Action<>");
+        return true;
     }
 
     // A delegate type that is not Func or Action of System (those are the Prelude aliases) is the std::function of its

@@ -94,10 +94,15 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        // The native stack form runs a warp collective through the prelude and passes the frame of a call that
+        // reaches one (StackWarpEmitter)
+        var stackWarp = StackWarpEmitter.Plan(node, symbol, ref context);
+
         // A method with no device definition (of the project, #891, or one the dialect does not map) would be
         // called by a name nothing defines
         // [WHY] Unsupported targets are all static, so there is no receiver expression.
-        if (CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
+        if (stackWarp.Kind != StackWarpCallKind.Collective &&
+            CallTargetEmitter.TryReplaceCall(node, symbol, ref context))
         {
             return;
         }
@@ -107,11 +112,28 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         var checks = PlanArgumentChecks(symbol, node.ArgumentList.Arguments, ref context);
         using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
             GetReceiver(node, symbol), spillAll: false);
-        context.Visitor.Visit(node.Expression);
+        if (stackWarp.Kind == StackWarpCallKind.Collective)
+        {
+            context.Emitter.Writer.Append(stackWarp.Function);
+        }
+        else
+        {
+            context.Visitor.Visit(node.Expression);
+        }
+
         using (context.Emitter.Writer.Parentheses())
         {
+            if (stackWarp.Kind == StackWarpCallKind.Collective)
+            {
+                StackWarpEmitter.AppendCollectivePrefix(in stackWarp, symbol.Parameters.Length > 0, ref context);
+            }
+
             TranspileArguments(symbol, node, in sequence, ref context, convertArguments, checks);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
+            if (stackWarp.Kind == StackWarpCallKind.FrameCall)
+            {
+                StackWarpEmitter.AppendFrameArgument(in stackWarp, symbol.Parameters.Length > 0, ref context);
+            }
         }
     }
 

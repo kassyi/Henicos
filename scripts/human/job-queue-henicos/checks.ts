@@ -651,6 +651,7 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
         },
       },
       { name: "nvidia-gpu" },
+      { name: "git" },
       {
         name: "agents",
         options: {

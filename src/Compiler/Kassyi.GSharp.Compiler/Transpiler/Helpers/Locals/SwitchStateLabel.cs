@@ -34,6 +34,13 @@ internal static class SwitchStateLabel
         writer.Append(suffix);
     }
 
+    /// <summary>
+    /// Whether the case value <paramref name="value"/> of the user's source names a C++ label, which a switch that the
+    /// CPU state machine does not flatten needs (<see cref="Append"/> reports the others).
+    /// </summary>
+    public static bool NamesLabel(ExpressionSyntax value, SemanticModel model) =>
+        GetConstant(value, model) is { } constant && GetSuffix(constant) is not null;
+
     // The bound constant; a case that lowering wrote (the states of a CPU state machine) is a literal outside the
     // compilation, which has the value of its token
     private static object? GetConstant(ExpressionSyntax value, SemanticModel model) =>

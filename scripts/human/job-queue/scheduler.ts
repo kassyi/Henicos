@@ -98,7 +98,17 @@ export interface Rotation {
 export interface Expected {
   startAt: number;
   endAt: number;
+  /** The end if it takes its longest recorded run time; absent without a recorded time. */
+  latestEndAt?: number;
 }
+
+/**
+ * What a waiting job waits for, as the grant step sees it: its predecessor (after), its client (away), the startup
+ * grace after a restart (restart), the pause (paused), a GPU turn (gpu) or the probe of the GPU's free memory
+ * (gpu-memory), the CPU slots (slots), the memory pool of the test runs (memory), or nothing but the jobs that go
+ * first (in-line).
+ */
+export type WaitFor = "after" | "away" | "restart" | "paused" | "gpu" | "gpu-memory" | "slots" | "memory" | "in-line";
 
 /**
  * The scheduler state. A job that holds the GPU lock is granted at once. The other waiting jobs are put in order (the
@@ -307,6 +317,53 @@ export class Scheduler<J extends SchedulerJob> {
     }
     const outcome = this.outcomes.get(job.after);
     return outcome === undefined || (outcome !== "succeeded" && job.keepIfFailed !== true);
+  }
+
+  /**
+   * What a waiting job waits for (WaitFor), by the same rules as grant: a turn waits for its resource, whose first
+   * grantable turn waits for a probe ("gpu-memory") or for the turns that run ("gpu"); a job that takes slots waits for
+   * slots, then for the memory pool, else for the jobs ordered before it. Undefined for a job that does not wait, and
+   * for one the next grant takes (the answer to a request comes before the settle that grants it).
+   */
+  waitFor(job: J, now = Date.now()): WaitFor | undefined {
+    if (!this.waiting.includes(job)) {
+      return undefined;
+    }
+    if (this.awaitsPredecessor(job)) {
+      return "after";
+    }
+    if (job.detached === true) {
+      return "away";
+    }
+    if (now < this.holdUntil) {
+      return "restart";
+    }
+    // A GPU holder and a job started by hand are granted at once, also while paused
+    if ((job.gpu || job.startNow === true) && job.gpuTurn !== true) {
+      return undefined;
+    }
+    if (this.paused) {
+      return "paused";
+    }
+    if (job.gpuTurn === true) {
+      const name = resourceOf(job);
+      const head = this.headTurns().get(name);
+      const verdict = head === job ? turnVerdict(job, usageOf(this.running, name), this.stateOf(name), now) : "behind";
+      return verdict === "grant" ? undefined : verdict === "probe" ? "gpu-memory" : "gpu";
+    }
+    if (this.used + job.weight > this.capacity) {
+      return "slots";
+    }
+    if (!this.fitsMemory(job)) {
+      return "memory";
+    }
+    // The first job that takes slots and fits is granted by the next settle: it waits for nothing
+    const first = this.waiting.find((other) => !other.gpuTurn && !this.isBlocked(other));
+    // Nor does a later job that backfilling grants now (not under fifo, as in grant)
+    if (first === job || (this.policy !== "fifo" && this.backfill(now).includes(job))) {
+      return undefined;
+    }
+    return "in-line";
   }
 
   /** move --first: ahead of every waiting job, the pinned ones included. */
@@ -579,10 +636,14 @@ export class Scheduler<J extends SchedulerJob> {
    * When each job is expected to start and end: the grants of this scheduler played forward on copies of the jobs,
    * each taking its typical run time (UnknownTypicalMs without a record). A running job past its typical time is
    * expected to end at its longest recorded time, and past that, OverrunGuessMs from now. A job that waits for another
-   * (--after) starts no earlier than that one's expected end.
+   * (--after) starts no earlier than that one's expected end. latestEndAt is the end at the longest recorded run time,
+   * from the same expected start.
    */
   forecast(now = Date.now()): Map<J, Expected> {
     const duration = (job: SchedulerJob): number => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
+    // The end at its longest recorded run time, from the same start; none without a record
+    const latest = (startAt: number, job: SchedulerJob): { latestEndAt?: number } =>
+      job.estimate ? { latestEndAt: startAt + job.estimate.longestMs } : {};
     const specs = [...this.resources.values()].map((state) => state.spec);
     const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity, specs);
     // The replay assumes every probe passes: an estimate, optimistic
@@ -608,7 +669,7 @@ export class Scheduler<J extends SchedulerJob> {
       }
       simulation.start(copy);
       ends.set(copy, endAt);
-      result.set(job, { startAt: job.grantedAt, endAt });
+      result.set(job, { startAt: job.grantedAt, endAt, ...latest(job.grantedAt, job) });
     }
     for (const job of this.waiting) {
       const copy: SchedulerJob = { ...job };
@@ -620,7 +681,7 @@ export class Scheduler<J extends SchedulerJob> {
       for (const copy of simulation.grant(time)) {
         const original = originals.get(copy) as J;
         ends.set(copy, time + duration(copy));
-        result.set(original, { startAt: time, endAt: time + duration(copy) });
+        result.set(original, { startAt: time, endAt: time + duration(copy), ...latest(time, copy) });
       }
       if (simulation.waiting.length === 0 || simulation.running.length === 0) {
         break;

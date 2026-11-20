@@ -9,7 +9,9 @@ internal static class MethodSignatureTranspiler
     /// Writes the signature of a kernel entry point or of a device function that does not suspend. A kernel with a state
     /// machine (<paramref name="hasContext"/>) takes its per-thread context as the last parameter before the auto result.
     /// A CUDA device function that reaches a dynamic <c>SharedMemory&lt;T&gt;</c> declaration is a template over the
-    /// table type of its kernel and takes the table as the last parameter (<see cref="DynamicSharedMemoryEmitter"/>).
+    /// table type of its kernel and takes the table as the last parameter (<see cref="DynamicSharedMemoryEmitter"/>). The
+    /// native stack form of a device function that reaches a warp collective takes the offset of its frame as the last
+    /// parameter (<see cref="StackWarpEmitter"/>).
     /// </summary>
     /// <param name="plan">The method.</param>
     /// <param name="hasContext">Whether the kernel runs as a state machine with a per-thread context.</param>
@@ -40,6 +42,9 @@ internal static class MethodSignatureTranspiler
         var takesTable = isDevice && methodSymbol != null &&
                          DynamicSharedMemoryEmitter.TakesTable(methodSymbol, context.Emitter.Dialect,
                              context.Query.SemanticModel.Compilation);
+        var takesWarpFrame = isDevice && methodSymbol != null &&
+                             StackWarpEmitter.TakesFrame(methodSymbol, context.Emitter.Dialect,
+                                 context.Query.SemanticModel.Compilation);
         if (isDevice)
         {
             if (takesTable)
@@ -80,6 +85,12 @@ internal static class MethodSignatureTranspiler
             if (takesTable)
             {
                 DynamicSharedMemoryEmitter.AppendTableParameter(method.ParameterList.Parameters.Count > 0, ref context);
+            }
+
+            // The native stack form of a device function that reaches a warp collective takes the offset of its frame
+            if (takesWarpFrame)
+            {
+                StackWarpEmitter.AppendFrameParameter(method.ParameterList.Parameters.Count > 0, ref context);
             }
 
             if (contextName != null)

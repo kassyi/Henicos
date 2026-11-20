@@ -2,7 +2,7 @@
 // (the end of a job whose command ended while no scheduler listened).
 
 import { ProtocolVersion } from "./constants.ts";
-import { idField, numberField, send, shareField, type Incoming } from "./protocol.ts";
+import { environmentField, idField, numberField, send, shareField, type Incoming } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import {
@@ -151,10 +151,16 @@ function request(connection: Connection, message: Incoming): void {
   const job = created;
   server.records.set(job.id, job);
   server.bind(job, connection);
+  const environment = environmentField(message);
   server.log(
     `queue ${formatJobId(job.id)} weight ${job.weight}${job.gpu ? " gpu" : ""}` +
-      `${after !== null ? ` after ${formatJobId(after)}` : ""} pid ${job.pid}: ${job.command}`,
+      `${after !== null ? ` after ${formatJobId(after)}` : ""} pid ${job.pid} cwd ${job.cwd} worktree ${job.worktree}` +
+      `${environment !== undefined ? ` env ${environment.hash}` : ""}: ${job.command}`,
   );
+  const differs = environment !== undefined ? server.environmentChange(job, environment.keys) : null;
+  if (differs !== null) {
+    server.log(differs);
+  }
   scheduler.add(job);
   // The id first, so that the caller can ask about its job (status <id>) whatever happens next; settle grants
   send(socket, server.queuedMessage(job));

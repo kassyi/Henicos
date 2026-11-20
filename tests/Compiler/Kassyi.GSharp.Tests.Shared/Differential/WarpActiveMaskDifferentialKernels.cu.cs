@@ -1659,4 +1659,82 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 64] = (uint)n;
         result[t + 96] = Warp.ActiveMask();
     }
+
+    // A goto loop whose last statement is a block: the loop ends right after the if that holds its last goto back to
+    // L1, inside the block, so the statement after that if runs with every lane. The lanes with (t & 3) != 0 take the
+    // goto twice
+    [GpuKernel]
+    public static void GotoLoopEndingInBlockKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // GotoLoopEndingInBlockKernel with the if in a block nested in the last statement: the loop ends right after the if,
+    // two blocks deep
+    [GpuKernel]
+    public static void GotoLoopEndingInNestedBlockKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        {
+            {
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+            }
+
+            result[t + 128] = Warp.ActiveMask();
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+        result[t + 192] = (uint)n;
+    }
+
+    // Two gotos back to L1 in the last block: the loop ends after the second, so the lanes do not meet at the statement
+    // between them, only after the second. The lanes with (t & 3) == 1 take the first goto once, those with
+    // (t & 3) == 2 the second
+    [GpuKernel]
+    public static void GotoLoopEndingInBlockWithTwoGotosKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        {
+            if ((t & 3) == 1 && n++ < 1)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+            if ((t & 3) == 2 && n++ < 1)
+            {
+                goto L1;
+            }
+
+            result[t + 128] = Warp.ActiveMask();
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+        result[t + 192] = (uint)n;
+    }
 }

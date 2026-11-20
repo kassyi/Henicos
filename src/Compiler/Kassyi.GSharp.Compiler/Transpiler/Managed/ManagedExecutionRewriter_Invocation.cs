@@ -2,7 +2,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal sealed partial class ManagedExecutionRewriter
 {
-    // A block barrier of a stack form, a call of the user's code (qualified, routed, with its caller information) or a
+    // A block barrier or a warp collective of a stack form, a call of the user's code (qualified, routed, with its
+    // caller information and, in a stack form, the frame of a device function that reaches a warp collective) or a
     // resume call of the lowered state machine (RewriteResumeCall)
     public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
     {
@@ -11,15 +12,20 @@ internal sealed partial class ManagedExecutionRewriter
             return stackBarrier;
         }
 
+        if (TryRewriteStackWarp(node) is { } stackWarp)
+        {
+            return stackWarp;
+        }
+
         if (node.Expression is not IdentifierNameSyntax
             {
                 Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
             })
         {
-            var result = AddCallerInfoArguments(node,
+            var result = AddWarpFrameArgument(node, AddCallerInfoArguments(node,
                 ManagedNameQualifier.TryRewriteInvocation(node, this, semanticModel) is { } rewritten
                     ? RouteExtensionCall(node, rewritten)
-                    : base.VisitInvocationExpression(node));
+                    : base.VisitInvocationExpression(node)));
             return ManagedRewriteClassifier.IsSequentialSum(node, semanticModel) &&
                    result is InvocationExpressionSyntax sumCall
                 ? RewriteSequentialSum(sumCall)
@@ -27,6 +33,90 @@ internal sealed partial class ManagedExecutionRewriter
         }
 
         return RewriteResumeCall(node);
+    }
+
+    // In a stack form, a warp collective becomes the one call of the managed stack model that publishes, waits for the
+    // lanes of the mask and reads, with the frame, the site and the place first and the user's arguments after them
+    // (named ones keep their names: the parameters have the names of the API):
+    // global::Kassyi.GSharp.Core.ManagedGpuContext.__gsharp_stack_warp_<kind>[<T>](__gsharp_warp_frame, <site>,
+    //     "<place>", <arguments>); null for any other call
+    private InvocationExpressionSyntax? TryRewriteStackWarp(InvocationExpressionSyntax node)
+    {
+        if (bodyKind != ManagedBodyKind.StackBody ||
+            semanticModel.GetSymbol(node) is not IMethodSymbol method ||
+            SyncIntrinsicClassifier.Classify(method) is not { Kind: SyncIntrinsicKind.WarpShuffle } intrinsic)
+        {
+            return null;
+        }
+
+        var layout = WarpLayout ?? throw new InvalidOperationException(
+            $"G#: internal error: a stack form without a warp layout reaches {method.Name} " +
+            "(please report this G# bug).");
+        if (intrinsic.Shuffle == WarpShuffleKind.ActiveMask)
+        {
+            throw new InvalidOperationException(
+                "G#: internal error: a stack form reaches Warp.ActiveMask(), which the managed stack model does not " +
+                "run (please report this G# bug).");
+        }
+
+        var shape = WarpShuffleShape.ForKind(intrinsic.Shuffle);
+        var site = layout.GetSite(node);
+        var place = SourcePlace.Format(semanticModel, node);
+        var visited = Visit(node.ArgumentList) as ArgumentListSyntax ?? node.ArgumentList;
+        var arguments = visited.Arguments
+            .Insert(0, SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.StackWarp.Frame)))
+            .Insert(1, SyntaxFactory.Argument(
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(site))))
+            .Insert(2, SyntaxFactory.Argument(
+                SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, SyntaxFactory.Literal(place))));
+        return SyntaxFactory.InvocationExpression(
+            ManagedNames.CreateMemberAccess(CreateStackWarpName(shape.StackFunction, method)),
+            visited.WithArguments(arguments)
+        ).WithTriviaFrom(node);
+    }
+
+    // The entry of a collective whose value has the type of the API overload (a shuffle, a reduction, a match) takes it
+    // as its type argument, so that the value is converted as the user's call converts it (a short passed to the int
+    // overload stays an int): __gsharp_stack_warp_<kind><T>; a vote or Gpu.SyncWarp: __gsharp_stack_warp_<kind>
+    private static SimpleNameSyntax CreateStackWarpName(string stackFunction, IMethodSymbol method)
+    {
+        if (method.Parameters.Length < 2 ||
+            method.Parameters[WarpShuffleShape.ShuffleValuePosition].Type.SpecialType == SpecialType.System_Boolean)
+        {
+            return SyntaxFactory.IdentifierName(stackFunction);
+        }
+
+        using var writer = new SourceWriter();
+        writer.AppendCsharpTypeName(method.Parameters[WarpShuffleShape.ShuffleValuePosition].Type);
+        return SyntaxFactory.GenericName(
+            SyntaxFactory.Identifier(stackFunction),
+            SyntaxFactory.TypeArgumentList(
+                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.ParseTypeName(writer.ToString())))
+        );
+    }
+
+    // In a stack form, the call of a device function that reaches a warp collective passes the offset of its frame
+    // first (WarpFrameLayout): <call>(__gsharp_warp_frame + <offset>, <arguments>)
+    private SyntaxNode? AddWarpFrameArgument(InvocationExpressionSyntax node, SyntaxNode? visited)
+    {
+        if (WarpLayout is not { } layout ||
+            visited is not InvocationExpressionSyntax call ||
+            semanticModel.GetSymbol(node) is not IMethodSymbol callee ||
+            SyncIntrinsicClassifier.Classify(callee).Kind == SyncIntrinsicKind.WarpShuffle ||
+            !SuspensionAnalysis.ReachesWarpShuffle(callee, semanticModel.Compilation))
+        {
+            return visited;
+        }
+
+        // __gsharp_warp_frame + <offset>
+        var frame = SyntaxFactory.BinaryExpression(
+            SyntaxKind.AddExpression,
+            SyntaxFactory.IdentifierName(GSharpInternalNames.StackWarp.Frame),
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(layout.GetCallOffset(node)))
+        );
+        return call.WithArgumentList(
+            call.ArgumentList.WithArguments(call.ArgumentList.Arguments.Insert(0, SyntaxFactory.Argument(frame))));
     }
 
     // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args,

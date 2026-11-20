@@ -17,6 +17,8 @@ export const DefaultPort = 47117;
 
 export const IdleExitMs = 30 * 60 * 1000;
 export const NoticeIntervalMs = 5 * 60 * 1000;
+/** A waiting client tells a new wait reason no sooner than this after its last notice. */
+export const ReasonNoticeMs = 30 * 1000;
 export const StartupGraceMs = 1500;
 export const OrphanPollMs = 2000;
 export const LogRotateBytes = 5 * 1024 * 1024;
@@ -67,6 +69,8 @@ export const GpuLockHeldVariable = "GSHARP_GPU_LOCK_HELD";
 export const CommandVariable = "GSHARP_JOB_QUEUE_COMMAND";
 export const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 export const CpusVariable = "GSHARP_JOB_QUEUE_CPUS";
+/** "0": run takes no digest of the worktree (contentDigest), as for the self-test's clients in a developer's worktree. */
+export const DigestVariable = "GSHARP_JOB_QUEUE_DIGEST";
 export const StateDirectoryVariable = "GSHARP_JOB_QUEUE_STATE_DIR";
 export const ShellVariable = "GSHARP_JOB_QUEUE_SHELL";
 export const PolicyVariable = "GSHARP_JOB_QUEUE_POLICY";

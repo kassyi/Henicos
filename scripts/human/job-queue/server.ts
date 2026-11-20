@@ -17,6 +17,7 @@ import {
   type Policy,
 } from "./constants.ts";
 import { loadConfig, type QueueConfig } from "./config.ts";
+import { differingNames } from "./environment-hash.ts";
 import type { EstimateLevel } from "./estimate-fallback.ts";
 import { RunHistory } from "./history.ts";
 import {
@@ -45,6 +46,11 @@ import { describeProbe, ProbeRunner } from "./server-probe.ts";
 import { JobStore } from "./server-store.ts";
 import { ProcessTable, resolveStateDirectory, worktreeKey } from "./system.ts";
 import { formatJobId } from "./job-id.ts";
+
+/** The environments kept for the comparison (environmentChange): one per command and worktree, the newest. */
+const KeptEnvironments = 500;
+/** The differing names a log line lists; more are counted. */
+const MaxDifferingNames = 20;
 
 export interface ServeOptions {
   slots: number;
@@ -95,6 +101,11 @@ export class JobServer {
   /** Ends, frees or keeps the records whose client is away, on what the processes show (server-observe.ts). */
   readonly observer: DetachedObserver;
   readonly server: net.Server;
+  /**
+   * The environment of the last job queued per command and worktree (environment-hash.ts), in memory only and at most
+   * KeptEnvironments of them, for the log line that says which variables differ from the run before.
+   */
+  readonly environments = new Map<string, { id: number; keys: Record<string, string> }>();
   /** Measures what a second shared turn needs (server-probe.ts); stopped with the scheduler. */
   readonly probes = new ProbeRunner();
 
@@ -173,17 +184,43 @@ export class JobServer {
     job.epoch++;
   }
 
+  /**
+   * Keeps the environment of a queued job and returns the log line for it when the last job of the same command and
+   * worktree had another: the names that differ, never their values. Null for the first such job and an equal one.
+   */
+  environmentChange(job: ServerJob, keys: Record<string, string>): string | null {
+    const key = `${job.worktree}\0${job.command}`;
+    const before = this.environments.get(key);
+    this.environments.delete(key);
+    this.environments.set(key, { id: job.id, keys });
+    while (this.environments.size > KeptEnvironments) {
+      this.environments.delete(this.environments.keys().next().value as string);
+    }
+    const names = before === undefined ? [] : differingNames(before.keys, keys);
+    if (before === undefined || names.length === 0) {
+      return null;
+    }
+    const shown = names.slice(0, MaxDifferingNames).join(", ");
+    const more = names.length > MaxDifferingNames ? ` and ${names.length - MaxDifferingNames} more` : "";
+    return `${formatJobId(job.id)}: env differs from ${formatJobId(before.id)} (same command and worktree): ${shown}${more}`;
+  }
+
   /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
   outlook(job: ServerJob, forecast: Map<ServerJob, Expected>): Outlook {
     const expected = forecast.get(job);
     const index = this.scheduler.waiting.indexOf(job);
+    const waitFor = this.scheduler.waitFor(job);
+    const onTurn = waitFor === "gpu" || waitFor === "gpu-memory";
     return {
       state: index >= 0 ? "waiting" : "running",
       ahead: Math.max(0, index),
       position: index + 1,
       startAt: expected ? expected.startAt : null,
       endAt: expected ? expected.endAt : null,
+      ...(expected?.latestEndAt !== undefined ? { latestEndAt: expected.latestEndAt } : {}),
       blockedBy: this.scheduler.awaitsPredecessor(job) ? job.after : null,
+      ...(waitFor !== undefined ? { waitFor } : {}),
+      ...(onTurn ? { waitResource: resourceOf(job) } : {}),
     };
   }
 
@@ -208,9 +245,10 @@ export class JobServer {
     scheduler.waiting.forEach((job, index) => {
       const view = this.outlook(job, forecast);
       const moved = Math.abs((view.startAt ?? 0) - (job.lastStartAt ?? 0)) >= ForecastNoticeMs;
-      if (job.lastPosition !== index || moved) {
+      if (job.lastPosition !== index || moved || job.lastWaitFor !== view.waitFor) {
         job.lastPosition = index;
         job.lastStartAt = view.startAt;
+        job.lastWaitFor = view.waitFor;
         this.tell(job, { type: "waiting", id: job.id, ...view, used: scheduler.used, capacity: scheduler.capacity });
       }
     });
@@ -296,6 +334,7 @@ export class JobServer {
       cwd,
       // Resolved once by the client; an older client sends none, and its directory stands for its worktree
       worktree,
+      ...(String(message.worktree ?? "") === "" ? { worktreeFromCwd: true } : {}),
       ...(places !== undefined ? { places } : {}),
       ...(keys !== undefined ? { keys } : {}),
       ...(resource !== undefined ? { resource } : {}),

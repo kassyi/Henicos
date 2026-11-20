@@ -392,38 +392,26 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var heldRefLocalSites = HeldRefLocalSite.Collect(plan.Lowered, plan.SemanticModel, plan.Declaration);
             var cppText = NativeStackTranslator.ForKernel(context, in plan, cppSource, requiredIncludesCpp, errorSites);
 
-            if (!CheckSuppressGs0001(methodDeclaration))
-            {
-                return new TranspiledKernelResult(
-                    header,
-                    host,
-                    cudaSource,
-                    cppText.Source,
-                    managedCSharpSource,
-                    ToIncludes(requiredIncludesCuda),
-                    cppText.Includes,
-                    "",
-                    structExports,
-                    cppText.ErrorSites,
-                    heldRefLocalSites
-                );
-            }
-
-            cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-            cppSource = "// gsharp:suppress GS0001\n" + cppText.Source;
+            var spill = new KernelSpillScope(
+                GlobalCppNames.GetKernelName(methodSymbol),
+                CheckSuppressGs0001(methodDeclaration),
+                DeviceFunctionReach.GetReachedFunctionNames(methodSymbol, methodDeclaration,
+                    context.SemanticModel.Compilation)
+            );
 
             return new TranspiledKernelResult(
                 header,
                 host,
                 cudaSource,
-                cppSource,
+                cppText.Source,
                 managedCSharpSource,
                 ToIncludes(requiredIncludesCuda),
                 cppText.Includes,
                 "",
                 structExports,
                 cppText.ErrorSites,
-                heldRefLocalSites
+                heldRefLocalSites,
+                Spill: spill
             );
         }
         catch (Exception ex)

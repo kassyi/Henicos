@@ -1,0 +1,534 @@
+// Checks of what a job is told while it waits and what the scheduler logs of it: what it waits for (Scheduler.waitFor),
+// the latest expected end, status --here, the worktree digest and the environment hash.
+
+import type * as Assert from "node:assert";
+import * as fs from "node:fs";
+import type * as net from "node:net";
+import * as os from "node:os";
+import * as path from "node:path";
+import { parseArgs } from "./cli.ts";
+import { describeOutlook, describeWaitFor, isJobHere } from "./client-commands.ts";
+import type { RunOptions } from "./client.ts";
+import { QueuedRun } from "./client-queued-run.ts";
+import { DigestVariable, JobVariable, ProtocolVersion, ReasonNoticeMs } from "./constants.ts";
+import { differingNames, environmentHash, VolatileEnv } from "./environment-hash.ts";
+import { PluginApiVersion, type QueuePlugin } from "./plugin-api.ts";
+import { PluginHost } from "./plugin-host.ts";
+import type { Incoming, StatusJob } from "./protocol.ts";
+import { FakeHost, FakeScheduler, until } from "./self-test-client.ts";
+import { worktreeKey } from "./system.ts";
+import type { ResourceSpec } from "./resources.ts";
+import { Scheduler, type SchedulerJob } from "./scheduler.ts";
+import { job, times } from "./scheduler-checks.ts";
+import { connectRaw, exitsOf, registration, removeDirectory, type Client } from "./self-test-support.ts";
+import { JobServer } from "./server.ts";
+
+type AssertModule = typeof Assert;
+
+const gpu = (slots: number, probe: boolean): ResourceSpec => ({
+  name: "gpu",
+  slots,
+  probe: probe ? { argv: ["probe"], min: 3072, timeoutMs: 2000, settleMs: 15000 } : null,
+});
+
+const turn = (id: number, share: "shared" | "exclusive"): SchedulerJob =>
+  Object.assign(job(id, 2, id), { gpuTurn: true, share });
+
+/** Each answer of waitFor, in the order grant decides: predecessor, client, restart, pause, turn, slots, memory. */
+function checkWaitFor(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(2, 0, "fifo", 1000);
+  const [a, b, c] = [job(1, 2, 1), job(2, 1, 2), job(3, 1, 3)];
+  s.enqueue(a, 0);
+  s.enqueue(b, 0);
+  assert.strictEqual(s.waitFor(a, 0), undefined, "a running job waits for nothing");
+  // A job the next grant takes waits for nothing either: the answer to its request comes before that grant
+  const empty = new Scheduler<SchedulerJob>(2, 0, "fifo", 1000);
+  const [lone, holder, started] = [
+    job(11, 1, 1),
+    job(12, 1, 2, true),
+    Object.assign(job(13, 2, 3), { startNow: true }),
+  ];
+  [lone, holder, started].forEach((j) => empty.add(j));
+  assert.deepStrictEqual(
+    [empty.waitFor(lone, 0), empty.waitFor(holder, 0), empty.waitFor(started, 0)],
+    [undefined, undefined, undefined],
+    "the first job that fits, a GPU holder, a job started by hand",
+  );
+  empty.paused = true;
+  assert.deepStrictEqual([empty.waitFor(lone, 0), empty.waitFor(holder, 0)], ["paused", undefined], "while paused");
+  assert.strictEqual(s.waitFor(b, 0), "slots", "every slot in use");
+  c.after = 1;
+  s.enqueue(c, 0);
+  assert.strictEqual(s.waitFor(c, 0), "after", "its predecessor runs, ahead of the slots");
+  c.after = null;
+  c.detached = true;
+  assert.strictEqual(s.waitFor(c, 0), "away", "its client is away");
+  c.detached = false;
+  s.paused = true;
+  assert.strictEqual(s.waitFor(c, 0), "paused");
+  s.paused = false;
+  s.holdUntil = 100;
+  assert.strictEqual(s.waitFor(c, 50), "restart", "the startup grace");
+  assert.strictEqual(s.waitFor(c, 100), "slots", "after the grace");
+  s.holdUntil = 0;
+
+  const memory = new Scheduler<SchedulerJob>(4, 0, "fifo", 1000);
+  const [m1, m2, m3] = [
+    Object.assign(job(1, 1, 1), { memoryMb: 800 }),
+    Object.assign(job(2, 1, 2), { memoryMb: 800 }),
+    job(3, 1, 3),
+  ];
+  memory.enqueue(m1, 0);
+  memory.enqueue(m2, 0);
+  memory.add(m3);
+  assert.strictEqual(memory.waitFor(m2, 0), "memory", "slots are free, the memory pool is not");
+  assert.strictEqual(memory.waitFor(m3, 0), "in-line", "room for it, but fifo keeps it behind m2");
+
+  const turns = new Scheduler<SchedulerJob>(4, 0, "fifo", Infinity, [gpu(2, true)]);
+  const [t1, t2, t3, t4] = [turn(1, "shared"), turn(2, "shared"), turn(3, "exclusive"), turn(4, "shared")];
+  turns.add(t1);
+  assert.strictEqual(turns.waitFor(t1, 0), undefined, "a turn the next grant takes");
+  turns.grant(0);
+  [t2, t3, t4].forEach((t) => turns.enqueue(t, 0));
+  assert.strictEqual(turns.waitFor(t2, 0), "gpu-memory", "the first waiting shared turn waits for the probe");
+  assert.strictEqual(turns.waitFor(t3, 0), "gpu", "a turn behind the first waits for the GPU");
+  assert.strictEqual(turns.waitFor(t4, 0), "gpu", "so does a shared one: only the first is measured for");
+  const exclusive = new Scheduler<SchedulerJob>(4, 0, "fifo", Infinity, [gpu(2, true)]);
+  const [e1, e2] = [turn(1, "exclusive"), turn(2, "shared")];
+  exclusive.enqueue(e1, 0);
+  exclusive.enqueue(e2, 0);
+  assert.strictEqual(exclusive.waitFor(e2, 0), "gpu", "an exclusive turn runs: no probe helps");
+}
+
+/** A job that backfilling grants at the next settle waits for nothing; under fifo it waits in line. */
+function checkWaitForBackfill(assert: AssertModule): void {
+  for (const policy of ["hrrn", "backfill", "fifo"] as const) {
+    const s = new Scheduler<SchedulerJob>(4, 0, policy);
+    const a = job(1, 2, 1, false, times(300, 300));
+    const [b, c] = [job(2, 4, 2), job(3, 1, 3, false, times(10, 10))];
+    s.enqueue(a, 0);
+    s.add(b);
+    s.add(c);
+    assert.strictEqual(s.waitFor(b, 0), "slots", `${policy}: the wide job`);
+    assert.strictEqual(s.waitFor(c, 0), policy === "fifo" ? "in-line" : undefined, `${policy}: the short job`);
+    assert.deepStrictEqual(s.grant(0), policy === "fifo" ? [] : [c], `${policy}: and the grant agrees`);
+  }
+}
+
+/** The words of each answer, the predecessor and the resource named; nothing for a scheduler that did not say. */
+function checkDescribeWaitFor(assert: AssertModule): void {
+  assert.strictEqual(describeWaitFor({ waitFor: "after", blockedBy: 821 }), "waits for j0821 to end");
+  assert.strictEqual(describeWaitFor({ waitFor: "gpu", waitResource: "gpu" }), "waits for a turn at gpu");
+  assert.strictEqual(describeWaitFor({ waitFor: "gpu-memory", waitResource: "x" }), "waits for free memory on x");
+  assert.strictEqual(describeWaitFor({ waitFor: "slots" }), "waits for CPU slots");
+  assert.strictEqual(describeWaitFor({ waitFor: "memory" }), "waits for the memory budget of the test runs");
+  assert.strictEqual(describeWaitFor({}), "", "an older scheduler");
+  assert.strictEqual(describeWaitFor({ waitFor: "something new" }), "", "a newer one");
+}
+
+/** The latest end: from the longest recorded time, for running and waiting jobs; none without a record. */
+function checkLatestEnd(assert: AssertModule): void {
+  const s = new Scheduler<SchedulerJob>(1, 0, "fifo");
+  const [a, b, c] = [job(1, 1, 1, false, times(60, 300)), job(2, 1, 2, false, times(60, 90)), job(3, 1, 3)];
+  s.enqueue(a, 5000);
+  s.add(b);
+  s.add(c);
+  const forecast = s.forecast(5000);
+  assert.deepStrictEqual(forecast.get(a), { startAt: 5000, endAt: 65000, latestEndAt: 305000 }, "a running job");
+  assert.deepStrictEqual(forecast.get(b), { startAt: 65000, endAt: 125000, latestEndAt: 155000 }, "from its start");
+  assert.strictEqual(forecast.get(c)?.latestEndAt, undefined, "no record, no latest end");
+  // Said only a minute or more after the expected end
+  const clock = (time: number): string => new Date(time).toTimeString().slice(0, 5);
+  const view = { state: "running", ahead: 0, startAt: 0, endAt: 600000 };
+  assert.strictEqual(
+    describeOutlook({ ...view, latestEndAt: 660000 }, 0),
+    `expected end ~${clock(600000)} (in 10m), at the latest ~${clock(660000)}`,
+  );
+  assert.strictEqual(describeOutlook({ ...view, latestEndAt: 659999 }, 0), `expected end ~${clock(600000)} (in 10m)`);
+  assert.strictEqual(describeOutlook(view, 0), `expected end ~${clock(600000)} (in 10m)`, "an older scheduler");
+  // A waiting job's longest run counts from its expected start, which the jobs ahead may push back: not "at the latest"
+  assert.match(
+    describeOutlook({ ...view, state: "waiting", latestEndAt: 660000 }, 0),
+    new RegExp(`, if it runs its longest ~${clock(660000)}$`),
+  );
+}
+
+/** A scheduler of one slot on a private port and state directory, with its log lines kept, for `body`. */
+async function withServer(body: (port: number, log: string[], server: JobServer) => Promise<void>): Promise<void> {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-self-test-hints-"));
+  const log: string[] = [];
+  const server = new JobServer({
+    slots: 1,
+    memoryMb: 1e9,
+    policy: "fifo",
+    port: 0,
+    stateDir: directory,
+    log: (text) => log.push(text),
+  });
+  server.scheduler.holdUntil = 0;
+  await new Promise<void>((resolve) => server.server.listen(0, "127.0.0.1", resolve));
+  try {
+    await body((server.server.address() as net.AddressInfo).port, log, server);
+  } finally {
+    server.stopping = true;
+    server.server.close();
+    removeDirectory(directory);
+  }
+}
+
+/** The scheduler tells a queued job, its waiting notices and status what it waits for. */
+async function checkWaitForMessages(assert: AssertModule): Promise<void> {
+  await withServer(async (port, _log, server) => {
+    const first = await connectRaw(port);
+    first.send(registration("A", 1, process.pid));
+    const granted = await first.until("granted");
+    assert.strictEqual(
+      first.messages.find((m) => m.type === "queued")?.waitFor,
+      undefined,
+      "an empty queue: no reason",
+    );
+    const running = server.records.get(Number(granted?.id));
+    assert.ok(running);
+    running.estimate = times(60, 300);
+    const second = await connectRaw(port);
+    second.send(registration("B", 1, process.pid));
+    const queued = await second.until("queued");
+    assert.strictEqual(queued?.waitFor, "slots", "the queued answer says it");
+    const ask = await connectRaw(port);
+    ask.send({ type: "status" });
+    const status = await ask.until("status");
+    const waiting = (status?.waiting as { waitFor?: string }[] | undefined) ?? [];
+    assert.deepStrictEqual(
+      waiting.map((j) => j.waitFor),
+      ["slots"],
+      "and status",
+    );
+    const ran = (status?.running as { grantedAt: number; latestEndAt?: number }[] | undefined) ?? [];
+    assert.strictEqual(ran[0]?.latestEndAt, (ran[0]?.grantedAt ?? 0) + 300000, "the latest end of the running job");
+    // A new reason alone is told to the waiting client: the pause changes neither its place nor its start
+    const pauser = await connectRaw(port);
+    pauser.send({ type: "pause" });
+    await pauser.until("pause-result");
+    await until("the waiting client is told its new reason", () =>
+      second.messages.some((m) => m.type === "waiting" && m.waitFor === "paused"),
+    );
+    [first, second, ask, pauser].forEach((client) => client.close());
+  });
+}
+
+/** status --here: a job of the worktree, by its worktree, or for an older client by its directory inside it. */
+function checkHere(assert: AssertModule): void {
+  const root = process.platform === "win32" ? "X:\\__dummy__" : "/__dummy__";
+  const here = worktreeKey(path.join(root, "repo"));
+  const at = (worktree: string | undefined, cwd: string): StatusJob =>
+    ({ worktree: worktree === undefined ? undefined : worktreeKey(worktree), cwd }) as unknown as StatusJob;
+  const inside = path.join(root, "repo", "src");
+  assert.strictEqual(isJobHere(at(path.join(root, "repo"), inside), here), true, "its worktree");
+  assert.strictEqual(
+    isJobHere(at(path.join(root, "repo", "tmp", "worktree", "x"), inside), here),
+    false,
+    "a worktree inside",
+  );
+  assert.strictEqual(isJobHere(at(path.join(root, "repo2"), path.join(root, "repo2")), here), false, "a sibling");
+  assert.strictEqual(isJobHere(at(undefined, inside), here), true, "an older client: its directory is inside");
+  assert.strictEqual(isJobHere(at(undefined, path.join(root, "repo2")), here), false, "not a prefix match");
+  // A newer scheduler fills in an older client's directory as its worktree, and says so
+  const filled = { ...at(inside, inside), worktreeFromCwd: true } as StatusJob;
+  assert.strictEqual(isJobHere(filled, here), true, "an older client below the worktree, through a newer scheduler");
+  assert.strictEqual(isJobHere(at(inside, inside), here), false, "a job whose own worktree is the subdirectory");
+  const parsed = parseArgs(["status", "--here", "--json"]);
+  assert.deepStrictEqual([parsed.here, parsed.json], [true, true], "--here goes with --json");
+}
+
+/** What `body` writes to stderr, kept off the console. */
+async function stderrOf(body: () => Promise<void>): Promise<string> {
+  const write = process.stderr.write;
+  let text = "";
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    text += String(chunk);
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    await body();
+  } finally {
+    process.stderr.write = write;
+  }
+  return text;
+}
+
+/**
+ * The digest at the queue and the one at the start: one line when they differ, nothing when they match or either is
+ * missing, and the command starts without waiting for the digest. A GPU holder takes none.
+ */
+async function checkWorktreeChange(assert: AssertModule): Promise<void> {
+  const options: RunOptions = {
+    port: 0,
+    slots: 2,
+    memoryMb: 1024,
+    policy: "hrrn",
+    command: "dotnet build X",
+    commandWords: null,
+    weight: 1,
+    gpu: false,
+    shell: "",
+    timeoutMinutes: 0,
+    after: 0,
+    keepIfFailed: false,
+  };
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  process.env.JOB_QUEUE_CHECK_SESSION = "a session";
+  try {
+    // slow: the digest at the queue comes only after the grant; off: GSHARP_JOB_QUEUE_DIGEST=0
+    const cases: {
+      digests: (string | undefined)[];
+      inGpuLock?: boolean;
+      told: boolean;
+      calls: number;
+      slow?: boolean;
+      off?: boolean;
+    }[] = [
+      { digests: ["a", "b"], told: true, calls: 2 },
+      { digests: ["a", "a"], told: false, calls: 2 },
+      { digests: ["a", undefined], told: false, calls: 2 },
+      { digests: [undefined, "b"], told: false, calls: 2 },
+      { digests: ["a", "b"], inGpuLock: true, told: false, calls: 0 },
+      { digests: ["a", "b"], slow: true, told: false, calls: 1 },
+      { digests: ["a", "b"], off: true, told: false, calls: 0 },
+    ];
+    for (const [index, { digests, inGpuLock = false, told, calls: expected, slow, off }] of cases.entries()) {
+      const calls: number[] = [];
+      if (off === true) {
+        process.env[DigestVariable] = "0";
+      }
+      // The digest at the start (or with slow, the one at the queue) resolves only once the command has started
+      let release = (): void => {};
+      const started = new Promise<void>((resolve) => (release = resolve));
+      const plugin: QueuePlugin = {
+        name: "digests",
+        apiVersion: PluginApiVersion,
+        volatileEnv: () => ["JOB_QUEUE_CHECK_SESSION"],
+        contentDigest: async () => {
+          const call = calls.push(calls.length) - 1;
+          if (call === (slow === true ? 0 : 1)) {
+            await started;
+          }
+          const digest = digests[call];
+          return digest === undefined ? undefined : { digest, ms: 1 };
+        },
+      };
+      const plugins = new PluginHost([plugin], [undefined], process.cwd(), () => {});
+      const host = new FakeHost();
+      const text = await stderrOf(async () => {
+        void new QueuedRun(
+          { ...options },
+          { weight: 1, pin: null, before: null },
+          inGpuLock,
+          false,
+          host,
+          plugins,
+        ).run();
+        await until("the client connects", () => host.connects.length === 1);
+        host.connects[0]?.resolve(await scheduler.connect());
+        await until("the registration arrives", () => (scheduler.accepted[index]?.messages.length ?? 0) > 0);
+        const accepted = scheduler.accepted[index];
+        if (accepted === undefined) {
+          throw new Error("no connection");
+        }
+        // The registration carries the environment's hash, without the variables the plugins name
+        const keys = (accepted.messages[0]?.envKeys ?? {}) as Record<string, string>;
+        assert.match(String(accepted.messages[0]?.envHash), /^[0-9a-f]{12}$/);
+        assert.ok(Object.keys(keys).length > 0, "the variables by name");
+        assert.ok(!("JOB_QUEUE_CHECK_SESSION" in keys), "a plugin's volatile variable is left out");
+        FakeScheduler.send(accepted, { type: "granted", id: 18739, cpus: 1, capacity: 2, protocol: ProtocolVersion });
+        await until("the command starts before the digest", () => host.commands.length === 1);
+        release();
+        if (expected === 2) {
+          await until("both digests were taken", () => calls.length === 2);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        delete process.env[DigestVariable];
+        accepted.socket.destroy();
+        // The client notices the drop and tries to come back (to a host that never connects): keep its note here
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+      const line = /j8739: the worktree changed after it was queued \(\d\d:\d\d\); it builds what is there now/;
+      assert.strictEqual(line.test(text), told, `case ${index}: the notice`);
+      // A GPU holder takes none (its turn did), nor does a job whose first digest had not come when it was granted
+      assert.strictEqual(calls.length, expected, `case ${index}: the digests taken`);
+    }
+  } finally {
+    delete process.env.JOB_QUEUE_CHECK_SESSION;
+    scheduler.close();
+  }
+}
+
+/** The hash per name and in all: values change it, the volatile names and the given ones do not. */
+function checkEnvironmentHash(assert: AssertModule): void {
+  const env = { PATH: "/bin", HOME: "/home/x", [JobVariable]: "12", SHLVL: "2", CHAT: "a" };
+  const base = environmentHash(env, [...VolatileEnv, "CHAT"]);
+  assert.deepStrictEqual(Object.keys(base.keys), ["HOME", "PATH"], "sorted, without the volatile names");
+  assert.match(base.hash, /^[0-9a-f]{12}$/);
+  assert.ok(
+    Object.values(base.keys).every((value) => /^[0-9a-f]{8}$/.test(value)),
+    "no value is sent",
+  );
+  const same = environmentHash({ ...env, [JobVariable]: "13", SHLVL: "3", CHAT: "b" }, [...VolatileEnv, "CHAT"]);
+  assert.strictEqual(same.hash, base.hash, "the left-out variables change nothing");
+  const other = environmentHash({ ...env, PATH: "/usr/bin" }, [...VolatileEnv, "CHAT"]);
+  assert.notStrictEqual(other.hash, base.hash, "a value changes the hash");
+  assert.deepStrictEqual(differingNames(base.keys, other.keys), ["PATH"]);
+  const added = environmentHash({ ...env, EXTRA: "1" }, [...VolatileEnv, "CHAT"]);
+  assert.deepStrictEqual(differingNames(base.keys, added.keys), ["EXTRA"], "a name in one of them only");
+  if (process.platform === "win32") {
+    const mixed = environmentHash({ Path: "x", ComSpec: "c", shlvl: "1" }, VolatileEnv);
+    const upper = environmentHash({ PATH: "x", COMSPEC: "c" }, VolatileEnv);
+    assert.deepStrictEqual(Object.keys(mixed.keys), ["COMSPEC", "PATH"], "names without case on Windows");
+    assert.strictEqual(mixed.hash, upper.hash, "Path and PATH are one variable");
+    assert.deepStrictEqual(differingNames(mixed.keys, upper.keys), []);
+  }
+}
+
+/** The log line of a queued job: cwd, worktree and env; the next run of the same command names what differs. */
+async function checkEnvironmentLog(assert: AssertModule): Promise<void> {
+  await withServer(async (port, log) => {
+    const root = process.platform === "win32" ? "X:\\__dummy__" : "/__dummy__";
+    const queue = async (command: string, envKeys: unknown, worktree = path.join(root, "a")): Promise<void> => {
+      const client = await connectRaw(port);
+      client.send({ ...registration(command, 1, process.pid), cwd: "here", worktree, envHash: "abc", envKeys });
+      await client.until("queued");
+      client.close();
+    };
+    await queue("A", { PATH: "11111111", HOME: "22222222" });
+    assert.match(log.find((line) => line.startsWith("queue")) ?? "", /pid \d+ cwd here worktree \S+ env abc: A$/);
+    await queue("A", { PATH: "33333333", HOME: "22222222", EXTRA: "44444444" });
+    const differs = log.filter((line) => line.includes("env differs"));
+    assert.strictEqual(differs.length, 1);
+    assert.match(differs[0] ?? "", /^j\d{4}: env differs from j\d{4} \(same command and worktree\): EXTRA, PATH$/);
+    await queue("A", { PATH: "33333333", HOME: "22222222", EXTRA: "44444444" });
+    await queue("B", { PATH: "55555555" });
+    await queue("A", { PATH: "66666666" }, path.join(root, "b"));
+    assert.strictEqual(
+      log.filter((line) => line.includes("env differs")).length,
+      1,
+      "the same, another command, or the same command in another worktree",
+    );
+    await queue("C", { PATH: "not a hash" });
+    assert.match(log.filter((line) => line.startsWith("queue")).at(-1) ?? "", /worktree \S+: C$/, "malformed: no env");
+    // A worktree the client sent is its own; none sent (an older client): its directory, marked
+    const older = await connectRaw(port);
+    older.send({ ...registration("D", 1, process.pid), cwd: "here" });
+    await older.until("queued");
+    const ask = await connectRaw(port);
+    ask.send({ type: "status" });
+    const status = await ask.until("status");
+    const jobs = [...((status?.running as StatusJob[]) ?? []), ...((status?.waiting as StatusJob[]) ?? [])];
+    assert.deepStrictEqual(
+      ["A", "D"].map((command) => jobs.find((j) => j.command === command)?.worktreeFromCwd),
+      [undefined, true],
+    );
+    [older, ask].forEach((client) => client.close());
+  });
+}
+
+/**
+ * The client tells a new wait reason at once when the last notice is ReasonNoticeMs old, else once that much has
+ * passed, if it still holds then: a reason that flips back and forth prints no line for each flip.
+ */
+async function checkReasonNotices(assert: AssertModule): Promise<void> {
+  const realNow = Date.now;
+  let clock = realNow();
+  Date.now = () => clock;
+  // What the client prints, as it prints it (its timer prints between the steps below)
+  let text = "";
+  const write = process.stderr.write;
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    text += String(chunk);
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    const options: RunOptions = {
+      port: 0,
+      slots: 2,
+      memoryMb: 1024,
+      policy: "hrrn",
+      command: "dotnet build X",
+      commandWords: null,
+      weight: 1,
+      gpu: false,
+      shell: "",
+      timeoutMinutes: 0,
+      after: 0,
+      keepIfFailed: false,
+    };
+    // The messages go to the client's handler directly, each at the time the clock says: no socket, no race with the
+    // clock; the only wait is for its own timer (a reason kept for later), on what it printed or its pending timer
+    const run = new QueuedRun(options, { weight: 1, pin: null, before: null }, false, false, new FakeHost(), undefined);
+    const client = run as unknown as { onMessage(message: Incoming): void; laterTimer: unknown };
+    const start = clock;
+    const outlook = { id: 9, state: "waiting", ahead: 1, position: 2, startAt: start + 60000, endAt: start + 120000 };
+    const notices = (): string[] => text.split(/\r?\n/).filter((line) => line.includes("waiting j0009"));
+    const deliver = (type: string, waitFor: string, at: number, extra: object = {}): void => {
+      clock = start + at;
+      client.onMessage({ type, ...outlook, waitFor, used: 2, capacity: 2, ...extra });
+    };
+    const L = ReasonNoticeMs;
+    deliver("queued", "slots", 0);
+    // Too soon, and back before the limit: nothing is told, then or later (the timer ends without a notice)
+    deliver("waiting", "in-line", L - 10);
+    deliver("waiting", "slots", L - 10);
+    await until("the timer of the dropped reason has run", () => client.laterTimer === null);
+    // The limit has passed since the last notice: told at once (at 35 s, where a notice left over would come at 30 s)
+    deliver("waiting", "in-line", L + 5000);
+    deliver("waiting", "slots", 2 * L + 5100);
+    // Too soon: told once the limit has passed, as it still holds then
+    deliver("waiting", "in-line", 3 * L + 5090);
+    clock = start + 3 * L + 5200;
+    await until("the kept reason is told", () => notices().length === 3);
+    // A notice in between (a new place) tells the latest reason: the change kept for later is dropped with its timer
+    deliver("waiting", "slots", 4 * L + 5190);
+    deliver("waiting", "memory", 4 * L + 5195, { position: 1 });
+    assert.strictEqual(client.laterTimer, null, "no reason is kept once a notice told the latest");
+    assert.deepStrictEqual(
+      notices().map(
+        (line) =>
+          `${/\((\d+)s\)/.exec(line)?.[1]} ${/waits for (CPU slots|the jobs that go first|the memory budget of the test runs)$/.exec(line)?.[1]}`,
+      ),
+      [
+        "35 the jobs that go first",
+        "65 CPU slots",
+        "95 the jobs that go first",
+        "125 the memory budget of the test runs",
+      ],
+      JSON.stringify(text),
+    );
+  } finally {
+    process.stderr.write = write;
+    Date.now = realNow;
+  }
+}
+
+/** exitsOf: the exit codes and what each client said; one that does not end within the limit is "no exit". */
+async function checkExitsOf(assert: AssertModule): Promise<void> {
+  const ended = { done: Promise.resolve(4), said: () => "cancelled" } as unknown as Client;
+  const stuck = { done: new Promise<number>(() => {}), said: () => "still waiting" } as unknown as Client;
+  const started = Date.now();
+  const { codes, said } = await exitsOf([ended, stuck], 50);
+  assert.ok(Date.now() - started < 5000, "within the limit, not when the stuck client ends");
+  assert.deepStrictEqual(codes, [4, "no exit"]);
+  assert.deepStrictEqual(said.split("\n"), ["client 0 (exit 4): cancelled", "client 1 (exit no exit): still waiting"]);
+}
+
+export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
+  checkWaitFor,
+  checkWaitForBackfill,
+  checkDescribeWaitFor,
+  checkLatestEnd,
+  checkWaitForMessages,
+  checkHere,
+  checkWorktreeChange,
+  checkEnvironmentHash,
+  checkEnvironmentLog,
+  checkReasonNotices,
+  checkExitsOf,
+};
