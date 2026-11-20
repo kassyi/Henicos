@@ -282,7 +282,27 @@ internal static class CooperativeMegaKernelLauncher
         return m;
     }
 
-    private static void PrepareLaunchShape(
+    /// <summary>
+    /// The block size of a cooperative mega-kernel for a transform of <paramref name="transformLength"/> points: the
+    /// smallest candidate, at most <paramref name="largestFitting"/>, with which every block still transforms its rows
+    /// in one batch (<c>transformLength &lt;= 2 * deviceSmCount * candidate</c>), or <paramref name="largestFitting"/>.
+    /// </summary>
+    internal static uint ChooseBlockDim(int transformLength, int deviceSmCount, uint largestFitting,
+        ReadOnlySpan<int> candidates)
+    {
+        var chosen = largestFitting;
+        foreach (var candidate in candidates)
+        {
+            if (candidate < chosen && transformLength <= 2L * deviceSmCount * candidate)
+            {
+                chosen = (uint)candidate;
+            }
+        }
+
+        return chosen;
+    }
+
+    internal static void PrepareLaunchShape(
         GpuWorkspace workspace,
         int requiredLen,
         Func<IntPtr> resolveFunction,
@@ -293,7 +313,12 @@ internal static class CooperativeMegaKernelLauncher
     {
         var transformLength = TransformLengthFor(requiredLen);
         sharedMemBytes = ComputeMegaKernelSharedMemoryBytes(transformLength);
-        blockDim = ResolveCooperativeBlockDim(workspace, resolveFunction, kernelName, sharedMemBytes);
+        var largestFitting = ResolveCooperativeBlockDim(workspace, resolveFunction, kernelName, sharedMemBytes);
+        var overrideCandidates = CandidateBlockSizesOverride;
+        ReadOnlySpan<int> candidates = overrideCandidates is null
+            ? CooperativeBlockSize.DefaultCandidates
+            : overrideCandidates;
+        blockDim = ChooseBlockDim(transformLength, workspace.DeviceSmCount, largestFitting, candidates);
         gridDim = ComputeClampedGridDim(transformLength, blockDim, workspace.DeviceSmCount);
     }
 

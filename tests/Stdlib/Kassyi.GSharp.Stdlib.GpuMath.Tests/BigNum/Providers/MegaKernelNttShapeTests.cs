@@ -68,6 +68,44 @@ public class MegaKernelNttShapeTests
         Assert.Equal(34048u, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(1 << 25));
     }
 
+    /// <summary>
+    /// The block-size rule by hand: the smallest candidate c, at most the largest that fits, with M &lt;= 2 * SMs * c,
+    /// else the largest that fits.
+    /// </summary>
+    public static TheoryData<int, int, uint, int[], uint> BlockSizeRuleCases() => new()
+    {
+        // 48 SMs: 256 up to 24576 points (2 * 48 * 256, included), 512 up to 49152, 768 up to 73728, then 1024.
+        { 512, 48, 1024, [1024, 768, 512, 256], 256 },
+        { 16384, 48, 1024, [1024, 768, 512, 256], 256 },
+        { 24576, 48, 1024, [1024, 768, 512, 256], 256 },
+        { 32768, 48, 1024, [1024, 768, 512, 256], 512 },
+        { 65536, 48, 1024, [1024, 768, 512, 256], 768 },
+        { 131072, 48, 1024, [1024, 768, 512, 256], 1024 },
+        // The largest that fits caps the choice, and is the fallback.
+        { 131072, 48, 768, [1024, 768, 512, 256], 768 },
+        // 1 SM: 256 up to 512 points, 512 up to 1024, then the largest.
+        { 512, 1, 1024, [1024, 768, 512, 256], 256 },
+        { 1024, 1, 1024, [1024, 768, 512, 256], 512 },
+        { 4096, 1, 1024, [1024, 768, 512, 256], 1024 },
+        // One candidate (a test override): it is also the largest that fits.
+        { 512, 48, 768, [768], 768 },
+    };
+
+    // Every block keeps its rows in one batch while M <= 2 * SMs * c: below that a larger block only waits longer at
+    // each barrier, above it a larger block runs fewer batches.
+    // mutant: CooperativeMegaKernelLauncher.cs ChooseBlockDim `transformLength <= 2L * ...` -> `<` (input 24576)
+    // mutant: `2L * deviceSmCount` -> `1L * deviceSmCount` (input 16384)
+    // mutant: `candidate < chosen` -> `candidate > chosen` (input 512, 48)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(BlockSizeRuleCases))]
+    public void ChooseBlockDim_TransformAndSmCount_IsTheSmallestBlockThatKeepsOneBatch(
+        int transformLength, int smCount, uint largestFitting, int[] candidates, uint expected)
+    {
+        Assert.Equal(expected,
+            CooperativeMegaKernelLauncher.ChooseBlockDim(transformLength, smCount, largestFitting, candidates));
+    }
+
     // A transform up to 1024 points runs as one shared-memory row: above it the six-step split is faster at every
     // block size (measured), at 1024 the single row is faster with blocks of 512 threads or more. No result depends on
     // the value, so only this test notices a change of it.
