@@ -97,6 +97,7 @@ internal static class IrNodeChecks
                                         (isWriteTarget && property.Category == IrCategory.Location),
         IrCall call => call.Method.RefKind != RefKind.None,
         IrConditional conditional => conditional.IsRef,
+        IrSequence sequence => IsLocation(sequence.Value, isWriteTarget),
         _ => false
     };
 

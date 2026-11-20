@@ -51,6 +51,56 @@ public class IrInvariantsTests
     }
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void I3_SequenceWhoseValueIsALocation_IsALocation()
+    {
+        var method = IrTestCases.BuildCase("InVariable");
+        var call = (IrCall)IrTestCases.Result(method);
+        var variable = call.Arguments[0].Value;
+        var sequence = new IrSequence([], [], variable, IrCategory.ReadOnlyLocation, variable.Source);
+
+        Assert.Empty(IrInvariants.Verify(WithResult(method, ReplaceArgument(call, 0, sequence)), Compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void I3_SequenceWhoseValueIsAValue_IsNotALocation()
+    {
+        var method = IrTestCases.BuildCase("InNonVariable");
+        var call = (IrCall)IrTestCases.Result(method);
+        var sum = call.Arguments[0].Value;
+        var sequence = new IrSequence([], [], sum, IrCategory.ReadOnlyLocation, sum.Source);
+
+        AssertViolates("I3", WithResult(method, ReplaceArgument(call, 0, sequence)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void I10_TemporaryDeclaredInASequence_IsAccepted()
+    {
+        var method = IrTestCases.BuildCase("Literal");
+        var constant = IrTestCases.Result(method);
+        var temporary = IrVariable.CreateTemporary(constant.Type, RefKind.None, "seq", constant.Source);
+        var read = new IrVariableReference(temporary, false, IrCategory.Value, default, constant.Source);
+        var sequence = new IrSequence([temporary], [new IrLocalDeclaration(temporary, constant, constant.Source)],
+            read, IrCategory.Value, constant.Source);
+
+        Assert.Empty(IrInvariants.Verify(WithResult(method, sequence), Compilation));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void I10_TemporaryDeclaredOutsideASequence_IsRejected()
+    {
+        var method = IrTestCases.BuildCase("Literal");
+        var constant = IrTestCases.Result(method);
+        var temporary = IrVariable.CreateTemporary(constant.Type, RefKind.None, "seq", constant.Source);
+
+        AssertViolates("I10", WithStatement(method, new IrLocalDeclaration(temporary, constant, constant.Source),
+            IrTestCases.Statement(method)));
+    }
+
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void I4_PointerCategoryOfAnIntegerRead()
     {
