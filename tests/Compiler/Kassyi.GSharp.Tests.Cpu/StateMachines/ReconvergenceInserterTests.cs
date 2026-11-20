@@ -66,6 +66,25 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         Assert.Equal(new[] { "Mark(17)" }, lowered);
     }
 
+    // A goto loop whose last statement is a block closes inside it, right after the statement with the last goto back
+    // to its label; one whose block holds another goto loop open across that place, or whose last statement is an if,
+    // closes after its last statement (the region of the if ends right before it, with no user call between)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("GotoLoopInBlockKernel", "Mark(28)")]
+    [InlineData("GotoLoopInBlockAroundInnerLoopKernel", "Mark(30)", "Mark(31)")]
+    [InlineData("GotoLoopInIfKernel", "Mark(32)")]
+    public void Insert_GotoLoopEndingInBlock_ClosesAfterTheLastGotoInTheBlock(string kernel, params string[] expected)
+    {
+        var (lowered, _) = LowerAndAnalyze(kernel);
+        Assert.Equal(expected, lowered);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_GotoLoopEndingInBlock_EmitsArriveInsideTheBlock() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopInBlock.cs");
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("GotoCaseJoinKernel", "Mark(20)", "Mark(21)")]

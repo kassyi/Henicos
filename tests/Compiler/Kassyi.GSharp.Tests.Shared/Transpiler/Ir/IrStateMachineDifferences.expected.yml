@@ -1472,6 +1472,9 @@
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoInsideFirstStatementOfRangeKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLabelJoinKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopAtKernelEndKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopEndingInBlockKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopEndingInBlockWithTwoGotosKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopEndingInNestedBlockKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopExitAfterSplitKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopInsideLabeledStatementKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpActiveMaskDifferentialKernels.cu.cs", method: "WarpActiveMaskDifferentialKernels.GotoLoopOverNestedBlockKernel", status: "Reconvergence", count: 1}
@@ -5121,6 +5124,9 @@
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoCaseJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLabelJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLoopAtKernelEndKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLoopInBlockAroundInnerLoopKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLoopInBlockKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoLoopInIfKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.GotoOutOfUniformIfKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.IfElseKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.IfKernel", status: "Reconvergence", count: 1}
@@ -5135,6 +5141,7 @@
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.UniformSwitchGotoCaseNoJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceCases.cs", method: "ReconvergenceCases.WhenSwitchNoJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceGotoLoop.cs", method: "ReconvergenceGotoLoop.BackwardGotoLoopKernel", status: "Reconvergence", count: 1}
+- {file: "TestCases/StateMachines/ReconvergenceGotoLoopInBlock.cs", method: "ReconvergenceGotoLoopInBlock.GotoLoopInNestedBlockKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceSwitchJoin.cs", method: "ReconvergenceSwitchJoin.GotoCaseJoinKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/ReconvergenceSwitchJoinChain.cs", method: "ReconvergenceSwitchJoinChain.GotoCaseChainKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/StateMachines/RegionCounterIterator.cs", method: "RegionCounterIterator.Range", status: "NoStateMachine", count: 1}

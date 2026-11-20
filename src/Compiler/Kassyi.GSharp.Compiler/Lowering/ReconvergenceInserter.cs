@@ -53,6 +53,9 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     // The loops and switch statements the statement being rewritten is inside, outermost first
     private readonly ImmutableArray<JumpTarget>.Builder _targets = ImmutableArray.CreateBuilder<JumpTarget>();
 
+    // The goto loops that close inside the last statement, with the block of the level being rewritten, innermost last
+    private readonly ImmutableArray<PendingClose>.Builder _pendingCloses = ImmutableArray.CreateBuilder<PendingClose>();
+
     private ReconvergenceInserter(SemanticModel? model, UniformityAnalysis? uniformity,
         MethodDeclarationSyntax? declaration, bool isDeviceFunction, bool stackForm)
     {
@@ -150,7 +153,15 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             }
         }
 
-        // The ranges this list opened; a range closes in the list that opened it, never in a nested one
+        // The goto loop that closes in this list or passes through it to a nested block (GotoLoopTailPlanner)
+        var pending = _pendingCloses.Count > 0 &&
+                      statements.Count > 0 &&
+                      statements[0].Parent == _pendingCloses[_pendingCloses.Count - 1].Owner
+            ? _pendingCloses[_pendingCloses.Count - 1]
+            : null;
+
+        // The ranges this list opened; a range closes in the list that opened it, or a goto loop in a block of its last
+        // statement (pending)
         var ranges = new List<Region>(plan.Regions.Length);
         for (var i = 0; i < statements.Count; i++)
         {
@@ -198,7 +209,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 {
                     if (plan.Regions[p].First == i)
                     {
-                        OpenJumpRegion(rewritten, ranges, statements, i, plan.Regions[p], includesFirstLabels: true);
+                        OpenJumpRegion(rewritten, ranges, statements, plan, plan.Regions[p],
+                            includesFirstLabels: true);
                     }
                 }
 
@@ -212,21 +224,45 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 {
                     if (plan.Regions[p].First == i)
                     {
-                        OpenJumpRegion(rewritten, ranges, statements, i, plan.Regions[p], includesFirstLabels: false);
+                        OpenJumpRegion(rewritten, ranges, statements, plan, plan.Regions[p],
+                            includesFirstLabels: false);
                     }
                 }
             }
 
             var endsThread = isKernelBody && i == statements.Count - 1 && ranges.Count == 0;
+            var pushed = PushPendingCloses(ranges, statements, i, pending);
             AddRewritten(rewritten, statement, endsThread);
+            for (var p = 0; p < pushed; p++)
+            {
+                _pendingCloses.RemoveAt(_pendingCloses.Count - 1);
+            }
 
             for (var r = ranges.Count - 1; r >= 0; r--)
             {
                 if (ranges[r].JumpRegion is { Kind: JumpRegionKind.GotoLoop, Last: var last } jumpRegion && last == i)
                 {
-                    CloseRange(rewritten, ranges[r], statements[jumpRegion.First]);
+                    if (ranges[r].InnerClose.IsDefaultOrEmpty)
+                    {
+                        CloseRange(rewritten, ranges[r], statements[jumpRegion.First]);
+                    }
+                    else if (_open
+                             .AsStackEnumerable()
+                             .Any(ranges[r], static (open, range) => ReferenceEquals(open, range)))
+                    {
+                        throw new InvalidOperationException(
+                            "A goto loop that closes inside its last statement is still open after it.");
+                    }
+
                     ranges.RemoveAt(r);
                 }
+            }
+
+            if (pending != null &&
+                i == pending.Region.InnerClose[pending.Level] &&
+                pending.Level == pending.Region.InnerClose.Length - 1)
+            {
+                CloseRange(rewritten, pending.Region, GetLoopStart(pending.Region));
             }
         }
 
@@ -319,15 +355,69 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         ImmutableArray<StatementSyntax>.Builder rewritten,
         List<Region> ranges,
         SyntaxList<StatementSyntax> statements,
-        int index,
+        JumpRegionPlan plan,
         JumpRegion region,
         bool includesFirstLabels)
     {
-        var range = new Region(RegionCount++, statements[index], region, statements, includesFirstLabels);
+        var innerClose = region.Kind == JumpRegionKind.GotoLoop
+            ? GotoLoopTailPlanner.FindInnerClose(statements, plan, region, BarrierHelper.ContainsPhaseBarrier)
+            : ImmutableArray<int>.Empty;
+        var range = new Region(
+            RegionCount++,
+            statements[region.First],
+            region,
+            statements,
+            includesFirstLabels,
+            InnerClose: innerClose);
         _open.Add(range);
         ranges.Add(range);
         rewritten.Add(CreateRegionCall(RegionCall.Enter, range.Site));
     }
+
+    // Before statements[index] is rewritten: the goto loop of this list that closes inside it, and the next level of the
+    // pending loop that passes through it. Returns how many levels it pushed, which the caller pops after the statement
+    private int PushPendingCloses(
+        List<Region> ranges,
+        SyntaxList<StatementSyntax> statements,
+        int index,
+        PendingClose? pending)
+    {
+        var pushed = 0;
+        if (pending != null &&
+            index == pending.Region.InnerClose[pending.Level] &&
+            pending.Level < pending.Region.InnerClose.Length - 1)
+        {
+            _pendingCloses.Add(pending with
+            {
+                Level = pending.Level + 1,
+                Owner = GetInnerBlock(statements[index])
+            });
+            pushed++;
+        }
+
+        foreach (var range in ranges)
+        {
+            if (range.JumpRegion is { Kind: JumpRegionKind.GotoLoop, Last: var last } &&
+                last == index &&
+                !range.InnerClose.IsDefaultOrEmpty)
+            {
+                _pendingCloses.Add(new PendingClose(range, 0, GetInnerBlock(statements[index])));
+                pushed++;
+            }
+        }
+
+        return pushed;
+    }
+
+    private static BlockSyntax GetInnerBlock(StatementSyntax statement) =>
+        GotoLoopTailPlanner.GetBlock(statement)
+        ?? throw new InvalidOperationException("A goto loop closes inside a statement that is not a block.");
+
+    // The first statement of a goto loop, whose place names the loop's region in the messages
+    private static StatementSyntax GetLoopStart(Region range) =>
+        range.JumpRegion is { } jumpRegion
+            ? range.EnclosingStatements[jumpRegion.First]
+            : throw new InvalidOperationException("A pending goto loop close has no jump region.");
 
     // __gsharp_ReconvergeJoin_<site>: ; (for ForwardRange) and __gsharp_warp_reconverge_arrive(...); where a jump
     // region ends. The statements inside have closed their own regions, so the range is the innermost open region
@@ -983,7 +1073,12 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         bool IncludesFirstLabels = false,
         SwitchJoin? SwitchJoin = null,
         SwitchStatementSyntax? OwnerSwitch = null,
-        SwitchJoinPlan? SwitchJoinPlan = null);
+        SwitchJoinPlan? SwitchJoinPlan = null,
+        ImmutableArray<int> InnerClose = default);
+
+    // A goto loop that closes inside a block of its last statement (Region.InnerClose): Owner is the block of the level
+    // Level, whose statement Region.InnerClose[Level] holds the close or the next level
+    private sealed record PendingClose(Region Region, int Level, BlockSyntax Owner);
 
     private sealed record SwitchSectionJoinState(
         SwitchStatementSyntax SwitchStatement,

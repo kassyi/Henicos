@@ -1108,4 +1108,80 @@ public class WarpActiveMaskDifferentialTests
                 .Concat(Enumerable.Range(0, 32).Select(static t => (t & 1) == 1 ? 0u : 1u + (uint)((t >> 1) & 1)))
                 .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
                 .ToArray());
+
+    // The lanes that take the goto ((t & 3) != 0) write slots 1 and 2 on their own; every lane meets right after the if
+    // that holds the goto, inside the block (slot 3), as on the GPU. n is 3 for them, 0 for the others
+    private static uint[] GotoLoopEndingInBlockExpected(int allLaneSlots) =>
+        PerLane(32, static _ => true, 0xFFFFFFFFu)
+            .Concat(PerLane(32, static t => (t & 3) != 0, 0xEEEEEEEEu))
+            .Concat(PerLane(32, static t => (t & 3) != 0, 0xEEEEEEEEu))
+            .Concat(Enumerable.Range(0, allLaneSlots).SelectMany(static _ => PerLane(32, static _ => true, 0xFFFFFFFFu)))
+            .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) != 0 ? 3u : 0u))
+            .ToArray();
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ActiveMask_GotoLoopEndingInBlock_ReconvergesInsideTheBlock() =>
+        RunOnEveryPath(192,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopEndingInBlockKernel(
+                output, blockDimX: 32),
+            GotoLoopEndingInBlockExpected(2));
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopEndingInNestedBlock_ReconvergesInsideTheInnerBlock() =>
+        RunOnEveryPath(224,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopEndingInNestedBlockKernel(
+                output, blockDimX: 32),
+            GotoLoopEndingInBlockExpected(3));
+
+    // The lanes with (t & 3) == 1 (B) take the first goto, those with (t & 3) == 2 (C) the second, the others (A) none.
+    // Between the two gotos the loop has not ended: A and C pass it together the first time (0xDDDDDDDD), B and C
+    // alone the second time. Every lane meets after the second goto (slot 4). Slot 1 is not compared: B and C come back
+    // to L1 by different backward gotos and meet there on CUDA (0x66666666) but not on the CPU paths, a separate
+    // divergence
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopEndingInBlockWithTwoGotos_ReconvergesAfterTheLastGoto() =>
+        RunOnEveryPathIgnoring(224,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopEndingInBlockWithTwoGotosKernel(
+                output, blockDimX: 32),
+            PerLane(32, static _ => true, 0xFFFFFFFFu)
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) switch
+                {
+                    1 => 0x22222222u,
+                    2 => 0x44444444u,
+                    _ => 0u
+                }))
+                .Concat(PerLane(32, static _ => false, 0u))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) switch
+                {
+                    1 => 0x22222222u,
+                    2 => 0x44444444u,
+                    _ => 0xDDDDDDDDu
+                }))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) is 1 or 2 ? 2u : 0u))
+                .ToArray(),
+            ignoredFrom: 32,
+            ignoredTo: 64);
+
+    // RunOnEveryPath with the entries from ignoredFrom up to ignoredTo left out of the comparison
+    private static void RunOnEveryPathIgnoring(int outputLength, Action<uint[]> launch, uint[] expected,
+        int ignoredFrom, int ignoredTo)
+    {
+        foreach (var path in DiffPaths.Available)
+        {
+            path.Preflight?.Invoke();
+            var output = new uint[outputLength];
+            path.Run(() => launch(output));
+            for (int i = 0; i < outputLength; i++)
+            {
+                Assert.True(
+                    (i >= ignoredFrom && i < ignoredTo) || output[i] == expected[i],
+                    $"{path.Name}: entry {i} is 0x{output[i]:X8}, expected 0x{expected[i]:X8}; got [{Format(output)}]");
+            }
+        }
+    }
 }
