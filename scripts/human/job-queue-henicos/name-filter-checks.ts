@@ -3,7 +3,7 @@
 
 import type { AssertModule, ClientContext, ShareMode } from "../job-queue/plugin-api.ts";
 import { listCommandOf, listVerdict, nameFilterShare, type ListResult } from "./name-filter.ts";
-import { nameFilterCheck } from "./share-rules.ts";
+import { nameFilterCheck, type DirectoryEntries } from "./share-rules.ts";
 
 const Options = {
   exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
@@ -28,11 +28,25 @@ const Read: readonly [string, string, string][] = [
   ],
   [`${Plain} "FullyQualifiedName=N.C.M"`, "tests/X", "FullyQualifiedName=N.C.M"],
   [`${Plain}="Name~Foo"`, "tests/X", "Name~Foo"],
-  ['dotnet test tests/X/X.csproj --filter "Name~Foo"', "tests/X/X.csproj", "Name~Foo"],
-  ['DiffEngine_Disabled=true dotnet test tests/X --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
-  ['dotnet.exe test tests/X --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
-  ['cd tests && dotnet test X --filter "Name~Foo"', "X", "Name~Foo"],
+  ['dotnet test tests/X/X.csproj --no-build --filter "Name~Foo"', "tests/X/X.csproj", "Name~Foo"],
+  ['DiffEngine_Disabled=true dotnet test tests/X --no-build --filter "Name~Foo" -v n --nologo', "tests/X", "Name~Foo"],
+  ['dotnet.exe test tests/X --no-build --filter "Name~Foo" -nodeReuse:false', "tests/X", "Name~Foo"],
+  [`${Plain} "Name~Foo"; echo done`, "tests/X", "Name~Foo"],
+  [`${Plain} "Name~Foo" # rerun`, "tests/X", "Name~Foo"],
 ];
+
+/** The directories the checks know: one project, a solution beside it, two projects, no project (others: missing). */
+const Entries: DirectoryEntries = (directory) => {
+  const name = directory.replaceAll("\\", "/");
+  const known: Record<string, string[]> = {
+    "tests/X": ["X.csproj", "Program.cs"],
+    "tests/Sln": ["X.csproj", "All.slnx"],
+    "tests/Two": ["A.csproj", "B.csproj"],
+    "tests/None": ["a.cs"],
+  };
+  const key = Object.keys(known).find((each) => name.endsWith(`/${each}`));
+  return key === undefined ? null : (known[key] ?? null);
+};
 
 /** Commands that stay with `shareOf`: a negated or mixed filter, a form that is not one project, anything unread. */
 const NotRead: readonly string[] = [
@@ -47,6 +61,34 @@ const NotRead: readonly string[] = [
   `${Plain} ""`,
   `${Plain} "Name~A" --filter "Name~B"`,
   "dotnet test tests/X --no-build",
+  // Without --no-build the run builds inside the turn, after the list read the old assembly
+  'dotnet test tests/X --filter "Name~Foo"',
+  `dotnet test tests/X --filter "Name~Foo"; echo done`,
+  `dotnet test tests/X --filter "Name~Foo" # rerun`,
+  // A step or an assignment that changes the directory or the environment the list would read
+  `cd tests && ${Plain} "Name~Foo"`,
+  `export Configuration=Debug; ${Plain} "Name~Foo"`,
+  `Configuration=Debug ${Plain.slice(0)} "Name~Foo"`,
+  `Configuration=Debug DiffEngine_Disabled=true ${Plain} "Name~Foo"`,
+  `Set-Location tests; ${Plain} "Name~Foo"`,
+  `$env:Configuration='Debug'; ${Plain} "Name~Foo"`,
+  `echo hi && ${Plain} "Name~Foo"`,
+  `${Plain} "Name~Foo" && dotnet build tests/X`,
+  `${Plain} "Name~Foo"; rm -rf tests/X/bin`,
+  `${Plain} "Name~Foo" && cp a b`,
+  `$CMD && ${Plain} "Name~Foo"`,
+  `${Plain} "Name~Foo" --logger "$L"`,
+  // A directory that is not exactly one project, braces and globs
+  'dotnet test tests/Sln --no-build --filter "Name~Foo"',
+  'dotnet test tests/Two --no-build --filter "Name~Foo"',
+  'dotnet test tests/None --no-build --filter "Name~Foo"',
+  'dotnet test tests/Missing --no-build --filter "Name~Foo"',
+  `${Plain} "Name~{A,B}"`,
+  `${Plain} "Name~F*o"`,
+  `${Plain} "Name~F?o"`,
+  `${Plain} "Name~F[1]"`,
+  'dotnet test tests/{X,Two} --no-build --filter "Name~Foo"',
+  'dotnet test tests/* --no-build --filter "Name~Foo"',
   'dotnet test bin/Tests.dll --filter "Name~Foo"',
   'dotnet test Henicos.slnx --filter "Name~Foo"',
   'dotnet test Henicos.sln --filter "Name~Foo"',
@@ -97,25 +139,28 @@ const Verdicts: readonly [string, ListResult, ShareMode, number][] = [
 export async function checkNameFilter(assert: AssertModule): Promise<void> {
   const context = contextWith();
   for (const [command, project, filter] of Read) {
-    assert.deepStrictEqual(nameFilterCheck(command, context), { project, filter }, `read: ${command}`);
+    assert.deepStrictEqual(nameFilterCheck(command, context, Entries), { project, filter }, `read: ${command}`);
   }
   for (const command of NotRead) {
-    assert.strictEqual(nameFilterCheck(command, context), null, `not read: ${command}`);
+    assert.strictEqual(nameFilterCheck(command, context, Entries), null, `not read: ${command}`);
   }
-  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release -f net10.0`, context);
+  const carried = nameFilterCheck(`${Plain} "Name~Foo" -c Release -f net10.0`, context, Entries);
   assert.deepStrictEqual(
     carried,
     { project: "tests/X", filter: "Name~Foo", configuration: "Release", framework: "net10.0" },
     "-c and -f are carried to the list",
   );
-  assert.strictEqual(nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "1" })), null);
+  assert.strictEqual(
+    nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "1" }), Entries),
+    null,
+  );
   assert.notStrictEqual(
-    nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "0" })),
+    nameFilterCheck(`${Plain} "Name~Foo"`, contextWith({ GSHARP_CUDA_TRAP_TESTS: "0" }), Entries),
     null,
     "0 leaves the trap tests off",
   );
   assert.strictEqual(
-    nameFilterCheck(`${Plain} "Name~Foo"`, { ...context, options: {} }),
+    nameFilterCheck(`${Plain} "Name~Foo"`, { ...context, options: {} }, Entries),
     null,
     "no share options: not read",
   );
@@ -147,7 +192,7 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     };
   const logging = contextWith({}, (text) => lines.push(text));
   const command = `${Plain} "FullyQualifiedName~PoolStressTests"`;
-  assert.strictEqual(await nameFilterShare(command, logging, answer(NoMatch)), "shared");
+  assert.strictEqual(await nameFilterShare(command, logging, answer(NoMatch), Entries), "shared");
   assert.strictEqual(calls.length, 1, "one list job");
   assert.match(calls[0] as string, /--list-tests --filter "\(FullyQualifiedName~PoolStressTests\)&\(Category=Stress\|/);
   assert.match(
@@ -155,15 +200,15 @@ export async function checkNameFilter(assert: AssertModule): Promise<void> {
     /^GPU share: shared \(list of exclusive tests: 0, /,
     "one line says what was decided",
   );
-  assert.strictEqual(await nameFilterShare(command, logging, answer(Listed)), "exclusive");
+  assert.strictEqual(await nameFilterShare(command, logging, answer(Listed), Entries), "exclusive");
   assert.match(lines[1] as string, /^GPU share: exclusive \(list of exclusive tests: 2, /);
-  assert.strictEqual(await nameFilterShare(command, logging, answer(new Error("spawn failed"))), "exclusive");
+  assert.strictEqual(await nameFilterShare(command, logging, answer(new Error("spawn failed")), Entries), "exclusive");
   assert.match(lines[2] as string, /list failed: spawn failed/);
   const before = calls.length;
   assert.strictEqual(
-    await nameFilterShare('dotnet test tests/X --filter "Name!~A"', logging, answer(NoMatch)),
+    await nameFilterShare('dotnet test tests/X --filter "Name!~A"', logging, answer(NoMatch), Entries),
     undefined,
   );
-  assert.strictEqual(await nameFilterShare("echo hi", logging, answer(NoMatch)), undefined);
+  assert.strictEqual(await nameFilterShare("echo hi", logging, answer(NoMatch), Entries), undefined);
   assert.strictEqual(calls.length, before, "a command that is not read starts no list job");
 }

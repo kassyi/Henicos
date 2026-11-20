@@ -2,6 +2,8 @@
 // out every category that needs the GPU alone (Stress, Benchmark, the real GPU faults of GpuTrap) and that does not
 // turn the trap tests on. Anything this cannot read is exclusive.
 
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   isTrivialStep,
   programOf,
@@ -212,6 +214,37 @@ export interface NameFilterTest {
   framework?: string;
 }
 
+// The test step must start the command (after DiffEngine_Disabled=... alone): any other leading assignment, `export`,
+// `cd` or `$env:` changes what the list would read
+const StartsWithTest = /^\s*(?:DiffEngine_Disabled=\S*\s+)*(?:\S*[\\/])?dotnet(?:\.exe)?\s+test\s/i;
+// Unexpanded bash braces and globs: the shell would run other words than these
+const GlobOrBrace = /[{}*?[\]]/;
+
+/** The names in a directory, or null when it cannot be read; a parameter of nameFilterCheck so that a test stays offline. */
+export type DirectoryEntries = (directory: string) => string[] | null;
+
+function readEntries(directory: string): string[] | null {
+  try {
+    return fs.readdirSync(directory);
+  } catch {
+    // Not a directory (or not readable): not a project the list can name
+    return null;
+  }
+}
+
+/** A .csproj, or a directory that holds exactly one .csproj and no solution (`dotnet test` takes either of them). */
+function isOneProject(project: string, cwd: string, entries: DirectoryEntries): boolean {
+  if (/\.csproj$/i.test(project)) {
+    return true;
+  }
+  const names = entries(path.resolve(cwd, project));
+  return (
+    names !== null &&
+    names.filter((name) => /\.csproj$/i.test(name)).length === 1 &&
+    !names.some((name) => /\.(sln|slnx|slnf)$/i.test(name))
+  );
+}
+
 // A word that can be put back into a command between double quotes in every shell
 const SafeWord = /^[\w.+\-/\\:]+$/;
 // Positive name terms only: no parentheses, `&` or `!`, and no character a shell reads inside double quotes
@@ -239,26 +272,36 @@ const ValueOptions = new Set([
  * selection, and neither name nor set an exclusive variable. A negated term or one on another property is left to
  * `shareOf`: it stays exclusive.
  */
-export function nameFilterCheck(command: string, context: ClientContext): NameFilterTest | null {
+export function nameFilterCheck(
+  command: string,
+  context: ClientContext,
+  entries: DirectoryEntries = readEntries,
+): NameFilterTest | null {
   const options = shareOptions(context.options);
   const line = readCommandLine(command);
   if (options === null || line === null || line.piped) {
     return null;
   }
-  const work = line.steps.filter((step) => !isTrivialStep(step));
-  const step = work[0];
+  // The list runs in the client's directory and environment: a step that changes them (cd, export, an assignment
+  // before the program) or builds would make it read another assembly than the run, so only echo may stand beside the
+  // dotnet test, which must follow nothing but DiffEngine_Disabled=...
+  const tests = line.steps.filter((each) => programOf(each.words[0] ?? "") === "dotnet");
+  const step = tests[0];
   if (
-    work.length !== 1 ||
+    tests.length !== 1 ||
     step === undefined ||
+    !StartsWithTest.test(command) ||
+    line.steps.some((each) => each !== step && programOf(each.words[0] ?? "") !== "echo") ||
     line.steps.some((each, i) => isHidden(each, line.expands[i] === true)) ||
     (context.shell === "cmd" && command.includes("%")) ||
-    programOf(step.words[0] ?? "") !== "dotnet" ||
     step.words[1] !== "test" ||
+    step.words.some((word) => GlobOrBrace.test(word)) ||
     usesExclusiveEnv(command, line.steps, options, context)
   ) {
     return null;
   }
   const words = step.words.slice(2);
+  let noBuild = false;
   const filters: string[] = [];
   const positional: string[] = [];
   let configuration: string | undefined;
@@ -283,13 +326,19 @@ export function nameFilterCheck(command: string, context: ClientContext): NameFi
         return null;
       }
       positional.push(word);
+    } else if (lower === "--no-build") {
+      noBuild = true;
     }
   }
   const filter = filters[0];
   const terms = filter?.split("|").map((term) => term.trim());
+  const project = positional[0];
   if (
+    !noBuild ||
     filters.length !== 1 ||
     positional.length !== 1 ||
+    project === undefined ||
+    !isOneProject(project, context.cwd, entries) ||
     filter === undefined ||
     terms === undefined ||
     !terms.every((term) => NameTerm.test(term)) ||
@@ -298,7 +347,7 @@ export function nameFilterCheck(command: string, context: ClientContext): NameFi
     return null;
   }
   return {
-    project: positional[0] as string,
+    project,
     filter: terms.join("|"),
     ...(configuration !== undefined ? { configuration } : {}),
     ...(framework !== undefined ? { framework } : {}),

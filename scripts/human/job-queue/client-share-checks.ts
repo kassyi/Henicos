@@ -323,7 +323,15 @@ async function checkCheckShare(assert: AssertModule): Promise<void> {
       "exclusive",
       "--gpu-exclusive wins",
     );
-    assert.deepStrictEqual(asked, [], "not asked when classify shared or --gpu-exclusive");
+    assert.strictEqual(
+      await shareOf(
+        hostOf(() => Promise.resolve("shared")),
+        runOptions({ after: 5 }),
+      ),
+      "exclusive",
+      "--after: the predecessor may still build what a list would read",
+    );
+    assert.deepStrictEqual(asked, [], "not asked when classify shared, --gpu-exclusive or --after");
     const second: QueuePlugin = {
       name: "second",
       apiVersion: PluginApiVersion,

@@ -478,7 +478,9 @@ export class QueuedRun {
       return;
     }
     let share = this.classifyShare(plugins);
-    if (share === "exclusive" && this.options.gpuExclusive !== true) {
+    // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
+    // job already waited), so a list now could read the old assembly
+    if (share === "exclusive" && this.options.gpuExclusive !== true && this.options.after === 0) {
       share =
         (await plugins.checkShare(this.options.command, this.contextOf(plugins))) === "shared" ? "shared" : "exclusive";
     }
