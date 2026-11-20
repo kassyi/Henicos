@@ -18,6 +18,7 @@ import {
   type PreparedCommand,
   type QueuePlugin,
   type ResourceRequest,
+  type ShareMode,
   type SplitPlan,
   type StepContext,
   type StepKeys,
@@ -30,6 +31,8 @@ export type BaseClientContext = Omit<ClientContext, "options">;
 
 const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
+/** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
+export const CheckShareTimeoutMs = 180_000;
 export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -106,6 +109,8 @@ export class PluginHost {
   private readonly warn: (message: string) => void;
   private readonly slowHookMs: number;
   private readonly warnedFailures = new Set<string>();
+  /** The time limit of one checkShare call; a field so that a self-test can shorten it. */
+  checkShareTimeoutMs = CheckShareTimeoutMs;
 
   constructor(
     plugins: readonly QueuePlugin[],
@@ -298,6 +303,46 @@ export class PluginHost {
       result.share = "exclusive";
     }
     return result;
+  }
+
+  /**
+   * [first, async] Asks the plugins in order for the share of a GPU turn that classify did not share: the first
+   * "shared" or "exclusive" wins and undefined passes on. A throw, a time out (checkShareTimeoutMs) or any other value
+   * is "exclusive" and ends the asking, with one line saying why. Undefined when no plugin answers.
+   */
+  async checkShare(command: string, context: BaseClientContext): Promise<ShareMode | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.checkShare !== "function") {
+        continue;
+      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const limit = new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`)),
+            this.checkShareTimeoutMs,
+          );
+        });
+        const res = await Promise.race([plugin.checkShare(command, this.contextFor(i, context)), limit]);
+        if (res === undefined) {
+          continue;
+        }
+        if (res === "shared" || res === "exclusive") {
+          return res;
+        }
+        this.warn(`[job-queue] plugin ${plugin.name}.checkShare returned an invalid value; taking the GPU exclusively`);
+        return "exclusive";
+      } catch (error) {
+        this.warn(
+          `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
+        );
+        return "exclusive";
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    return undefined;
   }
 
   /** [first] Returns the first valid StepKeys. */

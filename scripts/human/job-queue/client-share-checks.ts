@@ -224,6 +224,161 @@ async function checkShareRegistrations(assert: AssertModule): Promise<void> {
   }
 }
 
+/**
+ * The asynchronous checkShare hook: asked once, before the first registration, for a turn that classify did not
+ * share and that did not ask for --gpu-exclusive; "shared" makes the registration (and the adopt after a scheduler
+ * restart) ask for "shared"; a throw, a time out, an invalid value or no answer leaves it exclusive; the next plugin
+ * is asked when one answers undefined.
+ */
+async function checkCheckShare(assert: AssertModule): Promise<void> {
+  const scheduler = new FakeScheduler();
+  await scheduler.listen();
+  let index = 0;
+  try {
+    const asked: string[] = [];
+    const warnings: string[] = [];
+    const hostOf = (
+      checkShare: ((command: string) => Promise<unknown>) | undefined,
+      classifyShared = false,
+      extra: QueuePlugin[] = [],
+    ): PluginHost => {
+      const plugin: QueuePlugin = {
+        name: "late",
+        apiVersion: PluginApiVersion,
+        classify: () => (classifyShared ? { share: "shared" } : {}),
+        ...(checkShare !== undefined
+          ? {
+              checkShare: (command: string) => {
+                asked.push(command);
+                return checkShare(command) as Promise<"shared" | undefined>;
+              },
+            }
+          : {}),
+      };
+      const host = new PluginHost(
+        [plugin, ...extra],
+        [undefined, ...extra.map(() => undefined)],
+        process.cwd(),
+        (text) => warnings.push(text),
+      );
+      host.checkShareTimeoutMs = 100;
+      return host;
+    };
+    const shareOf = async (plugins: PluginHost, options: RunOptions = runOptions()): Promise<unknown> => {
+      const run = await startRun(scheduler, index++, options, false, true, plugins);
+      run.drop();
+      return run.registration.share;
+    };
+
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("shared"))), "shared", "checkShare shared");
+    assert.deepStrictEqual(asked, ["dotnet test X --filter Name~Foo"], "asked with the command, once");
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("exclusive"))), "exclusive");
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve(undefined))), "exclusive", "no answer");
+    assert.strictEqual(await shareOf(hostOf(undefined)), "exclusive", "no checkShare hook");
+
+    warnings.length = 0;
+    assert.strictEqual(await shareOf(hostOf(() => Promise.reject(new Error("boom")))), "exclusive", "a rejection");
+    assert.strictEqual(
+      await shareOf(
+        hostOf(() => {
+          throw new Error("sync boom");
+        }),
+      ),
+      "exclusive",
+      "a throw",
+    );
+    assert.strictEqual(await shareOf(hostOf(() => new Promise<never>(() => {}))), "exclusive", "a time out");
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("Shared"))), "exclusive", "an invalid value");
+    assert.strictEqual(warnings.length, 4, "each of the four says why on one line");
+    assert.match(warnings.join("\n"), /checkShare failed: boom.*exclusively/);
+    assert.match(warnings.join("\n"), /timed out after 100 ms/);
+    assert.match(warnings.join("\n"), /invalid value/);
+
+    // The host itself answers "exclusive" (not undefined) for a failure, a time out and an invalid value
+    const direct = { cwd: ".", worktree: ".", configRoot: ".", shell: "bash" as const, env: {}, log: () => {} };
+    for (const hook of [
+      () => Promise.reject(new Error("x")),
+      () => new Promise<never>(() => {}),
+      () => Promise.resolve(true),
+    ]) {
+      assert.strictEqual(await hostOf(hook).checkShare("c", direct), "exclusive");
+    }
+    assert.strictEqual(await hostOf(() => Promise.resolve(undefined)).checkShare("c", direct), undefined);
+    asked.length = 0;
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("shared"), true)), "shared", "classify shared");
+    // A failing or invalid answer ends the asking: a later plugin that would say "shared" is not asked
+    const later: QueuePlugin = {
+      name: "later",
+      apiVersion: PluginApiVersion,
+      checkShare: () => Promise.resolve("shared"),
+    };
+    assert.strictEqual(await shareOf(hostOf(() => Promise.reject(new Error("x")), false, [later])), "exclusive");
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve("Shared"), false, [later])), "exclusive");
+    asked.length = 0;
+    assert.strictEqual(
+      await shareOf(
+        hostOf(() => Promise.resolve("shared")),
+        runOptions({ gpuExclusive: true }),
+      ),
+      "exclusive",
+      "--gpu-exclusive wins",
+    );
+    assert.deepStrictEqual(asked, [], "not asked when classify shared or --gpu-exclusive");
+    const second: QueuePlugin = {
+      name: "second",
+      apiVersion: PluginApiVersion,
+      checkShare: () => Promise.resolve("shared"),
+    };
+    assert.strictEqual(await shareOf(hostOf(() => Promise.resolve(undefined), false, [second])), "shared", "next");
+    const ends: QueuePlugin = { ...second, name: "never", checkShare: () => Promise.reject(new Error("not asked")) };
+    assert.strictEqual(
+      await shareOf(hostOf(() => Promise.resolve("exclusive"), false, [ends])),
+      "exclusive",
+      "the first answer ends the asking",
+    );
+
+    // A holder (the client inside the lock) and a job without a turn are never asked
+    asked.length = 0;
+    const holder = await startRun(
+      scheduler,
+      index++,
+      runOptions({ gpu: false }),
+      true,
+      false,
+      hostOf(() => Promise.resolve("shared")),
+    );
+    holder.drop();
+    assert.deepStrictEqual(asked, [], "a GPU holder is not asked");
+
+    // The adopt after a scheduler restart carries the answer without asking again
+    const turn = await startRun(
+      scheduler,
+      index++,
+      runOptions(),
+      false,
+      true,
+      hostOf(() => Promise.resolve("shared")),
+    );
+    assert.strictEqual(turn.registration.share, "shared");
+    turn.send(granted(60, "shared"));
+    await until("the turn takes the GPU lock", () => turn.host.locks.length === 1);
+    turn.drop();
+    await until("the turn connects again", () => turn.host.connects.length === 2);
+    turn.host.connects[1]?.resolve(await scheduler.connect());
+    const reconnected = scheduler.accepted[index];
+    index++;
+    await until("the re-registration arrives", () => (reconnected?.messages.length ?? 0) > 0);
+    assert.deepStrictEqual(
+      [reconnected?.messages[0]?.type, reconnected?.messages[0]?.share, asked.length],
+      ["adopt", "shared", 1],
+      "adopt keeps the share and does not ask again",
+    );
+    reconnected?.socket.destroy();
+  } finally {
+    scheduler.close();
+  }
+}
+
 /** gpu-lock.js gets --mode shared for a shared lock alone; without --mode it takes every seat. */
 function checkGpuLockArguments(assert: AssertModule): void {
   const options = runOptions({ timeoutMinutes: 5 });
@@ -245,6 +400,7 @@ export const ShareClientChecks: Record<string, (assert: AssertModule) => Promise
   checkTurnShare: (assert) => quietly(() => checkTurnShare(assert)),
   checkOlderSchedulerLock: (assert) => quietly(() => checkOlderSchedulerLock(assert)),
   checkShareRegistrations: (assert) => quietly(() => checkShareRegistrations(assert)),
+  checkCheckShare: (assert) => quietly(() => checkCheckShare(assert)),
   checkGpuExclusiveFlag: async (assert) => checkGpuExclusiveFlag(assert),
   checkGpuLockArguments: async (assert) => checkGpuLockArguments(assert),
 };

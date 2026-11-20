@@ -118,6 +118,7 @@ export class QueuedRun {
       ).unref();
     }
 
+    await this.resolveShare();
     await this.attach();
   }
 
@@ -445,6 +446,45 @@ export class QueuedRun {
     current.on("close", () => this.onClose(current));
   }
 
+  /** What the plugins are told about this job: its directory, worktree and shell (resolved once, git). */
+  private contextOf(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: (this.worktree ??= resolveWorktree(cwd)),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
+  }
+
+  /** The classify answer for the share of this GPU turn: "shared" only when the plugins say exactly that. */
+  private classifyShare(plugins: PluginHost): ShareMode {
+    const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
+    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share === "shared"
+      ? "shared"
+      : "exclusive";
+  }
+
+  /**
+   * Decides the share of a GPU turn before its first registration: classify (sync), and for an answer other than
+   * "shared" without --gpu-exclusive, the plugins' checkShare, which may take a while (a test list through the queue),
+   * so it runs before the connection is made, not during it. Once per run; a re-registration reuses the answer.
+   */
+  private async resolveShare(): Promise<void> {
+    const plugins = this.plugins;
+    if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
+      return;
+    }
+    let share = this.classifyShare(plugins);
+    if (share === "exclusive" && this.options.gpuExclusive !== true) {
+      share =
+        (await plugins.checkShare(this.options.command, this.contextOf(plugins))) === "shared" ? "shared" : "exclusive";
+    }
+    this.share = share;
+  }
+
   /** Registers the job on a new connection: a request while it waits, an adopt once its command runs. */
   private register(current: net.Socket): void {
     const { options, placement } = this;
@@ -457,14 +497,7 @@ export class QueuedRun {
     const keys = hasPlugins
       ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
       : undefined;
-    const context = (plugins: PluginHost): BaseClientContext => ({
-      cwd,
-      worktree,
-      configRoot: plugins.configRoot,
-      shell: CommandShell.resolve(options.shell).name,
-      env: process.env,
-      log: prefix,
-    });
+    const context = (plugins: PluginHost): BaseClientContext => this.contextOf(plugins);
     let memoryMb: number | undefined;
     if (hasPlugins && !this.gpuTurn) {
       if (this.memoryMb === null) {
@@ -479,10 +512,8 @@ export class QueuedRun {
     let share: ShareMode | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
-        const plugins = this.plugins as PluginHost;
-        const resource = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
-        const classified = plugins.classify(options.command, resource, context(plugins));
-        this.share = classified.share === "shared" ? "shared" : "exclusive";
+        // Normally set by resolveShare before the connection; kept for a run that registers without it
+        this.share = this.classifyShare(this.plugins as PluginHost);
       }
       share = this.share;
     }

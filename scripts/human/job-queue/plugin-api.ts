@@ -133,6 +133,14 @@ export interface QueuePlugin {
   /** [first per-field] Classifies whether the command is a test, its memory budget, and its share mode. */
   classify?(command: string, resource: ResourceRequest | null, context: ClientContext): Classification | undefined;
 
+  /**
+   * [first, async] Asked only for a GPU turn that classify did not answer "shared" and that did not ask for --gpu-exclusive,
+   * once, before the turn is first registered: may take a measurement that classify cannot (it runs before the turn
+   * registers, so a slow answer delays the registration). "shared" or "exclusive" ends the asking; undefined passes it
+   * to the next plugin. A throw, a time out or any other value takes the GPU exclusively.
+   */
+  checkShare?(command: string, context: ClientContext): Promise<ShareMode | undefined>;
+
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;
 
