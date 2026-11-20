@@ -67,17 +67,17 @@ internal static class HostLauncherTranspiler
         {
             traits |= KernelStepTraits.UsesStack;
         }
-        else if (effectiveHasContext)
+        else if (effectiveHasContext && methodSymbol.IsCooperativeKernel())
         {
-            if (methodSymbol.IsCooperativeKernel())
-            {
-                traits |= KernelStepTraits.Cooperative;
-            }
+            traits |= KernelStepTraits.Cooperative;
+        }
 
-            if (SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation))
-            {
-                traits |= KernelStepTraits.ReachesWarpShuffle;
-            }
+        // The stack model meets the lanes of a warp in the rounds of the state machine: the same gate before a step,
+        // the same check for a stall (StackThreads.hpp)
+        if (effectiveHasContext &&
+            SuspensionAnalysis.ReachesWarpShuffle(methodSymbol, context.Query.SemanticModel.Compilation))
+        {
+            traits |= KernelStepTraits.ReachesWarpShuffle;
         }
 
         var step = new KernelStep(method, GlobalCppNames.GetKernelName(methodSymbol),

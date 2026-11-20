@@ -88,6 +88,7 @@ public static class MethodTranspiler
         context.Emitter.CurrentMemberName = plan.Symbol?.Name;
         requiredIncludes = context.Emitter.RequiredIncludes;
         context.Emitter.IsSuspendingDeviceFunction = plan.IsSuspendingOn(dialect);
+        context.Emitter.StackWarp = StackWarpEmitter.GetFrame(in plan, dialect);
 
         var lowered = plan.GetLoweredFor(dialect);
         context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
@@ -484,6 +485,7 @@ public static class MethodTranspiler
             }
 
             DynamicSharedMemoryEmitter.WriteKernelPrologue(in plan, ref context);
+            StackWarpEmitter.WriteKernelPrologue(in plan, ref context);
 
             if (plan.HasAutoResult)
             {

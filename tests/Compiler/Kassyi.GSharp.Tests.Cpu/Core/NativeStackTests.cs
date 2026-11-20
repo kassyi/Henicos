@@ -15,7 +15,8 @@ public class NativeStackTests
 
     private static readonly string s_dllPath = DiffPaths.NativeLibraryPath(typeof(NativeStackTests).Assembly);
 
-    private static bool IsStackBuild() =>
+    // Whether this build runs the native kernels on stacks (GSharpNativeBarrierModel=Stack)
+    internal static bool IsStackBuild() =>
         typeof(NativeStackTests).Assembly
             .GetCustomAttributes<AssemblyMetadataAttribute>()
             .Any(static a => string.Equals(a.Key, "GSharpNativeBarrierModel", StringComparison.OrdinalIgnoreCase) &&
@@ -255,7 +256,7 @@ public class NativeStackTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void ShuffleDeviceFallbackKernel_FourThreads_ExecutesViaStateMachineFallback()
+    public void ShuffleDeviceFallbackKernel_FourThreads_SwapsTheLanesOfEachPair()
     {
         DiffPaths.EnsureNativeLibrary(s_dllPath);
         var output = new int[4];
@@ -267,7 +268,7 @@ public class NativeStackTests
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
-    public void SuspendingDeviceKernelSources_StackModelBuild_RunEligibleOnStackAndKeepShuffleFallbackOnStateMachine()
+    public void SuspendingDeviceKernelSources_StackModelBuild_RunOnStacksWithTheirShuffles()
     {
         Skip.IfNot(IsStackBuild(), "Runs only when GSharpNativeBarrierModel=Stack.");
 
@@ -283,9 +284,13 @@ public class NativeStackTests
             GSharpInternalNames.NativeStack.Resume,
             NativeStackKernels.MultiLevelSuspendingDeviceKernel_Source,
             StringComparison.Ordinal);
-        Assert.DoesNotContain(
+        Assert.Contains(
             GSharpInternalNames.NativeStack.Resume,
             NativeStackKernels.ShuffleDeviceFallbackKernel_Source,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            GSharpInternalNames.StackWarp.ShuffleXorSync,
+            NativeStackKernels.ShuffleAndBarrierKernel_Source,
             StringComparison.Ordinal);
     }
 }

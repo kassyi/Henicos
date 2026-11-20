@@ -41,11 +41,16 @@ internal static class StackLauncherTranspiler
                     HostLauncherTranspiler.WriteBlockCoordinates(ref context);
                     context.Emitter.Writer.AppendLine($"{ResetSharedMemory}({SharedMemBytes});");
                     context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
+                    // The threads of a kernel that reaches a warp collective carry the warp state of the state machine
+                    var (blockType, threadType) = step.ReachesWarpShuffle
+                        ? (GSharpInternalNames.StackWarp.BlockType, GSharpInternalNames.StackWarp.ThreadType)
+                        : (BlockType, ThreadType);
                     context.Emitter.Writer.AppendLine(
-                        $"{BlockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body});");
+                        $"{blockType} {Block}({Stacks}, {BlockDimX} * {BlockDimY} * {BlockDimZ}, {Body});");
                     context.Emitter.Writer.AppendLine(
-                        $"{ThreadType}* {Contexts} = {Block}.threads.data();");
+                        $"{threadType}* {Contexts} = {Block}.threads.data();");
                     context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
+                    HostLauncherTranspiler.WriteRoundDeclaration(step, ref context);
                     context.Emitter.Writer.AppendLine($"while ({AnyActive})");
                     using (context.Emitter.Writer.Scope())
                     {

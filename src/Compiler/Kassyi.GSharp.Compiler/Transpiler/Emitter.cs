@@ -74,6 +74,12 @@ public struct Emitter(
         return TwoFormsPlan.IsPassedByAddress(parameter.Ordinal);
     }
 
+    /// <summary>
+    /// The places of the warp collectives of the stack form being written in the visit counts of its kernel
+    /// (<see cref="StackWarpEmitter"/>); <see langword="null"/> for any other code.
+    /// </summary>
+    internal StackWarpFrame? StackWarp;
+
     /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>
     public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
