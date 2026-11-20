@@ -1164,8 +1164,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-unsigned char __gsharp_id_1_localMax = 255;
-auto __gsharp_id_2_x = __gsharp_id_1_localMax;
+auto __gsharp_id_2_x = (unsigned char)255;
 __gsharp_id_2_x=(unsigned char)__gsharp_add_i32(__gsharp_id_2_x,1);
 __gsharp_array_at(__gsharp_id_0_output, 0, 1805465861u)=__gsharp_id_2_x;
 __gsharp_state=-1;

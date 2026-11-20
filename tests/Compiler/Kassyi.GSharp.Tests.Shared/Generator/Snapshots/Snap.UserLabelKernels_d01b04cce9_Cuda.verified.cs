@@ -972,13 +972,11 @@ if(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1304821217u)%4==0)
 __gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,100);
 goto __gsharp_id_6_skip;
 }
-int __gsharp_id_3_Scale;
-__gsharp_id_3_Scale = 3;
 int __gsharp_id_4_counts[4];
 memset(__gsharp_id_4_counts,0,sizeof(__gsharp_id_4_counts));
 int __gsharp_id_5_scratch[4];
 memset(__gsharp_id_5_scratch,0,sizeof(__gsharp_id_5_scratch));
-__gsharp_id_4_counts[1]=__gsharp_add_i32(__gsharp_id_4_counts[1],__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 185000229u),__gsharp_id_3_Scale));
+__gsharp_id_4_counts[1]=__gsharp_add_i32(__gsharp_id_4_counts[1],__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 185000229u),3));
 __gsharp_id_5_scratch[2]=__gsharp_add_i32(__gsharp_id_5_scratch[2],__gsharp_add_i32(__gsharp_id_4_counts[1],1));
 __gsharp_id_2_total=__gsharp_add_i32(__gsharp_id_2_total,__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_4_counts[0],__gsharp_id_4_counts[1]),__gsharp_id_5_scratch[1]),__gsharp_id_5_scratch[2]));
 __gsharp_id_6_skip:

@@ -1967,23 +1967,21 @@ break;
 __gsharp_array_at(__gsharp_id_2_dst, __gsharp_id_7_col+0, 870874687u)=__gsharp_id_8_acc;
 int __gsharp_id_9_r1 = 0;
 {
-const int __gsharp_id_10_BaseOffset = 10;
-const int __gsharp_id_11_ScaledOffset = 30;
 int __gsharp_id_12_sharedLocal;
 switch(__gsharp_id_5_v&3)
 {
 case 0:
 __gsharp_switch_3_state_0:
 {
-__gsharp_id_12_sharedLocal = __gsharp_add_i32(__gsharp_id_6_w&0xFF,__gsharp_id_11_ScaledOffset);
+__gsharp_id_12_sharedLocal = __gsharp_add_i32(__gsharp_id_6_w&0xFF,30);
 __gsharp_id_9_r1=__gsharp_id_12_sharedLocal;
 break;
 }
 case 1:
 __gsharp_switch_3_state_1:
 {
-__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_w&0xFF,2),__gsharp_id_10_BaseOffset);
-__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_12_sharedLocal,__gsharp_id_11_ScaledOffset);
+__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_6_w&0xFF,2),10);
+__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_12_sharedLocal,30);
 break;
 }
 case 2:
@@ -1995,8 +1993,8 @@ goto __gsharp_switch_3_state_default;
 default:
 __gsharp_switch_3_state_default:
 {
-__gsharp_id_12_sharedLocal=__gsharp_add_i32(__gsharp_id_10_BaseOffset,__gsharp_id_6_w&0xF);
-__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_9_r1,__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_12_sharedLocal,__gsharp_id_11_ScaledOffset),1));
+__gsharp_id_12_sharedLocal=__gsharp_add_i32(10,__gsharp_id_6_w&0xF);
+__gsharp_id_9_r1=__gsharp_add_i32(__gsharp_id_9_r1,__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_12_sharedLocal,30),1));
 break;
 }
 }
@@ -4581,7 +4579,6 @@ __gsharp_ctx->__gsharp_id_1_fa=__gsharp_in___gsharp_id_1_fa;
 __gsharp_ctx->__gsharp_id_2_dst=__gsharp_in___gsharp_id_2_dst;
 __gsharp_ctx->__gsharp_id_3_n=__gsharp_in___gsharp_id_3_n;
 }
-int __gsharp_id_11_FlatBase = 40;
 switch(__gsharp_state)
 {
 case 0:
@@ -4749,7 +4746,7 @@ goto __gsharp_switch_1_state_10;
 case 10:
 __gsharp_switch_1_state_10:
 {
-__gsharp_ctx->__gsharp_id_12_sharedAcrossFlat=__gsharp_add_i32(__gsharp_id_11_FlatBase,__gsharp_ctx->__gsharp_id_5_v&0xF);
+__gsharp_ctx->__gsharp_id_12_sharedAcrossFlat=__gsharp_add_i32(40,__gsharp_ctx->__gsharp_id_5_v&0xF);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=11;
 return;
@@ -4784,7 +4781,7 @@ goto __gsharp_switch_1_state_13;
 case 13:
 __gsharp_switch_1_state_13:
 {
-__gsharp_ctx->__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_10_iRes,__gsharp_id_11_FlatBase);
+__gsharp_ctx->__gsharp_id_10_iRes=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_10_iRes,40);
 goto __gsharp_switch_1_state_15;
 goto __gsharp_switch_1_state_14;
 }

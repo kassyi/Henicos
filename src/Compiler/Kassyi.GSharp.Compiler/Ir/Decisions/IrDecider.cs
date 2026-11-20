@@ -73,11 +73,11 @@ internal sealed class IrDecider(IrDecisionContext context) : IrRewriter
                 return constant.WithDecision(IrNumericDecider.DecideConstant(
                     constant, above?.Target, above?.IsNumericOrConstant ?? false));
             default:
-                return DecideNullOrCall(expression);
+                return DecideNullOrCall(expression, isTarget);
         }
     }
 
-    private IrExpression DecideNullOrCall(IrExpression expression)
+    private IrExpression DecideNullOrCall(IrExpression expression, bool isTarget)
     {
         switch (expression)
         {
@@ -99,7 +99,7 @@ internal sealed class IrDecider(IrDecisionContext context) : IrRewriter
             case IrPropertyReference property:
             {
                 var updated = (IrPropertyReference)base.VisitExpression(property);
-                return updated.WithDecision(IrNullDecider.DecideMember(updated, _context));
+                return updated.WithDecision(IrNullDecider.DecideMember(updated, isTarget, _context));
             }
             case IrCall call:
             {

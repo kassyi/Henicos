@@ -12,6 +12,7 @@ import {
 } from "./constants.ts";
 import {
   resourceOf,
+  sharedTurnsSettled,
   turnVerdict,
   usageOf,
   type ProbeResult,
@@ -19,6 +20,7 @@ import {
   type ResourceState,
   type ShareMode,
 } from "./resources.ts";
+import { formatJobId } from "./job-id.ts";
 
 /** The run times of a command's earlier runs: the median and the longest. */
 export interface Estimate {
@@ -191,7 +193,7 @@ export class Scheduler<J extends SchedulerJob> {
 
   /**
    * The resources whose first waiting turn waits for a probe (turnVerdict "probe") while every shared turn that runs
-   * has run settleMs: the server measures them. Nothing while paused or before holdUntil, when nothing is granted.
+   * has used the resource for settleMs (sharedTurnsSettled): the server measures them. Nothing while paused or before holdUntil, when nothing is granted.
    */
   probeWanted(now: number): string[] {
     if (this.paused || now < this.holdUntil) {
@@ -202,10 +204,7 @@ export class Scheduler<J extends SchedulerJob> {
       const state = this.stateOf(name);
       const usage = usageOf(this.running, name);
       const settleMs = state.spec.probe?.settleMs ?? 0;
-      if (
-        turnVerdict(head, usage, state, now) === "probe" &&
-        usage.sharedTurns.every((turn) => now - turn.grantedAt >= settleMs)
-      ) {
+      if (turnVerdict(head, usage, state, now) === "probe" && sharedTurnsSettled(usage, settleMs, now)) {
         wanted.push(name);
       }
     }
@@ -334,7 +333,7 @@ export class Scheduler<J extends SchedulerJob> {
     const seen = new Set<J>();
     for (let next: J | undefined = target; next !== undefined && next.before !== null && !seen.has(next); ) {
       if (next.before === job.id) {
-        return `#${target.id} already goes before #${job.id}`;
+        return `${formatJobId(target.id)} already goes before ${formatJobId(job.id)}`;
       }
       seen.add(next);
       next = this.waiting.find((other) => other.id === (next as J).before);

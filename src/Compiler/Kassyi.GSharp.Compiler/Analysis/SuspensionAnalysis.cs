@@ -277,7 +277,7 @@ internal static class SuspensionAnalysis
     /// <paramref name="compilation"/>. A method of another assembly has no body here, also when an IDE gives its
     /// declaration through a referenced compilation.
     /// </summary>
-    private static bool TryGetMethodBody(IMethodSymbol method, Compilation compilation,
+    internal static bool TryGetMethodBody(IMethodSymbol method, Compilation compilation,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration) =>
         TryGetBody(method, GpuExecutionSpace.IsGpuFunction(method), compilation, out declaration);
 

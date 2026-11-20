@@ -24,6 +24,11 @@ import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
 const { dialectOf } = require("./target-dialect.js") as TargetDialectModule;
+const justfileReader = require("../job-queue/plugins/just/justfile.js") as {
+  justVariables(justfile: string): Map<string, string>;
+  recipeBodies(justfile: string, recipe: string): string[];
+  recipeParameters(justfile: string, recipe: string): string[];
+};
 
 const FixedBudgetsYaml = [
   "# fixed characterization budgets",
@@ -296,14 +301,16 @@ const Kept = "Category!=Stress&Category!=Benchmark&Category!=GpuTrap";
 /**
  * The share of a --gpu command under the repository configuration: [command, expected]. Shared: a dotnet test whose
  * every filter negates each exclusive category (`Category!=` in any case and order, among other `&` terms, no `|`),
- * and `just test` / `just test-coverage`, which expand to `dotnet test ... --filter "<Kept>"` in the justfile.
+ * and `just test` / `just test-coverage` / `just test-differential-cuda`, whose dotnet test filters in the justfile
+ * negate each of them (checkSharedRecipeFilters).
  * Exclusive: anything unreadable, piped, unfiltered, not a test, with a variable the shell expands, that names tests
  * alone or does not negate every category, or that names or sets the trap variable in any case.
  */
 const ShareTable: readonly [string, "shared" | "exclusive"][] = [
   ["just test", "shared"],
   ["just test-coverage", "shared"],
-  ["just test-differential-cuda", "exclusive"], // its filter "Category=Differential&Category!=Stress" keeps two in
+  ["just test-differential-cuda", "shared"],
+  ['just test-differential-cuda --filter "Category=Differential"', "exclusive"],
   ["just test-gpu-trap", "exclusive"],
   ["just test-stability", "exclusive"],
   ["just -f justfile test", "exclusive"],
@@ -604,7 +611,7 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
         options: {
           exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
           exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-          sharedRecipes: ["test", "test-coverage"],
+          sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
         },
       },
       { name: "dotnet" },
@@ -671,6 +678,38 @@ function checkDialectOf(assert: AssertModule): void {
   }
 }
 
+/**
+ * Every recipe of sharedRecipes in the repository config is shared by name only, so its command in the justfile must
+ * be one the share rules call shared: the `dotnet test` it queues under `--gpu`, as just expands it. A recipe parameter
+ * is removed (just gives it precedence over a variable of the same name), a top-level variable is replaced by its
+ * value, and any other interpolation fails the check, since a value the check cannot read could select any tests.
+ */
+function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, configRoot: string, recipes: unknown): void {
+  assert.ok(Array.isArray(recipes) && recipes.length > 0, "the repository config names shared recipes");
+  const justfile = fs.readFileSync(path.join(configRoot, "justfile"), "utf8");
+  const variables = justfileReader.justVariables(justfile);
+  const ctx = contextFor(configRoot, configRoot);
+  for (const recipe of recipes as string[]) {
+    const [body] = justfileReader.recipeBodies(justfile, recipe);
+    assert.ok(body !== undefined, `the justfile has the shared recipe ${recipe}`);
+    const queued = /--gpu -- ([\s\S]*)$/.exec(body ?? "");
+    assert.ok(queued !== null, `${recipe} queues its command with --gpu`);
+    const parameters = new Set(justfileReader.recipeParameters(justfile, recipe));
+    const command = (queued?.[1] ?? "")
+      .replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name: string) =>
+        parameters.has(name) ? "" : (variables.get(name) ?? all),
+      )
+      .replace(/\s+/g, " ")
+      .trim();
+    assert.ok(!command.includes("{{"), `${recipe}: the check reads every interpolation of the command: ${command}`);
+    assert.strictEqual(
+      host.classify(command, Gpu, ctx).share,
+      "shared",
+      `the justfile command of ${recipe}: ${command}`,
+    );
+  }
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -694,6 +733,8 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkCharacterizationAndBudgets(assert, host);
   checkGpuCheckHook(assert, host);
   checkShareRules(assert, host);
+  const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;
+  checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
 }

@@ -217,8 +217,7 @@ public class LocalConstHoistingTests
         }
     }
 
-    // The generated managed C# of the test case, built in memory: the native C++ of the case label kernels does not
-    // build (C2051)
+    // The generated managed C# of the test case, built in memory
     private static (Compilation Output, Assembly? Assembly, string Errors) CompileManaged()
     {
         var (_, output, _) = GeneratorTestRunner.RunGenerator(RoslynTestUtility.ReadTestCase(TestCase), "Cpu");

@@ -156,6 +156,88 @@ public class WideArrayIndexTests : TranspilerTestBase
         Assert.Equal([-1], o);
     }
 
+    [Scenario(TestScenario.HappyPath)]
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NUIntAndConvertedULongIndex_WithinLength_ReadsAndWritesTheElement(bool forceManaged)
+    {
+        int[] a = [10, 20, 30];
+        int[] o = [-1, -1, -1];
+        int[] r = [-1];
+
+        Run(forceManaged, () => WideArrayIndexKernels.LaunchReadNUIntIndexKernel(a, 2, r));
+        o[0] = r[0];
+        Run(forceManaged, () => WideArrayIndexKernels.LaunchReadUncheckedNUIntIndexKernel(a, 1, r));
+        o[1] = r[0];
+        Run(forceManaged, () =>
+            WideArrayIndexKernels.LaunchReadConvertedULongIndexKernel(a, new WideULongIndex { Value = 0 }, r));
+        o[2] = r[0];
+        Run(forceManaged, () => WideArrayIndexKernels.LaunchWriteNUIntIndexKernel(a, 1, 99));
+        Run(forceManaged, () =>
+            WideArrayIndexKernels.LaunchWriteConvertedULongIndexKernel(a, new WideULongIndex { Value = 2 }, 77));
+        Run(forceManaged, () => WideArrayIndexKernels.LaunchWriteNUIntIndexShuffleKernel(a, 0, 55));
+
+        Assert.Equal([30, 20, 10], o);
+        Assert.Equal([55, 99, 77], a);
+    }
+
+    // C# converts a nuint index to ulong and then checks it with conv.ovf.i.un, as for a ulong index
+    // mutant: ArrayElementIndex.NeedsOverflowCheck reading the type before the conversion (nuint) throws
+    // IndexOutOfRangeException instead of OverflowException
+    [Scenario(TestScenario.SadPath)]
+    [SkippableTheory]
+    [InlineData(false, ulong.MaxValue)]
+    [InlineData(true, ulong.MaxValue)]
+    [InlineData(false, (ulong)long.MaxValue + 1UL)]
+    [InlineData(true, (ulong)long.MaxValue + 1UL)]
+    public void NUIntIndex_AboveLongMax_ThrowsOverflow(bool forceManaged, ulong value)
+    {
+        SkipOnReleaseCuda();
+        var index = (nuint)value;
+        int[] a = [10, 20, 30];
+        int[] o = [-1];
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchReadNUIntIndexKernel(a, index, o)));
+        Assert.Equal([-1], o);
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchWriteNUIntIndexKernel(a, index, 99)));
+        Assert.Equal([10, 20, 30], a);
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchReadUncheckedNUIntIndexKernel(a, index, o)));
+        Assert.Equal([-1], o);
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchWriteNUIntIndexShuffleKernel(a, index, 99)));
+        Assert.Equal([10, 20, 30], a);
+    }
+
+    // A user-defined implicit conversion to ulong makes C# convert the index to ulong and check it as well
+    [Scenario(TestScenario.SadPath)]
+    [SkippableTheory]
+    [InlineData(false, ulong.MaxValue)]
+    [InlineData(true, ulong.MaxValue)]
+    [InlineData(false, (ulong)long.MaxValue + 1UL)]
+    [InlineData(true, (ulong)long.MaxValue + 1UL)]
+    public void ConvertedULongIndex_AboveLongMax_ThrowsOverflow(bool forceManaged, ulong value)
+    {
+        SkipOnReleaseCuda();
+        var index = new WideULongIndex { Value = value };
+        int[] a = [10, 20, 30];
+        int[] o = [-1];
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchReadConvertedULongIndexKernel(a, index, o)));
+        Assert.Equal([-1], o);
+
+        Assert.Throws<OverflowException>(() =>
+            Run(forceManaged, () => WideArrayIndexKernels.LaunchWriteConvertedULongIndexKernel(a, index, 99)));
+        Assert.Equal([10, 20, 30], a);
+    }
+
     [Scenario(TestScenario.SadPath)]
     [SkippableTheory]
     [InlineData(false, ulong.MaxValue)]

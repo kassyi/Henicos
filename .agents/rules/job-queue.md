@@ -28,6 +28,7 @@ node scripts/human/job-queue.js status [<id>]               # the jobs ahead and
   failing Verify snapshot otherwise opens a diff viewer and the run waits for it forever. The `just` recipes set it.
 - Write the command for the shell you call `run` from (Git Bash for the Claude Code Bash tool, PowerShell otherwise on
   Windows).
+- An `<id>` is the full number or the last four digits as `status` shows them (`j8739`, `8739`).
 - A wait can be long: run `run` or `wait <id>` in the background, and the tool calls you when it ends.
 - A PreToolUse hook (`check-queued-command.js`) denies a build or test command that does not go through the queue; in
   Claude Code it rewrites a plain one (`dotnet ...`, `just ...` joined by `&&`) into a queued one instead.

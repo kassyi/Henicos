@@ -103,7 +103,7 @@ function checkRows(): void {
   // A tool's question keeps its start; a reply judged by the question mark keeps its end, where agents ask, with its
   // line breaks as spaces; Claude Haiku's newest open question is marked with ≈, the others counted; a job without a
   // session counts for its worktree, but not in the main checkout
-  assert.match(panel[1] ?? "", /#900 Where should the chat panel go: below the jobs, or…$/);
+  assert.match(panel[1] ?? "", /j0900 Where should the chat panel go: below the jobs, o…$/);
   assert.match(panel[2] ?? "", / 9m reply +The rows fit the width now\. Shall I push the branch\? +$/);
   assert.match(panel[3] ?? "", / 41m reply +≈ Which of the two queue PRs merges first\? \(\+1\) +$/);
   // A verdict of an earlier wait is not Haiku's for this one: the list is shown as the heuristic's
@@ -123,7 +123,7 @@ function checkRows(): void {
   const narrow = panelOf(
     renderScreen(linkedReply(), initialViewState(), { ...screen, columns: 60 }, false, samplePanel(chats)),
   );
-  assert.match(narrow[1] ?? "", /^\? +claude issue-1851-panel +6m #900 Where/);
+  assert.match(narrow[1] ?? "", /^\? +claude issue-1851-panel +6m j0900 Where/);
   assert.match(narrow[3] ?? "", /^…\? agy +Queue PR order +41m ≈ Which of the two … \(\+1\)$/);
   narrow.forEach((line) => assert.ok(displayWidth(line) <= 60, line));
   // Which replies are listed: Claude Haiku's verdict over the question mark; an older file by its question mark
@@ -173,7 +173,7 @@ function checkShortAndOverflow(): void {
   assert.strictEqual(small.length, 13);
   assert.match(small[11] ?? "", /^ 4 chats wait: \?issue-1835 40s, \?issue-1851-panel 6m, …\?issue-1890: Fi$/);
   assert.match(small[10] ?? "", /^── chats: 4 wait/);
-  assert.match(small[4] ?? "", /^ 902 /, "the three jobs still show");
+  assert.match(small[4] ?? "", /^ j0902 /, "the three jobs still show");
   // More waiting chats than a tall screen has room for: the job list keeps its minimum, the rest are counted
   const many: ChatView = {
     ...chats,
@@ -193,7 +193,7 @@ function checkShortAndOverflow(): void {
     samplePanel(many),
   );
   assert.strictEqual(tall.length, 20);
-  assert.match(tall[7] ?? "", /^ 906 /, "the job list keeps half of the rows: all six jobs show");
+  assert.match(tall[7] ?? "", /^ j0906 /, "the job list keeps half of the rows: all six jobs show");
   assert.match(tall[8] ?? "", /^── chats: 30 wait/);
   assert.match(tall[9] ?? "", /^…\? claude w0 /, "the most recent wait first");
   assert.match(tall[18] ?? "", /^ \+21 more chats wait/);
@@ -209,7 +209,7 @@ function checkShortAndOverflow(): void {
     false,
     samplePanel(many),
   );
-  assert.match(taller[14] ?? "", /^ 9\d\d /, "13 job rows, half of the 26 rows below the header");
+  assert.match(taller[14] ?? "", /^ j09\d\d /, "13 job rows, half of the 26 rows below the header");
   assert.match(taller[15] ?? "", /^── \+\d+ more ── chats: 30 wait/);
 }
 

@@ -697,6 +697,32 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
             .Select(static d => d.ToString()));
     }
 
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task SameNameLabels_GotoToTheLabelOfItsOwnBlock_JudgedByThatLabel()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/BarrierUsage/SameNameLabelGotoKernels.cu.cs"));
+
+        var run = await KernelDiagnostics.RunCompilationAsync(compilation, "Cpu");
+
+        // Sibling blocks may declare one label name. A goto is measured against the label C# binds it to, so a barrier
+        // between the blocks is crossed by neither goto; one inside the goto's own block still is (GSH0040), and a
+        // chained goto across a shuffle alone stays GSH0121 from the analyzer and the generator
+        // mutant: CrossBarrierChecks.FindTargetLabel by name -> GSH0040 at lines 31, 91 and 114 too
+        // mutant: the nearest label of the name before the goto -> GSH0040 at line 114 (the forward goto)
+        // mutant: FindReported finding the label by name -> no GSH0121 at line 91, the generator reports GSH0040 there
+        var gsh0040 = GSharpDiagnostics.CrossBarrierGotoProhibited.Id;
+        var gsh0121 = GSharpDiagnostics.GotoToChainedLabelAcrossStates.Id;
+        var analyzer = run.Analyzer
+            .Select(static d => ReportedDiagnostic.From(DiagnosticOrigin.Analyzer, d))
+            .ToImmutableArray();
+        Assert.Equal([(DiagnosticOrigin.Analyzer, 59, 17, 59, 28)], analyzer.Ranges(gsh0040).ToList());
+        Assert.Equal([(DiagnosticOrigin.Analyzer, 91, 17, 91, 29)], analyzer.Ranges(gsh0121).ToList());
+        Assert.Single(run.Generator);
+        Assert.True(run.Analyzer.Where(d => d.Id == gsh0121).ToHashSet().SetEquals(run.Generator));
+    }
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
