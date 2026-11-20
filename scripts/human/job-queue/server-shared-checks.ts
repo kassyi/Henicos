@@ -331,6 +331,33 @@ export async function checkDowngradeSharedTurn(assert: AssertModule): Promise<vo
   });
 }
 
+/**
+ * A shared turn whose connection drops (a downgrade that did not arrive) registers again under its id and asks for no
+ * share: the scheduler counts it as exclusive from then on, so no second shared turn is granted beside it.
+ */
+export async function checkRebindLowersShare(assert: AssertModule): Promise<void> {
+  await withGpu({ slots: 2 }, async ({ port }) => {
+    const request = { ...turnRequest("A", { share: "shared" }) };
+    const first = await connectRaw(port);
+    first.send(request);
+    const queued = await first.until("queued");
+    assert.ok((await first.until("granted")) !== null, "the shared turn runs");
+    first.close();
+    await first.closed;
+    const again = await connectRaw(port);
+    again.send({ ...request, id: Number(queued?.id), share: "exclusive" });
+    const regranted = await again.until("granted", 3000);
+    assert.ok(regranted !== null, "the same record is granted again");
+    assert.ok(!("share" in regranted), "and no longer as a shared turn");
+    const other = await connectRaw(port);
+    other.send(turnRequest("B", { share: "shared" }));
+    assert.strictEqual(await other.until("granted", 700), null, "no shared turn runs beside the exclusive one");
+    await end(again, 0, assert);
+    assert.ok((await other.until("granted", 2000)) !== null, "it runs once the exclusive turn has ended");
+    await end(other, 0, assert);
+  });
+}
+
 /** Resolves to the `count`th grant the client has received (waiting for it), or null after 3 s. */
 async function waitForGrant(client: RawClient, count: number): Promise<Incoming | null> {
   const until = Date.now() + 3000;
@@ -353,4 +380,5 @@ export const SharedServerChecks: Record<string, (assert: AssertModule) => Promis
   checkStatusCountsHolders,
   checkFailedSharedTurnIsLogged,
   checkDowngradeSharedTurn,
+  checkRebindLowersShare,
 };
