@@ -369,6 +369,29 @@ public class JumpRegionPlannerTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoLoopEnclosingForwardRangeAtSameFirst_OrdersGotoLoopOuter()
+    {
+        var statements = ParseStatements(@"
+        L:
+            if (x) goto Inner;
+            Split();
+        Inner:
+            int a = 0;
+            if (y) goto L;");
+
+        var plan = JumpRegionPlanner.Plan(statements, HoldsSplit);
+        Assert.Empty(plan.Rejected);
+        Assert.Equal(2, plan.Regions.Length);
+
+        Assert.Equal(JumpRegionKind.GotoLoop, plan.Regions[0].Kind);
+        Assert.Equal((0, 3, 0), (plan.Regions[0].First, plan.Regions[0].Last, plan.Regions[0].LabelIndex));
+
+        Assert.Equal(JumpRegionKind.ForwardRange, plan.Regions[1].Kind);
+        Assert.Equal((0, 1, 2), (plan.Regions[1].First, plan.Regions[1].Last, plan.Regions[1].LabelIndex));
+    }
+
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Plan_BackwardGotoFromOutsideIntoGotoLoopMiddle_IsRejected()
     {

@@ -202,6 +202,18 @@
   IrSpillPlannerCases.cs Cases.TargetIndexWrittenByTheValue: r[t + 1] = SuspendWith(Inc(ref t), 0);
     ir:     spill(t + 1) spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
     syntax: spill(Inc(ref t)) split(SuspendWith(Inc(ref t), 0))
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LambdaMiddleGotoKernel: result[tid] = Warp.ActiveMask() ^ run(tid);
+    ir:     spill(result) spill(tid) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.LocalFunctionMiddleGotoKernel: result[tid] = Warp.ActiveMask() ^ Run(tid);
+    ir:     spill(result) spill(tid) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a part of a target location that the split may change
+  ReconvergenceJumpNestedFunctionKernels.cu.cs ReconvergenceJumpNestedFunctionKernels.MiddleGotoAroundLocalFunctionSplitKernel: result[tid] = LocalSplit() ^ lambdaSplit() ^ Warp.ActiveMask();
+    ir:     spill(result) spill(tid) spill(LocalSplit() ^ lambdaSplit()) split(Warp.ActiveMask())
+    syntax: spill(LocalSplit() ^ lambdaSplit()) split(Warp.ActiveMask())
 #991 a part of a target location that the split may change + #991 the read of a compound assignment target
   IrDecisionSiteOracleCases.cu.cs SiteOracleKernels.ShuffleKernel: (Pick(b)!)[0] += Warp.ShuffleSync(m, v, 1);
     ir:     spill(Pick(b)) spill((Pick(b)!)[0]) split(Warp.ShuffleSync(m, v, 1))

@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 internal sealed class SwitchJumpRewriter(
     string endLabel,
     string? defaultLabel,
-    ImmutableArray<SwitchStatementFlattener.SwitchCaseTarget> caseTargets,
+    ImmutableArray<SwitchCaseTarget> caseTargets,
     SemanticModel? semanticModel)
     : CSharpSyntaxRewriter
 {
@@ -62,33 +62,9 @@ internal sealed class SwitchJumpRewriter(
             return base.VisitGotoStatement(node);
         }
 
-        var target = node.IsKind(SyntaxKind.GotoDefaultStatement)
-            ? defaultLabel
-            : FindCaseLabel(node);
+        var target = SwitchCaseLookup.FindTargetLabel(node, defaultLabel, caseTargets, semanticModel);
         return GotoFrom(node, target ?? throw new InvalidOperationException(
             "A goto case or goto default of a flattened switch has no section to jump to."));
-    }
-
-    // [WHY] C# binds goto case to the case label whose constant equals its value converted to the governing type
-    // (goto case 1.5 reaches case 1 of an int switch, goto case 0.1 reaches case 0.1f of a float switch); the label
-    // symbol that Roslyn binds (IBranchOperation.Target) is that case label's declared symbol, so no conversion is
-    // repeated here. Without a semantic model, or when the goto does not resolve, equivalent case expressions match.
-    private string? FindCaseLabel(GotoStatementSyntax node)
-    {
-        if (semanticModel?.GetSafeOperation(node) is IBranchOperation { Target: { } target } &&
-            caseTargets
-                .AsStackEnumerable()
-                .TryFirst(target, static (c, t) => c.Symbol.IsEqualTo(t), out var bound))
-        {
-            return bound.Label;
-        }
-
-        return node.Expression is { } value &&
-               caseTargets
-                   .AsStackEnumerable()
-                   .TryFirst(value, static (c, v) => SyntaxFactory.AreEquivalent(c.Value, v), out var equivalent)
-            ? equivalent.Label
-            : null;
     }
 
     // goto <label>; with the trivia and the original span of the jump it replaces
