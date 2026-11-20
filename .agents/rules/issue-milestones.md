@@ -55,7 +55,7 @@ The order within a milestone is decided by sorting on the GitHub milestone page.
 
 ## 5. What agents do
 
-- When filing an issue (`/issue`), propose a milestone together with the labels and attach it with `gh issue create --milestone "<name>"`. A bug (`bug` label) must carry a `found-by:*` label (`audit`, `matrix`, `differential`, `review`, `operation`; a hook denies `gh issue create` without one) and, in `M1` or `M2`, goes into its tracking table; the hook does not check `gh issue edit`.
+- When filing an issue (`/issue`), propose a milestone together with the labels and attach it with `gh issue create --milestone "<name>"`. A bug (`bug` label, a `tracking` parent excepted) must carry a `found-by:*` label (`audit`, `matrix`, `differential`, `review`, `operation`; a hook denies `gh issue create` without one) and, in `M1` or `M2`, goes into its tracking table; the hook does not check `gh issue edit`.
 - A parent issue of sub-issues gets the `tracking` label and a title ending in `(tracking)`; the bug curve skips it.
 - Changing a milestone, and creating or closing a milestone, are public actions, so get the user's approval first.
 - When an `M3` issue is investigated and reproduced, propose where to move it (`M1` or `M2`).

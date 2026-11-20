@@ -203,7 +203,7 @@ function shellWords(command) {
 }
 
 // The denial text when a command contains a `gh issue create` with the `bug` label (any milestone, or none) and no
-// `found-by:` label, else null. --label / -l is read as `--label v`, `--label=v` and `-lv`; labels may repeat or be comma
+// `found-by:` label, else null. A `tracking` issue (a table of sub-issues) is exempt. --label / -l is read as `--label v`, `--label=v` and `-lv`; labels may repeat or be comma
 // separated.
 function foundByProblem(command) {
     const words = shellWords(command);
@@ -225,7 +225,7 @@ function foundByProblem(command) {
             take('--label', '-l', labels);
         }
         const names = labels.flatMap(l => l.split(',')).map(l => l.trim().toLowerCase());
-        if (!names.includes('bug')) continue;
+        if (!names.includes('bug') || names.includes('tracking')) continue;
         if (names.some(l => foundByLabels.includes(l))) continue;
         return 'A bug issue needs a found-by label: '
             + `${foundByLabels.join(', ')}. Add the label of how the bug was found; add the issue to its tracking table.`;
@@ -400,7 +400,8 @@ function selfTest() {
         test('found-by: comma-separated labels count', () => {
             assert.strictEqual(hook(`${issueCreate} --title x --label bug,found-by:matrix`), null);
             assert.strictEqual(hook(`${issueCreate} --title x --label found-by:operation,bug`), null);
-            assert.ok(denied(`${issueCreate} --title x --label bug,tracking`));
+            assert.strictEqual(hook(`${issueCreate} --title x --label bug,tracking`), null);
+            assert.ok(denied(`${issueCreate} --title x --label bug,documentation`));
         });
         test('found-by: -l short form and = form', () => {
             assert.ok(denied(`${issueCreate} -t x -m M1 -l bug`));
@@ -408,7 +409,8 @@ function selfTest() {
             assert.ok(denied(`${issueCreate} -t x --label=bug`));
         });
         test('found-by: a quoted label list with spaces, single quotes', () => {
-            assert.ok(denied(`${issueCreate} --title 'x y' --label 'bug, tracking' --milestone 'M1 Wrong Results'`));
+            assert.ok(denied(`${issueCreate} --title 'x y' --label 'bug, test' --milestone 'M1 Wrong Results'`));
+            assert.strictEqual(hook(`${issueCreate} --title 'x y' --label 'bug, tracking' --milestone 'M1 Wrong Results'`), null);
             assert.strictEqual(hook(`${issueCreate} --title 'x y' --label 'bug, found-by:audit'`), null);
         });
         test('found-by: --body-file without labels is denied for a bug', () => {
