@@ -125,12 +125,12 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
 | `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, `AssertModule`, context/result/panel types) and re-exported pure helpers |
 | `short-name.ts` | `dropShortWords`, the word walk the `shortName` hooks of plugins share (re-exported by `plugin-api.ts`) |
-| `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, return validation, and dynamic `checks.ts` discovery for the self-test |
+| `plugin-host.ts` | Client- and view-side `PluginHost` (every hook synchronous except the asynchronous `checkShare`, which has a 180 s limit and takes the GPU exclusively on a throw, a time out or an invalid value): `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, return validation, and dynamic `checks.ts` discovery for the self-test |
 | `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits, `GSHARP_JOB_QUEUE_MSBUILD_ARGS` and the `RequestCores` bound (`MSBUILDCORELIMIT`, `MSBUILDNODECOREALLOCATIONWEIGHT`), `classify`, `shortName`, `api` (`isDotnetTest`, `selectsCategory`), and hook command rules / `splitForRewrite` / CPU-build rewrite |
 | `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`, `hook-rules.js`, `justfile.js`, `hook-checks.js`): `just` recipe estimate keys (`stepKeys`), short command labels (`shortName`), and recipe hook rules (`options.hookRecipes` / `options.hookDryRunRecipes`) + `justfile` queue option lookup |
 | `plugins/nvidia-gpu/` | Built-in CJS-only `nvidia-gpu` `holderWatch` plugin (`holder-watch.js`, `holds.js`, `pools.js`, `fault-watch.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`, `README.md`): GPU hold sampling (`gpu-hold-log.tsv` with `mode` column) and Windows kernel pool / Event 153 watches (`gpu-pool-log.tsv`); the sanitizer and profiler runners of the PreToolUse hook (`hook-rules.js`) |
 | `plugins/agents/` | Built-in `agents` plugin: the chat `session` of a job (`plugin.ts`, from the `sessionEnv` variables of its options), the chat panel of the live view (`panel.ts` loads the `chatStatus` module, `view-chats.ts` draws the chats that ask the person in order, one row each or one summary line, and the chat part of the help; pure), its checks (`checks.ts`, `self-test-chats.ts`), and PreToolUse payload parsing and denial/rewrite formatting for Claude Code and Antigravity (`hook-io.js`, `hook-checks.js`) |
-| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `share-rules.ts`, `target-dialect.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, the GPU share of a `--gpu` run (`share-rules.ts`, options `exclusiveCategories`, `exclusiveEnv`, `sharedRecipes`), `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
+| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `share-rules.ts`, `name-filter.ts`, `name-filter-checks.ts`, `target-dialect.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, the GPU share of a `--gpu` run (`share-rules.ts`; `name-filter.ts` for a filter of test names alone; options `exclusiveCategories`, `exclusiveEnv`, `sharedRecipes`), `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
@@ -221,7 +221,16 @@ The turn of a `--gpu` run (`QueuedRun` with `gpuTurn`) classifies its command on
 the build step, with the resource `{ name: "gpu", forcedExclusive }` (`--gpu-exclusive`), and sends `resource: "gpu"`
 and `share` (`"shared"` only for exactly that answer, else `"exclusive"`) with `request` and `adopt`. Without plugins
 it sends no `share`; the GPU holder and a job without a turn send neither. The repository's rules are in
-`../job-queue-henicos/share-rules.ts` (job-queue-reference.md lists them). Once granted, the turn runs `gpu-lock.js
+`../job-queue-henicos/share-rules.ts` (job-queue-reference.md lists them).
+
+When classify does not answer `"shared"` and `--gpu-exclusive` is not set, `QueuedRun` awaits the plugins' `checkShare`
+(async, `PluginHost.checkShare`) once, before it connects, so that a slow answer does not hold an idle connection; the
+answer is kept for the re-registrations. The henicos plugin answers for a `dotnet test` whose `--filter` is positive name
+terms alone (`nameFilterCheck`): it runs `dotnet test <project> --no-build --list-tests --filter "(<names>)&(Category=<each
+exclusive category>)"` as a CPU job of the queue (`job-queue.js run`, without `--gpu`, output read from its standard
+output) and answers `"shared"` only for exit code 0, the runner's `No test matches the given testcase filter` line and no
+test name in the output. Anything else (a failure, a missing build, a time out) is exclusive. The list runner is a
+parameter of `nameFilterShare`, so the self-test never starts a real `dotnet test`. Once granted, the turn runs `gpu-lock.js
 --mode shared` only when it asked for `"shared"` and `granted.share` is exactly `"shared"`: the scheduler and the lock
 then agree on every shared turn, and every other case (no echo from an older scheduler, an echo it did not ask for,
 the direct lock under a scheduler without turns) takes the lock exclusively.
