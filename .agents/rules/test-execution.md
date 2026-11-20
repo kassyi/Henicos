@@ -15,7 +15,7 @@ description: Read before running tests, fuzzing or mutation testing, or acting o
 | `just test-category <Category> [args]` | One `TestCategory` enum value, e.g. `just test-category Stress` |
 | `just test-differential-cpu` | Differential tests on Tests.Cpu: each kernel on the managed and native paths against the sequential C# oracle (`Category=Differential`, no GPU) |
 | `just test-native-stack [args]` | Build `Tests.Cpu` with `GSharpNativeBarrierModel=Stack` into `bin/<os>-stack` and `obj/<os>-stack` and run its Differential and Execution tests |
-| `just test-managed-stack [args]` | Managed block-barrier and stack-model tests on Tests.Cpu built with `-p:GSharpOutputVariant=managed-stack -p:GSharpManagedBarrierModel=Stack` (no GPU) |
+| `just test-managed-stack [args]` | Build `Tests.Cpu` with `GSharpManagedBarrierModel=Stack` into `bin/<os>-managed-stack` and `obj/<os>-managed-stack` and run its Differential and Execution tests (no GPU) |
 | `just test-differential-cuda` | The same differential tests on Tests.Cuda against CUDA (uses the GPU; run through `job-queue.js run --gpu`). Long runs: `just test-stability` (`scripts/human/test-stability.js`), whose `TEST_SEED` adds one input seed per iteration |
 | `just test-gpu-trap [pause_ms] [args]` | Tests.Cuda tests that raise a real GPU fault (`Category=GpuTrap`: a CUDA `trap;` in a child process) and the CUDA cells of the differential fault seeds that are a known exception divergence on CUDA (a check CUDA does not make, such as a bounds or null check of a release build, so the launch may touch an illegal address), which every other run skips (#1457). A failing CUDA thread records its error and exits without a fault (sm_70 and later): a waiter at an mbarrier exits through `__gsharp_wait_check`, and the threads of a block that waits at the grid barrier leave it and exit. A thread still traps only when the launch has no error record, when other launches hold both its own record and the shared record, or before sm_70. Sets `GSHARP_CUDA_TRAP_TESTS=1`; the children run one at a time, the recipe's pause argument (default 3000 ms) apart. Run through `job-queue.js run --gpu`. On Windows each fault logs nvlddmkm Event 153, resets the GPU engine and writes a live kernel dump, and a series of them has frozen the machine, so run it only when a change touches the device error channel or the trap path |
 | `just fuzz-diff [profile] [minutes] *args` | Differential kernel fuzzer (`profile`: `M`/`managed`, `C`/`cpu` [default], or `G`/`all`; extra arguments such as `--allow-issue <n>` and `--swarm-focus <mode>` (for example `warp-shuffle`, `barrier`, `iterator`, `suspending-call`, `split-points`) are passed to `fuzz-differential.js`; wraps GPU execution in `gpu-lock.js`) |
@@ -43,8 +43,10 @@ Every build and test command goes through the job queue: [job-queue.md](job-queu
 
 Every test assembly has a memory budget for its whole test host in `tests/memory-budgets.yml`. The watchdog of
 `Kassyi.GSharp.Tests.Infrastructure` (`MemoryBudget`) runs in every test host and samples the peak memory of the process
-every 250 ms and at the start and end of every test: the peak private memory (commit charge) on Windows, the peak
-resident memory (`VmHWM`) on Linux. Native allocations count.
+every 250 ms and at the start and end of every test: the peak private memory (commit charge) on Windows, the private
+resident memory (`RssAnon` + `RssShmem`; `RssShmem` holds the JIT's code under W^X) on Linux, whose peak is the
+largest sample. Native allocations count; mapped files (the runtime and the loaded assemblies) do not, on either
+system.
 
 - **Two budgets per assembly**: `<test project name>: <MB>[, stress <MB>]`, one line per test project at column 0
   (`MemoryBudgetFileTests` fails when a test project has no line or a line names no test project). The first value
@@ -54,8 +56,8 @@ resident memory (`VmHWM`) on Linux. Native allocations count.
   select a budget.
 - **Breach**: every test that was running when the peak passed the budget fails with `MemoryBudgetExceededException`.
   The message gives the peak, the budget and its profile, the running tests (one of them caused the growth), the five
-  tests that raised the peak most (growth of the high-water mark between their start and end; approximate while tests
-  run in parallel) and the memory snapshot taken at the breach.
+  tests that raised the peak most (growth of the peak, on Linux the largest sample, between their start and end;
+  approximate while tests run in parallel) and the memory snapshot taken at the breach.
 - **Snapshot at the breach**: `dotnet-gcdump collect` of the test host plus its `dotnet-gcdump report` (types by size),
   run one-shot through `dotnet dnx` at a pinned version, into `tmp/test-memory/<assembly>-<time>-<pid>/`.
   `GSHARP_TEST_MEMORY_DUMP=full` writes a full dump (`dotnet-dump collect --type Full`) instead; `none` writes nothing.

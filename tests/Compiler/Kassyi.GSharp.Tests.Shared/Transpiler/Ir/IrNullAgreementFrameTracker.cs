@@ -88,7 +88,9 @@ internal static class IrNullAgreementFrameTracker
             return false;
         }
 
-        if (!visiting.Add(named))
+        // The definition, not the constructed type: a generic struct whose field nests its own type argument
+        // (S<T> holding S<S<T>>) constructs a new type at every level and would never repeat
+        if (!visiting.Add(named.OriginalDefinition))
         {
             return true;
         }
@@ -101,7 +103,7 @@ internal static class IrNullAgreementFrameTracker
             }
         }
 
-        visiting.Remove(named);
+        visiting.Remove(named.OriginalDefinition);
         return false;
     }
 
