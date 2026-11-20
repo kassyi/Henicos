@@ -2,7 +2,7 @@
 // (the end of a job whose command ended while no scheduler listened).
 
 import { ProtocolVersion } from "./constants.ts";
-import { environmentField, idField, numberField, send, type Incoming } from "./protocol.ts";
+import { environmentField, idField, numberField, send, shareField, type Incoming } from "./protocol.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import {
@@ -80,6 +80,13 @@ function rebind(
   const { server, socket } = connection;
   const scheduler = server.scheduler;
   server.bind(job, connection);
+  if (job.gpuTurn === true && job.share === "shared" && shareField(message) === undefined) {
+    // The turn registers again without a share (it gave the share up, and its downgrade did not reach us before the
+    // connection dropped): what it asks for now counts. The use of the resource is counted from the running turns on
+    // every grant, so a running turn stops counting as shared at once.
+    job.share = "exclusive";
+    server.log(`re-bind ${formatJobId(job.id)}: counted as an exclusive turn, as it asks`);
+  }
   if (job.commandPid === 0 && numberField(message, "commandPid") > 0) {
     job.commandPid = numberField(message, "commandPid");
     job.spawnedAt = numberField(message, "spawnedAt");
@@ -192,6 +199,31 @@ function started(connection: Connection, message: Incoming): void {
   }
 }
 
+/**
+ * downgrade: a granted shared GPU turn becomes an exclusive one that waits again under its id (the client found that
+ * what it judged the share on no longer holds). It leaves the running turns, so that the resource is free of it at
+ * once, and queues like the turn it was (same id and queue time), asking for the resource alone. Answered with the
+ * queued message; any other job (not a turn, not granted, not shared) gets an error and stays as it is.
+ */
+function downgrade(connection: Connection): void {
+  const { server, socket } = connection;
+  const job = connection.job;
+  if (job === null || job.phase !== "running" || job.gpuTurn !== true || job.share !== "shared") {
+    // Not a reply that ends the connection: the job goes on as it was
+    send(socket, { type: "error", code: "not-downgradable", message: "downgrade: not a granted shared GPU turn" });
+    return;
+  }
+  server.scheduler.detach(job);
+  job.share = "exclusive";
+  job.phase = "waiting";
+  job.epoch++;
+  job.grantedAt = 0;
+  job.lastPosition = -1;
+  server.scheduler.add(job);
+  server.log(`downgrade ${formatJobId(job.id)}: waits again as an exclusive turn`);
+  send(socket, server.queuedMessage(job));
+}
+
 /** done: the command ended; the slot is freed, the outcome recorded, and the receipt given. */
 function done(connection: Connection, message: Incoming): void {
   const { server, socket } = connection;
@@ -243,4 +275,11 @@ function report(connection: Connection, message: Incoming): void {
   connection.reply({ type: "reported", id: id ?? 0 });
 }
 
-export const JobMessages: Readonly<Record<string, MessageHandler>> = { request, adopt, started, done, report };
+export const JobMessages: Readonly<Record<string, MessageHandler>> = {
+  request,
+  adopt,
+  started,
+  done,
+  report,
+  downgrade,
+};

@@ -20,6 +20,7 @@ import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { checkNameFilter } from "./name-filter-checks.ts";
 import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
@@ -68,6 +69,24 @@ const CharacterizationTable: readonly [string, boolean, number][] = [
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category!~Benchmark"', true, 2496],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter "Category=Stress"', true, 6720],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Benchmark"', true, 6784],
+  // The test list of the name-filter share names Stress and runs no test: the normal budget
+  [
+    'dotnet test "tests/Compiler/Kassyi.GSharp.Tests.Cuda" --no-build --list-tests --filter "(Name~A)&(Category=Stress|Category=Benchmark)"',
+    true,
+    2496,
+  ],
+  [
+    'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter "Category=Stress" --list-tests',
+    true,
+    2496,
+  ],
+  // Only when no step runs a test: one that does is a stress run
+  [
+    'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --list-tests --filter "Category=Stress" && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress"',
+    true,
+    6784,
+  ],
+  ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress" ; echo --list-tests', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category!=Stress|Category=Benchmark"', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter "Category != Stress&Category!=Benchmark"', true, 2880],
   ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter \"Category!='Stress'\"", true, 6720],
@@ -409,6 +428,15 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     for (const [command, expected] of ShareTable) {
       assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
     }
+    // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
+    const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
+    assert.strictEqual(host.classify(named, Gpu, ctx).share, undefined, "a readable name filter: no opinion");
+    assert.strictEqual(
+      host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
+      "exclusive",
+      "a negated name term is no name filter: exclusive",
+    );
+    assert.strictEqual(host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).share, "exclusive");
     const filtered = `dotnet test X --filter "${Kept}"`;
     assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
     assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
@@ -738,4 +766,5 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
+  await checkNameFilter(assert);
 }

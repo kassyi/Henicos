@@ -37,6 +37,7 @@ import {
   type Incoming,
   type Placement,
 } from "./protocol.ts";
+import type { ShareAnswer } from "./plugin-api.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
@@ -59,7 +60,7 @@ export class QueuedRun {
   private readonly gpuTurn: boolean;
   private readonly host: RunHost;
   private readonly plugins?: PluginHost;
-  private readonly queuedAt = Date.now();
+  private queuedAt = Date.now(); // new when the turn queues again as exclusive
   private state: "waiting" | "running" | "done" = "waiting";
   private child: ChildProcess | null = null;
   private jobId = 0;
@@ -78,6 +79,12 @@ export class QueuedRun {
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
    */
   private share: ShareMode | null = null;
+  /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
+  private stillValid: ShareAnswer | null = null;
+  /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
+  private starting = false;
+  /** A "downgrade" was sent and not yet answered: the grants that arrive meanwhile are the old shared one. */
+  private downgrading = false;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
@@ -141,6 +148,7 @@ export class QueuedRun {
       ).unref();
     }
 
+    await this.resolveShare();
     await this.attach();
   }
 
@@ -236,8 +244,74 @@ export class QueuedRun {
     }
   }
 
+  /**
+   * A shared turn that rests on a measurement (ShareAnswer.stillValid) is checked again once it is granted, before the
+   * lock is taken: when the measurement no longer holds, the turn asks the scheduler to downgrade it ("downgrade": the
+   * same job, under the same id, waits again as an exclusive turn, so that `wait` and `--after` on its id still see
+   * the run). Only a scheduler that says so in the grant (`downgrade`) is asked; for an older one, and when the scheduler
+   * refuses, the turn takes the older way (requeueAsNewJob). Returns true when the turn waits again, so that start has nothing more to do.
+   */
+  private async requeueIfStale(granted: Incoming): Promise<boolean> {
+    const answer = this.stillValid;
+    if (answer === null || this.share !== "shared" || shareField(granted) !== "shared" || this.plugins === undefined) {
+      return false;
+    }
+    const valid = await this.plugins.stillValid(answer);
+    if (this.ended()) {
+      return true; // cancelled or interrupted meanwhile: finish has dealt with it
+    }
+    if (valid) {
+      return false;
+    }
+    prefix(
+      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} no longer holds; waiting again as exclusive`,
+    );
+    this.share = "exclusive";
+    this.stillValid = null;
+    if (granted.downgrade !== true) {
+      // A scheduler that does not know "downgrade" would close the connection at the message: the older way
+      await this.requeueAsNewJob();
+      return true;
+    }
+    // Grants that arrive until the scheduler answers are the old shared one: ignored
+    this.downgrading = true;
+    const message: ClientMessage = { type: "downgrade" };
+    send(this.socket, { version: wireVersion(message), ...message });
+    return true;
+  }
+
+  /**
+   * The older way back to exclusive, for a scheduler without "downgrade": the grant is given back (a "done" that
+   * records no run, under which the old id ends as cancelled) and the turn queues again as a new job.
+   */
+  private async requeueAsNewJob(): Promise<void> {
+    prefix("the scheduler cannot downgrade the turn; queueing it again as a new exclusive job");
+    this.downgrading = false;
+    this.starting = false;
+    const old = this.socket;
+    this.socket = null; // its close is then no loss of the scheduler
+    if (old !== null && !old.destroyed) {
+      send(old, { version: BaseProtocolVersion, type: "done", completed: false, exitCode: 0, cancelled: true });
+      old.end();
+    }
+    this.jobId = 0;
+    this.queuedAt = Date.now();
+    this.lastPosition = 0;
+    this.lastStartAt = null;
+    this.lastNotice = -Infinity;
+    await this.attach();
+  }
+
   private async start(granted: Incoming): Promise<void> {
     const { options, placement } = this;
+    if (this.starting) {
+      return; // a grant that arrives twice (or while the re-check runs) starts the turn once
+    }
+    this.starting = true;
+    if (await this.requeueIfStale(granted)) {
+      this.starting = false; // the turn queued again: its next grant starts it
+      return;
+    }
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
@@ -329,7 +403,7 @@ export class QueuedRun {
         break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
-        if (this.state === "waiting") {
+        if (this.state === "waiting" && !this.downgrading) {
           void this.start(message);
         }
         break;
@@ -354,6 +428,7 @@ export class QueuedRun {
   }
 
   private onQueued(message: Incoming): void {
+    this.downgrading = false; // also the answer to a "downgrade"
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
     const outlook =
@@ -470,6 +545,10 @@ export class QueuedRun {
   }
 
   private onError(message: Incoming): void {
+    if (this.downgrading && this.state === "waiting") {
+      void this.requeueAsNewJob(); // an older scheduler, or a job that is not a granted shared turn
+      return;
+    }
     if (this.gpuTurn && message.code === "version" && this.state === "waiting" && this.options.after === 0) {
       // A scheduler of an older checkout has no GPU turns: take the GPU lock as such schedulers expect (the command
       // then registers as a GPU holder), without the fair order
@@ -527,9 +606,55 @@ export class QueuedRun {
       return;
     }
     this.register(current);
-    onMessages(current, (message) => this.onMessage(message));
+    // Only the current connection speaks for the job: what a replaced one still delivers is not read
+    onMessages(current, (message) => {
+      if (current === this.socket) {
+        this.onMessage(message);
+      }
+    });
     current.on("error", () => current.destroy());
     current.on("close", () => this.onClose(current));
+  }
+
+  /** What the plugins are told about this job: its directory, worktree and shell (resolved once, git). */
+  private contextOf(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: (this.worktree ??= resolveWorktree(cwd)),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
+  }
+
+  /** What the plugins' classify says of the share of this GPU turn; undefined when no plugin has an opinion. */
+  private classifyShare(plugins: PluginHost): ShareMode | undefined {
+    const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
+    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share;
+  }
+
+  /**
+   * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
+   * (an explicit "shared" or "exclusive" stands, a veto too) and neither --gpu-exclusive nor --after is set, the
+   * plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
+   * made, not during it. Once per run; a re-registration reuses the answer.
+   */
+  private async resolveShare(): Promise<void> {
+    const plugins = this.plugins;
+    if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
+      return;
+    }
+    let share = this.classifyShare(plugins);
+    // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
+    // job already waited), so a list now could read the old assembly
+    if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
+      const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
+      share = answer?.share;
+      this.stillValid = answer?.share === "shared" && answer.stillValid !== undefined ? answer : null;
+    }
+    this.share = share === "shared" ? "shared" : "exclusive";
   }
 
   /** Registers the job on a new connection: a request while it waits, an adopt once its command runs. */
@@ -544,14 +669,7 @@ export class QueuedRun {
     const keys = hasPlugins
       ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
       : undefined;
-    const context = (plugins: PluginHost): BaseClientContext => ({
-      cwd,
-      worktree,
-      configRoot: plugins.configRoot,
-      shell: CommandShell.resolve(options.shell).name,
-      env: process.env,
-      log: prefix,
-    });
+    const context = (plugins: PluginHost): BaseClientContext => this.contextOf(plugins);
     let memoryMb: number | undefined;
     if (hasPlugins && !this.gpuTurn) {
       if (this.memoryMb === null) {
@@ -566,10 +684,8 @@ export class QueuedRun {
     let share: ShareMode | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
-        const plugins = this.plugins as PluginHost;
-        const resource = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
-        const classified = plugins.classify(options.command, resource, context(plugins));
-        this.share = classified.share === "shared" ? "shared" : "exclusive";
+        // Normally set by resolveShare before the connection; kept for a run that registers without it
+        this.share = this.classifyShare(this.plugins as PluginHost) === "shared" ? "shared" : "exclusive";
       }
       share = this.share;
     }
@@ -629,6 +745,10 @@ export class QueuedRun {
     }
     if (this.state !== "done" && this.socket === current) {
       this.socket = null;
+      // A pending downgrade is lost with the connection. The turn is exclusive already (the re-check said so): it
+      // registers again as exclusive, and a grant that comes after the reconnect (also one that still says shared) is
+      // started at once, under an exclusive lock
+      this.downgrading = false;
       if (!this.registered) {
         return;
       }

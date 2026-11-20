@@ -15,7 +15,7 @@ import {
 import { runBuildStep } from "./client-build-step.ts";
 import { type Endpoint } from "./client-connect.ts";
 import { QueuedRun } from "./client-queued-run.ts";
-import { ProcessRunHost } from "./client-run-host.ts";
+import { ProcessRunHost, type RunHost } from "./client-run-host.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
 import { CommandShell } from "./shell.ts";
@@ -121,26 +121,41 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
     }
   }
   if (options.gpu && !inGpuLock) {
-    const host = new ProcessRunHost(options);
-    const step = context !== undefined ? plugins.splitBeforeTurn(options.command, gpu, context) : undefined;
-    if (step !== undefined) {
-      // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
-      prefix(`building outside the GPU turn first, as a job of its own: ${step.before}`);
-      const code = await runBuildStep(options, placement, step.before, host, step.beforeRole, plugins);
-      if (code !== 0) {
-        prefix(`the build ended with ${code}; the tests do not ask for the GPU turn`);
-        process.exit(code);
-      }
-      prefix(`the build succeeded; the tests wait for the GPU turn: ${step.after}`);
-      options.command = step.after;
-      options.role = step.afterRole;
-      options.after = 0; // the build job waited for it
-    }
-    // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
-    // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too. The turn
-    // classifies its share from options.command, which is the command after the split.
-    await new QueuedRun(options, placement, false, true, host, plugins).run();
+    await runGpuTurn(options, placement, new ProcessRunHost(options), plugins, context);
     return;
   }
   await new QueuedRun(options, placement, inGpuLock, false, new ProcessRunHost(options), plugins).run();
+}
+
+/**
+ * The --gpu run: the builds of its command first, as a queued job without the GPU (when a plugin splits them off), and
+ * only after that job has ended with 0 the turn at the GPU, which classifies its share (and may ask the plugins'
+ * checkShare, which reads what the build wrote) from the command after the split.
+ */
+export async function runGpuTurn(
+  options: RunOptions,
+  placement: Placement,
+  host: RunHost,
+  plugins: PluginHost,
+  context: BaseClientContext | undefined,
+): Promise<void> {
+  const gpu = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
+  const step = context !== undefined ? plugins.splitBeforeTurn(options.command, gpu, context) : undefined;
+  if (step !== undefined) {
+    // Build first, on CPU slots: the GPU turn would otherwise be held, with the GPU idle, for the whole build
+    prefix(`building outside the GPU turn first, as a job of its own: ${step.before}`);
+    const code = await runBuildStep(options, placement, step.before, host, step.beforeRole, plugins);
+    if (code !== 0) {
+      prefix(`the build ended with ${code}; the tests do not ask for the GPU turn`);
+      process.exit(code);
+    }
+    prefix(`the build succeeded; the tests wait for the GPU turn: ${step.after}`);
+    options.command = step.after;
+    options.role = step.afterRole;
+    options.after = 0; // the build job waited for it
+  }
+  // Wait for the turn at the GPU in the scheduler (in order, visible and cancellable), then take the lock: the GPU
+  // lock alone gives it to whichever waiter polls first. An --after predecessor blocks the turn there too. The turn
+  // classifies its share from options.command, which is the command after the split.
+  await new QueuedRun(options, placement, false, true, host, plugins).run();
 }
