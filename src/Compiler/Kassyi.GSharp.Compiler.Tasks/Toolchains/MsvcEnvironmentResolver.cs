@@ -16,11 +16,28 @@ internal sealed class MsvcEnvironmentResolver(
 {
     // Keyed by the architecture and the vswhere override, so that a resolver with another vswhere does not get the
     // result of the first one
-    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
-        new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<VcvarsKey, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
+        new(VcvarsKeyComparer.Instance);
 
     private readonly ConcurrentDictionary<string, Dictionary<string, string>> _resolvedEnvs =
         new(StringComparer.OrdinalIgnoreCase);
+
+    // The architecture of vcvarsall.bat and the vswhere override (null for the installed one) of a resolution
+    private readonly record struct VcvarsKey(string Architecture, string? Vswhere);
+
+    // Both parts are compared ignoring case, as the file system and vcvarsall.bat do
+    private sealed class VcvarsKeyComparer : IEqualityComparer<VcvarsKey>
+    {
+        public static readonly VcvarsKeyComparer Instance = new();
+
+        public bool Equals(VcvarsKey x, VcvarsKey y) =>
+            string.Equals(x.Architecture, y.Architecture, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(x.Vswhere, y.Vswhere, StringComparison.OrdinalIgnoreCase);
+
+        public int GetHashCode(VcvarsKey key) =>
+            unchecked(StringComparer.OrdinalIgnoreCase.GetHashCode(key.Architecture) * 31 +
+                      (key.Vswhere is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(key.Vswhere)));
+    }
 
     /// <summary>
     /// Maps a host architecture name (<c>x64</c>, <c>arm64</c>) to the <c>vcvarsall.bat</c> argument.
@@ -48,7 +65,7 @@ internal sealed class MsvcEnvironmentResolver(
             return ResolveVcvarsEnvironment(vcvarsArch, cancellationToken);
         }
 
-        var key = vcvarsArch + "|" + vswherePathOverride;
+        var key = new VcvarsKey(vcvarsArch, vswherePathOverride);
         var entry = s_vcvarsCache.GetOrAdd(
             key,
             _ => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(vcvarsArch, cancellationToken)));
@@ -62,8 +79,8 @@ internal sealed class MsvcEnvironmentResolver(
             // fail every later build of the process with the first caller's exception. Remove this entry only: another
             // caller may already have added a new one for the key. A resolved value, null (no Visual Studio) included,
             // stays.
-            ((ICollection<KeyValuePair<string, Lazy<Dictionary<string, string>?>>>)s_vcvarsCache)
-                .Remove(new KeyValuePair<string, Lazy<Dictionary<string, string>?>>(key, entry));
+            ((ICollection<KeyValuePair<VcvarsKey, Lazy<Dictionary<string, string>?>>>)s_vcvarsCache)
+                .Remove(new KeyValuePair<VcvarsKey, Lazy<Dictionary<string, string>?>>(key, entry));
             throw;
         }
     }

@@ -7,8 +7,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 /// <summary>
-/// The process-wide cache of the <c>vcvarsall.bat</c> environment keeps a result, not the exception of a resolution that
-/// was cancelled or failed: the next build of the process resolves again.
+/// The process-wide cache of the <c>vcvarsall.bat</c> environment keeps a result, not the exception of a resolution
+/// that was cancelled or failed: the next build of the process resolves again.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class MsvcEnvironmentResolverCacheTests
@@ -21,8 +21,7 @@ public class MsvcEnvironmentResolverCacheTests
     [Scenario(TestScenario.Boundary)]
     public void GetVcvarsEnvironment_FirstResolutionCancelled_ResolvesAgain()
     {
-        // mutant: MsvcEnvironmentResolver.GetVcvarsEnvironment without the Remove in the catch -> the second call throws
-        // the cancellation of the first
+        // The entry of the cancelled resolution is not kept: the second call is not the first one's cancellation
         var runner = new CountingRunner();
         var toolchain = new MsvcToolchain(runner, disableCache: false, Vswhere);
         var architecture = NewArchitecture();
@@ -59,7 +58,7 @@ public class MsvcEnvironmentResolverCacheTests
     [Scenario(TestScenario.HappyPath)]
     public void GetVcvarsEnvironment_ResolvedOnce_IsNotRunAgain()
     {
-        // mutant: removing the entry of a result as well -> the second call runs vswhere again
+        // A result (here: no Visual Studio) is kept: the second call does not run vswhere again
         var runner = new CountingRunner();
         var toolchain = new MsvcToolchain(runner, disableCache: false, Vswhere);
         var architecture = NewArchitecture();
@@ -74,7 +73,7 @@ public class MsvcEnvironmentResolverCacheTests
     [Scenario(TestScenario.Boundary)]
     public void GetVcvarsEnvironment_OtherVswhereOverride_ResolvesItsOwn()
     {
-        // mutant: the key without the vswhere override -> the second toolchain gets the result of the first
+        // The key holds the vswhere override: the second toolchain does not get the result of the first
         var architecture = NewArchitecture();
         var firstRunner = new CountingRunner();
         var secondRunner = new CountingRunner();
@@ -101,7 +100,9 @@ public class MsvcEnvironmentResolverCacheTests
 
         public bool ThrowOnFirstCall { get; init; }
 
-        public Task<ProcessResult> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default) =>
+        public Task<ProcessResult> RunAsync(
+            ProcessStartInfo startInfo,
+            CancellationToken cancellationToken = default) =>
             Task.FromResult(Run(startInfo, cancellationToken));
 
         public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
