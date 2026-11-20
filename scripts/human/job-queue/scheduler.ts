@@ -359,7 +359,11 @@ export class Scheduler<J extends SchedulerJob> {
     }
     // The first job that takes slots and fits is granted by the next settle: it waits for nothing
     const first = this.waiting.find((other) => !other.gpuTurn && !this.isBlocked(other));
-    return first === job ? undefined : "in-line";
+    // Nor does a later job that backfilling grants now (not under fifo, as in grant)
+    if (first === job || (this.policy !== "fifo" && this.backfill(now).includes(job))) {
+      return undefined;
+    }
+    return "in-line";
   }
 
   /** move --first: ahead of every waiting job, the pinned ones included. */

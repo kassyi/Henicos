@@ -100,6 +100,21 @@ function checkWaitFor(assert: AssertModule): void {
   assert.strictEqual(exclusive.waitFor(e2, 0), "gpu", "an exclusive turn runs: no probe helps");
 }
 
+/** A job that backfilling grants at the next settle waits for nothing; under fifo it waits in line. */
+function checkWaitForBackfill(assert: AssertModule): void {
+  for (const policy of ["hrrn", "backfill", "fifo"] as const) {
+    const s = new Scheduler<SchedulerJob>(4, 0, policy);
+    const a = job(1, 2, 1, false, times(300, 300));
+    const [b, c] = [job(2, 4, 2), job(3, 1, 3, false, times(10, 10))];
+    s.enqueue(a, 0);
+    s.add(b);
+    s.add(c);
+    assert.strictEqual(s.waitFor(b, 0), "slots", `${policy}: the wide job`);
+    assert.strictEqual(s.waitFor(c, 0), policy === "fifo" ? "in-line" : undefined, `${policy}: the short job`);
+    assert.deepStrictEqual(s.grant(0), policy === "fifo" ? [] : [c], `${policy}: and the grant agrees`);
+  }
+}
+
 /** The words of each answer, the predecessor and the resource named; nothing for a scheduler that did not say. */
 function checkDescribeWaitFor(assert: AssertModule): void {
   assert.strictEqual(describeWaitFor({ waitFor: "after", blockedBy: 821 }), "waits for j0821 to end");
@@ -522,6 +537,7 @@ async function checkExitsOf(assert: AssertModule): Promise<void> {
 
 export const QueueHintChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   checkWaitFor,
+  checkWaitForBackfill,
   checkDescribeWaitFor,
   checkLatestEnd,
   checkWaitForMessages,
