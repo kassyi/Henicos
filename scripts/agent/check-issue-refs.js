@@ -213,6 +213,32 @@ function createLabels(list) {
     return labels;
 }
 
+// The bodies of the backtick substitutions of a bash segment (outside single quotes, also inside double quotes).
+function backtickBodies(segment) {
+    const bodies = [];
+    let quote = '';
+    let start = -1;
+    for (let i = 0; i < segment.length; i++) {
+        const ch = segment[i];
+        if (ch === '\\' && quote !== "'") i++;
+        else if (start >= 0) {
+            if (ch === '`') { bodies.push(segment.slice(start, i)); start = -1; }
+        } else if (ch === "'" && quote !== '"') quote = quote === "'" ? '' : "'";
+        else if (ch === '"' && quote !== "'") quote = quote === '"' ? '' : '"';
+        else if (ch === '`' && quote !== "'") start = i + 1;
+    }
+    return bodies;
+}
+
+// The index of the command a shell wrapper runs (cmd /c, also //c from Git Bash; pwsh -Command; bash -c), or -1.
+function wrapperCommandIndex(reader, name, raw) {
+    if (name === 'cmd') {
+        const flag = raw.findIndex((word, i) => i > 0 && /^\/\/?[ck]$/i.test(reader.unquote(word)));
+        return flag < 0 ? -1 : flag + 1;
+    }
+    return reader.shellCommandIndex(name, raw);
+}
+
 // The reader dialect of the command string a shell wrapper (bash -c, pwsh -Command, cmd /c) runs.
 function wrapperDialect(name) {
     if (name === 'cmd') return 'cmd';
@@ -238,10 +264,16 @@ function foundByProblem(command, dialect) {
             }
         }
         const inner = reader.substitutions(segment).map(body => ({ body, dialect }));
+        if (dialect === 'bash') inner.push(...backtickBodies(segment).map(body => ({ body, dialect })));
         const name = raw.length > 0 ? reader.programName(raw[0]) : '';
-        const at = reader.shellCommandIndex(name, raw);
+        const at = wrapperCommandIndex(reader, name, raw);
         if (at >= 0 && at < raw.length) {
-            inner.push({ body: reader.argumentText(raw[at]), dialect: wrapperDialect(name) });
+            // cmd and PowerShell take the rest of the words as the command (cmd /c gh issue create ..., a script
+            // block { ... }); the bash family takes one word.
+            const wrapper = wrapperDialect(name);
+            const rest = raw.slice(at);
+            const joined = wrapper === 'bash' || rest.length === 1 ? reader.argumentText(rest[0]) : rest.join(' ');
+            inner.push({ body: joined, dialect: wrapper });
         }
         for (const item of inner) {
             const problem = foundByProblem(item.body, item.dialect);
@@ -505,6 +537,27 @@ function selfTest() {
             assert.ok(denied(`pwsh -Command "${issueCreate} --title x --label bug"`, 'PowerShell'));
             assert.ok(denied('gh.exe issue create --title x --label bug', 'PowerShell'));
             assert.ok(denied('gh.exe -R o/n issue new --title x --label bug', 'PowerShell'));
+        });
+        test('found-by: a bash backtick substitution is read', () => {
+            assert.ok(denied(`url=\`${issueCreate} --title x --label bug\``));
+            assert.ok(denied(`echo "\`${issueCreate} --title x --label bug\`"`));
+            assert.strictEqual(hook(`url=\`${issueCreate} --title x --label bug,found-by:audit\``), null);
+            assert.strictEqual(hook(`echo '\`${issueCreate} --title x --label bug\`'`), null);
+            // an apostrophe inside double quotes does not open a single-quoted span
+            assert.ok(denied(`echo "it's \`${issueCreate} --title x --label bug\`"`));
+        });
+        test('found-by: an unquoted cmd /c, cmd //c and pwsh -Command are read', () => {
+            assert.ok(denied(`cmd /c ${issueCreate} --title x --label bug`));
+            assert.ok(denied(`cmd //c ${issueCreate} --title "x y" --label bug`));
+            assert.strictEqual(hook(`cmd /c ${issueCreate} --title x --label bug,found-by:audit`), null);
+            assert.ok(denied(`pwsh -Command ${issueCreate} --title x --label bug`, 'PowerShell'));
+            assert.ok(denied(`powershell -NoProfile -c ${issueCreate} --title x --label bug`, 'PowerShell'));
+            assert.strictEqual(hook(`pwsh -Command ${issueCreate} --title x --label bug,found-by:review`), null);
+        });
+        test('found-by: a PowerShell script block is read', () => {
+            assert.ok(denied(`pwsh -Command { ${issueCreate} --title x --label bug }`, 'PowerShell'));
+            assert.strictEqual(
+                hook(`pwsh -Command { ${issueCreate} --title x --label bug,found-by:audit }`, 'PowerShell'), null);
         });
         test('found-by: the denial also reports a number problem', () => {
             const answer = hook(`${issueCreate} --title "see ${missing}" --label bug`);
