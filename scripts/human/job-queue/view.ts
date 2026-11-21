@@ -319,7 +319,8 @@ export function timelineCells(job: StatusJob, window: TimeWindow, now: number): 
         cell = { char: "?", style: "rest" }; // no recorded run time: one ? right after now, not a made-up rest
       }
     } else if (finite(job.startAt) && finite(job.endAt) && to > now) {
-      if (from >= job.startAt && from < job.endAt) {
+      // Any overlap with the expected run: a run shorter than a cell still shows as one ▒
+      if (to > job.startAt && from < job.endAt) {
         cell = { char: "▒", style: "wait" };
       } else if (from < job.startAt && (job.blockedBy != null || job.gpuTurn)) {
         cell = { char: "⋯", style: "dim" };

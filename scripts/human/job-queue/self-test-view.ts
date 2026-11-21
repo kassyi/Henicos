@@ -130,6 +130,16 @@ function checkPieces(plugins: ShortNameProvider): void {
     .map((c) => c.char)
     .join("");
   assert.match(unknown, /^ *│ *$/, unknown);
+  // A waiting run shorter than a cell shows as one ▒ wherever it falls inside the cell
+  for (const offset of [0.1, 0.5, 0.9]) {
+    const startAt = Now + 3 * window.msPerCell + offset * window.msPerCell;
+    const short = job(3, { gpuTurn: true, startAt, endAt: startAt + window.msPerCell / 10 });
+    const drawn = timelineCells(short, window, Now)
+      .map((c) => c.char)
+      .join("");
+    assert.match(drawn, /^ *┃?│?⋯*▒ *$/, `offset ${offset}: ${drawn}`);
+    assert.strictEqual(drawn.split("▒").length - 1, 1, `offset ${offset}: one cell: ${drawn}`);
+  }
 }
 
 function checkKeys(): void {
