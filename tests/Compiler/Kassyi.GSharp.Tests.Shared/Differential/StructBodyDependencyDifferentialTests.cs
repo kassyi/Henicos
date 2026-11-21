@@ -10,13 +10,9 @@ public class StructBodyDependencyDifferentialTests
 {
     private const int Rows = 257;
 
-    private const string KernelName = nameof(StructBodyDependencyDifferentialKernels.StructCreatedOnlyInBodiesKernel);
-
-    internal static readonly DifferentialCase s_createdOnlyInBodies = new(
-        $"{nameof(StructBodyDependencyDifferentialKernels)}.{KernelName}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_createdOnlyInBodies = DiffCases.Create(
+        StructBodyDependencyDifferentialKernels.LaunchStructCreatedOnlyInBodiesKernel,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
@@ -27,13 +23,9 @@ public class StructBodyDependencyDifferentialTests
                     StructBodyDependencyDifferentialKernels.CreatedOnlyInBodiesColumns,
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructBodyDependencyDifferentialKernels.LaunchStructCreatedOnlyInBodiesKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "inputs",
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
