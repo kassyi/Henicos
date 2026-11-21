@@ -293,6 +293,7 @@ public class FuzzSplitOracleTests
             ?? throw new InvalidOperationException("Missing SplitHandRunner.");
     }
 
+    // Kept as interpolated template: wraps [InlineData] statement fragments for FuzzSplitOracle.
     private static string WrapKernel(string body) =>
         $$"""
         using System;
