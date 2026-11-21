@@ -53,7 +53,9 @@ public sealed class MandelbrotBenchmark(int size = 1024, int maxIter = 1000) : I
 
     public void RunGSharp() =>
         MandelbrotKernels.LaunchMandelbrotKernel(
-            _outputGsharp, size, size, maxIter, XMin, XMax, YMin, YMax,
+            output: _outputGsharp,
+            dimensions: new MandelbrotDimensions { Width = size, Height = size, MaxIterations = maxIter },
+            viewport: new MandelbrotViewport { XMin = XMin, XMax = XMax, YMin = YMin, YMax = YMax },
             gridDimX: GridDim, gridDimY: GridDim, blockDimX: TileSize, blockDimY: TileSize);
 
     public void RunNativeCuda() =>
