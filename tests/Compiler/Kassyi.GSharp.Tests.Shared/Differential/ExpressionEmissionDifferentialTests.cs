@@ -34,63 +34,46 @@ public sealed class ExpressionEmissionDifferentialTests
         0x1_0000, 123_456_789
     ];
 
-    internal static readonly DifferentialCase s_switchArmConversion = new(
-        $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.SwitchArmConversionKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_switchArmConversion = DiffCases.CreateRows<int, long, float>(
+        ExpressionEmissionDifferentialKernels.LaunchSwitchArmConversionKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Mixed(rng, rows, s_conversionCases, DiffValues.NextInt32))
             .Out<long>("dst", rows, ["int_long_arms", "uint_int_arms", "nested_narrow_arms", "arms_in_operand"], OutputPolicy.Bitwise)
             .Out<float>("fdst", rows, ["int_float_long_arms", "int_double_arms", "char_float_arms", "narrow_nan_arms"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchSwitchArmConversionKernel(
-            b.Get<int>("a"), b.Get<long>("dst"), b.Get<float>("fdst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "a",
+        secondInputName: "dst",
+        outputName: "fdst");
 
-    internal static readonly DifferentialCase s_floatingSwitch = new(
-        $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.FloatingSwitchKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_floatingSwitch = DiffCases.CreateRows<double, float, int>(
+        ExpressionEmissionDifferentialKernels.LaunchFloatingSwitchKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("d", DiffValues.Cycled(rng, rows, s_doubleCases,
                 static r => BitConverter.Int64BitsToDouble(unchecked((long)r.NextUInt64()))))
             .In("f", DiffValues.Cycled(rng, rows, s_singleCases, DiffValues.NextSingle))
             .Out<int>("dst", rows, ["double_arms", "float_arms", "evaluated_once", "nested_floating"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchFloatingSwitchKernel(
-            b.Get<double>("d"), b.Get<float>("f"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "d",
+        secondInputName: "f");
 
-    internal static readonly DifferentialCase s_nullableSwitch = new(
-        $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NullableSwitchKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullableSwitch = DiffCases.CreateRows<int, double, int>(
+        ExpressionEmissionDifferentialKernels.LaunchNullableSwitchKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("d", DiffValues.Cycled(rng, rows, s_doubleCases,
                 static r => BitConverter.Int64BitsToDouble(unchecked((long)r.NextUInt64()))))
             .Out<int>("dst", rows, ["null_arms", "nullable_int_input", "nullable_double_input", "array_null_arm"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNullableSwitchKernel(
-            b.Get<int>("a"), b.Get<double>("d"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "a",
+        secondInputName: "d");
 
-    internal static readonly DifferentialCase s_nullForgivingAndArrayCoalesce = new(
-        $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NullForgivingAndArrayCoalesceKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullForgivingAndArrayCoalesce = DiffCases.Create(
+        ExpressionEmissionDifferentialKernels.LaunchNullForgivingAndArrayCoalesceKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["null_forgiving", "coalesce", "coalesce_assign", "coalesce_operand"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNullForgivingAndArrayCoalesceKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
     internal static readonly DifferentialCase s_implicitArgumentConversion = new(
         $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.ImplicitArgumentConversionKernel)}")
@@ -102,23 +85,28 @@ public sealed class ExpressionEmissionDifferentialTests
             .Out<float>("dst", rows, ["vector2", "vector3", "vector4", "array_initializer"], OutputPolicy.Bitwise)
             .Out<double>("ddst", rows, ["nullable_int", "nullable_long", "vector2_long", "initializer_long"], OutputPolicy.Bitwise),
         Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchImplicitArgumentConversionKernel(
-            b.Get<int>("a"), b.Get<long>("la"), b.Get<float>("dst"), b.Get<double>("ddst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            inputs: new ImplicitConversionInputs
+            {
+                Int32Values = b.Get<int>("a"),
+                Int64Values = b.Get<long>("la"),
+            },
+            results: new ImplicitConversionResults
+            {
+                SingleResults = b.Get<float>("dst"),
+                DoubleResults = b.Get<double>("ddst"),
+            },
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nestedMemberInitializer = new(
-        $"{nameof(ExpressionEmissionDifferentialKernels)}.{nameof(ExpressionEmissionDifferentialKernels.NestedMemberInitializerKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nestedMemberInitializer = DiffCases.Create(
+        ExpressionEmissionDifferentialKernels.LaunchNestedMemberInitializerKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["nested_member", "nested_order", "two_levels", "after_constructor"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => ExpressionEmissionDifferentialKernels.LaunchNestedMemberInitializerKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
