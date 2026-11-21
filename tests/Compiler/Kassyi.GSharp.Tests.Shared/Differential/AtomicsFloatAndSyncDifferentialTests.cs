@@ -161,17 +161,14 @@ public class AtomicsFloatAndSyncDifferentialTests
             });
 
     internal static readonly DifferentialCase s_floatSpecialValuesContention =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.FloatSpecialValuesContentionKernel)}")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (_, _) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchFloatSpecialValuesContentionKernel,
+            inputs: static (_, _) =>
             {
                 float subnormal = BitConverter.UInt32BitsToSingle(0x00400000u); // largest-bit subnormal (2^-127)
                 // Non-canonical quiet NaN with payload
                 float nanPayload = BitConverter.UInt32BitsToSingle(0x7FC01234u);
-                return new DiffBuffers()
+                var buffers = new DiffBuffers()
                     .In(
                         "specialInputs",
                         [subnormal, nanPayload, -0.0f, 1.0f, float.NegativeInfinity],
@@ -189,24 +186,19 @@ public class AtomicsFloatAndSyncDifferentialTests
                             (AtomicsDifferentialKernels.FloatSpecialColumns[5], OutputPolicy.Bitwise),
                         ]
                     );
-            },
-            Launch = static (b, s) =>
-            {
-                var outBuf = b.Get<float>("specialOutputs");
+                var outBuf = buffers.Get<float>("specialOutputs");
                 outBuf[0] = 0.0f;
                 outBuf[1] = 0.0f;
                 outBuf[2] = 1.0f;
                 outBuf[3] = -0.0f;
                 outBuf[4] = float.PositiveInfinity;
                 outBuf[5] = float.PositiveInfinity;
-                AtomicsDifferentialKernels.LaunchFloatSpecialValuesContentionKernel(
-                    b.Get<float>("specialInputs"),
-                    outBuf,
-                    gridDimX: s.GridX,
-                    blockDimX: s.BlockX
-                );
+                return buffers;
             },
-            Reference = static (b, s) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "specialInputs",
+            outputName: "specialOutputs",
+            reference: static (b, s) =>
             {
                 var inputs = b.Get<float>("specialInputs");
                 var outBuf = b.Get<float>("specialOutputs");
@@ -235,8 +227,7 @@ public class AtomicsFloatAndSyncDifferentialTests
 
                 // Column 5: +Infinity + (-Infinity) = NaN
                 outBuf[5] = float.NaN;
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_blockLeaderCasSpinlock =
         DiffCases.Create(
