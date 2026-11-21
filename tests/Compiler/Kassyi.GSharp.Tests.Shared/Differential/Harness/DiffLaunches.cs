@@ -258,6 +258,16 @@ internal static class DiffLaunches
             s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, sharedMemBytes, default, default);
 
     /// <summary>
+    /// Binds a generic 1-buffer <c>Launch*</c> method group. Explicit type arguments are required when passing a method group.
+    /// </summary>
+    public static Action<DiffBuffers, LaunchShape> Bind<TBuffer>(
+        DiffLaunch<TBuffer[]> launch,
+        string bufferName = "a", uint sharedMemBytes = 0) =>
+        (b, s) => launch(
+            b.Get<TBuffer>(bufferName),
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, sharedMemBytes, default, default);
+
+    /// <summary>
     /// Binds a generic 2-buffer <c>Launch*</c> method group. Explicit type arguments are required when passing a method group.
     /// </summary>
     public static Action<DiffBuffers, LaunchShape> Bind<TSource, TResult>(

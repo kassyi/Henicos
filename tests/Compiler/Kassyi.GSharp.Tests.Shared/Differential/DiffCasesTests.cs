@@ -169,6 +169,26 @@ public sealed class DiffCasesTests
     }
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void BindAndCreate_GenericSingleBufferWithExplicitTypeArgument_CompilesAndDerivesName()
+    {
+        Action<DiffBuffers, LaunchShape> boundSingle = DiffLaunches.Bind<uint>(
+            WarpCollectiveDifferentialKernels.LaunchBallotCallerOutsideMaskKernel,
+            bufferName: "output");
+
+        Assert.NotNull(boundSingle);
+
+        DifferentialCase singleCase = DiffCases.Create<uint>(
+            WarpCollectiveDifferentialKernels.LaunchBallotCallerOutsideMaskKernel,
+            inputs: CreateDummyBuffers,
+            shape: LaunchShapes.SingleThread(),
+            bufferName: "output");
+
+        Assert.Equal("WarpCollectiveDifferentialKernels.BallotCallerOutsideMaskKernel", singleCase.Name);
+        Assert.True(singleCase.OracleIsLaunch);
+    }
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Create_OracleIsLaunchDefaultAndExplicitFalse_SetsExpectedFlag()
     {

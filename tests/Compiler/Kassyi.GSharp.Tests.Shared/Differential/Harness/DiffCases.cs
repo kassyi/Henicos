@@ -642,6 +642,41 @@ internal static class DiffCases
             verify, verifyAgainstInitial);
 
     /// <summary>
+    /// Creates a <see cref="DifferentialCase"/> from a generic 1-buffer <c>Launch*</c> method group.
+    /// Explicit type arguments are required for method groups; <c>Verify</c>-only/<c>ExpectedException</c>-only cases without
+    /// <c>Oracle</c>/<c>Reference</c> must pass <c>oracleIsLaunch: false</c>.
+    /// </summary>
+    public static DifferentialCase Create<TBuffer>(
+        DiffLaunch<TBuffer[]> launch,
+        Func<DiffRandom, LaunchShape, DiffBuffers> inputs,
+        LaunchShape? shape = null,
+        IReadOnlyList<LaunchShape>? shapes = null,
+        IReadOnlyList<LaunchShape>? extraShapesSeed0Only = null,
+        string bufferName = "a",
+        string? suffix = null,
+        string? caseName = null,
+        Action<DiffBuffers, LaunchShape>? reference = null,
+        Action<DiffBuffers, LaunchShape>? oracle = null,
+        bool? oracleIsLaunch = null,
+        IReadOnlyList<int>? seeds = null,
+        OutputPolicy? policy = null,
+        OracleExceptionMode oracleExceptions = OracleExceptionMode.None,
+        ExceptionPolicy? exceptionPolicy = null,
+        Func<DiffRandom, LaunchShape, ExceptionPolicy?>? expectedException = null,
+        DiffPath? exceptionPaths = null,
+        IReadOnlyDictionary<DiffPath, string>? skippedPaths = null,
+        Func<DiffBuffers, LaunchShape, PropertyResult>? verify = null,
+        Func<DiffBuffers, DiffBuffers, LaunchShape, PropertyResult>? verifyAgainstInitial = null,
+        uint sharedMemBytes = 0,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        Build(
+            launchExpression, suffix, caseName, nameof(launch),
+            inputs, DiffLaunches.Bind(launch, bufferName, sharedMemBytes),
+            shape, shapes, extraShapesSeed0Only, reference, oracle, oracleIsLaunch, seeds, policy,
+            oracleExceptions, exceptionPolicy, expectedException, exceptionPaths, skippedPaths,
+            verify, verifyAgainstInitial);
+
+    /// <summary>
     /// Creates a <see cref="DifferentialCase"/> from a generic 2-buffer <c>Launch*</c> method group.
     /// Explicit type arguments are required for method groups; <c>Verify</c>-only/<c>ExpectedException</c>-only cases without
     /// <c>Oracle</c>/<c>Reference</c> must pass <c>oracleIsLaunch: false</c>.
