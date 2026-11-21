@@ -1557,3 +1557,4 @@
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.SplitArgumentsKernel", node: "expression", reason: "UnsupportedShape", operation: "Invocation", syntax: "InvocationExpression", count: 1}
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.SplitArgumentsKernel", node: "statement", reason: "UnsupportedOperation", operation: "LocalFunction", syntax: "LocalFunctionStatement", count: 1}
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.SplitArgumentsKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
+- {file: "TestCases/Transpiler/SequentialSumRewriteCases.cs", method: "SequentialSumForms.RewriteAllForms", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleLambdaExpression", count: 9}

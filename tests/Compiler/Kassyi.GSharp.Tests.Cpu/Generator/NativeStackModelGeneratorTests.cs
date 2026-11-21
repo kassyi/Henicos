@@ -133,53 +133,16 @@ public class NativeStackModelGeneratorTests
     [Scenario(TestScenario.SadPath)]
     public async Task RecursiveSuspendingCallee_StackModelBuild_ReportsGsh0061WithoutStackEmission()
     {
-        const string Source = """
-            using Kassyi.GSharp.Core;
+        var source = ReadCase("NativeStackRecursiveCalleeCases.cs");
 
-            namespace RecursiveStackDiagTest;
-
-            public static partial class RecursiveKernels
-            {
-                [GpuDeviceFunction]
-                public static void DirectlyRecursiveBarrier(int depth)
-                {
-                    if (depth <= 0)
-                    {
-                        return;
-                    }
-
-                    Gpu.SyncThreads();
-                    DirectlyRecursiveBarrier(depth - 1);
-                }
-
-                [GpuDeviceFunction]
-                public static void NonRecursiveWrapper(int depth)
-                {
-                    DirectlyRecursiveBarrier(depth);
-                }
-
-                [GpuKernel]
-                public static void DirectRecursionKernel(int depth)
-                {
-                    DirectlyRecursiveBarrier(depth);
-                }
-
-                [GpuKernel]
-                public static void WrapperRecursionKernel(int depth)
-                {
-                    NonRecursiveWrapper(depth);
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(Source).WithAssemblyName("RecursiveStackDiagTest");
+        var compilation = RoslynTestUtility.CreateCompilation(source).WithAssemblyName("RecursiveStackDiagTest");
         var stackOptions = new Dictionary<string, string>
         {
             ["build_property.GSharpNativeBarrierModel"] = "Stack"
         };
 
         var analyzerDiagnostics = await GeneratorTestRunner.GetAnalyzerDiagnosticsAsync(
-            Source,
+            source,
             new BarrierUsageAnalyzer(),
             "Cpu",
             stackOptions);
@@ -202,43 +165,9 @@ public class NativeStackModelGeneratorTests
     [Scenario(TestScenario.SadPath)]
     public void WarpOperatorMacroKernel_StackModelBuild_StaysOnTheStateMachine()
     {
-        const string Source = """
-            using Kassyi.GSharp.Core;
+        var source = ReadCase("NativeStackWarpOperatorMacroCases.cs");
 
-            namespace WarpMacroStackTest;
-
-            public struct WarpSum
-            {
-                public int V;
-
-                [GpuOperatorMacro(typeof(WarpSumOps), nameof(WarpSumOps.Add))]
-                public static WarpSum operator +(WarpSum left, WarpSum right) => throw new GpuOnlyException();
-            }
-
-            public static partial class WarpSumOps
-            {
-                [GpuDeviceFunction]
-                public static void Add(ref WarpSum result, WarpSum left, WarpSum right)
-                {
-                    result.V = left.V + Warp.ShuffleXorSync(0xFFFFFFFFu, right.V, 1);
-                }
-            }
-
-            public static partial class Kernels
-            {
-                [GpuKernel]
-                public static void MacroAfterBarrierKernel(int[] data)
-                {
-                    var x = new WarpSum { V = data[ThreadIndex.X] };
-                    Gpu.SyncThreads();
-                    WarpSum z;
-                    z = x + x;
-                    data[ThreadIndex.X] = z.V;
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(Source).WithAssemblyName("WarpMacroStackTest");
+        var compilation = RoslynTestUtility.CreateCompilation(source).WithAssemblyName("WarpMacroStackTest");
         var (driver, _, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu",
             new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = "Stack" });
 
@@ -259,63 +188,9 @@ public class NativeStackModelGeneratorTests
     [Scenario(TestScenario.SadPath)]
     public void WarpCollectiveInStructMember_EitherModel_ReportsGsh0062(string model)
     {
-        const string Source = """
-            using Kassyi.GSharp.Core;
+        var source = ReadCase("NativeStackWarpStructMemberCases.cs");
 
-            namespace WarpStructMemberTest;
-
-            public struct Guard : System.IDisposable
-            {
-                public int V;
-
-                public int Shuffled => Warp.ShuffleXorSync(0xFFFFFFFFu, V, 1);
-
-                public void Dispose()
-                {
-                    V = Ops.PairSum(V);
-                }
-
-                public static implicit operator int(Guard g) => Ops.PairSum(g.V);
-            }
-
-            public static partial class Ops
-            {
-                [GpuDeviceFunction]
-                public static int PairSum(int v) => v + Warp.ShuffleXorSync(0xFFFFFFFFu, v, 1);
-
-                [GpuKernel]
-                public static void PropertyKernel(int[] data)
-                {
-                    int t = ThreadIndex.X;
-                    var g = new Guard { V = data[t] };
-                    Gpu.SyncThreads();
-                    data[t] = g.Shuffled;
-                }
-
-                [GpuKernel]
-                public static void ConversionKernel(int[] data)
-                {
-                    int t = ThreadIndex.X;
-                    var g = new Guard { V = data[t] };
-                    Gpu.SyncThreads();
-                    int v = g;
-                    data[t] = v;
-                }
-
-                [GpuKernel]
-                public static void UsingKernel(int[] data)
-                {
-                    int t = ThreadIndex.X;
-                    Gpu.SyncThreads();
-                    using (var g = new Guard { V = data[t] })
-                    {
-                        data[t] = g.V;
-                    }
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(Source).WithAssemblyName("WarpStructMemberTest");
+        var compilation = RoslynTestUtility.CreateCompilation(source).WithAssemblyName("WarpStructMemberTest");
         var (driver, _, _) = GeneratorTestRunner.RunGenerator(compilation, "Cpu",
             new Dictionary<string, string> { ["build_property.GSharpNativeBarrierModel"] = model });
 
@@ -362,6 +237,10 @@ public class NativeStackModelGeneratorTests
             }
         }
     }
+
+    private static string ReadCase(string fileName) =>
+        File.ReadAllText(RepositoryPaths.Combine(
+            "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Generator", "Cases", fileName));
 
     private static Compilation CreateKernelCompilation()
     {

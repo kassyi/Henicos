@@ -14,6 +14,7 @@ public class FuzzDeduplicatorAndPromoterTests
     [Scenario(TestScenario.Boundary)]
     public void FuzzDeduplicator_AlphaRenamedAndDeadCodePaddedKernels_ProduceIdenticalFingerprint()
     {
+        // Kept as source text: direct text input to FuzzDeduplicator.ComputeFingerprint (alpha-renaming test).
         const string KernelVariantA =
             """
             #nullable enable
@@ -53,6 +54,7 @@ public class FuzzDeduplicatorAndPromoterTests
             }
             """;
 
+        // Kept as source text: direct text input to FuzzDeduplicator.ComputeFingerprint (renamed variant B).
         const string KernelVariantB =
             """
             #nullable enable
@@ -88,6 +90,7 @@ public class FuzzDeduplicatorAndPromoterTests
             }
             """;
 
+        // Kept as source text: direct text input to FuzzDeduplicator.ComputeFingerprint (different AST control).
         const string StructurallyDifferentKernel =
             """
             #nullable enable
