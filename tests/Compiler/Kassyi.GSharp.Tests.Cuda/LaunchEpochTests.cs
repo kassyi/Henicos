@@ -40,6 +40,7 @@ public sealed class LaunchEpochTests
 
     // The data of the ElementAt tests, and the start of the source location of their error (the ElementAt call)
     private static readonly int[] ElementAtData = [10, 20, 30, 40];
+    private const int ElementAtOutOfRange = 5;
     private const string ElementAtLocation = "LaunchEpochKernels.cu.cs(62,21)";
 
     [SkippableFact]
@@ -366,27 +367,20 @@ public sealed class LaunchEpochTests
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
-        using var dData = new GpuBuffer<int>(ElementAtData.Length);
-        using var dIndex = new GpuBuffer<int>(1);
-        using var dResult = new GpuBuffer<int>(1);
-        dData.CopyToDevice(ElementAtData);
-        dIndex.CopyToDevice([1]);
+        using var buffers = new ElementAtBuffers(1);
+        using var graph = CapturedGraph.Capture(stream, buffers.Launch);
 
-        using var graph = CapturedGraph.Capture(stream, hStream =>
-            LaunchEpochKernels.LaunchElementAtFromBufferKernelPtr(dData.ToProxy(), dIndex.ToProxy(), dResult.ToProxy(),
-                blockDimX: 1, hStream: hStream));
+        Assert.Equal(ElementAtData[1], buffers.ReplayAndRead(graph, stream));
 
-        Assert.Equal(ElementAtData[1], ReplayAndRead(graph, stream, dResult));
-
-        dIndex.CopyToDevice([ElementAtData.Length + 1]);
+        buffers.SetIndex(ElementAtOutOfRange);
         for (int replay = 0; replay < 2; replay++)
         {
             graph.Launch(stream);
             AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(stream.Synchronize));
         }
 
-        dIndex.CopyToDevice([3]);
-        Assert.Equal(ElementAtData[3], ReplayAndRead(graph, stream, dResult));
+        buffers.SetIndex(3);
+        Assert.Equal(ElementAtData[3], buffers.ReplayAndRead(graph, stream));
     }
 
     // [WHY] While every record is owned the launch takes no epoch of its own and the stream is not being captured: the
@@ -399,17 +393,11 @@ public sealed class LaunchEpochTests
         Skip.IfNot(DiffPaths.IsCudaCheckedBuild, "Only the checked build's Ptr launcher reads the record itself.");
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
-        using var dData = new GpuBuffer<int>(ElementAtData.Length);
-        using var dIndex = new GpuBuffer<int>(1);
-        using var dResult = new GpuBuffer<int>(1);
-        dData.CopyToDevice(ElementAtData);
-        dIndex.CopyToDevice([ElementAtData.Length + 1]);
+        using var buffers = new ElementAtBuffers(ElementAtOutOfRange);
 
         using (LaunchErrorRecords.HoldEveryRecordForTest())
         {
-            AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(() =>
-                LaunchEpochKernels.LaunchElementAtFromBufferKernelPtr(dData.ToProxy(), dIndex.ToProxy(),
-                    dResult.ToProxy(), blockDimX: 1, hStream: stream.Handle)));
+            AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(() => buffers.Launch(stream.Handle)));
         }
 
         Assert.False(DeviceErrorSlot.TryConsumeSlot(out _), "the launcher left its error for another synchronization");
@@ -424,22 +412,16 @@ public sealed class LaunchEpochTests
         Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
-        using var dData = new GpuBuffer<int>(ElementAtData.Length);
-        using var dIndex = new GpuBuffer<int>(1);
-        using var dResult = new GpuBuffer<int>(1);
-        dData.CopyToDevice(ElementAtData);
-        dIndex.CopyToDevice([ElementAtData.Length + 1]);
-        Action<IntPtr> launch = hStream => LaunchEpochKernels.LaunchElementAtFromBufferKernelPtr(dData.ToProxy(),
-            dIndex.ToProxy(), dResult.ToProxy(), blockDimX: 1, hStream: hStream);
+        using var buffers = new ElementAtBuffers(ElementAtOutOfRange);
 
-        using (var failing = CapturedGraph.Capture(stream, launch))
+        using (var failing = CapturedGraph.Capture(stream, buffers.Launch))
         {
             failing.Launch(stream);
             // The driver alone waits, so the error stays in the shared record
             CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream.Handle));
         }
 
-        using var second = CapturedGraph.Capture(stream, launch);
+        using var second = CapturedGraph.Capture(stream, buffers.Launch);
         AssertElementAtError(Assert.Throws<ArgumentOutOfRangeException>(stream.Synchronize));
     }
 
@@ -450,14 +432,40 @@ public sealed class LaunchEpochTests
         Assert.Equal(nameof(LaunchEpochKernels.ElementAtFromBufferKernel), ex.Data["GSharp.MemberName"]);
     }
 
-    // Replays the graph, synchronizes the stream and reads the result of the ElementAt kernel
-    private static int ReplayAndRead(CapturedGraph graph, CudaStream stream, GpuBuffer<int> dResult)
+    // The device buffers of ElementAtFromBufferKernel: ElementAtData, the index it reads, and its result
+    private sealed class ElementAtBuffers : IDisposable
     {
-        graph.Launch(stream);
-        stream.Synchronize();
-        var result = new int[1];
-        dResult.CopyToHost(result);
-        return result[0];
+        private readonly GpuBuffer<int> _data = new(ElementAtData.Length);
+        private readonly GpuBuffer<int> _index = new(1);
+        private readonly GpuBuffer<int> _result = new(1);
+
+        public ElementAtBuffers(int index)
+        {
+            _data.CopyToDevice(ElementAtData);
+            SetIndex(index);
+        }
+
+        public void SetIndex(int index) => _index.CopyToDevice([index]);
+
+        public void Launch(IntPtr hStream) => LaunchEpochKernels.LaunchElementAtFromBufferKernelPtr(_data.ToProxy(),
+            _index.ToProxy(), _result.ToProxy(), blockDimX: 1, hStream: hStream);
+
+        // Replays the graph, synchronizes the stream and reads the result
+        public int ReplayAndRead(CapturedGraph graph, CudaStream stream)
+        {
+            graph.Launch(stream);
+            stream.Synchronize();
+            var result = new int[1];
+            _result.CopyToHost(result);
+            return result[0];
+        }
+
+        public void Dispose()
+        {
+            _result.Dispose();
+            _index.Dispose();
+            _data.Dispose();
+        }
     }
 
     // [WHY] The same for a captured launch, which records into the shared record: the waiters leave on the abort word
