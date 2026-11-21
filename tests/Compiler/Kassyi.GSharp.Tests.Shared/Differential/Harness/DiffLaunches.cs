@@ -268,6 +268,29 @@ internal static class DiffLaunches
             s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, sharedMemBytes, default, default);
 
     /// <summary>
+    /// Binds a generic 3-buffer <c>Launch*</c> method group. Explicit type arguments are required when passing a method group.
+    /// </summary>
+    public static Action<DiffBuffers, LaunchShape> Bind<TFirst, TSecond, TResult>(
+        DiffLaunch<TFirst[], TSecond[], TResult[]> launch,
+        string firstInputName = "a", string secondInputName = "b", string outputName = "dst",
+        uint sharedMemBytes = 0) =>
+        (b, s) => launch(
+            b.Get<TFirst>(firstInputName), b.Get<TSecond>(secondInputName), b.Get<TResult>(outputName),
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, sharedMemBytes, default, default);
+
+    /// <summary>
+    /// Binds a generic 4-buffer <c>Launch*</c> method group. Explicit type arguments are required when passing a method group.
+    /// </summary>
+    public static Action<DiffBuffers, LaunchShape> Bind<TFirst, TSecond, TThird, TResult>(
+        DiffLaunch<TFirst[], TSecond[], TThird[], TResult[]> launch,
+        string firstInputName = "a", string secondInputName = "b", string thirdInputName = "c",
+        string outputName = "dst", uint sharedMemBytes = 0) =>
+        (b, s) => launch(
+            b.Get<TFirst>(firstInputName), b.Get<TSecond>(secondInputName), b.Get<TThird>(thirdInputName),
+            b.Get<TResult>(outputName),
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, sharedMemBytes, default, default);
+
+    /// <summary>
     /// Binds a generic 2-buffer row-counted <c>Launch*</c> method group. Explicit type arguments are required when passing a method group.
     /// </summary>
     public static Action<DiffBuffers, LaunchShape> BindRows<TSource, TResult>(

@@ -115,18 +115,46 @@ public sealed class DiffCasesTests
     {
         Action<DiffBuffers, LaunchShape> boundPair =
             DiffLaunches.Bind<float, double>(MathDifferentialKernels.LaunchMathOfSingleMatrixKernel);
+        Action<DiffBuffers, LaunchShape> boundTriplet = DiffLaunches.Bind<float, double, long>(
+            ConversionDifferentialKernels.LaunchForeachFloatToIntMatrixKernel,
+            firstInputName: "f",
+            secondInputName: "d",
+            outputName: "r");
+        Action<DiffBuffers, LaunchShape> boundQuad = DiffLaunches.Bind<float, double, int, long>(
+            ConversionDifferentialKernels.LaunchEnumCastMatrixKernel,
+            firstInputName: "f",
+            secondInputName: "d",
+            thirdInputName: "i",
+            outputName: "r");
         Action<DiffBuffers, LaunchShape> boundTripletRows = DiffLaunches.BindRows<int, long, int>(
             BitOperationsPowerOfTwoDifferentialKernels.LaunchTrailingZeroCountSignedKernel,
             firstInputName: "iVals",
             secondInputName: "lVals");
 
         Assert.NotNull(boundPair);
+        Assert.NotNull(boundTriplet);
+        Assert.NotNull(boundQuad);
         Assert.NotNull(boundTripletRows);
 
         DifferentialCase singleToDouble = DiffCases.Create<float, double>(
             MathDifferentialKernels.LaunchMathOfSingleMatrixKernel,
             inputs: CreateDummyBuffers,
             shape: LaunchShapes.SingleThread());
+        DifferentialCase tripletCase = DiffCases.Create<float, double, long>(
+            ConversionDifferentialKernels.LaunchForeachFloatToIntMatrixKernel,
+            inputs: CreateDummyBuffers,
+            shape: LaunchShapes.SingleThread(),
+            firstInputName: "f",
+            secondInputName: "d",
+            outputName: "r");
+        DifferentialCase quadCase = DiffCases.Create<float, double, int, long>(
+            ConversionDifferentialKernels.LaunchEnumCastMatrixKernel,
+            inputs: CreateDummyBuffers,
+            shape: LaunchShapes.SingleThread(),
+            firstInputName: "f",
+            secondInputName: "d",
+            thirdInputName: "i",
+            outputName: "r");
         DifferentialCase trailingZeroCount = DiffCases.CreateRows<int, long, int>(
             BitOperationsPowerOfTwoDifferentialKernels.LaunchTrailingZeroCountSignedKernel,
             inputs: CreateDummyBuffers,
@@ -135,6 +163,8 @@ public sealed class DiffCasesTests
             secondInputName: "lVals");
 
         Assert.Equal("MathDifferentialKernels.MathOfSingleMatrixKernel", singleToDouble.Name);
+        Assert.Equal("ConversionDifferentialKernels.ForeachFloatToIntMatrixKernel", tripletCase.Name);
+        Assert.Equal("ConversionDifferentialKernels.EnumCastMatrixKernel", quadCase.Name);
         Assert.Equal("BitOperationsPowerOfTwoDifferentialKernels.TrailingZeroCountSignedKernel", trailingZeroCount.Name);
     }
 
