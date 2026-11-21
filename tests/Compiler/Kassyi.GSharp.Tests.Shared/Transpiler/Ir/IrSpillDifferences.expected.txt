@@ -343,6 +343,14 @@
     ir:     spill(a[l]) spill(b[l]) split(Warp.ShuffleSync(0xffffffffu, x, 0))
     syntax: split(Warp.ShuffleSync(0xffffffffu, x, 0))
 #991 the read of a compound assignment target
+  ManagedStackEligibilityCases.cs WarpEligibilityKernels.ActiveMaskAt: data[i] += (int)Warp.ActiveMask();
+    ir:     spill(data[i]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
+  ManagedStackOperatorMacroCases.cs MacroKernels.MacroAndActiveMaskKernel: x.V += (int)Warp.ActiveMask();
+    ir:     spill(x.V) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 the read of a compound assignment target
   SplitOperandOrderDifferentialKernels.cu.cs SplitOperandOrderDifferentialKernels.CompoundOrderKernel: a[l] += Warp.ShuffleSync(Full, Bump(a, l), l);
     ir:     spill(a[l]) spill(Bump(a, l)) split(Warp.ShuffleSync(Full, Bump(a, l), l))
     syntax: spill(Bump(a, l)) split(Warp.ShuffleSync(Full, Bump(a, l), l))

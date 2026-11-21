@@ -35,6 +35,27 @@ public static partial class EligibilityKernels
         data[tid] = (int)Warp.ActiveMask();
     }
 
+    [GpuKernel]
+    public static void CallsActiveMaskReachingDeviceFunction(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        if (tid % 2 == 0)
+        {
+            data[tid] = ActiveMaskDeviceWait(data[tid]);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static int ActiveMaskDeviceWait(int value)
+    {
+        if (value > 0)
+        {
+            value += (int)Warp.ActiveMask();
+        }
+
+        return value;
+    }
+
     [GpuKernel(Cooperative = true)]
     public static void CooperativeKernel(int[] data)
     {
@@ -177,6 +198,24 @@ public static partial class WarpEligibilityKernels
     public static void ShuffleAt(this int[] data, int i)
     {
         data[i] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[i], 1);
+    }
+
+    // The kernel reaches Warp.ActiveMask() itself, so its stack form writes the body lowered for the stacks
+    [GpuKernel]
+    public static void PassesActiveMaskGroup(int[] data)
+    {
+        if (ThreadIndex.X % 2 == 0)
+        {
+            data[ThreadIndex.X] = (int)Warp.ActiveMask();
+        }
+
+        Gpu.ForUnroll(0, 2, data.ActiveMaskAt);
+    }
+
+    [GpuDeviceFunction]
+    public static void ActiveMaskAt(this int[] data, int i)
+    {
+        data[i] += (int)Warp.ActiveMask();
     }
 
     // 1 + 1 + 3071 + 767 + 191 + 47 + 11 + 5 + 2 = 4096 visit counts
