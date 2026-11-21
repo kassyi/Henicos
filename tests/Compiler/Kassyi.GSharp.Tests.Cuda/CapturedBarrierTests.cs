@@ -180,16 +180,29 @@ public sealed class CapturedBarrierTests
         var result = new int[Threads];
         using var graph = CapturedGraph.Capture(stream, hStream =>
         {
+            var buffers = new CapturedBarrierKernels.AotContexts.RoundFailureBuffers
+            {
+                Keys = dKeys.ToProxy(),
+                Control = dControl.ToProxy(),
+                BlockValues = dValues.ToProxy(),
+                Result = dResult.ToProxy(),
+            };
             if (fast)
             {
-                CapturedBarrierKernels.LaunchFastFailAtRoundKernelPtr(dKeys.ToProxy(), Rounds, dControl.ToProxy(),
-                    dValues.ToProxy(), dResult.ToProxy(), gridDimX: GraphBlocks, blockDimX: GraphThreads,
+                CapturedBarrierKernels.LaunchFastFailAtRoundKernelPtr(
+                    buffers: buffers,
+                    rounds: Rounds,
+                    gridDimX: GraphBlocks,
+                    blockDimX: GraphThreads,
                     hStream: hStream);
             }
             else
             {
-                CapturedBarrierKernels.LaunchFailAtRoundKernelPtr(dKeys.ToProxy(), Rounds, dControl.ToProxy(),
-                    dValues.ToProxy(), dResult.ToProxy(), gridDimX: GraphBlocks, blockDimX: GraphThreads,
+                CapturedBarrierKernels.LaunchFailAtRoundKernelPtr(
+                    buffers: buffers,
+                    rounds: Rounds,
+                    gridDimX: GraphBlocks,
+                    blockDimX: GraphThreads,
                     hStream: hStream);
             }
         });
