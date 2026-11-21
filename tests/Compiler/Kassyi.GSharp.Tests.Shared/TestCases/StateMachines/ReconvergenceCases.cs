@@ -488,8 +488,8 @@ public static class ReconvergenceCases
     }
 
     // The block of a goto loop holds a second goto loop (again) around the statement with the last goto back to top:
-    // again closes inside its own block, right after its goto (before Mark(30)), but top would close inside again's
-    // statement, so it closes after its block, before Mark(31)
+    // again closes inside its own block, right after its goto (before Mark(30)), and top closes inside the block too,
+    // right after the if that holds its goto (before r[t + 32])
     [GpuKernel]
     public static void GotoLoopInBlockAroundInnerLoopKernel(uint[] r)
     {
@@ -519,7 +519,8 @@ public static class ReconvergenceCases
         Mark(31);
     }
 
-    // A goto loop whose last statement is a thread-dependent if: the if ends first, then the loop, both before Mark(32)
+    // A goto loop whose last statement is a thread-dependent if: the loop ends inside the if, right after the if that
+    // holds its goto; the if ends before Mark(32)
     [GpuKernel]
     public static void GotoLoopInIfKernel(uint[] r)
     {
@@ -538,5 +539,82 @@ public static class ReconvergenceCases
         }
 
         Mark(32);
+    }
+
+    // A goto loop whose last statement is an if with a pattern default switch after the gate: Mark(33) must be the
+    // gate of top even though the switch uses case var unused: return; instead of default:
+    [GpuKernel]
+    public static void GotoLoopSwitchVarPatternBeforeLastKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto top;
+            }
+
+            Mark(33);
+            r[t + 32] = Warp.ActiveMask();
+            switch (t & 8)
+            {
+                case 0:
+                    goto after;
+                case var unused:
+                    return;
+            }
+        }
+
+        Mark(34);
+        if ((t & 16) == 0 && n++ < 1)
+        {
+            goto top;
+        }
+
+    after:
+        Mark(35);
+        r[t + 64] = Warp.ActiveMask();
+    }
+
+    // A goto loop whose last statement is an if with a checked block holding an unreachable label after a jump:
+    // ReachesEnd matches StatementFlow, so the loop closes at the gate before Mark(36) without reconciling else
+    [GpuKernel]
+    public static void GotoLoopCheckedDeadLabelBeforeLastKernel(uint[] r)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        r[t] = Warp.ActiveMask();
+        if ((t & 4) == 0)
+        {
+            if ((t & 3) != 0 && n++ < 2)
+            {
+                goto top;
+            }
+
+            checked
+            {
+                Mark(36);
+                r[t + 32] = Warp.ActiveMask();
+                goto after;
+#pragma warning disable CS0162, CS0164 // Unreachable label tests ReachesEnd consistency inside checked blocks
+            deadChecked:
+                r[t + 64] = 1u;
+#pragma warning restore CS0162, CS0164
+            }
+        }
+
+        Mark(37);
+        if ((t & 16) == 0 && n++ < 1)
+        {
+            goto top;
+        }
+
+    after:
+        Mark(38);
+        r[t + 96] = Warp.ActiveMask();
     }
 }
