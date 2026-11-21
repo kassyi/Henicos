@@ -162,17 +162,8 @@ internal static class CooperativeMegaKernelLauncher
 
     internal static uint ComputeMegaKernelSharedMemoryBytes(int transformLength)
     {
-        var maxL = transformLength;
-        if (transformLength > GpuBigIntNttKernels.SharedRowMaxTransformLength)
-        {
-            var n2 = 1;
-            while (n2 * n2 < transformLength)
-            {
-                n2 *= 2;
-            }
-
-            maxL = Math.Max(transformLength / n2, n2);
-        }
+        var grid = GpuBigIntNttKernels.CreateNttGridContext(transformLength);
+        var maxL = Math.Max(grid.N1, grid.N2);
 
         // ExecuteNttSharedRow holds rowsPerBatch rows: at most 2 * blockDim points (one thread per butterfly), or one
         // longer row. Sized for the largest block, so that the size does not depend on the block size chosen after it.

@@ -41,6 +41,13 @@ public class MegaKernelOccupancyTests(ITestOutputHelper output)
         output.WriteLine(
             $"{kernelName}: {attributes.NumRegs} registers/thread, " +
             $"{attributes.SharedSizeBytes} B static shared memory, {attributes.LocalSizeBytes} B local memory");
+        // Static shared memory is 12672 B (3 * 32 * 33 words in TransposeTileBatches) + 400 B of block-scan buffers;
+        // 4 tiles (17296 B) + 34048 B dynamic at 2^25 points passes 48 KB, and a non-constant SharedMemory size drops
+        // static shared memory to 400 B.
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Kernels/GpuBigIntFermatKernels.cu.cs:149
+        //         `private const int MaxTilesPerBatch = 3;` -> `4`
+        // input: any of the three mega-kernels
+        Assert.Equal(13072, attributes.SharedSizeBytes);
 
         foreach (var transformLength in new[] { 512, 1 << 25 })
         {

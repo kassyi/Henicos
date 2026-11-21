@@ -25,47 +25,62 @@ public class MegaKernelNttShapeTests
         {
             var transformLength = 1 << log2M;
             var hostBytes = CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength);
-            int[] rowLengths;
-            if (transformLength <= 1024)
-            {
-                rowLengths = [transformLength];
-            }
-            else
-            {
-                var n2 = 1;
-                while ((long)n2 * n2 < transformLength)
-                {
-                    n2 *= 2;
-                }
-
-                rowLengths = [transformLength / n2, n2];
-            }
+            var rowLengths = RowLengthsFor(transformLength);
 
             foreach (var blockSize in s_blockSizes)
             {
                 foreach (var rowLength in rowLengths)
                 {
-                    var log2L = 0;
-                    while ((1 << log2L) < rowLength)
-                    {
-                        log2L++;
-                    }
-
-                    var rowsPerBatch = Math.Max(1, blockSize >> (log2L - 1));
-                    long kernelBytes = (long)rowsPerBatch * (rowLength + (rowLength >> 5)) * 4;
+                    var kernelBytes = KernelRowBytes(blockSize, rowLength);
                     Assert.True(kernelBytes <= hostBytes,
                         $"M = {transformLength}, B = {blockSize}, L = {rowLength}: the kernel asks for {kernelBytes} " +
                         $"bytes, the launcher passes {hostBytes}");
                 }
             }
         }
+    }
 
-        // The sizes themselves: 2 * 1024 points of rows up to 2^22 points, then one row of N2 = 4096 and 8192 points.
-        // mutant: CooperativeMegaKernelLauncher.cs `(rowWords + (rowWords >> 5)) * 4 + 256` -> `... * 4`
-        Assert.Equal(8704u, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(512));
-        Assert.Equal(8704u, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(1024));
-        Assert.Equal(17152u, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(1 << 24));
-        Assert.Equal(34048u, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(1 << 25));
+    // The sizes themselves: 2 * 1024 points of rows up to 2^22 points, then one row of N2 = 4096 and 8192 points.
+    // mutant: CooperativeMegaKernelLauncher.cs:171 `(rowWords + (rowWords >> 5)) * 4 + 256` -> `... * 4`
+    // input: any pinned transform length (512, 1024, 1 << 24, 1 << 25)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(512, 8704u)]
+    [InlineData(1024, 8704u)]
+    [InlineData(1 << 24, 17152u)]
+    [InlineData(1 << 25, 34048u)]
+    public void ComputeMegaKernelSharedMemoryBytes_PinnedTransformLengths_MatchExpectedBytes(
+        int transformLength, uint expectedBytes)
+    {
+        Assert.Equal(expectedBytes, CooperativeMegaKernelLauncher.ComputeMegaKernelSharedMemoryBytes(transformLength));
+    }
+
+    private static int[] RowLengthsFor(int transformLength)
+    {
+        if (transformLength <= 1024)
+        {
+            return [transformLength];
+        }
+
+        var n2 = 1;
+        while ((long)n2 * n2 < transformLength)
+        {
+            n2 *= 2;
+        }
+
+        return [transformLength / n2, n2];
+    }
+
+    private static long KernelRowBytes(int blockSize, int rowLength)
+    {
+        var log2L = 0;
+        while ((1 << log2L) < rowLength)
+        {
+            log2L++;
+        }
+
+        var rowsPerBatch = Math.Max(1, blockSize >> (log2L - 1));
+        return (long)rowsPerBatch * (rowLength + (rowLength >> 5)) * 4;
     }
 
     // A transform up to 1024 points runs as one shared-memory row: above it the six-step split is faster at every

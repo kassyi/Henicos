@@ -258,9 +258,9 @@ one of three shapes:
   - up to `2^16` points reading the columns in place is faster than transposing them, and from `2^17` transposing is
     faster, at every block size of 512 threads or more.
 - **Shared memory**: the launcher passes `(R + R / 32) * 4 + 256` bytes of dynamic shared memory with
-  `R = max(2 * 1024, Lmax)` (`Lmax` the longest row: `M` up to 1024 points, else `max(N1, N2)`), the most any block size
+  `R = max(2 * 1024, L)` (`L` the longest row: `M` up to 1024 points, else `max(N1, N2)`), the most any block size
   up to 1024 threads asks for, since the size is fixed before the block size is chosen: 8704 bytes up to `2^22` points,
-  17152 at `2^23` and `2^24`, 34048 at `2^25`. The kernels add 13072 bytes of static shared memory (the tiles).
+  17152 at `2^23` and `2^24`, 34048 at `2^25`. The kernels add 13072 bytes of static shared memory (12672 bytes for the tiles and 400 bytes of other buffers).
 - **Registers**: a block of 1024 threads fits an SM only with at most 64 registers per thread (56 for the inverse square
   root and the reciprocal). The occupancy test (`MegaKernelOccupancyTests`) asks the driver whether each mega-kernel
   fits with 1024 threads (ModPow with its 256) at the least and the most shared memory, since the launcher otherwise

@@ -34,39 +34,61 @@ public static partial class GpuBigIntNttKernels
         for (int firstSlot = 0; firstSlot < rowsOfBlock; firstSlot += rowsPerBatch)
         {
             int batchRows = rowsOfBlock - firstSlot < rowsPerBatch ? rowsOfBlock - firstSlot : rowsPerBatch;
-            int batchThreads = batchRows * halfLength;
             int firstRow = BlockIndex.X + firstSlot * GridDimension.X;
+            ExecuteNttSharedRowBatch(
+                sRows, args, modulus, halfLength, maxLog2Length, paddedLength, firstRow, batchRows);
+        }
+    }
 
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ExecuteNttSharedRowBatch(
+        SharedMemory<uint> sRows,
+        NumberTheoreticTransform args,
+        NttPrimeModulus modulus,
+        int halfLength,
+        int maxLog2Length,
+        int paddedLength,
+        int firstRow,
+        int batchRows)
+    {
+        int batchThreads = batchRows * halfLength;
+        for (int id = ThreadIndex.X; id < batchThreads; id += BlockDimension.X)
+        {
+            int slot = id >> (maxLog2Length - 1);
+            ExecuteNttLoadAndTwiddleBefore(sRows, slot * paddedLength, args,
+                firstRow + slot * GridDimension.X, id & (halfLength - 1), maxLog2Length, modulus);
+        }
+
+        Gpu.SyncThreads();
+
+        for (int step = 0; step < maxLog2Length; step++)
+        {
             for (int id = ThreadIndex.X; id < batchThreads; id += BlockDimension.X)
             {
                 int slot = id >> (maxLog2Length - 1);
-                ExecuteNttLoadAndTwiddleBefore(sRows, slot * paddedLength, args,
-                    firstRow + slot * GridDimension.X, id & (halfLength - 1), maxLog2Length, modulus);
-            }
-
-            Gpu.SyncThreads();
-
-            for (int step = 0; step < maxLog2Length; step++)
-            {
-                for (int id = ThreadIndex.X; id < batchThreads; id += BlockDimension.X)
-                {
-                    int slot = id >> (maxLog2Length - 1);
-                    ExecuteNttButterflyStep(sRows, slot * paddedLength, args, step, id & (halfLength - 1), modulus);
-                }
-
-                Gpu.SyncThreads();
-            }
-
-            for (int id = ThreadIndex.X; id < batchThreads; id += BlockDimension.X)
-            {
-                int slot = id >> (maxLog2Length - 1);
-                ExecuteNttTwiddleAfterAndStore(sRows, slot * paddedLength, args,
-                    firstRow + slot * GridDimension.X, id & (halfLength - 1), modulus);
+                ExecuteNttButterflyStep(sRows, slot * paddedLength, args, step, id & (halfLength - 1), modulus);
             }
 
             Gpu.SyncThreads();
         }
+
+        for (int id = ThreadIndex.X; id < batchThreads; id += BlockDimension.X)
+        {
+            int slot = id >> (maxLog2Length - 1);
+            ExecuteNttTwiddleAfterAndStore(sRows, slot * paddedLength, args,
+                firstRow + slot * GridDimension.X, id & (halfLength - 1), modulus);
+        }
+
+        Gpu.SyncThreads();
     }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int ElementIndex(NumberTheoreticTransform args, int rowIndex, int element) =>
+        args.ColumnStride == 0
+            ? rowIndex * args.CurrentL + element
+            : rowIndex + element * args.ColumnStride;
 
     [GpuDeviceFunction]
     private static void ExecuteNttLoadAndTwiddleBefore(
@@ -74,10 +96,8 @@ public static partial class GpuBigIntNttKernels
         int rowIndex, int threadId, int maxLog2Length, NttPrimeModulus modulus)
     {
         int currentLength = args.CurrentL;
-        int elementStride = args.ColumnStride == 0 ? 1 : args.ColumnStride;
-        int blockOffset = args.ColumnStride == 0 ? rowIndex * currentLength : rowIndex;
-        uint value1 = args.Buffer[blockOffset + threadId * elementStride];
-        uint value2 = args.Buffer[blockOffset + (threadId + currentLength / 2) * elementStride];
+        uint value1 = args.Buffer[ElementIndex(args, rowIndex, threadId)];
+        uint value2 = args.Buffer[ElementIndex(args, rowIndex, threadId + currentLength / 2)];
 
         uint reversedThreadId1 = Gpu.BitReverse((uint)threadId) >> (32 - maxLog2Length);
         uint reversedThreadId2 = Gpu.BitReverse((uint)(threadId + currentLength / 2)) >> (32 - maxLog2Length);
@@ -127,8 +147,6 @@ public static partial class GpuBigIntNttKernels
     {
         int currentLength = args.CurrentL;
         int halfL = currentLength / 2;
-        int elementStride = args.ColumnStride == 0 ? 1 : args.ColumnStride;
-        int blockOffset = args.ColumnStride == 0 ? rowIndex * currentLength : rowIndex;
 
         int padId1 = rowBase + threadId + (threadId >> 5);
         int idx2 = threadId + halfL;
@@ -147,7 +165,7 @@ public static partial class GpuBigIntNttKernels
             output2 = ModMul(output2, args.Twiddle[twiddleIndex2], modulus);
         }
 
-        args.TemporaryBuffer[blockOffset + threadId * elementStride] = output1;
-        args.TemporaryBuffer[blockOffset + idx2 * elementStride] = output2;
+        args.TemporaryBuffer[ElementIndex(args, rowIndex, threadId)] = output1;
+        args.TemporaryBuffer[ElementIndex(args, rowIndex, idx2)] = output2;
     }
 }

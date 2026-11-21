@@ -36,7 +36,6 @@ public static partial class GpuBigIntFermatKernels
 | [DeviceUnpack16(uint[], uint[], uint[], int, int, bool)](#deviceunpack16uint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements across dual NTT buffers. An overload takes the buffers as a `GpuBigIntMulKernels.NttUnpackOperandContext` (`DeviceUnpack16(NttUnpackOperandContext operand, int n, bool syncThreads = true)`). |
 | `DeviceUnpack16Transposed(NttUnpackOperandContext, NttGridContext, bool)` | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements in the transposed order of a six-step NTT grid. |
 | [DeviceTranspose32X32(uint[], uint[], int, int, bool)](#devicetranspose32x32uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix using 32x32 shared-memory tiles with bank-conflict padding. |
-| [TransposeTileBatches(uint[], uint[], int, int)](#transposetilebatchesuint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix with several 32x32 tiles per block at once. |
 | [DeviceShiftLeftParallel(uint[], uint[], int, int, bool)](#deviceshiftleftparalleluint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs a parallel grid-stride left bit-shift across device buffers. |
 | [KernelTestBlockAddSubParallel(uint[], uint[], uint[], int, int)](#kerneltestblockaddsubparalleluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) entry point that invokes `GpuBigIntKernels.DeviceAddSubParallel` for block-level parallel addition or subtraction. |
 | [GetQuotientWord(QuadraticFoldBlockedPassContext, QuadraticFoldSliceOffsets, int)](#getquotientwordquadraticfoldblockedpasscontext-quadraticfoldsliceoffsets-int) | A GPU device function (`[GpuDeviceFunction]`) that returns one word of the quotient `source >> m`, and 0 for a negative index. |
@@ -153,35 +152,6 @@ The height (row count) of the input matrix.
 
 `syncThreads` _bool_<br>
 If `true`, synchronizes threads after each tile write.
-
-## TransposeTileBatches(uint[], uint[], int, int)
-
-A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix like
-[DeviceTranspose32X32](#devicetranspose32x32uint-uint-int-int-bool), with every 256 threads of a block moving one
-32x32 tile, so that a block moves `min(4, BlockDimension.X / 256)` tiles at once.
-
-```csharp
-[GpuDeviceFunction]
-public static void TransposeTileBatches([GpuReadOnly] uint[] idata, uint[] odata, int width, int height);
-```
-
-Block `b` takes the tiles `b + kG` (`G` the grid size). The tiles live in static shared memory (`4 * 32 * 33` words).
-Each tile is moved by 256 threads, eight rows at a time, so the block needs at least 256 threads, as for
-`DeviceTranspose32X32`; the threads past the last whole group of 256 stay idle.
-
-#### Parameters
-
-`idata` _uint[]_<br>
-The input matrix buffer of dimensions `height` x `width`.
-
-`odata` _uint[]_<br>
-The output transposed matrix buffer of dimensions `width` x `height`.
-
-`width` _int_<br>
-The width (column count) of the input matrix.
-
-`height` _int_<br>
-The height (row count) of the input matrix.
 
 ## DeviceShiftLeftParallel(uint[], uint[], int, int, bool)
 

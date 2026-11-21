@@ -32,6 +32,24 @@ public static partial class GpuBigIntNttKernels
     internal const int StridedColumnMaxTransformLength = 1 << 16;
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static NttGridContext CreateNttGridContext(int transformLength)
+    {
+        if (transformLength <= SharedRowMaxTransformLength)
+        {
+            return new NttGridContext { M = transformLength, N1 = transformLength, N2 = 1 };
+        }
+
+        int n2 = 1;
+        while (n2 * n2 < transformLength)
+        {
+            n2 *= 2;
+        }
+
+        return new NttGridContext { M = transformLength, N1 = transformLength / n2, N2 = n2 };
+    }
+
+    [GpuDeviceFunction]
     public static void ExecuteNttPointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
     {
         Gpu.GridStrideLoop(transformLength, index =>
@@ -333,6 +351,50 @@ public static partial class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ExecuteSingleRowNtt(NumberTheoreticTransform args)
+    {
+        args.TemporaryBuffer = args.Buffer;
+        args.CurrentL = args.Grid.M;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = false;
+        args.MaxBlocks = 1;
+        ExecuteNttSharedRow(args);
+        Gpu.SyncGrid();
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ConfigureColumnPassArgs(ref NumberTheoreticTransform args, bool transposes)
+    {
+        if (transposes)
+        {
+            args.Buffer = args.TemporaryBuffer;
+        }
+        else
+        {
+            args.TemporaryBuffer = args.Buffer;
+            args.ColumnStride = args.Grid.N2;
+        }
+
+        args.CurrentL = args.Grid.N1;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = false;
+        args.MaxBlocks = args.Grid.N2;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ConfigureRowPassArgs(ref NumberTheoreticTransform args)
+    {
+        args.TemporaryBuffer = args.Buffer;
+        args.CurrentL = args.Grid.N2;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = false;
+        args.MaxBlocks = args.Grid.N1;
+    }
+
+    [GpuDeviceFunction]
     public static void ExecuteForwardNtt(NumberTheoreticTransform args)
     {
         var buffer = args.Buffer;
@@ -343,13 +405,7 @@ public static partial class GpuBigIntNttKernels
 
         if (transformLength <= SharedRowMaxTransformLength)
         {
-            args.TemporaryBuffer = buffer;
-            args.CurrentL = transformLength;
-            args.ApplyTwiddleBefore = false;
-            args.ApplyTwiddleAfter = false;
-            args.MaxBlocks = 1;
-            ExecuteNttSharedRow(args);
-            Gpu.SyncGrid();
+            ExecuteSingleRowNtt(args);
             return;
         }
 
@@ -357,28 +413,12 @@ public static partial class GpuBigIntNttKernels
         // place: the values and their places are those of transposing, transforming row x and transposing back.
         // Above it, the matrix is transposed into the scratch buffer and back. Every thread takes the same branch,
         // so all of them reach the same grid syncs.
-        var argsRow1 = args;
         bool transposes = transformLength > StridedColumnMaxTransformLength;
-        argsRow1.Buffer = temporaryBuffer;
-        argsRow1.TemporaryBuffer = temporaryBuffer;
-        if (!transposes)
-        {
-            argsRow1.Buffer = buffer;
-            argsRow1.TemporaryBuffer = buffer;
-            argsRow1.ColumnStride = length2;
-        }
-
-        argsRow1.CurrentL = length1;
-        argsRow1.ApplyTwiddleBefore = false;
+        var argsRow1 = args;
+        ConfigureColumnPassArgs(ref argsRow1, transposes);
         argsRow1.ApplyTwiddleAfter = true;
-        argsRow1.MaxBlocks = length2;
-
         var argsRow2 = args;
-        argsRow2.TemporaryBuffer = buffer;
-        argsRow2.CurrentL = length2;
-        argsRow2.ApplyTwiddleBefore = false;
-        argsRow2.ApplyTwiddleAfter = false;
-        argsRow2.MaxBlocks = length1;
+        ConfigureRowPassArgs(ref argsRow2);
 
         if (transposes)
         {
@@ -409,39 +449,18 @@ public static partial class GpuBigIntNttKernels
 
         if (transformLength <= SharedRowMaxTransformLength)
         {
-            args.TemporaryBuffer = buffer;
-            args.CurrentL = transformLength;
-            args.ApplyTwiddleBefore = false;
-            args.ApplyTwiddleAfter = false;
-            args.MaxBlocks = 1;
-            ExecuteNttSharedRow(args);
-            Gpu.SyncGrid();
+            ExecuteSingleRowNtt(args);
             return;
         }
 
         var argsRow1 = args;
-        argsRow1.TemporaryBuffer = buffer;
-        argsRow1.CurrentL = length2;
-        argsRow1.ApplyTwiddleBefore = false;
-        argsRow1.ApplyTwiddleAfter = false;
-        argsRow1.MaxBlocks = length1;
+        ConfigureRowPassArgs(ref argsRow1);
 
         // The second pass reads the columns in place or between two transposes (see ExecuteForwardNtt).
-        var argsRow2 = args;
         bool transposes = transformLength > StridedColumnMaxTransformLength;
-        argsRow2.Buffer = temporaryBuffer;
-        argsRow2.TemporaryBuffer = temporaryBuffer;
-        if (!transposes)
-        {
-            argsRow2.Buffer = buffer;
-            argsRow2.TemporaryBuffer = buffer;
-            argsRow2.ColumnStride = length2;
-        }
-
-        argsRow2.CurrentL = length1;
+        var argsRow2 = args;
+        ConfigureColumnPassArgs(ref argsRow2, transposes);
         argsRow2.ApplyTwiddleBefore = true;
-        argsRow2.ApplyTwiddleAfter = false;
-        argsRow2.MaxBlocks = length2;
 
         ExecuteNttSharedRow(argsRow1);
         Gpu.SyncGrid();
