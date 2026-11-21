@@ -205,6 +205,78 @@ public static partial class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
+    public static void TransposeTileBatches([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
+    {
+        var sTiles = new SharedMemory<uint>(3 * 32 * 33);
+
+        // 256 threads move one 32 x 32 tile (four elements each); a block moves BlockDimension.X / 256 tiles at once,
+        // at most 3: with 4 tiles (16.5 KB) and the 34048 B of rows of a 2^25-point transform, the mega-kernels need
+        // more than the 48 KB of shared memory a block gets without opting in.
+        int tilesPerBatch = BlockDimension.X >> 8;
+        if (tilesPerBatch > 3)
+        {
+            tilesPerBatch = 3;
+        }
+
+        if (tilesPerBatch < 1)
+        {
+            tilesPerBatch = 1;
+        }
+
+        var gridX = (width + 31) / 32;
+        var gridY = (height + 31) / 32;
+        var totalTiles = gridX * gridY;
+
+        // The tiles of this block are BlockIndex.X + k * GridDimension.X, k = 0 .. tilesOfBlock - 1.
+        int tilesOfBlock = (totalTiles - BlockIndex.X + GridDimension.X - 1) / GridDimension.X;
+
+        int slot = ThreadIndex.X >> 8;
+        int tx = ThreadIndex.X & 31;
+        int ty = (ThreadIndex.X >> 5) & 7;
+        int tileBase = slot * (32 * 33);
+
+        for (int firstSlot = 0; firstSlot < tilesOfBlock; firstSlot += tilesPerBatch)
+        {
+            bool moves = slot < tilesPerBatch && firstSlot + slot < tilesOfBlock;
+            int tile = BlockIndex.X + (firstSlot + slot) * GridDimension.X;
+            var bx = tile % gridX;
+            var by = tile / gridX;
+
+            if (moves)
+            {
+                var xIndex = bx * 32 + tx;
+                var yIndex = by * 32 + ty;
+
+                for (int i = 0; i < 32; i += 8)
+                {
+                    if (xIndex < width && yIndex + i < height)
+                    {
+                        sTiles[tileBase + (ty + i) * 33 + tx] = idata[(yIndex + i) * width + xIndex];
+                    }
+                }
+            }
+
+            Gpu.SyncThreads();
+
+            if (moves)
+            {
+                var outXIndex = by * 32 + tx;
+                var outYIndex = bx * 32 + ty;
+
+                for (int i = 0; i < 32; i += 8)
+                {
+                    if (outXIndex < height && outYIndex + i < width)
+                    {
+                        odata[(outYIndex + i) * height + outXIndex] = sTiles[tileBase + tx * 33 + (ty + i)];
+                    }
+                }
+            }
+
+            Gpu.SyncThreads();
+        }
+    }
+
+    [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords,
         bool syncThreads = true)

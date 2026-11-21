@@ -52,6 +52,11 @@ A GPU device function (`[GpuDeviceFunction]`) that performs shared-memory row-wi
 public static void ExecuteNttSharedRow(NumberTheoreticTransform args);
 ```
 
+Transforms the `args.MaxBlocks` rows of `args.CurrentL` points ($L$). Block $b$ takes rows $b + kG$ ($G$ the grid
+size), and one thread runs one butterfly, so a block of $B$ threads transforms $\max(1, \lfloor B / (L/2) \rfloor)$
+rows at once in shared memory ($L + L/32$ words each). With `args.ColumnStride` set, the rows are the columns of the
+buffer, read and written in place.
+
 ## ExecuteNttPointwiseSquare(uint[], uint[], int)
 
 A GPU device function (`[GpuDeviceFunction]`) that squares dual-modulus NTT frequency-domain elements in place.
@@ -190,6 +195,11 @@ A GPU device function (`[GpuDeviceFunction]`) that executes a complete four-step
 public static void ExecuteForwardNtt(NumberTheoreticTransform args);
 ```
 
+A transform of up to 1024 points runs as one shared-memory row. A longer one is the matrix of `N1` rows and `N2`
+columns: up to $2^{16}$ points the first pass transforms the columns in place (`ColumnStride = N2`), then the rows;
+above, it transposes the matrix into `TemporaryBuffer`, transforms its rows, transposes it back and transforms the
+rows of the buffer.
+
 ## ExecuteInverseNtt(NumberTheoreticTransform)
 
 A GPU device function (`[GpuDeviceFunction]`) that executes a complete four-step (Bailey's) or single-block inverse NTT.
@@ -198,6 +208,9 @@ A GPU device function (`[GpuDeviceFunction]`) that executes a complete four-step
 [GpuDeviceFunction]
 public static void ExecuteInverseNtt(NumberTheoreticTransform args);
 ```
+
+The steps of [ExecuteForwardNtt](#executeforwardnttnumbertheoretictransform) in reverse order: the rows first, then
+the columns (in place up to $2^{16}$ points, between two transposes above).
 
 ## ExecuteDualForwardNtt(DualNtt)
 

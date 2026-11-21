@@ -17,128 +17,19 @@ using static NttPrimeArithmetic;
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntNttKernels
 {
-    [GpuDeviceFunction]
-    public static void ExecuteNttSharedRow(NumberTheoreticTransform args)
-    {
-        var modulus = new NttPrimeModulus { P = args.P, Pm = args.Pm };
-        int threadsNeeded = args.CurrentL / 2;
+    /// <summary>The longest transform (in points) that runs as one shared-memory row of one block.</summary>
+    /// <remarks>
+    /// A longer transform is split into the rows and columns of a matrix. One row keeps the whole transform on one
+    /// SM, so the limit is the length up to which that is the faster of the two.
+    /// </remarks>
+    internal const int SharedRowMaxTransformLength = 1024;
 
-        int maxLog2Length = 0;
-        while ((1 << maxLog2Length) < args.CurrentL)
-        {
-            maxLog2Length++;
-        }
-
-        var sRow = new SharedMemory<uint>(args.CurrentL + (args.CurrentL >> 5));
-
-        for (int rowIndex = BlockIndex.X; rowIndex < args.MaxBlocks; rowIndex += GridDimension.X)
-        {
-            for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
-            {
-                ExecuteNttLoadAndTwiddleBefore(sRow, args, rowIndex, threadId, maxLog2Length, modulus);
-            }
-
-            Gpu.SyncThreads();
-
-            for (int step = 0; step < maxLog2Length; step++)
-            {
-                for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
-                {
-                    ExecuteNttButterflyStep(sRow, args, step, threadId, modulus);
-                }
-
-                Gpu.SyncThreads();
-            }
-
-            for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
-            {
-                ExecuteNttTwiddleAfterAndStore(sRow, args, rowIndex, threadId, modulus);
-            }
-
-            Gpu.SyncThreads();
-        }
-    }
-
-    [GpuDeviceFunction]
-    private static void ExecuteNttLoadAndTwiddleBefore(
-        SharedMemory<uint> sRow, NumberTheoreticTransform args,
-        int rowIndex, int threadId, int maxLog2Length, NttPrimeModulus modulus)
-    {
-        int currentLength = args.CurrentL;
-        int blockOffset = rowIndex * currentLength;
-        uint value1 = args.Buffer[blockOffset + threadId];
-        uint value2 = args.Buffer[blockOffset + threadId + currentLength / 2];
-
-        uint reversedThreadId1 = Gpu.BitReverse((uint)threadId) >> (32 - maxLog2Length);
-        uint reversedThreadId2 = Gpu.BitReverse((uint)(threadId + currentLength / 2)) >> (32 - maxLog2Length);
-
-        if (args.ApplyTwiddleBefore)
-        {
-            ulong transformMask = (ulong)(args.Grid.M - 1);
-            ulong twiddleIndex1 = ((ulong)rowIndex * (ulong)threadId) & transformMask;
-            value1 = ModMul(value1, args.Twiddle[twiddleIndex1], modulus);
-
-            ulong twiddleIndex2 = ((ulong)rowIndex * (ulong)(threadId + (currentLength >> 1))) & transformMask;
-            value2 = ModMul(value2, args.Twiddle[twiddleIndex2], modulus);
-        }
-
-        sRow[(int)(reversedThreadId1 + (reversedThreadId1 >> 5))] = value1;
-        sRow[(int)(reversedThreadId2 + (reversedThreadId2 >> 5))] = value2;
-    }
-
-    [GpuDeviceFunction]
-    private static void ExecuteNttButterflyStep(
-        SharedMemory<uint> sRow, NumberTheoreticTransform args,
-        int step, int threadId, NttPrimeModulus modulus)
-    {
-        int halfLength = 1 << step;
-        int blockIndex = threadId >> step;
-        int elementIndex = threadId & (halfLength - 1);
-        int position = (blockIndex << (step + 1)) + elementIndex;
-
-        int twiddleFactorIndex = elementIndex * (args.Grid.M >> (step + 1));
-        uint twiddleFactor = args.Twiddle[twiddleFactorIndex];
-
-        int padPos = position + (position >> 5);
-        int posHalf = position + halfLength;
-        int padPosHalf = posHalf + (posHalf >> 5);
-
-        uint leftTerm = sRow[padPos];
-        uint rightTerm = ModMul(sRow[padPosHalf], twiddleFactor, modulus);
-
-        sRow[padPos] = ModAdd(leftTerm, rightTerm, modulus.P);
-        sRow[padPosHalf] = ModSub(leftTerm, rightTerm, modulus.P);
-    }
-
-    [GpuDeviceFunction]
-    private static void ExecuteNttTwiddleAfterAndStore(
-        SharedMemory<uint> sRow, NumberTheoreticTransform args,
-        int rowIndex, int threadId, NttPrimeModulus modulus)
-    {
-        int currentLength = args.CurrentL;
-        int halfL = currentLength / 2;
-        int blockOffset = rowIndex * currentLength;
-
-        int padId1 = threadId + (threadId >> 5);
-        int idx2 = threadId + halfL;
-        int padId2 = idx2 + (idx2 >> 5);
-
-        uint output1 = sRow[padId1];
-        uint output2 = sRow[padId2];
-
-        if (args.ApplyTwiddleAfter)
-        {
-            ulong transformMask = (ulong)(args.Grid.M - 1);
-            ulong twiddleIndex1 = ((ulong)rowIndex * (ulong)threadId) & transformMask;
-            output1 = ModMul(output1, args.Twiddle[twiddleIndex1], modulus);
-
-            ulong twiddleIndex2 = ((ulong)rowIndex * (ulong)(threadId + (currentLength >> 1))) & transformMask;
-            output2 = ModMul(output2, args.Twiddle[twiddleIndex2], modulus);
-        }
-
-        args.TemporaryBuffer[blockOffset + threadId] = output1;
-        args.TemporaryBuffer[blockOffset + idx2] = output2;
-    }
+    /// <summary>The longest transform (in points) whose first pass reads the columns of the matrix in place.</summary>
+    /// <remarks>
+    /// A longer transform transposes the matrix into the scratch buffer first, several 32 x 32 tiles per block at
+    /// once: its columns are far enough apart that reading them one element at a time is the slower of the two.
+    /// </remarks>
+    internal const int StridedColumnMaxTransformLength = 1 << 16;
 
     [GpuDeviceFunction]
     public static void ExecuteNttPointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
@@ -432,6 +323,15 @@ public static partial class GpuBigIntNttKernels
         }
     }
 
+    // Not inlined: inlined into a cooperative mega-kernel, the transpose takes the kernel past the registers of a
+    // block of 1024 threads.
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void TransposeTiles(uint[] source, uint[] destination, int width, int height)
+    {
+        GpuBigIntFermatKernels.TransposeTileBatches(source, destination, width, height);
+    }
+
     [GpuDeviceFunction]
     public static void ExecuteForwardNtt(NumberTheoreticTransform args)
     {
@@ -441,7 +341,7 @@ public static partial class GpuBigIntNttKernels
         var length1 = args.Grid.N1;
         var length2 = args.Grid.N2;
 
-        if (transformLength <= 512)
+        if (transformLength <= SharedRowMaxTransformLength)
         {
             args.TemporaryBuffer = buffer;
             args.CurrentL = transformLength;
@@ -453,9 +353,21 @@ public static partial class GpuBigIntNttKernels
             return;
         }
 
+        // Up to StridedColumnMaxTransformLength, row x of the first pass is column x of the buffer, transformed in
+        // place: the values and their places are those of transposing, transforming row x and transposing back.
+        // Above it, the matrix is transposed into the scratch buffer and back. Every thread takes the same branch,
+        // so all of them reach the same grid syncs.
         var argsRow1 = args;
+        bool transposes = transformLength > StridedColumnMaxTransformLength;
         argsRow1.Buffer = temporaryBuffer;
         argsRow1.TemporaryBuffer = temporaryBuffer;
+        if (!transposes)
+        {
+            argsRow1.Buffer = buffer;
+            argsRow1.TemporaryBuffer = buffer;
+            argsRow1.ColumnStride = length2;
+        }
+
         argsRow1.CurrentL = length1;
         argsRow1.ApplyTwiddleBefore = false;
         argsRow1.ApplyTwiddleAfter = true;
@@ -468,13 +380,21 @@ public static partial class GpuBigIntNttKernels
         argsRow2.ApplyTwiddleAfter = false;
         argsRow2.MaxBlocks = length1;
 
-        Gpu.SyncGrid(() =>
+        if (transposes)
         {
-            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-            ExecuteNttSharedRow(argsRow1);
-            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
-            ExecuteNttSharedRow(argsRow2);
-        });
+            TransposeTiles(buffer, temporaryBuffer, length2, length1);
+            Gpu.SyncGrid();
+        }
+
+        ExecuteNttSharedRow(argsRow1);
+        Gpu.SyncGrid();
+        if (transposes)
+        {
+            TransposeTiles(temporaryBuffer, buffer, length1, length2);
+            Gpu.SyncGrid();
+        }
+
+        ExecuteNttSharedRow(argsRow2);
         Gpu.SyncGrid();
     }
 
@@ -487,7 +407,7 @@ public static partial class GpuBigIntNttKernels
         var length1 = args.Grid.N1;
         var length2 = args.Grid.N2;
 
-        if (transformLength <= 512)
+        if (transformLength <= SharedRowMaxTransformLength)
         {
             args.TemporaryBuffer = buffer;
             args.CurrentL = transformLength;
@@ -506,22 +426,38 @@ public static partial class GpuBigIntNttKernels
         argsRow1.ApplyTwiddleAfter = false;
         argsRow1.MaxBlocks = length1;
 
+        // The second pass reads the columns in place or between two transposes (see ExecuteForwardNtt).
         var argsRow2 = args;
+        bool transposes = transformLength > StridedColumnMaxTransformLength;
         argsRow2.Buffer = temporaryBuffer;
         argsRow2.TemporaryBuffer = temporaryBuffer;
+        if (!transposes)
+        {
+            argsRow2.Buffer = buffer;
+            argsRow2.TemporaryBuffer = buffer;
+            argsRow2.ColumnStride = length2;
+        }
+
         argsRow2.CurrentL = length1;
         argsRow2.ApplyTwiddleBefore = true;
         argsRow2.ApplyTwiddleAfter = false;
         argsRow2.MaxBlocks = length2;
 
-        Gpu.SyncGrid(() =>
-        {
-            ExecuteNttSharedRow(argsRow1);
-            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-            ExecuteNttSharedRow(argsRow2);
-            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
-        });
+        ExecuteNttSharedRow(argsRow1);
         Gpu.SyncGrid();
+        if (transposes)
+        {
+            TransposeTiles(buffer, temporaryBuffer, length2, length1);
+            Gpu.SyncGrid();
+        }
+
+        ExecuteNttSharedRow(argsRow2);
+        Gpu.SyncGrid();
+        if (transposes)
+        {
+            TransposeTiles(temporaryBuffer, buffer, length1, length2);
+            Gpu.SyncGrid();
+        }
     }
 
     [GpuDeviceFunction]
