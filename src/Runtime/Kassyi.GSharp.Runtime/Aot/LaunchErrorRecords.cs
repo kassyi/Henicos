@@ -307,9 +307,10 @@ public static unsafe class LaunchErrorRecords
     }
 
     /// <summary>
-    /// Waits for the launch with <paramref name="launchEpoch"/> on <paramref name="stream"/> and throws the device error
-    /// it recorded (the checked build's launchers). On a stream that is being captured into a CUDA graph the launch has
-    /// not run: it does nothing, and the synchronization after the graph launch throws the error of a replay.
+    /// Waits for the launch with <paramref name="launchEpoch"/> on <paramref name="stream"/> and throws the device
+    /// error it recorded (the checked build's launchers). On a stream that is being captured into a CUDA graph the
+    /// launch has not run: it does nothing, and the synchronization after the graph launch throws the error of a
+    /// replay.
     /// </summary>
     /// <param name="stream">The stream of the launch.</param>
     /// <param name="launchEpoch">

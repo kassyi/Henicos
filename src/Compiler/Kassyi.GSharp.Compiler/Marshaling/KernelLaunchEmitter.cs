@@ -23,9 +23,9 @@ internal static class KernelLaunchEmitter
 
     /// <summary>
     /// Whether the launcher reads the device error record of its launch itself: the managed-array launcher after its
-    /// copy-back, and every launcher of the checked build in SynchronizeAndThrowIfLaunchError, which neither synchronizes
-    /// nor reads while the stream is being captured. Such a launcher owns its launch epoch until it reads the record or
-    /// the launch ends (LaunchErrorRecords).
+    /// copy-back, and every launcher of the checked build in SynchronizeAndThrowIfLaunchError, which neither
+    /// synchronizes nor reads while the stream is being captured. Such a launcher owns its launch epoch until it reads
+    /// the record or the launch ends (LaunchErrorRecords).
     /// </summary>
     internal static bool ReadsOwnRecord(bool isDevicePtr, bool isCheckedBuild) => isCheckedBuild || !isDevicePtr;
 
@@ -121,17 +121,60 @@ internal static class KernelLaunchEmitter
         }
 
         AutoResultEmitter.WriteCudaCopyBack(writer, kernel.Host);
-        // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record
-        // of its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves
-        // it to the next synchronization of the stream. A managed-array launcher whose copy-back may copy nothing
-        // synchronizes first, so that it finds its record. The checked build synchronizes and reads in one runtime
-        // call, which does neither while the stream is being captured into a CUDA graph.
-        writer.AppendLineIf(isCheckedBuild,
-            $"{LaunchErrorRecordsType}.SynchronizeAndThrowIfLaunchError(hStream, {LaunchEpoch});");
-        writer.AppendLineIf(!isDevicePtr && !isCheckedBuild && !CopyBackAlwaysSynchronizes(kernel.Host),
-            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));");
-        writer.AppendLineIf(!isCheckedBuild && ReadsOwnRecord(isDevicePtr, isCheckedBuild),
-            $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});");
+        WritePostLaunchRead(writer, DecidePostLaunchRead(isDevicePtr, isCheckedBuild, kernel.Host));
+    }
+
+    // How the launcher reads the device error record of its launch after the kernel and the copy-back
+    private enum PostLaunchRead
+    {
+        // The release build's Ptr launcher: the next synchronization of the stream throws the record
+        None,
+
+        // A managed-array launcher whose copy-back synchronizes in every launch: it reads its record
+        ReadRecord,
+
+        // A managed-array launcher whose copy-back may copy nothing: it synchronizes first, so that it finds its record
+        SynchronizeAndReadRecord,
+
+        // Every launcher of the checked build: one runtime call synchronizes and reads, and does neither while the
+        // stream is being captured into a CUDA graph
+        CheckedSynchronizeAndRead,
+    }
+
+    // A failing device thread records its error and exits, and the kernel completes: the launcher reads the record of
+    // its own epoch once the stream has synchronized (copy-back or checked build). A launch with neither leaves it to
+    // the next synchronization of the stream.
+    private static PostLaunchRead DecidePostLaunchRead(bool isDevicePtr, bool isCheckedBuild,
+        in KernelHostModel kernel) =>
+        isCheckedBuild ? PostLaunchRead.CheckedSynchronizeAndRead
+        : isDevicePtr ? PostLaunchRead.None
+        : CopyBackAlwaysSynchronizes(kernel) ? PostLaunchRead.ReadRecord
+        : PostLaunchRead.SynchronizeAndReadRecord;
+
+    private static void WritePostLaunchRead(SourceWriter writer, PostLaunchRead read)
+    {
+        const string SynchronizeLine =
+            $"{CudaExceptionType}.ThrowIfError({CudaDriverApiType}.cuStreamSynchronize(hStream));";
+        const string ReadRecordLine = $"{LaunchErrorRecordsType}.ThrowIfLaunchError({LaunchEpoch});";
+        const string CheckedLine =
+            $"{LaunchErrorRecordsType}.SynchronizeAndThrowIfLaunchError(hStream, {LaunchEpoch});";
+        switch (read)
+        {
+            case PostLaunchRead.None:
+                break;
+            case PostLaunchRead.ReadRecord:
+                writer.AppendLine(ReadRecordLine);
+                break;
+            case PostLaunchRead.SynchronizeAndReadRecord:
+                writer.AppendLine(SynchronizeLine);
+                writer.AppendLine(ReadRecordLine);
+                break;
+            case PostLaunchRead.CheckedSynchronizeAndRead:
+                writer.AppendLine(CheckedLine);
+                break;
+            default:
+                throw new InvalidOperationException("The post-launch read has no emission.");
+        }
     }
 
     // Whether the copy-back of the managed-array launcher synchronizes the stream in every launch: a ref / out scalar
