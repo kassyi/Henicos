@@ -4,6 +4,29 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct ShiftBoundaryOperands
+{
+    [GpuReadOnly] public int[] Int32Values;
+    [GpuReadOnly] public uint[] UInt32Values;
+    [GpuReadOnly] public long[] Int64Values;
+    [GpuReadOnly] public ulong[] UInt64Values;
+    [GpuReadOnly] public short[] Int16Values;
+    [GpuReadOnly] public sbyte[] SByteValues;
+    [GpuReadOnly] public int[] ShiftCounts;
+}
+
+public struct FloatDivisionOperands
+{
+    [GpuReadOnly] public float[] SingleValues;
+    [GpuReadOnly] public double[] DoubleValues;
+}
+
+public struct FloatDivisionResults
+{
+    public float[] SingleResults;
+    public double[] DoubleResults;
+}
+
 /// <summary>
 /// Differential kernels for integer division/remainder by zero (<c>/</c>, <c>%</c>, <c>/=</c>, <c>%=</c>),
 /// <c>int.MinValue / -1</c> and <c>long.MinValue / -1L</c> overflow vs narrow <c>short.MinValue / (short)-1</c> promotion (#718),
@@ -267,14 +290,8 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
 
     [GpuKernel]
     public static void ShiftCountMaskBoundaryMatrixKernel(
-        int[] iVals,
-        uint[] uVals,
-        long[] lVals,
-        ulong[] ulVals,
-        short[] sVals,
-        sbyte[] sbVals,
-        int[] counts,
-        int[] dst,
+        ShiftBoundaryOperands operands,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -283,13 +300,14 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        int c = counts[t];
-        int iv = iVals[t];
-        uint uv = uVals[t];
-        long lv = lVals[t];
-        ulong ulv = ulVals[t];
-        short sv = sVals[t];
-        sbyte sbv = sbVals[t];
+        int c = operands.ShiftCounts[t];
+        int iv = operands.Int32Values[t];
+        uint uv = operands.UInt32Values[t];
+        long lv = operands.Int64Values[t];
+        ulong ulv = operands.UInt64Values[t];
+        short sv = operands.Int16Values[t];
+        sbyte sbv = operands.SByteValues[t];
+        var dst = results;
 
         int iShl = iv << c;
         int iShr = iv >> c;
@@ -371,7 +389,10 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
     }
 
     [GpuKernel]
-    public static void FloatDivisionByZeroKernel(float[] fVals, double[] dVals, float[] fDst, double[] dDst, int rows)
+    public static void FloatDivisionByZeroKernel(
+        FloatDivisionOperands operands,
+        FloatDivisionResults results,
+        int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
         if (t >= rows)
@@ -379,23 +400,23 @@ public static partial class IntegerTrapAndCheckedDifferentialKernels
             return;
         }
 
-        float fv = fVals[t];
+        float fv = operands.SingleValues[t];
         float fZero = 0.0f;
         float fQuot = fv / fZero;
         float fZeroByZero = fZero / fZero;
 
-        double dv = dVals[t];
+        double dv = operands.DoubleValues[t];
         double dZero = 0.0;
         double dQuot = dv / dZero;
         double dZeroByZero = dZero / dZero;
 
         int fBase = t * 2;
-        fDst[fBase + 0] = fQuot;
-        fDst[fBase + 1] = fZeroByZero;
+        results.SingleResults[fBase + 0] = fQuot;
+        results.SingleResults[fBase + 1] = fZeroByZero;
 
         int dBase = t * 2;
-        dDst[dBase + 0] = dQuot;
-        dDst[dBase + 1] = dZeroByZero;
+        results.DoubleResults[dBase + 0] = dQuot;
+        results.DoubleResults[dBase + 1] = dZeroByZero;
     }
 
     [GpuKernel]
