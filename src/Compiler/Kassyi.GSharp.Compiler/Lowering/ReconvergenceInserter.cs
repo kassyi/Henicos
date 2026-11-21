@@ -268,7 +268,8 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
         if (switchJoins != null)
         {
-            while (_open.Count > switchJoins.BaseDepth)
+            var baseDepth = DepthAbove(switchJoins.Below);
+            while (_open.Count > baseDepth)
             {
                 if (_open[_open.Count - 1].OwnerSwitch != switchJoins.SwitchStatement)
                 {
@@ -459,7 +460,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
         statements.Add(CreateRegionCall(RegionCall.Enter, region.Site));
         var rewritten = RewriteStatement(statement, endsThread: false);
-        _open.RemoveAt(_open.Count - 1);
+        PopRegion(region);
         statements.Add(rewritten);
         statements.Add(CreateArrive(region.Site, GetPlaceNode(statement)));
     }
@@ -543,12 +544,12 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             }
         }
 
-        var baseDepth = _open.Count;
+        var below = _open.Count > 0 ? _open[_open.Count - 1] : null;
         _targets.Add(new JumpTarget(
             switchStatement,
             IsLoop: false,
-            baseDepth,
-            ContinueDepth: 0,
+            below,
+            BodyRegion: null,
             ContinueLabel: null,
             SectionLookup: joinSites != null ? sectionLookup : null));
         var sections = ImmutableArray.CreateBuilder<SwitchSectionSyntax>(switchStatement.Sections.Count);
@@ -566,7 +567,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
                 sectionJoins = new SwitchSectionJoinState(
                     switchStatement,
                     s,
-                    baseDepth,
+                    below,
                     joinPlan,
                     joinsBuilder.ToImmutable(),
                     joinSites);
@@ -590,12 +591,12 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private StatementSyntax RewriteLoop(StatementSyntax loop)
     {
         var body = GetLoopBody(loop);
+        var below = _open.Count > 0 ? _open[_open.Count - 1] : null;
         var bodyRegion = BarrierHelper.ContainsPhaseBarrier(body) && HasContinue(loop) ? OpenRegion(body) : null;
         var continueLabel = bodyRegion != null
             ? $"{GSharpInternalNames.Lowering.ReconvergeContinueLabelPrefix}{bodyRegion.Site}"
             : null;
-        var breakDepth = bodyRegion != null ? _open.Count - 1 : _open.Count;
-        _targets.Add(new JumpTarget(loop, IsLoop: true, breakDepth, _open.Count, continueLabel));
+        _targets.Add(new JumpTarget(loop, IsLoop: true, below, bodyRegion, continueLabel));
 
         StatementSyntax rewrittenBody;
         if (bodyRegion != null && continueLabel != null)
@@ -606,7 +607,7 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
             statements.AddRange(RewriteList(bodyStatements, isKernelBody: false));
             statements.Add(LoweringSyntax.EmptyLabel(continueLabel));
             statements.Add(CreateArrive(bodyRegion.Site, loop));
-            _open.RemoveAt(_open.Count - 1);
+            PopRegion(bodyRegion);
             rewrittenBody = body is BlockSyntax bodyBlock
                 ? bodyBlock.WithStatements(SyntaxFactory.List(statements))
                 : SyntaxFactory.Block(statements);
@@ -645,10 +646,10 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         switch (statement)
         {
             case BreakStatementSyntax when FindTarget(statement, loopOnly: false) is { } target:
-                leaveFrom = target.BreakDepth;
+                leaveFrom = DepthAbove(target.Below);
                 break;
             case ContinueStatementSyntax when FindTarget(statement, loopOnly: true) is { } target:
-                leaveFrom = target.ContinueDepth;
+                leaveFrom = DepthAbove(target.BodyRegion ?? target.Below);
                 if (target.ContinueLabel != null)
                 {
                     // goto __gsharp_ReconvergeContinue_<n>;
@@ -712,14 +713,15 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
 
                 break;
             case GotoStatementSyntax gotoCase when FindSwitch() is { } target:
-                leaveFrom = target.BreakDepth;
+                var switchBaseDepth = DepthAbove(target.Below);
+                leaveFrom = switchBaseDepth;
                 if (target.Node is SwitchStatementSyntax switchOwner &&
                     target.SectionLookup != null)
                 {
                     var targetSection = target.SectionLookup(gotoCase);
                     if (targetSection >= 0)
                     {
-                        for (var r = _open.Count - 1; r >= target.BreakDepth; r--)
+                        for (var r = _open.Count - 1; r >= switchBaseDepth; r--)
                         {
                             if (_open[r].OwnerSwitch == switchOwner &&
                                 _open[r].SwitchJoin is { Position: 0, Section: var section } &&
@@ -921,6 +923,45 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
         return region;
     }
 
+    private void PopRegion(Region expected)
+    {
+        if (_open.Count == 0 || !ReferenceEquals(_open[_open.Count - 1], expected))
+        {
+            throw new InvalidOperationException("A region is not the innermost open region where it ends.");
+        }
+
+        _open.RemoveAt(_open.Count - 1);
+    }
+
+    private int DepthAbove(Region? below)
+    {
+        if (below == null)
+        {
+            return 0;
+        }
+
+        var index = IndexOfRegion(below);
+        if (index < 0)
+        {
+            throw new InvalidOperationException("A region that a jump target was opened above is no longer open.");
+        }
+
+        return index + 1;
+    }
+
+    private int IndexOfRegion(Region region)
+    {
+        for (var i = _open.Count - 1; i >= 0; i--)
+        {
+            if (ReferenceEquals(_open[i], region))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     // A branch or loop that holds a split point and whose lanes may take different ways through it, or a call to a device
     // function that suspends: its lanes may leave it at different times (an early return, a sub-warp shuffle), and the
     // GPU runs them together again where it returns
@@ -1083,18 +1124,18 @@ internal sealed class ReconvergenceInserter : IBlockLoweringPass
     private sealed record SwitchSectionJoinState(
         SwitchStatementSyntax SwitchStatement,
         int Section,
-        int BaseDepth,
+        Region? Below,
         SwitchJoinPlan Plan,
         ImmutableArray<SwitchJoin> SectionJoins,
         int[] Sites);
 
-    // A loop or switch that a break leaves (the regions from BreakDepth on are inside it) and, for a loop, where a
-    // continue goes (the regions from ContinueDepth on are inside its body region)
+    // A loop or switch that a break leaves (the regions above Below are inside it) and, for a loop, where a continue
+    // goes (the regions above BodyRegion—or Below when the body has no region—are inside it)
     private sealed record JumpTarget(
         SyntaxNode Node,
         bool IsLoop,
-        int BreakDepth,
-        int ContinueDepth,
+        Region? Below,
+        Region? BodyRegion,
         string? ContinueLabel,
         Func<GotoStatementSyntax, int>? SectionLookup = null);
 }
