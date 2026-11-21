@@ -80,15 +80,7 @@ internal static class DifferentialHarnessFakes
                     corrupt?.Invoke(r);
                 }
             },
-            Oracle = static (buffers, shape) => HarnessProbeKernels.LaunchInt32AddXorKernel(
-                buffers.Get<int>("a"),
-                buffers.Get<int>("b"),
-                buffers.Get<int>("r"),
-                gridDimX: shape.GridX,
-                gridDimY: shape.GridY,
-                blockDimX: shape.BlockX,
-                blockDimY: shape.BlockY
-            ),
+            Oracle = DiffLaunches.Bind(HarnessProbeKernels.LaunchInt32AddXorKernel, outputName: "r"),
         };
         return new FakeRun(testCase, runners);
     }
