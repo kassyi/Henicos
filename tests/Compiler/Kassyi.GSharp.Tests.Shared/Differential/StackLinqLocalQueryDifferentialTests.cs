@@ -10,23 +10,15 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public class StackLinqLocalQueryDifferentialTests
 {
     private const int SliceLen = StackLinqLocalQueryDifferentialKernels.SliceLength;
-    private const string KernelName = nameof(StackLinqLocalQueryDifferentialKernels.LocalQueryWithLambdaStagesKernel);
 
-    internal static readonly DifferentialCase s_localQuery = new(
-        $"{nameof(StackLinqLocalQueryDifferentialKernels)}.{KernelName}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_localQuery = DiffCases.Create(
+        StackLinqLocalQueryDifferentialKernels.LaunchLocalQueryWithLambdaStagesKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", DiffValues.Int32(rng, rows * SliceLen), OutputPolicy.Exact)
             .Out<int>("r", rows, StackLinqLocalQueryDifferentialKernels.LocalQueryColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqLocalQueryDifferentialKernels.LaunchLocalQueryWithLambdaStagesKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
     [SkippableFact]
     public void StackLinq_LocalQueryWithLambdaStages_MatchesTheOracleOnEveryPath() =>
