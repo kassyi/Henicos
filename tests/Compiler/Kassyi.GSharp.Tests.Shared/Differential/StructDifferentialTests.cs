@@ -11,11 +11,9 @@ public class StructDifferentialTests
 {
     private const int Rows = 441;
 
-    internal static readonly DifferentialCase s_mutationAndCopy = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructMutationAndCopySemantics)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_mutationAndCopy = DiffCases.Create(
+        StructDifferentialKernels.LaunchStructMutationAndCopySemantics,
+        inputs: static (rng, rows) =>
         {
             var (inputs, deltas) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -23,20 +21,14 @@ public class StructDifferentialTests
                 .In("deltas", deltas)
                 .Out<int>("r", rows, StructDifferentialKernels.MutationAndCopyColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchStructMutationAndCopySemantics(
-            b.Get<int>("inputs"),
-            b.Get<int>("deltas"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "inputs",
+        secondInputName: "deltas",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_defaultVsNew = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructDefaultVsNewAndFieldInitializers)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_defaultVsNew = DiffCases.Create(
+        StructDifferentialKernels.LaunchStructDefaultVsNewAndFieldInitializers,
+        inputs: static (rng, rows) =>
         {
             var (inputs, flags) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -44,20 +36,14 @@ public class StructDifferentialTests
                 .In("flags", flags)
                 .Out<int>("r", rows, StructDifferentialKernels.DefaultVsNewColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchStructDefaultVsNewAndFieldInitializers(
-            b.Get<int>("inputs"),
-            b.Get<int>("flags"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "inputs",
+        secondInputName: "flags",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_recordWith = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.RecordStructWithExpressions)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_recordWith = DiffCases.Create(
+        StructDifferentialKernels.LaunchRecordStructWithExpressions,
+        inputs: static (rng, rows) =>
         {
             var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
             var zs = DiffValues.Int32(rng, rows);
@@ -67,21 +53,15 @@ public class StructDifferentialTests
                 .In("zs", zs)
                 .Out<int>("r", rows, StructDifferentialKernels.RecordWithColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchRecordStructWithExpressions(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("zs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstName: "xs",
+        secondName: "ys",
+        thirdName: "zs",
+        fourthName: "r");
 
-    internal static readonly DifferentialCase s_autoPropInDefensiveCopy = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.AutoPropertyPassedToInParameterDefensiveCopy)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_autoPropInDefensiveCopy = DiffCases.Create(
+        StructDifferentialKernels.LaunchAutoPropertyPassedToInParameterDefensiveCopy,
+        inputs: static (rng, rows) =>
         {
             var (initialValues, mutatedValues) = DiffValues.Int32Pairs(rng, rows);
             for (int k = 0; k < rows; k++)
@@ -97,58 +77,40 @@ public class StructDifferentialTests
                 .In("mutatedValues", mutatedValues)
                 .Out<int>("r", rows, StructDifferentialKernels.AutoPropInDefensiveCopyColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchAutoPropertyPassedToInParameterDefensiveCopy(
-            b.Get<int>("initialValues"),
-            b.Get<int>("mutatedValues"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "initialValues",
+        secondInputName: "mutatedValues",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_userDefinedImplicitConv = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedImplicitConversion)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_userDefinedImplicitConv = DiffCases.Create(
+        StructDifferentialKernels.LaunchStructUserDefinedImplicitConversion,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
                 .In("inputs", inputs)
                 .Out<int>("r", rows, StructDifferentialKernels.UserDefinedImplicitConvColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchStructUserDefinedImplicitConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "inputs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_userDefinedExplicitConv = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructUserDefinedExplicitConversion)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_userDefinedExplicitConv = DiffCases.Create(
+        StructDifferentialKernels.LaunchStructUserDefinedExplicitConversion,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
                 .In("inputs", inputs)
                 .Out<int>("r", rows, StructDifferentialKernels.UserDefinedExplicitConvColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchStructUserDefinedExplicitConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "inputs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_liftedUserDefinedConv = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.StructLiftedUserDefinedConversion)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_liftedUserDefinedConv = DiffCases.Create(
+        StructDifferentialKernels.LaunchStructLiftedUserDefinedConversion,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             var flags = new int[rows];
@@ -162,52 +124,34 @@ public class StructDifferentialTests
                 .In("flags", flags)
                 .Out<int>("r", rows, StructDifferentialKernels.LiftedImplicitConvColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchStructLiftedUserDefinedConversion(
-            b.Get<int>("inputs"),
-            b.Get<int>("flags"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "inputs",
+        secondInputName: "flags",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_repro1103Default = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.DefaultOfConvertingStructReproKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_repro1103Default = DiffCases.Create(
+        StructDifferentialKernels.LaunchDefaultOfConvertingStructReproKernel,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
                 .In("a", inputs)
                 .Out<int>("dst", rows, StructDifferentialKernels.Repro1103Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchDefaultOfConvertingStructReproKernel(
-            b.Get<int>("a"),
-            b.Get<int>("dst"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
-    internal static readonly DifferentialCase s_constantSizedFixedBuffer = new(
-        $"{nameof(StructDifferentialKernels)}.{nameof(StructDifferentialKernels.ConstantSizedFixedBufferKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_constantSizedFixedBuffer = DiffCases.Create(
+        StructDifferentialKernels.LaunchConstantSizedFixedBufferKernel,
+        inputs: static (rng, rows) =>
         {
             var inputs = DiffValues.Int32(rng, rows);
             return new DiffBuffers()
                 .In("inputs", inputs)
                 .Out<int>("r", rows, StructDifferentialKernels.ConstantSizedFixedBufferColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => StructDifferentialKernels.LaunchConstantSizedFixedBufferKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "inputs",
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
