@@ -15,6 +15,41 @@ public struct DiffNullablePairStruct
     public int Y;
 }
 
+public struct NullableStructPairInputs
+{
+    [GpuReadOnly] public int[] HasPairFlags;
+    [GpuReadOnly] public int[] PairXValues;
+    [GpuReadOnly] public int[] PairYValues;
+}
+
+public struct Int32ClampInputs
+{
+    [GpuReadOnly] public int[] Values;
+    [GpuReadOnly] public int[] Minimums;
+    [GpuReadOnly] public int[] Maximums;
+}
+
+public struct SingleClampInputs
+{
+    [GpuReadOnly] public float[] Values;
+    [GpuReadOnly] public float[] Minimums;
+    [GpuReadOnly] public float[] Maximums;
+}
+
+public struct DoubleClampInputs
+{
+    [GpuReadOnly] public double[] Values;
+    [GpuReadOnly] public double[] Minimums;
+    [GpuReadOnly] public double[] Maximums;
+}
+
+public struct SortLengthMismatchBuffers
+{
+    public int[] KeysBacking;
+    public int[] ItemsBacking;
+    [GpuReadOnly] public int[] ItemLengths;
+}
+
 /// <summary>
 /// Differential kernels for runtime checks and BCL exceptions: <see cref="Nullable{T}.Value"/> (<see cref="InvalidOperationException"/>,
 /// #718), <c>Math.Clamp</c> (<see cref="ArgumentException"/> when <c>min &gt; max</c>, #718), <c>StackLinq</c> empty and
@@ -117,10 +152,8 @@ public static partial class BclExceptionDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void NullableStructValueAccessKernel(
-        int[] hasPair,
-        int[] pairX,
-        int[] pairY,
-        int[] dst,
+        NullableStructPairInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -128,6 +161,11 @@ public static partial class BclExceptionDifferentialKernels
         {
             return;
         }
+
+        var hasPair = inputs.HasPairFlags;
+        var pairX = inputs.PairXValues;
+        var pairY = inputs.PairYValues;
+        var dst = results;
 
         DiffNullablePairStruct? optPair = default;
         if (hasPair[t] != 0)
@@ -153,10 +191,8 @@ public static partial class BclExceptionDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void MathClampInt32Kernel(
-        int[] vals,
-        int[] mins,
-        int[] maxs,
-        int[] dst,
+        Int32ClampInputs inputs,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -164,6 +200,11 @@ public static partial class BclExceptionDifferentialKernels
         {
             return;
         }
+
+        var vals = inputs.Values;
+        var mins = inputs.Minimums;
+        var maxs = inputs.Maximums;
+        var dst = results;
 
         dst[t] = Math.Clamp(vals[t], mins[t], maxs[t]);
     }
@@ -173,10 +214,8 @@ public static partial class BclExceptionDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void MathClampSingleKernel(
-        float[] vals,
-        float[] mins,
-        float[] maxs,
-        float[] dst,
+        SingleClampInputs inputs,
+        float[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -184,6 +223,11 @@ public static partial class BclExceptionDifferentialKernels
         {
             return;
         }
+
+        var vals = inputs.Values;
+        var mins = inputs.Minimums;
+        var maxs = inputs.Maximums;
+        var dst = results;
 
         dst[t] = Math.Clamp(vals[t], mins[t], maxs[t]);
     }
@@ -193,10 +237,8 @@ public static partial class BclExceptionDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void MathClampDoubleKernel(
-        double[] vals,
-        double[] mins,
-        double[] maxs,
-        double[] dst,
+        DoubleClampInputs inputs,
+        double[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -204,6 +246,11 @@ public static partial class BclExceptionDifferentialKernels
         {
             return;
         }
+
+        var vals = inputs.Values;
+        var mins = inputs.Minimums;
+        var maxs = inputs.Maximums;
+        var dst = results;
 
         dst[t] = Math.Clamp(vals[t], mins[t], maxs[t]);
     }
@@ -350,10 +397,8 @@ public static partial class BclExceptionDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void MemoryExtensionsSortLengthMismatchKernel(
-        int[] keysBacking,
-        int[] itemsBacking,
-        int[] itemLens,
-        int[] dst,
+        SortLengthMismatchBuffers buffers,
+        int[] results,
         int rows)
     {
         int t = (int)(BlockIndex.X * BlockDimension.X + ThreadIndex.X);
@@ -361,6 +406,11 @@ public static partial class BclExceptionDifferentialKernels
         {
             return;
         }
+
+        var keysBacking = buffers.KeysBacking;
+        var itemsBacking = buffers.ItemsBacking;
+        var itemLens = buffers.ItemLengths;
+        var dst = results;
 
         int sliceOffset = t * SliceWidth;
         Span<int> keys = keysBacking.AsSpan().Slice(sliceOffset, SliceWidth);
