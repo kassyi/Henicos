@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Cuda;
 
@@ -52,4 +53,14 @@ public static partial class LaunchEpochKernels
         result[tid] = key switch { 0 => tid };
     }
 #pragma warning restore CS8509
+
+    // Reads data at the index that the first element of index holds, so that one captured launch can replay with an
+    // index in range and one out of range; ElementAt checks the index with its source location in every build
+    [GpuKernel]
+    public static void ElementAtFromBufferKernel(int[] data, int[] index, int[] result)
+    {
+        result[0] = data
+            .AsStackEnumerable()
+            .ElementAt(index[0]);
+    }
 }

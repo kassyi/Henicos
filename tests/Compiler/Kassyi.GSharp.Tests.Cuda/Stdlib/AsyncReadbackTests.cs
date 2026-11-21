@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
-using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
@@ -235,7 +234,6 @@ public class AsyncReadbackTests
     public async Task Fermat_RunAsync_MatchesRun()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var syncRunner = new FermatAlgorithm(FermatExponent);
         using var asyncRunner = new FermatAlgorithm(FermatExponent);
@@ -253,7 +251,6 @@ public class AsyncReadbackTests
     public async Task Fermat_RunBenchmarkChunkAsync_ThenGetStateAsync_MatchesSynchronousCounterparts()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var syncRunner = new FermatAlgorithm(FermatExponent);
         using var asyncRunner = new FermatAlgorithm(FermatExponent);

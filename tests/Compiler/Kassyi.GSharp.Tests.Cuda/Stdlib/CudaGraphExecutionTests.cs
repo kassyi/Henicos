@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
-using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
@@ -33,7 +32,6 @@ public class CudaGraphExecutionTests
     public async Task ExecuteAsync_Add_ProducesSum()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -50,7 +48,6 @@ public class CudaGraphExecutionTests
     public async Task ExecuteAsync_ReturnsBeforeGraphCompletes()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -71,7 +68,6 @@ public class CudaGraphExecutionTests
     public async Task ExecuteAsync_PreCanceledToken_ReturnsCanceled()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -90,7 +86,6 @@ public class CudaGraphExecutionTests
     public async Task ExecuteAsync_CanceledInFlight_GraphStillCompletes_AndStreamStaysUsable()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -115,7 +110,6 @@ public class CudaGraphExecutionTests
     public async Task Dispose_WhileInFlight_LetsGraphFinish()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         // The result goes to a target the test owns: the graph's own result buffer is released by Dispose. A sum is one
         // bit wider than its operands, so the target has one word more.
@@ -139,7 +133,6 @@ public class CudaGraphExecutionTests
     public void DisposedGraph_RejectsExecution_AndDisposeIsIdempotent()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -160,7 +153,6 @@ public class CudaGraphExecutionTests
     public void ExecuteAsync_RepeatedLaunch_DoesNotAllocateInSteadyState()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -196,7 +188,6 @@ public class CudaGraphExecutionTests
     public async Task EvaluateWithCudaGraphAsync_Add_MatchesSynchronousEvaluation()
     {
         CudaCapability.EnsureGpuAvailable();
-        Skip.If(DiffPaths.IsCudaCheckedBuild, DiffPaths.GraphCaptureInCheckedBuild);
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
