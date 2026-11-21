@@ -3,6 +3,22 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
+public struct OverloadTestInputs
+{
+    [GpuReadOnly]
+    public int[] First;
+    [GpuReadOnly]
+    public int[] Second;
+    [GpuReadOnly]
+    public int[] Third;
+}
+
+public struct OverloadTestOutputs
+{
+    public int[] TwoArgProducts;
+    public int[] ThreeArgMultiplyAdds;
+}
+
 public static partial class TranspilerInfrastructureKernels
 {
     // GEN-20: Mutually calling device functions (forward declarations test)
@@ -53,8 +69,13 @@ public static partial class TranspilerInfrastructureKernels
     // GEN-20 Kernel: Overload Test
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     [GpuKernel]
-    public static void OverloadTestKernel(int[] inputA, int[] inputB, int[] inputC, int[] output2Arg, int[] output3Arg)
+    public static void OverloadTestKernel(OverloadTestInputs inputs, OverloadTestOutputs outputs)
     {
+        int[] inputA = inputs.First;
+        int[] inputB = inputs.Second;
+        int[] inputC = inputs.Third;
+        int[] output2Arg = outputs.TwoArgProducts;
+        int[] output3Arg = outputs.ThreeArgMultiplyAdds;
         int tid = ThreadIndex.X;
         output2Arg[tid] = MultiplyAdd(inputA[tid], inputB[tid]);
         output3Arg[tid] = MultiplyAdd(inputA[tid], inputB[tid], inputC[tid]);
