@@ -194,8 +194,9 @@ internal static class CyclePlanner
             }
 
             var headerNode = StatementFlow.EntryOf(statements[region.First]);
+            var headerNodes = CollectHeaderNodes(statements, region.First);
             var members = ComputeMembers(flow, headerNode, statements, region, backJumps);
-            if (HasExternalPredecessor(flow, headerNode, members))
+            if (HasExternalPredecessor(flow, headerNodes, members))
             {
                 continue;
             }
@@ -229,8 +230,28 @@ internal static class CyclePlanner
                 region,
                 members,
                 backJumps,
-                NeedsLatch: false);
+                NeedsLatch: backJumps.Length >= 2);
         }
+    }
+
+    private static HashSet<FlowNode> CollectHeaderNodes(
+        SyntaxList<StatementSyntax> statements,
+        int first)
+    {
+        var headerNodes = new HashSet<FlowNode>
+        {
+            StatementFlow.EntryOf(statements[first])
+        };
+        var i = first;
+        while (i + 1 < statements.Count &&
+               JumpRegionPlanner.IsEmptyLabeledStatement(statements[i]) &&
+               statements[i + 1] is LabeledStatementSyntax)
+        {
+            i++;
+            headerNodes.Add(StatementFlow.EntryOf(statements[i]));
+        }
+
+        return headerNodes;
     }
 
     private static HashSet<LabeledStatementSyntax> CollectLabelGroup(
@@ -345,12 +366,12 @@ internal static class CyclePlanner
     // No non-header member has an incoming edge from outside the natural loop
     private static bool HasExternalPredecessor(
         StatementFlow flow,
-        FlowNode headerNode,
+        HashSet<FlowNode> headerNodes,
         ImmutableHashSet<FlowNode> members)
     {
         foreach (var member in members)
         {
-            if (member == headerNode)
+            if (headerNodes.Contains(member))
             {
                 continue;
             }

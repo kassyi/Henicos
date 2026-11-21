@@ -1960,4 +1960,200 @@ public static partial class WarpActiveMaskDifferentialKernels
     done:
         result[t + 192] = Warp.ActiveMask();
     }
+
+    // Two backward gotos in the label's list with a mask at the header and between the gotos: lanes that return by
+    // either goto meet at L1 on the next pass. Slots: 0,1 header per pass; 2,3 between gotos per pass; 4 after; 5 n
+    [GpuKernel]
+    public static void TwoBackwardGotosWithHeaderMaskKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int p = -1;
+    L1:
+        p++;
+        result[t + 32 * p] = Warp.ActiveMask();
+        if ((t & 3) == 1 && n++ < 1)
+        {
+            goto L1;
+        }
+
+        result[t + 32 * (2 + p)] = Warp.ActiveMask();
+        if ((t & 3) == 2 && n++ < 1)
+        {
+            goto L1;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // Two backward gotos with the pass-limit operand first in both conditions, so on the second pass the lanes that
+    // returned by either goto fail the same operand. Slots: 0,1 header; 2,3 between gotos; 4 after; 5 n
+    [GpuKernel]
+    public static void TwoBackwardGotosSameOperandFirstKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int p = -1;
+    L1:
+        p++;
+        result[t + 32 * p] = Warp.ActiveMask();
+        if (n < 1 && (t & 3) == 1)
+        {
+            n++;
+            goto L1;
+        }
+
+        result[t + 32 * (2 + p)] = Warp.ActiveMask();
+        if (n < 1 && (t & 3) == 2)
+        {
+            n++;
+            goto L1;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // One backward goto in each branch of an if-else after a different number of calls: returning lanes meet at L1
+    // on the second pass, and exiting lanes reconcile before the post-branch call. Slots: 0,1 header; 2 then; 3 else; 4 after; 5 p
+    [GpuKernel]
+    public static void BackwardGotosInBothBranchesKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int p = -1;
+    L1:
+        p++;
+        result[t + 32 * p] = Warp.ActiveMask();
+        if ((t & 1) == 0)
+        {
+            result[t + 64] = Warp.ActiveMask();
+            if ((t & 3) == 0 && p < 1)
+            {
+                goto L1;
+            }
+        }
+        else
+        {
+            if ((t & 3) == 1 && p < 1)
+            {
+                goto L1;
+            }
+
+            result[t + 96] = Warp.ActiveMask();
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)p;
+    }
+
+    // Two backward gotos with a collective inside the first goto's branch and a run-time trip limit u. Slots: 0 inside
+    // first goto; 1,2 between gotos per pass; 3 after; 4 n
+    [GpuKernel]
+    public static void TwoBackwardGotosWithMaskInFirstGotoKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        n++;
+        if ((t & 1) == 1 && n < u + 2)
+        {
+            result[t] = Warp.ActiveMask();
+            goto top;
+        }
+
+        result[t + 32 * n] = Warp.ActiveMask();
+        if ((t & 2) == 2 && n < u + 2)
+        {
+            goto top;
+        }
+
+        result[t + 96] = Warp.ActiveMask();
+        result[t + 128] = (uint)n;
+    }
+
+    // Two backward gotos with a side-effecting store before the first goto so the GPU compiler preserves the first
+    // loop pass structure. Slots: 0,1 between gotos; 2 after; 3 n; 4,5 stores per pass
+    [GpuKernel]
+    public static void TwoBackwardGotosWithStoreKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        n++;
+        result[t + 32 * (3 + n)] = (uint)(n + u);
+        if ((t & 1) == 1 && n < u + 2)
+        {
+            goto top;
+        }
+
+        result[t + 32 * (n - 1)] = Warp.ActiveMask();
+        if ((t & 2) == 2 && n < u + 2)
+        {
+            goto top;
+        }
+
+        result[t + 64] = Warp.ActiveMask();
+        result[t + 96] = (uint)n;
+    }
+
+    // GotoLoopReenteredFromBranchKernel with a run-time trip limit u and separate slots per pass so pass separation
+    // is directly observable. Slots: 0,1 inner branch per pass; 2,3 after inner branch per pass; 4 after loop
+    [GpuKernel]
+    public static void GotoLoopReenteredFromBranchPerPassKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    top:
+        n++;
+        if ((t & 1) == 1)
+        {
+            result[t + 32 * (n - 1)] = Warp.ActiveMask();
+            if (n < u + 2)
+            {
+                goto top;
+            }
+        }
+
+        result[t + 32 * (n + 1)] = Warp.ActiveMask();
+        if (t == u + 100)
+        {
+            goto top;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // Forward goto from before a chained label group into its second label, followed by two backward gotos targeting
+    // different labels of the group. Slots: 0,1 header per pass; 2,3 between gotos per pass; 4 after; 5,6 (n + dummy)
+    [GpuKernel]
+    public static void ChainedHeaderForwardEntryTwoBackwardGotosKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int dummy = 0;
+        if ((t & 16) == 0)
+        {
+            goto L1;
+        }
+
+        dummy = 1;
+    L0:
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        n++;
+        result[t + 32 * (4 + n)] = (uint)(n + dummy);
+        if ((t & 1) == 1 && n < 2)
+        {
+            goto L0;
+        }
+
+        result[t + 32 * (1 + n)] = Warp.ActiveMask();
+        if ((t & 2) == 2 && n < 2)
+        {
+            goto L1;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
 }

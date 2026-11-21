@@ -92,6 +92,11 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopInIf.cs");
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_GotoLoopWithTwoBackwardGotos_EmitsLatchAtEachGoto() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopLatch.cs");
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Insert_GotoLoopWithSwitchVarPatternExit_ClosesBeforeGate()
     {
@@ -110,8 +115,8 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .OfType<InvocationExpressionSyntax>()
             .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
 
-        Assert.Equal(4, arriveCount);
-        Assert.Equal(4, enterCount);
+        Assert.Equal(6, arriveCount);
+        Assert.Equal(5, enterCount);
         var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopSwitchVarPatternBeforeLastKernel");
         Assert.Equal(new[] { "Mark(34)", "Mark(35)" }, afterReconvergence);
     }
@@ -135,8 +140,8 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .OfType<InvocationExpressionSyntax>()
             .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpRegionEnter));
 
-        Assert.Equal(4, arriveCount);
-        Assert.Equal(4, enterCount);
+        Assert.Equal(6, arriveCount);
+        Assert.Equal(5, enterCount);
         var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopCheckedDeadLabelBeforeLastKernel");
         Assert.Equal(new[] { "Mark(37)", "Mark(38)" }, afterReconvergence);
     }
