@@ -12,7 +12,7 @@ public partial class MarshalingNullAndEmptyDifferentialTests
         new(typeof(NullReferenceException), DiffPaths.CheckedPaths())
         {
             SourceFile = nameof(MarshalingAliasingDifferentialKernels),
-            Line = 502,
+            Line = 505,
             Column = 25,
         };
 }

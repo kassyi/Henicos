@@ -30,12 +30,9 @@ public sealed class MarshalingAliasingDifferentialTests
 
     // --- Top-level array aliasing across 4 attribute combinations (#721)
     // + overlapping Span (#857) + aliased ref scalar (#1061) ---
-    internal static readonly DifferentialCase s_aliasTwoRwArrays = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasTwoRwArraysKernel)))
-    {
-        Shape = LaunchShapes.Linear(16, blockX: 16),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_aliasTwoRwArrays = DiffCases.Create(
+        MarshalingAliasingDifferentialKernels.LaunchAliasTwoRwArraysKernel,
+        inputs: static (_, _) =>
         {
             const int n = 16;
             int[] shared = new int[n];
@@ -48,22 +45,15 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.LaunchAliasTwoRwArraysKernel(
-                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        shape: LaunchShapes.Linear(16, blockX: 16),
+        firstInputName: "shared",
+        secondInputName: "shared",
+        outputName: "observed",
+        seeds: [0]);
 
-    internal static readonly DifferentialCase s_aliasInAndRwArray = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasInAndRwArrayKernel)))
-    {
-        Shape = LaunchShapes.Linear(16, blockX: 16),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_aliasInAndRwArray = DiffCases.Create(
+        MarshalingAliasingDifferentialKernels.LaunchAliasInAndRwArrayKernel,
+        inputs: static (_, _) =>
         {
             const int n = 16;
             int[] shared = new int[n];
@@ -76,22 +66,15 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.LaunchAliasInAndRwArrayKernel(
-                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        shape: LaunchShapes.Linear(16, blockX: 16),
+        firstInputName: "shared",
+        secondInputName: "shared",
+        outputName: "observed",
+        seeds: [0]);
 
-    internal static readonly DifferentialCase s_aliasOutAndInArray = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasOutAndInArrayKernel)))
-    {
-        Shape = LaunchShapes.Linear(16, blockX: 16),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_aliasOutAndInArray = DiffCases.Create(
+        MarshalingAliasingDifferentialKernels.LaunchAliasOutAndInArrayKernel,
+        inputs: static (_, _) =>
         {
             const int n = 16;
             int[] shared = new int[n];
@@ -104,22 +87,15 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.LaunchAliasOutAndInArrayKernel(
-                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        shape: LaunchShapes.Linear(16, blockX: 16),
+        firstInputName: "shared",
+        secondInputName: "shared",
+        outputName: "observed",
+        seeds: [0]);
 
-    internal static readonly DifferentialCase s_aliasTwoInArrays = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.AliasTwoInArraysKernel)))
-    {
-        Shape = LaunchShapes.Linear(16, blockX: 16),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_aliasTwoInArrays = DiffCases.Create(
+        MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel,
+        inputs: static (_, _) =>
         {
             const int n = 16;
             int[] shared = new int[n];
@@ -132,7 +108,11 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("shared", shared, OutputPolicy.Exact, readOnly: true)
                 .Out<int>("observed", n, OutputPolicy.Exact);
         },
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(16, blockX: 16),
+        firstInputName: "shared",
+        secondInputName: "shared",
+        outputName: "observed",
+        reference: static (b, s) =>
         {
             int[] sharedShadow = (int[])b.Get<int>("shared").Clone();
             int[] observed = b.Get<int>("observed");
@@ -140,14 +120,7 @@ public sealed class MarshalingAliasingDifferentialTests
                 MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel(
                     sharedShadow, sharedShadow, observed, gridDimX: s.GridX, blockDimX: s.BlockX));
         },
-        Launch = static (b, s) =>
-        {
-            int[] shared = b.Get<int>("shared");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.LaunchAliasTwoInArraysKernel(
-                shared, shared, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        seeds: [0]);
 
     internal static readonly DifferentialCase s_overlappingSpanSlice = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OverlappingSpanSliceKernel)))
@@ -311,12 +284,9 @@ public sealed class MarshalingAliasingDifferentialTests
     };
 
     // --- Cross-aliasing between [In] DeepStruct[] element field and writable int[] (#985) ---
-    internal static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.CrossAliasInDeepArrayAndRwArrayKernel)))
-    {
-        Shape = LaunchShapes.SingleThread(),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_crossAliasInDeepArrayAndRwArray = DiffCases.Create<DiffDeepBag, int, int>(
+        MarshalingAliasingDifferentialKernels.LaunchCrossAliasInDeepArrayAndRwArrayKernel,
+        inputs: static (_, _) =>
         {
             int[] shared = [42, 43];
             return new DiffBuffers()
@@ -324,16 +294,11 @@ public sealed class MarshalingAliasingDifferentialTests
                 .In("rwArr", shared, OutputPolicy.Exact)
                 .Out<int>("observed", 2, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) =>
-        {
-            DiffDeepBag[] inBags = b.Get<DiffDeepBag>("inBags");
-            int[] rwArr = b.Get<int>("rwArr");
-            int[] observed = b.Get<int>("observed");
-            MarshalingAliasingDifferentialKernels.LaunchCrossAliasInDeepArrayAndRwArrayKernel(
-                inBags, rwArr, observed, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        shape: LaunchShapes.SingleThread(),
+        firstInputName: "inBags",
+        secondInputName: "rwArr",
+        outputName: "observed",
+        seeds: [0]);
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]

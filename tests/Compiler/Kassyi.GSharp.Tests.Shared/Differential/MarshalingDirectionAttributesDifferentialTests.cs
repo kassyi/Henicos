@@ -17,12 +17,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.GlobalStateSequential)]
 public sealed class MarshalingDirectionAttributesDifferentialTests
 {
-    internal static readonly DifferentialCase s_inArrayMutationIsolation = new(
-        KernelName(nameof(MarshalingAliasingDifferentialKernels.InArrayMutationIsolationKernel)))
-    {
-        Shape = LaunchShapes.SingleThread(),
-        Seeds = [0],
-        Inputs = static (_, _) =>
+    internal static readonly DifferentialCase s_inArrayMutationIsolation = DiffCases.Create<int, DiffVec2Padded, DiffNestedDeep, float>(
+        MarshalingAliasingDifferentialKernels.LaunchInArrayMutationIsolationKernel,
+        inputs: static (_, _) =>
         {
             int[] inPrim = [10, 20];
             DiffVec2Padded[] inConv =
@@ -50,7 +47,12 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
                 .InDeep("inDeepStructs", inDeep, CloneNestedDeep, CompareNestedDeep, readOnly: true)
                 .Out<float>("outObserved", 3, OutputPolicy.Bitwise);
         },
-        Reference = static (b, s) =>
+        shape: LaunchShapes.SingleThread(),
+        firstInputName: "inPrimitives",
+        secondInputName: "inConvertStructs",
+        thirdInputName: "inDeepStructs",
+        outputName: "outObserved",
+        reference: static (b, s) =>
         {
             int[] primCopy = (int[])b.Get<int>("inPrimitives").Clone();
             DiffVec2Padded[] convCopy = (DiffVec2Padded[])b.Get<DiffVec2Padded>("inConvertStructs").Clone();
@@ -68,16 +70,7 @@ public sealed class MarshalingDirectionAttributesDifferentialTests
                 MarshalingAliasingDifferentialKernels.LaunchInArrayMutationIsolationKernel(
                     primCopy, convCopy, deepCopy, outObserved, gridDimX: s.GridX, blockDimX: s.BlockX));
         },
-        Launch = static (b, s) =>
-        {
-            int[] inPrim = b.Get<int>("inPrimitives");
-            DiffVec2Padded[] inConv = b.Get<DiffVec2Padded>("inConvertStructs");
-            DiffNestedDeep[] inDeep = b.Get<DiffNestedDeep>("inDeepStructs");
-            float[] outObserved = b.Get<float>("outObserved");
-            MarshalingAliasingDifferentialKernels.LaunchInArrayMutationIsolationKernel(
-                inPrim, inConv, inDeep, outObserved, gridDimX: s.GridX, blockDimX: s.BlockX);
-        },
-    };
+        seeds: [0]);
 
     internal static readonly DifferentialCase s_outArrayFullWrite = new(
         KernelName(nameof(MarshalingAliasingDifferentialKernels.OutArrayStridedWriteKernel), "Full"))
