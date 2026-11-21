@@ -1,4 +1,5 @@
 #nullable enable
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -12,88 +13,65 @@ public class DefaultValueDifferentialTests
 {
     private const int Rows = 64;
 
-    private static DifferentialCase Case(string kernel, string[] columns, Action<DiffBuffers, LaunchShape> launch) =>
-        new($"{nameof(DefaultValueDifferentialKernels)}.{kernel}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-            Inputs = (rng, rows) => new DiffBuffers()
+    private static DifferentialCase Case(
+        Int32RowsLaunch launch,
+        string[] columns,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, rows) => new DiffBuffers()
                 .In("a", DiffValues.Int32(rng, rows))
                 .Out<int>("dst", rows, columns, OutputPolicy.Exact),
-            Launch = launch,
-            OracleIsLaunch = true,
-        };
+            shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_var = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultVarKernel),
-        ["int", "long", "uint", "ulong"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultVarKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultVarKernel,
+        ["int", "long", "uint", "ulong"]);
 
     internal static readonly DifferentialCase s_conditionalArm = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultConditionalArmKernel),
-        ["int_arm", "uint_arm", "long_arm"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultConditionalArmKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultConditionalArmKernel,
+        ["int_arm", "uint_arm", "long_arm"]);
 
     internal static readonly DifferentialCase s_narrowTypes = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultNarrowTypesKernel),
-        ["byte", "sbyte", "short", "ushort", "byte_arm", "enum_arm", "enum_var"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultNarrowTypesKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultNarrowTypesKernel,
+        ["byte", "sbyte", "short", "ushort", "byte_arm", "enum_arm", "enum_var"]);
 
     internal static readonly DifferentialCase s_comparisonAndOperand = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultComparisonAndOperandKernel),
-        ["equal", "not_equal", "long_operand"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultComparisonAndOperandKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultComparisonAndOperandKernel,
+        ["equal", "not_equal", "long_operand"]);
 
     internal static readonly DifferentialCase s_return = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultReturnKernel),
-        ["long_return", "uint_return"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultReturnKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultReturnKernel,
+        ["long_return", "uint_return"]);
 
     internal static readonly DifferentialCase s_struct = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultStructKernel),
-        ["struct_arm_tag", "field_has_value", "default_tag"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultStructKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultStructKernel,
+        ["struct_arm_tag", "field_has_value", "default_tag"]);
 
     internal static readonly DifferentialCase s_zeroStructBesideAValue = Case(
-        nameof(DefaultValueDifferentialKernels.ZeroStructBesideAValueKernel),
-        ["created_arm_tag", "switch_default_arm_tag", "get_value_or_default_tag"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchZeroStructBesideAValueKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchZeroStructBesideAValueKernel,
+        ["created_arm_tag", "switch_default_arm_tag", "get_value_or_default_tag"]);
 
     internal static readonly DifferentialCase s_nullable = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultNullableKernel),
-        ["maybe_has_value", "q_has_value", "equals_default", "not_equals_default", "default_on_left"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultNullableKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultNullableKernel,
+        ["maybe_has_value", "q_has_value", "equals_default", "not_equals_default", "default_on_left"]);
 
     internal static readonly DifferentialCase s_array = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultArrayKernel),
-        ["arm_is_null", "equals_default", "other_equals_default"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultArrayKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultArrayKernel,
+        ["arm_is_null", "equals_default", "other_equals_default"]);
 
     internal static readonly DifferentialCase s_pointer = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultPointerKernel),
-        ["pointer_or_value"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultPointerKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultPointerKernel,
+        ["pointer_or_value"]);
 
     internal static readonly DifferentialCase s_convertedToNullable = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultConvertedToNullableKernel),
-        ["declaration", "assignment", "widened", "literal"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultConvertedToNullableKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultConvertedToNullableKernel,
+        ["declaration", "assignment", "widened", "literal"]);
 
     internal static readonly DifferentialCase s_omittedIn = Case(
-        nameof(DefaultValueDifferentialKernels.DefaultOmittedInArgumentKernel),
-        ["omitted_default", "given", "omitted_constant"],
-        static (b, s) => DefaultValueDifferentialKernels.LaunchDefaultOmittedInArgumentKernel(
-            b.Get<int>("a"), b.Get<int>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        DefaultValueDifferentialKernels.LaunchDefaultOmittedInArgumentKernel,
+        ["omitted_default", "given", "omitted_constant"]);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
