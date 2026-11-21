@@ -119,8 +119,11 @@ public partial class SpanCopyTests : SpanKernelPathTestBase
         // mutant: Types.hpp GSharpArray<T>::TryCopyTo `Length > destination.Length`
         // -> `Length >= destination.Length` (exact fit fails)
         Run(managed, () => SpanWriteKernels.LaunchTryCopyToSliceKernel(
-            src, srcOffset, srcCount, dst, dstOffset, dstCount, ok,
-            gridDimX: GridDimX, blockDimX: BlockDimX));
+            source: new SpanSliceReadSource { Buffer = src, Offset = srcOffset, Count = srcCount },
+            destination: new SpanSliceWriteTarget { Buffer = dst, Offset = dstOffset, Count = dstCount },
+            copied: ok,
+            gridDimX: GridDimX,
+            blockDimX: BlockDimX));
 
         Assert.Equal(expectedOk ? 1 : 0, ok[0]);
         Assert.Equal(expectedDst, dst);
@@ -145,8 +148,17 @@ public partial class SpanCopyTests : SpanKernelPathTestBase
 
         var ok = new int[1];
         Run(managed, () => SpanWriteKernels.LaunchTryCopyToSameBufferKernel(
-            actual, srcOffset, srcCount, dstOffset, dstCount, ok,
-            gridDimX: GridDimX, blockDimX: BlockDimX));
+            data: actual,
+            range: new SpanSliceCopyRange
+            {
+                SourceOffset = srcOffset,
+                SourceCount = srcCount,
+                DestinationOffset = dstOffset,
+                DestinationCount = dstCount,
+            },
+            copied: ok,
+            gridDimX: GridDimX,
+            blockDimX: BlockDimX));
 
         Assert.Equal(expectedOk ? 1 : 0, ok[0]);
         Assert.Equal(expected, actual);
