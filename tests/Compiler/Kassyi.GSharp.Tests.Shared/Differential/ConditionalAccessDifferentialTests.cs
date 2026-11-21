@@ -28,7 +28,7 @@ public class ConditionalAccessDifferentialTests
             launchExpression: launchExpression);
 
     private static DifferentialCase Case(string kernel, string[] columns, Action<DiffBuffers, LaunchShape> launch) =>
-        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+        new(DiffKernelNames.Of(typeof(ConditionalAccessDifferentialKernels), kernel))
         {
             Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
             Inputs = (rng, rows) => new DiffBuffers()
@@ -72,7 +72,7 @@ public class ConditionalAccessDifferentialTests
         string[] columns,
         Action<DiffBuffers, LaunchShape> launch,
         Func<int[], int, int[]> expected) =>
-        new($"{nameof(ConditionalAccessDifferentialKernels)}.{kernel}")
+        new(DiffKernelNames.Of(typeof(ConditionalAccessDifferentialKernels), kernel))
         {
             Shape = LaunchShape.ForRows(128, blockX: 64),
             Inputs = (rng, rows) => new DiffBuffers()
