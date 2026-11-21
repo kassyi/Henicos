@@ -34,12 +34,18 @@ public class AtomicsFloatAndSyncDifferentialTests
                     [new DiffAtomicPacket { Counter = 0, Flags = 0u, Accumulator = 4.0f }],
                     OutputPolicy.Exact),
             Launch = static (b, s) => AtomicsDifferentialKernels.LaunchFloatExactPowersOfTwoAtomicKernel(
-                b.Get<float>("summaryFloats"),
-                b.Get<float>("exchSlot"),
-                b.Get<float>("oldAddMultisetOut"),
-                b.Get<float>("oldExchOut"),
-                b.Get<DiffAtomicPacket>("packets"),
-                dynLen: 4,
+                targets: new FloatAtomicTargets
+                {
+                    SummaryAccumulators = b.Get<float>("summaryFloats"),
+                    ExchangeSlot = b.Get<float>("exchSlot"),
+                    Packets = b.Get<DiffAtomicPacket>("packets"),
+                },
+                oldValues: new FloatAtomicOldValues
+                {
+                    AddOldValues = b.Get<float>("oldAddMultisetOut"),
+                    ExchangeOldValues = b.Get<float>("oldExchOut"),
+                },
+                sharedBufferLength: 4,
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX,
                 sharedMemBytes: 4 * sizeof(float)
@@ -91,16 +97,9 @@ public class AtomicsFloatAndSyncDifferentialTests
         };
 
     internal static readonly DifferentialCase s_floatTwoStageRoundingBound =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.FloatTwoStageRoundingBoundKernel)}")
-        {
-            Shapes =
-            [
-                LaunchShape.ForRows(64, blockX: 32),
-                LaunchShape.ForRows(128, blockX: 64),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchFloatTwoStageRoundingBoundKernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var input = new float[rows];
@@ -119,13 +118,15 @@ public class AtomicsFloatAndSyncDifferentialTests
                     .In("input", input, OutputPolicy.Exact, readOnly: true)
                     .In("accumulators", [0.0f, 0.0f, 0.0f], OutputPolicy.Ignore);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchFloatTwoStageRoundingBoundKernel(
-                b.Get<float>("input"),
-                b.Get<float>("accumulators"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            VerifyAgainstInitial = static (initial, actual, s) =>
+            shapes:
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(128, blockX: 64),
+            ],
+            inputName: "input",
+            outputName: "accumulators",
+            oracleIsLaunch: false,
+            verifyAgainstInitial: static (initial, actual, s) =>
             {
                 var input = initial.Get<float>("input");
                 var acc = actual.Get<float>("accumulators");
@@ -157,8 +158,7 @@ public class AtomicsFloatAndSyncDifferentialTests
                 }
 
                 return PropertyResult.Pass();
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_floatSpecialValuesContention =
         new(
@@ -239,16 +239,9 @@ public class AtomicsFloatAndSyncDifferentialTests
         };
 
     internal static readonly DifferentialCase s_blockLeaderCasSpinlock =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.BlockLeaderCasSpinlockKernel)}")
-        {
-            Shapes =
-            [
-                LaunchShapes.Grid1D(4u, 32u),
-                LaunchShapes.Grid1D(8u, 32u),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchBlockLeaderCasSpinlockKernel,
+            inputs: static (rng, s) =>
             {
                 int blocks = (int)s.GridX;
                 var payloads = new int[blocks];
@@ -262,14 +255,15 @@ public class AtomicsFloatAndSyncDifferentialTests
                     .In("lockSlot", [0], OutputPolicy.Exact)
                     .In("sharedState", [0, 100, 0x13572468], OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchBlockLeaderCasSpinlockKernel(
-                b.Get<int>("blockPayloads"),
-                b.Get<int>("lockSlot"),
-                b.Get<int>("sharedState"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, s) =>
+            shapes:
+            [
+                LaunchShapes.Grid1D(4u, 32u),
+                LaunchShapes.Grid1D(8u, 32u),
+            ],
+            firstInputName: "blockPayloads",
+            secondInputName: "lockSlot",
+            outputName: "sharedState",
+            reference: static (b, s) =>
             {
                 var payloads = b.Get<int>("blockPayloads");
                 var lockSlot = b.Get<int>("lockSlot");
@@ -285,20 +279,12 @@ public class AtomicsFloatAndSyncDifferentialTests
                 }
 
                 lockSlot[0] = 0;
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_cooperativeCasLockFreeStack =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.CooperativeCasLockFreeStackKernel)}")
-        {
-            Shapes =
-            [
-                LaunchShapes.Grid1D(2u, 32u),
-                LaunchShapes.Grid1D(4u, 32u),
-            ],
-            Inputs = static (_, s) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchCooperativeCasLockFreeStackKernel,
+            inputs: static (_, s) =>
             {
                 int rows = s.ThreadCount;
                 var next = new int[rows];
@@ -308,14 +294,15 @@ public class AtomicsFloatAndSyncDifferentialTests
                     .In("next", next, OutputPolicy.Ignore)
                     .Out<int>("popped", rows, OutputPolicy.Multiset);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchCooperativeCasLockFreeStackKernel(
-                b.Get<int>("head"),
-                b.Get<int>("next"),
-                b.Get<int>("popped"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, s) =>
+            shapes:
+            [
+                LaunchShapes.Grid1D(2u, 32u),
+                LaunchShapes.Grid1D(4u, 32u),
+            ],
+            firstInputName: "head",
+            secondInputName: "next",
+            outputName: "popped",
+            reference: static (b, s) =>
             {
                 var head = b.Get<int>("head");
                 var popped = b.Get<int>("popped");
@@ -327,7 +314,7 @@ public class AtomicsFloatAndSyncDifferentialTests
 
                 head[0] = -1;
             },
-            Verify = static (actual, s) =>
+            verify: static (actual, s) =>
             {
                 var head = actual.Get<int>("head");
                 var popped = actual.Get<int>("popped");
@@ -356,8 +343,7 @@ public class AtomicsFloatAndSyncDifferentialTests
                 }
 
                 return PropertyResult.Pass();
-            },
-        };
+            });
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
