@@ -3,6 +3,13 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+public struct WarpShuffleExtremaOptions
+{
+    public uint Mask;
+    public uint Delta;
+    public int Width;
+}
+
 public static partial class WarpShuffleKernels
 {
     // [Happy Path] Parallel Reduction Sum using ShuffleDownSync within a 32-thread warp
@@ -70,8 +77,11 @@ public static partial class WarpShuffleKernels
     }
 
     [GpuKernel]
-    public static void WarpShuffleExtremaKernel(uint mask, int[] input, uint delta, int width, int[] output)
+    public static void WarpShuffleExtremaKernel(int[] input, int[] output, WarpShuffleExtremaOptions options)
     {
+        uint mask = options.Mask;
+        uint delta = options.Delta;
+        int width = options.Width;
         int tid = ThreadIndex.X;
         output[tid] = Warp.ShuffleDownSync(mask, input[tid], delta, width);
     }
