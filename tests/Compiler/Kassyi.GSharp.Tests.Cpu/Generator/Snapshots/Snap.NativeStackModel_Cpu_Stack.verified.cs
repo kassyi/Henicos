@@ -27,7 +27,7 @@ template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Co
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker);
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index){
-return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(20,63)"");
+return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(28,63)"");
 }
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index){
@@ -54,7 +54,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(29,9)"")=__gsharp_ctx->__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(37,9)"")=__gsharp_ctx->__gsharp_id_1_value;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -62,7 +62,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(31,16)"");
+*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -74,9 +74,9 @@ return false;
 }
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(29,9)"")=__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(37,9)"")=__gsharp_id_1_value;
 __gsharp_stack_barrier();
-return __gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(31,16)"");
+return __gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,16)"");
 }
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias {
@@ -120,7 +120,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_neighbour,__gsharp_ctx->__gsharp_id_2_bias);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(47,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_neighbour,__gsharp_ctx->__gsharp_id_2_bias);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
 return false;
@@ -128,7 +128,7 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(41,16)"");
+*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(49,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -141,9 +141,9 @@ return false;
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, int __gsharp_id_2_bias){
 int __gsharp_id_3_neighbour = __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(__gsharp_id_0_scratch,__gsharp_id_1_value);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,9)"")=__gsharp_add_i32(__gsharp_id_3_neighbour,__gsharp_id_2_bias);
+__gsharp_array_at(__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(47,9)"")=__gsharp_add_i32(__gsharp_id_3_neighbour,__gsharp_id_2_bias);
 __gsharp_stack_barrier();
-return __gsharp_array_at(__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(41,16)"");
+return __gsharp_array_at(__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(49,16)"");
 }
 
 struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper {
@@ -163,14 +163,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,""Warp.ShuffleXorSync"",""NativeStackKernels.cu.cs(47,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,""Warp.ShuffleXorSync"",""NativeStackKernels.cu.cs(55,16)"");
 __gsharp_state=1;
 return false;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,1,32,""NativeStackKernels.cu.cs(47,16)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,1,32,""NativeStackKernels.cu.cs(55,16)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -182,7 +182,7 @@ return false;
 #undef __gsharp_yielded_for_block_barrier
 }
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(int __gsharp_id_0_x, uint32_t __gsharp_warp_frame){
-return __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(47,16)"",0xFFFFFFFFu,__gsharp_id_0_x,1,32);
+return __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(55,16)"",0xFFFFFFFFu,__gsharp_id_0_x,1,32);
 }
 
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder__
@@ -227,7 +227,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(54,9)"")=1;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(62,9)"")=1;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -243,7 +243,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder __gsharp_tmp{}
 ());
 try
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(60,17)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_marker,1);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(68,17)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_marker,1);
 }
 catch (...)
 {
@@ -294,7 +294,7 @@ __gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_Slot, ""G#: a null array is read 
 #endif
 inline void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_log, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(54,9)"")=1;
+__gsharp_array_at(__gsharp_id_0_log, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(62,9)"")=1;
 __gsharp_stack_barrier();
 if(__gsharp_id_2_tid==1)
 {
@@ -304,7 +304,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder __gsharp_tmp{}
 ());
 try
 {
-__gsharp_array_at(__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(60,17)"")=__gsharp_add_i32(__gsharp_id_1_marker,1);
+__gsharp_array_at(__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(68,17)"")=__gsharp_add_i32(__gsharp_id_1_marker,1);
 }
 catch (...)
 {
@@ -335,9 +335,9 @@ __gsharp_id_3_recorder.__gsharp_dispose();
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.ExchangeWithNeighbour(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour", FrameName = @"__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour", Suspends = true, ReachesBlockBarrier = true, IsParallelDependent = true, Effect = @"Memory", CudaSignature = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value);
 ", CudaBody = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(29,9)"")=__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(37,9)"")=__gsharp_id_1_value;
 __syncthreads();
-return __gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(31,16)"");
+return __gsharp_array_at(__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,16)"");
 }
 ", CppSignature = @"struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour;
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result);
@@ -361,7 +361,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(29,9)"")=__gsharp_ctx->__gsharp_id_1_value;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(37,9)"")=__gsharp_ctx->__gsharp_id_1_value;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -369,7 +369,7 @@ return false;
 case 1:
 __gsharp_switch_1_state_1:
 {
-*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(31,16)"");
+*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (__gsharp_add_i32(__gsharp_ctx->__gsharp_id_2_tid,1))%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -384,9 +384,9 @@ return false;
 ", CudaBody = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, int __gsharp_id_2_bias){
 int __gsharp_id_3_neighbour = __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(__gsharp_id_0_scratch,__gsharp_id_1_value);
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,9)"")=__gsharp_add_i32(__gsharp_id_3_neighbour,__gsharp_id_2_bias);
+__gsharp_array_at(__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(47,9)"")=__gsharp_add_i32(__gsharp_id_3_neighbour,__gsharp_id_2_bias);
 __syncthreads();
-return __gsharp_array_at(__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(41,16)"");
+return __gsharp_array_at(__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(49,16)"");
 }
 ", CppSignature = @"struct __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias;
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(GSharpArray<int> __gsharp_id_0_scratch, int __gsharp_id_1_value, int __gsharp_id_2_bias, __gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result);
@@ -431,7 +431,7 @@ return false;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(39,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_neighbour,__gsharp_ctx->__gsharp_id_2_bias);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, (int)threadIdx.x, ""G#: a null array is read at NativeStackKernels.cu.cs(47,9)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_3_neighbour,__gsharp_ctx->__gsharp_id_2_bias);
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=3;
 return false;
@@ -439,7 +439,7 @@ return false;
 case 3:
 __gsharp_switch_1_state_3:
 {
-*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(41,16)"");
+*__gsharp_result = __gsharp_array_at(__gsharp_ctx->__gsharp_id_0_scratch, ((int)threadIdx.x+2)%(int)blockDim.x, ""G#: a null array is read at NativeStackKernels.cu.cs(49,16)"");
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
 }
@@ -452,11 +452,11 @@ return false;
 ", ManagedStateMachine = true)]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.ReadElement(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement", Effect = @"None", CudaSignature = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index);
 ", CudaBody = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index){
-return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(20,63)"");
+return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(28,63)"");
 }
 ", CppSignature = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index);
 ", CppBody = @"inline int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index){
-return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(20,63)"");
+return __gsharp_array_at(__gsharp_id_0_source, (long long)__gsharp_id_1_index, ""G#: a null array is read at NativeStackKernels.cu.cs(28,63)"");
 }
 ")]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.ReadElementNested(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested", CudaReferences = new string[] {@"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement"}, CppReferences = new string[] {@"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElement"}, Effect = @"None", CudaSignature = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(GSharpArray<int> __gsharp_id_0_source, int __gsharp_id_1_index);
@@ -491,14 +491,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,""Warp.ShuffleXorSync"",""NativeStackKernels.cu.cs(47,16)"");
+__gsharp_warp_publish(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,""Warp.ShuffleXorSync"",""NativeStackKernels.cu.cs(55,16)"");
 __gsharp_state=1;
 return false;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,1,32,""NativeStackKernels.cu.cs(47,16)"");
+auto __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,__gsharp_ctx,0,0xFFFFFFFFu,__gsharp_ctx->__gsharp_id_0_x,1,32,""NativeStackKernels.cu.cs(55,16)"");
 *__gsharp_result = __gsharp_warp_temp_0;
 __gsharp_state = 0;return true;
 __gsharp_state = 0;return true;
@@ -513,7 +513,7 @@ return false;
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Function", @"M:Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.SuspendingWithUsingAfterBarrier(System.Int32[],System.Int32)", CppName = @"__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier", CudaReferences = new string[] {@"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder"}, CppReferences = new string[] {@"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder"}, FrameName = @"__gsharp_frame_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier", Suspends = true, ReachesBlockBarrier = true, IsParallelDependent = true, Effect = @"Memory", CudaSignature = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker);
 ", CudaBody = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SuspendingWithUsingAfterBarrier(GSharpArray<int> __gsharp_id_0_log, int __gsharp_id_1_marker){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_log, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(54,9)"")=1;
+__gsharp_array_at(__gsharp_id_0_log, __gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(62,9)"")=1;
 __syncthreads();
 if(__gsharp_id_2_tid==1)
 {
@@ -522,7 +522,7 @@ auto __gsharp_id_3_recorder = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Log = __gsharp_id_0_log; __gsharp_tmp.__gsharp_mb_Slot = 4; __gsharp_tmp.__gsharp_mb_Marker = __gsharp_id_1_marker; return __gsharp_tmp; }
 ());
 __gsharp_using_scope<__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder> __gsharp_using_guard_0{__gsharp_id_3_recorder};
-__gsharp_array_at(__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(60,17)"")=__gsharp_add_i32(__gsharp_id_1_marker,1);
+__gsharp_array_at(__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(68,17)"")=__gsharp_add_i32(__gsharp_id_1_marker,1);
 }
 }
 }
@@ -548,7 +548,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=(int)threadIdx.x;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(54,9)"")=1;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, __gsharp_ctx->__gsharp_id_2_tid, ""G#: a null array is read at NativeStackKernels.cu.cs(62,9)"")=1;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
 return false;
@@ -564,7 +564,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder __gsharp_tmp{}
 ());
 try
 {
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(60,17)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_marker,1);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_log, 5, ""G#: a null array is read at NativeStackKernels.cu.cs(68,17)"")=__gsharp_add_i32(__gsharp_ctx->__gsharp_id_1_marker,1);
 }
 catch (...)
 {
@@ -592,6 +592,37 @@ return false;
 #undef __gsharp_yielded_for_block_barrier
 }
 ", ManagedStateMachine = true)]
+[assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Struct", @"T:Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers", CppName = @"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers", Effect = @"Memory", CudaBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers
+{
+GSharpArray<const int> __gsharp_mb_Source;
+GSharpArray<int> __gsharp_mb_Before;
+GSharpArray<int> __gsharp_mb_After;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==48,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==8,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Source)==0,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Source: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Before)==16,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Before: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_After)==32,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.After: offset"");
+#endif
+", CppBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers
+{
+GSharpArray<const int> __gsharp_mb_Source;
+GSharpArray<int> __gsharp_mb_Before;
+GSharpArray<int> __gsharp_mb_After;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==48,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==8,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Source)==0,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Source: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Before)==16,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Before: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_After)==32,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.After: offset"");
+#endif
+")]
 [assembly: global::Kassyi.GSharp.Core.GpuDeviceExportAttribute({FormatVersion}, @"{PreludeHash}", @"Struct", @"T:Kassyi.GSharp.Tests.Cpu.Core.NativeStackRecorder", CppName = @"__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder", Effect = @"Memory", CudaBody = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder
@@ -784,14 +815,14 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.x, "Warp.ShuffleXorSync", "NativeStackKernels.cu.cs(47,16)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.x, "Warp.ShuffleXorSync", "NativeStackKernels.cu.cs(55,16)");
 __gsharp_ctx.__gsharp_state = 1;
 return false;
 }
 
 case 1:
 {
-int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.x, 1, 32, "NativeStackKernels.cu.cs(47,16)");
+int __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.x, 1, 32, "NativeStackKernels.cu.cs(55,16)");
 {
 __gsharp_result = __gsharp_warp_temp_0;
 __gsharp_ctx.__gsharp_state = 0;
@@ -884,47 +915,153 @@ public partial class NativeStackKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(510692960u, "NativeStackKernels.cu.cs", 69, 9, "NeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(315395110u, "NativeStackKernels.cu.cs", 71, 9, "NeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(709839447u, "NativeStackKernels.cu.cs", 71, 23, "NeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(142774134u, "NativeStackKernels.cu.cs", 80, 9, "MultiBlockNeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(358971658u, "NativeStackKernels.cu.cs", 82, 9, "MultiBlockNeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(781758274u, "NativeStackKernels.cu.cs", 82, 37, "MultiBlockNeighbourKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1276289887u, "NativeStackKernels.cu.cs", 94, 13, "LoopBarrierLocalsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(661707792u, "NativeStackKernels.cu.cs", 96, 20, "LoopBarrierLocalsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(447891274u, "NativeStackKernels.cu.cs", 96, 28, "LoopBarrierLocalsKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1745503766u, "NativeStackKernels.cu.cs", 100, 9, "LoopBarrierLocalsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(505071257u, "NativeStackKernels.cu.cs", 109, 13, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2020815046u, "NativeStackKernels.cu.cs", 113, 9, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(894388958u, "NativeStackKernels.cu.cs", 115, 9, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1929153069u, "NativeStackKernels.cu.cs", 115, 23, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(443703862u, "NativeStackKernels.cu.cs", 115, 30, "EarlyReturnBeforeBarrierKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1885915970u, "NativeStackKernels.cu.cs", 122, 9, "ReturningBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1788322180u, "NativeStackKernels.cu.cs", 124, 16, "ReturningBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(291885672u, "NativeStackKernels.cu.cs", 132, 23, "SharedMemoryBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(178654686u, "NativeStackKernels.cu.cs", 134, 9, "SharedMemoryBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1911565930u, "NativeStackKernels.cu.cs", 142, 9, "FailureAfterBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1545430393u, "NativeStackKernels.cu.cs", 145, 9, "FailureAfterBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1602365829u, "NativeStackKernels.cu.cs", 154, 9, "TwoThreadsFailAfterBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(647812323u, "NativeStackKernels.cu.cs", 161, 9, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(865591781u, "NativeStackKernels.cu.cs", 167, 17, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1178537027u, "NativeStackKernels.cu.cs", 168, 17, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2126414902u, "NativeStackKernels.cu.cs", 77, 9, "NeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1458792966u, "NativeStackKernels.cu.cs", 79, 9, "NeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(506584631u, "NativeStackKernels.cu.cs", 79, 23, "NeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1132224278u, "NativeStackKernels.cu.cs", 88, 9, "MultiBlockNeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2138025288u, "NativeStackKernels.cu.cs", 90, 9, "MultiBlockNeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1265679774u, "NativeStackKernels.cu.cs", 90, 37, "MultiBlockNeighbourKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(605732255u, "NativeStackKernels.cu.cs", 102, 13, "LoopBarrierLocalsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(636804804u, "NativeStackKernels.cu.cs", 104, 20, "LoopBarrierLocalsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(491470438u, "NativeStackKernels.cu.cs", 104, 28, "LoopBarrierLocalsKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2069684182u, "NativeStackKernels.cu.cs", 108, 9, "LoopBarrierLocalsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1764275079u, "NativeStackKernels.cu.cs", 117, 13, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1043474774u, "NativeStackKernels.cu.cs", 121, 9, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(486537026u, "NativeStackKernels.cu.cs", 123, 9, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(496588415u, "NativeStackKernels.cu.cs", 123, 23, "EarlyReturnBeforeBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(278233592u, "NativeStackKernels.cu.cs", 123, 30, "EarlyReturnBeforeBarrierKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1516562766u, "NativeStackKernels.cu.cs", 130, 9, "ReturningBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(594833222u, "NativeStackKernels.cu.cs", 132, 16, "ReturningBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1827757498u, "NativeStackKernels.cu.cs", 140, 23, "SharedMemoryBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1911565930u, "NativeStackKernels.cu.cs", 142, 9, "SharedMemoryBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(151590830u, "NativeStackKernels.cu.cs", 153, 9, "FailureAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1579449421u, "NativeStackKernels.cu.cs", 156, 9, "FailureAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(216926133u, "NativeStackKernels.cu.cs", 165, 9, "TwoThreadsFailAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(571218019u, "NativeStackKernels.cu.cs", 172, 9, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1107673809u, "NativeStackKernels.cu.cs", 178, 17, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(131527819u, "NativeStackKernels.cu.cs", 179, 17, "UsingUnwindAfterBarrierKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(85582380u, "NativeStackKernels.cu.cs", 13, 30, "Dispose", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1722081642u, "NativeStackKernels.cu.cs", 179, 9, "OneLevelSuspendingDeviceKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1710787142u, "NativeStackKernels.cu.cs", 187, 9, "MultiLevelSuspendingDeviceKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1226312526u, "NativeStackKernels.cu.cs", 200, 9, "ShuffleDeviceFallbackKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1814130790u, "NativeStackKernels.cu.cs", 210, 9, "ShuffleAndBarrierKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1243219974u, "NativeStackKernels.cu.cs", 190, 9, "OneLevelSuspendingDeviceKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(63328646u, "NativeStackKernels.cu.cs", 198, 9, "MultiLevelSuspendingDeviceKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1802228102u, "NativeStackKernels.cu.cs", 211, 9, "ShuffleDeviceFallbackKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(989044562u, "NativeStackKernels.cu.cs", 221, 9, "ShuffleAndBarrierKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
+public unsafe partial struct FailureAfterBarrierBuffers
+{
+public const string DebugName_Source = "global::System.Int32[]";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Source;
+public const string DebugName_Before = "global::System.Int32[]";
+[global::System.Runtime.InteropServices.FieldOffset(16)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Before;
+public const string DebugName_After = "global::System.Int32[]";
+[global::System.Runtime.InteropServices.FieldOffset(32)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy After;
+}
+public static unsafe void Marshal_FailureAfterBarrierBuffers(ref global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, ref AotContexts.FailureAfterBarrierBuffers native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.Source != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Source, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Source.Data = handle.AddrOfPinnedObject();
+native.Source.Length = host.Source.Length;
+}
+if (host.Before != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Before, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Before.Data = handle.AddrOfPinnedObject();
+native.Before.Length = host.Before.Length;
+}
+if (host.After != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.After, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.After.Data = handle.AddrOfPinnedObject();
+native.After.Length = host.After.Length;
+}
+}
+public static unsafe void Unmarshal_FailureAfterBarrierBuffers(ref global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, ref AotContexts.FailureAfterBarrierBuffers native, global::System.IntPtr hStream = default)
+{
+if (native.Source.Data == global::System.IntPtr.Zero)
+{
+host.Source = default;
+}
+if (native.Before.Data == global::System.IntPtr.Zero)
+{
+host.Before = default;
+}
+if (native.After.Data == global::System.IntPtr.Zero)
+{
+host.After = default;
+}
+}
+public static void AliasHeldArrays_FailureAfterBarrierBuffers(ref global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Source != null)
+{
+held.Add(host.Source, 4, 0, false);
+}
+if (host.Before != null)
+{
+held.Add(host.Before, 4, 0, false);
+}
+if (host.After != null)
+{
+held.Add(host.After, 4, 0, false);
+}
+}
+public static void CopyArrays_FailureAfterBarrierBuffers(ref global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+{
+_ = copies.Copy(ref host.Source);
+_ = copies.Copy(ref host.Before);
+_ = copies.Copy(ref host.After);
+}
+public static bool HoldsArray_FailureAfterBarrierBuffers(global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Source, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Before, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.After, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_FailureAfterBarrierBuffers(global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_FailureAfterBarrierBuffers(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
+#pragma warning restore CS8500
 }
 public const string NeighbourKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__NeighbourKernel(GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output){
 int __gsharp_id_2_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_2_tid, 510692960u)=__gsharp_add_i32(__gsharp_id_2_tid,1);
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_2_tid, 2126414902u)=__gsharp_add_i32(__gsharp_id_2_tid,1);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 315395110u)=__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_2_tid,1))%4, 709839447u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 1458792966u)=__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_2_tid,1))%4, 506584631u);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__NeighbourKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -1226,9 +1363,9 @@ public const string MultiBlockNeighbourKernel_Source = @"extern ""C"" __declspec
 int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_bid = (int)blockIdx.x;
 int __gsharp_id_4_blockOffset = __gsharp_mul_i32(__gsharp_id_3_bid,(int)blockDim.x);
-__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_add_i32(__gsharp_id_4_blockOffset,__gsharp_id_2_tid), 142774134u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_3_bid,1),10000),__gsharp_id_2_tid),1);
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_add_i32(__gsharp_id_4_blockOffset,__gsharp_id_2_tid), 1132224278u)=__gsharp_add_i32(__gsharp_add_i32(__gsharp_mul_i32(__gsharp_add_i32(__gsharp_id_3_bid,1),10000),__gsharp_id_2_tid),1);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_4_blockOffset,__gsharp_id_2_tid), 358971658u)=__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_add_i32(__gsharp_id_4_blockOffset,(__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x), 781758274u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_id_4_blockOffset,__gsharp_id_2_tid), 2138025288u)=__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_add_i32(__gsharp_id_4_blockOffset,(__gsharp_add_i32(__gsharp_id_2_tid,1))%(int)blockDim.x), 1265679774u);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__MultiBlockNeighbourKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -1537,12 +1674,12 @@ int __gsharp_id_4_acc = __gsharp_add_i32(__gsharp_id_2_tid,1);
 int __gsharp_id_5_stepBias = __gsharp_mul_i32(__gsharp_id_2_tid,7);
 for(int __gsharp_id_6_round = 0;__gsharp_id_6_round<100;__gsharp_id_6_round++)
 {
-__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, 1276289887u)=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_id_6_round);
+__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_id_2_tid, 605732255u)=__gsharp_add_i32(__gsharp_id_2_tid,__gsharp_id_6_round);
 __gsharp_stack_barrier();
-__gsharp_id_4_acc=__gsharp_add_i32(__gsharp_id_4_acc,__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_2_tid,1),__gsharp_id_3_n,447891274u), 661707792u),__gsharp_id_5_stepBias));
+__gsharp_id_4_acc=__gsharp_add_i32(__gsharp_id_4_acc,__gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_scratch, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_2_tid,1),__gsharp_id_3_n,491470438u), 636804804u),__gsharp_id_5_stepBias));
 __gsharp_stack_barrier();
 }
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 1745503766u)=__gsharp_id_4_acc;
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 2069684182u)=__gsharp_id_4_acc;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__LoopBarrierLocalsKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_scratch, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -1879,12 +2016,12 @@ public const string EarlyReturnBeforeBarrierKernel_Source = @"extern ""C"" __dec
 int __gsharp_id_3_tid = (int)threadIdx.x;
 if(__gsharp_id_3_tid>=__gsharp_id_2_activeCount)
 {
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 505071257u)=(-1);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 1764275079u)=(-1);
 return;
 }
-__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_3_tid, 2020815046u)=__gsharp_add_i32(__gsharp_id_3_tid,10);
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_3_tid, 1043474774u)=__gsharp_add_i32(__gsharp_id_3_tid,10);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 894388958u)=__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_tid,1),__gsharp_id_2_activeCount,443703862u), 1929153069u);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 486537026u)=__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_tid,1),__gsharp_id_2_activeCount,278233592u), 496588415u);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__EarlyReturnBeforeBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_buffer, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_activeCount)
 {
@@ -2196,9 +2333,9 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string ReturningBarrierKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReturningBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, 1885915970u)=__gsharp_add_i32(__gsharp_id_1_tid,10);
+__gsharp_array_at(__gsharp_id_0_buffer, __gsharp_id_1_tid, 1516562766u)=__gsharp_add_i32(__gsharp_id_1_tid,10);
 __gsharp_stack_barrier();
-__gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_1_tid,1))%(int)blockDim.x, 1788322180u),__gsharp_id_1_tid);
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_add_i32(__gsharp_array_at(__gsharp_id_0_buffer, (__gsharp_add_i32(__gsharp_id_1_tid,1))%(int)blockDim.x, 594833222u),__gsharp_id_1_tid);
 return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReturningBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_buffer, int* __restrict__ __gsharp_auto_result)
@@ -2506,9 +2643,9 @@ return __gsharp_auto_result;
 public const string SharedMemoryBarrierKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SharedMemoryBarrierKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
 int* __gsharp_id_2_shared = (int*)__gsharp_allocate_smem_static(0xc7719de65a1f80d8ull, (8) * sizeof(int), alignof(int));
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_id_2_shared[__gsharp_id_3_tid]=__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_tid, 291885672u),2);
+__gsharp_id_2_shared[__gsharp_id_3_tid]=__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_tid, 1827757498u),2);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 178654686u)=__gsharp_id_2_shared[(__gsharp_add_i32(__gsharp_id_3_tid,3))%(int)blockDim.x];
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_3_tid, 1911565930u)=__gsharp_id_2_shared[(__gsharp_add_i32(__gsharp_id_3_tid,3))%(int)blockDim.x];
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__SharedMemoryBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -2807,18 +2944,37 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
-public const string FailureAfterBarrierKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(GSharpArray<int> __gsharp_id_0_source, GSharpArray<int> __gsharp_id_1_before, GSharpArray<int> __gsharp_id_2_after, int __gsharp_id_3_failingThread, int __gsharp_id_4_badIndex){
-int __gsharp_id_5_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_1_before, __gsharp_id_5_tid, 1911565930u)=__gsharp_add_i32(__gsharp_id_5_tid,100);
-__gsharp_stack_barrier();
-int __gsharp_id_6_value = (__gsharp_id_5_tid==__gsharp_id_3_failingThread?__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,__gsharp_id_4_badIndex):__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,0));
-__gsharp_array_at(__gsharp_id_2_after, __gsharp_id_5_tid, 1545430393u)=__gsharp_add_i32(__gsharp_id_6_value,__gsharp_id_5_tid);
-}
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_source, GSharpArray<int> __gsharp_id_1_before, GSharpArray<int> __gsharp_id_2_after, int __gsharp_id_3_failingThread, int __gsharp_id_4_badIndex)
+public const string FailureAfterBarrierKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers
 {
+GSharpArray<const int> __gsharp_mb_Source;
+GSharpArray<int> __gsharp_mb_Before;
+GSharpArray<int> __gsharp_mb_After;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==48,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers)==8,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Source)==0,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Source: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_Before)==16,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.Before: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers,__gsharp_mb_After)==32,""Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers.After: offset"");
+#endif
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers __gsharp_id_0_buffers, int __gsharp_id_1_failingThread, int __gsharp_id_2_badIndex){
+GSharpArray<int> __gsharp_id_3_source = __gsharp_id_0_buffers.__gsharp_mb_Source;
+GSharpArray<int> __gsharp_id_4_before = __gsharp_id_0_buffers.__gsharp_mb_Before;
+GSharpArray<int> __gsharp_id_5_after = __gsharp_id_0_buffers.__gsharp_mb_After;
+int __gsharp_id_6_tid = (int)threadIdx.x;
+__gsharp_array_at(__gsharp_id_4_before, __gsharp_id_6_tid, 151590830u)=__gsharp_add_i32(__gsharp_id_6_tid,100);
+__gsharp_stack_barrier();
+int __gsharp_id_7_value = (__gsharp_id_6_tid==__gsharp_id_1_failingThread?__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_3_source,__gsharp_id_2_badIndex):__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_3_source,0));
+__gsharp_array_at(__gsharp_id_5_after, __gsharp_id_6_tid, 1579449421u)=__gsharp_add_i32(__gsharp_id_7_value,__gsharp_id_6_tid);
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, const __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers* __gsharp_arg_0, int __gsharp_id_1_failingThread, int __gsharp_id_2_badIndex)
+{
+__gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__FailureAfterBarrierBuffers __gsharp_id_0_buffers = *__gsharp_arg_0;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(__gsharp_id_0_source, __gsharp_id_1_before, __gsharp_id_2_after, __gsharp_id_3_failingThread, __gsharp_id_4_badIndex);};
+auto __gsharp_stack_body = [&]() {__gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(__gsharp_id_0_buffers, __gsharp_id_1_failingThread, __gsharp_id_2_badIndex);};
 const auto __gsharp_stack_fp = __gsharp_stack_capture_fp();
 #pragma omp parallel num_threads(__gsharp_stack_thread_limit((uint64_t)__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z, __gsharp_total_blocks))
 {
@@ -2895,11 +3051,12 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 public class __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_path;
+public global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers buffers;
+public int failingThread;
+public int badIndex;
 public int[] source;
 public int[] before;
 public int[] after;
-public int failingThread;
-public int badIndex;
 public int tid;
 public uint __gsharp_number_warp_paths(uint next) {
 __gsharp_warp_path = next++;
@@ -2907,11 +3064,9 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(int[] __gsharp_in_source, int[] __gsharp_in_before, int[] __gsharp_in_after, int __gsharp_in_failingThread, int __gsharp_in_badIndex, __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers __gsharp_in_buffers, int __gsharp_in_failingThread, int __gsharp_in_badIndex, __gsharp_context_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel __gsharp_ctx) {
 if (__gsharp_ctx.__gsharp_state == 0) {
-__gsharp_ctx.source = __gsharp_in_source;
-__gsharp_ctx.before = __gsharp_in_before;
-__gsharp_ctx.after = __gsharp_in_after;
+__gsharp_ctx.buffers = __gsharp_in_buffers;
 __gsharp_ctx.failingThread = __gsharp_in_failingThread;
 __gsharp_ctx.badIndex = __gsharp_in_badIndex;
 }
@@ -2920,6 +3075,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+__gsharp_ctx.source = __gsharp_ctx.buffers.Source;
+__gsharp_ctx.before = __gsharp_ctx.buffers.Before;
+__gsharp_ctx.after = __gsharp_ctx.buffers.After;
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 __gsharp_ctx.before[__gsharp_ctx.tid] = __gsharp_ctx.tid + 100;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
@@ -2939,11 +3097,11 @@ return;
 }
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_FailureAfterBarrierKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy source, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy before, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy after, global::System.Int32 failingThread, global::System.Int32 badIndex);
+private unsafe delegate void __gsharp_delegate_FailureAfterBarrierKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.FailureAfterBarrierBuffers* buffers, global::System.Int32 failingThread, global::System.Int32 badIndex);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchFailureAfterBarrierKernel(global::System.Int32[] source, global::System.Int32[] before, global::System.Int32[] after, global::System.Int32 failingThread, global::System.Int32 badIndex, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchFailureAfterBarrierKernel(global::Kassyi.GSharp.Tests.Cpu.Core.FailureAfterBarrierBuffers buffers, global::System.Int32 failingThread, global::System.Int32 badIndex, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NativeStackKernels.FailureAfterBarrierKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NativeStackKernels.FailureAfterBarrierKernel");
@@ -3011,7 +3169,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(source, before, after, failingThread, badIndex, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel(buffers, failingThread, badIndex, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("NativeStackKernels.FailureAfterBarrierKernel");
@@ -3070,38 +3228,26 @@ if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(source))
-fixed (global::System.Int32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(before))
-fixed (global::System.Int32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(after))
+global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.FailureAfterBarrierBuffers __gsharp_native_0 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+try
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (source?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (before?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (after?.Length ?? 0) }, failingThread, badIndex);
+global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.Marshal_FailureAfterBarrierBuffers(ref buffers, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, failingThread, badIndex);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.Unmarshal_FailureAfterBarrierBuffers(ref buffers, ref __gsharp_native_0, hStream);
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchFailureAfterBarrierKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy source, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy before, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy after, global::System.Int32 failingThread, global::System.Int32 badIndex, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchFailureAfterBarrierKernelPtr(global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.FailureAfterBarrierBuffers buffers, global::System.Int32 failingThread, global::System.Int32 badIndex, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (source.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("source", source.Length, "The array length must not be negative.");
-}
-if (source.Data == global::System.IntPtr.Zero && source.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "source");
-}
-if (before.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("before", before.Length, "The array length must not be negative.");
-}
-if (before.Data == global::System.IntPtr.Zero && before.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "before");
-}
-if (after.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("after", after.Length, "The array length must not be negative.");
-}
-if (after.Data == global::System.IntPtr.Zero && after.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "after");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "NativeStackKernels.FailureAfterBarrierKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "NativeStackKernels.FailureAfterBarrierKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -3115,12 +3261,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchFailureAfterBarrierKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchFailureAfterBarrierKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.FailureAfterBarrierBuffers*, global::System.Int32, global::System.Int32, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Cpu.Core.NativeStackKernels.AotContexts.FailureAfterBarrierBuffers*, global::System.Int32, global::System.Int32, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__FailureAfterBarrierKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = source.Data, Length = source.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = before.Data, Length = before.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = after.Data, Length = after.Length }, failingThread, badIndex);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &buffers, failingThread, badIndex);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
@@ -3128,7 +3274,7 @@ public const string TwoThreadsFailAfterBarrierKernel_Source = @"extern ""C"" __d
 int __gsharp_id_3_tid = (int)threadIdx.x;
 __gsharp_stack_barrier();
 int __gsharp_id_4_value = ((__gsharp_id_3_tid==1||__gsharp_id_3_tid==3)?__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,__gsharp_id_2_badIndex):__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,0));
-__gsharp_array_at(__gsharp_id_1_after, __gsharp_id_3_tid, 1602365829u)=__gsharp_add_i32(__gsharp_id_4_value,__gsharp_id_3_tid);
+__gsharp_array_at(__gsharp_id_1_after, __gsharp_id_3_tid, 216926133u)=__gsharp_add_i32(__gsharp_id_4_value,__gsharp_id_3_tid);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__TwoThreadsFailAfterBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_source, GSharpArray<int> __gsharp_id_1_after, int __gsharp_id_2_badIndex)
 {
@@ -3452,7 +3598,7 @@ __gsharp_array_at(__gsharp_mb_Log, __gsharp_mb_Slot, 85582380u)=__gsharp_mb_Mark
 #endif
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__UsingUnwindAfterBarrierKernel(GSharpArray<int> __gsharp_id_0_source, GSharpArray<int> __gsharp_id_1_log, int __gsharp_id_2_badIndex){
 int __gsharp_id_3_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_1_log, __gsharp_id_3_tid, 647812323u)=1;
+__gsharp_array_at(__gsharp_id_1_log, __gsharp_id_3_tid, 571218019u)=1;
 __gsharp_stack_barrier();
 if(__gsharp_id_3_tid==1)
 {
@@ -3462,8 +3608,8 @@ __gsharp_ty_Kassyi__GSharp__Tests__Cpu__Core__NativeStackRecorder __gsharp_tmp{}
 ());
 try
 {
-__gsharp_array_at(__gsharp_id_1_log, 5, 865591781u)=__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,__gsharp_id_2_badIndex);
-__gsharp_array_at(__gsharp_id_1_log, 6, 1178537027u)=999;
+__gsharp_array_at(__gsharp_id_1_log, 5, 1107673809u)=__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ReadElementNested(__gsharp_id_0_source,__gsharp_id_2_badIndex);
+__gsharp_array_at(__gsharp_id_1_log, 6, 131527819u)=999;
 }
 catch (...)
 {
@@ -3800,7 +3946,7 @@ public const string OneLevelSuspendingDeviceKernel_Source = @"extern ""C"" __dec
 int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_local = __gsharp_mul_i32(__gsharp_id_2_tid,10);
 int __gsharp_id_4_neighbour = __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ExchangeWithNeighbour(__gsharp_id_0_scratch,__gsharp_add_i32(__gsharp_id_2_tid,1));
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 1722081642u)=__gsharp_add_i32(__gsharp_id_3_local,__gsharp_id_4_neighbour);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 1243219974u)=__gsharp_add_i32(__gsharp_id_3_local,__gsharp_id_4_neighbour);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OneLevelSuspendingDeviceKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_scratch, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -4112,7 +4258,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 public const string MultiLevelSuspendingDeviceKernel_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__MultiLevelSuspendingDeviceKernel(GSharpArray<int> __gsharp_id_0_scratch, GSharpArray<int> __gsharp_id_1_output){
 int __gsharp_id_2_tid = (int)threadIdx.x;
 int __gsharp_id_3_result = __gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__OuterExchangeAndBias(__gsharp_id_0_scratch,__gsharp_add_i32(__gsharp_id_2_tid,1),100);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 1710787142u)=__gsharp_id_3_result;
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_id_2_tid, 63328646u)=__gsharp_id_3_result;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__MultiLevelSuspendingDeviceKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_scratch, GSharpArray<int> __gsharp_id_1_output)
 {
@@ -4710,7 +4856,7 @@ uint32_t __gsharp_stack_warp_visits[3] = {};
 __gsharp_stack_warp_begin(__gsharp_stack_warp_visits, 3u);
 constexpr uint32_t __gsharp_warp_frame = 0u;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1226312526u)=__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(__gsharp_add_i32(__gsharp_id_1_tid,10),__gsharp_warp_frame+1u);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1802228102u)=__gsharp_fn_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceHelper(__gsharp_add_i32(__gsharp_id_1_tid,10),__gsharp_warp_frame+1u);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleDeviceFallbackKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output)
 {
@@ -5042,9 +5188,9 @@ uint32_t __gsharp_stack_warp_visits[2] = {};
 __gsharp_stack_warp_begin(__gsharp_stack_warp_visits, 2u);
 constexpr uint32_t __gsharp_warp_frame = 0u;
 int __gsharp_id_1_tid = (int)threadIdx.x;
-int __gsharp_id_2_shuffled = __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(208,24)"",0xFFFFFFFFu,__gsharp_id_1_tid,1,32);
+int __gsharp_id_2_shuffled = __gsharp_stack_warp_shuffle_xor_sync(__gsharp_warp_frame,0u,""NativeStackKernels.cu.cs(219,24)"",0xFFFFFFFFu,__gsharp_id_1_tid,1,32);
 __gsharp_stack_barrier();
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 1814130790u)=__gsharp_id_2_shuffled;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_id_1_tid, 989044562u)=__gsharp_id_2_shuffled;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Cpu__Core__NativeStackKernels__ShuffleAndBarrierKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output)
 {
@@ -5162,14 +5308,14 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
-__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, "Warp.ShuffleXorSync", "NativeStackKernels.cu.cs(208,24)");
+__gsharp_warp_publish(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, "Warp.ShuffleXorSync", "NativeStackKernels.cu.cs(219,24)");
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, 1, 32, "NativeStackKernels.cu.cs(208,24)");
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_xor_sync(0, ref __gsharp_ctx, 0, 0xFFFFFFFFu, __gsharp_ctx.tid, 1, 32, "NativeStackKernels.cu.cs(219,24)");
 __gsharp_ctx.shuffled = __gsharp_ctx.__gsharp_warp_temp_0;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = true;
 __gsharp_ctx.__gsharp_state = 2;
