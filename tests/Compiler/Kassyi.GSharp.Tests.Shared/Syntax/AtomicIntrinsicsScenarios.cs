@@ -116,8 +116,12 @@ internal static class AtomicIntrinsicsScenarios
         };
         var floats = new Slots<float>(FloatSlot.Count);
 
-        run(() => AtomicIntrinsicsKernels.LaunchAtomicOldValueKernel(ints.Values, ints.Olds, uints.Values, uints.Olds,
-            ulongs.Values, ulongs.Olds, floats.Values, floats.Olds, blockDimX: WarpSizedBlock));
+        run(() => AtomicIntrinsicsKernels.LaunchAtomicOldValueKernel(
+            signed32: new Int32AtomicSlots { Targets = ints.Values, OldValues = ints.Olds },
+            unsigned32: new UInt32AtomicSlots { Targets = uints.Values, OldValues = uints.Olds },
+            unsigned64: new UInt64AtomicSlots { Targets = ulongs.Values, OldValues = ulongs.Olds },
+            single: new SingleAtomicSlots { Targets = floats.Values, OldValues = floats.Olds },
+            blockDimX: WarpSizedBlock));
 
         AssertSameStep(ints, IntSlot.Add, static s => unchecked(s + 1));
         AssertSameStep(ints, IntSlot.Sub, static s => unchecked(s - 1));
