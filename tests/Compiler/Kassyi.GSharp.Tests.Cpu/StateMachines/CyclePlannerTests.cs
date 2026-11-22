@@ -130,12 +130,24 @@ public class CyclePlannerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Plan_GotoInLoopBody_IsNotPlanned()
+    public void Plan_GotoInForBody_IsPlannedAndNeedsLatch()
     {
-        var body = ParseBlock("L: Split(); for (;;) { if (c) goto L; Split(); }");
+        var body = ParseBlock("L: Split(); for (int i = 0; i < u; i++) { if (c) goto L; Split(); } Split();");
         var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
 
-        Assert.Null(plan.Find(body.Statements, FindLoopRegion(body.Statements, "L")));
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.True(cycle.NeedsLatch);
+
+        var forStatement = Assert.IsType<ForStatementSyntax>(body.Statements[1]);
+        var forBody = Assert.IsType<BlockSyntax>(forStatement.Statement);
+        var insideSplit = forBody.Statements[1];
+        var afterSplit = body.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(insideSplit), cycle.Members);
+        Assert.False(plan.IsGateStatement(cycle, insideSplit));
+        Assert.True(plan.IsGateStatement(cycle, afterSplit));
     }
 
     [Fact]
@@ -621,5 +633,349 @@ public class CyclePlannerTests
         Assert.NotNull(cycle);
         Assert.Equal(2, cycle.BackJumps.Length);
         Assert.True(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInBreakBlockOfInnerGotoLoop_NeedsLatch()
+    {
+        var body = ParseBlock(
+            "L0: Split(); { L1: Split(); if (a) { Split(); if (c) goto L0; return; } if (d) goto L1; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle0 = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L0"));
+        var innerBlock = Assert.IsType<BlockSyntax>(body.Statements[1]);
+        var cycle1 = plan.Find(innerBlock.Statements, FindLoopRegion(innerBlock.Statements, "L1"));
+
+        Assert.NotNull(cycle0);
+        Assert.Single(cycle0.BackJumps);
+        Assert.True(cycle0.NeedsLatch);
+
+        Assert.NotNull(cycle1);
+        Assert.Single(cycle1.BackJumps);
+        Assert.False(cycle1.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInConstantFalseDoBody_IsPlannedWithoutLatch()
+    {
+        var body = ParseBlock("L: Split(); do { if (c) goto L; Split(); } while (false); Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.False(cycle.NeedsLatch);
+
+        var doStatement = Assert.IsType<DoStatementSyntax>(body.Statements[1]);
+        var doBody = Assert.IsType<BlockSyntax>(doStatement.Statement);
+        Assert.True(plan.IsGateStatement(cycle, doBody.Statements[1]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GateInLoopWithBreakButNoBackEdge_IsNotPlanned()
+    {
+        var doWithBreak = ParseBlock("L: Split(); do { if (c) goto L; Split(); break; } while (false); Split();");
+        var doPlan = CyclePlanner.Plan(doWithBreak, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(doPlan.Find(doWithBreak.Statements, FindLoopRegion(doWithBreak.Statements, "L")));
+
+        var whileWithBreak = ParseBlock(
+            "L: Split(); while (true) { if (a) { if (c) goto L; Split(); } break; } Split();");
+        var whilePlan = CyclePlanner.Plan(whileWithBreak, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(whilePlan.Find(whileWithBreak.Statements, FindLoopRegion(whileWithBreak.Statements, "L")));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindCyclesGatedInside_GateInBreakBlock_ReturnsTheGotoLoop()
+    {
+        var body = ParseBlock(
+            "L: Split(); for (int i = 0; i < u; i++) { if (a) { if (c) goto L; Split(); break; } Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+        Assert.NotNull(cycle);
+
+        var forStatement = Assert.IsType<ForStatementSyntax>(body.Statements[1]);
+        Assert.Equal(new[] { cycle }, plan.FindCyclesGatedInside(forStatement));
+
+        var withoutGate = ParseBlock(
+            "L: Split(); for (int i = 0; i < u; i++) { if (c) goto L; Split(); } Split();");
+        var withoutGatePlan = CyclePlanner.Plan(withoutGate, HoldsSplit, ConstantLiteralCondition);
+        var withoutGateFor = Assert.IsType<ForStatementSyntax>(withoutGate.Statements[1]);
+        Assert.Empty(withoutGatePlan.FindCyclesGatedInside(withoutGateFor));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindCyclesGatedInside_LoopWithEarlyExitGateWhoseNormalExitStaysInCycle_ReturnsEmpty()
+    {
+        var singleLoopBody = ParseBlock(
+            "L: Split(); for (int i = 0; i < u; i++) { if (a) { if (c) goto L; Split(); return; } } if (d) goto L; Split();");
+        var singleLoopPlan = CyclePlanner.Plan(singleLoopBody, HoldsSplit, ConstantLiteralCondition);
+        var singleLoopCycle = singleLoopPlan.Find(
+            singleLoopBody.Statements, FindLoopRegion(singleLoopBody.Statements, "L"));
+        Assert.NotNull(singleLoopCycle);
+
+        var singleFor = Assert.IsType<ForStatementSyntax>(singleLoopBody.Statements[1]);
+        var singleForBody = Assert.IsType<BlockSyntax>(singleFor.Statement);
+        var singleOuterIf = Assert.IsType<IfStatementSyntax>(singleForBody.Statements[0]);
+        var singleIfBody = Assert.IsType<BlockSyntax>(singleOuterIf.Statement);
+        var singleGateSplit = singleIfBody.Statements[1];
+
+        Assert.Contains(StatementFlow.EntryOf(singleLoopBody.Statements[2]), singleLoopCycle.Members);
+        Assert.True(singleLoopPlan.IsGateStatement(singleLoopCycle, singleGateSplit));
+        Assert.Empty(singleLoopPlan.FindCyclesGatedInside(singleFor));
+
+        var nestedLoopBody = ParseBlock(
+            "L: Split(); for (int i = 0; i < u; i++) { for (int j = 0; j < u; j++) { if (a) { if (c) goto L; Split(); goto afterOuter; } } Split(); } afterOuter: Split();");
+        var nestedPlan = CyclePlanner.Plan(nestedLoopBody, HoldsSplit, ConstantLiteralCondition);
+        var nestedCycle = nestedPlan.Find(
+            nestedLoopBody.Statements, FindLoopRegion(nestedLoopBody.Statements, "L"));
+        Assert.NotNull(nestedCycle);
+
+        var outerFor = Assert.IsType<ForStatementSyntax>(nestedLoopBody.Statements[1]);
+        var outerBody = Assert.IsType<BlockSyntax>(outerFor.Statement);
+        var innerFor = Assert.IsType<ForStatementSyntax>(outerBody.Statements[0]);
+        var outerSplit = outerBody.Statements[1];
+        var afterOuterSplit = nestedLoopBody.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(outerSplit), nestedCycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(afterOuterSplit), nestedCycle.Members);
+        Assert.Empty(nestedPlan.FindCyclesGatedInside(innerFor));
+        Assert.Equal(new[] { nestedCycle }, nestedPlan.FindCyclesGatedInside(outerFor));
+
+        var doubleLoopBody = ParseBlock(
+            "L0: Split(); L1: Split(); for (int i = 0; i < u; i++) { if (a) { if (c) goto L0; if (b) goto L1; Split(); return; } } Split(); if (d) goto L0; Split();");
+        var doublePlan = CyclePlanner.Plan(doubleLoopBody, HoldsSplit, ConstantLiteralCondition);
+        var outerCycle = doublePlan.Find(doubleLoopBody.Statements, FindLoopRegion(doubleLoopBody.Statements, "L0"));
+        var innerCycle = doublePlan.Find(doubleLoopBody.Statements, FindLoopRegion(doubleLoopBody.Statements, "L1"));
+        Assert.NotNull(outerCycle);
+        Assert.NotNull(innerCycle);
+
+        var guardedFor = Assert.IsType<ForStatementSyntax>(doubleLoopBody.Statements[2]);
+        Assert.Equal(new[] { innerCycle }, doublePlan.FindCyclesGatedInside(guardedFor));
+
+        var doInCycleBody = ParseBlock(
+            "L: Split(); do { for (int i = 0; i < u; i++) { if (a) { if (c) goto L; Split(); return; } } if (d) goto L; break; } while (false); if (e) goto L; Split();");
+        var doInCyclePlan = CyclePlanner.Plan(doInCycleBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.NotNull(doInCyclePlan.Find(doInCycleBody.Statements, FindLoopRegion(doInCycleBody.Statements, "L")));
+
+        var doExitsCycleBody = ParseBlock(
+            "L: Split(); do { for (int i = 0; i < u; i++) { if (a) { if (c) goto L; Split(); return; } } if (d) goto L; break; } while (false); Split();");
+        var doExitsCyclePlan = CyclePlanner.Plan(doExitsCycleBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(doExitsCyclePlan.Find(doExitsCycleBody.Statements, FindLoopRegion(doExitsCycleBody.Statements, "L")));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInWhileOrForEachBody_IsPlannedAndNeedsLatch()
+    {
+        var whileBody = ParseBlock("L: Split(); while (k < u) { if (c) goto L; Split(); } Split();");
+        var whilePlan = CyclePlanner.Plan(whileBody, HoldsSplit, ConstantLiteralCondition);
+        var whileCycle = whilePlan.Find(whileBody.Statements, FindLoopRegion(whileBody.Statements, "L"));
+
+        Assert.NotNull(whileCycle);
+        Assert.Single(whileCycle.BackJumps);
+        Assert.True(whileCycle.NeedsLatch);
+
+        var whileStatement = Assert.IsType<WhileStatementSyntax>(whileBody.Statements[1]);
+        var whileBlock = Assert.IsType<BlockSyntax>(whileStatement.Statement);
+        Assert.Contains(StatementFlow.EntryOf(whileBlock.Statements[1]), whileCycle.Members);
+        Assert.False(whilePlan.IsGateStatement(whileCycle, whileBlock.Statements[1]));
+        Assert.True(whilePlan.IsGateStatement(whileCycle, whileBody.Statements[2]));
+        Assert.Empty(whilePlan.FindCyclesGatedInside(whileStatement));
+
+        var forEachBody = ParseBlock("L: Split(); foreach (var item in items) { if (c) goto L; Split(); } Split();");
+        var forEachPlan = CyclePlanner.Plan(forEachBody, HoldsSplit, ConstantLiteralCondition);
+        var forEachCycle = forEachPlan.Find(forEachBody.Statements, FindLoopRegion(forEachBody.Statements, "L"));
+
+        Assert.NotNull(forEachCycle);
+        Assert.Single(forEachCycle.BackJumps);
+        Assert.True(forEachCycle.NeedsLatch);
+
+        var forEachStatement = Assert.IsType<ForEachStatementSyntax>(forEachBody.Statements[1]);
+        var forEachBlock = Assert.IsType<BlockSyntax>(forEachStatement.Statement);
+        Assert.Contains(StatementFlow.EntryOf(forEachBlock.Statements[1]), forEachCycle.Members);
+        Assert.False(forEachPlan.IsGateStatement(forEachCycle, forEachBlock.Statements[1]));
+        Assert.True(forEachPlan.IsGateStatement(forEachCycle, forEachBody.Statements[2]));
+        Assert.Empty(forEachPlan.FindCyclesGatedInside(forEachStatement));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ContinueBetweenGotoAndGateInFor_MarksGateAndFindsEnclosingCycle()
+    {
+        var body = ParseBlock(
+            "L1: Split(); for (int i = 0; i < u; i++) { if (a) { if (c) goto L1; if (i == 0) continue; Mark(1); break; } Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L1"));
+
+        Assert.NotNull(cycle);
+        var forStatement = Assert.IsType<ForStatementSyntax>(body.Statements[1]);
+        var forBody = Assert.IsType<BlockSyntax>(forStatement.Statement);
+        var outerIf = Assert.IsType<IfStatementSyntax>(forBody.Statements[0]);
+        var thenBlock = Assert.IsType<BlockSyntax>(outerIf.Statement);
+        var continueIf = thenBlock.Statements[1];
+        var gateMark = thenBlock.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(continueIf), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(gateMark), cycle.Members);
+        Assert.False(plan.IsLatchStatement(cycle, continueIf));
+        Assert.True(plan.IsGateStatement(cycle, gateMark));
+        Assert.Equal(new[] { cycle }, plan.FindCyclesGatedInside(forStatement));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_LabeledBreakIntoCycleBetweenGotoAndGate_MarksGateAndLeavesOuterForUnclosed()
+    {
+        var body = ParseBlock(
+            "L1: Split(); outer: for (int i = 0; i < u; i++) { for (int j = 0; j < u; j++) { if (a) { if (c) goto L1; if (b) break outer; Mark(1); return; } } Mark(2); return; } if (d) goto L1; Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L1"));
+
+        Assert.NotNull(cycle);
+        var outerLabeled = Assert.IsType<LabeledStatementSyntax>(body.Statements[1]);
+        var outerFor = Assert.IsType<ForStatementSyntax>(outerLabeled.Statement);
+        var outerBody = Assert.IsType<BlockSyntax>(outerFor.Statement);
+        var innerFor = Assert.IsType<ForStatementSyntax>(outerBody.Statements[0]);
+        var innerBody = Assert.IsType<BlockSyntax>(innerFor.Statement);
+        var outerIf = Assert.IsType<IfStatementSyntax>(innerBody.Statements[0]);
+        var thenBlock = Assert.IsType<BlockSyntax>(outerIf.Statement);
+        var breakOuterIf = thenBlock.Statements[1];
+        var mark1 = thenBlock.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(breakOuterIf), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(mark1), cycle.Members);
+        Assert.True(plan.IsGateStatement(cycle, mark1));
+        Assert.Equal(new[] { cycle }, plan.FindCyclesGatedInside(innerFor));
+        Assert.Empty(plan.FindCyclesGatedInside(outerFor));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_NestedGotoLoopsWhereForExitsInnerOnly_MarksOuterGate()
+    {
+        var plainBody = ParseBlock(
+            "L0: Split(); L1: for (int i = 0; i < u; i++) { if (a) { if (c) goto L0; if (b) goto L1; Mark(1); return; } } Split(); if (d) goto L0; Split();");
+        var plainPlan = CyclePlanner.Plan(plainBody, HoldsSplit, ConstantLiteralCondition);
+        var plainCycle0 = plainPlan.Find(plainBody.Statements, FindLoopRegion(plainBody.Statements, "L0"));
+        var plainCycle1 = plainPlan.Find(plainBody.Statements, FindLoopRegion(plainBody.Statements, "L1"));
+
+        Assert.NotNull(plainCycle0);
+        Assert.NotNull(plainCycle1);
+        var plainLabeled = Assert.IsType<LabeledStatementSyntax>(plainBody.Statements[1]);
+        var plainFor = Assert.IsType<ForStatementSyntax>(plainLabeled.Statement);
+        var plainForBody = Assert.IsType<BlockSyntax>(plainFor.Statement);
+        var plainIf = Assert.IsType<IfStatementSyntax>(plainForBody.Statements[0]);
+        var plainThen = Assert.IsType<BlockSyntax>(plainIf.Statement);
+        var plainGotoL1If = plainThen.Statements[1];
+        var plainMark1 = plainThen.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(plainGotoL1If), plainCycle0.Members);
+        Assert.Contains(StatementFlow.EntryOf(plainGotoL1If), plainCycle1.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(plainMark1), plainCycle0.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(plainMark1), plainCycle1.Members);
+        Assert.True(plainPlan.IsGateStatement(plainCycle0, plainMark1));
+        Assert.True(plainPlan.IsGateStatement(plainCycle1, plainMark1));
+        Assert.Equal(new[] { plainCycle1 }, plainPlan.FindCyclesGatedInside(plainFor));
+
+        var loopBody = ParseBlock(
+            "L0: Split(); L1: for (int i = 0; i < u; i++) { if (i == 0) continue; if (e) break; if (c) goto L0; if (b) goto L1; Mark(1); return; } Split(); if (d) goto L0; Split();");
+        var loopPlan = CyclePlanner.Plan(loopBody, HoldsSplit, ConstantLiteralCondition);
+        var loopCycle0 = loopPlan.Find(loopBody.Statements, FindLoopRegion(loopBody.Statements, "L0"));
+        var loopCycle1 = loopPlan.Find(loopBody.Statements, FindLoopRegion(loopBody.Statements, "L1"));
+
+        Assert.NotNull(loopCycle0);
+        Assert.NotNull(loopCycle1);
+        var loopLabeled = Assert.IsType<LabeledStatementSyntax>(loopBody.Statements[1]);
+        var loopFor = Assert.IsType<ForStatementSyntax>(loopLabeled.Statement);
+        var loopForBody = Assert.IsType<BlockSyntax>(loopFor.Statement);
+        var loopMark1 = loopForBody.Statements[4];
+
+        Assert.True(loopPlan.IsGateStatement(loopCycle0, loopMark1));
+        Assert.True(loopPlan.IsGateStatement(loopCycle1, loopMark1));
+        Assert.Equal(new[] { loopCycle1 }, loopPlan.FindCyclesGatedInside(loopFor));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ConditionalForwardGotoToMemberLabelBeforeNonMember_MarksNonMemberAsGate()
+    {
+        var body = ParseBlock(
+            "L1: Split(); if (a) { if (c) goto L1; if (b) goto M; Mark(1); return; } M: if (d) goto L1; Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L1"));
+
+        Assert.NotNull(cycle);
+        var outerIf = Assert.IsType<IfStatementSyntax>(body.Statements[1]);
+        var thenBlock = Assert.IsType<BlockSyntax>(outerIf.Statement);
+        var forwardGotoIf = thenBlock.Statements[1];
+        var mark1 = thenBlock.Statements[2];
+        var memberLabel = body.Statements[2];
+
+        Assert.Contains(StatementFlow.EntryOf(forwardGotoIf), cycle.Members);
+        Assert.Contains(StatementFlow.EntryOf(memberLabel), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(mark1), cycle.Members);
+        Assert.True(plan.IsGateStatement(cycle, mark1));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_DeadStatementAfterUnconditionalJumpInCycle_IsNotMarkedAsGate()
+    {
+        var afterGotoBody = ParseBlock(
+            "L1: Split(); if (a) { if (c) goto L1; goto M; Mark(1); } M: if (d) goto L1; Split();");
+        var afterGotoPlan = CyclePlanner.Plan(afterGotoBody, HoldsSplit, ConstantLiteralCondition);
+        var afterGotoCycle = afterGotoPlan.Find(afterGotoBody.Statements, FindLoopRegion(afterGotoBody.Statements, "L1"));
+        Assert.NotNull(afterGotoCycle);
+        var afterGotoIf = Assert.IsType<IfStatementSyntax>(afterGotoBody.Statements[1]);
+        var afterGotoThen = Assert.IsType<BlockSyntax>(afterGotoIf.Statement);
+        var deadAfterGoto = afterGotoThen.Statements[2];
+        Assert.DoesNotContain(StatementFlow.EntryOf(deadAfterGoto), afterGotoCycle.Members);
+        Assert.False(afterGotoPlan.IsGateStatement(afterGotoCycle, deadAfterGoto));
+
+        var afterContinueBody = ParseBlock(
+            "L1: Split(); for (int i = 0; i < u; i++) { if (a) { if (c) goto L1; continue; Mark(1); } Split(); } Split();");
+        var afterContinuePlan = CyclePlanner.Plan(afterContinueBody, HoldsSplit, ConstantLiteralCondition);
+        var afterContinueCycle = afterContinuePlan.Find(
+            afterContinueBody.Statements, FindLoopRegion(afterContinueBody.Statements, "L1"));
+        Assert.NotNull(afterContinueCycle);
+        var forStatement = Assert.IsType<ForStatementSyntax>(afterContinueBody.Statements[1]);
+        var forBody = Assert.IsType<BlockSyntax>(forStatement.Statement);
+        var afterContinueIf = Assert.IsType<IfStatementSyntax>(forBody.Statements[0]);
+        var afterContinueThen = Assert.IsType<BlockSyntax>(afterContinueIf.Statement);
+        var deadAfterContinue = afterContinueThen.Statements[2];
+        Assert.DoesNotContain(StatementFlow.EntryOf(deadAfterContinue), afterContinueCycle.Members);
+        Assert.False(afterContinuePlan.IsGateStatement(afterContinueCycle, deadAfterContinue));
+        Assert.Empty(afterContinuePlan.FindCyclesGatedInside(forStatement));
+
+        var afterIfElseBody = ParseBlock(
+            "L1: Split(); if (a) { if (c) goto L1; else return; Mark(1); } if (d) goto L1; Split();");
+        var afterIfElsePlan = CyclePlanner.Plan(afterIfElseBody, HoldsSplit, ConstantLiteralCondition);
+        var afterIfElseCycle = afterIfElsePlan.Find(
+            afterIfElseBody.Statements, FindLoopRegion(afterIfElseBody.Statements, "L1"));
+        Assert.NotNull(afterIfElseCycle);
+        var outerIfElse = Assert.IsType<IfStatementSyntax>(afterIfElseBody.Statements[1]);
+        var outerIfElseThen = Assert.IsType<BlockSyntax>(outerIfElse.Statement);
+        var deadAfterIfElse = outerIfElseThen.Statements[1];
+        Assert.DoesNotContain(StatementFlow.EntryOf(deadAfterIfElse), afterIfElseCycle.Members);
+        Assert.False(afterIfElsePlan.IsGateStatement(afterIfElseCycle, deadAfterIfElse));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_DisallowedGateAfterContinueOrForwardGoto_IsNotPlanned()
+    {
+        var switchGateBody = ParseBlock(
+            "L1: Split(); switch (x) { case 0: if (b) goto M; Mark(1); return; } if (c) goto L1; M: if (d) goto L1; Split();");
+        var switchGatePlan = CyclePlanner.Plan(switchGateBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(switchGatePlan.Find(switchGateBody.Statements, FindLoopRegion(switchGateBody.Statements, "L1")));
+
+        var doWhileGateBody = ParseBlock(
+            "L1: Split(); do { if (a) { if (b) goto M; Mark(1); return; } if (d) break; if (c) goto L1; } while (false); Mark(2); return; M: if (e) goto L1; Split();");
+        var doWhileGatePlan = CyclePlanner.Plan(doWhileGateBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(doWhileGatePlan.Find(doWhileGateBody.Statements, FindLoopRegion(doWhileGateBody.Statements, "L1")));
     }
 }

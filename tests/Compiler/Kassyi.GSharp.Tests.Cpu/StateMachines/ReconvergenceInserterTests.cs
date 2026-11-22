@@ -98,6 +98,20 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public Task Lower_GotoLoopThroughForLoop_EmitsLatchAtBackwardGoto() =>
+        VerifyPipelineLowerFromTestCase(
+            "ReconvergenceGotoLoopThroughLoop.cs",
+            kernelName: "GotoLoopThroughForLoopKernel");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_GotoLoopLeftInsideForLoop_EmitsBreakGateAndJoinGate() =>
+        VerifyPipelineLowerFromTestCase(
+            "ReconvergenceGotoLoopThroughLoop.cs",
+            kernelName: "GotoLoopLeftInsideForLoopKernel");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Insert_GotoLoopWithSwitchVarPatternExit_ClosesBeforeGate()
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
@@ -144,6 +158,312 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         Assert.Equal(5, enterCount);
         var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopCheckedDeadLabelBeforeLastKernel");
         Assert.Equal(new[] { "Mark(37)", "Mark(38)" }, afterReconvergence);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithGateInInnerForAndContinueInOuterFor_ClosesAtOuterExit()
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, "GotoLoopInNestedForWithOuterContinueKernel");
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException("GotoLoopInNestedForWithOuterContinueKernel has no symbol.");
+
+        var lowered = AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction: false);
+        var stackLowered = AstLoweringPipeline.LowerForStack(method, model, symbol, isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        Assert.NotEmpty(stackLowered.Body.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge)));
+
+        var afterReconvergence = lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergePass))
+            .Select(static pass => FirstUserCallAfter(pass))
+            .OfType<string>()
+            .ToArray();
+
+        Assert.Contains("Mark(40)", afterReconvergence);
+        Assert.Contains("Mark(41)", afterReconvergence);
+
+        var mark39 = stackLowered.Body
+            .DescendantNodes()
+            .OfType<ExpressionStatementSyntax>()
+            .Single(static s => s.Expression is InvocationExpressionSyntax inv && Describe(inv) == "Mark(39)");
+        var mark39Block = Assert.IsType<BlockSyntax>(mark39.Parent);
+        var mark39Index = mark39Block.Statements.IndexOf(mark39);
+        Assert.Contains(
+            mark39Block.Statements.Take(mark39Index).Select(static s => (s as ExpressionStatementSyntax)?.Expression).OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithContinueBeforeGateInFor_EmitsGateBeforeBreakBlock()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithContinueBeforeGateInForKernel", isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        var afterReconvergence = GetCallsAfterReconvergencePass(lowered);
+        Assert.Contains("Mark(43)", afterReconvergence);
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(42)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(43)");
+        Assert.Contains(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithLabeledBreakIntoLoopInNestedFor_GatesInnerForOnly()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithLabeledBreakIntoLoopInNestedForKernel", isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        var afterReconvergence = GetCallsAfterReconvergencePass(lowered);
+        Assert.Contains("Mark(45)", afterReconvergence);
+        Assert.Contains("Mark(46)", afterReconvergence);
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(44)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(46)");
+        Assert.DoesNotContain(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_NestedGotoLoopsWithContinueAndBreakExitingInnerLoop_ClosesOuterAtGateAndInnerAtBreak()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("NestedGotoLoopsWithContinueAndBreakExitingInnerLoopKernel", isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(47)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(49)");
+
+        var mark47 = FindMarkStatement(stackLowered.Body, "Mark(47)");
+        var mark47Block = Assert.IsType<BlockSyntax>(mark47.Parent);
+        var mark47Index = mark47Block.Statements.IndexOf(mark47);
+        var mark47LeavesBeforeReconverge = mark47Block.Statements
+            .Take(mark47Index)
+            .Reverse()
+            .SkipWhile(static s => s is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax c } &&
+                                   (Calls(c, GSharpInternalNames.StackWarp.RegionEnter) ||
+                                    Calls(c, GSharpInternalNames.StackWarp.Reconverge)))
+            .TakeWhile(static s => s is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax c } &&
+                                   Calls(c, GSharpInternalNames.StackWarp.RegionLeave))
+            .Count();
+        // Leaves C, F, B_L1, G_L1, and B_L0 when closing outer L0 at the gate.
+        Assert.Equal(5, mark47LeavesBeforeReconverge);
+
+        var joinGoto = stackLowered.Body
+            .DescendantNodes()
+            .OfType<GotoStatementSyntax>()
+            .Single(static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                                label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+        var joinGotoBlock = Assert.IsType<BlockSyntax>(joinGoto.Parent);
+        var joinGotoIndex = joinGotoBlock.Statements.IndexOf(joinGoto);
+        Assert.Contains(
+            joinGotoBlock.Statements
+                .Take(joinGotoIndex)
+                .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
+                .OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopWithConditionalForwardGotoToMemberBeforeGate_EmitsGateBeforeReturn()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("GotoLoopWithConditionalForwardGotoToMemberBeforeGateKernel", isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(50)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(51)");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_DeviceFunctionWithGotoLoopGatedInForAndEarlyReturn_LeavesStructuralRegionsOnReturn()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase("GotoInForWithEarlyReturn", isDeviceFunction: true);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+
+        var mark52 = FindMarkStatement(stackLowered.Body, "Mark(52)");
+        var mark52Block = Assert.IsType<BlockSyntax>(mark52.Parent);
+        var mark52Index = mark52Block.Statements.IndexOf(mark52);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(52)");
+
+        var earlyReturn = mark52Block.Statements.OfType<ReturnStatementSyntax>().Single();
+        var earlyReturnIndex = mark52Block.Statements.IndexOf(earlyReturn);
+        var regionLeaveCount = mark52Block.Statements
+            .Skip(mark52Index + 1)
+            .Take(earlyReturnIndex - (mark52Index + 1))
+            .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
+            .OfType<InvocationExpressionSyntax>()
+            .Count(static call => Calls(call, GSharpInternalNames.StackWarp.RegionLeave));
+        Assert.Equal(2, regionLeaveCount);
+
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(53)");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopTopLevelForwardGotoToMemberPastReturnGate_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopTopLevelForwardGotoToMemberPastReturnGateKernel",
+            isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        Assert.Contains("Mark(55)", GetCallsAfterReconvergencePass(lowered));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(54)");
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(55)");
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInForForwardGotoToMemberPastBreakGate_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInForForwardGotoToMemberPastBreakGateKernel",
+            isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        Assert.Contains("Mark(58)", GetCallsAfterReconvergencePass(lowered));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(56)");
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(57)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(58)");
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+        var joinGotoCount = stackLowered.Body
+            .DescendantNodes()
+            .OfType<GotoStatementSyntax>()
+            .Count(static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                               label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+        Assert.Equal(3, joinGotoCount);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopPlainBlockForwardGotoToMemberPastReturnGate_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopPlainBlockForwardGotoToMemberPastReturnGateKernel",
+            isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        Assert.Contains("Mark(60)", GetCallsAfterReconvergencePass(lowered));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(59)");
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(60)");
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInIfForwardGotoToMemberPastReturnGate_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInIfForwardGotoToMemberPastReturnGateKernel",
+            isDeviceFunction: false);
+
+        Assert.NotEmpty(lowered.LoweredBody.DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergeArrive)));
+        Assert.Contains("Mark(63)", GetCallsAfterReconvergencePass(lowered));
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(61)");
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(62)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(63)");
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopCheckedBlockForwardGotoToMemberPastReturnGate_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "CheckedBlockForwardGotoToMemberPastReturnGateKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedStackRegionsAndTrailingGotoLatch(
+            stackLowered,
+            lowered,
+            finalMark: "Mark(65)",
+            gateMark: "Mark(64)");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopGateWithForwardGotoToMemberPastReturn_PreservesBothLabelStacks()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GateWithForwardGotoToMemberPastReturnKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(90)");
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(91)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(92)");
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_LoopNotDroppingCycleWithContinueAndUnreachableEnd_RestoresOpenAndBalancesBodyRegion()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "LoopWithContinueAndUnreachableEndKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedStackRegionsAndTrailingGotoLatch(
+            stackLowered,
+            lowered,
+            finalMark: "Mark(68)",
+            afterLoopMark: "Mark(67)",
+            expectLoopBodyContinueRegion: true);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_LoopNotDroppingCycleWithoutContinueAndUnreachableEnd_PreservesOpenAfterLoop()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "LoopWithoutContinueAndUnreachableEndKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedStackRegionsAndTrailingGotoLatch(
+            stackLowered,
+            lowered,
+            finalMark: "Mark(71)",
+            afterLoopMark: "Mark(70)");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_DoWhileFalseWithInnerForEarlyReturnAndTrailingGoto_ClosesAfterDoWhile()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "DoWhileFalseWithInnerForEarlyReturnKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedStackRegionsAndTrailingGotoLatch(
+            stackLowered,
+            lowered,
+            finalMark: "Mark(73)");
     }
 
     [Theory]
@@ -333,4 +653,189 @@ public class ReconvergenceInserterTests : StateMachineTestBase
         body.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Count(static call => Calls(call, GSharpInternalNames.Prelude.WarpPublish));
+
+    private static void AssertHasBalancedStackRegionsAndTrailingGotoLatch(
+        StackLoweredBody stackLowered,
+        LoweredStateMachine lowered,
+        string finalMark,
+        string? gateMark = null,
+        string? afterLoopMark = null,
+        bool expectLoopBodyContinueRegion = false)
+    {
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 2);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+
+        if (gateMark != null)
+        {
+            AssertHasGateStackReconvergeBefore(stackLowered.Body, gateMark);
+        }
+
+        if (afterLoopMark != null)
+        {
+            AssertHasPrecedingStackReconverge(stackLowered.Body, afterLoopMark);
+        }
+
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, finalMark);
+
+        if (expectLoopBodyContinueRegion)
+        {
+            var continueLabel = stackLowered.Body
+                .DescendantNodes()
+                .OfType<LabeledStatementSyntax>()
+                .Single(static labeled => labeled.Identifier.ValueText.StartsWith(
+                    GSharpInternalNames.Lowering.ReconvergeContinueLabelPrefix,
+                    StringComparison.Ordinal));
+            var block = Assert.IsType<BlockSyntax>(continueLabel.Parent);
+            var index = block.Statements.IndexOf(continueLabel);
+            Assert.True(index + 1 < block.Statements.Count,
+                "Expected loop-body reconvergence call after continue label.");
+            var nextInvocation = Assert.IsType<ExpressionStatementSyntax>(block.Statements[index + 1])
+                .Expression as InvocationExpressionSyntax;
+            Assert.NotNull(nextInvocation);
+            Assert.True(Calls(nextInvocation, GSharpInternalNames.StackWarp.Reconverge),
+                $"Expected {GSharpInternalNames.StackWarp.Reconverge} after {continueLabel.Identifier.ValueText}, got {nextInvocation}.");
+            var continueSite = ExtractRegionSite(nextInvocation, siteIndex: 1);
+            var enterSites = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.RegionEnter, siteIndex: 1);
+            Assert.Contains(continueSite, enterSites);
+        }
+    }
+
+    private static void AssertHasBalancedRegionSites(
+        StackLoweredBody stackLowered,
+        LoweredStateMachine lowered)
+    {
+        var stackEnters = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.RegionEnter, siteIndex: 1);
+        var stackLeaves = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.RegionLeave, siteIndex: 1);
+        var stackReconverges = ExtractRegionSites(stackLowered.Body, GSharpInternalNames.StackWarp.Reconverge, siteIndex: 1);
+
+        Assert.NotEmpty(stackEnters);
+        Assert.NotEmpty(stackReconverges);
+
+        var enterSet = stackEnters.ToHashSet();
+        var closedSet = stackLeaves.Concat(stackReconverges).ToHashSet();
+        Assert.All(stackLeaves, site => Assert.Contains(site, enterSet));
+        Assert.All(stackEnters, site => Assert.Contains(site, closedSet));
+
+        var maxSite = stackEnters.Concat(stackReconverges).Max();
+        Assert.Equal(maxSite + 1, stackLowered.RegionCount);
+
+        var loweredEnters = ExtractRegionSites(lowered.LoweredBody, GSharpInternalNames.Prelude.WarpRegionEnter, siteIndex: 2);
+        var loweredLeaves = ExtractRegionSites(lowered.LoweredBody, GSharpInternalNames.Prelude.WarpRegionLeave, siteIndex: 2);
+        var loweredArrives = ExtractRegionSites(lowered.LoweredBody, GSharpInternalNames.Prelude.WarpReconvergeArrive, siteIndex: 2);
+
+        Assert.Equal(loweredEnters.OrderBy(static s => s), stackEnters.OrderBy(static s => s));
+        Assert.Equal(loweredLeaves.OrderBy(static s => s), stackLeaves.OrderBy(static s => s));
+        Assert.Equal(loweredArrives.OrderBy(static s => s), stackReconverges.OrderBy(static s => s));
+    }
+
+    private static int[] ExtractRegionSites(BlockSyntax body, string functionName, int siteIndex) =>
+        body.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(call => Calls(call, functionName))
+            .Select(call => ExtractRegionSite(call, siteIndex))
+            .ToArray();
+
+    private static int ExtractRegionSite(InvocationExpressionSyntax call, int siteIndex)
+    {
+        Assert.True(call.ArgumentList.Arguments.Count > siteIndex,
+            $"Expected at least {siteIndex + 1} arguments on {call}.");
+        var siteExpression = call.ArgumentList.Arguments[siteIndex].Expression;
+        var literal = Assert.IsType<LiteralExpressionSyntax>(siteExpression);
+        return Assert.IsType<int>(literal.Token.Value);
+    }
+
+    private static (LoweredStateMachine Lowered, StackLoweredBody StackLowered) LowerFromTestCase(
+        string methodName,
+        bool isDeviceFunction)
+    {
+        var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
+        var method = FindMethod(tree, methodName);
+        var symbol = model.GetDeclaredSymbol<IMethodSymbol>(method)
+                     ?? throw new InvalidOperationException($"{methodName} has no symbol.");
+        return (
+            AstLoweringPipeline.Lower(method, model, symbol, isDeviceFunction),
+            AstLoweringPipeline.LowerForStack(method, model, symbol, isDeviceFunction));
+    }
+
+    private static string[] GetCallsAfterReconvergencePass(LoweredStateMachine lowered) =>
+        lowered.LoweredBody
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.Prelude.WarpReconvergePass))
+            .Select(static pass => FirstUserCallAfter(pass))
+            .OfType<string>()
+            .ToArray();
+
+    private static ExpressionStatementSyntax FindMarkStatement(BlockSyntax body, string markCall) =>
+        body.DescendantNodes()
+            .OfType<ExpressionStatementSyntax>()
+            .Single(s => s.Expression is InvocationExpressionSyntax inv && Describe(inv) == markCall);
+
+    private static void AssertHasGateStackReconvergeBefore(BlockSyntax body, string markCall)
+    {
+        var markStatement = FindMarkStatement(body, markCall);
+        var block = Assert.IsType<BlockSyntax>(markStatement.Parent);
+        var index = block.Statements.IndexOf(markStatement);
+        var reconvergeIndex = -1;
+        for (var i = index - 1; i >= 0; i--)
+        {
+            if (block.Statements[i] is ExpressionStatementSyntax
+                {
+                    Expression: InvocationExpressionSyntax call
+                })
+            {
+                if (Calls(call, GSharpInternalNames.StackWarp.Reconverge))
+                {
+                    reconvergeIndex = i;
+                    break;
+                }
+
+                if (Calls(call, GSharpInternalNames.StackWarp.RegionEnter))
+                {
+                    continue;
+                }
+            }
+
+            break;
+        }
+
+        Assert.True(reconvergeIndex >= 0,
+            $"Expected {GSharpInternalNames.StackWarp.Reconverge} (followed only by {GSharpInternalNames.StackWarp.RegionEnter}) immediately before {markCall}.");
+    }
+
+    private static void AssertHasPrecedingStackReconverge(BlockSyntax body, string markCall)
+    {
+        var markStatement = FindMarkStatement(body, markCall);
+        var block = Assert.IsType<BlockSyntax>(markStatement.Parent);
+        var index = block.Statements.IndexOf(markStatement);
+        Assert.Contains(
+            block.Statements
+                .Take(index)
+                .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
+                .OfType<InvocationExpressionSyntax>(),
+            static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge));
+    }
+
+    private static void AssertHasLatchBeforeAllBackGotos(BlockSyntax body, string labelName, int expectedCount)
+    {
+        var backGotos = body
+            .DescendantNodes()
+            .OfType<GotoStatementSyntax>()
+            .Where(g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var target } &&
+                        target == labelName)
+            .ToArray();
+        Assert.Equal(expectedCount, backGotos.Length);
+
+        foreach (var backGoto in backGotos)
+        {
+            var containingBlock = Assert.IsType<BlockSyntax>(backGoto.Parent);
+            var index = containingBlock.Statements.IndexOf(backGoto);
+            Assert.True(index > 0, "Expected latch reconvergence call before backward goto.");
+            var prevInvocation = Assert.IsType<ExpressionStatementSyntax>(containingBlock.Statements[index - 1])
+                .Expression as InvocationExpressionSyntax;
+            Assert.NotNull(prevInvocation);
+            Assert.True(Calls(prevInvocation, GSharpInternalNames.StackWarp.Reconverge),
+                $"Expected {GSharpInternalNames.StackWarp.Reconverge} before backward goto, got {prevInvocation}.");
+        }
+    }
 }

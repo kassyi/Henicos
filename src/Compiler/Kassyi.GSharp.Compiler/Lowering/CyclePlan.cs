@@ -19,15 +19,20 @@ internal sealed record Cycle(
 internal sealed class CyclePlan
 {
     public static readonly CyclePlan Empty =
-        new(null, new Dictionary<CycleKey, Cycle>());
+        new(null, new Dictionary<CycleKey, Cycle>(), ImmutableArray<Cycle>.Empty);
 
     private readonly StatementFlow? _flow;
     private readonly Dictionary<CycleKey, Cycle> _cycles;
+    private readonly ImmutableArray<Cycle> _orderedCycles;
 
-    internal CyclePlan(StatementFlow? flow, Dictionary<CycleKey, Cycle> cycles)
+    internal CyclePlan(
+        StatementFlow? flow,
+        Dictionary<CycleKey, Cycle> cycles,
+        ImmutableArray<Cycle> orderedCycles)
     {
         _flow = flow;
         _cycles = cycles;
+        _orderedCycles = orderedCycles;
     }
 
     public Cycle? Find(SyntaxList<StatementSyntax> statements, JumpRegion region)
@@ -50,10 +55,73 @@ internal sealed class CyclePlan
 
     public bool IsGateStatement(Cycle cycle, StatementSyntax statement) =>
         _flow != null &&
-        !cycle.Members.Contains(StatementFlow.EntryOf(statement)) &&
         _flow.TryGetListPosition(statement, out var list, out var index) &&
         index > 0 &&
-        IsLatchStatement(cycle, list[index - 1]);
+        IsGateTransition(_flow, cycle.Members, list[index - 1], statement);
+
+    internal static bool IsGateTransition(
+        StatementFlow flow,
+        ImmutableHashSet<FlowNode> members,
+        StatementSyntax prev,
+        StatementSyntax candidateGate) =>
+        members.Contains(StatementFlow.EntryOf(prev)) &&
+        !members.Contains(StatementFlow.EntryOf(candidateGate)) &&
+        flow.ReachesEnd(prev);
+
+    public ImmutableArray<Cycle> FindCyclesGatedInside(StatementSyntax loop)
+    {
+        if (_flow == null || _orderedCycles.IsDefaultOrEmpty)
+        {
+            return ImmutableArray<Cycle>.Empty;
+        }
+
+        var body = CyclePlanner.GetLoopBody(loop);
+        var builder = ImmutableArray.CreateBuilder<Cycle>();
+        _orderedCycles
+            .AsStackEnumerable()
+            .Where((Self: this, Loop: loop, Body: body), static (cycle, state) =>
+                state.Self.DoesLoopExitCycle(state.Loop, state.Body, cycle) &&
+                state.Self.HasGateStatementInside(cycle, state.Body)
+            ).AddTo(builder);
+        return builder.ToImmutable();
+    }
+
+    public bool HasNaturalLoop(StatementSyntax loop) =>
+        _flow != null && CyclePlanner.HasNaturalLoop(_flow, loop);
+
+    private bool DoesLoopExitCycle(StatementSyntax loop, StatementSyntax body, Cycle cycle) =>
+        _flow != null &&
+        !ReconvergenceSyntax.IsInside(cycle.Header, body) &&
+        _flow.TryGetBreakAfter(loop, out var after) &&
+        !cycle.Members.Contains(after);
+
+    private bool HasGateStatementInside(Cycle cycle, StatementSyntax body)
+    {
+        if (_flow == null)
+        {
+            return false;
+        }
+
+        foreach (var member in cycle.Members)
+        {
+            if (member.Kind != FlowNodeKind.Statement ||
+                member.Syntax is not StatementSyntax memberStatement ||
+                !_flow.TryGetListPosition(memberStatement, out var list, out var index) ||
+                index + 1 >= list.Count)
+            {
+                continue;
+            }
+
+            var candidateGate = list[index + 1];
+            if (IsGateTransition(_flow, cycle.Members, memberStatement, candidateGate) &&
+                ReconvergenceSyntax.IsInside(candidateGate, body))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     internal static bool HasBackJumpInside(ImmutableArray<GotoStatementSyntax> backJumps, StatementSyntax statement) =>
         backJumps
@@ -74,34 +142,111 @@ internal static class CyclePlanner
         Func<ExpressionSyntax, bool?> constantCondition)
     {
         var flow = StatementFlow.Build(body, constantCondition);
+        var listPlans = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>();
+        var allGotoLoops = ImmutableArray.CreateBuilder<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>();
+        CollectListPlans(body.Statements, holdsSplitPoint, listPlans, allGotoLoops);
+
         var cycles = new Dictionary<CyclePlan.CycleKey, Cycle>();
-        WalkList(body.Statements, flow, holdsSplitPoint, cycles);
-        return new CyclePlan(flow, cycles);
+        var orderedCycles = ImmutableArray.CreateBuilder<Cycle>();
+        var gotoLoops = allGotoLoops.ToImmutable();
+        foreach (var (statements, plan) in listPlans)
+        {
+            PlanListCycles(statements, plan, flow, gotoLoops, cycles, orderedCycles);
+        }
+
+        return new CyclePlan(flow, cycles, orderedCycles.ToImmutable());
     }
 
-    private static void WalkList(
+    internal static StatementSyntax GetLoopBody(StatementSyntax loop) =>
+        loop switch
+        {
+            WhileStatementSyntax whileStatement => whileStatement.Statement,
+            DoStatementSyntax doStatement => doStatement.Statement,
+            ForStatementSyntax forStatement => forStatement.Statement,
+            CommonForEachStatementSyntax forEach => forEach.Statement,
+            _ => throw new InvalidOperationException($"Not a loop: {loop.Kind()}")
+        };
+
+    internal static bool HasNaturalLoop(StatementFlow flow, StatementSyntax loop)
+    {
+        var body = GetLoopBody(loop);
+        var bodyEntry = StatementFlow.EntryOf(body);
+        var loopTarget = loop is DoStatementSyntax
+            ? new FlowNode(loop, FlowNodeKind.LoopTest)
+            : flow.ResolveNode(loop);
+
+        if (!flow.GetSuccessors(loopTarget).Contains(bodyEntry))
+        {
+            return false;
+        }
+
+        var visited = new HashSet<FlowNode> { bodyEntry };
+        var queue = new Queue<FlowNode>();
+        queue.Enqueue(bodyEntry);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            foreach (var successor in flow.GetSuccessors(current))
+            {
+                if (successor == loopTarget)
+                {
+                    return true;
+                }
+
+                if (successor.Syntax is { } syntax &&
+                    ReconvergenceSyntax.IsInside(syntax, body) &&
+                    visited.Add(successor))
+                {
+                    queue.Enqueue(successor);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool OwnsBreakOrContinue(StatementSyntax loop) =>
+        GetLoopBody(loop)
+            .DescendantNodesAndSelf(static n =>
+                n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .AsStackEnumerable()
+            .Any(loop, static (node, target) =>
+                (node is BreakStatementSyntax &&
+                 ReconvergenceSyntax.FindJumpTarget(node, loopOnly: false) == target) ||
+                (node is ContinueStatementSyntax &&
+                 ReconvergenceSyntax.FindJumpTarget(node, loopOnly: true) == target));
+
+    private static void CollectListPlans(
         SyntaxList<StatementSyntax> statements,
-        StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
-        Dictionary<CyclePlan.CycleKey, Cycle> cycles)
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops)
     {
         var plan = JumpRegionPlanner.Plan(statements, holdsSplitPoint);
         if (plan.Rejected.IsEmpty)
         {
-            PlanListCycles(statements, plan, flow, cycles);
+            listPlans.Add((statements, plan));
+            foreach (var region in plan.Regions)
+            {
+                if (region.Kind == JumpRegionKind.GotoLoop)
+                {
+                    allGotoLoops.Add((statements, region));
+                }
+            }
         }
 
         foreach (var statement in statements)
         {
-            WalkStatement(statement, flow, holdsSplitPoint, cycles);
+            CollectStatementPlans(statement, holdsSplitPoint, listPlans, allGotoLoops);
         }
     }
 
-    private static void WalkStatement(
+    private static void CollectStatementPlans(
         StatementSyntax statement,
-        StatementFlow flow,
         Func<StatementSyntax, bool> holdsSplitPoint,
-        Dictionary<CyclePlan.CycleKey, Cycle> cycles)
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegionPlan Plan)>.Builder listPlans,
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)>.Builder allGotoLoops)
     {
         while (statement is LabeledStatementSyntax labeled)
         {
@@ -111,33 +256,33 @@ internal static class CyclePlanner
         switch (statement)
         {
             case BlockSyntax block:
-                WalkList(block.Statements, flow, holdsSplitPoint, cycles);
+                CollectListPlans(block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case CheckedStatementSyntax checkedStatement:
-                WalkList(checkedStatement.Block.Statements, flow, holdsSplitPoint, cycles);
+                CollectListPlans(checkedStatement.Block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case UnsafeStatementSyntax unsafeStatement:
-                WalkList(unsafeStatement.Block.Statements, flow, holdsSplitPoint, cycles);
+                CollectListPlans(unsafeStatement.Block.Statements, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case IfStatementSyntax ifStatement:
-                WalkStatement(ifStatement.Statement, flow, holdsSplitPoint, cycles);
+                CollectStatementPlans(ifStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 if (ifStatement.Else is { } elseClause)
                 {
-                    WalkStatement(elseClause.Statement, flow, holdsSplitPoint, cycles);
+                    CollectStatementPlans(elseClause.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 }
 
                 break;
             case WhileStatementSyntax whileStatement:
-                WalkStatement(whileStatement.Statement, flow, holdsSplitPoint, cycles);
+                CollectStatementPlans(whileStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case DoStatementSyntax doStatement:
-                WalkStatement(doStatement.Statement, flow, holdsSplitPoint, cycles);
+                CollectStatementPlans(doStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case ForStatementSyntax forStatement:
-                WalkStatement(forStatement.Statement, flow, holdsSplitPoint, cycles);
+                CollectStatementPlans(forStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case CommonForEachStatementSyntax forEachStatement:
-                WalkStatement(forEachStatement.Statement, flow, holdsSplitPoint, cycles);
+                CollectStatementPlans(forEachStatement.Statement, holdsSplitPoint, listPlans, allGotoLoops);
                 break;
             case SwitchStatementSyntax switchStatement:
                 var sectionPlans = new JumpRegionPlan[switchStatement.Sections.Count];
@@ -153,12 +298,19 @@ internal static class CyclePlanner
                     var sectionStatements = switchStatement.Sections[s].Statements;
                     if (crossSectionRejected.IsEmpty && sectionPlans[s].Rejected.IsEmpty)
                     {
-                        PlanListCycles(sectionStatements, sectionPlans[s], flow, cycles);
+                        listPlans.Add((sectionStatements, sectionPlans[s]));
+                        foreach (var region in sectionPlans[s].Regions)
+                        {
+                            if (region.Kind == JumpRegionKind.GotoLoop)
+                            {
+                                allGotoLoops.Add((sectionStatements, region));
+                            }
+                        }
                     }
 
                     foreach (var sectionStatement in sectionStatements)
                     {
-                        WalkStatement(sectionStatement, flow, holdsSplitPoint, cycles);
+                        CollectStatementPlans(sectionStatement, holdsSplitPoint, listPlans, allGotoLoops);
                     }
                 }
 
@@ -170,7 +322,9 @@ internal static class CyclePlanner
         SyntaxList<StatementSyntax> statements,
         JumpRegionPlan plan,
         StatementFlow flow,
-        Dictionary<CyclePlan.CycleKey, Cycle> cycles)
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)> allGotoLoops,
+        Dictionary<CyclePlan.CycleKey, Cycle> cycles,
+        ImmutableArray<Cycle>.Builder orderedCycles)
     {
         if (statements.Count == 0 || statements[0].Parent is not { } owner)
         {
@@ -224,14 +378,57 @@ internal static class CyclePlanner
                 continue;
             }
 
-            cycles[new CyclePlan.CycleKey(statements[region.First], region.Last)] = new Cycle(
+            var needsLatch = backJumps.Length >= 2 ||
+                NeedsLatchForSingleBackJump(backJumps[0], owner, statements, region, members, flow, allGotoLoops);
+            var cycle = new Cycle(
                 header,
                 statements,
                 region,
                 members,
                 backJumps,
-                NeedsLatch: backJumps.Length >= 2);
+                needsLatch);
+            cycles[new CyclePlan.CycleKey(statements[region.First], region.Last)] = cycle;
+            orderedCycles.Add(cycle);
         }
+    }
+
+    private static bool NeedsLatchForSingleBackJump(
+        GotoStatementSyntax backJump,
+        SyntaxNode owner,
+        SyntaxList<StatementSyntax> statements,
+        JumpRegion region,
+        ImmutableHashSet<FlowNode> members,
+        StatementFlow flow,
+        ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)> allGotoLoops)
+    {
+        for (var current = backJump.Parent; current != null && current != owner; current = current.Parent)
+        {
+            if (current is WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
+                or CommonForEachStatementSyntax &&
+                members.Contains(flow.ResolveNode(current)) &&
+                HasNaturalLoop(flow, (StatementSyntax)current))
+            {
+                return true;
+            }
+        }
+
+        foreach (var (otherStatements, otherRegion) in allGotoLoops)
+        {
+            if (ReferenceEquals(otherRegion, region) ||
+                (uint)otherRegion.First >= (uint)otherStatements.Count ||
+                (uint)otherRegion.Last >= (uint)otherStatements.Count)
+            {
+                continue;
+            }
+
+            if (IsInLexicalRange(otherStatements[otherRegion.First], statements, region.First, region.Last) &&
+                IsInLexicalRange(backJump, otherStatements, otherRegion.First, otherRegion.Last))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static HashSet<FlowNode> CollectHeaderNodes(
@@ -408,21 +605,43 @@ internal static class CyclePlanner
             if (member.Kind != FlowNodeKind.Statement ||
                 member.Syntax is not StatementSyntax memberStatement ||
                 !flow.TryGetListPosition(memberStatement, out var list, out var index) ||
-                index + 1 >= list.Count ||
-                !CyclePlan.HasBackJumpInside(backJumps, memberStatement))
+                index + 1 >= list.Count)
             {
                 continue;
             }
 
             var candidateGate = list[index + 1];
-            if (!members.Contains(StatementFlow.EntryOf(candidateGate)) &&
-                !HasAllowedAncestors(candidateGate, owner))
+            if (CyclePlan.IsGateTransition(flow, members, memberStatement, candidateGate) &&
+                (!HasAllowedAncestors(candidateGate, owner) ||
+                 IsInsideNonNaturalLoopWithJump(candidateGate, owner, flow, members)))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static bool IsInsideNonNaturalLoopWithJump(
+        SyntaxNode node,
+        SyntaxNode owner,
+        StatementFlow flow,
+        ImmutableHashSet<FlowNode> members)
+    {
+        for (var current = node.Parent; current != null && current != owner; current = current.Parent)
+        {
+            if (current is WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
+                or CommonForEachStatementSyntax &&
+                flow.TryGetBreakAfter(current, out var after) &&
+                !members.Contains(after) &&
+                !HasNaturalLoop(flow, (StatementSyntax)current) &&
+                OwnsBreakOrContinue((StatementSyntax)current))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool HasAllowedAncestors(SyntaxNode node, SyntaxNode owner)
@@ -435,7 +654,9 @@ internal static class CyclePlanner
             }
 
             if (current is not (BlockSyntax or LabeledStatementSyntax or CheckedStatementSyntax
-                or UnsafeStatementSyntax or IfStatementSyntax or ElseClauseSyntax))
+                or UnsafeStatementSyntax or IfStatementSyntax or ElseClauseSyntax
+                or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax
+                or CommonForEachStatementSyntax))
             {
                 return false;
             }

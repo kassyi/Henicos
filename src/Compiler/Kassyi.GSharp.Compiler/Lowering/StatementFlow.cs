@@ -20,24 +20,31 @@ internal sealed class StatementFlow
 {
     private static readonly FlowNode s_endNode = new(null, FlowNodeKind.End);
 
+    private readonly Func<ExpressionSyntax, bool?> _constantCondition;
     private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>> _successors;
     private readonly Dictionary<FlowNode, ImmutableArray<FlowNode>> _predecessors;
     private readonly Dictionary<StatementSyntax, (SyntaxList<StatementSyntax> List, int Index)> _listPositions;
     private readonly Dictionary<LabeledStatementSyntax, FlowNode> _labelTargets;
     private readonly HashSet<FlowNode> _knownNodes;
+    private readonly Dictionary<SyntaxNode, FlowNode> _breakAfter;
+    private readonly Dictionary<StatementSyntax, bool> _reachesEnd = new();
 
     private StatementFlow(
+        Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<FlowNode, ImmutableArray<FlowNode>> successors,
         Dictionary<FlowNode, ImmutableArray<FlowNode>> predecessors,
         Dictionary<StatementSyntax, (SyntaxList<StatementSyntax> List, int Index)> listPositions,
         Dictionary<LabeledStatementSyntax, FlowNode> labelTargets,
-        HashSet<FlowNode> knownNodes)
+        HashSet<FlowNode> knownNodes,
+        Dictionary<SyntaxNode, FlowNode> breakAfter)
     {
+        _constantCondition = constantCondition;
         _successors = successors;
         _predecessors = predecessors;
         _listPositions = listPositions;
         _labelTargets = labelTargets;
         _knownNodes = knownNodes;
+        _breakAfter = breakAfter;
     }
 
     public static FlowNode EndNode => s_endNode;
@@ -68,6 +75,21 @@ internal sealed class StatementFlow
         list = default;
         index = -1;
         return false;
+    }
+
+    internal bool TryGetBreakAfter(SyntaxNode statement, out FlowNode after) =>
+        _breakAfter.TryGetValue(statement, out after);
+
+    internal bool ReachesEnd(StatementSyntax statement)
+    {
+        if (_reachesEnd.TryGetValue(statement, out var reaches))
+        {
+            return reaches;
+        }
+
+        reaches = ReachesEnd(statement, _constantCondition);
+        _reachesEnd[statement] = reaches;
+        return reaches;
     }
 
     internal FlowNode ResolveNode(SyntaxNode node)
@@ -115,11 +137,13 @@ internal sealed class StatementFlow
             }
 
             return new StatementFlow(
+                constantCondition,
                 Freeze(_successors),
                 Freeze(_predecessors),
                 _listPositions,
                 _labelTargets,
-                _knownNodes);
+                _knownNodes,
+                _breakAfter);
         }
 
         public bool ReachesEnd(StatementSyntax statement)
