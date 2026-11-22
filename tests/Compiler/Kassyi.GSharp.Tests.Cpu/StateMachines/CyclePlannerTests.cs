@@ -1129,4 +1129,140 @@ public class CyclePlannerTests
         Assert.Single(selfDefaultCycle.BackJumps);
         Assert.True(selfDefaultCycle.NeedsLatch);
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_StatementAfterContinueThatLeavesTheLoop_IsGate()
+    {
+        var body = ParseBlock("while (true) { Split(); if (a) { if (c) continue; Split(); } break; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var whileStatement = Assert.IsType<WhileStatementSyntax>(body.Statements[0]);
+        var cycle = plan.FindLoop(whileStatement);
+
+        Assert.NotNull(cycle);
+        var loopBlock = Assert.IsType<BlockSyntax>(whileStatement.Statement);
+        var firstSplit = loopBlock.Statements[0];
+        var outerIf = Assert.IsType<IfStatementSyntax>(loopBlock.Statements[1]);
+        var thenBlock = Assert.IsType<BlockSyntax>(outerIf.Statement);
+        var innerIf = thenBlock.Statements[0];
+        var innerSplit = thenBlock.Statements[1];
+        var breakStatement = loopBlock.Statements[2];
+        var trailingSplit = body.Statements[1];
+
+        Assert.Contains(StatementFlow.EntryOf(whileStatement), cycle.Members);
+        Assert.Contains(StatementFlow.EntryOf(firstSplit), cycle.Members);
+        Assert.Contains(StatementFlow.EntryOf(outerIf), cycle.Members);
+        Assert.Contains(StatementFlow.EntryOf(innerIf), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(innerSplit), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(breakStatement), cycle.Members);
+        Assert.DoesNotContain(StatementFlow.EntryOf(trailingSplit), cycle.Members);
+
+        Assert.True(plan.IsGateStatement(cycle, innerSplit));
+        Assert.True(plan.IsGateStatement(cycle, breakStatement));
+        Assert.False(plan.IsGateStatement(cycle, trailingSplit));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_BreakBlock_IsNotGate()
+    {
+        var pureBreakBody = ParseBlock("for (int i = 0; i < u; i++) { Split(); if (a) { Split(); break; } } Split();");
+        var pureBreakPlan = CyclePlanner.Plan(pureBreakBody, HoldsSplit, ConstantLiteralCondition);
+        var forStatement = Assert.IsType<ForStatementSyntax>(pureBreakBody.Statements[0]);
+        Assert.Null(pureBreakPlan.FindLoop(forStatement));
+
+        var mixedBody = ParseBlock(
+            "while (true) { if (b) { if (c) continue; Split(); break; } if (a) { Split(); break; } } Split();");
+        var mixedPlan = CyclePlanner.Plan(mixedBody, HoldsSplit, ConstantLiteralCondition);
+        var whileStatement = Assert.IsType<WhileStatementSyntax>(mixedBody.Statements[0]);
+        var cycle = mixedPlan.FindLoop(whileStatement);
+        Assert.NotNull(cycle);
+
+        var loopBlock = Assert.IsType<BlockSyntax>(whileStatement.Statement);
+        var continueIf = Assert.IsType<IfStatementSyntax>(loopBlock.Statements[0]);
+        var continueThen = Assert.IsType<BlockSyntax>(continueIf.Statement);
+        var breakIf = Assert.IsType<IfStatementSyntax>(loopBlock.Statements[1]);
+        var breakThen = Assert.IsType<BlockSyntax>(breakIf.Statement);
+        Assert.True(mixedPlan.IsGateStatement(cycle, continueThen.Statements[1]));
+        Assert.False(mixedPlan.IsGateStatement(cycle, breakThen.Statements[0]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_StatementAfterContinueInsideTheLoop_IsNotGate()
+    {
+        var body = ParseBlock(
+            "int k = 0; do { Split(); if (a) { if (c) continue; Split(); } k = 1; } while (k == 0); Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var doStatement = Assert.IsType<DoStatementSyntax>(body.Statements[1]);
+
+        Assert.Null(plan.FindLoop(doStatement));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_LoopWithGateInSwitchOrNestedLoop_IsNotPlanned()
+    {
+        var switchGateBody = ParseBlock(
+            "while (true) { Split(); if (a) { if (c) continue; Split(); } " +
+            "switch (x) { case 0: if (d) continue; Split(); break; } break; } Split();");
+        var switchGatePlan = CyclePlanner.Plan(switchGateBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(switchGatePlan.FindLoop(Assert.IsType<WhileStatementSyntax>(switchGateBody.Statements[0])));
+
+        var nestedLoopGateBody = ParseBlock(
+            "outer: while (true) { Split(); for (int i = 0; i < u; i++) { if (c) continue outer; Split(); break outer; } " +
+            "break; } Split();");
+        var nestedLoopGatePlan = CyclePlanner.Plan(nestedLoopGateBody, HoldsSplit, ConstantLiteralCondition);
+        var outerLabeled = Assert.IsType<LabeledStatementSyntax>(nestedLoopGateBody.Statements[0]);
+        Assert.Null(nestedLoopGatePlan.FindLoop(Assert.IsType<WhileStatementSyntax>(outerLabeled.Statement)));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_LoopWithLabeledContinueAndElseGate_IsPlanned()
+    {
+        var body = ParseBlock(
+            "outer: while (true) { Split(); if (a) { if (b) { for (int i = 0; i < u; i++) { if (c) continue outer; } } break; } " +
+            "else { if (d) continue outer; Split(); break; } } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var outerLabeled = Assert.IsType<LabeledStatementSyntax>(body.Statements[0]);
+        var whileStatement = Assert.IsType<WhileStatementSyntax>(outerLabeled.Statement);
+        var cycle = plan.FindLoop(whileStatement);
+
+        Assert.NotNull(cycle);
+        Assert.Equal(2, cycle.BackJumps.Length);
+        var loopBlock = Assert.IsType<BlockSyntax>(whileStatement.Statement);
+        var outerIf = Assert.IsType<IfStatementSyntax>(loopBlock.Statements[1]);
+        Assert.NotNull(outerIf.Else);
+        var elseBlock = Assert.IsType<BlockSyntax>(outerIf.Else.Statement);
+        Assert.True(plan.IsGateStatement(cycle, elseBlock.Statements[1]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ConstantFalseDoLoopWithContinue_IsNotPlanned()
+    {
+        var body = ParseBlock("do { Split(); if (c) continue; Split(); } while (false); Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(plan.FindLoop(Assert.IsType<DoStatementSyntax>(body.Statements[0])));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_LoopWithoutSplitPoint_IsNotPlanned()
+    {
+        var body = ParseBlock("while (true) { if (a) { if (c) continue; Plain(); } break; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(plan.FindLoop(Assert.IsType<WhileStatementSyntax>(body.Statements[0])));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_LoopWithForwardGotoPastGate_IsNotPlanned()
+    {
+        var body = ParseBlock(
+            "while (true) { Split(); if (a) { if (b) goto PastGate; if (c) continue; Split(); PastGate: Split(); } break; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(plan.FindLoop(Assert.IsType<WhileStatementSyntax>(body.Statements[0])));
+    }
 }

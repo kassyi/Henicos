@@ -2939,4 +2939,154 @@ public static partial class WarpActiveMaskDifferentialKernels
 
         result[t + 160] = Warp.ActiveMask();
     }
+
+    // A while (true) loop left through a break after an if branch that holds its continue: lanes that fall out of
+    // the if after the continue branch wait at the trailing call until every lane has left the loop, then reconverge
+    // at the loop exit. Slots: 0..2 header; 3 after the continue inside the if; 4 after the loop; 5 n
+    [GpuKernel]
+    public static void LoopLeftAfterContinueKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        while (true)
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+            if ((t & 4) == 0)
+            {
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    continue;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+            }
+
+            break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A run-time counted loop left by a break block in different iterations: each lane runs the break block with only
+    // the lanes breaking in that same iteration, then all lanes reconverge after the loop. Slots: 0..3 body per
+    // iteration; 4 break block; 5 after the loop
+    [GpuKernel]
+    public static void LoopWithBreakBlockKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < u + 4; i++)
+        {
+            result[t + 32 * i] = Warp.ActiveMask();
+            if (i == (t & 3))
+            {
+                result[t + 128] = Warp.ActiveMask();
+                break;
+            }
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+    }
+
+    // A do-while loop with a non-constant bottom test: the call after the continue branch still reaches the bottom
+    // test and stays inside the natural loop, so lanes do not wait there across passes. Slots: 0..2 header; 3 after
+    // the continue; 4 after the loop; 5 n
+    [GpuKernel]
+    public static void DoLoopLeftAfterContinueWithBottomTestKernel(uint[] result)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int k = 0;
+        do
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+            if ((t & 4) == 0)
+            {
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    continue;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+            }
+
+            k = 1;
+        }
+        while (k == 0);
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A for loop with a thread-dependent trip count and a collective call after an early continue: lanes meet after
+    // each pass before starting the next pass and meet again after the loop. Slots: 0..3 head per iteration; 4..7
+    // tail per iteration; 8 after the loop
+    [GpuKernel]
+    public static void ContinueInLoopOfThreadDependentCountKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < u + 1 + (t & 3); i++)
+        {
+            result[t + 32 * i] = Warp.ActiveMask();
+            if (((t >> 2) & 1) == (i & 1))
+            {
+                continue;
+            }
+
+            result[t + 32 * (4 + i)] = Warp.ActiveMask();
+        }
+
+        result[t + 256] = Warp.ActiveMask();
+    }
+
+    // A run-time counted for loop whose lanes continue before the only collective call in the body on one iteration:
+    // lanes that skip the call still wait at the end of each pass and all lanes reconverge after the loop. Slots:
+    // 0..3 per iteration; 4 after the loop
+    [GpuKernel]
+    public static void ContinueBeforeTheOnlyMaskKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < u + 4; i++)
+        {
+            if ((t & 3) == i)
+            {
+                continue;
+            }
+
+            result[t + 32 * i] = Warp.ActiveMask();
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    // A trailing conditional-exit for loop at the end of a kernel: some lanes exit via the loop condition, some take
+    // an early break before the gate, and some continue before exiting via the post-gate break. Slots: 0..2 header;
+    // 3 after the continue inside the if
+    [GpuKernel]
+    public static void TrailingForLoopLeftAfterContinueKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        for (int i = 0; i < u + 3 - (t & 8); i++)
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+            n++;
+            if ((t & 16) != 0 && i == 0)
+            {
+                break;
+            }
+
+            if ((t & 4) == 0)
+            {
+                if ((t & 3) != 0 && i < 2)
+                {
+                    continue;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+            }
+
+            break;
+        }
+    }
 }
