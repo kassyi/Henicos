@@ -152,12 +152,23 @@ public class CyclePlannerTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Plan_GotoInSwitchSection_IsNotPlanned()
+    public void Plan_GotoInSwitchSection_IsPlanned()
     {
-        var body = ParseBlock("L: Split(); switch (x) { case 0: if (c) goto L; Split(); break; }");
+        var body = ParseBlock("L: Split(); switch (x) { case 0: if (c) goto L; Split(); break; } Split();");
         var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
 
-        Assert.Null(plan.Find(body.Statements, FindLoopRegion(body.Statements, "L")));
+        Assert.NotNull(cycle);
+        Assert.False(cycle.NeedsLatch);
+
+        var switchStatement = Assert.IsType<SwitchStatementSyntax>(body.Statements[1]);
+        var sectionSplit = switchStatement.Sections[0].Statements[1];
+        var afterSwitchSplit = body.Statements[2];
+
+        Assert.DoesNotContain(StatementFlow.EntryOf(sectionSplit), cycle.Members);
+        Assert.True(plan.IsGateStatement(cycle, sectionSplit));
+        Assert.True(plan.IsGateStatement(cycle, afterSwitchSplit));
+        Assert.Equal(new[] { cycle }, plan.FindCyclesGatedInside(switchStatement));
     }
 
     [Fact]
@@ -969,7 +980,7 @@ public class CyclePlannerTests
     public void Plan_DisallowedGateAfterContinueOrForwardGoto_IsNotPlanned()
     {
         var switchGateBody = ParseBlock(
-            "L1: Split(); switch (x) { case 0: if (b) goto M; Mark(1); return; } if (c) goto L1; M: if (d) goto L1; Split();");
+            "L1: Split(); switch (x) { case 0: if (b) goto M; Mark(1); return; case 1: goto case 0; } if (c) goto L1; M: if (d) goto L1; Split();");
         var switchGatePlan = CyclePlanner.Plan(switchGateBody, HoldsSplit, ConstantLiteralCondition);
         Assert.Null(switchGatePlan.Find(switchGateBody.Statements, FindLoopRegion(switchGateBody.Statements, "L1")));
 
@@ -977,5 +988,145 @@ public class CyclePlannerTests
             "L1: Split(); do { if (a) { if (b) goto M; Mark(1); return; } if (d) break; if (c) goto L1; } while (false); Mark(2); return; M: if (e) goto L1; Split();");
         var doWhileGatePlan = CyclePlanner.Plan(doWhileGateBody, HoldsSplit, ConstantLiteralCondition);
         Assert.Null(doWhileGatePlan.Find(doWhileGateBody.Statements, FindLoopRegion(doWhileGateBody.Statements, "L1")));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInSwitchWithJoins_IsNotPlanned()
+    {
+        var gotoCaseJoinBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (c) goto L; Split(); goto case 1; case 1: Split(); break; } Split();");
+        var gotoCaseJoinPlan = CyclePlanner.Plan(gotoCaseJoinBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(gotoCaseJoinPlan.Find(gotoCaseJoinBody.Statements, FindLoopRegion(gotoCaseJoinBody.Statements, "L")));
+
+        var gotoLabelJoinBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (c) goto L; Split(); goto target; case 1: target: Split(); break; } Split();");
+        var gotoLabelJoinPlan = CyclePlanner.Plan(gotoLabelJoinBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(gotoLabelJoinPlan.Find(gotoLabelJoinBody.Statements, FindLoopRegion(gotoLabelJoinBody.Statements, "L")));
+
+        var gotoDefaultJoinBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (c) goto L; Split(); goto default; default: Split(); break; } Split();");
+        var gotoDefaultJoinPlan = CyclePlanner.Plan(gotoDefaultJoinBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(gotoDefaultJoinPlan.Find(gotoDefaultJoinBody.Statements, FindLoopRegion(gotoDefaultJoinBody.Statements, "L")));
+
+        var uniformGotoCaseJoinBody = ParseBlock(
+            "L: Split(); switch (u) { case 0: if (c) goto L; goto case 1; case 1: Mark(1); break; } Split();");
+        var uniformGotoCaseJoinPlan = CyclePlanner.Plan(uniformGotoCaseJoinBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(uniformGotoCaseJoinPlan.Find(
+            uniformGotoCaseJoinBody.Statements, FindLoopRegion(uniformGotoCaseJoinBody.Statements, "L")));
+
+        var unresolvedGotoCaseBody = ParseBlock(
+            "L: Split(); switch (x) { case K: if (c) goto L; Mark(1); goto case 1; default: break; } Split();");
+        var unresolvedGotoCasePlan = CyclePlanner.Plan(unresolvedGotoCaseBody, HoldsSplit, ConstantLiteralCondition);
+        Assert.Null(unresolvedGotoCasePlan.Find(
+            unresolvedGotoCaseBody.Statements, FindLoopRegion(unresolvedGotoCaseBody.Statements, "L")));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindCyclesGatedInside_SwitchWithDefaultAndWithoutDefault_ReturnsCycle()
+    {
+        var withDefaultBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (c) goto L; Split(); break; default: break; } Split();");
+        var withDefaultPlan = CyclePlanner.Plan(withDefaultBody, HoldsSplit, ConstantLiteralCondition);
+        var withDefaultCycle = withDefaultPlan.Find(
+            withDefaultBody.Statements, FindLoopRegion(withDefaultBody.Statements, "L"));
+        Assert.NotNull(withDefaultCycle);
+        var withDefaultSwitch = Assert.IsType<SwitchStatementSyntax>(withDefaultBody.Statements[1]);
+        Assert.Equal(new[] { withDefaultCycle }, withDefaultPlan.FindCyclesGatedInside(withDefaultSwitch));
+
+        var withoutDefaultBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (c) goto L; Split(); break; } Split();");
+        var withoutDefaultPlan = CyclePlanner.Plan(withoutDefaultBody, HoldsSplit, ConstantLiteralCondition);
+        var withoutDefaultCycle = withoutDefaultPlan.Find(
+            withoutDefaultBody.Statements, FindLoopRegion(withoutDefaultBody.Statements, "L"));
+        Assert.NotNull(withoutDefaultCycle);
+        var withoutDefaultSwitch = Assert.IsType<SwitchStatementSyntax>(withoutDefaultBody.Statements[1]);
+        Assert.Equal(new[] { withoutDefaultCycle }, withoutDefaultPlan.FindCyclesGatedInside(withoutDefaultSwitch));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInSwitchWithWhenOrPattern_MarksGateAndFindsEnclosingCycle()
+    {
+        var whenBody = ParseBlock(
+            "L: Split(); switch (x) { case int v when w: if (c) goto L; Split(); break; } Split();");
+        var whenPlan = CyclePlanner.Plan(whenBody, HoldsSplit, ConstantLiteralCondition);
+        var whenCycle = whenPlan.Find(whenBody.Statements, FindLoopRegion(whenBody.Statements, "L"));
+        Assert.NotNull(whenCycle);
+        var whenSwitch = Assert.IsType<SwitchStatementSyntax>(whenBody.Statements[1]);
+        var whenGate = whenSwitch.Sections[0].Statements[1];
+        Assert.True(whenPlan.IsGateStatement(whenCycle, whenGate));
+        Assert.True(whenPlan.IsGateStatement(whenCycle, whenBody.Statements[2]));
+        Assert.Equal(new[] { whenCycle }, whenPlan.FindCyclesGatedInside(whenSwitch));
+
+        var patternBody = ParseBlock(
+            "L: Split(); switch (x) { case > 0: if (c) goto L; Split(); break; } Split();");
+        var patternPlan = CyclePlanner.Plan(patternBody, HoldsSplit, ConstantLiteralCondition);
+        var patternCycle = patternPlan.Find(patternBody.Statements, FindLoopRegion(patternBody.Statements, "L"));
+        Assert.NotNull(patternCycle);
+        var patternSwitch = Assert.IsType<SwitchStatementSyntax>(patternBody.Statements[1]);
+        Assert.True(patternPlan.IsGateStatement(patternCycle, patternSwitch.Sections[0].Statements[1]));
+        Assert.Equal(new[] { patternCycle }, patternPlan.FindCyclesGatedInside(patternSwitch));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInSwitchWhereBreakStaysInCycle_ReturnsEmptyForFindCyclesGatedInside()
+    {
+        var body = ParseBlock(
+            "L: Split(); switch (x) { case 0: if (a) { if (c) goto L; Split(); return; } break; } if (d) goto L; Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var switchStatement = Assert.IsType<SwitchStatementSyntax>(body.Statements[1]);
+        var ifStatement = Assert.IsType<IfStatementSyntax>(switchStatement.Sections[0].Statements[0]);
+        var thenBlock = Assert.IsType<BlockSyntax>(ifStatement.Statement);
+        var innerSplit = thenBlock.Statements[1];
+
+        Assert.Contains(StatementFlow.EntryOf(body.Statements[2]), cycle.Members);
+        Assert.True(plan.IsGateStatement(cycle, innerSplit));
+        Assert.Empty(plan.FindCyclesGatedInside(switchStatement));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInUniformSwitchSection_IsPlanned()
+    {
+        var body = ParseBlock(
+            "L: Split(); switch (u) { case 0: if (c) goto L; Split(); break; default: break; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var switchStatement = Assert.IsType<SwitchStatementSyntax>(body.Statements[1]);
+        Assert.True(plan.IsGateStatement(cycle, switchStatement.Sections[0].Statements[1]));
+        Assert.Equal(new[] { cycle }, plan.FindCyclesGatedInside(switchStatement));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_GotoInSwitchSectionWithSelfGotoCase_NeedsLatch()
+    {
+        var selfCaseBody = ParseBlock(
+            "L: Split(); switch (x) { case 0: Split(); if (a) goto case 0; if (b) goto L; Split(); break; default: break; } Split();");
+        var selfCasePlan = CyclePlanner.Plan(selfCaseBody, HoldsSplit, ConstantLiteralCondition);
+        var selfCaseCycle = selfCasePlan.Find(
+            selfCaseBody.Statements, FindLoopRegion(selfCaseBody.Statements, "L"));
+
+        Assert.NotNull(selfCaseCycle);
+        Assert.Single(selfCaseCycle.BackJumps);
+        Assert.True(selfCaseCycle.NeedsLatch);
+
+        var selfDefaultBody = ParseBlock(
+            "L: Split(); switch (x) { default: Split(); if (a) goto default; if (b) goto L; Split(); break; } Split();");
+        var selfDefaultPlan = CyclePlanner.Plan(selfDefaultBody, HoldsSplit, ConstantLiteralCondition);
+        var selfDefaultCycle = selfDefaultPlan.Find(
+            selfDefaultBody.Statements, FindLoopRegion(selfDefaultBody.Statements, "L"));
+
+        Assert.NotNull(selfDefaultCycle);
+        Assert.Single(selfDefaultCycle.BackJumps);
+        Assert.True(selfDefaultCycle.NeedsLatch);
     }
 }

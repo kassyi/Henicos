@@ -80,6 +80,22 @@ internal sealed class StatementFlow
     internal bool TryGetBreakAfter(SyntaxNode statement, out FlowNode after) =>
         _breakAfter.TryGetValue(statement, out after);
 
+    internal static bool HasUnconditionalDefault(SwitchStatementSyntax switchStatement) =>
+        switchStatement.Sections
+            .AsStackEnumerable()
+            .Any(static section => section.Labels
+                .AsStackEnumerable()
+                .Any(IsUnconditionalDefaultLabel)
+            );
+
+    private static bool IsUnconditionalDefaultLabel(SwitchLabelSyntax label) =>
+        label is DefaultSwitchLabelSyntax or
+            CasePatternSwitchLabelSyntax
+            {
+                Pattern: DiscardPatternSyntax or VarPatternSyntax,
+                WhenClause: null
+            };
+
     internal bool ReachesEnd(StatementSyntax statement)
     {
         if (_reachesEnd.TryGetValue(statement, out var reaches))
@@ -312,23 +328,15 @@ internal sealed class StatementFlow
                 case SwitchStatementSyntax switchStatement:
                     _breakAfter[switchStatement] = after;
                     var sectionEntries = ImmutableArray.CreateBuilder<FlowNode>(switchStatement.Sections.Count);
-                    var hasDefault = false;
                     foreach (var section in switchStatement.Sections)
                     {
-                        if (section.Labels
-                            .AsStackEnumerable()
-                            .Any(IsUnconditionalDefaultLabel))
-                        {
-                            hasDefault = true;
-                        }
-
                         var sectionEntry = BuildList(section.Statements, after);
                         sectionEntries.Add(sectionEntry);
                         AddEdge(node, sectionEntry);
                     }
 
                     _switchSections[switchStatement] = sectionEntries.ToImmutable();
-                    if (!hasDefault)
+                    if (!HasUnconditionalDefault(switchStatement))
                     {
                         AddEdge(node, after);
                     }
@@ -432,14 +440,6 @@ internal sealed class StatementFlow
                     break;
             }
         }
-
-        private static bool IsUnconditionalDefaultLabel(SwitchLabelSyntax label) =>
-            label is DefaultSwitchLabelSyntax or
-                CasePatternSwitchLabelSyntax
-                {
-                    Pattern: DiscardPatternSyntax or VarPatternSyntax,
-                    WhenClause: null
-                };
 
         private static SwitchStatementSyntax? FindEnclosingSwitch(SyntaxNode node)
         {

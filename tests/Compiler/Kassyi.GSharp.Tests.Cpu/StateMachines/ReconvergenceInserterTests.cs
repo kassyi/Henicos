@@ -112,6 +112,11 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
+    public Task Lower_GotoLoopEndingInSwitchSection_EmitsBreakGateAndJoinLabel() =>
+        VerifyPipelineLowerFromTestCase("ReconvergenceGotoLoopInSwitch.cs");
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
     public void Insert_GotoLoopWithSwitchVarPatternExit_ClosesBeforeGate()
     {
         var (_, tree, model) = RoslynTestUtility.GetTestCaseContext(Path.Combine("StateMachines", TestCase));
@@ -466,6 +471,139 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             finalMark: "Mark(73)");
     }
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInSwitchWithoutDefault_EmitsFallthroughGateAndJoinLabel()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInSwitchWithoutDefaultKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(74)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(75)");
+        Assert.Contains(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+        var (afterReconvergence, _) = LowerAndAnalyze("GotoLoopInSwitchWithoutDefaultKernel");
+        Assert.Contains("Mark(75)", afterReconvergence);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInSwitchWithMultipleSectionsAndBreak_EmitsBreakGatesAndJoinLabel()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInSwitchWithMultipleSectionsAndBreakKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(76)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(78)");
+        Assert.Contains(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInSwitchSectionWithIfReconcile_EmitsGateAndReconcilesBranches()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInSwitchSectionWithIfReconcileKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(79)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(80)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(81)");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInUniformSwitchSection_OpensSwitchRegionAndEmitsGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInUniformSwitchSectionKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(82)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(83)");
+        Assert.Contains(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInWhenPatternSwitch_EmitsFallthroughGateAfterSwitch()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInWhenPatternSwitchKernel",
+            isDeviceFunction: false);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(84)");
+
+        var statements = stackLowered.Body.Statements;
+        var switchIndex = statements
+            .Select(static (statement, index) => (statement, index))
+            .Single(static pair => pair.statement is SwitchStatementSyntax)
+            .index;
+        var joinIndex = statements
+            .Select(static (statement, index) => (statement, index))
+            .Single(static pair =>
+                pair.statement is LabeledStatementSyntax labeled &&
+                labeled.Identifier.ValueText.StartsWith(
+                    GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix,
+                    StringComparison.Ordinal))
+            .index;
+        Assert.True(switchIndex < joinIndex,
+            "Expected switch statement before its reconverge join label.");
+
+        var fallthroughReconvergeSites = statements
+            .Skip(switchIndex + 1)
+            .Take(joinIndex - switchIndex - 1)
+            .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge))
+            .Select(static call => ExtractRegionSite(call, siteIndex: 1))
+            .ToArray();
+        var enterSites = ExtractRegionSites(
+            stackLowered.Body, GSharpInternalNames.StackWarp.RegionEnter, siteIndex: 1);
+        Assert.Single(fallthroughReconvergeSites);
+        Assert.Equal(enterSites[0], fallthroughReconvergeSites[0]);
+
+        var mark85Statement = FindMarkStatement(stackLowered.Body, "Mark(85)");
+        var mark85Index = statements.IndexOf(mark85Statement);
+        var postJoinReconvergeSites = statements
+            .Skip(joinIndex + 1)
+            .Take(mark85Index - joinIndex - 1)
+            .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static call => Calls(call, GSharpInternalNames.StackWarp.Reconverge))
+            .Select(static call => ExtractRegionSite(call, siteIndex: 1))
+            .ToArray();
+        Assert.Single(postJoinReconvergeSites);
+        Assert.NotEqual(fallthroughReconvergeSites[0], postJoinReconvergeSites[0]);
+        Assert.Contains(
+            stackLowered.Body.DescendantNodes().OfType<GotoStatementSyntax>(),
+            static g => g.Expression is IdentifierNameSyntax { Identifier.ValueText: var label } &&
+                        label.StartsWith(GSharpInternalNames.Lowering.ReconvergeJoinLabelPrefix, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Insert_GotoLoopInSwitchSectionWithSelfGotoCase_EmitsLatchAndGate()
+    {
+        var (lowered, stackLowered) = LowerFromTestCase(
+            "GotoLoopInSwitchSectionWithSelfGotoCaseKernel",
+            isDeviceFunction: false);
+        AssertHasLatchBeforeAllBackGotos(stackLowered.Body, "L1", 1);
+        AssertHasBalancedRegionSites(stackLowered, lowered);
+        AssertHasGateStackReconvergeBefore(stackLowered.Body, "Mark(86)");
+        AssertHasPrecedingStackReconverge(stackLowered.Body, "Mark(87)");
+    }
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("GotoCaseJoinKernel", "Mark(20)", "Mark(21)")]
@@ -771,15 +909,23 @@ public class ReconvergenceInserterTests : StateMachineTestBase
             .OfType<ExpressionStatementSyntax>()
             .Single(s => s.Expression is InvocationExpressionSyntax inv && Describe(inv) == markCall);
 
+    private static SyntaxList<StatementSyntax> GetStatementList(SyntaxNode? parent) =>
+        parent switch
+        {
+            BlockSyntax block => block.Statements,
+            SwitchSectionSyntax section => section.Statements,
+            _ => throw new InvalidOperationException($"Expected BlockSyntax or SwitchSectionSyntax, got {parent?.Kind()}.")
+        };
+
     private static void AssertHasGateStackReconvergeBefore(BlockSyntax body, string markCall)
     {
         var markStatement = FindMarkStatement(body, markCall);
-        var block = Assert.IsType<BlockSyntax>(markStatement.Parent);
-        var index = block.Statements.IndexOf(markStatement);
+        var statements = GetStatementList(markStatement.Parent);
+        var index = statements.IndexOf(markStatement);
         var reconvergeIndex = -1;
         for (var i = index - 1; i >= 0; i--)
         {
-            if (block.Statements[i] is ExpressionStatementSyntax
+            if (statements[i] is ExpressionStatementSyntax
                 {
                     Expression: InvocationExpressionSyntax call
                 })
@@ -806,10 +952,10 @@ public class ReconvergenceInserterTests : StateMachineTestBase
     private static void AssertHasPrecedingStackReconverge(BlockSyntax body, string markCall)
     {
         var markStatement = FindMarkStatement(body, markCall);
-        var block = Assert.IsType<BlockSyntax>(markStatement.Parent);
-        var index = block.Statements.IndexOf(markStatement);
+        var statements = GetStatementList(markStatement.Parent);
+        var index = statements.IndexOf(markStatement);
         Assert.Contains(
-            block.Statements
+            statements
                 .Take(index)
                 .Select(static s => (s as ExpressionStatementSyntax)?.Expression)
                 .OfType<InvocationExpressionSyntax>(),
@@ -828,10 +974,10 @@ public class ReconvergenceInserterTests : StateMachineTestBase
 
         foreach (var backGoto in backGotos)
         {
-            var containingBlock = Assert.IsType<BlockSyntax>(backGoto.Parent);
-            var index = containingBlock.Statements.IndexOf(backGoto);
+            var statements = GetStatementList(backGoto.Parent);
+            var index = statements.IndexOf(backGoto);
             Assert.True(index > 0, "Expected latch reconvergence call before backward goto.");
-            var prevInvocation = Assert.IsType<ExpressionStatementSyntax>(containingBlock.Statements[index - 1])
+            var prevInvocation = Assert.IsType<ExpressionStatementSyntax>(statements[index - 1])
                 .Expression as InvocationExpressionSyntax;
             Assert.NotNull(prevInvocation);
             Assert.True(Calls(prevInvocation, GSharpInternalNames.StackWarp.Reconverge),

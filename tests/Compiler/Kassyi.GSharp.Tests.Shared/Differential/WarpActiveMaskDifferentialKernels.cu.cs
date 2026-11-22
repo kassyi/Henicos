@@ -2820,4 +2820,123 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 128] = Warp.ActiveMask();
         result[t + 160] = (uint)n;
     }
+
+    // A goto loop whose last backward goto is inside a switch section: lanes falling out of the goto inside case 0 wait
+    // there for the lanes still in the loop and for lanes in default before running together after the switch. Slots:
+    // 0..2 header per pass; 3 after the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside a switch without default: lanes skipping all cases close the loop
+    // on the fallthrough path after the switch before joining the breaking lanes. Slots: 0..2 header per pass; 3 after
+    // the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInSwitchSectionWithoutDefaultKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose last backward goto is inside a uniform switch section: lanes falling out of the goto inside
+    // case 0 still reconverge with the loop before running the rest of the section. Slots: 0..2 header per pass; 3
+    // after the goto inside case 0; 4 after switch; 5 n
+    [GpuKernel]
+    public static void GotoLoopEndingInUniformSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch (u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 128] = Warp.ActiveMask();
+        result[t + 160] = (uint)n;
+    }
+
+    // A goto loop whose single backward goto is inside a switch section that also loops to its own case head via
+    // goto case: lanes taking the intra-section loop arrive at the backward goto a round later, so the outer loop
+    // needs a latch to wait for them before running the next pass together. Slots: 0..1 header per pass; 2..3 inside
+    // case 0 before goto case; 4 after the goto inside case 0; 5 after switch
+    [GpuKernel]
+    public static void GotoLoopInSwitchSectionWithSelfGotoCaseKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int k = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                result[t + 32 * (2 + k)] = Warp.ActiveMask();
+                if ((t & 3) == 2 && k < 1)
+                {
+                    k++;
+                    goto case 0;
+                }
+
+                if ((t & 3) != 0 && n < 1)
+                {
+                    n++;
+                    goto L1;
+                }
+
+                result[t + 128] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        result[t + 160] = Warp.ActiveMask();
+    }
 }

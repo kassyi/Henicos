@@ -1194,4 +1194,174 @@ public static class ReconvergenceCases
         Mark(73);
         result[t + 160] = Warp.ActiveMask();
     }
+
+    [GpuKernel]
+    public static void GotoLoopInSwitchWithoutDefaultKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                Mark(74);
+                result[t + 96] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(75);
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInSwitchWithMultipleSectionsAndBreakKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + (t & 8) + u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                Mark(76);
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            case 4:
+                Mark(77);
+                result[t + 128] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        Mark(78);
+        result[t + 160] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInSwitchSectionWithIfReconcileKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                if ((t & 8) == 0)
+                {
+                    if ((t & 3) != 0 && n++ < 2)
+                    {
+                        goto L1;
+                    }
+
+                    Mark(79);
+                    result[t + 96] = Warp.ActiveMask();
+                }
+
+                Mark(80);
+                break;
+            default:
+                break;
+        }
+
+        Mark(81);
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInUniformSwitchSectionKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch (u)
+        {
+            case 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                Mark(82);
+                result[t + 96] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        Mark(83);
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInWhenPatternSwitchKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0 when u == 0:
+                if ((t & 3) != 0 && n++ < 2)
+                {
+                    goto L1;
+                }
+
+                Mark(84);
+                result[t + 96] = Warp.ActiveMask();
+                break;
+        }
+
+        Mark(85);
+        result[t + 128] = Warp.ActiveMask();
+    }
+
+    [GpuKernel]
+    public static void GotoLoopInSwitchSectionWithSelfGotoCaseKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+        int k = 0;
+    L1:
+        result[t + 32 * n] = Warp.ActiveMask();
+        switch ((t & 4) + u)
+        {
+            case 0:
+                result[t + 32 * (2 + k)] = Warp.ActiveMask();
+                if ((t & 3) == 2 && k < 1)
+                {
+                    k++;
+                    goto case 0;
+                }
+
+                if ((t & 3) != 0 && n < 1)
+                {
+                    n++;
+                    goto L1;
+                }
+
+                Mark(86);
+                result[t + 128] = Warp.ActiveMask();
+                break;
+            default:
+                break;
+        }
+
+        Mark(87);
+        result[t + 160] = Warp.ActiveMask();
+    }
 }
