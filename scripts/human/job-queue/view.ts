@@ -530,6 +530,11 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
 const LateLegend = "  red = longer than usual";
 const SelectHint = "  ↑↓ select a job";
 
+/** The id label of a job: `j0812` locally, `j0812@ubuntu` when running on a remote CPU worker. */
+function jobIdLabel(job: Pick<StatusJob, "id" | "remote">): string {
+  return job.remote ? `${formatJobId(job.id)}@${job.remote}` : formatJobId(job.id);
+}
+
 /**
  * The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 j0965", then what a red bar
  * means while one is drawn (the legend is otherwise only in the help), else how to select a job.
@@ -544,7 +549,7 @@ function summaryLine(jobs: ScreenJob[], columns: number, now: number): ScreenLin
   const next = running.filter((job) => finite(job.endAt)).sort((a, b) => (a.endAt ?? 0) - (b.endAt ?? 0))[0];
   return line
     .add(` ${running.length} running, ${jobs.length - running.length} waiting`)
-    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} ${formatJobId(next.id)}` : "")
+    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} ${jobIdLabel(next)}` : "")
     .add(late ? LateLegend : SelectHint, late ? "late" : "dim")
     .padTo();
 }
@@ -566,14 +571,14 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     job.holderId !== null ? `runs as ${formatJobId(job.holderId)}` : "",
   ].filter((f) => f !== "");
   return line
-    .add(` ${formatJobId(job.id)} `, "bold")
+    .add(` ${jobIdLabel(job)} `, "bold")
     .add(describeProgress(job, now), isLate(job, now) ? "late" : "")
     .add(`  ${flags.join(" ")}  `, "dim")
     .add(job.command)
     .padTo();
 }
 
-/** The fields left of the timeline: marker, id, GPU flag, command. */
+/** The fields left of the timeline: marker, id (with @remote when offloaded), GPU/remote flag, command. */
 function jobLine(
   job: ScreenJob,
   selected: boolean,
@@ -586,7 +591,7 @@ function jobLine(
   const commandWidth = window === null ? Math.max(8, columns - idWidth - 25) : Math.min(22, columns - idWidth - 14);
   const line = new ScreenLine(columns)
     .add(selected ? "▸" : " ", "bold")
-    .add(formatJobId(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
+    .add(jobIdLabel(job).padEnd(idWidth), job.state === "running" ? "bold" : "")
     .add(
       job.gpu ? (job.share === "shared" ? "g" : "G") : job.remote ? "R" : " ",
       job.gpu ? "gpu" : job.remote ? "run" : "",
@@ -656,7 +661,7 @@ export function renderScreen(
     read === null || state.panelHidden ? [] : read.view.render(read.data, panelJobs(jobs), columns, room, now);
   const panelShown = panelRows.length < rows - 4 ? panelRows : []; // the job list keeps at least one row
   const listRows = rows - 4 - panelShown.length;
-  const idWidth = JobIdWidth;
+  const idWidth = jobs.reduce((max, item) => Math.max(max, jobIdLabel(item).length), JobIdWidth);
   const left = 1 + idWidth + 1 + 1 + Math.min(22, columns - idWidth - 14) + 1;
   const cells = columns - left;
   const window = cells >= 12 ? timeWindow(jobs, now, cells) : null;
