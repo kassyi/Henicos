@@ -1,6 +1,7 @@
 // Typed configuration for the job queue (job-queue.config.json): schema validation, unknown-key forward
 // compatibility warnings, defaults when missing, and mode-specific error handling.
 
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { createRequire } from "node:module";
 import { EntryScript, isRemoteMode, UsageExitCode, type RemoteMode } from "./constants.ts";
@@ -59,7 +60,7 @@ export interface LegacyClientsConfig {
 }
 
 export interface RemoteWorkerConfig {
-  /** SSH host (e.g. "ubuntu-server.lan"). */
+  /** SSH host (e.g. "jobrunner@ubuntu-server.lan"). */
   host: string;
   /** Remote workspace directory (e.g. "~/henicos"). */
   workspace: string;
@@ -71,11 +72,13 @@ export interface RemoteWorkerConfig {
   memoryMb: number;
   /** Routing mode: prefer-remote (default), remote-only, spillover, or off. */
   mode?: RemoteMode;
-  /** Extra ssh CLI arguments (e.g. ["-o", "BatchMode=yes", "-o", "ConnectTimeout=5"]). */
+  /** Hard wall-clock timeout (minutes) enforced on the remote worker via `timeout`. Default 30. */
+  maxJobMinutes?: number;
+  /** Extra ssh CLI arguments (e.g. ["-o", "ConnectTimeout=5"]). Security flags are always enforced. */
   sshOptions?: string[];
   /** Strip --disable-build-servers / -nodeReuse:false on remote Linux runs to keep VBCSCompiler warm. Default true. */
   keepBuildServersWarm?: boolean;
-  /** Optional health/free-memory probe run by the scheduler via ProbeRunner. */
+  /** Optional health/free-memory probe run by the scheduler via ProbeRunner (must invoke ssh). */
   probe?: ResourceProbeConfig;
 }
 
@@ -104,9 +107,13 @@ export interface LoadConfigOptions {
   mode: string;
   configPath?: string;
   fromDirectory?: string;
+  /** Shared state directory (main checkout tmp/job-queue) holding untracked remotes.local.json. */
+  stateDir?: string;
   warn?: (message: string) => void;
   exit?: (code: number) => never;
 }
+
+export const LocalRemotesFileName = "remotes.local.json";
 
 export interface LoadedConfig {
   config: QueueConfig;
@@ -141,10 +148,71 @@ const RemoteKeys = new Set([
   "cpus",
   "memoryMb",
   "mode",
+  "maxJobMinutes",
   "sshOptions",
   "keepBuildServersWarm",
   "probe",
 ]);
+
+/** Valid SSH target: optional user@, followed by hostname/IP; never starts with '-' (prevents option injection). */
+const RemoteHostPattern = /^(?:[A-Za-z0-9._-]+@)?[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+/** Dangerous OpenSSH short flags that enable forwarding, arbitrary config files, or local command execution. */
+const DangerousSshShortFlags = new Set(["-A", "-X", "-Y", "-L", "-R", "-D", "-W", "-F", "-J", "-S"]);
+
+/**
+ * Dangerous OpenSSH -o option rules. Returns the offending option string if any entry in `args` attempts to weaken
+ * host-key verification, forward agent/X11/ports, or execute local commands (ProxyCommand / LocalCommand).
+ */
+export function findDangerousSshOption(args: readonly string[]): string | null {
+  for (let i = 0; i < args.length; i++) {
+    const token = args[i] as string;
+    if (token === "--") {
+      break;
+    }
+    if (DangerousSshShortFlags.has(token) || /^-[AXYLDRWFJS]/.test(token)) {
+      return token;
+    }
+    let optSpec = "";
+    if (token === "-o" && i + 1 < args.length) {
+      optSpec = args[++i] as string;
+    } else if (token.startsWith("-o") && token.length > 2) {
+      optSpec = token.slice(2);
+    } else {
+      continue;
+    }
+    const eq = optSpec.search(/[=\s]/);
+    const key = (eq >= 0 ? optSpec.slice(0, eq) : optSpec).trim().toLowerCase();
+    const val = (eq >= 0 ? optSpec.slice(eq + 1) : "").trim().toLowerCase();
+    if (
+      key === "proxycommand" ||
+      key === "localcommand" ||
+      key === "remotecommand" ||
+      key === "knownhostscommand" ||
+      key === "proxyjump" ||
+      key === "userknownhostsfile" ||
+      key === "globalknownhostsfile" ||
+      key === "localforward" ||
+      key === "remoteforward" ||
+      key === "dynamicforward"
+    ) {
+      return optSpec;
+    }
+    if (key === "permitlocalcommand" && val !== "no") {
+      return optSpec;
+    }
+    if ((key === "forwardagent" || key === "forwardx11" || key === "forwardx11trusted") && val !== "no") {
+      return optSpec;
+    }
+    if (key === "stricthostkeychecking" && val !== "yes") {
+      return optSpec;
+    }
+    if (key === "clearallforwardings" && val !== "yes") {
+      return optSpec;
+    }
+  }
+  return null;
+}
 const LockKeys = new Set(["seats"]);
 const ProbeKeys = new Set(["argv", "min", "timeoutMs", "settleMs"]);
 const LegacyClientsKeys = new Set(["testPattern", "testMemoryMb"]);
@@ -354,8 +422,8 @@ function validateRemote(name: string, raw: unknown, warn: (message: string) => v
     throw new Error(`config remotes.${name} must be an object`);
   }
   warnUnknownKeys(raw, RemoteKeys, `remotes.${name}`, warn);
-  if (!isNonEmptyString(raw.host)) {
-    throw new Error(`config remotes.${name}.host must be a non-empty string`);
+  if (!isNonEmptyString(raw.host) || !RemoteHostPattern.test(raw.host)) {
+    throw new Error(`config remotes.${name}.host must be a valid [user@]hostname without leading "-"`);
   }
   if (!isNonEmptyString(raw.workspace)) {
     throw new Error(`config remotes.${name}.workspace must be a non-empty string`);
@@ -389,9 +457,24 @@ function validateRemote(name: string, raw: unknown, warn: (message: string) => v
     }
     remote.mode = raw.mode;
   }
+  if (raw.maxJobMinutes !== undefined) {
+    if (
+      typeof raw.maxJobMinutes !== "number" ||
+      !Number.isInteger(raw.maxJobMinutes) ||
+      raw.maxJobMinutes < 1 ||
+      raw.maxJobMinutes > 1440
+    ) {
+      throw new Error(`config remotes.${name}.maxJobMinutes must be an integer between 1 and 1440`);
+    }
+    remote.maxJobMinutes = raw.maxJobMinutes;
+  }
   if (raw.sshOptions !== undefined) {
     if (!Array.isArray(raw.sshOptions) || !raw.sshOptions.every(isNonEmptyString)) {
       throw new Error(`config remotes.${name}.sshOptions must be an array of non-empty strings`);
+    }
+    const dangerous = findDangerousSshOption(raw.sshOptions);
+    if (dangerous !== null) {
+      throw new Error(`config remotes.${name}.sshOptions forbids unsafe SSH option "${dangerous}"`);
     }
     remote.sshOptions = [...raw.sshOptions];
   }
@@ -402,7 +485,16 @@ function validateRemote(name: string, raw: unknown, warn: (message: string) => v
     remote.keepBuildServersWarm = raw.keepBuildServersWarm;
   }
   if (raw.probe !== undefined) {
-    remote.probe = validateProbe(`remotes.${name}.probe`, raw.probe, warn);
+    const probe = validateProbe(`remotes.${name}.probe`, raw.probe, warn);
+    const prog = path.basename(probe.argv[0] as string).toLowerCase();
+    if (prog !== "ssh" && prog !== "ssh.exe") {
+      throw new Error(`config remotes.${name}.probe.argv[0] must be "ssh"`);
+    }
+    const dangerous = findDangerousSshOption(probe.argv.slice(1));
+    if (dangerous !== null) {
+      throw new Error(`config remotes.${name}.probe.argv forbids unsafe SSH option "${dangerous}"`);
+    }
+    remote.probe = probe;
   }
   return remote;
 }
@@ -534,13 +626,63 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
 }
 
 /**
+ * Reads machine-local remote worker definitions from `<stateDir>/remotes.local.json` (untracked, shared across all
+ * git worktrees of the main checkout). Returns undefined when absent or invalid (fail-closed to local execution).
+ */
+export function loadLocalRemotesConfig(
+  stateDir: string,
+  warn: (message: string) => void = () => {},
+): Record<string, RemoteWorkerConfig> | undefined {
+  const filePath = path.join(stateDir, LocalRemotesFileName);
+  let text: string;
+  try {
+    text = fs.readFileSync(filePath, "utf8");
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      return undefined;
+    }
+    warn(`could not read ${filePath}: ${errorMessage(error)}`);
+    return undefined;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    warn(`invalid ${filePath}: ${errorMessage(error)}; ignoring remote workers`);
+    return undefined;
+  }
+  if (!isPlainObject(parsed)) {
+    warn(`invalid ${filePath}: root must be a JSON object; ignoring remote workers`);
+    return undefined;
+  }
+  const rawRemotes = parsed.remotes !== undefined ? parsed.remotes : parsed;
+  if (!isPlainObject(rawRemotes)) {
+    warn(`invalid ${filePath}: remotes must be a JSON object; ignoring remote workers`);
+    return undefined;
+  }
+  try {
+    const remotes: Record<string, RemoteWorkerConfig> = {};
+    for (const [name, value] of Object.entries(rawRemotes)) {
+      remotes[name] = validateRemote(name, value, warn);
+    }
+    return Object.keys(remotes).length > 0 ? remotes : undefined;
+  } catch (error) {
+    warn(`invalid ${filePath}: ${errorMessage(error)}; ignoring remote workers`);
+    return undefined;
+  }
+}
+
+/**
  * Loads and validates job-queue.config.json.
  * - Missing config: returns defaults with status "missing".
  * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to
  *   defaults.
+ * - When `stateDir` is provided and no explicit `--config` / `JOB_QUEUE_CONFIG` override was given, `remotes` are loaded
+ *   strictly from `<stateDir>/remotes.local.json` (untrusted checkout `remotes` in job-queue.config.json are ignored).
  */
 export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   const fromDirectory = options.fromDirectory ?? path.dirname(EntryScript);
+  const envExplicit = process.env.JOB_QUEUE_CONFIG !== undefined && process.env.JOB_QUEUE_CONFIG !== "";
   const warnings: string[] = [];
   const warn = (message: string): void => {
     warnings.push(message);
@@ -552,9 +694,25 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   };
   const exit = options.exit ?? ((code: number): never => process.exit(code));
   const loaded = loadConfigFile(fromDirectory, options.configPath);
+  const attachLocalRemotes = (config: QueueConfig): QueueConfig => {
+    if (envExplicit || options.stateDir === undefined || options.stateDir === "") {
+      return config;
+    }
+    if (config.remotes !== undefined && Object.keys(config.remotes).length > 0) {
+      warn(
+        `ignoring remotes defined in repo job-queue.config.json; configure machine-local workers in ${path.join(options.stateDir, LocalRemotesFileName)}`,
+      );
+      delete config.remotes;
+    }
+    const localRemotes = loadLocalRemotesConfig(options.stateDir, warn);
+    if (localRemotes !== undefined) {
+      config.remotes = localRemotes;
+    }
+    return config;
+  };
   if (loaded.status === "missing") {
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,
@@ -570,7 +728,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     }
     warn(`invalid config${location}: ${detail}; using defaults`);
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,
@@ -578,7 +736,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     };
   }
   try {
-    const config = validateConfig(loaded.raw, warn);
+    const config = attachLocalRemotes(validateConfig(loaded.raw, warn));
     const resolvedPath = loaded.path as string;
     return {
       config,
@@ -596,7 +754,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     }
     warn(`invalid config${location}: ${detail}; using defaults`);
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,

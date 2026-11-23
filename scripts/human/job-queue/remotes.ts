@@ -9,6 +9,34 @@ import { isResourceName, type ProbeResult } from "./resources.ts";
 /** How a job interacts with remote offload: auto (eligible), force (--remote), never (--local / ineligible). */
 export type OffloadPreference = "auto" | "force" | "never";
 
+/** Default hard wall-clock timeout (minutes) for a remote command. */
+export const DefaultMaxJobMinutes = 30;
+
+/** Mandatory OpenSSH hardening and dead-connection keepalive flags enforced on every remote SSH invocation. */
+export const MandatorySshOptions: readonly string[] = [
+  "-o",
+  "BatchMode=yes",
+  "-o",
+  "StrictHostKeyChecking=yes",
+  "-o",
+  "ForwardAgent=no",
+  "-o",
+  "ForwardX11=no",
+  "-o",
+  "ClearAllForwardings=yes",
+  "-o",
+  "PermitLocalCommand=no",
+  "-o",
+  "ServerAliveInterval=5",
+  "-o",
+  "ServerAliveCountMax=3",
+];
+
+/** Builds hardened argv for `ssh`, always prepending mandatory security options and `--` before `remote.host`. */
+export function buildSshArgs(remote: Pick<RemoteSpec, "host" | "sshOptions">, remoteCommand: string): string[] {
+  return [...MandatorySshOptions, ...remote.sshOptions, "--", remote.host, remoteCommand];
+}
+
 /** One remote worker, as the scheduler reads it from configuration at start. */
 export interface RemoteSpec {
   name: string;
@@ -21,6 +49,8 @@ export interface RemoteSpec {
   /** Maximum memory budget (MB) of a job eligible for this remote worker. */
   memoryMb: number;
   mode: RemoteMode;
+  /** Hard wall-clock timeout (minutes) enforced on the remote worker via `timeout`. */
+  maxJobMinutes: number;
   sshOptions: string[];
   keepBuildServersWarm: boolean;
   /** Health/free-memory probe run by ProbeRunner; null for no probe. */
@@ -64,13 +94,14 @@ export function remoteSpecsFromConfig(config: QueueConfig): RemoteSpec[] {
       cpus: remote.cpus,
       memoryMb: remote.memoryMb,
       mode: remote.mode ?? "prefer-remote",
-      sshOptions: remote.sshOptions ? [...remote.sshOptions] : ["-o", "BatchMode=yes", "-o", "ConnectTimeout=5"],
+      maxJobMinutes: remote.maxJobMinutes ?? DefaultMaxJobMinutes,
+      sshOptions: remote.sshOptions ? [...remote.sshOptions] : ["-o", "ConnectTimeout=5"],
       keepBuildServersWarm: remote.keepBuildServersWarm ?? true,
       probe:
         remote.probe === undefined
           ? null
           : {
-              argv: [...remote.probe.argv],
+              argv: [remote.probe.argv[0] as string, ...MandatorySshOptions, ...remote.probe.argv.slice(1)],
               min: remote.probe.min,
               timeoutMs: remote.probe.timeoutMs ?? ProbeTimeoutMs,
               settleMs: remote.probe.settleMs ?? 0,

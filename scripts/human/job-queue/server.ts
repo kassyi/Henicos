@@ -121,10 +121,13 @@ export class JobServer {
     this.log =
       options.log ??
       ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
+    const stateDirectory = options.stateDir || resolveStateDirectory();
+    this.stateDirectory = stateDirectory;
     // Scheduler reads only configuration data (never loads plugin code).
     this.config = loadConfig({
       mode: "serve",
       configPath: options.configPath || undefined,
+      stateDir: stateDirectory,
       warn: (text) => this.log(text),
     }).config;
     this.legacyTestPattern = this.config.legacyClients?.testPattern
@@ -140,8 +143,6 @@ export class JobServer {
     const resources = specsFromConfig(this.config, options.gpuSlots ?? 0);
     const remotes = remoteSpecsFromConfig(this.config);
     this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb, resources, remotes);
-    const stateDirectory = options.stateDir || resolveStateDirectory();
-    this.stateDirectory = stateDirectory;
     this.history = new RunHistory(path.join(stateDirectory, "history.json"), this.log);
     this.nextId = this.history.nextId;
     for (const remote of remotes) {
