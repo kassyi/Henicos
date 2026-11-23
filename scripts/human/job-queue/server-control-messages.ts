@@ -5,6 +5,7 @@ import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
 import { formatJobId, pickSuffixMatch } from "./job-id.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
+import { describeRemote } from "./remotes.ts";
 import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";
@@ -15,6 +16,7 @@ function status(connection: Connection): void {
   scheduler.order();
   const forecast = scheduler.forecast();
   const view = (j: ServerJob) => ({ ...describeJob(j), ...server.outlook(j, forecast) });
+  const remotes = scheduler.remoteStates().map((state) => describeRemote(state, scheduler.running));
   connection.reply({
     type: "status",
     pid: process.pid,
@@ -27,6 +29,7 @@ function status(connection: Connection): void {
     paused: scheduler.paused,
     ...(scheduler.paused ? { pausedAt: scheduler.pausedAt } : {}),
     resources: scheduler.resourceStates().map((state) => describeResource(state, scheduler.running)),
+    ...(remotes.length > 0 ? { remotes } : {}),
     running: scheduler.running.map(view),
     waiting: scheduler.waiting.map(view),
   });

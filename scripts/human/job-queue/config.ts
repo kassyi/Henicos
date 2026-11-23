@@ -3,7 +3,7 @@
 
 import * as path from "node:path";
 import { createRequire } from "node:module";
-import { EntryScript, UsageExitCode } from "./constants.ts";
+import { EntryScript, isRemoteMode, UsageExitCode, type RemoteMode } from "./constants.ts";
 import { errorMessage } from "./history.ts";
 import type { ConfigFileModule, ConfigFileStatus } from "./lib/types.ts";
 
@@ -58,6 +58,27 @@ export interface LegacyClientsConfig {
   testMemoryMb?: number;
 }
 
+export interface RemoteWorkerConfig {
+  /** SSH host (e.g. "ubuntu-server.lan"). */
+  host: string;
+  /** Remote workspace directory (e.g. "~/henicos"). */
+  workspace: string;
+  /** Maximum concurrent jobs on this remote worker. Default 1. */
+  slots?: number;
+  /** CPU cores granted to a job on this remote worker (-m:<cpus>). */
+  cpus: number;
+  /** Maximum memory budget (MB) of a job eligible for this remote worker. */
+  memoryMb: number;
+  /** Routing mode: prefer-remote (default), remote-only, spillover, or off. */
+  mode?: RemoteMode;
+  /** Extra ssh CLI arguments (e.g. ["-o", "BatchMode=yes", "-o", "ConnectTimeout=5"]). */
+  sshOptions?: string[];
+  /** Strip --disable-build-servers / -nodeReuse:false on remote Linux runs to keep VBCSCompiler warm. Default true. */
+  keepBuildServersWarm?: boolean;
+  /** Optional health/free-memory probe run by the scheduler via ProbeRunner. */
+  probe?: ResourceProbeConfig;
+}
+
 export interface QueueConfig {
   /** Config format version. Currently 1. */
   version: 1;
@@ -75,6 +96,7 @@ export interface QueueConfig {
   plugins: PluginEntry[];
   pools?: PoolsConfig;
   resources?: Record<string, ResourceConfig>;
+  remotes?: Record<string, RemoteWorkerConfig>;
   legacyClients?: LegacyClientsConfig;
 }
 
@@ -106,11 +128,23 @@ const TopLevelKeys = new Set([
   "plugins",
   "pools",
   "resources",
+  "remotes",
   "legacyClients",
 ]);
 const PluginKeys = new Set(["name", "options"]);
 const PoolsKeys = new Set(["coresPerSlot", "minimumSlots", "memoryShare", "defaultTestMemoryMb"]);
 const ResourceKeys = new Set(["slots", "lock", "probe", "holderWatch"]);
+const RemoteKeys = new Set([
+  "host",
+  "workspace",
+  "slots",
+  "cpus",
+  "memoryMb",
+  "mode",
+  "sshOptions",
+  "keepBuildServersWarm",
+  "probe",
+]);
 const LockKeys = new Set(["seats"]);
 const ProbeKeys = new Set(["argv", "min", "timeoutMs", "settleMs"]);
 const LegacyClientsKeys = new Set(["testPattern", "testMemoryMb"]);
@@ -285,6 +319,94 @@ function validateResource(name: string, raw: unknown, warn: (message: string) =>
   return resource;
 }
 
+function validateProbe(scope: string, raw: unknown, warn: (message: string) => void): ResourceProbeConfig {
+  if (!isPlainObject(raw)) {
+    throw new Error(`config ${scope} must be an object`);
+  }
+  warnUnknownKeys(raw, ProbeKeys, scope, warn);
+  if (!Array.isArray(raw.argv) || raw.argv.length === 0 || !raw.argv.every(isNonEmptyString)) {
+    throw new Error(`config ${scope}.argv must be a non-empty array of strings`);
+  }
+  if (typeof raw.min !== "number" || !Number.isFinite(raw.min)) {
+    throw new Error(`config ${scope}.min must be a finite number`);
+  }
+  const probe: ResourceProbeConfig = { argv: [...raw.argv], min: raw.min };
+  if (raw.timeoutMs !== undefined) {
+    if (typeof raw.timeoutMs !== "number" || !Number.isFinite(raw.timeoutMs) || raw.timeoutMs <= 0) {
+      throw new Error(`config ${scope}.timeoutMs must be a positive finite number`);
+    }
+    probe.timeoutMs = raw.timeoutMs;
+  }
+  if (raw.settleMs !== undefined) {
+    if (typeof raw.settleMs !== "number" || !Number.isFinite(raw.settleMs) || raw.settleMs < 0) {
+      throw new Error(`config ${scope}.settleMs must be a non-negative finite number`);
+    }
+    probe.settleMs = raw.settleMs;
+  }
+  return probe;
+}
+
+function validateRemote(name: string, raw: unknown, warn: (message: string) => void): RemoteWorkerConfig {
+  if (!ResourceNamePattern.test(name)) {
+    throw new Error(`invalid config remote name "${name}"`);
+  }
+  if (!isPlainObject(raw)) {
+    throw new Error(`config remotes.${name} must be an object`);
+  }
+  warnUnknownKeys(raw, RemoteKeys, `remotes.${name}`, warn);
+  if (!isNonEmptyString(raw.host)) {
+    throw new Error(`config remotes.${name}.host must be a non-empty string`);
+  }
+  if (!isNonEmptyString(raw.workspace)) {
+    throw new Error(`config remotes.${name}.workspace must be a non-empty string`);
+  }
+  if (typeof raw.cpus !== "number" || !Number.isInteger(raw.cpus) || raw.cpus < 1) {
+    throw new Error(`config remotes.${name}.cpus must be a positive integer`);
+  }
+  if (typeof raw.memoryMb !== "number" || !Number.isFinite(raw.memoryMb) || raw.memoryMb < 0) {
+    throw new Error(`config remotes.${name}.memoryMb must be a non-negative finite number`);
+  }
+  const remote: RemoteWorkerConfig = {
+    host: raw.host,
+    workspace: raw.workspace,
+    cpus: raw.cpus,
+    memoryMb: raw.memoryMb,
+  };
+  if (raw.slots !== undefined) {
+    if (
+      typeof raw.slots !== "number" ||
+      !Number.isInteger(raw.slots) ||
+      raw.slots < 1 ||
+      raw.slots > MaxResourceSlots
+    ) {
+      throw new Error(`config remotes.${name}.slots must be an integer between 1 and ${MaxResourceSlots}`);
+    }
+    remote.slots = raw.slots;
+  }
+  if (raw.mode !== undefined) {
+    if (!isRemoteMode(raw.mode)) {
+      throw new Error(`config remotes.${name}.mode must be one of prefer-remote, remote-only, spillover, off`);
+    }
+    remote.mode = raw.mode;
+  }
+  if (raw.sshOptions !== undefined) {
+    if (!Array.isArray(raw.sshOptions) || !raw.sshOptions.every(isNonEmptyString)) {
+      throw new Error(`config remotes.${name}.sshOptions must be an array of non-empty strings`);
+    }
+    remote.sshOptions = [...raw.sshOptions];
+  }
+  if (raw.keepBuildServersWarm !== undefined) {
+    if (typeof raw.keepBuildServersWarm !== "boolean") {
+      throw new Error(`config remotes.${name}.keepBuildServersWarm must be a boolean`);
+    }
+    remote.keepBuildServersWarm = raw.keepBuildServersWarm;
+  }
+  if (raw.probe !== undefined) {
+    remote.probe = validateProbe(`remotes.${name}.probe`, raw.probe, warn);
+  }
+  return remote;
+}
+
 function validateLegacyClients(raw: unknown, warn: (message: string) => void): LegacyClientsConfig {
   if (!isPlainObject(raw)) {
     throw new Error("config legacyClients must be an object");
@@ -394,6 +516,16 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
       resources[name] = validateResource(name, value, warn);
     }
     config.resources = resources;
+  }
+  if (raw.remotes !== undefined) {
+    if (!isPlainObject(raw.remotes)) {
+      throw new Error("config remotes must be an object");
+    }
+    const remotes: Record<string, RemoteWorkerConfig> = {};
+    for (const [name, value] of Object.entries(raw.remotes)) {
+      remotes[name] = validateRemote(name, value, warn);
+    }
+    config.remotes = remotes;
   }
   if (raw.legacyClients !== undefined) {
     config.legacyClients = validateLegacyClients(raw.legacyClients, warn);
