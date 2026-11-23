@@ -44,7 +44,7 @@ const Usage = [
   '  --build-iso         Also pack user-data & meta-data into <out>/cidata.iso (uses xorriso/genisoimage/cloud-localds).',
   '  --iso-via-ssh       When building cidata.iso on Windows without local xorriso, pack it via the configured Ubuntu host.',
   '  --write-remotes     Write/update <mainCheckout>/tmp/job-queue/remotes.local.json from the profile.',
-  '  --no-migrate-cache  With --apply, do not copy existing /home/<admin>/henicos cache to /home/<runner>/henicos.',
+  '  --no-migrate-cache  With --apply, do not copy existing workspace/cacheDirs from admin user to runner user.',
   '  --profile <file>    Path to worker-profile.json (default: <mainCheckout>/tmp/job-queue/worker-profile.json).',
   '  --out <path>        Output file or directory.',
   '  --self-test         Run built-in unit checks without touching any remote host.',
@@ -55,6 +55,21 @@ const UserPattern = /^[a-z_][a-z0-9_-]{0,31}$/;
 const HostPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const CidrPattern = /^(?:\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
 const PubKeyPattern = /^(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com)\s+[A-Za-z0-9+/=]+(?:\s+[^\r\n]+)?$/;
+const PackageNamePattern = /^[a-z0-9][a-z0-9.+_-]{0,63}$/;
+const WorkspacePattern = /^(?:~\/[A-Za-z0-9_./-]+|\/[A-Za-z0-9_./-]+)$/;
+const RelativeCacheDirPattern = /^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/;
+
+const BaseAutoinstallPackages = [
+  'openssh-server',
+  'ufw',
+  'avahi-daemon',
+  'git',
+  'curl',
+  'rsync',
+  'ca-certificates',
+  'psmisc',
+  'python3',
+];
 
 function expandHome(filePath) {
   if (filePath === '~') {
@@ -119,6 +134,51 @@ function validateProfile(raw) {
       throw new Error('network.gateway4 is required when network.dhcp4 is false');
     }
   }
+  const workspace = typeof raw.workspace === 'string' && raw.workspace.trim() !== '' ? raw.workspace.trim() : '~/workspace';
+  if (!WorkspacePattern.test(workspace) || workspace.includes('..')) {
+    throw new Error('workspace must be a safe ~/... or /... POSIX path without ".."');
+  }
+  const packages = [];
+  if (raw.packages !== undefined) {
+    if (!Array.isArray(raw.packages)) {
+      throw new Error('packages must be an array of apt package names');
+    }
+    for (const pkg of raw.packages) {
+      if (typeof pkg !== 'string' || !PackageNamePattern.test(pkg)) {
+        throw new Error(`invalid packages entry: ${String(pkg)}`);
+      }
+      packages.push(pkg);
+    }
+  }
+  const setupCommands = [];
+  if (raw.setupCommands !== undefined) {
+    if (!Array.isArray(raw.setupCommands)) {
+      throw new Error('setupCommands must be an array of shell command strings');
+    }
+    for (const cmd of raw.setupCommands) {
+      if (typeof cmd !== 'string' || cmd.trim() === '' || /[\r\n\0]/.test(cmd)) {
+        throw new Error('setupCommands entries must be non-empty single-line strings');
+      }
+      setupCommands.push(cmd);
+    }
+  } else if (typeof raw.dotnetChannel === 'string' && /^\d+\.\d+$/.test(raw.dotnetChannel)) {
+    // Backward compatibility with pre-parameterized profiles that specified dotnetChannel
+    setupCommands.push(
+      `curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel ${raw.dotnetChannel} --install-dir /usr/local/share/dotnet && ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh`,
+    );
+  }
+  const cacheDirs = [];
+  if (raw.cacheDirs !== undefined) {
+    if (!Array.isArray(raw.cacheDirs)) {
+      throw new Error('cacheDirs must be an array of relative directory paths');
+    }
+    for (const dir of raw.cacheDirs) {
+      if (typeof dir !== 'string' || !RelativeCacheDirPattern.test(dir) || dir.includes('..')) {
+        throw new Error(`invalid cacheDirs entry: ${String(dir)}`);
+      }
+      cacheDirs.push(dir.replace(/\/+$/, ''));
+    }
+  }
   return {
     workerName: raw.workerName,
     hostname: raw.hostname,
@@ -126,7 +186,7 @@ function validateProfile(raw) {
     network,
     adminUser: raw.adminUser,
     runnerUser: raw.runnerUser,
-    workspace: typeof raw.workspace === 'string' && raw.workspace.trim() !== '' ? raw.workspace : '~/henicos',
+    workspace,
     cpus: raw.cpus,
     memoryMb: raw.memoryMb,
     maxJobMinutes,
@@ -135,7 +195,9 @@ function validateProfile(raw) {
     sshPublicKeyPath: typeof raw.sshPublicKeyPath === 'string' ? raw.sshPublicKeyPath : '~/.ssh/id_ed25519.pub',
     blockAllEgress: raw.blockAllEgress !== false,
     blockedLanCidrs,
-    dotnetChannel: typeof raw.dotnetChannel === 'string' && /^\d+\.\d+$/.test(raw.dotnetChannel) ? raw.dotnetChannel : '10.0',
+    packages,
+    setupCommands,
+    cacheDirs,
     timezone: typeof raw.timezone === 'string' && /^[A-Za-z0-9_/-]+$/.test(raw.timezone) ? raw.timezone : 'UTC',
   };
 }
@@ -153,7 +215,7 @@ function resolvePublicKey(profile) {
 
 function buildSshdMatchConfig(profile) {
   return [
-    `# Managed by Henicos provision-remote-worker.js`,
+    `# Managed by provision-remote-worker.js`,
     `AllowUsers ${profile.adminUser} ${profile.runnerUser}`,
     `Match User ${profile.runnerUser}`,
     `    AuthorizedKeysFile /etc/ssh/authorized_keys/%u`,
@@ -170,7 +232,7 @@ function buildSshdMatchConfig(profile) {
 
 function buildLimitsConfig(profile) {
   return [
-    '# Managed by Henicos provision-remote-worker.js',
+    '# Managed by provision-remote-worker.js',
     `${profile.runnerUser} soft nproc ${profile.maxProcesses}`,
     `${profile.runnerUser} hard nproc ${profile.maxProcesses}`,
     '',
@@ -199,6 +261,34 @@ function buildHardeningShellScript(profile, pubKey, migrateCache) {
         '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fc00::/7 -j REJECT --reject-with icmp6-port-unreachable"',
         '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fe80::/10 -j REJECT --reject-with icmp6-port-unreachable"',
       ].join('\n');
+
+  const workspaceRel = profile.workspace.startsWith('~/') ? profile.workspace.slice(2).replace(/\/+$/, '') : '';
+  const runnerWorkspaceExpr = workspaceRel !== '' ? `/home/$RUNNER_USER/${workspaceRel}` : profile.workspace;
+  const adminWorkspaceExpr = workspaceRel !== '' ? `/home/$ADMIN_USER/${workspaceRel}` : '';
+  const migrateCacheLines = [];
+  if (migrateCache) {
+    if (adminWorkspaceExpr !== '') {
+      migrateCacheLines.push(
+        '# 6. Migrate existing warm build workspace from admin user if runner workspace does not exist yet',
+        `if [ ! -d "${runnerWorkspaceExpr}" ] && [ -d "${adminWorkspaceExpr}" ]; then`,
+        `  cp -a "${adminWorkspaceExpr}" "${runnerWorkspaceExpr}"`,
+        `  rm -rf "${runnerWorkspaceExpr}/.claude/worktrees" "${runnerWorkspaceExpr}/.job-queue-manifest.digest" "${runnerWorkspaceExpr}/.job-queue-manifest.sha256"`,
+        `  chown -R "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
+        'fi',
+      );
+    }
+    for (const cacheDir of profile.cacheDirs) {
+      const parentRel = path.posix.dirname(cacheDir);
+      const runnerParent = parentRel !== '.' ? `/home/$RUNNER_USER/${parentRel}` : '/home/$RUNNER_USER';
+      migrateCacheLines.push(
+        `if [ ! -d "/home/$RUNNER_USER/${cacheDir}" ] && [ -d "/home/$ADMIN_USER/${cacheDir}" ]; then`,
+        `  mkdir -p "${runnerParent}"`,
+        `  cp -a "/home/$ADMIN_USER/${cacheDir}" "/home/$RUNNER_USER/${cacheDir}"`,
+        `  chown -R "$RUNNER_USER:$RUNNER_USER" "${runnerParent}"`,
+        'fi',
+      );
+    }
+  }
 
   return [
     '#!/usr/bin/env bash',
@@ -299,23 +389,9 @@ function buildHardeningShellScript(profile, pubKey, migrateCache) {
     'ufw --force enable >/dev/null 2>&1 || true',
     'ufw reload >/dev/null 2>&1 || true',
     '',
-    ...(migrateCache
-      ? [
-          '# 6. Migrate existing warm build workspace from admin user if runner workspace does not exist yet',
-          'if [ ! -d "/home/$RUNNER_USER/henicos" ] && [ -d "/home/$ADMIN_USER/henicos" ]; then',
-          '  cp -a "/home/$ADMIN_USER/henicos" "/home/$RUNNER_USER/henicos"',
-          '  rm -rf "/home/$RUNNER_USER/henicos/.claude/worktrees" "/home/$RUNNER_USER/henicos/.job-queue-manifest.digest" "/home/$RUNNER_USER/henicos/.job-queue-manifest.sha256"',
-          '  chown -R "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos"',
-          'fi',
-          'if [ ! -d "/home/$RUNNER_USER/.nuget/packages" ] && [ -d "/home/$ADMIN_USER/.nuget/packages" ]; then',
-          '  mkdir -p "/home/$RUNNER_USER/.nuget"',
-          '  cp -a "/home/$ADMIN_USER/.nuget/packages" "/home/$RUNNER_USER/.nuget/packages"',
-          '  chown -R "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/.nuget"',
-          'fi',
-        ]
-      : []),
-    'mkdir -p "/home/$RUNNER_USER/henicos"',
-    'chown "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos"',
+    ...migrateCacheLines,
+    `mkdir -p "${runnerWorkspaceExpr}"`,
+    `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
     'echo "PROVISION_OK runner=$RUNNER_USER uid=$RUNNER_UID"',
     '',
   ].join('\n');
@@ -351,6 +427,9 @@ function buildAutoinstallUserData(profile, pubKey) {
         ].join('\n');
 
   const hardeningB64 = Buffer.from(buildHardeningShellScript(profile, pubKey, false), 'utf8').toString('base64');
+  const allPackages = [...new Set([...BaseAutoinstallPackages, ...profile.packages])];
+  const packageLines = allPackages.map((pkg) => `    - ${pkg}`);
+  const setupLines = profile.setupCommands.map((cmd) => `    - curtin in-target -- bash -c ${JSON.stringify(cmd)}`);
 
   return [
     '#cloud-config',
@@ -375,29 +454,16 @@ function buildAutoinstallUserData(profile, pubKey) {
     '    authorized-keys:',
     `      - ${JSON.stringify(pubKey)}`,
     '  packages:',
-    '    - openssh-server',
-    '    - ufw',
-    '    - avahi-daemon',
-    '    - git',
-    '    - curl',
-    '    - rsync',
-    '    - clang',
-    '    - g++',
-    '    - ninja-build',
-    '    - ca-certificates',
-    '    - libicu-dev',
-    '    - psmisc',
-    '    - python3',
+    ...packageLines,
     '  late-commands:',
-    `    - curtin in-target -- bash -c "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel ${profile.dotnetChannel} --install-dir /usr/local/share/dotnet && ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh"`,
-    '    - curtin in-target -- bash -c "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin"',
-    `    - curtin in-target -- bash -c "echo '${hardeningB64}' | base64 -d > /usr/local/sbin/henicos-harden-worker.sh && chmod 0700 /usr/local/sbin/henicos-harden-worker.sh && /usr/local/sbin/henicos-harden-worker.sh"`,
+    ...setupLines,
+    `    - curtin in-target -- bash -c "echo '${hardeningB64}' | base64 -d > /usr/local/sbin/jobrunner-harden-worker.sh && chmod 0700 /usr/local/sbin/jobrunner-harden-worker.sh && /usr/local/sbin/jobrunner-harden-worker.sh"`,
     '',
   ].join('\n');
 }
 
 function buildAutoinstallMetaData(profile) {
-  return `instance-id: henicos-worker-${profile.hostname}\nlocal-hostname: ${profile.hostname}\n`;
+  return `instance-id: job-queue-worker-${profile.hostname}\nlocal-hostname: ${profile.hostname}\n`;
 }
 
 function buildRemotesLocalJson(profile) {
@@ -590,11 +656,15 @@ function selfTest() {
   const profile = validateProfile(sampleRaw);
   const fakeKey = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKeyForSelfTestOnly test@local';
 
-  // Reject unsafe runnerUser and invalid CIDRs
+  // Reject unsafe runnerUser, invalid CIDRs, bad packages, multiline setupCommands, and path-traversal cacheDirs
   assert.throws(() => validateProfile({ ...sampleRaw, runnerUser: 'root' }));
   assert.throws(() => validateProfile({ ...sampleRaw, runnerUser: sampleRaw.adminUser }));
   assert.throws(() => validateProfile({ ...sampleRaw, blockedLanCidrs: ['not-a-cidr'] }));
   assert.throws(() => validateProfile({ ...sampleRaw, connectHost: '-oProxyCommand=evil' }));
+  assert.throws(() => validateProfile({ ...sampleRaw, packages: ['clang; rm -rf /'] }));
+  assert.throws(() => validateProfile({ ...sampleRaw, setupCommands: ['echo ok\nrm -rf /'] }));
+  assert.throws(() => validateProfile({ ...sampleRaw, cacheDirs: ['../etc'] }));
+  assert.throws(() => validateProfile({ ...sampleRaw, workspace: '~/../etc' }));
 
   const sshd = buildSshdMatchConfig(profile);
   assert.ok(sshd.includes('Match User jobrunner'));
@@ -607,6 +677,8 @@ function selfTest() {
   assert.ok(script.includes('--uid-owner ${RUNNER_UID} -j REJECT --reject-with icmp-port-unreachable'));
   assert.ok(script.includes('ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -j REJECT'));
   assert.ok(script.includes('BEGIN GSHARP-JOBRUNNER-ISOLATION'));
+  assert.ok(script.includes('/home/$RUNNER_USER/henicos'));
+  assert.ok(script.includes('/home/$RUNNER_USER/.nuget/packages'));
 
   const lanOnlyScript = buildHardeningShellScript(validateProfile({ ...sampleRaw, blockAllEgress: false }), fakeKey, false);
   assert.ok(lanOnlyScript.includes('-d 192.168.0.0/16 -j REJECT'));
@@ -614,8 +686,36 @@ function selfTest() {
   const userData = buildAutoinstallUserData(profile, fakeKey);
   assert.ok(userData.startsWith('#cloud-config\nautoinstall:\n'));
   assert.ok(userData.includes('name: direct'), 'uses hardware-agnostic direct storage layout for bare-metal & VM');
+  assert.ok(userData.includes('    - clang'));
+  assert.ok(userData.includes('    - ninja-build'));
   assert.ok(userData.includes('dotnet-install.sh --channel 10.0'));
-  assert.ok(userData.includes('henicos-harden-worker.sh'));
+  assert.ok(userData.includes('just.systems/install.sh'));
+  assert.ok(userData.includes('jobrunner-harden-worker.sh'));
+
+  // Ecosystem-agnostic profile without .NET emits only its declared packages and setupCommands
+  const rustProfile = validateProfile({
+    ...sampleRaw,
+    workspace: '~/rust-repo',
+    packages: ['build-essential', 'pkg-config'],
+    setupCommands: ['echo rustup-install'],
+    cacheDirs: ['.cargo/registry'],
+  });
+  const rustUserData = buildAutoinstallUserData(rustProfile, fakeKey);
+  assert.ok(rustUserData.includes('    - openssh-server'), 'always keeps base OS packages');
+  assert.ok(rustUserData.includes('    - build-essential'));
+  assert.ok(rustUserData.includes('echo rustup-install'));
+  assert.ok(!rustUserData.includes('dotnet-install.sh'), 'non-.NET profile omits .NET setup');
+  assert.ok(!rustUserData.includes('    - clang'), 'non-.NET profile omits undeclared packages');
+  const rustScript = buildHardeningShellScript(rustProfile, fakeKey, true);
+  assert.ok(rustScript.includes('/home/$RUNNER_USER/rust-repo'));
+  assert.ok(rustScript.includes('/home/$RUNNER_USER/.cargo/registry'));
+  assert.ok(!rustScript.includes('.nuget/packages'));
+
+  // Legacy profile with dotnetChannel still emits dotnet-install.sh when setupCommands is omitted
+  const legacyRaw = { ...sampleRaw, dotnetChannel: '9.0' };
+  delete legacyRaw.setupCommands;
+  const legacyUserData = buildAutoinstallUserData(validateProfile(legacyRaw), fakeKey);
+  assert.ok(legacyUserData.includes('dotnet-install.sh --channel 9.0'));
 
   const metaData = buildAutoinstallMetaData(profile);
   assert.ok(metaData.includes('local-hostname: ubuntu-server'));

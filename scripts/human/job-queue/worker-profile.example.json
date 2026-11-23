@@ -23,6 +23,18 @@
     "172.16.0.0/12",
     "169.254.0.0/16"
   ],
-  "dotnetChannel": "10.0",
+  "packages": [
+    "clang",
+    "g++",
+    "ninja-build",
+    "libicu-dev"
+  ],
+  "setupCommands": [
+    "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel 10.0 --install-dir /usr/local/share/dotnet && ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh",
+    "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin"
+  ],
+  "cacheDirs": [
+    ".nuget/packages"
+  ],
   "timezone": "Asia/Tokyo"
 }
