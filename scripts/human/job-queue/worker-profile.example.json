@@ -1,0 +1,28 @@
+{
+  "workerName": "ubuntu",
+  "hostname": "ubuntu-server",
+  "connectHost": "ubuntu-server.lan",
+  "network": {
+    "dhcp4": false,
+    "address": "192.168.100.100/24",
+    "gateway4": "192.168.100.1",
+    "nameservers": ["192.168.100.1", "1.1.1.1"]
+  },
+  "adminUser": "tonbo",
+  "runnerUser": "jobrunner",
+  "workspace": "~/henicos",
+  "cpus": 4,
+  "memoryMb": 6144,
+  "maxJobMinutes": 30,
+  "maxProcesses": 2048,
+  "sshPublicKeyPath": "~/.ssh/id_ed25519.pub",
+  "blockAllEgress": true,
+  "blockedLanCidrs": [
+    "192.168.0.0/16",
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "169.254.0.0/16"
+  ],
+  "dotnetChannel": "10.0",
+  "timezone": "Asia/Tokyo"
+}

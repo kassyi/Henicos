@@ -35,8 +35,9 @@ import {
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
+import { remoteReset } from "./remote-control.ts";
 import { remoteSpecsFromConfig } from "./remotes.ts";
-import { prefix, resolveWorktree } from "./system.ts";
+import { prefix, resolveStateDirectory, resolveWorktree } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
@@ -55,6 +56,7 @@ const Usage = [
   "  node scripts/human/job-queue.js pause [--until-idle]",
   "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
+  "  node scripts/human/job-queue.js remote-reset [<name>] [--clean]",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "                                        [--gpu-slots <n>] [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
@@ -102,6 +104,9 @@ const Usage = [
   "            restart. --until-idle then waits until no job runs and exits 0 (pause --until-idle && stop).",
   "resume      Lifts the pause; the waiting jobs are granted as usual.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
+  "remote-reset",
+  "            Terminates stuck build/test processes on a remote worker (or all enabled remotes) over SSH and clears",
+  "            manifest caches; with --clean, also wipes bin/, obj/, TestResults/, and tmp/ for a clean rebuild.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2, or config pools); --memory-mb: the memory pool for test runs (default",
   "            half the physical memory, or config pools); --gpu-slots: the shared GPU turns that run at a time",
@@ -131,6 +136,7 @@ const Modes = [
   "pause",
   "resume",
   "stop",
+  "remote-reset",
   "serve",
 ] as const;
 type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
@@ -161,6 +167,10 @@ interface Options extends RunOptions {
   newWeight: number;
   /** --screenshots: the directory the SVG files go to. */
   screenshotDir: string;
+  /** remote-reset [<name>]: optional remote worker name (empty = all enabled remotes). */
+  remoteTarget: string;
+  /** remote-reset --clean: wipe remote bin/, obj/, TestResults/, tmp/. */
+  clean: boolean;
 }
 
 function parsePositive(name: string, text: string | undefined, allowZero = false): number {
@@ -219,6 +229,8 @@ export function parseArgs(argv: string[]): Options {
     moveReset: false,
     newWeight: 0,
     screenshotDir: "",
+    remoteTarget: "",
+    clean: false,
     command: command.join(" "),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -243,6 +255,10 @@ export function parseArgs(argv: string[]): Options {
     if (options.mode === "status" && options.jobRef === null && parseJobRef(arg) !== null) {
       options.jobRef = parseRef("status", arg); // status <id>, before or after the options
       options.jobId = options.jobRef.kind === "exact" ? options.jobRef.id : 0;
+      continue;
+    }
+    if (options.mode === "remote-reset" && options.remoteTarget === "" && !arg.startsWith("-")) {
+      options.remoteTarget = arg;
       continue;
     }
     switch (arg) {
@@ -276,6 +292,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--remote":
         options.remote = true;
+        break;
+      case "--clean":
+        options.clean = true;
         break;
       case "--after":
         options.afterRef = parseRef("--after", own[++i]);
@@ -377,6 +396,9 @@ export function parseArgs(argv: string[]): Options {
   if (options.untilIdle && options.mode !== "pause") {
     usageError("--until-idle goes with pause alone.");
   }
+  if (options.clean && options.mode !== "remote-reset") {
+    usageError("--clean goes with remote-reset alone.");
+  }
   if (options.local && options.remote) {
     usageError("--local and --remote cannot be used together.");
   }
@@ -402,6 +424,7 @@ export async function main(argv: string[]): Promise<void> {
     const loaded = loadConfig({
       mode: options.mode,
       configPath: options.configPath || undefined,
+      stateDir: options.stateDir || resolveStateDirectory(),
       warn: prefix,
     });
     if (loaded.path !== null) {
@@ -494,6 +517,18 @@ export async function main(argv: string[]): Promise<void> {
       case "stop":
         await stop(options.port);
         break;
+      case "remote-reset": {
+        const code = await remoteReset(
+          options.remotes ?? [],
+          options.remoteTarget,
+          options.clean,
+          options.stateDir || resolveStateDirectory(),
+        );
+        if (code !== 0) {
+          process.exitCode = code;
+        }
+        break;
+      }
       case "serve":
         serve(options);
         break;

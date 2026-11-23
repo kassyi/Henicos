@@ -40,7 +40,8 @@ function formatJob(job: StatusJob, now: number): string {
   // An older scheduler says only what a job waits for after another (blockedBy)
   const waits = describeWaitFor(job) || (job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end` : "");
   const detail = outlook || waits ? `\n      ${outlook}${waits && outlook ? "; " : ""}${waits}` : "";
-  return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
+  const idLabel = job.remote ? `${formatJobId(job.id)}@${job.remote}` : formatJobId(job.id);
+  return `  ${idLabel} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 
 /** The latest end is told when it is this much after the expected end: a shorter gap says nothing new. */
