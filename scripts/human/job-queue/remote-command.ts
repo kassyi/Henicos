@@ -8,6 +8,7 @@ import { KeepBuildServersWarmVariable, type ShellName } from "./constants.ts";
 import { bare, rawWords, segmentParts } from "./command-reader.ts";
 import type { PathPlace } from "./estimate-key.ts";
 import { limitMsbuildNodes } from "./plugins/dotnet/msbuild-nodes.ts";
+import type { CollectPathSpec } from "./remote-output.ts";
 
 export interface RemoteCommandPlan {
   /** Single local git worktree root to sync to the remote workspace. */
@@ -19,7 +20,7 @@ export interface RemoteCommandPlan {
   /** Environment variables parsed from leading assignments + remote defaults. */
   env: Record<string, string>;
   /** Relative POSIX paths (e.g. --results-directory or redirection targets) to pull back after execution. */
-  collectPaths: string[];
+  collectPaths: CollectPathSpec[];
 }
 
 export interface TranslateOptions {
@@ -362,26 +363,46 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   const remoteBaseDir = remoteCwdRel === "" ? targetWorktree : path.resolve(targetWorktree, remoteCwdRel);
 
   // Pass 2: rewrite each statement into POSIX bash
-  const collectPaths: string[] = [];
+  const collectMap = new Map<string, CollectPathSpec>();
+  const addCollect = (rel: string, kind: "file" | "dir"): void => {
+    const clean = path.posix.normalize(rel).replace(/\/+$/, "");
+    if (clean !== "" && clean !== "." && !clean.startsWith("..")) {
+      collectMap.set(`${kind}:${clean}`, { path: clean, kind });
+    }
+  };
   const bashParts: string[] = [];
 
   for (let s = 0; s < parsedStatements.length; s++) {
     const stmt = parsedStatements[s] as (typeof parsedStatements)[number];
     const subcommand = (stmt.words[1] ? bare(stmt.words[1]) : "").toLowerCase();
     const outWords: string[] = [stmt.program];
+    let hasBlame = false;
+    let hasListTests = false;
+    let seenDoubleDash = false;
 
     for (let i = 1; i < stmt.words.length; i++) {
       const raw = stmt.words[i] as string;
       const token = bare(raw);
 
       if (token === "--") {
+        seenDoubleDash = true;
+        if (stmt.program === "dotnet" && subcommand === "test" && !hasBlame && !hasListTests) {
+          outWords.push("--blame");
+          hasBlame = true;
+        }
         outWords.push("--", ...stmt.words.slice(i + 1).map((w) => bashQuote(bare(w))));
         break;
       }
 
+      const lower = token.toLowerCase();
+      if (lower === "--blame" || lower.startsWith("--blame-")) {
+        hasBlame = true;
+      } else if (lower === "--list-tests" || lower === "-t") {
+        hasListTests = true;
+      }
+
       // Optionally keep VBCSCompiler warm on Linux by dropping Windows file-lock workarounds
       if (warmServers && stmt.program === "dotnet") {
-        const lower = token.toLowerCase();
         if (lower === "--disable-build-servers" || /^[-/](nodereuse|nr)[:=]false$/.test(lower)) {
           continue;
         }
@@ -402,11 +423,17 @@ export function translateForRemote(command: string, options: TranslateOptions): 
         const relToBase = path.relative(remoteBaseDir, abs).split(path.sep).join("/") || ".";
         outWords.push(bashQuote(relToBase));
         if (prev === "--results-directory") {
-          collectPaths.push(relativePosix(targetWorktree, abs));
+          addCollect(relativePosix(targetWorktree, abs), "dir");
         }
       } else {
         outWords.push(bashQuote(token));
       }
+    }
+
+    // Automatically attach lightweight `--blame` to remote `dotnet test` so native C++ SIGSEGV/OOM crashes record
+    // the exact in-progress test in TestResults/**/Sequence_*.xml without taking large crash dumps.
+    if (!seenDoubleDash && stmt.program === "dotnet" && subcommand === "test" && !hasBlame && !hasListTests) {
+      outWords.push("--blame");
     }
 
     // Rewrite output redirections (e.g., `> out.log`, `2>&1`)
@@ -428,7 +455,7 @@ export function translateForRemote(command: string, options: TranslateOptions): 
         return null;
       }
       const relToBase = path.relative(remoteBaseDir, abs).split(path.sep).join("/");
-      collectPaths.push(relativePosix(targetWorktree, abs));
+      addCollect(relativePosix(targetWorktree, abs), "file");
       outRedirs.push(`${fd}${op} ${bashQuote(relToBase)}`);
     }
 
@@ -461,6 +488,6 @@ export function translateForRemote(command: string, options: TranslateOptions): 
     remoteCwdRel,
     bashCommand,
     env,
-    collectPaths: [...new Set(collectPaths)],
+    collectPaths: [...collectMap.values()],
   };
 }

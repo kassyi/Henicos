@@ -26,9 +26,19 @@ export interface ManifestDiff {
   localDigest: string;
 }
 
-const ExcludedPrefixes = ["tmp/", "TestResults/", ".git/", ".vs/", "node_modules/"];
+const ExcludedPrefixes = [
+  "tmp/",
+  "TestResults/",
+  "BenchmarkDotNet.Artifacts/",
+  "scratch/",
+  ".git/",
+  ".vs/",
+  ".claude/worktrees/",
+  "node_modules/",
+  "src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/",
+];
 const ExcludedSegment = /(?:^|\/)(?:bin|obj|node_modules)\//;
-const ReceivedFile = /\.received\.[^/]+$/;
+const ExcludedFile = /(?:\.received\.[^/]+|\.(?:log|user))$/i;
 
 /** True when a worktree-relative POSIX path should be excluded from remote source sync. */
 export function isExcludedSyncPath(relPosix: string): boolean {
@@ -40,7 +50,29 @@ export function isExcludedSyncPath(relPosix: string): boolean {
       return true;
     }
   }
-  return ExcludedSegment.test(relPosix) || ReceivedFile.test(relPosix);
+  return ExcludedSegment.test(relPosix) || ExcludedFile.test(relPosix);
+}
+
+/** Deterministic `sha256sum -c` manifest text (`<hex>  ./<rel>\n`) sorted by path. */
+export function formatSha256Manifest(files: Readonly<Record<string, string>>): string {
+  const keys = Object.keys(files).sort();
+  let out = "";
+  for (const key of keys) {
+    out += `${files[key] ?? ""}  ./${key}\n`;
+  }
+  return out;
+}
+
+/** Set of all POSIX parent directories present in `files` (used to validate remote `*.received.*` targets). */
+export function manifestParentDirs(files: Readonly<Record<string, string>>): Set<string> {
+  const dirs = new Set<string>();
+  for (const rel of Object.keys(files)) {
+    const dir = path.posix.dirname(rel);
+    if (dir !== "" && dir !== ".") {
+      dirs.add(dir);
+    }
+  }
+  return dirs;
 }
 
 /** Deterministic SHA-256 digest of an entire file->sha256 manifest. */
@@ -81,17 +113,22 @@ export function diffManifests(
 /** Parses `sha256sum` output (`<hex>  ./<rel>` or `<hex>  <rel>`) into a relPosix -> sha256 map. */
 export function parseRemoteSha256Output(stdout: string): Record<string, string> {
   const files = Object.create(null) as Record<string, string>;
-  for (const rawLine of stdout.split(/\r?\n/)) {
-    const line = rawLine.trim();
+  for (const rawLine of stdout.split("\n")) {
+    const line = rawLine.replace(/\r$/, "");
     if (line === "") {
       continue;
     }
-    const match = /^([0-9a-f]{64})\s+\*?\.?\/?(.+)$/.exec(line);
+    const escaped = line.startsWith("\\");
+    const body = escaped ? line.slice(1) : line;
+    const match = /^([0-9a-f]{64}) [ *](.+)$/.exec(body);
     if (match === null) {
       continue;
     }
     const sha = match[1] as string;
-    const rel = (match[2] as string).replace(/^\.\//, "");
+    let rel = (match[2] as string).replace(/^\.\//, "");
+    if (escaped) {
+      rel = rel.replace(/\\\\/g, "\\").replace(/\\n/g, "\n");
+    }
     if (!isExcludedSyncPath(rel)) {
       files[rel] = sha;
     }
