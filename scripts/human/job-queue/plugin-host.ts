@@ -27,6 +27,7 @@ import {
 } from "./plugin-api.ts";
 import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
+import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote-rules.ts";
 
 export type BaseClientContext = Omit<ClientContext, "options">;
 
@@ -536,6 +537,25 @@ export class PluginHost {
       }
     }
     return undefined;
+  }
+
+  /** [all] Collects and validates remote CPU offload rules and hooks from every plugin in order. */
+  remoteOffload(context: BaseClientContext): ResolvedRemoteRules {
+    const entries: RemoteContributionEntry[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.remoteOffload !== "function") {
+        continue;
+      }
+      const contribution = this.callHook(i, "remoteOffload", (p) => p.remoteOffload?.(this.contextFor(i, context)));
+      if (isPlainObject(contribution)) {
+        entries.push({
+          contribution,
+          call: (subHook, invoke) => this.callHook(i, subHook, () => invoke()),
+        });
+      }
+    }
+    return resolveRemoteRules(entries);
   }
 }
 

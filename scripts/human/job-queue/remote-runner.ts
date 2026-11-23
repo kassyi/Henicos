@@ -3,26 +3,27 @@
 //      before every run (keeps bin/linux & obj/linux warm while auto-healing any mutated or rogue source file)
 //   2. Atomic execution under remote flock with hard wall-clock timeout, stdin-EOF lifeline watchdog (FD 3), and
 //      O_RDWR FIFO + 128-bit EOF sentinel (`sed -u -n`) so 100% of test stack traces flush losslessly while warm
-//      VBCSCompiler / MSBuild daemons never hold sshd open
-//   3. Zero-trust output boundary: live stdout/stderr pass through RemoteStreamSanitizer, native crashes print the
-//      in-progress test from VSTest `--blame` Sequence_*.xml, and *.received.* / explicit collectPaths are retrieved
-//      via length-framed streaming through validateAndWriteArtifacts (never `tar -xf` on Windows).
+//      build daemons never hold sshd open
+//   3. Zero-trust output boundary: live stdout/stderr pass through RemoteStreamSanitizer, plugin crash-summary rules
+//      report aborted tests in memory, and plugin failure artifacts / explicit collectPaths are retrieved via
+//      length-framed streaming through validateAndWriteArtifacts (never `tar -xf` on Windows).
 
 import { spawn, type ChildProcess } from "node:child_process";
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { EmptyRemoteRules, type ResolvedRemoteRules } from "./remote-rules.ts";
 import { buildSshArgs, type RemoteSpec } from "./remotes.ts";
 import { bashQuote, type RemoteCommandPlan } from "./remote-command.ts";
 import {
   MaxTotalArtifactBytes,
   RemoteStreamSanitizer,
-  parseSequenceXmlInProgress,
   validateAndWriteArtifacts,
   type CollectPathSpec,
 } from "./remote-output.ts";
 import {
+  buildRemoteFindPruneExpr,
   collectLocalManifest,
   diffManifests,
   formatSha256Manifest,
@@ -30,6 +31,7 @@ import {
   manifestParentDirs,
   parseRemoteSha256Output,
   saveRemoteManifestCache,
+  type RemoteSyncRules,
 } from "./remote-sync.ts";
 import type { ShellResult } from "./shell.ts";
 import { prefix, resolveStateDirectory } from "./system.ts";
@@ -38,14 +40,31 @@ export const RemoteManifestDigestFile = ".job-queue-manifest.digest";
 export const RemoteManifestSha256File = ".job-queue-manifest.sha256";
 export const RemoteLockFile = ".job-queue-slot.lock";
 
-/** Prune expression matching `isExcludedSyncPath` in remote-sync.ts (keeps bin/obj/StackLinqEmbedded warm). */
-const RemoteFindPruneExpr =
-  `\\( -path './.git' -o -path './tmp' -o -path './TestResults' -o -path './BenchmarkDotNet.Artifacts' ` +
-  `-o -path './scratch' -o -path './.vs' -o -path './.claude/worktrees' ` +
-  `-o -path './src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded' ` +
-  `-o -path './${RemoteManifestDigestFile}' -o -path './${RemoteManifestSha256File}' -o -path './${RemoteLockFile}' ` +
-  `-o -name 'bin' -o -name 'obj' -o -name 'node_modules' \\) -prune -o ` +
-  `\\( -type f ! -name '*.received.*' ! -name '*.log' ! -name '*.user' -print0 \\)`;
+const RemoteMetadataFiles = [RemoteManifestDigestFile, RemoteManifestSha256File, RemoteLockFile] as const;
+
+function syncRulesOf(remoteRules: ResolvedRemoteRules): RemoteSyncRules {
+  return {
+    excludePrefixes: remoteRules.syncExcludePrefixes,
+    excludeFindNames: remoteRules.syncExcludeFindNames,
+  };
+}
+
+function buildCleanupLines(remoteRules: ResolvedRemoteRules): string[] {
+  const lines: string[] = [];
+  for (const rule of remoteRules.failureArtifacts) {
+    if (rule.cleanBeforeRun && rule.searchDirs.length > 0) {
+      const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
+      lines.push(`find ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`);
+    }
+  }
+  for (const rule of remoteRules.crashSummaries) {
+    if (rule.cleanBeforeRun && rule.searchDirs.length > 0) {
+      const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
+      lines.push(`find ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`);
+    }
+  }
+  return lines;
+}
 
 function tarBinary(): string {
   return process.platform === "win32" ? "tar.exe" : "tar";
@@ -81,20 +100,24 @@ function runSshCapture(remote: RemoteSpec, script: string): Promise<{ code: numb
 }
 
 /** Fetches the remote workspace's current file->sha256 map when local cache is missing or out of sync. */
-async function fetchRemoteManifest(remote: RemoteSpec): Promise<Record<string, string> | null> {
+async function fetchRemoteManifest(
+  remote: RemoteSpec,
+  syncRules: RemoteSyncRules,
+): Promise<Record<string, string> | null> {
   const ws = bashWorkspaceExpr(remote.workspace);
+  const pruneExpr = buildRemoteFindPruneExpr(syncRules, RemoteMetadataFiles);
   const script = [
     "set -euo pipefail",
     `WS=${ws}`,
     `mkdir -p "$WS"`,
     `cd "$WS"`,
-    `find . ${RemoteFindPruneExpr} | xargs -0 -r sha256sum`,
+    `find . ${pruneExpr} | xargs -0 -r sha256sum`,
   ].join("\n");
   const res = await runSshCapture(remote, script);
   if (res.code !== 0) {
     return null;
   }
-  return parseRemoteSha256Output(res.stdout);
+  return parseRemoteSha256Output(res.stdout, syncRules);
 }
 
 /**
@@ -258,16 +281,17 @@ async function applyDeltaSync(
 }
 
 /**
- * Pulls back failed Verify `*.received.*` files and explicit `collectPaths` via length-framed regular-file streaming
- * and writes them strictly through `validateAndWriteArtifacts` (no `tar -xf` on Windows). Also reports any aborted
- * test names recorded by VSTest `--blame` `Sequence_*.xml` when `allowReceived` is true (non-zero exit).
+ * Pulls back plugin-configured failure artifacts and explicit `collectPaths` via length-framed regular-file streaming
+ * and writes them strictly through `validateAndWriteArtifacts` (no `tar -xf` on Windows). Also runs any plugin
+ * crash-summary parsers in memory on failure without writing those diagnostic files to the local worktree.
  */
 async function pullValidatedArtifacts(
   remote: RemoteSpec,
   worktree: string,
-  allowReceived: boolean,
+  allowFailureArtifacts: boolean,
   knownLocalDirs: ReadonlySet<string>,
   collectPaths: readonly CollectPathSpec[],
+  remoteRules: ResolvedRemoteRules,
 ): Promise<{ written: number; rejected: number; bytes: number; crashedTests: string[] }> {
   const ws = bashWorkspaceExpr(remote.workspace);
   const collectLines = collectPaths.map((spec) =>
@@ -275,8 +299,30 @@ async function pullValidatedArtifacts(
       ? `if [ -f ${bashQuote(spec.path)} ] && [ ! -L ${bashQuote(spec.path)} ]; then printf '%s\\0' ${bashQuote(spec.path)}; fi`
       : `if [ -d ${bashQuote(spec.path)} ] && [ ! -L ${bashQuote(spec.path)} ]; then find ${bashQuote(spec.path)} -type f ! -type l ! -name '*.dmp' -print0 2>/dev/null || true; fi`,
   );
+  const failureFindLines: string[] = [];
+  if (allowFailureArtifacts) {
+    for (const rule of remoteRules.failureArtifacts) {
+      if (rule.searchDirs.length > 0) {
+        const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
+        failureFindLines.push(
+          `find ${dirs} -type f ! -type l -name ${bashQuote(rule.findName)} -print0 2>/dev/null || true`,
+        );
+      }
+    }
+    for (const rule of remoteRules.crashSummaries) {
+      if (rule.searchDirs.length > 0) {
+        const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
+        failureFindLines.push(
+          `find ${dirs} -type f ! -type l -name ${bashQuote(rule.findName)} -print0 2>/dev/null || true`,
+        );
+      }
+    }
+  }
 
-  // Also collect Sequence_*.xml on failure to report native crash / OOM test attribution
+  if (failureFindLines.length === 0 && collectLines.length === 0) {
+    return { written: 0, rejected: 0, bytes: 0, crashedTests: [] };
+  }
+
   const script = [
     "set -euo pipefail",
     `WS=${ws}`,
@@ -290,8 +336,7 @@ async function pullValidatedArtifacts(
     '  cat "$f"',
     "}",
     "{",
-    allowReceived ? "  find tests src -type f ! -type l -name '*.received.*' -print0 2>/dev/null || true" : "",
-    allowReceived ? "  find TestResults -type f ! -type l -name 'Sequence_*.xml' -print0 2>/dev/null || true" : "",
+    ...failureFindLines.map((l) => `  ${l}`),
     ...collectLines.map((l) => `  ${l}`),
     "} | while IFS= read -r -d '' f; do emit_file \"$f\"; done",
   ]
@@ -332,7 +377,7 @@ async function pullValidatedArtifacts(
     return { written: 0, rejected: 0, bytes: 0, crashedTests: [] };
   }
 
-  // Extract crashed test names from any Sequence_*.xml frames in memory (never written to worktree unless requested)
+  // Extract crashed test names from plugin crash-summary frames in memory (never written to worktree unless requested)
   const crashedTests: string[] = [];
   const filteredFrames: Buffer[] = [];
   let offset = 0;
@@ -355,9 +400,12 @@ async function pullValidatedArtifacts(
     if (end > payload.length) {
       break;
     }
-    if (/^TestResults\/.*Sequence_[^/]+\.xml$/i.test(rel)) {
-      const xml = payload.subarray(nl + 1, end).toString("utf8");
-      crashedTests.push(...parseSequenceXmlInProgress(xml));
+    const crashRule = allowFailureArtifacts
+      ? remoteRules.crashSummaries.find((rule) => rule.pathPattern.test(rel))
+      : undefined;
+    if (crashRule !== undefined) {
+      const content = payload.subarray(nl + 1, end).toString("utf8");
+      crashedTests.push(...crashRule.parse(content));
     } else {
       filteredFrames.push(payload.subarray(offset, end));
     }
@@ -366,9 +414,10 @@ async function pullValidatedArtifacts(
 
   const writeResult = validateAndWriteArtifacts(Buffer.concat(filteredFrames), {
     worktree,
-    allowReceived,
+    allowReceived: allowFailureArtifacts,
     knownLocalDirs,
     collectPaths,
+    failureArtifacts: remoteRules.failureArtifacts,
     warn: prefix,
   });
 
@@ -388,24 +437,27 @@ export interface RemoteRunResult extends ShellResult {
 /**
  * Syncs `plan.worktree` to `remote`, verifies source integrity (exact file-set + `sha256sum --quiet -c`) under
  * remote flock, runs `plan.bashCommand` with lossless EOF-sentinel FIFO drain and sanitized live stdio, and pulls back
- * validated `*.received.*` / explicit output artifacts without `tar -xf`.
+ * validated failure artifacts / explicit output artifacts without `tar -xf`.
  */
 export async function executeRemotePlan(
   remote: RemoteSpec,
   plan: RemoteCommandPlan,
   onChild: (child: ChildProcess) => void,
   stateDir = resolveStateDirectory(),
+  remoteRules: ResolvedRemoteRules = EmptyRemoteRules,
 ): Promise<RemoteRunResult> {
   const syncStart = performance.now();
   const statCachePath = path.join(stateDir, "offload-stat-cache.json");
   const remoteCachePath = path.join(stateDir, `remote-manifest-${remote.name}.json`);
+  const syncRules = syncRulesOf(remoteRules);
+  const pruneExpr = buildRemoteFindPruneExpr(syncRules, RemoteMetadataFiles);
 
-  const localManifest = collectLocalManifest(plan.worktree, statCachePath);
+  const localManifest = collectLocalManifest(plan.worktree, statCachePath, syncRules);
   const sha256ManifestText = formatSha256Manifest(localManifest);
   const cached = loadRemoteManifestCache(remoteCachePath);
 
   const syncWithFetch = async (): Promise<{ uploaded: number; deleted: number; digest: string } | null> => {
-    const fetched = await fetchRemoteManifest(remote);
+    const fetched = await fetchRemoteManifest(remote, syncRules);
     if (fetched === null) {
       return null;
     }
@@ -495,13 +547,14 @@ export async function executeRemotePlan(
           `EXPECTED_LIST=$(mktemp)`,
           `ACTUAL_LIST=$(mktemp)`,
           `LC_ALL=C awk '{print substr($0, 67)}' ${RemoteManifestSha256File} | LC_ALL=C sort > "$EXPECTED_LIST"`,
-          `find . ${RemoteFindPruneExpr} | tr '\\0' '\\n' | LC_ALL=C sort > "$ACTUAL_LIST"`,
+          `find . ${pruneExpr} | tr '\\0' '\\n' | LC_ALL=C sort > "$ACTUAL_LIST"`,
           `if ! cmp -s "$EXPECTED_LIST" "$ACTUAL_LIST"; then rm -f "$EXPECTED_LIST" "$ACTUAL_LIST"; exit 254; fi`,
           `rm -f "$EXPECTED_LIST" "$ACTUAL_LIST"`,
           `if ! sha256sum --quiet -c ${RemoteManifestSha256File} >/dev/null 2>&1; then exit 254; fi`,
         ].join("\n")
       : "";
 
+    const cleanupLines = buildCleanupLines(remoteRules);
     const execScript = [
       "set -euo pipefail",
       `WS=${ws}`,
@@ -509,8 +562,7 @@ export async function executeRemotePlan(
       "flock 9",
       `cd "$WS"`,
       integrityCheck,
-      "find tests src -name '*.received.*' -delete 2>/dev/null || true",
-      "find TestResults -name 'Sequence_*.xml' -delete 2>/dev/null || true",
+      ...cleanupLines,
       mkdirDirs,
       cdSubdir,
       'export PATH="/usr/local/bin:$HOME/.dotnet:$HOME/.cargo/bin:$PATH"',
@@ -612,7 +664,7 @@ export async function executeRemotePlan(
     return { ...runResult, transportFailed: true };
   }
 
-  // Pull back validated Verify *.received.* (on failure), native crash Sequence_*.xml names, and explicit collectPaths
+  // Pull back validated failure artifacts, crash summaries, and explicit collectPaths
   if (!runResult.signaled && (runResult.code !== 0 || plan.collectPaths.length > 0)) {
     const pulled = await pullValidatedArtifacts(
       remote,
@@ -620,6 +672,7 @@ export async function executeRemotePlan(
       runResult.code !== 0,
       manifestParentDirs(localManifest),
       plan.collectPaths,
+      remoteRules,
     );
     if (pulled.crashedTests.length > 0) {
       prefix(`remote ${remote.name}: test host crashed/aborted while running: ${pulled.crashedTests.join(", ")}`);

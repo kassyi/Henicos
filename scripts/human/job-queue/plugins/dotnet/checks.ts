@@ -16,10 +16,14 @@ import { RunHistory } from "../../history.ts";
 import { resolvePlaces } from "../../path-places.ts";
 import type { AssertModule, StepKeys } from "../../plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../../plugin-host.ts";
+import { translateForRemote } from "../../remote-command.ts";
+import { validateAndWriteArtifacts } from "../../remote-output.ts";
+import { isExcludedSyncPath } from "../../remote-sync.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../../self-test-client.ts";
 import { resolveWorktree } from "../../system.ts";
 import { shortCommand } from "../../view.ts";
 import dotnetPlugin, { isDotnetTest, selectsCategory } from "./plugin.ts";
+import { parseSequenceXmlInProgress } from "./remote.ts";
 
 const Cpu = "tests/Compiler/App.Cpu";
 const Cuda = "tests/Compiler/App.Cuda";
@@ -870,6 +874,91 @@ function checkClassifyShortNameAndApi(assert: AssertModule): void {
   }
 }
 
+function checkRemoteOffload(assert: AssertModule): void {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-dotnet-remote-"));
+  try {
+    const wtA = path.join(tmp, "wt-main");
+    const wtB = path.join(tmp, "wt-review");
+    fs.mkdirSync(path.join(wtA, ".git"), { recursive: true });
+    fs.mkdirSync(path.join(wtB, ".git"), { recursive: true });
+    const projB = path.join(wtB, "tests", "App.Tests", "App.Tests.csproj");
+    fs.mkdirSync(path.dirname(projB), { recursive: true });
+    fs.writeFileSync(projB, "<Project />");
+
+    const dotnetOnlyHost = new PluginHost([dotnetPlugin], [{}], wtA, () => {});
+    const rules = dotnetOnlyHost.remoteOffload(clientContext("pwsh", wtA));
+
+    const cmd = `dotnet test ${projB} --disable-build-servers --results-directory ${path.join(wtB, "tmp", "trx")} --filter 'FullyQualifiedName~SmokeTests'`;
+    const plan = translateForRemote(cmd, {
+      cwd: wtA,
+      worktree: wtA,
+      shell: "pwsh",
+      places: { [projB]: { root: wtB, ignored: false } },
+      cpus: 4,
+      keepBuildServersWarm: true,
+      env: {},
+      remoteRules: rules,
+    });
+    assert.ok(plan !== null, "dotnet plugin translates cross-worktree dotnet test");
+    assert.strictEqual(path.resolve(plan.worktree), path.resolve(wtB));
+    assert.ok(!plan.bashCommand.includes("--disable-build-servers"), "warm servers strips --disable-build-servers");
+    assert.ok(plan.bashCommand.includes("-m:4"), "injects remote -m:4");
+    assert.ok(plan.bashCommand.includes("--blame"), "auto-attaches lightweight --blame");
+    assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
+    assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
+    assert.strictEqual(plan.env.GSHARP_JOB_QUEUE_MSBUILD_ARGS, "-m:4");
+    assert.strictEqual(plan.note, "4 MSBuild nodes");
+    assert.deepStrictEqual(plan.collectPaths, [{ path: "tmp/trx", kind: "dir" }]);
+
+    // Cold server opt-out preserves --disable-build-servers
+    const coldPlan = translateForRemote(cmd, {
+      cwd: wtA,
+      worktree: wtA,
+      shell: "pwsh",
+      places: { [projB]: { root: wtB, ignored: false } },
+      cpus: 4,
+      keepBuildServersWarm: false,
+      env: {},
+      remoteRules: rules,
+    });
+    assert.ok(coldPlan !== null && coldPlan.bashCommand.includes("--disable-build-servers"));
+
+    // Sync exclusions & failure artifact validation
+    const syncRules = { excludePrefixes: rules.syncExcludePrefixes, excludeFindNames: rules.syncExcludeFindNames };
+    assert.strictEqual(isExcludedSyncPath("tests/Snap.received.cs", syncRules), true);
+    assert.strictEqual(isExcludedSyncPath("TestResults/a.trx", syncRules), true);
+    assert.strictEqual(isExcludedSyncPath("tests/Snap.verified.cs", syncRules), false);
+
+    const frame = (rel: string, content: string): Buffer => {
+      const body = Buffer.from(content, "utf8");
+      return Buffer.concat([Buffer.from(`${rel}\0${body.length}\n`, "utf8"), body]);
+    };
+    fs.mkdirSync(path.join(wtB, "tests", "Snapshots"), { recursive: true });
+    const writeRes = validateAndWriteArtifacts(
+      Buffer.concat([
+        frame("tests/Snapshots/Snap.Foo.received.txt", "actual"),
+        frame("tests/Snapshots/Snap.Foo.verified.txt", "tamper"),
+      ]),
+      {
+        worktree: wtB,
+        allowReceived: true,
+        knownLocalDirs: new Set(["tests/Snapshots"]),
+        collectPaths: [],
+        failureArtifacts: rules.failureArtifacts,
+      },
+    );
+    assert.deepStrictEqual(writeRes.writtenFiles, ["tests/Snapshots/Snap.Foo.received.txt"]);
+    assert.strictEqual(writeRes.rejectedFiles.length, 1);
+
+    // Sequence_*.xml crash parser
+    const xml =
+      '<TestSequence><Test Name="A.Passed" Completed="True" /><Test Name="B.NativeCrash" Completed="False" /></TestSequence>';
+    assert.deepStrictEqual(parseSequenceXmlInProgress(xml), ["B.NativeCrash"]);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   const configWarnings: string[] = [];
   const loaded = loadConfig({
@@ -895,4 +984,5 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkPrepareCommand(assert, host);
   await quietly(() => checkQueuedRunKeysAndEscape(assert, host));
   checkClassifyShortNameAndApi(assert);
+  checkRemoteOffload(assert);
 }

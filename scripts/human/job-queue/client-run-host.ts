@@ -15,6 +15,7 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
+import type { ResolvedRemoteRules } from "./remote-rules.ts";
 import type { RemoteCommandPlan } from "./remote-command.ts";
 import { executeRemotePlan, type RemoteRunResult } from "./remote-runner.ts";
 import type { RemoteSpec } from "./remotes.ts";
@@ -131,6 +132,7 @@ export interface RunHost {
     remote: RemoteSpec,
     plan: RemoteCommandPlan,
     onChild: (child: ChildProcess) => void,
+    remoteRules?: ResolvedRemoteRules,
   ): Promise<RemoteRunResult>;
   /**
    * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
@@ -181,8 +183,9 @@ export class ProcessRunHost implements RunHost {
     remote: RemoteSpec,
     plan: RemoteCommandPlan,
     onChild: (child: ChildProcess) => void,
+    remoteRules?: ResolvedRemoteRules,
   ): Promise<RemoteRunResult> {
-    return executeRemotePlan(remote, plan, onChild);
+    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules);
   }
 
   runUnderGpuLock(

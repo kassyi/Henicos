@@ -7,7 +7,7 @@ import * as path from "node:path";
 import { KeepBuildServersWarmVariable, type ShellName } from "./constants.ts";
 import { bare, rawWords, segmentParts } from "./command-reader.ts";
 import type { PathPlace } from "./estimate-key.ts";
-import { limitMsbuildNodes } from "./plugins/dotnet/msbuild-nodes.ts";
+import { EmptyRemoteRules, type ResolvedRemoteRules } from "./remote-rules.ts";
 import type { CollectPathSpec } from "./remote-output.ts";
 
 export interface RemoteCommandPlan {
@@ -17,10 +17,12 @@ export interface RemoteCommandPlan {
   remoteCwdRel: string;
   /** POSIX bash command line to execute inside `<workspace>/<remoteCwdRel>`. */
   bashCommand: string;
-  /** Environment variables parsed from leading assignments + remote defaults. */
+  /** Environment variables parsed from leading assignments + plugin remote defaults. */
   env: Record<string, string>;
-  /** Relative POSIX paths (e.g. --results-directory or redirection targets) to pull back after execution. */
+  /** Relative POSIX paths (e.g. plugin collectDirOptions or redirection targets) to pull back after execution. */
   collectPaths: CollectPathSpec[];
+  /** Optional grant-line note from plugins (e.g. "4 MSBuild nodes"). */
+  note?: string;
 }
 
 export interface TranslateOptions {
@@ -31,6 +33,8 @@ export interface TranslateOptions {
   cpus: number;
   keepBuildServersWarm: boolean;
   env: Readonly<NodeJS.ProcessEnv>;
+  /** Aggregated remote offload rules contributed by active plugins. */
+  remoteRules?: ResolvedRemoteRules;
 }
 
 /** Single-quotes a string for POSIX bash. */
@@ -143,53 +147,32 @@ function splitStatements(command: string, shell: ShellName): { op: "&&" | ";"; t
   return out.length > 0 ? out : null;
 }
 
-/** Options whose next argument is a filesystem path (translated to relative POSIX when inside the target worktree). */
-const PathValueOptions = new Set([
-  "--results-directory",
-  "-s",
-  "--settings",
-  "-o",
-  "--output",
-  "--artifacts-path",
-  "--project",
-  "-p", // note: dotnet run -p <proj>, while dotnet test -p is --property (handled below)
-]);
+/** Core generic options whose next argument is a filesystem path. Plugins extend this via `pathValueOptions`. */
+const BasePathValueOptions = new Set(["-o", "--output"]);
 
-/** Options whose next argument is NOT a path (e.g. --filter, -c, -f, -e, --logger). */
-const NonPathValueOptions = new Set([
-  "--filter",
-  "-c",
-  "--configuration",
-  "-f",
-  "--framework",
-  "-r",
-  "--runtime",
-  "-a",
-  "--arch",
-  "--os",
-  "-v",
-  "--verbosity",
-  "-l",
-  "--logger",
-  "--collect",
-  "-e",
-  "--environment",
-  "--blame-crash-dump-type",
-  "--blame-hang-dump-type",
-  "--blame-hang-timeout",
-  "--property",
-]);
+/** Core generic options whose next argument is NOT a path. Plugins extend this via `nonPathValueOptions`. */
+const BaseNonPathValueOptions = new Set(["-e", "--environment"]);
 
-/** Looks like a filesystem path argument (project file, directory with slash/backslash, or existing file). */
-function looksLikePath(token: string, cwd: string): boolean {
+/** Core generic file extensions recognized as path-like tokens. Plugins extend this via `pathExtensions`. */
+const BasePathExtensions = new Set(["js", "ts", "json", "yml", "yaml"]);
+
+/** Core generic programs allowed without plugins. Plugins extend this via `allowedPrograms`. */
+const BaseAllowedPrograms = new Set(["node", "echo"]);
+
+/** Looks like a filesystem path argument (slash/backslash, recognized extension, or existing file). */
+function looksLikePath(token: string, cwd: string, extraExtensions: ReadonlySet<string>): boolean {
   if (token === "" || token.startsWith("-")) {
     return false;
   }
   if (/^[A-Za-z]:[\\/]/.test(token) || token.includes("\\") || token.includes("/")) {
     return true;
   }
-  if (/\.(csproj|fsproj|vbproj|sln|slnx|slnf|runsettings|js|ts|json|yml|yaml|cs)$/i.test(token)) {
-    return true;
+  const dot = token.lastIndexOf(".");
+  if (dot > 0 && dot < token.length - 1) {
+    const ext = token.slice(dot + 1).toLowerCase();
+    if (BasePathExtensions.has(ext) || extraExtensions.has(ext)) {
+      return true;
+    }
   }
   return fs.existsSync(path.resolve(cwd, token));
 }
@@ -206,8 +189,6 @@ function findWorktreeRoot(dir: string): string {
     }
   }
 }
-
-const AllowedPrograms = new Set(["dotnet", "just", "node", "echo"]);
 
 /**
  * Translates `command` into a remote Linux bash execution plan, or returns null when the command cannot be
@@ -226,8 +207,14 @@ export function translateForRemote(command: string, options: TranslateOptions): 
     return null;
   }
 
+  const rules = options.remoteRules ?? EmptyRemoteRules;
   const env: Record<string, string> = Object.assign(Object.create(null) as Record<string, string>, leading.env);
   const warmServers = options.keepBuildServersWarm && options.env[KeepBuildServersWarmVariable] !== "0";
+
+  const isAllowedProgram = (prog: string): boolean => BaseAllowedPrograms.has(prog) || rules.allowedPrograms.has(prog);
+  const isPathOption = (opt: string): boolean => BasePathValueOptions.has(opt) || rules.pathValueOptions.has(opt);
+  const isNonPathOption = (opt: string): boolean =>
+    BaseNonPathValueOptions.has(opt) || rules.nonPathValueOptions.has(opt);
 
   // Pass 1: track cwd, validate every program, and determine the single target worktree root
   let currentCwd = path.resolve(options.cwd);
@@ -276,7 +263,7 @@ export function translateForRemote(command: string, options: TranslateOptions): 
       continue;
     }
 
-    if (!AllowedPrograms.has(progLower)) {
+    if (!isAllowedProgram(progLower)) {
       return null;
     }
 
@@ -299,13 +286,15 @@ export function translateForRemote(command: string, options: TranslateOptions): 
         break;
       }
       const prev = i > 1 ? bare(words[i - 1] as string).toLowerCase() : "";
-      if (NonPathValueOptions.has(prev)) {
+      const optionDecision = prev !== "" ? rules.isOptionValuePath(progLower, subcommand, prev) : undefined;
+      if (optionDecision === false || (optionDecision === undefined && isNonPathOption(prev))) {
         continue;
       }
-      if (prev === "-p" && progLower === "dotnet" && subcommand !== "run") {
-        continue;
-      }
-      if (PathValueOptions.has(prev) || (progLower !== "echo" && looksLikePath(token, currentCwd))) {
+      if (
+        optionDecision === true ||
+        isPathOption(prev) ||
+        (progLower !== "echo" && looksLikePath(token, currentCwd, rules.pathExtensions))
+      ) {
         const abs = path.resolve(currentCwd, token);
         const place = options.places[abs];
         if (place !== undefined) {
@@ -356,7 +345,7 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   const targetWorktree = [...uniqueRoots.values()][0] as string;
 
   // Compute remote working directory relative to targetWorktree (if caller's cwd is inside targetWorktree, keep it;
-  // otherwise run from the target worktree root — e.g. main checkout running `dotnet test <other-worktree>/tests/...`)
+  // otherwise run from the target worktree root — e.g. main checkout running a command targeting another worktree)
   const remoteCwdRel = isInside(targetWorktree, currentCwd)
     ? relativePosix(targetWorktree, currentCwd).replace(/^\.$/, "")
     : "";
@@ -375,66 +364,53 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   for (let s = 0; s < parsedStatements.length; s++) {
     const stmt = parsedStatements[s] as (typeof parsedStatements)[number];
     const subcommand = (stmt.words[1] ? bare(stmt.words[1]) : "").toLowerCase();
-    const outWords: string[] = [stmt.program];
-    let hasBlame = false;
-    let hasListTests = false;
-    let seenDoubleDash = false;
+    const translatedArgs: string[] = [];
 
     for (let i = 1; i < stmt.words.length; i++) {
       const raw = stmt.words[i] as string;
       const token = bare(raw);
 
       if (token === "--") {
-        seenDoubleDash = true;
-        if (stmt.program === "dotnet" && subcommand === "test" && !hasBlame && !hasListTests) {
-          outWords.push("--blame");
-          hasBlame = true;
-        }
-        outWords.push("--", ...stmt.words.slice(i + 1).map((w) => bashQuote(bare(w))));
+        translatedArgs.push("--", ...stmt.words.slice(i + 1).map((w) => bare(w)));
         break;
       }
 
-      const lower = token.toLowerCase();
-      if (lower === "--blame" || lower.startsWith("--blame-")) {
-        hasBlame = true;
-      } else if (lower === "--list-tests" || lower === "-t") {
-        hasListTests = true;
-      }
-
-      // Optionally keep VBCSCompiler warm on Linux by dropping Windows file-lock workarounds
-      if (warmServers && stmt.program === "dotnet") {
-        if (lower === "--disable-build-servers" || /^[-/](nodereuse|nr)[:=]false$/.test(lower)) {
-          continue;
-        }
-      }
-
       const prev = i > 1 ? bare(stmt.words[i - 1] as string).toLowerCase() : "";
-      const isNonPathVal =
-        NonPathValueOptions.has(prev) || (prev === "-p" && stmt.program === "dotnet" && subcommand !== "run");
+      const optionDecision = prev !== "" ? rules.isOptionValuePath(stmt.program, subcommand, prev) : undefined;
+      const isNonPathVal = optionDecision === false || (optionDecision === undefined && isNonPathOption(prev));
 
       if (
         !isNonPathVal &&
-        (PathValueOptions.has(prev) || (stmt.program !== "echo" && looksLikePath(token, stmt.cwd)))
+        (optionDecision === true ||
+          isPathOption(prev) ||
+          (stmt.program !== "echo" && looksLikePath(token, stmt.cwd, rules.pathExtensions)))
       ) {
         const abs = path.resolve(stmt.cwd, token);
         if (!isInside(targetWorktree, abs)) {
           return null;
         }
         const relToBase = path.relative(remoteBaseDir, abs).split(path.sep).join("/") || ".";
-        outWords.push(bashQuote(relToBase));
-        if (prev === "--results-directory") {
+        translatedArgs.push(relToBase);
+        if (rules.collectDirOptions.has(prev)) {
           addCollect(relativePosix(targetWorktree, abs), "dir");
         }
       } else {
-        outWords.push(bashQuote(token));
+        translatedArgs.push(token);
       }
     }
 
-    // Automatically attach lightweight `--blame` to remote `dotnet test` so native C++ SIGSEGV/OOM crashes record
-    // the exact in-progress test in TestResults/**/Sequence_*.xml without taking large crash dumps.
-    if (!seenDoubleDash && stmt.program === "dotnet" && subcommand === "test" && !hasBlame && !hasListTests) {
-      outWords.push("--blame");
+    const rewritten = rules.rewriteStatement({
+      program: stmt.program,
+      subcommand,
+      args: translatedArgs,
+      keepBuildServersWarm: warmServers,
+      cpus: options.cpus,
+    });
+    const finalArgs = rewritten.args ?? translatedArgs;
+    for (const extraCollect of rewritten.collectPaths ?? []) {
+      addCollect(extraCollect.path, extraCollect.kind);
     }
+    const outWords: string[] = [stmt.program, ...finalArgs.map((arg) => bashQuote(arg))];
 
     // Rewrite output redirections (e.g., `> out.log`, `2>&1`)
     const outRedirs: string[] = [];
@@ -469,25 +445,26 @@ export function translateForRemote(command: string, options: TranslateOptions): 
     bashParts.push(core);
   }
 
-  let bashCommand = bashParts.join(" ");
-  if (options.cpus > 0) {
-    bashCommand = limitMsbuildNodes(bashCommand, options.cpus);
+  // Apply plugin default environment variables (without overriding caller-specified values)
+  for (const [key, value] of Object.entries(rules.defaultEnv)) {
+    env[key] ??= value;
   }
 
-  // Ensure standard headless CI/test environment variables on the remote Linux server
-  env.DiffEngine_Disabled ??= "true";
-  env.GSHARP_TEST_NO_CUDA ??= "1";
-  if (options.cpus > 0) {
-    env.GSHARP_JOB_QUEUE_MSBUILD_ARGS = `-m:${options.cpus}`;
-    env.MSBUILDCORELIMIT ??= String(options.cpus);
-    env.MSBUILDNODECOREALLOCATIONWEIGHT ??= "100";
+  const prepared = rules.prepareRemoteCommand(bashParts.join(" "), {
+    cpus: options.cpus,
+    keepBuildServersWarm: warmServers,
+    env,
+  });
+  for (const [key, value] of Object.entries(prepared.env)) {
+    env[key] = value;
   }
 
   return {
     worktree: targetWorktree,
     remoteCwdRel,
-    bashCommand,
+    bashCommand: prepared.command,
     env,
     collectPaths: [...collectMap.values()],
+    ...(prepared.note !== undefined ? { note: prepared.note } : {}),
   };
 }

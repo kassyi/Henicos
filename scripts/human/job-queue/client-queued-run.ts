@@ -346,6 +346,7 @@ export class QueuedRun {
     if (remoteName !== undefined && this.host.runRemoteCommand !== undefined) {
       const remoteSpec = (options.remotes ?? []).find((r) => r.name === remoteName);
       const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
+      const remoteRules = this.plugins?.remoteOffload(this.contextOf(this.plugins));
       const plan =
         remoteSpec === undefined
           ? null
@@ -357,13 +358,15 @@ export class QueuedRun {
               cpus,
               keepBuildServersWarm: remoteSpec.keepBuildServersWarm,
               env: process.env,
+              remoteRules,
             });
       if (remoteSpec !== undefined && plan !== null) {
         this.grantedRemote = remoteName;
+        const remoteNote = plan.note ?? `${cpus} cpus`;
         prefix(
-          `granted ${formatJobId(jobId)} on remote ${remoteName} (${remoteSpec.host}) after ${waited}s (${cpus} MSBuild nodes)`,
+          `granted ${formatJobId(jobId)} on remote ${remoteName} (${remoteSpec.host}) after ${waited}s (${remoteNote})`,
         );
-        const remoteResult = await this.host.runRemoteCommand(remoteSpec, plan, (c) => this.started(c));
+        const remoteResult = await this.host.runRemoteCommand(remoteSpec, plan, (c) => this.started(c), remoteRules);
         if (!remoteResult.transportFailed || options.remote === true) {
           const end = commandEnd(remoteResult, this.cancelRequested);
           this.finish(end.exitCode, end.completed, end.cancelled);
@@ -736,6 +739,7 @@ export class QueuedRun {
           this.offload = "never";
         } else {
           const shell = CommandShell.resolve(options.shell).name;
+          const remoteRules = plugins.remoteOffload(context(plugins));
           const canTranslate =
             (classified.offloadable === true || options.remote === true) &&
             translateForRemote(options.command, {
@@ -746,6 +750,7 @@ export class QueuedRun {
               cpus: enabledRemotes[0]?.cpus ?? 1,
               keepBuildServersWarm: enabledRemotes[0]?.keepBuildServersWarm ?? true,
               env: process.env,
+              remoteRules,
             }) !== null;
           if (options.remote === true && !canTranslate) {
             prefix("--remote requested, but this command cannot be safely translated for remote Linux execution");

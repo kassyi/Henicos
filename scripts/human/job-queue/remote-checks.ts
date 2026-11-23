@@ -7,10 +7,12 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { loadConfig, loadLocalRemotesConfig, LocalRemotesFileName, validateConfig } from "./config.ts";
 import { RunHistory } from "./history.ts";
-import type { AssertModule } from "./plugin-api.ts";
+import { PluginApiVersion, type AssertModule, type QueuePlugin } from "./plugin-api.ts";
+import { PluginHost } from "./plugin-host.ts";
 import { translateForRemote } from "./remote-command.ts";
-import { RemoteStreamSanitizer, parseSequenceXmlInProgress, validateAndWriteArtifacts } from "./remote-output.ts";
+import { RemoteStreamSanitizer, validateAndWriteArtifacts } from "./remote-output.ts";
 import {
+  buildRemoteFindPruneExpr,
   diffManifests,
   formatSha256Manifest,
   isExcludedSyncPath,
@@ -181,59 +183,104 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       const wtB = path.join(tmp, "wt-review");
       fs.mkdirSync(path.join(wtA, ".git"), { recursive: true });
       fs.mkdirSync(path.join(wtB, ".git"), { recursive: true });
-      const projB = path.join(wtB, "tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Kassyi.GSharp.Tests.Cpu.csproj");
-      fs.mkdirSync(path.dirname(projB), { recursive: true });
-      fs.writeFileSync(projB, "<Project />");
+      const scriptB = path.join(wtB, "scripts", "run-tests.js");
+      fs.mkdirSync(path.dirname(scriptB), { recursive: true });
+      fs.writeFileSync(scriptB, "console.log('ok');");
 
-      // Caller in wtA passes absolute path to wtB's csproj: must sync wtB, NOT wtA!
-      const cmd = `$env:DiffEngine_Disabled='true'; dotnet test ${projB} --disable-build-servers --filter 'FullyQualifiedName~WarpStackModelTests'`;
-      const plan = translateForRemote(cmd, {
+      // Without plugins, generic core allows `node` and `echo`, and rejects ecosystem-specific tools like `dotnet`
+      const outB = path.join(wtB, "tmp", "out.json");
+      const coreNodePlan = translateForRemote(`$env:CI='true'; node ${scriptB} --output ${outB}`, {
         cwd: wtA,
         worktree: wtA,
         shell: "pwsh",
-        places: { [projB]: { root: wtB, ignored: false } },
+        places: { [scriptB]: { root: wtB, ignored: false }, [outB]: { root: wtB, ignored: false } },
         cpus: 4,
         keepBuildServersWarm: true,
         env: {},
       });
-      assert.ok(plan !== null, "cross-worktree single-target command translates");
-      assert.strictEqual(path.resolve(plan.worktree), path.resolve(wtB));
-      assert.strictEqual(plan.remoteCwdRel, "");
-      assert.ok(!plan.bashCommand.includes("--disable-build-servers"), "warm servers strips --disable-build-servers");
-      assert.ok(plan.bashCommand.includes("-m:4"), "injects remote -m:4");
-      assert.ok(
-        plan.bashCommand.includes("tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj"),
-        "rewrites Windows path to POSIX relative path",
-      );
-      assert.ok(plan.bashCommand.includes("FullyQualifiedName~WarpStackModelTests"), "keeps --filter intact");
-      assert.ok(plan.bashCommand.includes("--blame"), "auto-attaches lightweight --blame for crash attribution");
-      assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
-      assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
-      assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
+      assert.ok(coreNodePlan !== null, "core translates cross-worktree node command without plugins");
+      assert.strictEqual(path.resolve(coreNodePlan.worktree), path.resolve(wtB));
+      assert.strictEqual(coreNodePlan.remoteCwdRel, "");
+      assert.ok(coreNodePlan.bashCommand.includes("scripts/run-tests.js"));
+      assert.strictEqual(coreNodePlan.env.CI, "true");
+      assert.strictEqual(coreNodePlan.env.GSHARP_TEST_NO_CUDA, undefined, "core has no Henicos env hardcode");
+      assert.strictEqual(coreNodePlan.env.MSBUILDCORELIMIT, undefined, "core has no MSBuild env hardcode");
 
-      // Opt-out of warm servers preserves --disable-build-servers
-      const coldPlan = translateForRemote(cmd, {
+      assert.strictEqual(
+        translateForRemote("dotnet test App.csproj", {
+          cwd: wtB,
+          worktree: wtB,
+          shell: "pwsh",
+          places: {},
+          cpus: 4,
+          keepBuildServersWarm: true,
+          env: {},
+        }),
+        null,
+        "core without plugins does not hardcode dotnet as an allowed program",
+      );
+
+      // Plugin-contributed remote rules work for any ecosystem (e.g. cargo)
+      const cargoPlugin: QueuePlugin = {
+        name: "cargo",
+        apiVersion: PluginApiVersion,
+        remoteOffload: () => ({
+          allowedPrograms: ["cargo"],
+          pathValueOptions: ["--manifest-path"],
+          nonPathValueOptions: ["--filter"],
+          pathExtensions: ["toml"],
+          defaultEnv: { CARGO_TERM_COLOR: "always" },
+          rewriteStatement: (stmt) =>
+            stmt.program === "cargo" && stmt.subcommand === "test"
+              ? { args: [...stmt.args, "--nocapture"] }
+              : undefined,
+          prepareRemoteCommand: (command, grant) => ({
+            command,
+            env: { CARGO_BUILD_JOBS: String(grant.cpus) },
+            note: `${grant.cpus} cargo jobs`,
+          }),
+        }),
+      };
+      const cargoHost = new PluginHost([cargoPlugin], [{}], wtA, () => {});
+      const cargoRules = cargoHost.remoteOffload({
+        cwd: wtA,
+        worktree: wtA,
+        configRoot: wtA,
+        shell: "pwsh",
+        env: {},
+        log: () => {},
+      });
+      const manifestB = path.join(wtB, "Cargo.toml");
+      fs.writeFileSync(manifestB, "[package]\nname = 'demo'\n");
+      const cargoPlan = translateForRemote(`cargo test --manifest-path ${manifestB} --filter foo`, {
         cwd: wtA,
         worktree: wtA,
         shell: "pwsh",
-        places: { [projB]: { root: wtB, ignored: false } },
+        places: { [manifestB]: { root: wtB, ignored: false } },
         cpus: 4,
-        keepBuildServersWarm: false,
+        keepBuildServersWarm: true,
         env: {},
+        remoteRules: cargoRules,
       });
-      assert.ok(coldPlan !== null && coldPlan.bashCommand.includes("--disable-build-servers"));
+      assert.ok(cargoPlan !== null, "plugin-contributed cargo command translates");
+      assert.strictEqual(path.resolve(cargoPlan.worktree), path.resolve(wtB));
+      assert.ok(cargoPlan.bashCommand.includes("--manifest-path Cargo.toml"));
+      assert.ok(cargoPlan.bashCommand.includes("--nocapture"));
+      assert.strictEqual(cargoPlan.env.CARGO_TERM_COLOR, "always");
+      assert.strictEqual(cargoPlan.env.CARGO_BUILD_JOBS, "4");
+      assert.strictEqual(cargoPlan.note, "4 cargo jobs");
 
       // Spanning two different worktrees must return null (fail-closed)
-      const projA = path.join(wtA, "tests", "A.csproj");
-      fs.mkdirSync(path.dirname(projA), { recursive: true });
-      fs.writeFileSync(projA, "<Project />");
-      const multi = translateForRemote(`dotnet test ${projA} && dotnet test ${projB}`, {
+      const scriptA = path.join(wtA, "scripts", "a.js");
+      fs.mkdirSync(path.dirname(scriptA), { recursive: true });
+      fs.writeFileSync(scriptA, "console.log('a');");
+      const multi = translateForRemote(`node ${scriptA} && node ${scriptB}`, {
         cwd: wtA,
         worktree: wtA,
         shell: "pwsh",
         places: {
-          [projA]: { root: wtA, ignored: false },
-          [projB]: { root: wtB, ignored: false },
+          [scriptA]: { root: wtA, ignored: false },
+          [scriptB]: { root: wtB, ignored: false },
         },
         cpus: 4,
         keepBuildServersWarm: true,
@@ -243,11 +290,11 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
 
       // Ignored path or pipe must return null
       assert.strictEqual(
-        translateForRemote(`dotnet test ${projB} | Select-Object -First 5`, {
+        translateForRemote(`node ${scriptB} | Select-Object -First 5`, {
           cwd: wtB,
           worktree: wtB,
           shell: "pwsh",
-          places: { [projB]: { root: wtB, ignored: false } },
+          places: { [scriptB]: { root: wtB, ignored: false } },
           cpus: 4,
           keepBuildServersWarm: true,
           env: {},
@@ -255,11 +302,11 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         null,
       );
       assert.strictEqual(
-        translateForRemote(`dotnet test ${projB}`, {
+        translateForRemote(`node ${scriptB}`, {
           cwd: wtB,
           worktree: wtB,
           shell: "pwsh",
-          places: { [projB]: { root: wtB, ignored: true } },
+          places: { [scriptB]: { root: wtB, ignored: true } },
           cpus: 4,
           keepBuildServersWarm: true,
           env: {},
@@ -279,20 +326,32 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     assert.deepStrictEqual(diff.toDelete, ["src/old.cs"]);
     assert.strictEqual(diff.localDigest, manifestDigest(local));
 
+    // Core generic exclusions
     assert.strictEqual(isExcludedSyncPath("src/Foo/bin/Debug/a.dll"), true);
     assert.strictEqual(isExcludedSyncPath("src/Foo/obj/linux/a.o"), true);
-    assert.strictEqual(isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs"), true);
     assert.strictEqual(isExcludedSyncPath(".claude/worktrees/w1/a.cs"), true);
-    assert.strictEqual(isExcludedSyncPath("tests/Snap.received.cs"), true);
     assert.strictEqual(isExcludedSyncPath("tmp/foo.txt"), true);
-    assert.strictEqual(isExcludedSyncPath("tests/Snap.verified.cs"), false);
+    assert.strictEqual(isExcludedSyncPath("src/debug.log"), true);
     assert.strictEqual(isExcludedSyncPath("src/Compiler/Emit.cs"), false);
+    // Repo-specific and .NET-specific exclusions are NOT hardcoded in core
+    assert.strictEqual(isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs"), false);
+    assert.strictEqual(isExcludedSyncPath("tests/Snap.received.cs"), false);
+
+    // Custom plugin sync rules extend both isExcludedSyncPath and buildRemoteFindPruneExpr consistently
+    const customRules = { excludePrefixes: ["target/", "generated/"], excludeFindNames: ["*.snap.new"] };
+    assert.strictEqual(isExcludedSyncPath("target/debug/app", customRules), true);
+    assert.strictEqual(isExcludedSyncPath("tests/foo.snap.new", customRules), true);
+    const prune = buildRemoteFindPruneExpr(customRules, [".job-queue-slot.lock"]);
+    assert.ok(prune.includes("-path './target'"));
+    assert.ok(prune.includes("-path './generated'"));
+    assert.ok(prune.includes("! -name '*.snap.new'"));
 
     const shaText = formatSha256Manifest({ "b.cs": "2".repeat(64), "a.cs": "1".repeat(64) });
     assert.strictEqual(shaText, `${"1".repeat(64)}  ./a.cs\n${"2".repeat(64)}  ./b.cs\n`);
 
     const parsed = parseRemoteSha256Output(
-      `${"a".repeat(64)}  ./src/Emit.cs\n${"b".repeat(64)}  ./tests/bin/x.dll\n${"c".repeat(64)}  ./tests/A.received.txt\n`,
+      `${"a".repeat(64)}  ./src/Emit.cs\n${"b".repeat(64)}  ./tests/bin/x.dll\n${"c".repeat(64)}  ./tests/A.snap.new\n`,
+      customRules,
     );
     assert.deepStrictEqual(Object.keys(parsed), ["src/Emit.cs"]);
     assert.strictEqual(parsed["src/Emit.cs"], "a".repeat(64));
@@ -333,10 +392,16 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         const body = Buffer.from(content, "utf8");
         return Buffer.concat([Buffer.from(`${rel}\0${body.length}\n`, "utf8"), body]);
       };
+      const customFailureRule = {
+        searchDirs: ["tests"],
+        findName: "*.actual.txt",
+        allowPattern: /^tests\/[A-Za-z0-9_./-]+\.actual\.txt$/,
+        requireKnownLocalDir: true,
+      };
       const payload = Buffer.concat([
-        // Allowed: *.received.txt inside known test directory
-        frame("tests/Snapshots/Snap.Foo.received.txt", "actual output"),
-        // Allowed: .trx inside explicit --results-directory
+        // Allowed: plugin-declared failure artifact inside known test directory
+        frame("tests/Snapshots/Snap.Foo.actual.txt", "actual output"),
+        // Allowed: .trx inside explicit collectPaths
         frame("tmp/trx/run1.trx", "<TestRun />"),
         // Attacks that MUST all be rejected
         frame("../outside.txt", "escape"),
@@ -345,7 +410,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         frame("scripts/human/job-queue.js", "rce"),
         frame("tests/Snapshots/Snap.Foo.verified.txt", "snapshot tamper"),
         frame("tests/Snapshots/Evil.cs", "source tamper"),
-        frame("tests/UnknownDir/Snap.Foo.received.txt", "untracked dir"),
+        frame("tests/UnknownDir/Snap.Foo.actual.txt", "untracked dir"),
         frame("tmp/trx/crash.dmp", "huge dump"),
       ]);
       const result = validateAndWriteArtifacts(payload, {
@@ -353,17 +418,28 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         allowReceived: true,
         knownLocalDirs: new Set(["tests/Snapshots"]),
         collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+        failureArtifacts: [customFailureRule],
       });
-      assert.deepStrictEqual(result.writtenFiles, ["tests/Snapshots/Snap.Foo.received.txt", "tmp/trx/run1.trx"]);
+      assert.deepStrictEqual(result.writtenFiles, ["tests/Snapshots/Snap.Foo.actual.txt", "tmp/trx/run1.trx"]);
       assert.strictEqual(result.rejectedFiles.length, 8, "blocks all 8 unapproved/attack paths");
       assert.strictEqual(
-        fs.readFileSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.received.txt"), "utf8"),
+        fs.readFileSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.actual.txt"), "utf8"),
         "actual output",
       );
       assert.strictEqual(fs.readFileSync(path.join(wt, "tmp", "trx", "run1.trx"), "utf8"), "<TestRun />");
       assert.ok(!fs.existsSync(path.join(tmp, "outside.txt")));
       assert.ok(!fs.existsSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.verified.txt")));
       assert.ok(!fs.existsSync(path.join(wt, "scripts", "human", "job-queue.js")));
+
+      // Without failureArtifacts rules, *.received.txt is NOT implicitly allowed by core
+      const noPluginRules = validateAndWriteArtifacts(frame("tests/Snapshots/Snap.Foo.received.txt", "x"), {
+        worktree: wt,
+        allowReceived: true,
+        knownLocalDirs: new Set(["tests/Snapshots"]),
+        collectPaths: [],
+      });
+      assert.deepStrictEqual(noPluginRules.writtenFiles, []);
+      assert.strictEqual(noPluginRules.rejectedFiles.length, 1);
 
       // Quota enforcement rejects oversized single file
       const big = validateAndWriteArtifacts(frame("tmp/trx/big.trx", "x".repeat(200)), {
@@ -375,11 +451,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       });
       assert.deepStrictEqual(big.writtenFiles, []);
       assert.strictEqual(big.rejectedFiles.length, 1);
-
-      // Sequence_*.xml crash parser
-      const xml =
-        '<TestSequence><Test Name="A.Passed" Completed="True" /><Test Name="B.NativeCrash" Completed="False" /></TestSequence>';
-      assert.deepStrictEqual(parseSequenceXmlInProgress(xml), ["B.NativeCrash"]);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

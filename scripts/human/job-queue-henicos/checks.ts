@@ -15,6 +15,8 @@ import type { TargetDialectModule } from "../job-queue/lib/types.ts";
 import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
 import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
+import { translateForRemote } from "../job-queue/remote-command.ts";
+import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remote-sync.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
@@ -788,6 +790,36 @@ function checkOffloadClassification(assert: AssertModule, host: PluginHost, repo
     ),
     false,
   );
+
+  // Full repo plugin stack contributes Henicos + dotnet + just remote offload rules
+  const rules = host.remoteOffload(ctx);
+  assert.strictEqual(rules.defaultEnv.GSHARP_TEST_NO_CUDA, "1");
+  assert.strictEqual(rules.defaultEnv.DiffEngine_Disabled, "true");
+  assert.ok(rules.allowedPrograms.has("dotnet"));
+  assert.ok(rules.allowedPrograms.has("just"));
+  const syncRules = { excludePrefixes: rules.syncExcludePrefixes, excludeFindNames: rules.syncExcludeFindNames };
+  assert.strictEqual(
+    isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs", syncRules),
+    true,
+  );
+  const prune = buildRemoteFindPruneExpr(syncRules);
+  assert.ok(prune.includes("-path './src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded'"));
+  assert.ok(prune.includes("! -name '*.received.*'"));
+
+  const plan = translateForRemote("just test-differential-cpu", {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    shell: "pwsh",
+    places: {},
+    cpus: 4,
+    keepBuildServersWarm: true,
+    env: {},
+    remoteRules: rules,
+  });
+  assert.ok(plan !== null, "Henicos + just + dotnet plugins translate just test-differential-cpu");
+  assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
+  assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
+  assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
 }
 
 export async function checks(assert: AssertModule): Promise<void> {

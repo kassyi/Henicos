@@ -26,31 +26,105 @@ export interface ManifestDiff {
   localDigest: string;
 }
 
-const ExcludedPrefixes = [
+/** Optional plugin-supplied sync exclusions merged with the core defaults. */
+export interface RemoteSyncRules {
+  readonly excludePrefixes?: readonly string[];
+  readonly excludeFindNames?: readonly string[];
+}
+
+export const BaseExcludedPrefixes: readonly string[] = [
   "tmp/",
-  "TestResults/",
-  "BenchmarkDotNet.Artifacts/",
   "scratch/",
   ".git/",
   ".vs/",
   ".claude/worktrees/",
   "node_modules/",
-  "src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/",
 ];
 const ExcludedSegment = /(?:^|\/)(?:bin|obj|node_modules)\//;
-const ExcludedFile = /(?:\.received\.[^/]+|\.(?:log|user))$/i;
+export const BaseExcludedFindNames: readonly string[] = ["*.log"];
+
+/** Converts a simple `find -name` glob (with `*` and `?`) into a basename regex. */
+export function globNameToRegExp(glob: string): RegExp {
+  const escaped = glob
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*/g, ".*")
+    .replace(/\?/g, ".");
+  return new RegExp(`^${escaped}$`, "i");
+}
+
+function allExcludedPrefixes(rules?: RemoteSyncRules): string[] {
+  const out = [...BaseExcludedPrefixes];
+  if (rules?.excludePrefixes !== undefined) {
+    for (const prefix of rules.excludePrefixes) {
+      const normalized = path.posix.normalize(prefix).replace(/\/+$/, "");
+      if (normalized !== "" && normalized !== "." && !normalized.startsWith("..") && !normalized.startsWith("/")) {
+        const withSlash = `${normalized}/`;
+        if (!out.includes(withSlash)) {
+          out.push(withSlash);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function allExcludedFindNames(rules?: RemoteSyncRules): string[] {
+  const out = [...BaseExcludedFindNames];
+  if (rules?.excludeFindNames !== undefined) {
+    for (const glob of rules.excludeFindNames) {
+      if (glob !== "" && !out.includes(glob)) {
+        out.push(glob);
+      }
+    }
+  }
+  return out;
+}
+
+/** Single-quotes a POSIX shell literal for use inside `find` expressions. */
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+/**
+ * Builds the remote `find . <expr>` prune/print0 expression matching `isExcludedSyncPath` so local and remote
+ * source-file sets stay identical while keeping build outputs warm.
+ */
+export function buildRemoteFindPruneExpr(rules?: RemoteSyncRules, extraRootFiles: readonly string[] = []): string {
+  const pruneTerms: string[] = [];
+  for (const prefix of allExcludedPrefixes(rules)) {
+    const dir = prefix.replace(/\/+$/, "");
+    pruneTerms.push(`-path ${shellQuote(`./${dir}`)}`);
+  }
+  for (const file of extraRootFiles) {
+    pruneTerms.push(`-path ${shellQuote(`./${file}`)}`);
+  }
+  pruneTerms.push("-name 'bin'", "-name 'obj'", "-name 'node_modules'");
+  const nameNegations = allExcludedFindNames(rules)
+    .map((glob) => `! -name ${shellQuote(glob)}`)
+    .join(" ");
+  return `\\( ${pruneTerms.join(" -o ")} \\) -prune -o \\( -type f ${nameNegations} -print0 \\)`;
+}
 
 /** True when a worktree-relative POSIX path should be excluded from remote source sync. */
-export function isExcludedSyncPath(relPosix: string): boolean {
+export function isExcludedSyncPath(relPosix: string, rules?: RemoteSyncRules): boolean {
   if (relPosix === "" || relPosix.startsWith("..") || relPosix.startsWith("/")) {
     return true;
   }
-  for (const prefix of ExcludedPrefixes) {
+  for (const prefix of allExcludedPrefixes(rules)) {
     if (relPosix.startsWith(prefix)) {
       return true;
     }
   }
-  return ExcludedSegment.test(relPosix) || ExcludedFile.test(relPosix);
+  if (ExcludedSegment.test(relPosix)) {
+    return true;
+  }
+  const base = path.posix.basename(relPosix);
+  for (const glob of allExcludedFindNames(rules)) {
+    if (globNameToRegExp(glob).test(base)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Deterministic `sha256sum -c` manifest text (`<hex>  ./<rel>\n`) sorted by path. */
@@ -111,7 +185,7 @@ export function diffManifests(
 }
 
 /** Parses `sha256sum` output (`<hex>  ./<rel>` or `<hex>  <rel>`) into a relPosix -> sha256 map. */
-export function parseRemoteSha256Output(stdout: string): Record<string, string> {
+export function parseRemoteSha256Output(stdout: string, rules?: RemoteSyncRules): Record<string, string> {
   const files = Object.create(null) as Record<string, string>;
   for (const rawLine of stdout.split("\n")) {
     const line = rawLine.replace(/\r$/, "");
@@ -129,7 +203,7 @@ export function parseRemoteSha256Output(stdout: string): Record<string, string> 
     if (escaped) {
       rel = rel.replace(/\\([\\n])/g, (_, ch: string) => (ch === "n" ? "\n" : "\\"));
     }
-    if (!isExcludedSyncPath(rel)) {
+    if (!isExcludedSyncPath(rel, rules)) {
       files[rel] = sha;
     }
   }
@@ -179,7 +253,11 @@ export function saveRemoteManifestCache(cachePath: string, files: Record<string,
  * Collects the SHA-256 manifest of all tracked + untracked (non-ignored) files in `worktree`, using an on-disk
  * `(size, mtimeMs) -> sha256` stat cache so unchanged files are not re-read.
  */
-export function collectLocalManifest(worktree: string, statCachePath: string): Record<string, string> {
+export function collectLocalManifest(
+  worktree: string,
+  statCachePath: string,
+  rules?: RemoteSyncRules,
+): Record<string, string> {
   const stdout = execFileSync("git", ["ls-files", "-co", "--exclude-standard", "-z"], {
     cwd: worktree,
     maxBuffer: 64 * 1024 * 1024,
@@ -196,7 +274,7 @@ export function collectLocalManifest(worktree: string, statCachePath: string): R
       continue;
     }
     const rel = entry.split("\\").join("/");
-    if (isExcludedSyncPath(rel)) {
+    if (isExcludedSyncPath(rel, rules)) {
       continue;
     }
     const abs = path.join(worktree, rel);

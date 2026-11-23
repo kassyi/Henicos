@@ -3,11 +3,11 @@
 //      (\x1b[...m) while stripping OSC (clipboard/title), DCS/APC/PM/SOS, cursor-movement CSI, BEL, BS, and C1 controls.
 //   2. validateAndWriteArtifacts: zero-tar 6-gate validated receiver for length-framed files (<path>\0<bytes>\n<payload>),
 //      enforcing strict path/extension allowlists, symlink/junction realpath guards, and hard size/count quotas.
-//   3. parseSequenceXmlInProgress: extracts aborted/crashed test names from VSTest `--blame` Sequence_*.xml files.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { StringDecoder } from "node:string_decoder";
+import type { RemoteFailureArtifactRule } from "./plugin-api.ts";
 
 export interface CollectPathSpec {
   /** Worktree-relative normalized POSIX path (no leading/trailing slash). */
@@ -126,7 +126,6 @@ const ForbiddenSegment = /(?:^|\/)(?:bin|obj|node_modules)\//;
 const VerifiedSnapshotPattern = /\.verified\.[^/]+$/i;
 const ForbiddenExtension =
   /\.(?:csproj|fsproj|vbproj|props|targets|sln|slnx|slnf|js|mjs|cjs|ts|mts|cts|ps1|psm1|sh|bash|cmd|bat|exe|dll|so|dylib|dmp|pdb|reg|vbs|wsf|hta)$/i;
-const ReceivedFilePattern = /^(?:tests|src)\/[A-Za-z0-9_./-]+\.received\.(?:txt|cs|cu|cpp|h|hpp|json|xml|md)$/;
 const SafeCollectExtension = /\.(?:trx|xml|json|log|txt|md|html|csv|tsv)$/i;
 
 /** Normalizes a path for case-insensitive containment checks on Windows. */
@@ -142,13 +141,14 @@ function isInsideRoot(root: string, target: string): boolean {
 
 /**
  * Checks whether a relative POSIX path from a remote worker passes Gates 1-3 (path hygiene, forbidden area deny, and
- * strict allowlist against `allowReceived` + `knownLocalDirs` or explicit `collectPaths`).
+ * strict allowlist against plugin `failureArtifacts` + `knownLocalDirs` or explicit `collectPaths`).
  */
 export function isAllowedArtifactPath(
   relPosix: string,
-  allowReceived: boolean,
+  allowFailureArtifacts: boolean,
   knownLocalDirs: ReadonlySet<string>,
   collectPaths: readonly CollectPathSpec[],
+  failureArtifacts: readonly RemoteFailureArtifactRule[] = [],
 ): { ok: true } | { ok: false; reason: string } {
   // Gate 1: normalized relative POSIX path with no traversal, drive letters, ADS (:), or control characters
   if (
@@ -182,16 +182,22 @@ export function isAllowedArtifactPath(
     return { ok: false, reason: "forbidden file extension" };
   }
 
-  // Gate 3: strict allowlist
-  if (allowReceived && ReceivedFilePattern.test(relPosix)) {
-    const dir = path.posix.dirname(relPosix);
-    if (!knownLocalDirs.has(dir)) {
-      return { ok: false, reason: `parent directory ${dir} does not exist in local manifest` };
+  // Gate 3: strict allowlist (plugin-supplied failure artifact rules, or explicit collectPaths)
+  if (allowFailureArtifacts) {
+    for (const rule of failureArtifacts) {
+      if (rule.allowPattern.test(relPosix)) {
+        if (rule.requireKnownLocalDir) {
+          const dir = path.posix.dirname(relPosix);
+          if (!knownLocalDirs.has(dir)) {
+            return { ok: false, reason: `parent directory ${dir} does not exist in local manifest` };
+          }
+        }
+        return { ok: true };
+      }
     }
-    return { ok: true };
   }
 
-  // Regular .cs files are never allowed outside *.received.cs
+  // Regular .cs files are never allowed outside plugin-approved failure artifacts
   if (/\.cs$/i.test(relPosix)) {
     return { ok: false, reason: "source file write not allowed" };
   }
@@ -206,7 +212,7 @@ export function isAllowedArtifactPath(
     }
   }
 
-  return { ok: false, reason: "path not in explicit collectPaths or failed *.received.* allowlist" };
+  return { ok: false, reason: "path not in explicit collectPaths or failure artifact allowlist" };
 }
 
 export interface ArtifactWriteOptions {
@@ -214,6 +220,7 @@ export interface ArtifactWriteOptions {
   allowReceived: boolean;
   knownLocalDirs: ReadonlySet<string>;
   collectPaths: readonly CollectPathSpec[];
+  failureArtifacts?: readonly RemoteFailureArtifactRule[];
   maxFiles?: number;
   maxSingleBytes?: number;
   maxTotalBytes?: number;
@@ -304,6 +311,7 @@ export function validateAndWriteArtifacts(payload: Buffer, options: ArtifactWrit
       options.allowReceived,
       options.knownLocalDirs,
       options.collectPaths,
+      options.failureArtifacts ?? [],
     );
     if (!verdict.ok) {
       rejectedFiles.push({ path: relPosix, reason: verdict.reason });
@@ -367,25 +375,4 @@ export function validateAndWriteArtifacts(payload: Buffer, options: ArtifactWrit
   }
 
   return { writtenFiles, rejectedFiles, totalBytes };
-}
-
-/**
- * Extracts test names that did not complete (native SIGSEGV/SIGABRT or OOM crash) from VSTest `--blame`
- * `Sequence_*.xml` contents.
- */
-export function parseSequenceXmlInProgress(xml: string): string[] {
-  const crashed: string[] = [];
-  const tagPattern = /<Test\b([^>]*)\/>/g;
-  let match: RegExpExecArray | null;
-  while ((match = tagPattern.exec(xml)) !== null) {
-    const attrs = match[1] as string;
-    const completed = /\bCompleted="([^"]*)"/i.exec(attrs)?.[1]?.toLowerCase();
-    if (completed === "false") {
-      const name = /\bName="([^"]+)"/i.exec(attrs)?.[1];
-      if (name !== undefined && name !== "") {
-        crashed.push(name);
-      }
-    }
-  }
-  return crashed;
 }

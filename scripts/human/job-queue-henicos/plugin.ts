@@ -214,6 +214,13 @@ const plugin = {
       .join(" ");
     return next === trimmed ? undefined : next;
   },
+
+  remoteOffload() {
+    return {
+      defaultEnv: { GSHARP_TEST_NO_CUDA: "1" },
+      syncExcludePrefixes: ["src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/"],
+    };
+  },
 } satisfies QueuePlugin;
 
 export default plugin;
