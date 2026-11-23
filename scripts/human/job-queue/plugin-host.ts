@@ -309,6 +309,9 @@ export class PluginHost {
       if (result.share === undefined && (res.share === "shared" || res.share === "exclusive")) {
         result.share = res.share;
       }
+      if (result.offloadable === undefined && typeof res.offloadable === "boolean") {
+        result.offloadable = res.offloadable;
+      }
     }
     if (resource?.forcedExclusive) {
       result.share = "exclusive";

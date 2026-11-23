@@ -70,6 +70,8 @@ export interface Classification {
   memoryMb?: number;
   /** Share mode for the requested resource; defaults to "exclusive". */
   share?: ShareMode;
+  /** True when the command is self-contained and eligible for transparent offload to a remote Linux CPU worker. */
+  offloadable?: boolean;
 }
 
 /** Result of check; the first refuse stops execution, hints are collected in order. */

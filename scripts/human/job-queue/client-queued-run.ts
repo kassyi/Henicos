@@ -11,6 +11,7 @@ import {
   ForecastNoticeMs,
   JobVariable,
   NoticeIntervalMs,
+  OffloadVariable,
   ReasonNoticeMs,
   BaseProtocolVersion,
   TimedOutExitCode,
@@ -30,6 +31,7 @@ import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import {
   numberField,
   onMessages,
+  remoteField,
   send,
   shareField,
   wireVersion,
@@ -38,6 +40,8 @@ import {
   type Placement,
 } from "./protocol.ts";
 import type { ShareAnswer } from "./plugin-api.ts";
+import { translateForRemote } from "./remote-command.ts";
+import type { OffloadPreference } from "./remotes.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
@@ -74,6 +78,10 @@ export class QueuedRun {
   private keys: CommandKeys | null = null;
   /** Precomputed memory budget when plugins are active and !gpuTurn; resolved once at the first registration. */
   private memoryMb: number | null = null;
+  /** Precomputed remote CPU offload preference; resolved once at the first registration. */
+  private offload: OffloadPreference | null = null;
+  /** Remote worker name granted by the scheduler (sent back in adopt after a scheduler restart). */
+  private grantedRemote: string | null = null;
   /**
    * The share a GPU turn asks for when plugins are active, classified once at the first registration: "shared" only
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
@@ -330,21 +338,56 @@ export class QueuedRun {
     }
     const cpus = numberField(granted, "cpus", 1);
     const cwd = process.cwd();
+    const worktree = this.worktree ?? resolveWorktree(cwd);
+    const shell = CommandShell.resolve(options.shell).name;
+    const waited = Math.round((Date.now() - this.queuedAt) / 1000);
+    const remoteName = remoteField(granted);
+
+    if (remoteName !== undefined && this.host.runRemoteCommand !== undefined) {
+      const remoteSpec = (options.remotes ?? []).find((r) => r.name === remoteName);
+      const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
+      const plan =
+        remoteSpec === undefined
+          ? null
+          : translateForRemote(options.command, {
+              cwd,
+              worktree,
+              shell,
+              places,
+              cpus,
+              keepBuildServersWarm: remoteSpec.keepBuildServersWarm,
+              env: process.env,
+            });
+      if (remoteSpec !== undefined && plan !== null) {
+        this.grantedRemote = remoteName;
+        prefix(
+          `granted ${formatJobId(jobId)} on remote ${remoteName} (${remoteSpec.host}) after ${waited}s (${cpus} MSBuild nodes)`,
+        );
+        const remoteResult = await this.host.runRemoteCommand(remoteSpec, plan, (c) => this.started(c));
+        if (!remoteResult.transportFailed || options.remote === true) {
+          const end = commandEnd(remoteResult, this.cancelRequested);
+          this.finish(end.exitCode, end.completed, end.cancelled);
+          return;
+        }
+        prefix(`remote ${remoteName} transport failed before execution; falling back to local execution`);
+        this.grantedRemote = null;
+      }
+    }
+
     const prepared = this.plugins?.prepareCommand(
       options.command,
       { jobId, cpus, nested: false },
       {
         cwd,
-        worktree: this.worktree ?? resolveWorktree(cwd),
+        worktree,
         configRoot: this.plugins.configRoot,
-        shell: CommandShell.resolve(options.shell).name,
+        shell,
         env: process.env,
         log: prefix,
       },
     );
     const command = prepared?.command ?? options.command;
     const note = prepared?.note ?? `${cpus} cpus`;
-    const waited = Math.round((Date.now() - this.queuedAt) / 1000);
     prefix(`granted ${formatJobId(jobId)} after ${waited}s (weight ${placement.weight}, ${note})`);
     const env = {
       ...process.env,
@@ -671,14 +714,49 @@ export class QueuedRun {
       : undefined;
     const context = (plugins: PluginHost): BaseClientContext => this.contextOf(plugins);
     let memoryMb: number | undefined;
+    let offload: OffloadPreference | undefined;
     if (hasPlugins && !this.gpuTurn) {
-      if (this.memoryMb === null) {
+      if (this.memoryMb === null || this.offload === null) {
         const plugins = this.plugins as PluginHost;
         const classified = plugins.classify(options.command, null, context(plugins));
         const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
         this.memoryMb = classified.memoryMb ?? fallback;
+        const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
+        const offloadDisabled =
+          this.inGpuLock ||
+          options.local === true ||
+          process.env[OffloadVariable] === "0" ||
+          enabledRemotes.length === 0;
+        if (offloadDisabled) {
+          if (options.remote === true) {
+            prefix("--remote requested, but no enabled remote worker is configured or offload is disabled");
+            this.host.exit(UsageExitCode);
+            return;
+          }
+          this.offload = "never";
+        } else {
+          const shell = CommandShell.resolve(options.shell).name;
+          const canTranslate =
+            (classified.offloadable === true || options.remote === true) &&
+            translateForRemote(options.command, {
+              cwd,
+              worktree,
+              shell,
+              places,
+              cpus: enabledRemotes[0]?.cpus ?? 1,
+              keepBuildServersWarm: enabledRemotes[0]?.keepBuildServersWarm ?? true,
+              env: process.env,
+            }) !== null;
+          if (options.remote === true && !canTranslate) {
+            prefix("--remote requested, but this command cannot be safely translated for remote Linux execution");
+            this.host.exit(UsageExitCode);
+            return;
+          }
+          this.offload = canTranslate ? (options.remote === true ? "force" : "auto") : "never";
+        }
       }
       memoryMb = this.memoryMb;
+      offload = this.offload;
     }
     // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
     let share: ShareMode | undefined;
@@ -721,6 +799,8 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(offload !== undefined && offload !== "never" ? { offload } : {}),
+      ...(this.state === "running" && this.grantedRemote !== null ? { remote: this.grantedRemote } : {}),
       envHash: environment.hash,
       envKeys: environment.keys,
       // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row

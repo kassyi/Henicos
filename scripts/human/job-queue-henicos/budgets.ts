@@ -141,3 +141,60 @@ export function cpuOnlyTestProjects(
   };
   return named.every(runsOnCpu) ? named : [];
 }
+
+/**
+ * True when every test project named in `command` (at least one named) can run on a headless Linux CPU worker without
+ * CUDA: either `<GSharpTargetDialect>Cpu</GSharpTargetDialect>`, a pure managed test project without
+ * `Kassyi.GSharp.Compiler.targets` (excluding `Kassyi.GSharp.Tests.Integration`), or `command` explicitly filters out
+ * `Category!=GpuExecution`.
+ */
+export function isHeadlessCpuSafe(
+  command: string,
+  names: Iterable<string>,
+  testsDir: string,
+  log: (text: string) => void,
+): boolean {
+  const lower = command.toLowerCase();
+  const named = [...names].filter((name) => lower.includes(name.toLowerCase()));
+  if (named.length === 0) {
+    return false;
+  }
+  const excludesGpuExecution = /category\s*!=\s*gpuexecution/i.test(command);
+  let projects: TestProjectEntry[];
+  try {
+    projects = testProjectFiles(testsDir);
+  } catch (error) {
+    log(`could not read ${testsDir}: ${errorMessage(error)}`);
+    return false;
+  }
+  const projectsByName = new Map<string, string>();
+  for (const { name, project } of projects) {
+    projectsByName.set(name, project);
+  }
+  return named.every((name) => {
+    if (name === "Kassyi.GSharp.Tests.Integration") {
+      return false;
+    }
+    const project = projectsByName.get(name);
+    if (project === undefined) {
+      return false;
+    }
+    const dialect = dialectOf(project);
+    if (dialect === "cpu") {
+      return true;
+    }
+    if (dialect === "cuda") {
+      return false;
+    }
+    // No GSharpTargetDialect: safe if pure managed (no compiler targets) or Category!=GpuExecution is set
+    try {
+      const content = fs.readFileSync(project, "utf8");
+      if (!content.includes("Kassyi.GSharp.Compiler.targets")) {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    return excludesGpuExecution;
+  });
+}

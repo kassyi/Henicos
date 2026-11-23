@@ -35,14 +35,16 @@ import {
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
+import { remoteSpecsFromConfig } from "./remotes.ts";
 import { prefix, resolveWorktree } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
 const Usage = [
   "Usage:",
-  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--after <id> [--keep-if-failed]]",
-  '                                       [--shell <name>] [--timeout-minutes <n>] -- "<command>"',
+  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--local | --remote]",
+  "                                       [--after <id> [--keep-if-failed]] [--shell <name>] [--timeout-minutes <n>]",
+  '                                       -- "<command>"',
   "  node scripts/human/job-queue.js status [<id>] [--here] [--json | --watch | --accuracy]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
@@ -68,6 +70,8 @@ const Usage = [
   "                                   lock (gpu-lock.js); the command's slots are then granted at once. The",
   "                                   plugins decide whether the run may share the GPU with other shared runs.",
   "            --gpu-exclusive        --gpu, and the run uses the GPU alone, whatever the plugins decide.",
+  "            --local                Run on this machine; disable transparent remote CPU offload.",
+  "            --remote               Require execution on a configured remote CPU worker (fails if ineligible).",
   "            --after <id>           Start only after job <id> has ended. When it failed, was cancelled or its",
   "                                   client was lost, this job is cancelled too (exit 4), unless --keep-if-failed.",
   "            --shell <name>         bash, pwsh, powershell, cmd or sh (default: the caller's: Git Bash when MSYSTEM",
@@ -267,6 +271,12 @@ export function parseArgs(argv: string[]): Options {
         options.gpu = true;
         options.gpuExclusive = true;
         break;
+      case "--local":
+        options.local = true;
+        break;
+      case "--remote":
+        options.remote = true;
+        break;
       case "--after":
         options.afterRef = parseRef("--after", own[++i]);
         options.after = options.afterRef.kind === "exact" ? options.afterRef.id : 0;
@@ -367,6 +377,12 @@ export function parseArgs(argv: string[]): Options {
   if (options.untilIdle && options.mode !== "pause") {
     usageError("--until-idle goes with pause alone.");
   }
+  if (options.local && options.remote) {
+    usageError("--local and --remote cannot be used together.");
+  }
+  if (options.remote && options.gpu) {
+    usageError("--remote cannot be used with --gpu or --gpu-exclusive.");
+  }
   if (options.keepIfFailed && options.afterRef === null) {
     usageError("--keep-if-failed needs --after <id>.");
   }
@@ -401,6 +417,7 @@ export async function main(argv: string[]): Promise<void> {
       options.memoryMb = machine.memoryPoolMb;
     }
     options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
+    options.remotes = remoteSpecsFromConfig(loaded.config);
     if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
       plugins = await PluginHost.load(loaded.config, loaded.configRoot);
     }

@@ -15,6 +15,9 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
+import type { RemoteCommandPlan } from "./remote-command.ts";
+import { executeRemotePlan, type RemoteRunResult } from "./remote-runner.ts";
+import type { RemoteSpec } from "./remotes.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
 import { ProcessTable, prefix } from "./system.ts";
@@ -123,6 +126,12 @@ export interface RunHost {
   ): Promise<void>;
   /** Runs the command in the caller's shell (CommandShell.run). */
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult>;
+  /** Syncs the worktree and runs the translated command on a configured remote Linux worker over SSH. */
+  runRemoteCommand?(
+    remote: RemoteSpec,
+    plan: RemoteCommandPlan,
+    onChild: (child: ChildProcess) => void,
+  ): Promise<RemoteRunResult>;
   /**
    * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
    * lock for `mode` "shared", else on all of them.
@@ -166,6 +175,14 @@ export class ProcessRunHost implements RunHost {
 
   runCommand(command: string, env: NodeJS.ProcessEnv, onChild: (child: ChildProcess) => void): Promise<ShellResult> {
     return CommandShell.resolve(this.options.shell).run(command, env, onChild);
+  }
+
+  runRemoteCommand(
+    remote: RemoteSpec,
+    plan: RemoteCommandPlan,
+    onChild: (child: ChildProcess) => void,
+  ): Promise<RemoteRunResult> {
+    return executeRemotePlan(remote, plan, onChild);
   }
 
   runUnderGpuLock(

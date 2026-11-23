@@ -18,6 +18,7 @@ import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost, type RunHost } from "./client-run-host.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
+import type { RemoteSpec } from "./remotes.ts";
 import { CommandShell } from "./shell.ts";
 import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 
@@ -39,6 +40,12 @@ export interface RunOptions extends Endpoint {
   role?: string;
   /** Memory budget (MB) from config.pools.defaultTestMemoryMb for classified tests without an explicit memoryMb. */
   defaultTestMemoryMb?: number;
+  /** --local: disable transparent remote CPU offload for this run. */
+  local?: boolean;
+  /** --remote: require execution on a configured remote CPU worker (refuse if ineligible). */
+  remote?: boolean;
+  /** Configured remote CPU workers from job-queue.config.json. */
+  remotes?: RemoteSpec[];
 }
 
 /** Ends the process with a usage error. */

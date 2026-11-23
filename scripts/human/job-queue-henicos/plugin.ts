@@ -14,7 +14,7 @@ import {
   readCommandLine,
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
-import { cpuOnlyTestProjects, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
+import { cpuOnlyTestProjects, isHeadlessCpuSafe, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
 import { nameFilterShare } from "./name-filter.ts";
 import { shareOf } from "./share-rules.ts";
 
@@ -43,6 +43,81 @@ function onlyListsTests(command: string): boolean {
         programOf(step.words[0] ?? "") === "dotnet" && step.words[1] === "test" && step.words.includes("--list-tests"),
     )
   );
+}
+
+/** just recipes that are 100% CPU-only and self-contained on headless Linux. */
+const OffloadableJustRecipes = new Set([
+  "test-differential-cpu",
+  "test-native-stack",
+  "test-managed-stack",
+  "test-sanitized",
+]);
+
+/** Filters targeting Windows-only implementation tests stay on Windows so they do not skip on Linux. */
+const WindowsOnlyFilterPattern = /(?:^|[^A-Za-z0-9])(?:Windows|Win32|Msvc|Wmi|Event153)/i;
+
+/**
+ * True when `command` is a self-contained CPU test run eligible for transparent offload to a headless Linux worker:
+ * - No GPU resource requested, no pipe, no Windows-only filter
+ * - Either an allowlisted CPU-only `just` recipe, or plain `dotnet build` / `dotnet test` steps ending in a test
+ *   (never a bare `dotnet build` or a standalone `dotnet test --no-build` that relies on local bin/win/)
+ * - Every named test project is headless-CPU-safe (GSharpTargetDialect Cpu, pure managed, or Category!=GpuExecution).
+ */
+function isOffloadableCommand(
+  command: string,
+  budgets: ReadonlyMap<string, unknown>,
+  testsDir: string,
+  log: (text: string) => void,
+): boolean {
+  if (WindowsOnlyFilterPattern.test(command)) {
+    return false;
+  }
+  const line = readCommandLine(command);
+  if (line === null || line.piped) {
+    return false;
+  }
+  const work = line.steps.filter((step) => {
+    if (isTrivialStep(step)) {
+      return false;
+    }
+    const prog = programOf(step.words[0] ?? "");
+    return prog !== "cd" && prog !== "set-location" && prog !== "sl";
+  });
+  if (work.length === 0) {
+    return false;
+  }
+  // Allowlisted CPU-only just recipes (single step)
+  if (work.length === 1 && programOf(work[0]?.words[0] ?? "") === "just") {
+    const recipe = work[0]?.words.slice(1).find((w) => !w.startsWith("-") && !w.includes("="));
+    return recipe !== undefined && OffloadableJustRecipes.has(recipe);
+  }
+  // Plain dotnet build/test sequence: must include at least one dotnet test, and any --no-build test must be preceded
+  // by a dotnet build in the same command (standalone --no-build reads local bin/win/)
+  let sawBuild = false;
+  let sawTest = false;
+  for (const step of work) {
+    if (programOf(step.words[0] ?? "") !== "dotnet") {
+      return false;
+    }
+    const verb = (step.words[1] ?? "").toLowerCase();
+    if (verb === "build") {
+      sawBuild = true;
+    } else if (verb === "test") {
+      if (step.words.includes("--list-tests") || step.words.includes("-t")) {
+        return false;
+      }
+      if (step.words.includes("--no-build") && !sawBuild) {
+        return false;
+      }
+      sawTest = true;
+    } else {
+      return false;
+    }
+  }
+  if (!sawTest) {
+    return false;
+  }
+  return isHeadlessCpuSafe(command, budgets.keys(), testsDir, log);
 }
 
 export function isHenicosTest(command: string): boolean {
@@ -113,7 +188,13 @@ const plugin = {
       budgets,
       (cmd) => !onlyListsTests(cmd) && selectsCategory(cmd, ["Stress", "Benchmark"]),
     );
-    return share !== undefined ? { test: true, memoryMb, share } : { test: true, memoryMb };
+    const testsDir = resolveTestsDir(
+      context.worktree,
+      context.configRoot,
+      optionString(context, "testsDir", DefaultTestsDir),
+    );
+    const offloadable = resource === null ? isOffloadableCommand(command, budgets, testsDir, context.log) : false;
+    return share !== undefined ? { test: true, memoryMb, share, offloadable } : { test: true, memoryMb, offloadable };
   },
 
   // A --gpu run whose filter names tests only is shared when the runner lists no Stress, Benchmark or GpuTrap test

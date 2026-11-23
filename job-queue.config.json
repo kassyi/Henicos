@@ -51,6 +51,31 @@
       "holderWatch": ["scripts/human/job-queue/plugins/nvidia-gpu/holder-watch.js"]
     }
   },
+  "remotes": {
+    "ubuntu": {
+      "host": "ubuntu-server.lan",
+      "workspace": "~/henicos",
+      "slots": 1,
+      "cpus": 4,
+      "memoryMb": 6144,
+      "mode": "prefer-remote",
+      "sshOptions": ["-o", "BatchMode=yes", "-o", "ConnectTimeout=5"],
+      "keepBuildServersWarm": true,
+      "probe": {
+        "argv": [
+          "ssh",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "ConnectTimeout=3",
+          "ubuntu-server.lan",
+          "awk '/MemAvailable:/{printf \"%d\\n\", $2/1024}' /proc/meminfo"
+        ],
+        "min": 1536,
+        "timeoutMs": 5000
+      }
+    }
+  },
   "legacyClients": {
     "testPattern": "\\bdotnet(\\.exe)?\"?\\s+(test|vstest)\\b|\\bjust\\b[^;&|\\n]*?\\s(test[\\w-]*|coverage-diff|mutate|long-checks)(\\s|$)",
     "testMemoryMb": 2880
