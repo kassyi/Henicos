@@ -29,6 +29,11 @@ node scripts/human/job-queue.js status [<id>]               # the jobs ahead and
 - Write the command for the shell you call `run` from (Git Bash for the Claude Code Bash tool, PowerShell otherwise on
   Windows).
 - An `<id>` is the full number or the last four digits as `status` shows them (`j8739`, `8739`).
+- Transparent remote CPU offload (`remotes` in `job-queue.config.json`, e.g. `ubuntu-server.lan`): self-contained CPU
+  test runs are delta-synced and executed on the remote worker when free and healthy (0 local CPU/RAM), spilling over
+  or falling back to local slots when busy or offline. Remote run times are tracked separately from local
+  (`history-remote-<name>.json`). Pass `--local` (or `GSHARP_JOB_QUEUE_OFFLOAD=0`) to stay local, `--remote` to require
+  remote execution.
 - A wait can be long: run `run` or `wait <id>` in the background, and the tool calls you when it ends.
 - A PreToolUse hook (`check-queued-command.js`) denies a build or test command that does not go through the queue; in
   Claude Code it rewrites a plain one (`dotnet ...`, `just ...` joined by `&&`) into a queued one instead.

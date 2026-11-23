@@ -739,6 +739,57 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
   }
 }
 
+function checkOffloadClassification(assert: AssertModule, host: PluginHost, repoRoot: string): void {
+  const ctx: BaseClientContext = {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    configRoot: repoRoot,
+    shell: "pwsh",
+    env: {},
+    log: () => {},
+  };
+  const cases: readonly [string, boolean][] = [
+    [
+      "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'",
+      true,
+    ],
+    [
+      "$env:DiffEngine_Disabled='true'; dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj",
+      true,
+    ],
+    [
+      "dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu && dotnet test --no-build tests/Compiler/Kassyi.GSharp.Tests.Cpu",
+      true,
+    ],
+    [
+      "dotnet test tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests/Kassyi.GSharp.Compiler.Generators.Tests.csproj",
+      true,
+    ],
+    ["dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests --filter 'Category!=GpuExecution'", true],
+    ["just test-differential-cpu", true],
+    ["just test-sanitized", true],
+    // Ineligible: bare build, standalone --no-build, CUDA project, GpuMath without Category!=GpuExecution, Windows filter, Integration
+    ["dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj", false],
+    ["dotnet test --no-build tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj", false],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj", false],
+    ["dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj", false],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter 'FullyQualifiedName~WindowsJobObjectTests'", false],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj", false],
+    ["just test", false],
+  ];
+  for (const [cmd, expected] of cases) {
+    assert.strictEqual(Boolean(host.classify(cmd, null, ctx).offloadable), expected, `offloadable for: ${cmd}`);
+  }
+  // Never offloadable when GPU resource is requested
+  assert.strictEqual(
+    Boolean(
+      host.classify("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", { name: "gpu", forcedExclusive: false }, ctx)
+        .offloadable,
+    ),
+    false,
+  );
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -766,5 +817,6 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
+  checkOffloadClassification(assert, host, loaded.configRoot);
   await checkNameFilter(assert);
 }

@@ -15,6 +15,7 @@ import { JobIdChecks } from "./job-id-checks.ts";
 import { QueueHintChecks } from "./queue-hint-checks.ts";
 import { SchedulerChecks } from "./scheduler-checks.ts";
 import { FairnessChecks } from "./scheduler-fairness-checks.ts";
+import { RemoteChecks } from "./remote-checks.ts";
 import { ResourceChecks } from "./resource-checks.ts";
 import { JobServerChecks, JobStateChecks } from "./server-job-checks.ts";
 import { ProbeChecks } from "./server-probe-checks.ts";
@@ -108,6 +109,7 @@ export async function selfTest(): Promise<void> {
       ...JobIdChecks,
       ...FairnessChecks,
       ...SchedulerChecks,
+      ...RemoteChecks,
       ...ResourceChecks,
       ...JobStateChecks,
     })) {
