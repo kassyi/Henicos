@@ -385,12 +385,15 @@ export interface Screenshot {
   state: Partial<ViewState>;
   /** The queue is paused (pause) in this sample. */
   paused?: boolean;
+  /** Shows a remote CPU worker (`UBUNTU j0818` header and `j0818@ubuntuR` job row). */
+  remote?: boolean;
 }
 
 export const Screenshots: Screenshot[] = [
   { file: "wide.svg", columns: 120, rows: 17, state: {} },
   { file: "small.svg", columns: 70, rows: 13, state: {} },
   { file: "selected.svg", columns: 120, rows: 17, state: { selectedId: 812 } },
+  { file: "remote.svg", columns: 120, rows: 17, state: { selectedId: 818 }, remote: true },
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
   { file: "chats-hidden.svg", columns: 120, rows: 17, state: { panelHidden: true } },
   { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
@@ -407,9 +410,33 @@ export function writeScreenshots(dir: string, plugins?: ShortNameProvider): stri
   process.env.TZ = TimeZone;
   try {
     fs.mkdirSync(dir, { recursive: true });
-    return Screenshots.map(({ file, columns, rows, state, paused }) => {
+    return Screenshots.map(({ file, columns, rows, state, paused, remote }) => {
+      let reply = screenshotReply();
+      if (paused) {
+        reply = { ...reply, paused: true, pausedAt: Now - 4 * Minute };
+      }
+      if (remote) {
+        reply = {
+          ...reply,
+          used: 4,
+          memoryUsed: 6144,
+          remotes: [
+            {
+              name: "ubuntu",
+              host: "jobrunner@ubuntu-server.lan",
+              slots: 1,
+              cpus: 4,
+              memoryMb: 6144,
+              mode: "prefer-remote",
+              running: [818],
+              probe: { ok: true, value: 6400, at: Now - 1000 },
+            },
+          ],
+          running: reply.running.map((item) => (item.id === 818 ? { ...item, remote: "ubuntu" } : item)),
+        };
+      }
       const lines = renderScreen(
-        paused ? { ...screenshotReply(), paused: true, pausedAt: Now - 4 * Minute } : screenshotReply(),
+        reply,
         { ...initialViewState(), ...state },
         { columns, rows, now: Now },
         true,

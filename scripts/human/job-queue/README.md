@@ -37,6 +37,11 @@ runs as, the full command):
 
 ![A selected job](images/selected.svg)
 
+A remote CPU worker running an offloaded test job (`UBUNTU j0818` in the header, `j0818@ubuntuR` in the job list, and
+`remote:ubuntu` in the details at the bottom):
+
+![A remote offloaded job](images/remote.svg)
+
 The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
 screen colors. While it is open only `?` (next page), Esc (close), `q` and Ctrl+C act; any other key would act on jobs
 the help covers, so it only says how to leave:
