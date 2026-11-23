@@ -127,7 +127,7 @@ export function parseRemoteSha256Output(stdout: string): Record<string, string> 
     const sha = match[1] as string;
     let rel = (match[2] as string).replace(/^\.\//, "");
     if (escaped) {
-      rel = rel.replace(/\\\\/g, "\\").replace(/\\n/g, "\n");
+      rel = rel.replace(/\\([\\n])/g, (_, ch: string) => (ch === "n" ? "\n" : "\\"));
     }
     if (!isExcludedSyncPath(rel)) {
       files[rel] = sha;

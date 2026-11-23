@@ -57,7 +57,7 @@ export function bashWorkspaceExpr(workspace: string): string {
     return `"$HOME"`;
   }
   if (workspace.startsWith("~/")) {
-    return `"$HOME/${workspace.slice(2).replace(/"/g, '\\"')}"`;
+    return `"$HOME"/${bashQuote(workspace.slice(2))}`;
   }
   return bashQuote(workspace);
 }

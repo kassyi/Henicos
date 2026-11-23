@@ -373,7 +373,7 @@ function buildAutoinstallUserData(profile, pubKey) {
     '    install-server: true',
     '    allow-pw: false',
     '    authorized-keys:',
-    `      - "${pubKey.replace(/"/g, '\\"')}"`,
+    `      - ${JSON.stringify(pubKey)}`,
     '  packages:',
     '    - openssh-server',
     '    - ufw',
