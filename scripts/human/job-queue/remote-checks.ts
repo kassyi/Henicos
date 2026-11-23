@@ -5,24 +5,32 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { validateConfig } from "./config.ts";
+import { loadConfig, loadLocalRemotesConfig, LocalRemotesFileName, validateConfig } from "./config.ts";
 import { RunHistory } from "./history.ts";
 import type { AssertModule } from "./plugin-api.ts";
 import { translateForRemote } from "./remote-command.ts";
-import { diffManifests, isExcludedSyncPath, manifestDigest, parseRemoteSha256Output } from "./remote-sync.ts";
-import { fitsRemote, type RemoteSpec } from "./remotes.ts";
+import { RemoteStreamSanitizer, parseSequenceXmlInProgress, validateAndWriteArtifacts } from "./remote-output.ts";
+import {
+  diffManifests,
+  formatSha256Manifest,
+  isExcludedSyncPath,
+  manifestDigest,
+  parseRemoteSha256Output,
+} from "./remote-sync.ts";
+import { buildSshArgs, fitsRemote, type RemoteSpec } from "./remotes.ts";
 import { Scheduler, type Estimate, type SchedulerJob } from "./scheduler.ts";
 
 function makeRemote(overrides: Partial<RemoteSpec> = {}): RemoteSpec {
   return {
     name: "ubuntu",
-    host: "ubuntu-server.lan",
+    host: "jobrunner@ubuntu-server.lan",
     workspace: "~/henicos",
     slots: 1,
     cpus: 4,
     memoryMb: 6144,
     mode: "prefer-remote",
-    sshOptions: ["-o", "BatchMode=yes"],
+    maxJobMinutes: 30,
+    sshOptions: ["-o", "ConnectTimeout=5"],
     keepBuildServersWarm: true,
     probe: null,
     ...overrides,
@@ -198,6 +206,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         "rewrites Windows path to POSIX relative path",
       );
       assert.ok(plan.bashCommand.includes("FullyQualifiedName~WarpStackModelTests"), "keeps --filter intact");
+      assert.ok(plan.bashCommand.includes("--blame"), "auto-attaches lightweight --blame for crash attribution");
       assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
       assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
       assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
@@ -272,16 +281,108 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
 
     assert.strictEqual(isExcludedSyncPath("src/Foo/bin/Debug/a.dll"), true);
     assert.strictEqual(isExcludedSyncPath("src/Foo/obj/linux/a.o"), true);
+    assert.strictEqual(isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs"), true);
+    assert.strictEqual(isExcludedSyncPath(".claude/worktrees/w1/a.cs"), true);
     assert.strictEqual(isExcludedSyncPath("tests/Snap.received.cs"), true);
     assert.strictEqual(isExcludedSyncPath("tmp/foo.txt"), true);
     assert.strictEqual(isExcludedSyncPath("tests/Snap.verified.cs"), false);
     assert.strictEqual(isExcludedSyncPath("src/Compiler/Emit.cs"), false);
+
+    const shaText = formatSha256Manifest({ "b.cs": "2".repeat(64), "a.cs": "1".repeat(64) });
+    assert.strictEqual(shaText, `${"1".repeat(64)}  ./a.cs\n${"2".repeat(64)}  ./b.cs\n`);
 
     const parsed = parseRemoteSha256Output(
       `${"a".repeat(64)}  ./src/Emit.cs\n${"b".repeat(64)}  ./tests/bin/x.dll\n${"c".repeat(64)}  ./tests/A.received.txt\n`,
     );
     assert.deepStrictEqual(Object.keys(parsed), ["src/Emit.cs"]);
     assert.strictEqual(parsed["src/Emit.cs"], "a".repeat(64));
+  },
+
+  remoteStreamSanitizerStripsDangerousEscapes(assert: AssertModule): void {
+    const san = new RemoteStreamSanitizer();
+    // Split OSC 52 clipboard injection, window title, cursor up, and valid SGR red + Japanese UTF-8 across chunks
+    const raw =
+      "\x1b[31mFailed\x1b[0m MyTests.Crash\r\n" +
+      "\x1b]52;c;ZXZpbA==\x07" +
+      "\x1b]0;FakeTitle\x1b\\" +
+      "\x1b[2A\x1b[2J" +
+      "Error Message: テスト失敗\x08\x07\n" +
+      "   at Foo.Bar() in /home/jobrunner/henicos/tests/Foo.cs:line 42\n";
+    const buf = Buffer.from(raw, "utf8");
+    let out = "";
+    // Feed in 3-byte slices to stress multi-byte UTF-8 and split escape sequences
+    for (let i = 0; i < buf.length; i += 3) {
+      out += san.push(buf.subarray(i, i + 3));
+    }
+    out += san.flush();
+    assert.ok(out.includes("\x1b[31mFailed\x1b[0m MyTests.Crash"), "preserves SGR colors and test name");
+    assert.ok(out.includes("Error Message: テスト失敗\n"), "preserves UTF-8 text and strips BS/BEL");
+    assert.ok(out.includes("at Foo.Bar() in /home/jobrunner/henicos/tests/Foo.cs:line 42"), "preserves stack trace");
+    assert.ok(!out.includes("52;c;"), "strips OSC 52 clipboard payload");
+    assert.ok(!out.includes("FakeTitle"), "strips OSC 0 window title");
+    assert.ok(!out.includes("\x1b[2A"), "strips CSI cursor movement");
+    assert.ok(!out.includes("\x1b[2J"), "strips CSI screen clear");
+  },
+
+  remoteArtifactValidatorBlocksAttacksAndWritesAllowedFiles(assert: AssertModule): void {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-art-"));
+    try {
+      const wt = path.join(tmp, "wt");
+      fs.mkdirSync(path.join(wt, "tests", "Snapshots"), { recursive: true });
+      const frame = (rel: string, content: string): Buffer => {
+        const body = Buffer.from(content, "utf8");
+        return Buffer.concat([Buffer.from(`${rel}\0${body.length}\n`, "utf8"), body]);
+      };
+      const payload = Buffer.concat([
+        // Allowed: *.received.txt inside known test directory
+        frame("tests/Snapshots/Snap.Foo.received.txt", "actual output"),
+        // Allowed: .trx inside explicit --results-directory
+        frame("tmp/trx/run1.trx", "<TestRun />"),
+        // Attacks that MUST all be rejected
+        frame("../outside.txt", "escape"),
+        frame("/etc/passwd", "abs"),
+        frame(".git/config", "git hijack"),
+        frame("scripts/human/job-queue.js", "rce"),
+        frame("tests/Snapshots/Snap.Foo.verified.txt", "snapshot tamper"),
+        frame("tests/Snapshots/Evil.cs", "source tamper"),
+        frame("tests/UnknownDir/Snap.Foo.received.txt", "untracked dir"),
+        frame("tmp/trx/crash.dmp", "huge dump"),
+      ]);
+      const result = validateAndWriteArtifacts(payload, {
+        worktree: wt,
+        allowReceived: true,
+        knownLocalDirs: new Set(["tests/Snapshots"]),
+        collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+      });
+      assert.deepStrictEqual(result.writtenFiles, ["tests/Snapshots/Snap.Foo.received.txt", "tmp/trx/run1.trx"]);
+      assert.strictEqual(result.rejectedFiles.length, 8, "blocks all 8 unapproved/attack paths");
+      assert.strictEqual(
+        fs.readFileSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.received.txt"), "utf8"),
+        "actual output",
+      );
+      assert.strictEqual(fs.readFileSync(path.join(wt, "tmp", "trx", "run1.trx"), "utf8"), "<TestRun />");
+      assert.ok(!fs.existsSync(path.join(tmp, "outside.txt")));
+      assert.ok(!fs.existsSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.verified.txt")));
+      assert.ok(!fs.existsSync(path.join(wt, "scripts", "human", "job-queue.js")));
+
+      // Quota enforcement rejects oversized single file
+      const big = validateAndWriteArtifacts(frame("tmp/trx/big.trx", "x".repeat(200)), {
+        worktree: wt,
+        allowReceived: false,
+        knownLocalDirs: new Set(),
+        collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+        maxSingleBytes: 100,
+      });
+      assert.deepStrictEqual(big.writtenFiles, []);
+      assert.strictEqual(big.rejectedFiles.length, 1);
+
+      // Sequence_*.xml crash parser
+      const xml =
+        '<TestSequence><Test Name="A.Passed" Completed="True" /><Test Name="B.NativeCrash" Completed="False" /></TestSequence>';
+      assert.deepStrictEqual(parseSequenceXmlInProgress(xml), ["B.NativeCrash"]);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   },
 
   remoteConfigValidation(assert: AssertModule): void {
@@ -291,25 +392,72 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       plugins: [],
       remotes: {
         ubuntu: {
-          host: "ubuntu-server.lan",
+          host: "jobrunner@ubuntu-server.lan",
           workspace: "~/henicos",
           slots: 1,
           cpus: 4,
           memoryMb: 6144,
           mode: "prefer-remote",
+          maxJobMinutes: 30,
           keepBuildServersWarm: true,
         },
       },
     });
-    assert.strictEqual(valid.remotes?.ubuntu?.host, "ubuntu-server.lan");
+    assert.strictEqual(valid.remotes?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
 
+    // Validate the tracked sample file remotes.local.example.json
+    const samplePath = path.join(import.meta.dirname, "remotes.local.example.json");
+    const sampleTmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-local-rem-"));
+    try {
+      fs.copyFileSync(samplePath, path.join(sampleTmp, LocalRemotesFileName));
+      const loadedSample = loadLocalRemotesConfig(sampleTmp);
+      assert.ok(loadedSample?.ubuntu !== undefined, "remotes.local.example.json validates cleanly");
+      assert.strictEqual(loadedSample?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
+
+      // loadConfig ignores repo-level remotes when stateDir is given without explicit --config
+      const repoDir = path.join(sampleTmp, "repo");
+      fs.mkdirSync(repoDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(repoDir, "job-queue.config.json"),
+        JSON.stringify({
+          version: 1,
+          entry: "scripts/human/job-queue.js",
+          plugins: [],
+          remotes: {
+            evil: { host: "attacker.example", workspace: "~/x", cpus: 4, memoryMb: 4096 },
+          },
+        }),
+      );
+      const loaded = loadConfig({
+        mode: "status",
+        fromDirectory: repoDir,
+        stateDir: sampleTmp,
+        warn: () => {},
+      });
+      assert.strictEqual(loaded.config.remotes?.evil, undefined, "untrusted repo remotes are ignored");
+      assert.strictEqual(loaded.config.remotes?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
+
+      // Forwarding --config <repo>/job-queue.config.json (as serve does via WMI) still loads remotes.local.json
+      const loadedServe = loadConfig({
+        mode: "serve",
+        configPath: path.join(repoDir, "job-queue.config.json"),
+        stateDir: sampleTmp,
+        warn: () => {},
+      });
+      assert.strictEqual(loadedServe.config.remotes?.evil, undefined, "serve --config still ignores repo remotes");
+      assert.strictEqual(loadedServe.config.remotes?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
+    } finally {
+      fs.rmSync(sampleTmp, { recursive: true, force: true });
+    }
+
+    // Reject unsafe SSH options, leading '-' host, and non-ssh probe
     assert.throws(() =>
       validateConfig({
         version: 1,
         entry: "scripts/human/job-queue.js",
         plugins: [],
         remotes: {
-          ubuntu: { host: "ubuntu-server.lan", workspace: "~/henicos", cpus: 0, memoryMb: 6144 },
+          ubuntu: { host: "-oProxyCommand=evil", workspace: "~/henicos", cpus: 4, memoryMb: 6144 },
         },
       }),
     );
@@ -319,10 +467,55 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         entry: "scripts/human/job-queue.js",
         plugins: [],
         remotes: {
-          ubuntu: { host: "ubuntu-server.lan", workspace: "~/henicos", cpus: 4, memoryMb: 6144, mode: "invalid" },
+          ubuntu: {
+            host: "ubuntu-server.lan",
+            workspace: "~/henicos",
+            cpus: 4,
+            memoryMb: 6144,
+            sshOptions: ["-o", "ProxyCommand=evil"],
+          },
         },
       }),
     );
+    assert.throws(() =>
+      validateConfig({
+        version: 1,
+        entry: "scripts/human/job-queue.js",
+        plugins: [],
+        remotes: {
+          ubuntu: {
+            host: "ubuntu-server.lan",
+            workspace: "~/henicos",
+            cpus: 4,
+            memoryMb: 6144,
+            sshOptions: ["-o", "StrictHostKeyChecking=no"],
+          },
+        },
+      }),
+    );
+    assert.throws(() =>
+      validateConfig({
+        version: 1,
+        entry: "scripts/human/job-queue.js",
+        plugins: [],
+        remotes: {
+          ubuntu: {
+            host: "ubuntu-server.lan",
+            workspace: "~/henicos",
+            cpus: 4,
+            memoryMb: 6144,
+            probe: { argv: ["powershell", "-c", "echo 9999"], min: 100 },
+          },
+        },
+      }),
+    );
+
+    // buildSshArgs enforces mandatory security flags and '--' separator
+    const args = buildSshArgs(makeRemote(), "echo ok");
+    assert.ok(args.includes("StrictHostKeyChecking=yes"));
+    assert.ok(args.includes("ForwardAgent=no"));
+    assert.ok(args.includes("ServerAliveInterval=5"));
+    assert.strictEqual(args[args.length - 3], "--");
 
     // fitsRemote rejects GPU jobs
     const spec = makeRemote();
