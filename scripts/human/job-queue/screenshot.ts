@@ -395,6 +395,7 @@ export const Screenshots: Screenshot[] = [
   { file: "selected.svg", columns: 120, rows: 17, state: { selectedId: 812 } },
   { file: "remote.svg", columns: 120, rows: 17, state: { selectedId: 818 }, remote: true },
   { file: "help.svg", columns: 120, rows: 17, state: { help: 1 } },
+  { file: "help-remote.svg", columns: 120, rows: 27, state: { help: 1, panelHidden: true }, remote: true },
   { file: "chats-hidden.svg", columns: 120, rows: 17, state: { panelHidden: true } },
   { file: "paused.svg", columns: 120, rows: 17, state: { flash: { kind: "pause", until: Now + 1000 } }, paused: true },
   // just resumed: the play mark, and nothing of the pause in the header
