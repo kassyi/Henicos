@@ -1,16 +1,23 @@
-// The remote CPU workers of the scheduler, with no I/O: configuration to RemoteSpec, live usage counted from the
-// running jobs, health/probe freshness, and eligibility checks.
+// Layer 4 Core Value Objects & SSH specification for remote CPU workers (zero I/O, zero upward dependencies):
+// RemoteSpec, MandatorySshOptions, buildSshArgs, POSIX quoting, live usage accounting, health/probe freshness, and
+// scheduling eligibility checks.
 
-import type { QueueConfig } from "./config.ts";
-import { ProbeTimeoutMs, RemoteProbeFreshMs, RemoteProbeRetryMs, type RemoteMode } from "./constants.ts";
-import type { RemoteStatus } from "./protocol.ts";
-import { isResourceName, type ProbeResult } from "./resources.ts";
+import type { QueueConfig } from "../config.ts";
+import { ProbeTimeoutMs, RemoteProbeFreshMs, RemoteProbeRetryMs, type RemoteMode } from "../constants.ts";
+import type { RemoteStatus } from "../protocol.ts";
+import { isResourceName, type ProbeResult } from "../resources.ts";
 
 /** How a job interacts with remote offload: auto (eligible), force (--remote), never (--local / ineligible). */
 export type OffloadPreference = "auto" | "force" | "never";
 
 /** Default hard wall-clock timeout (minutes) for a remote command. */
 export const DefaultMaxJobMinutes = 30;
+
+/** Remote workspace metadata filenames kept at the root of the remote workspace. */
+export const RemoteManifestDigestFile = ".job-queue-manifest.digest";
+export const RemoteManifestSha256File = ".job-queue-manifest.sha256";
+export const RemoteLockFile = ".job-queue-slot.lock";
+export const RemoteMetadataFiles = [RemoteManifestDigestFile, RemoteManifestSha256File, RemoteLockFile] as const;
 
 /** Mandatory OpenSSH hardening and dead-connection keepalive flags enforced on every remote SSH invocation. */
 export const MandatorySshOptions: readonly string[] = [
@@ -32,6 +39,25 @@ export const MandatorySshOptions: readonly string[] = [
   "ServerAliveCountMax=3",
 ];
 
+/** Single-quotes a string for POSIX bash. */
+export function bashQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) {
+    return value;
+  }
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+/** Expands leading `~/` safely inside bash without quoting away tilde expansion. */
+export function bashWorkspaceExpr(workspace: string): string {
+  if (workspace === "~") {
+    return `"$HOME"`;
+  }
+  if (workspace.startsWith("~/")) {
+    return `"$HOME"/${bashQuote(workspace.slice(2))}`;
+  }
+  return bashQuote(workspace);
+}
+
 /** Builds hardened argv for `ssh`, always prepending mandatory security options and `--` before `remote.host`. */
 export function buildSshArgs(remote: Pick<RemoteSpec, "host" | "sshOptions">, remoteCommand: string): string[] {
   return [...MandatorySshOptions, ...remote.sshOptions, "--", remote.host, remoteCommand];
@@ -44,7 +70,7 @@ export interface RemoteSpec {
   workspace: string;
   /** Maximum concurrent jobs on this remote worker. */
   slots: number;
-  /** CPU cores granted to a job on this remote worker (-m:<cpus>). */
+  /** CPU cores granted to a job on this remote worker. */
   cpus: number;
   /** Maximum memory budget (MB) of a job eligible for this remote worker. */
   memoryMb: number;

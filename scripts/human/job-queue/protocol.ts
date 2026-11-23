@@ -4,7 +4,7 @@ import type { Socket } from "node:net";
 import { BaseProtocolVersion, ProtocolVersion, type RemoteMode } from "./constants.ts";
 import { MaxEnvKeys } from "./environment-hash.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
-import { isRemoteName, type OffloadPreference } from "./remotes.ts";
+import { isRemoteName, type OffloadPreference } from "./remote/spec.ts";
 import { isResourceName, type ShareMode } from "./resources.ts";
 import type { WaitFor } from "./scheduler.ts";
 

@@ -233,6 +233,10 @@ export interface RemoteOffloadContribution {
   readonly failureArtifacts?: readonly RemoteFailureArtifactRule[];
   /** Crash summary rules parsed in memory on non-zero exit. */
   readonly crashSummaries?: readonly RemoteCrashSummaryRule[];
+  /** Process command names (Linux `comm`) to terminate during `remote-reset` (e.g. ["dotnet", "VBCSCompiler"]). */
+  readonly resetProcessNames?: readonly string[];
+  /** Worktree-relative directories to wipe during `remote-reset --clean` (e.g. ["TestResults"]). */
+  readonly resetCleanDirs?: readonly string[];
 }
 
 export interface QueuePlugin {

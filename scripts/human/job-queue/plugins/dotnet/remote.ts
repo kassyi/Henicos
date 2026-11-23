@@ -163,5 +163,7 @@ export function dotnetRemoteOffload(): RemoteOffloadContribution {
     prepareRemoteCommand: prepareDotnetRemoteCommand,
     failureArtifacts: [DotnetReceivedArtifactRule],
     crashSummaries: [DotnetCrashSummaryRule],
+    resetProcessNames: ["dotnet", "VBCSCompiler", "testhost", "vstest"],
+    resetCleanDirs: ["TestResults", "BenchmarkDotNet.Artifacts"],
   };
 }

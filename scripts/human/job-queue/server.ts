@@ -38,7 +38,7 @@ import {
   type ServerMessage,
 } from "./protocol.ts";
 import { MachineProfile } from "./machine.ts";
-import { remoteSpecsFromConfig } from "./remotes.ts";
+import { remoteSpecsFromConfig } from "./remote/spec.ts";
 import { resourceOf, specsFromConfig, usageOf } from "./resources.ts";
 import { Scheduler, type Estimate, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";

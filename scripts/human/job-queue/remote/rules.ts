@@ -1,4 +1,5 @@
-// Validates and merges `QueuePlugin.remoteOffload` contributions into a single `ResolvedRemoteRules` object.
+// Layer 3 Plugin Contribution Merger: validates and merges `QueuePlugin.remoteOffload` contributions into one
+// `ResolvedRemoteRules` instance.
 
 import * as path from "node:path";
 import type {
@@ -9,7 +10,7 @@ import type {
   RemoteOffloadContribution,
   RemoteStatementContext,
   RemoteStatementRewrite,
-} from "./plugin-api.ts";
+} from "../plugin-api.ts";
 
 /** Aggregated remote CPU offload rules collected from all active plugins. */
 export interface ResolvedRemoteRules {
@@ -23,6 +24,8 @@ export interface ResolvedRemoteRules {
   readonly syncExcludeFindNames: readonly string[];
   readonly failureArtifacts: readonly RemoteFailureArtifactRule[];
   readonly crashSummaries: readonly RemoteCrashSummaryRule[];
+  readonly resetProcessNames: readonly string[];
+  readonly resetCleanDirs: readonly string[];
   isOptionValuePath(program: string, subcommand: string, option: string): boolean | undefined;
   rewriteStatement(stmt: RemoteStatementContext): RemoteStatementRewrite;
   prepareRemoteCommand(
@@ -43,6 +46,8 @@ export const EmptyRemoteRules: ResolvedRemoteRules = {
   syncExcludeFindNames: [],
   failureArtifacts: [],
   crashSummaries: [],
+  resetProcessNames: [],
+  resetCleanDirs: [],
   isOptionValuePath: () => undefined,
   rewriteStatement: (stmt) => ({ args: [...stmt.args], collectPaths: [] }),
   prepareRemoteCommand: (command) => ({ command, env: Object.create(null) as Record<string, string> }),
@@ -57,6 +62,7 @@ export interface RemoteContributionEntry {
 const SafeRelPosixPattern = /^[A-Za-z0-9_./-]+$/;
 const SafeFindNamePattern = /^[A-Za-z0-9_.*?-]+$/;
 const SafeEnvKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const SafeProcessNamePattern = /^[A-Za-z0-9_.+-]{1,32}$/;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -180,6 +186,8 @@ const asPrefix = (s: string): string | null => {
   return dir !== null ? `${dir}/` : null;
 };
 const asFindName = (s: string): string | null => (isSafeFindName(s) ? s : null);
+const asProcessName = (s: string): string | null => (SafeProcessNamePattern.test(s) ? s : null);
+const asCleanDir = (s: string): string | null => normalizeSafeDir(s);
 
 type OptionPathFn = NonNullable<RemoteOffloadContribution["isOptionValuePath"]>;
 type StatementRewriteFn = NonNullable<RemoteOffloadContribution["rewriteStatement"]>;
@@ -266,6 +274,8 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
   const syncExcludeFindNames = new Set<string>();
   const failureArtifacts: RemoteFailureArtifactRule[] = [];
   const crashSummaries: RemoteCrashSummaryRule[] = [];
+  const resetProcessNames = new Set<string>();
+  const resetCleanDirs = new Set<string>();
   const optionChecks: { entry: RemoteContributionEntry; fn: OptionPathFn }[] = [];
   const statementRewriters: { entry: RemoteContributionEntry; fn: StatementRewriteFn }[] = [];
   const commandPreparers: { entry: RemoteContributionEntry; fn: CommandPrepareFn }[] = [];
@@ -282,6 +292,8 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     collectStrings(syncExcludeFindNames, c.syncExcludeFindNames, asFindName);
     collectFailureArtifacts(failureArtifacts, c.failureArtifacts);
     collectCrashSummaries(crashSummaries, c.crashSummaries, entry);
+    collectStrings(resetProcessNames, c.resetProcessNames, asProcessName);
+    collectStrings(resetCleanDirs, c.resetCleanDirs, asCleanDir);
     if (typeof c.isOptionValuePath === "function") {
       optionChecks.push({ entry, fn: c.isOptionValuePath as OptionPathFn });
     }
@@ -304,6 +316,8 @@ export function resolveRemoteRules(entries: readonly RemoteContributionEntry[]):
     syncExcludeFindNames: [...syncExcludeFindNames],
     failureArtifacts,
     crashSummaries,
+    resetProcessNames: [...resetProcessNames],
+    resetCleanDirs: [...resetCleanDirs],
     isOptionValuePath: composeOptionPathChecks(optionChecks),
     rewriteStatement: composeStatementRewriters(statementRewriters),
     prepareRemoteCommand: composeCommandPreparers(commandPreparers),

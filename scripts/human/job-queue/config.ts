@@ -1,12 +1,20 @@
 // Typed configuration for the job queue (job-queue.config.json): schema validation, unknown-key forward
 // compatibility warnings, defaults when missing, and mode-specific error handling.
 
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { createRequire } from "node:module";
-import { EntryScript, isRemoteMode, UsageExitCode, type RemoteMode } from "./constants.ts";
+import { EntryScript, UsageExitCode } from "./constants.ts";
 import { errorMessage } from "./history.ts";
 import type { ConfigFileModule, ConfigFileStatus } from "./lib/types.ts";
+import {
+  findDangerousSshOption,
+  loadLocalRemotesConfig as loadLocalRemotesWithProbe,
+  LocalRemotesFileName,
+  validateRemote,
+  type RemoteWorkerConfig,
+} from "./remote/config.ts";
+
+export { findDangerousSshOption, LocalRemotesFileName, type RemoteWorkerConfig };
 
 const require = createRequire(import.meta.url);
 const { loadConfigFile } = require("./lib/config-file.js") as ConfigFileModule;
@@ -59,29 +67,6 @@ export interface LegacyClientsConfig {
   testMemoryMb?: number;
 }
 
-export interface RemoteWorkerConfig {
-  /** SSH host (e.g. "jobrunner@ubuntu-server.lan"). */
-  host: string;
-  /** Remote workspace directory (e.g. "~/henicos"). */
-  workspace: string;
-  /** Maximum concurrent jobs on this remote worker. Default 1. */
-  slots?: number;
-  /** CPU cores granted to a job on this remote worker (-m:<cpus>). */
-  cpus: number;
-  /** Maximum memory budget (MB) of a job eligible for this remote worker. */
-  memoryMb: number;
-  /** Routing mode: prefer-remote (default), remote-only, spillover, or off. */
-  mode?: RemoteMode;
-  /** Hard wall-clock timeout (minutes) enforced on the remote worker via `timeout`. Default 30. */
-  maxJobMinutes?: number;
-  /** Extra ssh CLI arguments (e.g. ["-o", "ConnectTimeout=5"]). Security flags are always enforced. */
-  sshOptions?: string[];
-  /** Strip --disable-build-servers / -nodeReuse:false on remote Linux runs to keep VBCSCompiler warm. Default true. */
-  keepBuildServersWarm?: boolean;
-  /** Optional health/free-memory probe run by the scheduler via ProbeRunner (must invoke ssh). */
-  probe?: ResourceProbeConfig;
-}
-
 export interface QueueConfig {
   /** Config format version. Currently 1. */
   version: 1;
@@ -113,8 +98,6 @@ export interface LoadConfigOptions {
   exit?: (code: number) => never;
 }
 
-export const LocalRemotesFileName = "remotes.local.json";
-
 export interface LoadedConfig {
   config: QueueConfig;
   path: string | null;
@@ -141,78 +124,6 @@ const TopLevelKeys = new Set([
 const PluginKeys = new Set(["name", "options"]);
 const PoolsKeys = new Set(["coresPerSlot", "minimumSlots", "memoryShare", "defaultTestMemoryMb"]);
 const ResourceKeys = new Set(["slots", "lock", "probe", "holderWatch"]);
-const RemoteKeys = new Set([
-  "host",
-  "workspace",
-  "slots",
-  "cpus",
-  "memoryMb",
-  "mode",
-  "maxJobMinutes",
-  "sshOptions",
-  "keepBuildServersWarm",
-  "probe",
-]);
-
-/** Valid SSH target: optional user@, followed by hostname/IP; never starts with '-' (prevents option injection). */
-const RemoteHostPattern = /^(?:[A-Za-z0-9._-]+@)?[A-Za-z0-9][A-Za-z0-9._-]*$/;
-
-/** Dangerous OpenSSH short flags that enable forwarding, arbitrary config files, or local command execution. */
-const DangerousSshShortFlags = new Set(["-A", "-X", "-Y", "-L", "-R", "-D", "-W", "-F", "-J", "-S"]);
-
-/**
- * Dangerous OpenSSH -o option rules. Returns the offending option string if any entry in `args` attempts to weaken
- * host-key verification, forward agent/X11/ports, or execute local commands (ProxyCommand / LocalCommand).
- */
-export function findDangerousSshOption(args: readonly string[]): string | null {
-  for (let i = 0; i < args.length; i++) {
-    const token = args[i] as string;
-    if (token === "--") {
-      break;
-    }
-    if (DangerousSshShortFlags.has(token) || /^-[AXYLDRWFJS]/.test(token)) {
-      return token;
-    }
-    let optSpec = "";
-    if (token === "-o" && i + 1 < args.length) {
-      optSpec = args[++i] as string;
-    } else if (token.startsWith("-o") && token.length > 2) {
-      optSpec = token.slice(2);
-    } else {
-      continue;
-    }
-    const eq = optSpec.search(/[=\s]/);
-    const key = (eq >= 0 ? optSpec.slice(0, eq) : optSpec).trim().toLowerCase();
-    const val = (eq >= 0 ? optSpec.slice(eq + 1) : "").trim().toLowerCase();
-    if (
-      key === "proxycommand" ||
-      key === "localcommand" ||
-      key === "remotecommand" ||
-      key === "knownhostscommand" ||
-      key === "proxyjump" ||
-      key === "userknownhostsfile" ||
-      key === "globalknownhostsfile" ||
-      key === "localforward" ||
-      key === "remoteforward" ||
-      key === "dynamicforward"
-    ) {
-      return optSpec;
-    }
-    if (key === "permitlocalcommand" && val !== "no") {
-      return optSpec;
-    }
-    if ((key === "forwardagent" || key === "forwardx11" || key === "forwardx11trusted") && val !== "no") {
-      return optSpec;
-    }
-    if (key === "stricthostkeychecking" && val !== "yes") {
-      return optSpec;
-    }
-    if (key === "clearallforwardings" && val !== "yes") {
-      return optSpec;
-    }
-  }
-  return null;
-}
 const LockKeys = new Set(["seats"]);
 const ProbeKeys = new Set(["argv", "min", "timeoutMs", "settleMs"]);
 const LegacyClientsKeys = new Set(["testPattern", "testMemoryMb"]);
@@ -414,91 +325,6 @@ function validateProbe(scope: string, raw: unknown, warn: (message: string) => v
   return probe;
 }
 
-function validateRemote(name: string, raw: unknown, warn: (message: string) => void): RemoteWorkerConfig {
-  if (!ResourceNamePattern.test(name)) {
-    throw new Error(`invalid config remote name "${name}"`);
-  }
-  if (!isPlainObject(raw)) {
-    throw new Error(`config remotes.${name} must be an object`);
-  }
-  warnUnknownKeys(raw, RemoteKeys, `remotes.${name}`, warn);
-  if (!isNonEmptyString(raw.host) || !RemoteHostPattern.test(raw.host)) {
-    throw new Error(`config remotes.${name}.host must be a valid [user@]hostname without leading "-"`);
-  }
-  if (!isNonEmptyString(raw.workspace)) {
-    throw new Error(`config remotes.${name}.workspace must be a non-empty string`);
-  }
-  if (typeof raw.cpus !== "number" || !Number.isInteger(raw.cpus) || raw.cpus < 1) {
-    throw new Error(`config remotes.${name}.cpus must be a positive integer`);
-  }
-  if (typeof raw.memoryMb !== "number" || !Number.isFinite(raw.memoryMb) || raw.memoryMb < 0) {
-    throw new Error(`config remotes.${name}.memoryMb must be a non-negative finite number`);
-  }
-  const remote: RemoteWorkerConfig = {
-    host: raw.host,
-    workspace: raw.workspace,
-    cpus: raw.cpus,
-    memoryMb: raw.memoryMb,
-  };
-  if (raw.slots !== undefined) {
-    if (
-      typeof raw.slots !== "number" ||
-      !Number.isInteger(raw.slots) ||
-      raw.slots < 1 ||
-      raw.slots > MaxResourceSlots
-    ) {
-      throw new Error(`config remotes.${name}.slots must be an integer between 1 and ${MaxResourceSlots}`);
-    }
-    remote.slots = raw.slots;
-  }
-  if (raw.mode !== undefined) {
-    if (!isRemoteMode(raw.mode)) {
-      throw new Error(`config remotes.${name}.mode must be one of prefer-remote, remote-only, spillover, off`);
-    }
-    remote.mode = raw.mode;
-  }
-  if (raw.maxJobMinutes !== undefined) {
-    if (
-      typeof raw.maxJobMinutes !== "number" ||
-      !Number.isInteger(raw.maxJobMinutes) ||
-      raw.maxJobMinutes < 1 ||
-      raw.maxJobMinutes > 1440
-    ) {
-      throw new Error(`config remotes.${name}.maxJobMinutes must be an integer between 1 and 1440`);
-    }
-    remote.maxJobMinutes = raw.maxJobMinutes;
-  }
-  if (raw.sshOptions !== undefined) {
-    if (!Array.isArray(raw.sshOptions) || !raw.sshOptions.every(isNonEmptyString)) {
-      throw new Error(`config remotes.${name}.sshOptions must be an array of non-empty strings`);
-    }
-    const dangerous = findDangerousSshOption(raw.sshOptions);
-    if (dangerous !== null) {
-      throw new Error(`config remotes.${name}.sshOptions forbids unsafe SSH option "${dangerous}"`);
-    }
-    remote.sshOptions = [...raw.sshOptions];
-  }
-  if (raw.keepBuildServersWarm !== undefined) {
-    if (typeof raw.keepBuildServersWarm !== "boolean") {
-      throw new Error(`config remotes.${name}.keepBuildServersWarm must be a boolean`);
-    }
-    remote.keepBuildServersWarm = raw.keepBuildServersWarm;
-  }
-  if (raw.probe !== undefined) {
-    const probe = validateProbe(`remotes.${name}.probe`, raw.probe, warn);
-    const prog = path.basename(probe.argv[0] as string).toLowerCase();
-    if (prog !== "ssh" && prog !== "ssh.exe") {
-      throw new Error(`config remotes.${name}.probe.argv[0] must be "ssh"`);
-    }
-    const dangerous = findDangerousSshOption(probe.argv.slice(1));
-    if (dangerous !== null) {
-      throw new Error(`config remotes.${name}.probe.argv forbids unsafe SSH option "${dangerous}"`);
-    }
-    remote.probe = probe;
-  }
-  return remote;
-}
-
 function validateLegacyClients(raw: unknown, warn: (message: string) => void): LegacyClientsConfig {
   if (!isPlainObject(raw)) {
     throw new Error("config legacyClients must be an object");
@@ -615,7 +441,7 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
     }
     const remotes: Record<string, RemoteWorkerConfig> = {};
     for (const [name, value] of Object.entries(raw.remotes)) {
-      remotes[name] = validateRemote(name, value, warn);
+      remotes[name] = validateRemote(name, value, validateProbe, warn);
     }
     config.remotes = remotes;
   }
@@ -633,43 +459,7 @@ export function loadLocalRemotesConfig(
   stateDir: string,
   warn: (message: string) => void = () => {},
 ): Record<string, RemoteWorkerConfig> | undefined {
-  const filePath = path.join(stateDir, LocalRemotesFileName);
-  let text: string;
-  try {
-    text = fs.readFileSync(filePath, "utf8");
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
-      return undefined;
-    }
-    warn(`could not read ${filePath}: ${errorMessage(error)}`);
-    return undefined;
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch (error) {
-    warn(`invalid ${filePath}: ${errorMessage(error)}; ignoring remote workers`);
-    return undefined;
-  }
-  if (!isPlainObject(parsed)) {
-    warn(`invalid ${filePath}: root must be a JSON object; ignoring remote workers`);
-    return undefined;
-  }
-  const rawRemotes = parsed.remotes !== undefined ? parsed.remotes : parsed;
-  if (!isPlainObject(rawRemotes)) {
-    warn(`invalid ${filePath}: remotes must be a JSON object; ignoring remote workers`);
-    return undefined;
-  }
-  try {
-    const remotes: Record<string, RemoteWorkerConfig> = {};
-    for (const [name, value] of Object.entries(rawRemotes)) {
-      remotes[name] = validateRemote(name, value, warn);
-    }
-    return Object.keys(remotes).length > 0 ? remotes : undefined;
-  } catch (error) {
-    warn(`invalid ${filePath}: ${errorMessage(error)}; ignoring remote workers`);
-    return undefined;
-  }
+  return loadLocalRemotesWithProbe(stateDir, validateProbe, warn);
 }
 
 /**

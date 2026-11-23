@@ -18,7 +18,7 @@ import { QueuedRun } from "./client-queued-run.ts";
 import { ProcessRunHost, type RunHost } from "./client-run-host.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import { type Placement } from "./protocol.ts";
-import type { RemoteSpec } from "./remotes.ts";
+import type { RemoteSpec } from "./remote/spec.ts";
 import { CommandShell } from "./shell.ts";
 import { ProcessTable, prefix, resolveWorktree } from "./system.ts";
 

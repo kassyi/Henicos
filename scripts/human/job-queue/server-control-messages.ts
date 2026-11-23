@@ -5,7 +5,7 @@ import type * as net from "node:net";
 import { idField, numberField, send, type Incoming, type ServerMessage } from "./protocol.ts";
 import { formatJobId, pickSuffixMatch } from "./job-id.ts";
 import type { Connection, MessageHandler } from "./server-connection.ts";
-import { describeRemote } from "./remotes.ts";
+import { describeRemote } from "./remote/spec.ts";
 import { describeResource } from "./resources.ts";
 import { describeJob, type ServerJob } from "./server-job.ts";
 import type { JobServer } from "./server.ts";

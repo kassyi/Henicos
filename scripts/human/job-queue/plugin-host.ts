@@ -27,7 +27,7 @@ import {
 } from "./plugin-api.ts";
 import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
-import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote-rules.ts";
+import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
 
 export type BaseClientContext = Omit<ClientContext, "options">;
 

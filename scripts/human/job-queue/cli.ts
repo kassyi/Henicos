@@ -35,8 +35,9 @@ import {
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
-import { remoteReset } from "./remote-control.ts";
-import { remoteSpecsFromConfig } from "./remotes.ts";
+import { remoteReset } from "./remote/control.ts";
+import { remoteSpecsFromConfig } from "./remote/spec.ts";
+import { CommandShell } from "./shell.ts";
 import { prefix, resolveStateDirectory, resolveWorktree } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
@@ -441,7 +442,12 @@ export async function main(argv: string[]): Promise<void> {
     }
     options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
     options.remotes = remoteSpecsFromConfig(loaded.config);
-    if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
+    if (
+      options.mode === "run" ||
+      (options.mode === "status" && options.watch) ||
+      options.mode === "screenshots" ||
+      options.mode === "remote-reset"
+    ) {
       plugins = await PluginHost.load(loaded.config, loaded.configRoot);
     }
   }
@@ -518,11 +524,21 @@ export async function main(argv: string[]): Promise<void> {
         await stop(options.port);
         break;
       case "remote-reset": {
+        const cwd = process.cwd();
+        const remoteRules = plugins?.remoteOffload({
+          cwd,
+          worktree: cwd,
+          configRoot: plugins.configRoot,
+          shell: CommandShell.resolve(options.shell).name,
+          env: process.env,
+          log: prefix,
+        });
         const code = await remoteReset(
           options.remotes ?? [],
           options.remoteTarget,
           options.clean,
           options.stateDir || resolveStateDirectory(),
+          remoteRules,
         );
         if (code !== 0) {
           process.exitCode = code;

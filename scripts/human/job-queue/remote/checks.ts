@@ -1,16 +1,22 @@
-// Unit and in-process server checks for transparent remote CPU job offload:
-// scheduler remote slots & fallback, strict local vs remote history separation, command translation & worktree
-// boundaries, manifest diffing, and config validation.
+// Unit and offline E2E checks for transparent remote CPU job offload:
+// scheduler remote slots & fallback, strict local vs remote history separation, ShellDialect command translation,
+// manifest diffing, 1-pass frame parsing, 6-gate Chain of Responsibility, config validation, and FakeRemoteTransport
+// E2E (sync -> exit-254 auto-heal retry -> crash attribution -> artifact pull-back -> plugin-driven remote-reset).
 
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { loadConfig, loadLocalRemotesConfig, LocalRemotesFileName, validateConfig } from "./config.ts";
-import { RunHistory } from "./history.ts";
-import { PluginApiVersion, type AssertModule, type QueuePlugin } from "./plugin-api.ts";
-import { PluginHost } from "./plugin-host.ts";
-import { translateForRemote } from "./remote-command.ts";
-import { RemoteStreamSanitizer, validateAndWriteArtifacts } from "./remote-output.ts";
+import { loadConfig, loadLocalRemotesConfig, LocalRemotesFileName, validateConfig } from "../config.ts";
+import { RunHistory } from "../history.ts";
+import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../plugin-api.ts";
+import { PluginHost } from "../plugin-host.ts";
+import { Scheduler, type Estimate, type SchedulerJob } from "../scheduler.ts";
+import type { ShellResult } from "../shell.ts";
+import { parseArtifactFrames, RemoteStreamSanitizer, validateAndWriteArtifacts } from "./artifact-collector.ts";
+import { translateForRemote } from "./command-translator.ts";
+import { buildResetScript, resetWorker } from "./control.ts";
+import { buildExecScript, RemoteRunner } from "./runner.ts";
+import { buildSshArgs, fitsRemote, type RemoteSpec } from "./spec.ts";
 import {
   buildRemoteFindPruneExpr,
   diffManifests,
@@ -18,9 +24,8 @@ import {
   isExcludedSyncPath,
   manifestDigest,
   parseRemoteSha256Output,
-} from "./remote-sync.ts";
-import { buildSshArgs, fitsRemote, type RemoteSpec } from "./remotes.ts";
-import { Scheduler, type Estimate, type SchedulerJob } from "./scheduler.ts";
+} from "./syncer.ts";
+import type { CaptureResult, RemoteTransport, StreamCallbacks } from "./transport.ts";
 
 function makeRemote(overrides: Partial<RemoteSpec> = {}): RemoteSpec {
   return {
@@ -56,7 +61,57 @@ function makeJob(id: number, overrides: Partial<SchedulerJob> = {}): SchedulerJo
   };
 }
 
-export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
+function makeFrame(rel: string, content: string): Buffer {
+  const body = Buffer.from(content, "utf8");
+  return Buffer.concat([Buffer.from(`${rel}\0${body.length}\n`, "utf8"), body]);
+}
+
+/** In-memory `RemoteTransport` adapter for offline E2E verification without SSH. */
+class FakeRemoteTransport implements RemoteTransport {
+  readonly spec: RemoteSpec;
+  readonly execCalls: string[] = [];
+  readonly uploadCalls: { remoteCommand: string; files: string[] }[] = [];
+  readonly interactiveCalls: string[] = [];
+  execHandler: (script: string) => CaptureResult = () => ({ code: 0, stdout: "", stderr: "" });
+  binaryHandler: (script: string) => Buffer | null = () => null;
+  uploadHandler: (files: readonly string[]) => { code: number; stderr: string } = () => ({ code: 0, stderr: "" });
+  interactiveHandler: (script: string, callbacks: StreamCallbacks) => ShellResult = () => ({
+    code: 0,
+    signaled: false,
+  });
+
+  constructor(spec: RemoteSpec) {
+    this.spec = spec;
+  }
+
+  async exec(script: string): Promise<CaptureResult> {
+    this.execCalls.push(script);
+    return this.execHandler(script);
+  }
+
+  async execBinary(script: string, _maxBytes: number): Promise<Buffer | null> {
+    return this.binaryHandler(script);
+  }
+
+  async streamUpload(
+    remoteCommand: string,
+    _headerChunks: readonly Buffer[],
+    _worktree: string,
+    files: readonly string[],
+  ): Promise<{ code: number; stderr: string }> {
+    this.uploadCalls.push({ remoteCommand, files: [...files] });
+    return this.uploadHandler(files);
+  }
+
+  async spawnInteractive(script: string, callbacks: StreamCallbacks): Promise<ShellResult> {
+    this.interactiveCalls.push(script);
+    const result = this.interactiveHandler(script, callbacks);
+    callbacks.onClose?.();
+    return result;
+  }
+}
+
+export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   remoteSchedulerPrefersRemoteWithoutLocalUsage(assert: AssertModule): void {
     const remote = makeRemote({ slots: 1, memoryMb: 6144, mode: "prefer-remote" });
     const scheduler = new Scheduler<SchedulerJob>(2, 0, "hrrn", 8192, undefined, [remote]);
@@ -67,7 +122,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     assert.strictEqual(scheduler.used, 0, "remote job consumes 0 local CPU slots");
     assert.strictEqual(scheduler.memoryUsed, 0, "remote job consumes 0 local memory");
 
-    // Second offloadable job while remote is full (1/1) spills over to local slots
     const j2 = makeJob(2, { memoryMb: 2880, offload: "auto" });
     const granted2 = scheduler.enqueue(j2, 2001);
     assert.deepStrictEqual(granted2, [j2]);
@@ -75,7 +129,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     assert.strictEqual(scheduler.used, 1);
     assert.strictEqual(scheduler.memoryUsed, 2880);
 
-    // Detaching remote job leaves local accounting intact
     scheduler.detach(j1);
     assert.strictEqual(scheduler.used, 1);
     assert.strictEqual(scheduler.memoryUsed, 2880);
@@ -84,7 +137,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
   remoteSchedulerRespectsMemoryCap(assert: AssertModule): void {
     const remote = makeRemote({ slots: 1, memoryMb: 6144, mode: "prefer-remote" });
     const scheduler = new Scheduler<SchedulerJob>(2, 0, "hrrn", 16384, undefined, [remote]);
-    // Stress test (6720 MB > 6144 MB) must stay on local even when remote is completely idle
     const stress = makeJob(1, { memoryMb: 6720, offload: "auto" });
     const granted = scheduler.enqueue(stress, 2000);
     assert.deepStrictEqual(granted, [stress]);
@@ -102,27 +154,20 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     });
     const scheduler = new Scheduler<SchedulerJob>(2, 0, "hrrn", 8192, undefined, [remote]);
     const j1 = makeJob(1, { offload: "auto" });
-    const firstGrant = scheduler.enqueue(j1, 5000);
-    assert.deepStrictEqual(firstGrant, [], "initial unprobed remote holds job briefly for probe");
+    assert.deepStrictEqual(scheduler.enqueue(j1, 5000), [], "initial unprobed remote holds job briefly for probe");
     assert.strictEqual(scheduler.waitFor(j1, 5000), "remote");
     assert.deepStrictEqual(scheduler.remoteProbesWanted(5000), ["ubuntu"]);
 
-    // Probe fails (server offline): auto job falls back to local immediately
     scheduler.recordRemoteProbe("ubuntu", { ok: false, value: null, at: 5100, generation: 0, why: "timeout" });
-    const afterFail = scheduler.grant(5100);
-    assert.deepStrictEqual(afterFail, [j1]);
+    assert.deepStrictEqual(scheduler.grant(5100), [j1]);
     assert.strictEqual(j1.remote, undefined, "offline remote falls back to local for auto job");
 
-    // Forced --remote job does NOT fall back to local when probe failed
     const forced = makeJob(2, { offload: "force" });
-    const forcedGrant = scheduler.enqueue(forced, 5200);
-    assert.deepStrictEqual(forcedGrant, [], "forced remote job never falls back to local");
+    assert.deepStrictEqual(scheduler.enqueue(forced, 5200), [], "forced remote job never falls back to local");
     assert.strictEqual(scheduler.waitFor(forced, 5200), "remote");
 
-    // Probe recovers: forced job now runs on ubuntu
     scheduler.recordRemoteProbe("ubuntu", { ok: true, value: 4096, at: 25000, generation: 0 });
-    const recovered = scheduler.grant(25000);
-    assert.deepStrictEqual(recovered, [forced]);
+    assert.deepStrictEqual(scheduler.grant(25000), [forced]);
     assert.strictEqual(forced.remote, "ubuntu");
   },
 
@@ -131,16 +176,8 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     const scheduler = new Scheduler<SchedulerJob>(1, 0, "hrrn", 8192, undefined, [remote]);
     const localEst: Estimate = { typicalMs: 10_000, longestMs: 15_000 };
     const remoteEst: Estimate = { typicalMs: 90_000, longestMs: 120_000 };
-    const j1 = makeJob(1, {
-      offload: "auto",
-      estimate: localEst,
-      remoteEstimates: new Map([["ubuntu", remoteEst]]),
-    });
-    const j2 = makeJob(2, {
-      offload: "never",
-      estimate: localEst,
-      remoteEstimates: new Map([["ubuntu", remoteEst]]),
-    });
+    const j1 = makeJob(1, { offload: "auto", estimate: localEst, remoteEstimates: new Map([["ubuntu", remoteEst]]) });
+    const j2 = makeJob(2, { offload: "never", estimate: localEst, remoteEstimates: new Map([["ubuntu", remoteEst]]) });
     scheduler.enqueue(j1, 1000);
     scheduler.enqueue(j2, 1000);
     assert.strictEqual(j1.remote, "ubuntu");
@@ -187,7 +224,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       fs.mkdirSync(path.dirname(scriptB), { recursive: true });
       fs.writeFileSync(scriptB, "console.log('ok');");
 
-      // Without plugins, generic core allows `node` and `echo`, and rejects ecosystem-specific tools like `dotnet`
       const outB = path.join(wtB, "tmp", "out.json");
       const coreNodePlan = translateForRemote(`$env:CI='true'; node ${scriptB} --output ${outB}`, {
         cwd: wtA,
@@ -220,7 +256,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         "core without plugins does not hardcode dotnet as an allowed program",
       );
 
-      // Plugin-contributed remote rules work for any ecosystem (e.g. cargo)
       const cargoPlugin: QueuePlugin = {
         name: "cargo",
         apiVersion: PluginApiVersion,
@@ -270,25 +305,26 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       assert.strictEqual(cargoPlan.env.CARGO_BUILD_JOBS, "4");
       assert.strictEqual(cargoPlan.note, "4 cargo jobs");
 
-      // Spanning two different worktrees must return null (fail-closed)
       const scriptA = path.join(wtA, "scripts", "a.js");
       fs.mkdirSync(path.dirname(scriptA), { recursive: true });
       fs.writeFileSync(scriptA, "console.log('a');");
-      const multi = translateForRemote(`node ${scriptA} && node ${scriptB}`, {
-        cwd: wtA,
-        worktree: wtA,
-        shell: "pwsh",
-        places: {
-          [scriptA]: { root: wtA, ignored: false },
-          [scriptB]: { root: wtB, ignored: false },
-        },
-        cpus: 4,
-        keepBuildServersWarm: true,
-        env: {},
-      });
-      assert.strictEqual(multi, null, "multi-worktree command must not offload");
+      assert.strictEqual(
+        translateForRemote(`node ${scriptA} && node ${scriptB}`, {
+          cwd: wtA,
+          worktree: wtA,
+          shell: "pwsh",
+          places: {
+            [scriptA]: { root: wtA, ignored: false },
+            [scriptB]: { root: wtB, ignored: false },
+          },
+          cpus: 4,
+          keepBuildServersWarm: true,
+          env: {},
+        }),
+        null,
+        "multi-worktree command must not offload",
+      );
 
-      // Ignored path or pipe must return null
       assert.strictEqual(
         translateForRemote(`node ${scriptB} | Select-Object -First 5`, {
           cwd: wtB,
@@ -326,18 +362,15 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     assert.deepStrictEqual(diff.toDelete, ["src/old.cs"]);
     assert.strictEqual(diff.localDigest, manifestDigest(local));
 
-    // Core generic exclusions
     assert.strictEqual(isExcludedSyncPath("src/Foo/bin/Debug/a.dll"), true);
     assert.strictEqual(isExcludedSyncPath("src/Foo/obj/linux/a.o"), true);
     assert.strictEqual(isExcludedSyncPath(".claude/worktrees/w1/a.cs"), true);
     assert.strictEqual(isExcludedSyncPath("tmp/foo.txt"), true);
     assert.strictEqual(isExcludedSyncPath("src/debug.log"), true);
     assert.strictEqual(isExcludedSyncPath("src/Compiler/Emit.cs"), false);
-    // Repo-specific and .NET-specific exclusions are NOT hardcoded in core
     assert.strictEqual(isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs"), false);
     assert.strictEqual(isExcludedSyncPath("tests/Snap.received.cs"), false);
 
-    // Custom plugin sync rules extend both isExcludedSyncPath and buildRemoteFindPruneExpr consistently
     const customRules = { excludePrefixes: ["target/", "generated/"], excludeFindNames: ["*.snap.new"] };
     assert.strictEqual(isExcludedSyncPath("target/debug/app", customRules), true);
     assert.strictEqual(isExcludedSyncPath("tests/foo.snap.new", customRules), true);
@@ -359,7 +392,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
 
   remoteStreamSanitizerStripsDangerousEscapes(assert: AssertModule): void {
     const san = new RemoteStreamSanitizer();
-    // Split OSC 52 clipboard injection, window title, cursor up, and valid SGR red + Japanese UTF-8 across chunks
     const raw =
       "\x1b[31mFailed\x1b[0m MyTests.Crash\r\n" +
       "\x1b]52;c;ZXZpbA==\x07" +
@@ -369,7 +401,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       "   at Foo.Bar() in /home/jobrunner/henicos/tests/Foo.cs:line 42\n";
     const buf = Buffer.from(raw, "utf8");
     let out = "";
-    // Feed in 3-byte slices to stress multi-byte UTF-8 and split escape sequences
     for (let i = 0; i < buf.length; i += 3) {
       out += san.push(buf.subarray(i, i + 3));
     }
@@ -384,14 +415,15 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
   },
 
   remoteArtifactValidatorBlocksAttacksAndWritesAllowedFiles(assert: AssertModule): void {
+    // 1-pass frame parser edge cases
+    const truncated = parseArtifactFrames(Buffer.from("a.txt\x0099\nhi", "utf8"));
+    assert.strictEqual(truncated.frames.length, 0);
+    assert.strictEqual(truncated.errors.length, 1);
+
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-art-"));
     try {
       const wt = path.join(tmp, "wt");
       fs.mkdirSync(path.join(wt, "tests", "Snapshots"), { recursive: true });
-      const frame = (rel: string, content: string): Buffer => {
-        const body = Buffer.from(content, "utf8");
-        return Buffer.concat([Buffer.from(`${rel}\0${body.length}\n`, "utf8"), body]);
-      };
       const customFailureRule = {
         searchDirs: ["tests"],
         findName: "*.actual.txt",
@@ -399,19 +431,16 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
         requireKnownLocalDir: true,
       };
       const payload = Buffer.concat([
-        // Allowed: plugin-declared failure artifact inside known test directory
-        frame("tests/Snapshots/Snap.Foo.actual.txt", "actual output"),
-        // Allowed: .trx inside explicit collectPaths
-        frame("tmp/trx/run1.trx", "<TestRun />"),
-        // Attacks that MUST all be rejected
-        frame("../outside.txt", "escape"),
-        frame("/etc/passwd", "abs"),
-        frame(".git/config", "git hijack"),
-        frame("scripts/human/job-queue.js", "rce"),
-        frame("tests/Snapshots/Snap.Foo.verified.txt", "snapshot tamper"),
-        frame("tests/Snapshots/Evil.cs", "source tamper"),
-        frame("tests/UnknownDir/Snap.Foo.actual.txt", "untracked dir"),
-        frame("tmp/trx/crash.dmp", "huge dump"),
+        makeFrame("tests/Snapshots/Snap.Foo.actual.txt", "actual output"),
+        makeFrame("tmp/trx/run1.trx", "<TestRun />"),
+        makeFrame("../outside.txt", "escape"),
+        makeFrame("/etc/passwd", "abs"),
+        makeFrame(".git/config", "git hijack"),
+        makeFrame("scripts/human/job-queue.js", "rce"),
+        makeFrame("tests/Snapshots/Snap.Foo.verified.txt", "snapshot tamper"),
+        makeFrame("tests/Snapshots/Evil.cs", "source tamper"),
+        makeFrame("tests/UnknownDir/Snap.Foo.actual.txt", "untracked dir"),
+        makeFrame("tmp/trx/crash.dmp", "huge dump"),
       ]);
       const result = validateAndWriteArtifacts(payload, {
         worktree: wt,
@@ -431,8 +460,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       assert.ok(!fs.existsSync(path.join(wt, "tests", "Snapshots", "Snap.Foo.verified.txt")));
       assert.ok(!fs.existsSync(path.join(wt, "scripts", "human", "job-queue.js")));
 
-      // Without failureArtifacts rules, *.received.txt is NOT implicitly allowed by core
-      const noPluginRules = validateAndWriteArtifacts(frame("tests/Snapshots/Snap.Foo.received.txt", "x"), {
+      const noPluginRules = validateAndWriteArtifacts(makeFrame("tests/Snapshots/Snap.Foo.received.txt", "x"), {
         worktree: wt,
         allowReceived: true,
         knownLocalDirs: new Set(["tests/Snapshots"]),
@@ -441,8 +469,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       assert.deepStrictEqual(noPluginRules.writtenFiles, []);
       assert.strictEqual(noPluginRules.rejectedFiles.length, 1);
 
-      // Quota enforcement rejects oversized single file
-      const big = validateAndWriteArtifacts(frame("tmp/trx/big.trx", "x".repeat(200)), {
+      const big = validateAndWriteArtifacts(makeFrame("tmp/trx/big.trx", "x".repeat(200)), {
         worktree: wt,
         allowReceived: false,
         knownLocalDirs: new Set(),
@@ -451,6 +478,109 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       });
       assert.deepStrictEqual(big.writtenFiles, []);
       assert.strictEqual(big.rejectedFiles.length, 1);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  },
+
+  async remoteRunnerAndControlOfflineE2E(assert: AssertModule): Promise<void> {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-runner-e2e-"));
+    try {
+      const wt = path.join(tmp, "wt");
+      const stateDir = path.join(tmp, "state");
+      fs.mkdirSync(path.join(wt, "tests", "Snap"), { recursive: true });
+      fs.mkdirSync(stateDir, { recursive: true });
+
+      const plugin: QueuePlugin = {
+        name: "demo",
+        apiVersion: PluginApiVersion,
+        remoteOffload: () => ({
+          failureArtifacts: [
+            {
+              searchDirs: ["tests"],
+              findName: "*.actual.txt",
+              allowPattern: /^tests\/[A-Za-z0-9_./-]+\.actual\.txt$/,
+              requireKnownLocalDir: true,
+              cleanBeforeRun: true,
+            },
+          ],
+          crashSummaries: [
+            {
+              searchDirs: ["CrashDir"],
+              findName: "crash_*.txt",
+              pathPattern: /^CrashDir\/crash_[^/]+\.txt$/,
+              cleanBeforeRun: true,
+              parse: (content) => content.split(/\r?\n/).filter(Boolean),
+            },
+          ],
+          resetProcessNames: ["demo-runner"],
+          resetCleanDirs: ["CrashDir"],
+        }),
+      };
+      const host = new PluginHost([plugin], [{}], wt, () => {});
+      const rules = host.remoteOffload({
+        cwd: wt,
+        worktree: wt,
+        configRoot: wt,
+        shell: "bash",
+        env: {},
+        log: () => {},
+      });
+
+      // Pure script builders include plugin rules and omit hardcoded .NET/Henicos names
+      const execScript = buildExecScript({
+        workspace: "~/demo",
+        maxJobMinutes: 10,
+        plan: { worktree: wt, remoteCwdRel: "", bashCommand: "echo hi", env: { FOO: "1" }, collectPaths: [] },
+        pruneExpr: "\\( -path './tmp' \\) -prune -o \\( -type f -print0 \\)",
+        expectedDigest: "deadbeef",
+        verifyIntegrity: true,
+        remoteRules: rules,
+        eofToken: "__EOF_TEST__",
+      });
+      assert.ok(execScript.includes("find tests -name '*.actual.txt' -delete"));
+      assert.ok(execScript.includes("find CrashDir -name 'crash_*.txt' -delete"));
+      assert.ok(execScript.includes("__EOF_TEST__"));
+
+      const resetScript = buildResetScript("~/demo", true, rules);
+      assert.ok(resetScript.includes("demo-runner"));
+      assert.ok(resetScript.includes('"$WS"/CrashDir'));
+      assert.ok(!resetScript.includes("StackLinqEmbedded"), "core reset script has no Henicos hardcode");
+      assert.ok(!resetScript.includes("VBCSCompiler"), "core reset script has no dotnet hardcode");
+
+      // Offline E2E via FakeRemoteTransport: initial sync -> exit 254 integrity mismatch -> resync -> exit 1 + artifact pull
+      const transport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
+      let interactiveAttempt = 0;
+      transport.interactiveHandler = () => {
+        interactiveAttempt++;
+        return interactiveAttempt === 1 ? { code: 254, signaled: false } : { code: 1, signaled: false };
+      };
+      transport.binaryHandler = () =>
+        Buffer.concat([
+          makeFrame("CrashDir/crash_1.txt", "Suite.AbortedTest\n"),
+          makeFrame("tests/Snap/Case.actual.txt", "got-42"),
+        ]);
+
+      const runner = new RemoteRunner(transport, stateDir, rules);
+      const localManifest = { "tests/Snap/Case.cs": "a".repeat(64) };
+      const res = await runner.execute(
+        { worktree: wt, remoteCwdRel: "", bashCommand: "echo test", env: {}, collectPaths: [] },
+        () => {},
+        localManifest,
+      );
+      assert.strictEqual(res.code, 1);
+      assert.strictEqual(interactiveAttempt, 2, "retried once after exit 254 integrity mismatch");
+      assert.strictEqual(transport.uploadCalls.length, 2, "initial sync + clean resync after 254");
+      assert.strictEqual(fs.readFileSync(path.join(wt, "tests", "Snap", "Case.actual.txt"), "utf8"), "got-42");
+      assert.ok(!fs.existsSync(path.join(wt, "CrashDir")), "crash summary parsed in memory, never written to disk");
+
+      // Offline remote-reset via FakeRemoteTransport clears local manifest cache and parses RESET_OK
+      transport.execHandler = () => ({ code: 0, stdout: "RESET_OK killed=3 mem_mb=4096\n", stderr: "" });
+      const resetRes = await resetWorker(transport, true, stateDir, rules);
+      assert.strictEqual(resetRes.ok, true);
+      assert.strictEqual(resetRes.killed, "3");
+      assert.strictEqual(resetRes.memMb, "4096");
+      assert.ok(!fs.existsSync(path.join(stateDir, "remote-manifest-ubuntu.json")));
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -476,8 +606,7 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
     });
     assert.strictEqual(valid.remotes?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
 
-    // Validate the tracked sample file remotes.local.example.json
-    const samplePath = path.join(import.meta.dirname, "remotes.local.example.json");
+    const samplePath = path.join(import.meta.dirname, "..", "remotes.local.example.json");
     const sampleTmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-local-rem-"));
     try {
       fs.copyFileSync(samplePath, path.join(sampleTmp, LocalRemotesFileName));
@@ -485,7 +614,6 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       assert.ok(loadedSample?.ubuntu !== undefined, "remotes.local.example.json validates cleanly");
       assert.strictEqual(loadedSample?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
 
-      // loadConfig ignores repo-level remotes when stateDir is given without explicit --config
       const repoDir = path.join(sampleTmp, "repo");
       fs.mkdirSync(repoDir, { recursive: true });
       fs.writeFileSync(
@@ -499,16 +627,10 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
           },
         }),
       );
-      const loaded = loadConfig({
-        mode: "status",
-        fromDirectory: repoDir,
-        stateDir: sampleTmp,
-        warn: () => {},
-      });
+      const loaded = loadConfig({ mode: "status", fromDirectory: repoDir, stateDir: sampleTmp, warn: () => {} });
       assert.strictEqual(loaded.config.remotes?.evil, undefined, "untrusted repo remotes are ignored");
       assert.strictEqual(loaded.config.remotes?.ubuntu?.host, "jobrunner@ubuntu-server.lan");
 
-      // Forwarding --config <repo>/job-queue.config.json (as serve does via WMI) still loads remotes.local.json
       const loadedServe = loadConfig({
         mode: "serve",
         configPath: path.join(repoDir, "job-queue.config.json"),
@@ -521,15 +643,12 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       fs.rmSync(sampleTmp, { recursive: true, force: true });
     }
 
-    // Reject unsafe SSH options, leading '-' host, and non-ssh probe
     assert.throws(() =>
       validateConfig({
         version: 1,
         entry: "scripts/human/job-queue.js",
         plugins: [],
-        remotes: {
-          ubuntu: { host: "-oProxyCommand=evil", workspace: "~/henicos", cpus: 4, memoryMb: 6144 },
-        },
+        remotes: { ubuntu: { host: "-oProxyCommand=evil", workspace: "~/henicos", cpus: 4, memoryMb: 6144 } },
       }),
     );
     assert.throws(() =>
@@ -581,14 +700,12 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void> = {
       }),
     );
 
-    // buildSshArgs enforces mandatory security flags and '--' separator
     const args = buildSshArgs(makeRemote(), "echo ok");
     assert.ok(args.includes("StrictHostKeyChecking=yes"));
     assert.ok(args.includes("ForwardAgent=no"));
     assert.ok(args.includes("ServerAliveInterval=5"));
     assert.strictEqual(args[args.length - 3], "--");
 
-    // fitsRemote rejects GPU jobs
     const spec = makeRemote();
     assert.strictEqual(fitsRemote(makeJob(1, { gpu: true }), { spec, probe: null }, [], 1000), false);
     assert.strictEqual(fitsRemote(makeJob(1, { gpuTurn: true }), { spec, probe: null }, [], 1000), false);

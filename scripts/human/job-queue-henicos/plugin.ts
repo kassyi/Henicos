@@ -219,6 +219,8 @@ const plugin = {
     return {
       defaultEnv: { GSHARP_TEST_NO_CUDA: "1" },
       syncExcludePrefixes: ["src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/"],
+      resetProcessNames: ["cc1plus", "clang++", "g++", "ld", "lld", "ninja"],
+      resetCleanDirs: ["src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded"],
     };
   },
 } satisfies QueuePlugin;

@@ -15,10 +15,10 @@ import {
 } from "./constants.ts";
 import { SchedulerLauncher } from "./client-connect.ts";
 import type { RunOptions } from "./client.ts";
-import type { ResolvedRemoteRules } from "./remote-rules.ts";
-import type { RemoteCommandPlan } from "./remote-command.ts";
-import { executeRemotePlan, type RemoteRunResult } from "./remote-runner.ts";
-import type { RemoteSpec } from "./remotes.ts";
+import type { RemoteCommandPlan } from "./remote/command-translator.ts";
+import type { ResolvedRemoteRules } from "./remote/rules.ts";
+import { executeRemotePlan, type RemoteRunResult } from "./remote/runner.ts";
+import type { RemoteSpec } from "./remote/spec.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell, type ShellResult } from "./shell.ts";
 import { ProcessTable, prefix } from "./system.ts";

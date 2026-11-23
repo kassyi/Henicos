@@ -1,12 +1,23 @@
-// Fast content-addressed worktree manifest and delta computation for remote CPU offload.
-// Uses `git ls-files -co --exclude-standard -z` + a local (size, mtimeMs) -> sha256 stat cache so computing the full
-// worktree manifest takes ~75 ms instead of re-hashing every unchanged file.
+// Layer 3 Workspace Synchronization:
+//   - Pure manifest helpers (local stat-cached SHA-256 collection, diffing, single-source exclusion/prune rules)
+//   - `WorkspaceSyncer`: cohesive collaborator depending only on `RemoteTransport` (Port) to keep remote sources
+//     cryptographically aligned with the local worktree while preserving warm build outputs.
 
 import { execFileSync } from "node:child_process";
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { replaceFile } from "./history.ts";
+import { replaceFile } from "../history.ts";
+import { prefix } from "../system.ts";
+import {
+  bashQuote,
+  bashWorkspaceExpr,
+  RemoteLockFile,
+  RemoteManifestDigestFile,
+  RemoteManifestSha256File,
+  RemoteMetadataFiles,
+} from "./spec.ts";
+import type { RemoteTransport } from "./transport.ts";
 
 export interface StatCacheEntry {
   size: number;
@@ -32,6 +43,21 @@ export interface RemoteSyncRules {
   readonly excludeFindNames?: readonly string[];
 }
 
+export interface SyncOutcome {
+  ok: true;
+  localManifest: Record<string, string>;
+  sha256ManifestText: string;
+  digest: string;
+  uploaded: number;
+  deleted: number;
+  elapsedSec: string;
+}
+
+export interface SyncFailure {
+  ok: false;
+  error: string;
+}
+
 export const BaseExcludedPrefixes: readonly string[] = [
   "tmp/",
   "scratch/",
@@ -55,8 +81,8 @@ export function globNameToRegExp(glob: string): RegExp {
 function allExcludedPrefixes(rules?: RemoteSyncRules): string[] {
   const out = [...BaseExcludedPrefixes];
   if (rules?.excludePrefixes !== undefined) {
-    for (const prefix of rules.excludePrefixes) {
-      const normalized = path.posix.normalize(prefix).replace(/\/+$/, "");
+    for (const p of rules.excludePrefixes) {
+      const normalized = path.posix.normalize(p).replace(/\/+$/, "");
       if (normalized !== "" && normalized !== "." && !normalized.startsWith("..") && !normalized.startsWith("/")) {
         const withSlash = `${normalized}/`;
         if (!out.includes(withSlash)) {
@@ -80,8 +106,7 @@ function allExcludedFindNames(rules?: RemoteSyncRules): string[] {
   return out;
 }
 
-/** Single-quotes a POSIX shell literal for use inside `find` expressions. */
-function shellQuote(value: string): string {
+function singleQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
@@ -91,16 +116,15 @@ function shellQuote(value: string): string {
  */
 export function buildRemoteFindPruneExpr(rules?: RemoteSyncRules, extraRootFiles: readonly string[] = []): string {
   const pruneTerms: string[] = [];
-  for (const prefix of allExcludedPrefixes(rules)) {
-    const dir = prefix.replace(/\/+$/, "");
-    pruneTerms.push(`-path ${shellQuote(`./${dir}`)}`);
+  for (const p of allExcludedPrefixes(rules)) {
+    pruneTerms.push(`-path ${singleQuote(`./${p.replace(/\/+$/, "")}`)}`);
   }
   for (const file of extraRootFiles) {
-    pruneTerms.push(`-path ${shellQuote(`./${file}`)}`);
+    pruneTerms.push(`-path ${singleQuote(`./${file}`)}`);
   }
   pruneTerms.push("-name 'bin'", "-name 'obj'", "-name 'node_modules'");
   const nameNegations = allExcludedFindNames(rules)
-    .map((glob) => `! -name ${shellQuote(glob)}`)
+    .map((glob) => `! -name ${singleQuote(glob)}`)
     .join(" ");
   return `\\( ${pruneTerms.join(" -o ")} \\) -prune -o \\( -type f ${nameNegations} -print0 \\)`;
 }
@@ -110,8 +134,8 @@ export function isExcludedSyncPath(relPosix: string, rules?: RemoteSyncRules): b
   if (relPosix === "" || relPosix.startsWith("..") || relPosix.startsWith("/")) {
     return true;
   }
-  for (const prefix of allExcludedPrefixes(rules)) {
-    if (relPosix.startsWith(prefix)) {
+  for (const p of allExcludedPrefixes(rules)) {
+    if (relPosix.startsWith(p)) {
       return true;
     }
   }
@@ -137,7 +161,7 @@ export function formatSha256Manifest(files: Readonly<Record<string, string>>): s
   return out;
 }
 
-/** Set of all POSIX parent directories present in `files` (used to validate remote `*.received.*` targets). */
+/** Set of all POSIX parent directories present in `files` (used to validate failure artifact targets). */
 export function manifestParentDirs(files: Readonly<Record<string, string>>): Set<string> {
   const dirs = new Set<string>();
   for (const rel of Object.keys(files)) {
@@ -282,7 +306,7 @@ export function collectLocalManifest(
     try {
       stat = fs.lstatSync(abs);
     } catch {
-      continue; // deleted in working tree
+      continue;
     }
     if (!stat.isFile()) {
       continue;
@@ -300,10 +324,9 @@ export function collectLocalManifest(
     }
   }
 
-  // Keep entries of other worktrees in the shared stat cache so multiple worktrees do not evict each other
-  const prefix = `${worktree}\0`;
+  const keyPrefix = `${worktree}\0`;
   for (const [k, v] of Object.entries(rawCache)) {
-    if (!k.startsWith(prefix)) {
+    if (!k.startsWith(keyPrefix)) {
       nextCache[k] = v;
     }
   }
@@ -311,4 +334,163 @@ export function collectLocalManifest(
     saveJsonAtomic(statCachePath, nextCache);
   }
   return files;
+}
+
+/** Cohesive workspace synchronizer operating strictly over `RemoteTransport` (Port). */
+export class WorkspaceSyncer {
+  private readonly transport: RemoteTransport;
+  private readonly syncRules: RemoteSyncRules;
+  private readonly stateDir: string;
+  readonly pruneExpr: string;
+
+  constructor(transport: RemoteTransport, syncRules: RemoteSyncRules, stateDir: string) {
+    this.transport = transport;
+    this.syncRules = syncRules;
+    this.stateDir = stateDir;
+    this.pruneExpr = buildRemoteFindPruneExpr(syncRules, RemoteMetadataFiles);
+  }
+
+  private get remoteCachePath(): string {
+    return path.join(this.stateDir, `remote-manifest-${this.transport.spec.name}.json`);
+  }
+
+  private get statCachePath(): string {
+    return path.join(this.stateDir, "offload-stat-cache.json");
+  }
+
+  /** Fetches the remote workspace's current file->sha256 map. */
+  async fetchRemoteManifest(): Promise<Record<string, string> | null> {
+    const ws = bashWorkspaceExpr(this.transport.spec.workspace);
+    const script = [
+      "set -euo pipefail",
+      `WS=${ws}`,
+      `mkdir -p "$WS"`,
+      `cd "$WS"`,
+      `find . ${this.pruneExpr} | xargs -0 -r sha256sum`,
+    ].join("\n");
+    const res = await this.transport.exec(script);
+    return res.code === 0 ? parseRemoteSha256Output(res.stdout, this.syncRules) : null;
+  }
+
+  /** Applies a delta upload/delete + `.job-queue-manifest.sha256` atomically under the remote flock. */
+  private async applyDelta(
+    worktree: string,
+    diff: ManifestDiff,
+    sha256ManifestText: string,
+    expectedRemoteDigest?: string,
+  ): Promise<{ ok: boolean; stale?: boolean; error?: string }> {
+    const ws = bashWorkspaceExpr(this.transport.spec.workspace);
+    const deleteBuf =
+      diff.toDelete.length === 0 ? Buffer.alloc(0) : Buffer.from(`${diff.toDelete.join("\0")}\0`, "utf8");
+    const manifestBuf = Buffer.from(sha256ManifestText, "utf8");
+    const guard =
+      expectedRemoteDigest !== undefined
+        ? `if [ "$(cat ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${bashQuote(expectedRemoteDigest)} ]; then exit 254; fi`
+        : "";
+    const remoteCmd = [
+      "bash -c",
+      bashQuote(
+        [
+          "set -euo pipefail",
+          `WS=${ws}`,
+          `mkdir -p "$WS"`,
+          `exec 9>"$WS/${RemoteLockFile}"`,
+          "flock 9",
+          `cd "$WS"`,
+          guard,
+          "IFS= read -r DEL_BYTES",
+          'if [ "$DEL_BYTES" -gt 0 ]; then dd iflag=fullblock bs="$DEL_BYTES" count=1 2>/dev/null | xargs -0 -r rm -f --; fi',
+          "IFS= read -r MANIFEST_BYTES",
+          `if [ "$MANIFEST_BYTES" -gt 0 ]; then dd iflag=fullblock bs="$MANIFEST_BYTES" count=1 2>/dev/null > ${RemoteManifestSha256File}.tmp; else : > ${RemoteManifestSha256File}.tmp; fi`,
+          diff.toUpload.length > 0 ? "tar -xf -" : "",
+          `mv -f ${RemoteManifestSha256File}.tmp ${RemoteManifestSha256File}`,
+          `printf '%s\\n' ${bashQuote(diff.localDigest)} > ${RemoteManifestDigestFile}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      ),
+    ].join(" ");
+
+    const headerChunks: Buffer[] = [Buffer.from(`${deleteBuf.length}\n`, "utf8")];
+    if (deleteBuf.length > 0) {
+      headerChunks.push(deleteBuf);
+    }
+    headerChunks.push(Buffer.from(`${manifestBuf.length}\n`, "utf8"), manifestBuf);
+
+    const res = await this.transport.streamUpload(remoteCmd, headerChunks, worktree, diff.toUpload);
+    if (res.code === 254) {
+      return { ok: false, stale: true };
+    }
+    return res.code === 0 ? { ok: true } : { ok: false, error: res.stderr.trim() || `ssh exit ${res.code}` };
+  }
+
+  /** Performs a full fetch-and-heal sync against the remote workspace (used on cold cache or exit 254). */
+  async resyncClean(
+    worktree: string,
+    localManifest: Record<string, string>,
+    sha256ManifestText: string,
+  ): Promise<{ uploaded: number; deleted: number; digest: string } | null> {
+    const fetched = await this.fetchRemoteManifest();
+    if (fetched === null) {
+      return null;
+    }
+    const diff = diffManifests(localManifest, fetched);
+    const applied = await this.applyDelta(worktree, diff, sha256ManifestText);
+    if (!applied.ok) {
+      prefix(
+        `remote sync to ${this.transport.spec.name} (${this.transport.spec.host}) failed: ${applied.error ?? "unknown"}`,
+      );
+      return null;
+    }
+    saveRemoteManifestCache(this.remoteCachePath, localManifest);
+    return { uploaded: diff.toUpload.length, deleted: diff.toDelete.length, digest: diff.localDigest };
+  }
+
+  /** Computes the local manifest and syncs changes to the remote workspace (falling back to full resync on stale cache). */
+  async sync(worktree: string, localManifestOverride?: Record<string, string>): Promise<SyncOutcome | SyncFailure> {
+    const syncStart = performance.now();
+    const localManifest = localManifestOverride ?? collectLocalManifest(worktree, this.statCachePath, this.syncRules);
+    const sha256ManifestText = formatSha256Manifest(localManifest);
+    const cached = loadRemoteManifestCache(this.remoteCachePath);
+
+    let uploaded = 0;
+    let deleted = 0;
+    let digest = "";
+
+    if (cached === null) {
+      const res = await this.resyncClean(worktree, localManifest, sha256ManifestText);
+      if (res === null) {
+        return { ok: false, error: "failed to fetch/sync remote manifest" };
+      }
+      uploaded = res.uploaded;
+      deleted = res.deleted;
+      digest = res.digest;
+    } else {
+      const diff = diffManifests(localManifest, cached.files);
+      digest = diff.localDigest;
+      if (diff.toUpload.length > 0 || diff.toDelete.length > 0) {
+        const applied = await this.applyDelta(worktree, diff, sha256ManifestText, cached.digest);
+        if (applied.stale) {
+          const res = await this.resyncClean(worktree, localManifest, sha256ManifestText);
+          if (res === null) {
+            return { ok: false, error: "failed to heal stale remote manifest" };
+          }
+          uploaded = res.uploaded;
+          deleted = res.deleted;
+        } else if (!applied.ok) {
+          prefix(
+            `remote sync to ${this.transport.spec.name} (${this.transport.spec.host}) failed: ${applied.error ?? "unknown"}`,
+          );
+          return { ok: false, error: applied.error ?? "unknown" };
+        } else {
+          uploaded = diff.toUpload.length;
+          deleted = diff.toDelete.length;
+          saveRemoteManifestCache(this.remoteCachePath, localManifest);
+        }
+      }
+    }
+
+    const elapsedSec = ((performance.now() - syncStart) / 1000).toFixed(2);
+    return { ok: true, localManifest, sha256ManifestText, digest, uploaded, deleted, elapsedSec };
+  }
 }

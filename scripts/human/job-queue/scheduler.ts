@@ -20,7 +20,7 @@ import {
   type OffloadPreference,
   type RemoteSpec,
   type RemoteState,
-} from "./remotes.ts";
+} from "./remote/spec.ts";
 import {
   resourceOf,
   sharedTurnsSettled,

@@ -6,12 +6,9 @@ import type * as net from "node:net";
 import { type ChildProcess } from "node:child_process";
 import {
   CancelledExitCode,
-  CpusVariable,
   DigestVariable,
   ForecastNoticeMs,
-  JobVariable,
   NoticeIntervalMs,
-  OffloadVariable,
   ReasonNoticeMs,
   BaseProtocolVersion,
   TimedOutExitCode,
@@ -40,8 +37,8 @@ import {
   type Placement,
 } from "./protocol.ts";
 import type { ShareAnswer } from "./plugin-api.ts";
-import { translateForRemote } from "./remote-command.ts";
-import type { OffloadPreference } from "./remotes.ts";
+import { RemoteWithFallbackExecutor, resolveOffloadPreference } from "./remote/executor.ts";
+import type { OffloadPreference } from "./remote/spec.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
@@ -341,64 +338,27 @@ export class QueuedRun {
     const worktree = this.worktree ?? resolveWorktree(cwd);
     const shell = CommandShell.resolve(options.shell).name;
     const waited = Math.round((Date.now() - this.queuedAt) / 1000);
-    const remoteName = remoteField(granted);
-
-    if (remoteName !== undefined && this.host.runRemoteCommand !== undefined) {
-      const remoteSpec = (options.remotes ?? []).find((r) => r.name === remoteName);
-      const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
-      const remoteRules = this.plugins?.remoteOffload(this.contextOf(this.plugins));
-      const plan =
-        remoteSpec === undefined
-          ? null
-          : translateForRemote(options.command, {
-              cwd,
-              worktree,
-              shell,
-              places,
-              cpus,
-              keepBuildServersWarm: remoteSpec.keepBuildServersWarm,
-              env: process.env,
-              remoteRules,
-            });
-      if (remoteSpec !== undefined && plan !== null) {
-        this.grantedRemote = remoteName;
-        const remoteNote = plan.note ?? `${cpus} cpus`;
-        prefix(
-          `granted ${formatJobId(jobId)} on remote ${remoteName} (${remoteSpec.host}) after ${waited}s (${remoteNote})`,
-        );
-        const remoteResult = await this.host.runRemoteCommand(remoteSpec, plan, (c) => this.started(c), remoteRules);
-        if (!remoteResult.transportFailed || options.remote === true) {
-          const end = commandEnd(remoteResult, this.cancelRequested);
-          this.finish(end.exitCode, end.completed, end.cancelled);
-          return;
-        }
-        prefix(`remote ${remoteName} transport failed before execution; falling back to local execution`);
-        this.grantedRemote = null;
-      }
-    }
-
-    const prepared = this.plugins?.prepareCommand(
-      options.command,
-      { jobId, cpus, nested: false },
+    const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
+    const executor = new RemoteWithFallbackExecutor(this.host, (remoteName) => {
+      this.grantedRemote = remoteName;
+    });
+    const result = await executor.execute(
       {
+        jobId,
+        cpus,
+        weight: placement.weight,
+        waitedSec: waited,
         cwd,
         worktree,
-        configRoot: this.plugins.configRoot,
         shell,
-        env: process.env,
-        log: prefix,
+        places,
+        options,
+        plugins: this.plugins,
+        context: this.plugins !== undefined ? this.contextOf(this.plugins) : undefined,
+        remoteName: remoteField(granted),
       },
+      (c) => this.started(c),
     );
-    const command = prepared?.command ?? options.command;
-    const note = prepared?.note ?? `${cpus} cpus`;
-    prefix(`granted ${formatJobId(jobId)} after ${waited}s (weight ${placement.weight}, ${note})`);
-    const env = {
-      ...process.env,
-      ...prepared?.env,
-      [JobVariable]: String(jobId),
-      [CpusVariable]: String(cpus),
-    };
-    const result = await this.host.runCommand(command, env, (c) => this.started(c));
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
@@ -721,44 +681,26 @@ export class QueuedRun {
     if (hasPlugins && !this.gpuTurn) {
       if (this.memoryMb === null || this.offload === null) {
         const plugins = this.plugins as PluginHost;
-        const classified = plugins.classify(options.command, null, context(plugins));
+        const ctx = context(plugins);
+        const classified = plugins.classify(options.command, null, ctx);
         const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
         this.memoryMb = classified.memoryMb ?? fallback;
-        const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
-        const offloadDisabled =
-          this.inGpuLock ||
-          options.local === true ||
-          process.env[OffloadVariable] === "0" ||
-          enabledRemotes.length === 0;
-        if (offloadDisabled) {
-          if (options.remote === true) {
-            prefix("--remote requested, but no enabled remote worker is configured or offload is disabled");
-            this.host.exit(UsageExitCode);
-            return;
-          }
-          this.offload = "never";
-        } else {
-          const shell = CommandShell.resolve(options.shell).name;
-          const remoteRules = plugins.remoteOffload(context(plugins));
-          const canTranslate =
-            (classified.offloadable === true || options.remote === true) &&
-            translateForRemote(options.command, {
-              cwd,
-              worktree,
-              shell,
-              places,
-              cpus: enabledRemotes[0]?.cpus ?? 1,
-              keepBuildServersWarm: enabledRemotes[0]?.keepBuildServersWarm ?? true,
-              env: process.env,
-              remoteRules,
-            }) !== null;
-          if (options.remote === true && !canTranslate) {
-            prefix("--remote requested, but this command cannot be safely translated for remote Linux execution");
-            this.host.exit(UsageExitCode);
-            return;
-          }
-          this.offload = canTranslate ? (options.remote === true ? "force" : "auto") : "never";
+        const decision = resolveOffloadPreference({
+          options,
+          inGpuLock: this.inGpuLock,
+          classifiedOffloadable: classified.offloadable === true,
+          cwd,
+          worktree,
+          shell: CommandShell.resolve(options.shell).name,
+          places,
+          remoteRules: plugins.remoteOffload(ctx),
+        });
+        if (!decision.ok) {
+          prefix(decision.error);
+          this.host.exit(UsageExitCode);
+          return;
         }
+        this.offload = decision.offload;
       }
       memoryMb = this.memoryMb;
       offload = this.offload;
