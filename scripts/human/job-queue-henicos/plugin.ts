@@ -25,8 +25,8 @@ const DefaultTestsDir = "tests";
 // just options and variable assignments may stand between just and the recipe: just -f justfile test, just a=b test
 const HenicosTestPattern = new RegExp(
   [
-    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
-    String.raw`\b(test-stability|test-memory|test-sanitized|long-checks|mutate|coverage-diff)\.js\b`,
+    String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate)(\s|$)`,
+    String.raw`\b(test-stability|test-memory|test-sanitized|mutate|coverage-diff)\.js\b`,
   ].join("|"),
 );
 
@@ -381,13 +381,21 @@ const plugin = {
   apiVersion: PluginApiVersion,
 
   check(command: string, resource: ResourceRequest | null, context: ClientContext): CheckResult | undefined {
+    if (/\blong-checks(?:\.js)?\b/.test(command)) {
+      // long-checks.js is a slot-free orchestrator that queues each step through job-queue.js itself; wrapping it in
+      // an outer queued job wastes a slot and can deadlock small-slot pools when inner steps ask for --weight 2+.
+      return {
+        refuse:
+          "long-checks queues each step through job-queue.js itself: run 'just long-checks' directly without wrapping it in job-queue.js run.",
+      };
+    }
     if (resource === null || resource.name !== "gpu") {
       return undefined;
     }
-    if (/fuzz-diff|fuzz-differential|long-checks/.test(command)) {
-      // They take the GPU lock themselves for their GPU steps; holding it here would make them wait for ever
+    if (/fuzz-diff|fuzz-differential/.test(command)) {
+      // It takes the GPU lock itself for its GPU steps; holding it here would make it wait for ever
       return {
-        refuse: "fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.",
+        refuse: "fuzz-diff takes the GPU lock itself: queue it without --gpu.",
       };
     }
     const budgets = resolveBudgets(

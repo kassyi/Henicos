@@ -15,6 +15,7 @@ import type { TargetDialectModule } from "../job-queue/lib/types.ts";
 import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
 import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
+import { resolveOffloadPreference } from "../job-queue/remote/executor.ts";
 import { translateForRemote } from "../job-queue/remote/command-translator.ts";
 import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remote/syncer.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../job-queue/self-test-client.ts";
@@ -98,19 +99,23 @@ const CharacterizationTable: readonly [string, boolean, number][] = [
   ["just test", true, 7232],
   ["just -f justfile test-category Runtime", true, 7232],
   ['just test-category Stress "--project" kassyi.gsharp.tests.cpu', true, 6720],
-  ["just test-differential-cuda", true, 7232],
+  ["just test-differential-cuda", true, 2496],
+  ["just test-differential-cpu", true, 2880],
+  ["just test-sanitized", true, 2880],
   ["just a=1 test-coverage", true, 7232],
   ["just coverage-diff", true, 7232],
-  ["just mutate", true, 7232],
-  ["just long-checks", true, 7232],
+  ["just mutate", true, 1536],
+  ["just mutate compiler", true, 2880],
+  ["just mutate compiler-cuda", true, 2496],
+  ["just long-checks", false, 0],
   ["just build", false, 0],
   ["just doctest", false, 0],
   ["just queue-watch", false, 0],
   ["node scripts/human/test-stability.js --count 5", true, 7232],
   ["node scripts/human/test-memory.js Kassyi.GSharp.Tests.Cpu", true, 2880],
-  ["node scripts/human/test-sanitized.js", true, 7232],
-  ["node scripts/human/long-checks.js --dry-run", true, 7232],
-  ["node scripts/human/mutate.js --phase compiler", true, 7232],
+  ["node scripts/human/test-sanitized.js", true, 2880],
+  ["node scripts/human/long-checks.js --dry-run", false, 0],
+  ["node scripts/human/mutate.js --phase compiler", true, 2880],
   ["node scripts/human/coverage-diff.js --base main", true, 7232],
   ["dotnet build Henicos.slnx", false, 0],
   ["dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu -c Release", false, 0],
@@ -286,14 +291,11 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     const gpu = { name: "gpu", forcedExclusive: false };
 
     const fuzz = host.check("node scripts/human/fuzz-differential.js --minutes 5", gpu, ctx);
+    assert.strictEqual(fuzz.refuse, "fuzz-diff takes the GPU lock itself: queue it without --gpu.");
+    const longChecksGpu = host.check("just long-checks", gpu, ctx);
     assert.strictEqual(
-      fuzz.refuse,
-      "fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.",
-    );
-    const longChecks = host.check("just long-checks", gpu, ctx);
-    assert.strictEqual(
-      longChecks.refuse,
-      "fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.",
+      longChecksGpu.refuse,
+      "long-checks queues each step through job-queue.js itself: run 'just long-checks' directly without wrapping it in job-queue.js run.",
     );
 
     const cpuHint = host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", gpu, ctx);
@@ -306,8 +308,12 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(cudaCheck.refuse, undefined);
     assert.strictEqual(cudaCheck.hints, undefined);
 
-    // Without --gpu (resource = null): neither refuse nor hints
-    assert.deepStrictEqual(host.check("just long-checks", null, ctx), {});
+    // Without --gpu (resource = null): long-checks still refuses double-queueing; plain CPU tests pass cleanly
+    const longChecksCpu = host.check("just long-checks", null, ctx);
+    assert.strictEqual(
+      longChecksCpu.refuse,
+      "long-checks queues each step through job-queue.js itself: run 'just long-checks' directly without wrapping it in job-queue.js run.",
+    );
     assert.deepStrictEqual(host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", null, ctx), {});
   } finally {
     removeDirectory(dir);
@@ -648,8 +654,8 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
       {
         name: "just",
         options: {
-          hookRecipes: "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
-          hookDryRunRecipes: "^(mutate|long-checks)$",
+          hookRecipes: "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|bench\\S*|doctest)$",
+          hookDryRunRecipes: "^(mutate)$",
         },
       },
       { name: "nvidia-gpu" },
@@ -673,7 +679,7 @@ async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
     assert.deepStrictEqual(repoConfig.config.legacyClients, {
       testPattern: [
         String.raw`\bdotnet(\.exe)?"?\s+(test|vstest)\b`,
-        String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
+        String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate)(\s|$)`,
       ].join("|"),
       testMemoryMb: 2880,
     });
@@ -825,6 +831,52 @@ function checkOffloadClassification(assert: AssertModule, host: PluginHost, repo
   assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
   assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
   assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
+
+  // Regression: OffloadableJustRecipes must resolve to Tests.Cpu (2880 MB <= 6144 MB remote budget), never the whole
+  // solution sum (9920 MB), so both auto offload and --remote succeed against a 6144 MB worker.
+  const remote6g = {
+    name: "ubuntu",
+    host: "jobrunner@ubuntu-server.lan",
+    workspace: "~/henicos",
+    slots: 1,
+    cpus: 4,
+    memoryMb: 6144,
+    mode: "prefer-remote" as const,
+    maxJobMinutes: 30,
+    sshOptions: [],
+    keepBuildServersWarm: true,
+    probe: null,
+  };
+  for (const recipe of ["test-differential-cpu", "test-native-stack", "test-managed-stack", "test-sanitized"]) {
+    const cmd = `just ${recipe}`;
+    const cls = host.classify(cmd, null, ctx);
+    assert.strictEqual(cls.offloadable, true, `${cmd} must be offloadable`);
+    assert.strictEqual(cls.memoryMb, 2880, `${cmd} must resolve to Tests.Cpu (2880 MB), not whole-solution sum`);
+    const autoPref = resolveOffloadPreference({
+      options: { ...baseRunOptions(cmd), remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: Boolean(cls.offloadable),
+      memoryMb: cls.memoryMb,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+    });
+    assert.deepStrictEqual(autoPref, { ok: true, offload: "auto" }, `${cmd} must qualify for 6144 MB remote worker`);
+    const forcePref = resolveOffloadPreference({
+      options: { ...baseRunOptions(cmd), remote: true, remotes: [remote6g] },
+      inGpuLock: false,
+      classifiedOffloadable: Boolean(cls.offloadable),
+      memoryMb: cls.memoryMb,
+      cwd: repoRoot,
+      worktree: repoRoot,
+      shell: "pwsh",
+      places: {},
+      remoteRules: rules,
+    });
+    assert.deepStrictEqual(forcePref, { ok: true, offload: "force" }, `${cmd} with --remote must qualify`);
+  }
 }
 
 export async function checks(assert: AssertModule): Promise<void> {
