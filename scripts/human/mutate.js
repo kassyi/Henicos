@@ -143,6 +143,7 @@ function main() {
     process.stdout.write(`  Directory: ${targetDir}\n`);
     process.stdout.write(`  GSharpTestHeapHardLimit: ${heapLimit}\n`);
     process.stdout.write(`  Restore command: dotnet tool restore (in ${repoRoot})\n`);
+    process.stdout.write(`  Build command: dotnet build ${relativeDir} (in ${repoRoot})\n`);
     process.stdout.write(`  Stryker command: dotnet ${strykerArgs.join(' ')}\n`);
     if (hasCustomOutput) {
       process.stdout.write('  Report check: skipped (custom output directory)\n');
@@ -170,6 +171,18 @@ function main() {
 
   if (restoreResult.status !== 0) {
     process.exit(restoreResult.status || 1);
+  }
+
+  // Build the phase test project once so referenced generators/tasks and generated sources exist before Stryker's
+  // design-time Buildalyzer pass (which runs with BuildProjectReferences=false and fails in fresh worktrees).
+  const buildResult = spawnSync('dotnet', ['build', relativeDir], {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    env,
+  });
+
+  if (buildResult.status !== 0) {
+    process.exit(buildResult.status || 1);
   }
 
   const strykerResult = spawnSync('dotnet', strykerArgs, {
