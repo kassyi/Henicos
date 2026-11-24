@@ -6,35 +6,45 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ReadStep } from "./command-reader.ts";
-import { loadConfig, type QueueConfig } from "./config.ts";
-import { EntryScript } from "./constants.ts";
+import type { QueueConfig } from "./config.ts";
 import {
   PluginApiVersion,
-  type AssertModule,
   type CheckResult,
   type Classification,
   type ClientContext,
+  type ContentDigest,
   type GrantInfo,
   type PreparedCommand,
   type QueuePlugin,
   type ResourceRequest,
+  type ShareAnswer,
   type SplitPlan,
   type StepContext,
   type StepKeys,
   type ViewPanel,
 } from "./plugin-api.ts";
+import {
+  DefaultImportTimeoutMs,
+  DefaultPluginsRoot,
+  importWithTimeout,
+  isPlainObject,
+  resolvePluginFolder,
+  runPluginChecks,
+  type PluginChecksOptions,
+} from "./plugin-checks-runner.ts";
 import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
+import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
+
+export { DefaultPluginsRoot, runPluginChecks, type PluginChecksOptions };
 
 export type BaseClientContext = Omit<ClientContext, "options">;
 
-const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
-export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
+/** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
+export const CheckShareTimeoutMs = 180_000;
+/** How long the `stillValid` of a shared answer may take (it should only compare what was measured). */
+export const StillValidTimeoutMs = 30_000;
 
 function isValidSplitPlan(value: unknown): value is SplitPlan {
   if (!isPlainObject(value)) {
@@ -64,36 +74,6 @@ function isValidViewPanel(value: unknown): value is ViewPanel {
   );
 }
 
-function resolvePluginFolder(name: string, configRoot: string, pluginsRoot = DefaultPluginsRoot): string | null {
-  if (name.startsWith("./") || name.startsWith(".\\")) {
-    return path.resolve(configRoot, name);
-  }
-  if (name.includes("/") || name.includes("\\") || name.includes("..")) {
-    return null;
-  }
-  const resolved = path.resolve(pluginsRoot, name);
-  const relative = path.relative(pluginsRoot, resolved);
-  if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-    return null;
-  }
-  return resolved;
-}
-
-async function importWithTimeout(fileUrl: string, timeoutMs: number): Promise<unknown> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs} ms`)), timeoutMs);
-    timer.unref?.();
-  });
-  try {
-    return await Promise.race([import(fileUrl), timeout]);
-  } finally {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  }
-}
-
 export interface PluginHostLoadOptions {
   importTimeoutMs?: number;
   slowHookMs?: number;
@@ -106,6 +86,10 @@ export class PluginHost {
   private readonly warn: (message: string) => void;
   private readonly slowHookMs: number;
   private readonly warnedFailures = new Set<string>();
+  /** The time limit of one checkShare call; a field so that a self-test can shorten it. */
+  checkShareTimeoutMs = CheckShareTimeoutMs;
+  /** The time limit of one `stillValid` call; a field so that a self-test can shorten it. */
+  stillValidTimeoutMs = StillValidTimeoutMs;
 
   constructor(
     plugins: readonly QueuePlugin[],
@@ -214,13 +198,19 @@ export class PluginHost {
       if (elapsed > this.slowHookMs) {
         this.warn(`[job-queue] plugin ${plugin.name}.${hookName} took ${Math.round(elapsed)} ms`);
       }
-      const key = `${pluginIndex}\0${plugin.name}\0${hookName}`;
-      if (!this.warnedFailures.has(key)) {
-        this.warnedFailures.add(key);
-        const message = errorMessage(error);
-        this.warn(`[job-queue] plugin ${plugin.name}.${hookName} failed: ${message}; continuing without it`);
-      }
+      this.warnFailure(pluginIndex, hookName, error);
       return undefined;
+    }
+  }
+
+  /** Warns once per plugin and hook that it failed. */
+  private warnFailure(pluginIndex: number, hookName: string, error: unknown): void {
+    const plugin = this.plugins[pluginIndex] as QueuePlugin;
+    const key = `${pluginIndex}\0${plugin.name}\0${hookName}`;
+    if (!this.warnedFailures.has(key)) {
+      this.warnedFailures.add(key);
+      const message = errorMessage(error);
+      this.warn(`[job-queue] plugin ${plugin.name}.${hookName} failed: ${message}; continuing without it`);
     }
   }
 
@@ -293,11 +283,91 @@ export class PluginHost {
       if (result.share === undefined && (res.share === "shared" || res.share === "exclusive")) {
         result.share = res.share;
       }
+      if (result.offloadable === undefined && typeof res.offloadable === "boolean") {
+        result.offloadable = res.offloadable;
+      }
     }
     if (resource?.forcedExclusive) {
       result.share = "exclusive";
     }
     return result;
+  }
+
+  /**
+   * [first, async] Asks the plugins in order for the share of a GPU turn that classify did not share: the first
+   * "shared" or "exclusive" wins and undefined passes on. A throw, a time out (checkShareTimeoutMs) or any other value
+   * is "exclusive" and ends the asking, with one line saying why. Undefined when no plugin answers.
+   */
+  async checkShare(command: string, context: BaseClientContext): Promise<ShareAnswer | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.checkShare !== "function") {
+        continue;
+      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const limit = new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`timed out after ${this.checkShareTimeoutMs} ms`)),
+            this.checkShareTimeoutMs,
+          );
+        });
+        const res = await Promise.race([plugin.checkShare(command, this.contextFor(i, context)), limit]);
+        if (res === undefined) {
+          continue;
+        }
+        if (res === "shared" || res === "exclusive") {
+          return { share: res };
+        }
+        if (isPlainObject(res) && (res.share === "shared" || res.share === "exclusive")) {
+          // An exclusive answer needs no re-check; a non-function stillValid is ignored (the client then has none)
+          const stillValid =
+            res.share === "shared" && typeof res.stillValid === "function"
+              ? (res.stillValid as () => Promise<boolean>)
+              : undefined;
+          return stillValid !== undefined ? { share: "shared", stillValid } : { share: res.share };
+        }
+        this.warn(`[job-queue] plugin ${plugin.name}.checkShare returned an invalid value; taking the GPU exclusively`);
+        return { share: "exclusive" };
+      } catch (error) {
+        this.warn(
+          `[job-queue] plugin ${plugin.name}.checkShare failed: ${errorMessage(error)}; taking the GPU exclusively`,
+        );
+        return { share: "exclusive" };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Runs the `stillValid` of a shared answer: true only when it resolves to exactly true within stillValidTimeoutMs.
+   * A throw, a time out or any other value is false, with one line saying why.
+   */
+  async stillValid(answer: ShareAnswer): Promise<boolean> {
+    if (answer.stillValid === undefined) {
+      return true;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const limit = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`timed out after ${this.stillValidTimeoutMs} ms`)),
+          this.stillValidTimeoutMs,
+        );
+      });
+      const valid = await Promise.race([answer.stillValid(), limit]);
+      if (valid !== true) {
+        this.warn("[job-queue] the check that the shared GPU turn still holds says no");
+      }
+      return valid === true;
+    } catch (error) {
+      this.warn(`[job-queue] the check that the shared GPU turn still holds failed: ${errorMessage(error)}`);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** [first] Returns the first valid StepKeys. */
@@ -328,6 +398,22 @@ export class PluginHost {
       }
     }
     return undefined;
+  }
+
+  /** [all] The names every plugin gives for volatileEnv, in plugin order. */
+  volatileEnv(context: BaseClientContext): string[] {
+    const names: string[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.volatileEnv !== "function") {
+        continue;
+      }
+      const res = this.callHook(i, "volatileEnv", (p) => p.volatileEnv?.(this.contextFor(i, context)));
+      if (Array.isArray(res)) {
+        names.push(...res.filter((name): name is string => typeof name === "string" && name !== ""));
+      }
+    }
+    return names;
   }
 
   /** [sequential] Chains command rewrites, merges env later-wins, and joins non-empty notes with ", ". */
@@ -386,6 +472,31 @@ export class PluginHost {
     return current;
   }
 
+  /**
+   * [first, asynchronous] The first valid digest of the worktree's content; undefined when no plugin gives one. A
+   * rejected promise counts as no answer (warned once), like a hook that throws.
+   */
+  async contentDigest(context: BaseClientContext): Promise<ContentDigest | undefined> {
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.contentDigest !== "function") {
+        continue;
+      }
+      const pending = this.callHook(i, "contentDigest", (p) => p.contentDigest?.(this.contextFor(i, context)));
+      let res: unknown;
+      try {
+        res = await pending;
+      } catch (error) {
+        this.warnFailure(i, "contentDigest", error);
+        continue;
+      }
+      if (isPlainObject(res) && typeof res.digest === "string" && res.digest !== "" && typeof res.ms === "number") {
+        return { digest: res.digest, ms: res.ms };
+      }
+    }
+    return undefined;
+  }
+
   /** [first] Returns the first valid ViewPanel. */
   panel(context: BaseClientContext): ViewPanel | undefined {
     for (let i = 0; i < this.plugins.length; i++) {
@@ -400,99 +511,23 @@ export class PluginHost {
     }
     return undefined;
   }
-}
 
-export interface PluginChecksOptions {
-  config?: QueueConfig;
-  configRoot?: string;
-  pluginsRoot?: string;
-  importTimeoutMs?: number;
-}
-
-function bundledPluginOrder(name: string): number {
-  return name === "dotnet" ? 0 : name === "just" ? 1 : 2;
-}
-
-/**
- * Discovers and runs `checks(assert)` for all bundled `plugins/<name>/checks.ts` (dotnet, just, then sorted others)
- * plus `config.plugins[]` entries, regardless of `JOB_QUEUE_PLUGINS=0`. Rejects if an enabled config plugin
- * lacks `checks.ts` or if any `checks(assert)` throws.
- */
-export async function runPluginChecks(assert: AssertModule, options: PluginChecksOptions = {}): Promise<void> {
-  const pluginsRoot = options.pluginsRoot ?? DefaultPluginsRoot;
-  const timeoutMs = options.importTimeoutMs ?? DefaultImportTimeoutMs;
-  let config = options.config;
-  let configRoot = options.configRoot;
-  if (config === undefined) {
-    const loaded =
-      configRoot !== undefined
-        ? loadConfig({
-            mode: "status",
-            configPath: path.join(configRoot, "job-queue.config.json"),
-            fromDirectory: configRoot,
-            warn: () => {},
-          })
-        : loadConfig({
-            mode: "status",
-            fromDirectory: path.dirname(EntryScript),
-          });
-    config = loaded.config;
-    configRoot = loaded.configRoot;
-  } else if (configRoot === undefined) {
-    configRoot = path.dirname(EntryScript);
-  }
-
-  const targets: { name: string; checksPath: string }[] = [];
-  const seen = new Set<string>();
-  const addTarget = (name: string, checksPath: string): void => {
-    const realPath = fs.realpathSync.native(checksPath);
-    if (seen.has(realPath)) {
-      return;
-    }
-    seen.add(realPath);
-    targets.push({ name, checksPath: realPath });
-  };
-
-  if (fs.existsSync(pluginsRoot)) {
-    const bundledNames = fs
-      .readdirSync(pluginsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort((a, b) => bundledPluginOrder(a) - bundledPluginOrder(b) || (a < b ? -1 : a > b ? 1 : 0));
-    for (const name of bundledNames) {
-      const folder = resolvePluginFolder(name, configRoot, pluginsRoot);
-      if (folder === null) {
+  /** [all] Collects and validates remote CPU offload rules and hooks from every plugin in order. */
+  remoteOffload(context: BaseClientContext): ResolvedRemoteRules {
+    const entries: RemoteContributionEntry[] = [];
+    for (let i = 0; i < this.plugins.length; i++) {
+      const plugin = this.plugins[i] as QueuePlugin;
+      if (typeof plugin.remoteOffload !== "function") {
         continue;
       }
-      const checksPath = path.join(folder, "checks.ts");
-      if (fs.existsSync(checksPath)) {
-        addTarget(name, checksPath);
+      const contribution = this.callHook(i, "remoteOffload", (p) => p.remoteOffload?.(this.contextFor(i, context)));
+      if (isPlainObject(contribution)) {
+        entries.push({
+          contribution,
+          call: (subHook, invoke) => this.callHook(i, subHook, () => invoke()),
+        });
       }
     }
-  }
-
-  for (const entry of config.plugins) {
-    const folder = resolvePluginFolder(entry.name, configRoot, pluginsRoot);
-    if (folder === null) {
-      throw new Error(`plugin ${entry.name} has an invalid bare name`);
-    }
-    const checksPath = path.join(folder, "checks.ts");
-    if (!fs.existsSync(checksPath)) {
-      throw new Error(`plugin ${entry.name} has no checks.ts (${checksPath})`);
-    }
-    addTarget(entry.name, checksPath);
-  }
-
-  for (const target of targets) {
-    try {
-      const moduleValue = await importWithTimeout(pathToFileURL(target.checksPath).href, timeoutMs);
-      const checks = isPlainObject(moduleValue) ? moduleValue.checks : undefined;
-      if (typeof checks !== "function") {
-        throw new Error("missing exported checks(assert) function");
-      }
-      await (checks as (assert: AssertModule) => void | Promise<void>)(assert);
-    } catch (error) {
-      throw new Error(`plugin ${target.name} checks failed: ${errorMessage(error)}`, { cause: error });
-    }
+    return resolveRemoteRules(entries);
   }
 }

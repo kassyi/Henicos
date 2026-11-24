@@ -37,6 +37,11 @@ runs as, the full command):
 
 ![A selected job](images/selected.svg)
 
+A remote CPU worker running an offloaded test job (`UBUNTU j0818` in the header, `j0818@ubuntuR` in the job list, and
+`remote:ubuntu` in the details at the bottom):
+
+![A remote offloaded job](images/remote.svg)
+
 The help (`?`): the keys and what the marks of the timeline, the wait reasons and the chat marks mean, drawn in their
 screen colors. While it is open only `?` (next page), Esc (close), `q` and Ctrl+C act; any other key would act on jobs
 the help covers, so it only says how to leave:
@@ -110,11 +115,15 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `server-store.ts` | `JobStore`: the state file `jobs-<port>.json`, written after every event and read when the scheduler starts, restoring every record as held |
 | `scheduler.ts` | The scheduling decisions, with no I/O: order, grants, backfilling, GPU turns, the memory pool, the forecast |
 | `resources.ts` | The turn resources, with no I/O: `ResourceSpec`, `resourceOf`, `usageOf` (the use of a resource counted from the running jobs) and `turnVerdict` (the grant rule) |
+| `remote/spec.ts`, `remote/transport.ts`, `remote/config.ts`, `remote/rules.ts` | Layer 4/3 remote offload foundation: `RemoteSpec` / `MandatorySshOptions` / `buildSshArgs` / scheduling helpers (`spec.ts`), `RemoteTransport` Port + `SshTransport` Adapter (`transport.ts`), `remotes.local.json` validation & SSH option guard (`config.ts`), and plugin `remoteOffload()` contribution merger (`rules.ts`) |
+| `remote/syncer.ts`, `remote/artifact-collector.ts`, `remote/command-translator.ts` | Layer 3 cohesive remote components: stat-cached SHA-256 manifest + `WorkspaceSyncer` (`syncer.ts`), `RemoteStreamSanitizer` + 1-pass frame parser + 6-gate Chain of Responsibility `ArtifactCollector` (`artifact-collector.ts`), and `ShellDialect` Strategy Map command translator (`command-translator.ts`) |
+| `remote/runner.ts`, `remote/control.ts`, `remote/executor.ts`, `remote/checks.ts` | Layer 2 orchestration: `RemoteRunner` Facade (`runner.ts`), plugin-driven `remote-reset` controller (`control.ts`), `JobExecutor` Strategy with local fallback (`executor.ts`), and unit + `FakeRemoteTransport` offline E2E checks (`checks.ts`) |
 | `resource-checks.ts` | Self-test checks of the turn resources (run through the unit checks) |
 | `server-probe.ts` | The probe of a turn resource: `runProbe` runs the program of `resources.<name>.probe` without a shell (ok on exit 0 and a first number of at least `min`; a timeout, a failure to start or no number is not ok), `ProbeRunner` keeps one per resource, five seconds apart, and kills them when the scheduler stops |
 | `server-shared-checks.ts`, `server-probe-checks.ts` | Self-test checks of shared turns against a scheduler in the test's own process (the `share` of a grant, the probe before a second shared turn, restore, `status` resources, the log of a failed shared turn) and of `runProbe` and the `serve --gpu-slots` range |
 | `protocol.ts` | The messages between clients and the scheduler (one JSON object per line) and the protocol versions |
 | `job-id.ts` | `formatJobId` (`j` and the last four digits, for every printed id), `parseJobRef` (what a person typed: a full id or the last digits), `pickSuffixMatch` (the scheduler's `resolve`: a live match, else the newest ended one); lib/resource-lock.js keeps a copy of the one-line formatter |
+| `environment-hash.ts` | The environment of a queued job as the scheduler logs it: a short hash of each variable's value by name and one of them all (`environmentHash`), without `VolatileEnv` and the names of the plugins' `volatileEnv`; `differingNames` for the log line |
 | `history.ts` | The recorded run times per command text (`history.json`), for ordering and forecasts; `estimateWithFallback` guesses a command with no record from similar ones |
 | `command-reader.ts` | The shared reader of a command line: the plain form `planBuildStep` accepts (`rawWords`, `segmentsOf`, `segmentParts`, `variablePrefix`) and `readCommand`, which reads steps, words, assignments and redirections for the estimate keys, or says the line cannot be read (`readCommandLine` also says whether a `|` stands outside quotes); pure |
 | `estimate-key.ts`, `estimate-fallback.ts` | The keys under which commands are compared (`commandKeys`: normalized, shape, kind, built from the words of `readCommand` and delegated `stepKeys`), the fallback over them, and the accuracy log (`accuracy.json`) behind `status --accuracy` |
@@ -125,12 +134,13 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `config.ts` | Typed schema and validation for `job-queue.config.json`, unknown-key warnings, defaults when missing, and mode-specific invalid-config handling |
 | `plugin-api.ts` | The plugin API contract (`PluginApiVersion = 1`, `QueuePlugin`, `AssertModule`, context/result/panel types) and re-exported pure helpers |
 | `short-name.ts` | `dropShortWords`, the word walk the `shortName` hooks of plugins share (re-exported by `plugin-api.ts`) |
-| `plugin-host.ts` | Client- and view-side synchronous `PluginHost`: `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, return validation, and dynamic `checks.ts` discovery for the self-test |
-| `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits, `GSHARP_JOB_QUEUE_MSBUILD_ARGS` and the `RequestCores` bound (`MSBUILDCORELIMIT`, `MSBUILDNODECOREALLOCATIONWEIGHT`), `classify`, `shortName`, `api` (`isDotnetTest`, `selectsCategory`), and hook command rules / `splitForRewrite` / CPU-build rewrite |
+| `plugin-host.ts` | Client- and view-side `PluginHost` (synchronous hooks, and the asynchronous `contentDigest` and `checkShare`, which has a 180 s limit and takes the GPU exclusively on a throw, a time out or an invalid value; `stillValid` of its answer has 30 s): `JOB_QUEUE_PLUGINS=0` opt-out, dynamic `plugin.ts` loading with 5 s timeout, hook composition, per-plugin exception isolation, slowness warnings, return validation, and dynamic `checks.ts` discovery for the self-test |
+| `plugins/dotnet/` | Built-in `dotnet` plugin (`plugin.ts`, `estimate-keys.ts`, `build-split.ts`, `msbuild-nodes.ts`, `remote.ts`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): `dotnet` estimate keys, `planBuildStep` pre-turn build split, MSBuild `-m:<n>` node limits, `GSHARP_JOB_QUEUE_MSBUILD_ARGS` and the `RequestCores` bound (`MSBUILDCORELIMIT`, `MSBUILDNODECOREALLOCATIONWEIGHT`), `classify`, `shortName`, `api` (`isDotnetTest`, `selectsCategory`), `remoteOffload` (`remote.ts`: warm build servers, `--blame`, `*.received.*` failure artifacts, `Sequence_*.xml` crash attribution, and reset cleanup), and hook command rules / `splitForRewrite` / CPU-build rewrite |
 | `plugins/just/` | Built-in `just` plugin (`plugin.ts`, `checks.ts`, `hook-rules.js`, `justfile.js`, `hook-checks.js`): `just` recipe estimate keys (`stepKeys`), short command labels (`shortName`), and recipe hook rules (`options.hookRecipes` / `options.hookDryRunRecipes`) + `justfile` queue option lookup |
 | `plugins/nvidia-gpu/` | Built-in CJS-only `nvidia-gpu` `holderWatch` plugin (`holder-watch.js`, `holds.js`, `pools.js`, `fault-watch.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`, `README.md`): GPU hold sampling (`gpu-hold-log.tsv` with `mode` column) and Windows kernel pool / Event 153 watches (`gpu-pool-log.tsv`); the sanitizer and profiler runners of the PreToolUse hook (`hook-rules.js`) |
-| `plugins/agents/` | Built-in `agents` plugin: the chat `session` of a job (`plugin.ts`, from the `sessionEnv` variables of its options), the chat panel of the live view (`panel.ts` loads the `chatStatus` module, `view-chats.ts` draws the chats that ask the person in order, one row each or one summary line, and the chat part of the help; pure), its checks (`checks.ts`, `self-test-chats.ts`), and PreToolUse payload parsing and denial/rewrite formatting for Claude Code and Antigravity (`hook-io.js`, `hook-checks.js`) |
-| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `share-rules.ts`, `target-dialect.js`, `checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, the GPU share of a `--gpu` run (`share-rules.ts`, options `exclusiveCategories`, `exclusiveEnv`, `sharedRecipes`), `tests/memory-budgets.yml` budgets, `--gpu` `fuzz-diff`/`long-checks` refusal and CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
+| `plugins/git/` | Built-in `git` plugin (`plugin.ts`, `checks.ts`): `contentDigest`, the tree `git write-tree` gives for what `git add -A` would stage, through a copy of the index and a temporary object directory with the worktree's objects as alternates, with the settings that write into .git turned off (split index, every configured clean filter such as Git LFS, file system monitor, automatic gc) and Verify's `*.received.*` files left out, so that the worktree's .git gains nothing (git only refreshes the time of an object it would write again); a process that exits during a digest removes its scratch folder and stops its git at exit; its checks run on throwaway repositories |
+| `plugins/agents/` | Built-in `agents` plugin: the chat `session` of a job (`plugin.ts`, from the `sessionEnv` variables of its options, which `volatileEnv` also names, so that the environment hash leaves them out), the chat panel of the live view (`panel.ts` loads the `chatStatus` module, `view-chats.ts` draws the chats that ask the person in order, one row each or one summary line, and the chat part of the help; pure), its checks (`checks.ts`, `self-test-chats.ts`), and PreToolUse payload parsing and denial/rewrite formatting for Claude Code and Antigravity (`hook-io.js`, `hook-checks.js`) |
+| `../job-queue-henicos/` | Repository plugin (`plugin.ts`, `budgets.ts`, `share-rules.ts`, `name-filter.ts`, `name-filter-checks.ts`, `target-dialect.js`, `checks.ts`, `offload-checks.ts`, `hook-rules.js`, `hook-checks.js`): test classification, the GPU share of a `--gpu` run (`share-rules.ts`; `name-filter.ts` for a filter of test names alone; options `exclusiveCategories`, `exclusiveEnv`, `sharedRecipes`), `tests/memory-budgets.yml` budgets (with single-project recipe resolution), `--gpu` `fuzz-diff` refusal, `long-checks` double-queue refusal, CPU-only project hints (`GSharpTargetDialect` Cpu), `Kassyi.GSharp.` short-name trimming, hook `nodeScripts` / `legacyQueueScripts` / test-project GPU lookup / hook messages |
 | `lib/main-checkout.js` | Resolves the main checkout root directory (parent of git common-dir) for CJS and TS callers |
 | `lib/process-liveness.js` | Windows process table query, parsing, `isGone`, and command process tree resolution |
 | `lib/config-file.js` | Discovers `job-queue.config.json` via `JOB_QUEUE_CONFIG` (or explicit override) or upward from the entry script directory, and parses it |
@@ -141,7 +151,7 @@ only (no `enum`, `namespace` or parameter properties) and Node built-in modules 
 | `plugin-checks.ts` | Checks of config discovery/validation, `PluginHost` loading/composition/validation, dynamic `checks.ts` loader verification, and the hardening of plugin names, command environments and `--config` forwarding |
 | `scheduler-intake-checks.ts` | Checks of the scheduler side of the optional `memoryMb`/`keys` fields: the job record, history key lookup/preservation, state-file `keys` persistence, and version skew |
 | `constants.ts` | Shared constants and the `GSHARP_JOB_QUEUE_*` variable names |
-| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts` | The self-test (`job-queue.js --self-test`); runs core unit checks, loads plugin `checks.ts` suites dynamically via `plugin-host.ts`, and runs end-to-end checks; `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys; a plugin's `checks.ts` loads its own checks (the agents plugin's `self-test-chats.ts` draws its chat panel) |
+| `self-test*.ts`, `scheduler-checks.ts`, `scheduler-fairness-checks.ts`, `server-job-checks.ts`, `queue-hint-checks.ts` | The self-test (`job-queue.js --self-test`); runs core unit checks, loads plugin `checks.ts` suites dynamically via `plugin-host.ts`, and runs end-to-end checks; `self-test-support.ts` holds its fixture, `QueueFixture`; `server-job-checks.ts` checks the plans and a scheduler in the self-test's own process; `self-test-client.ts` drives a client (`QueuedRun` with a fake `RunHost`) in process; `self-test-view.ts` draws the live view from a fixed status and drives its keys; `queue-hint-checks.ts` checks what a waiting job is told (`waitFor`, the latest end), `status --here`, the worktree notice and the environment log; a plugin's `checks.ts` loads its own checks (the agents plugin's `self-test-chats.ts` draws its chat panel) |
 
 ## How a job runs
 
@@ -196,6 +206,20 @@ sequenceDiagram
   assumes every probe passes. `probeWanted` names the resources that wait for a measurement once the command of each
   running shared turn has held the lock for `settleMs` (from the latest start of its holders, not from the grant; a
   turn whose command holds nothing yet has not settled). A holder counts on the resource of the turn that started it.
+- **What a waiting job waits for**: `Scheduler.waitFor` answers by the rules of `grant()`, in its order: the
+  predecessor (`after`), the client (`away`), the startup grace (`restart`), the pause, a turn (`gpu`, or `gpu-memory`
+  when the first waiting turn of its resource waits for the probe), the slots, the memory pool, else the jobs ordered
+  first (`in-line`). It goes out in every outlook (`queued`, `waiting`, `status`) with `latestEndAt`, the end at the
+  longest recorded run time. The scheduler tells every change of it; the client prints a new one at most every 30 s
+  (`ReasonNoticeMs`), later if it still holds then. A job the next grant takes has none. The live view uses it and guesses from the totals only
+  for an older scheduler.
+- **The worktree as queued**: the client takes the plugins' `contentDigest` of its worktree when it queues and again
+  when it is granted, both beside the work (the request and the command never wait for them), and prints one line when
+  they differ. A GPU holder takes none: its turn did. A job granted before its first digest came takes no second one,
+  and `GSHARP_JOB_QUEUE_DIGEST=0` turns digests off (the self-test's clients set it).
+- **The log of a queued job**: the queue line of `server.log` has the job's cwd, worktree and environment hash
+  (`environment-hash.ts`); the scheduler keeps the last environment per command and worktree in memory (at most 500)
+  and logs the names that differ from it. Values never leave the client.
 - **A slot follows the command**: when a client dies while its command runs on, the scheduler keeps the slot and polls
   the processes until the command has exited.
 
@@ -225,6 +249,43 @@ it sends no `share`; the GPU holder and a job without a turn send neither. The r
 --mode shared` only when it asked for `"shared"` and `granted.share` is exactly `"shared"`: the scheduler and the lock
 then agree on every shared turn, and every other case (no echo from an older scheduler, an echo it did not ask for,
 the direct lock under a scheduler without turns) takes the lock exclusively.
+
+When no plugin's classify gives a share (an explicit `"exclusive"` is a veto, as is `--gpu-exclusive`) and `--after` is
+not set, `QueuedRun` awaits the plugins' `checkShare` (async, `PluginHost.checkShare`) once, before it connects, so that
+a slow answer does not hold an idle connection; the answer is kept for the re-registrations. The check runs after the
+build job that `run --gpu` splits off has ended (`runGpuTurn` in `client.ts` awaits `runBuildStep` before the turn's
+`QueuedRun.run()`; the self-test drives it with a fake host), and the client is not in the GPU line meanwhile (180 s at
+most). An answer may be a `ShareAnswer`: `"shared"` with a `stillValid` that the client calls once the shared turn is
+granted and before it takes the lock (`requeueIfStale`). When it says no, throws or takes more than 30 s, the client
+sends `downgrade`: the scheduler takes the granted shared turn out of the running turns and queues the same job, under
+the same id and queue time, as an exclusive turn (`wait <id>` and `--after <id>` still see the one run). The client
+asks only when the grant says `downgrade: true` (an older scheduler closes the connection at a message it does not
+know); for an older one, and when the scheduler refuses (a non-ending `not-downgradable` error), the client
+gives the grant back (a `done` that records no run, under which the old id ends as cancelled) and queues the turn again
+as a new exclusive job. Grants that arrive between the message and the answer are the old shared one and are not
+started; messages of a replaced connection are not read. The check sits before the lock, so the short wait for the lock and a command already running at an
+`adopt` after a scheduler restart are not covered; a turn that queues again after a lost connection is checked at its
+next grant.
+
+The henicos plugin answers for a `dotnet test` whose `--filter` is positive name terms alone (`nameFilterCheck`). The
+list must read the assembly the run reads, so only a command of one `dotnet test` step with `--no-build`, started by
+nothing but `DiffEngine_Disabled=...` and run by `dotnet`, `dotnet.exe` or an absolute path to one (no `cd`, `export`,
+other leading assignment or other step except `echo`), whose project is a `.csproj` or a directory with exactly one
+`.csproj` and no solution, with no brace or glob character, is read. It runs `dotnet test <project> --no-build
+--list-tests --filter "(<names>)&(Category=<each exclusive category>)"` as a CPU job of the queue (`job-queue.js run`,
+without `--gpu`, output read from its standard output) and answers `"shared"` only for exit code 0, the runner's `No
+test matches the given testcase filter` line and no test name in the output. Anything else (a failure, a missing build,
+a time out) is exclusive. The assemblies are the `Test run for <path> (<framework>)` lines of the output, one per target
+framework: none named, one missing, one written after the list job started, or one that is not among the
+`<project name>.dll` files under the project's `bin` that were hashed before the list job started (or whose hash changed
+since: MSBuild copies a build from `obj` to `bin` and keeps the compile time, so the time alone does not show a copy
+that lands during the list; a custom assembly name is not in that snapshot either) is exclusive;
+otherwise the SHA-256 of each is the fingerprint, and the `stillValid` of the answer hashes them again, so a rebuild
+while the turn waited sends it back as exclusive. The list runner and the files are parameters of `nameFilterShare`, so
+the self-test never starts a real `dotnet test` and stays offline. The list job's process tree is killed on a time out
+(`ProcessTable.killTree`), and a command whose every test step is a `--list-tests` takes the normal memory budget, not
+the stress one. For a command `nameFilterCheck` reads, the henicos `classify` has no opinion on the share, so only
+`checkShare` judges it.
 
 ## Job records
 
@@ -286,7 +347,7 @@ A shared GPU turn is the same kind of addition: `share` and `resource` in `reque
 optional and need no new version, and each falls back to the stricter reading when it is ignored: an older client sends
 no `share`, so its turn is exclusive; an older scheduler never sends `share` in `granted`, so a client takes the lock
 exclusively; an older scheduler that reads a state file with two running shared turns restores both as running turns
-and grants no other turn until both end; a view that gets no `resources` draws the header and the marks as before.
+and grants no other turn until both end; a view that gets no `resources` draws the header and the marks as before. `downgrade` (a granted shared turn waits again as an exclusive one under its id) is a version 3 message like `pause`; the grant of a shared turn says `downgrade: true`, and a client asks only then, so an older scheduler is never sent it.
 
 The optional fields `turn` (in `request` and `adopt`) and `pid` / `queuedAt` (in `report`) need no new version: an
 older scheduler ignores them, and an older client that sends none is matched by its pid and command, and its report is

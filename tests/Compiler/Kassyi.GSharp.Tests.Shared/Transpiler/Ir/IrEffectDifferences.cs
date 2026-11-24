@@ -68,9 +68,6 @@ internal static class IrEffectDifferences
         IrFieldReference { Receiver: { Type.IsValueType: true } receiver }
             when !IrMemberEffects.IsVariable(receiver) && Differs(ir, old, reads: Memory()) =>
             IrClassificationEquivalence.KnownPrefix + "a field of a struct temporary reads no memory",
-        // The syntax walk treats is null as throwing
-        IrNullTest when Differs(ir, old, throws: true) =>
-            IrClassificationEquivalence.KnownPrefix + "an is null pattern throws nothing",
         // The syntax walk does not list nameof among the operations that raise nothing; it is a constant
         IrConstant or IrConversion { IsImplicit: true, Operand: IrConstant } when Differs(ir, old, throws: true) =>
             IrClassificationEquivalence.KnownPrefix + "a nameof is a constant",

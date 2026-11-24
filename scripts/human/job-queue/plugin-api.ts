@@ -26,6 +26,17 @@ export const PluginApiVersion = 1;
 
 export type ShareMode = "shared" | "exclusive";
 
+/**
+ * The answer of checkShare. `stillValid` is for a "shared" answer that rests on something that can change while the
+ * turn waits (an assembly that is rebuilt): the client calls it once the scheduler has granted the shared turn and
+ * before the GPU lock is taken, and when it resolves to anything but true, throws or takes too long, the client gives
+ * the grant back and queues the turn again as exclusive (it loses its place).
+ */
+export interface ShareAnswer {
+  readonly share: ShareMode;
+  readonly stillValid?: () => Promise<boolean>;
+}
+
 /** Read-only client context passed to client/view hooks. */
 export interface ClientContext {
   /** Working directory of the job (process.cwd()). */
@@ -59,6 +70,8 @@ export interface Classification {
   memoryMb?: number;
   /** Share mode for the requested resource; defaults to "exclusive". */
   share?: ShareMode;
+  /** True when the command is self-contained and eligible for transparent offload to a remote Linux CPU worker. */
+  offloadable?: boolean;
 }
 
 /** Result of check; the first refuse stops execution, hints are collected in order. */
@@ -112,11 +125,118 @@ export interface ViewPanel {
   help(data: unknown): LegendEntry[];
 }
 
+/** A digest of a worktree's content (contentDigest) and how long it took. */
+export interface ContentDigest {
+  digest: string;
+  ms: number;
+}
+
 export interface PanelJob {
   readonly id: number;
   readonly worktree: string;
   readonly cwd?: string;
   readonly session?: string;
+}
+
+/** Worktree-relative path specification to pull back after remote execution. */
+export interface RemoteCollectPathSpec {
+  readonly path: string;
+  readonly kind: "file" | "dir";
+}
+
+/** Parsed statement context passed to plugin `rewriteStatement` during remote command translation. */
+export interface RemoteStatementContext {
+  readonly program: string;
+  readonly subcommand: string;
+  /** Argument tokens after the program name (already translated to relative POSIX paths, unquoted). */
+  readonly args: readonly string[];
+  readonly keepBuildServersWarm: boolean;
+  readonly cpus: number;
+}
+
+/** Result of a plugin's statement rewrite for remote execution. */
+export interface RemoteStatementRewrite {
+  /** Rewritten argument tokens (after the program name, unquoted). */
+  args?: string[];
+  /** Additional worktree-relative paths to pull back after execution. */
+  collectPaths?: RemoteCollectPathSpec[];
+}
+
+/** Grant information passed to plugin `prepareRemoteCommand`. */
+export interface RemoteCommandGrant {
+  readonly cpus: number;
+  readonly keepBuildServersWarm: boolean;
+  /** Current environment map (leading assignments + defaults); plugins may avoid overriding explicit keys. */
+  readonly env: Readonly<Record<string, string>>;
+}
+
+/** Result of a plugin's post-translation bash command rewrite for remote execution. */
+export interface RemoteCommandRewrite {
+  command?: string;
+  env?: Record<string, string>;
+  note?: string;
+}
+
+/** Remote failure-artifact collection and local allowlist rule contributed by a plugin. */
+export interface RemoteFailureArtifactRule {
+  /** Worktree-relative directories to search on the remote worker (e.g. ["tests", "src"]). */
+  readonly searchDirs: readonly string[];
+  /** `find -name` glob pattern on the remote worker (e.g. "*.received.*"). */
+  readonly findName: string;
+  /** Allowlist regex tested against worktree-relative POSIX paths on the local side. */
+  readonly allowPattern: RegExp;
+  /** When true, the parent directory must exist in the local worktree manifest. */
+  readonly requireKnownLocalDir?: boolean;
+  /** When true, stale matching files are removed on the remote worker before each run. */
+  readonly cleanBeforeRun?: boolean;
+}
+
+/** Remote crash-summary diagnostic rule parsed in memory on non-zero exit (never written to local disk). */
+export interface RemoteCrashSummaryRule {
+  /** Worktree-relative directories to search on the remote worker (e.g. ["TestResults"]). */
+  readonly searchDirs: readonly string[];
+  /** `find -name` glob pattern on the remote worker (e.g. "Sequence_*.xml"). */
+  readonly findName: string;
+  /** Regex matching the worktree-relative POSIX path of the diagnostic file. */
+  readonly pathPattern: RegExp;
+  /** When true, stale matching files are removed on the remote worker before each run. */
+  readonly cleanBeforeRun?: boolean;
+  /** Parses diagnostic file contents and returns crashed/aborted test names. */
+  parse(content: string): string[];
+}
+
+/** Remote CPU offload rules and hooks contributed by a plugin. */
+export interface RemoteOffloadContribution {
+  /** Additional program basenames allowed in remote offload commands (e.g. ["dotnet"], ["just"]). */
+  readonly allowedPrograms?: readonly string[];
+  /** Options whose next token is a filesystem path (translated to relative POSIX). */
+  readonly pathValueOptions?: readonly string[];
+  /** Options whose next token is NOT a filesystem path (kept verbatim). */
+  readonly nonPathValueOptions?: readonly string[];
+  /** Program/subcommand-specific override for whether an option's value is a filesystem path. */
+  isOptionValuePath?(program: string, subcommand: string, option: string): boolean | undefined;
+  /** Additional file extensions (without leading dot) recognized as path-like tokens. */
+  readonly pathExtensions?: readonly string[];
+  /** Options whose translated path value should be collected back as a directory after execution. */
+  readonly collectDirOptions?: readonly string[];
+  /** Default environment variables set on the remote worker unless already set by the command. */
+  readonly defaultEnv?: Readonly<Record<string, string>>;
+  /** Additional worktree-relative POSIX directory prefixes excluded from remote source sync. */
+  readonly syncExcludePrefixes?: readonly string[];
+  /** Additional `find -name` glob patterns excluded from remote source sync (e.g. ["*.received.*", "*.user"]). */
+  readonly syncExcludeFindNames?: readonly string[];
+  /** Per-statement argument rewriter (runs after path translation, before bash quoting). */
+  rewriteStatement?(stmt: RemoteStatementContext): RemoteStatementRewrite | undefined;
+  /** Post-translation bash command & env rewriter (e.g. build tool parallelism flags & env vars). */
+  prepareRemoteCommand?(command: string, grant: RemoteCommandGrant): RemoteCommandRewrite | undefined;
+  /** Failure artifact rules pulled back on non-zero exit through the local 6-gate validator. */
+  readonly failureArtifacts?: readonly RemoteFailureArtifactRule[];
+  /** Crash summary rules parsed in memory on non-zero exit. */
+  readonly crashSummaries?: readonly RemoteCrashSummaryRule[];
+  /** Process command names (Linux `comm`) to terminate during `remote-reset` (e.g. ["dotnet", "VBCSCompiler"]). */
+  readonly resetProcessNames?: readonly string[];
+  /** Worktree-relative directories to wipe during `remote-reset --clean` (e.g. ["TestResults"]). */
+  readonly resetCleanDirs?: readonly string[];
 }
 
 export interface QueuePlugin {
@@ -133,8 +253,25 @@ export interface QueuePlugin {
   /** [first per-field] Classifies whether the command is a test, its memory budget, and its share mode. */
   classify?(command: string, resource: ResourceRequest | null, context: ClientContext): Classification | undefined;
 
+  /**
+   * [first, async] Asked only for a GPU turn to which no plugin's classify gave a share (an explicit "shared" or
+   * "exclusive" stands, so a plugin's "exclusive" is a veto) and that did not ask for --gpu-exclusive or set --after,
+   * once, before the turn is first registered: may take a measurement that classify cannot (it runs before the turn
+   * registers, so a slow answer delays the registration). "shared" or "exclusive" ends the asking; undefined passes it
+   * to the next plugin. A throw, a time out or any other value takes the GPU exclusively. A plugin answers "shared" only
+   * for what it measured, and answers undefined from classify for the shapes it will measure. A plain ShareMode is
+   * the same as a ShareAnswer without `stillValid`.
+   */
+  checkShare?(command: string, context: ClientContext): Promise<ShareMode | ShareAnswer | undefined>;
+
   /** [first] Computes estimate keys for one step. */
   stepKeys?(step: ReadStep, context: StepContext): StepKeys | undefined;
+
+  /**
+   * [all] Names of environment variables whose values differ from run to run by nature (a chat session id), left out
+   * of the environment hash the scheduler logs per job.
+   */
+  volatileEnv?(context: ClientContext): readonly string[] | undefined;
 
   /** [first] Returns the agent chat session id for the job. */
   session?(context: ClientContext): string | undefined;
@@ -145,8 +282,18 @@ export interface QueuePlugin {
   /** [sequential] Shortens a command label for the watch view. */
   shortName?(command: string, short: string): string | undefined;
 
+  /**
+   * [first, asynchronous] A digest of the content of context.worktree, taken when a job is queued and again when it
+   * starts: when the two differ, the job says that its worktree changed after it was queued. Undefined: no digest (not
+   * a worktree this plugin knows, or it failed); the job then says nothing.
+   */
+  contentDigest?(context: ClientContext): Promise<ContentDigest | undefined>;
+
   /** [first] Provides the lower panel for the watch view. */
   panel?(context: ClientContext): ViewPanel | undefined;
+
+  /** [all] Contributes remote CPU offload rules, command rewriters, sync exclusions, and failure artifact handlers. */
+  remoteOffload?(context: ClientContext): RemoteOffloadContribution | undefined;
 
   /** Pure helper functions exposed to repository plugins. */
   readonly api?: Readonly<Record<string, unknown>>;

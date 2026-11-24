@@ -17,6 +17,7 @@ import {
   ProtocolVersion,
   ShellVariable,
   StateDirectoryVariable,
+  DigestVariable,
   TurnVariable,
 } from "./constants.ts";
 import { connect, request } from "./client-connect.ts";
@@ -70,8 +71,38 @@ export function removeDirectory(directory: string): void {
   }
 }
 
-/** A child process with a promise of its exit code. */
-export type Client = ChildProcess & { done: Promise<number | null> };
+/** A child process with a promise of its exit code, and for a `run` client what it printed to stderr so far. */
+export type Client = ChildProcess & { done: Promise<number | null>; said?: () => string };
+
+/**
+ * The exit codes of `clients`, and what each printed (for the message of a check that compares the codes: a client
+ * that ends otherwise than expected then says why).
+ */
+export async function exitsOf(
+  clients: Client[],
+  limitMs = ClientExitMs,
+): Promise<{ codes: (number | null | "no exit")[]; said: string }> {
+  // A client that does not end within the limit counts as "no exit", so that the check fails instead of hanging
+  // The timer keeps the process alive until the client ends or the limit passes, and is cleared then
+  const codes = await Promise.all(
+    clients.map(async (client) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const limit = new Promise<"no exit">((resolve) => (timer = setTimeout(() => resolve("no exit"), limitMs)));
+      try {
+        return await Promise.race([client.done, limit]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }),
+  );
+  const said = clients
+    .map((client, i) => `client ${i} (exit ${String(codes[i])}): ${client.said?.() ?? ""}`)
+    .join("\n");
+  return { codes, said };
+}
+
+/** How long exitsOf waits for each client to end. */
+export const ClientExitMs = 120 * 1000;
 
 /** The pid of a process that has exited: a client or a command that is gone. */
 export function deadPid(): number {
@@ -197,6 +228,7 @@ export class QueueFixture {
     env.GSHARP_GPU_LOCK_PATH = path.join(this.dir, "gpu-lock");
     env.GSHARP_GPU_POOL_WATCH = "0";
     env.GSHARP_GPU_HOLD_WATCH = "0";
+    env[DigestVariable] = "0"; // the clients run in the developer's worktree: no git add -A over it for every job
     this.env = env;
   }
 
@@ -266,8 +298,16 @@ export class QueueFixture {
   // --slots: a scheduler that a client restarts gets the same capacity as the test one.
   readonly client = (port: number, command: string, extra: string[] = []): Client => {
     const args = [EntryScript, "run", "--port", String(port), "--slots", "2", "--weight", "1", ...extra, "--", command];
-    const child = spawn(process.execPath, args, { stdio: "ignore", windowsHide: true, env: this.env }) as Client;
+    const child = spawn(process.execPath, args, {
+      stdio: ["ignore", "ignore", "pipe"],
+      windowsHide: true,
+      env: this.env,
+    }) as Client;
     this.children.push(child);
+    // Read all along, so that the pipe never fills and holds the client up
+    let said = "";
+    child.stderr?.on("data", (data: Buffer) => (said += data.toString()));
+    child.said = () => said;
     child.done = new Promise((resolve) => child.on("close", resolve));
     return child;
   };

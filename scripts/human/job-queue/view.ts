@@ -52,9 +52,35 @@ function waitsForProbe(job: StatusJob, reply: StatusReply): boolean {
  * What a waiting job waits for, in words a person reads without the docs: "after j0821" (its --after job), "GPU busy"
  * (another job has the GPU), "GPU memory" (a shared turn waits for the probe of the free GPU memory), "CPU full"
  * (every slot in use), "mem full" (the memory pool of the test runs), or
- * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it).
+ * "in line" (there is room, but an earlier job goes first), "paused" (the queue is paused; start <id> still runs it),
+ * "away" (its client is gone for now) or "restart" (the scheduler waits for the running jobs to re-register).
  */
 function waitReason(job: StatusJob, reply: StatusReply): string {
+  // The scheduler's own answer (Scheduler.waitFor); the guesses below are for an older scheduler
+  switch (job.waitFor) {
+    case "after":
+      return job.blockedBy != null ? `after ${formatJobId(job.blockedBy)}` : "after";
+    case "away":
+      return "away";
+    case "restart":
+      return "restart";
+    case "paused":
+      return "paused";
+    case "gpu":
+      return "GPU busy";
+    case "gpu-memory":
+      return "GPU memory";
+    case "remote":
+      return "remote busy";
+    case "slots":
+      return "CPU full";
+    case "memory":
+      return "mem full";
+    case "in-line":
+      return "in line";
+    default:
+      break;
+  }
   if (job.blockedBy != null) {
     return `after ${formatJobId(job.blockedBy)}`;
   }
@@ -295,7 +321,8 @@ export function timelineCells(job: StatusJob, window: TimeWindow, now: number): 
         cell = { char: "?", style: "rest" }; // no recorded run time: one ? right after now, not a made-up rest
       }
     } else if (finite(job.startAt) && finite(job.endAt) && to > now) {
-      if (from >= job.startAt && from < job.endAt) {
+      // Any overlap with the expected run: a run shorter than a cell still shows as one ▒
+      if (to > job.startAt && from < job.endAt) {
         cell = { char: "▒", style: "wait" };
       } else if (from < job.startAt && (job.blockedBy != null || job.gpuTurn)) {
         cell = { char: "⋯", style: "dim" };
@@ -373,6 +400,21 @@ function headerLine(reply: StatusReply | null, jobs: ScreenJob[], columns: numbe
       line.add(` +${turns}`, "dim");
     }
   }
+  if (reply.remotes !== undefined && reply.remotes.length > 0) {
+    for (const remote of reply.remotes) {
+      if (remote.mode === "off") {
+        continue;
+      }
+      line.add(`  ${remote.name.toUpperCase()} `);
+      if (remote.probe !== undefined && !remote.probe.ok) {
+        line.add("off", "warn");
+      } else if (remote.running.length === 0) {
+        line.add("-", "dim");
+      } else {
+        remote.running.forEach((id, index) => line.add(`${index > 0 ? " " : ""}${formatJobId(id)}`, "run"));
+      }
+    }
+  }
   const keys = "  ?:keys";
   return line.width + keys.length <= columns ? line.padTo(columns - keys.length).add(keys, "dim") : line.padTo();
 }
@@ -407,12 +449,16 @@ const HelpLegend: LegendEntry[] = [
   { sample: "mem full", style: "warn", text: "the memory pool is full" },
   { sample: "GPU busy", style: "warn", text: "another job has the GPU" },
   { sample: "GPU memory", style: "warn", text: "a shared turn waits for the probe" },
+  { sample: "remote busy", style: "warn", text: "waits for a remote CPU worker" },
   { sample: "paused", style: "warn", text: "the queue is paused (Space)" },
   { sample: "in line", style: "warn", text: "an earlier job goes first" },
   { sample: "after jnnnn", style: "warn", text: "until job n has ended" },
-  { heading: "GPU turn (mark before the command)" },
+  { sample: "away", style: "warn", text: "its client is gone for now" },
+  { sample: "restart", style: "warn", text: "running jobs re-register" },
+  { heading: "GPU / remote (mark before the command)" },
   { sample: "G", style: "gpu", text: "an exclusive GPU turn" },
   { sample: "g", style: "gpu", text: "a shared GPU turn" },
+  { sample: "R", style: "run", text: "running on a remote CPU worker" },
 ];
 
 /** A screen of this many rows shows a row per waiting chat; a shorter one sums them up in one line. */
@@ -484,6 +530,11 @@ function promptText(prompt: Prompt, jobs: ScreenJob[]): string {
 const LateLegend = "  red = longer than usual";
 const SelectHint = "  ↑↓ select a job";
 
+/** The id label of a job: `j0812` locally, `j0812@ubuntu` when running on a remote CPU worker. */
+function jobIdLabel(job: Pick<StatusJob, "id" | "remote">): string {
+  return job.remote ? `${formatJobId(job.id)}@${job.remote}` : formatJobId(job.id);
+}
+
 /**
  * The queue in one line when no job is selected: "4 running, 2 waiting; next end ~00:45 j0965", then what a red bar
  * means while one is drawn (the legend is otherwise only in the help), else how to select a job.
@@ -498,7 +549,7 @@ function summaryLine(jobs: ScreenJob[], columns: number, now: number): ScreenLin
   const next = running.filter((job) => finite(job.endAt)).sort((a, b) => (a.endAt ?? 0) - (b.endAt ?? 0))[0];
   return line
     .add(` ${running.length} running, ${jobs.length - running.length} waiting`)
-    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} ${formatJobId(next.id)}` : "")
+    .add(next !== undefined && finite(next.endAt) ? `; next end ~${clock(next.endAt)} ${jobIdLabel(next)}` : "")
     .add(late ? LateLegend : SelectHint, late ? "late" : "dim")
     .padTo();
 }
@@ -512,6 +563,7 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     `w${job.weight}`,
     job.memoryMb ? `${(job.memoryMb / 1024).toFixed(1)}GB` : "",
     job.gpu ? "gpu" : "",
+    job.remote ? `remote:${job.remote}` : "",
     job.pin != null ? "pinned" : "",
     job.before != null ? `before ${formatJobId(job.before)}` : "",
     job.after != null ? `after ${formatJobId(job.after)}` : "",
@@ -519,14 +571,14 @@ function detailLine(job: ScreenJob | undefined, jobs: ScreenJob[], columns: numb
     job.holderId !== null ? `runs as ${formatJobId(job.holderId)}` : "",
   ].filter((f) => f !== "");
   return line
-    .add(` ${formatJobId(job.id)} `, "bold")
+    .add(` ${jobIdLabel(job)} `, "bold")
     .add(describeProgress(job, now), isLate(job, now) ? "late" : "")
     .add(`  ${flags.join(" ")}  `, "dim")
     .add(job.command)
     .padTo();
 }
 
-/** The fields left of the timeline: marker, id, GPU flag, command. */
+/** The fields left of the timeline: marker, id (with @remote when offloaded), GPU/remote flag, command. */
 function jobLine(
   job: ScreenJob,
   selected: boolean,
@@ -539,8 +591,11 @@ function jobLine(
   const commandWidth = window === null ? Math.max(8, columns - idWidth - 25) : Math.min(22, columns - idWidth - 14);
   const line = new ScreenLine(columns)
     .add(selected ? "▸" : " ", "bold")
-    .add(formatJobId(job.id).padStart(idWidth), job.state === "running" ? "bold" : "")
-    .add(job.gpu ? (job.share === "shared" ? "g" : "G") : " ", "gpu")
+    .add(jobIdLabel(job).padEnd(idWidth), job.state === "running" ? "bold" : "")
+    .add(
+      job.gpu ? (job.share === "shared" ? "g" : "G") : job.remote ? "R" : " ",
+      job.gpu ? "gpu" : job.remote ? "run" : "",
+    )
     .add(" ")
     .add(fit(shortCommand(job.command, plugins), commandWidth), job.state === "running" ? "" : "dim")
     .add(" ");
@@ -606,7 +661,7 @@ export function renderScreen(
     read === null || state.panelHidden ? [] : read.view.render(read.data, panelJobs(jobs), columns, room, now);
   const panelShown = panelRows.length < rows - 4 ? panelRows : []; // the job list keeps at least one row
   const listRows = rows - 4 - panelShown.length;
-  const idWidth = JobIdWidth;
+  const idWidth = jobs.reduce((max, item) => Math.max(max, jobIdLabel(item).length), JobIdWidth);
   const left = 1 + idWidth + 1 + 1 + Math.min(22, columns - idWidth - 14) + 1;
   const cells = columns - left;
   const window = cells >= 12 ? timeWindow(jobs, now, cells) : null;

@@ -6,26 +6,29 @@ import type * as net from "node:net";
 import { type ChildProcess } from "node:child_process";
 import {
   CancelledExitCode,
-  CpusVariable,
+  DigestVariable,
   ForecastNoticeMs,
-  JobVariable,
   NoticeIntervalMs,
+  ReasonNoticeMs,
   BaseProtocolVersion,
   TimedOutExitCode,
   TurnVariable,
   UsageExitCode,
 } from "./constants.ts";
-import { describeOutlook } from "./client-commands.ts";
+import { describeOutlook, describeWaitFor } from "./client-commands.ts";
 import { OlderSchedulerHint, delay } from "./client-connect.ts";
 import { commandEnd, type RunHost } from "./client-run-host.ts";
 import type { RunOptions } from "./client.ts";
+import { environmentHash, VolatileEnv, type EnvironmentHash } from "./environment-hash.ts";
 import { commandKeys, type CommandKeys, type PathPlace } from "./estimate-key.ts";
 import { errorMessage } from "./history.ts";
 import { resolvePlaces } from "./path-places.ts";
+import type { ContentDigest } from "./plugin-api.ts";
 import type { BaseClientContext, PluginHost } from "./plugin-host.ts";
 import {
   numberField,
   onMessages,
+  remoteField,
   send,
   shareField,
   wireVersion,
@@ -33,10 +36,19 @@ import {
   type Incoming,
   type Placement,
 } from "./protocol.ts";
+import type { ShareAnswer } from "./plugin-api.ts";
+import { RemoteWithFallbackExecutor, resolveOffloadPreference } from "./remote/executor.ts";
+import { EmptyRemoteRules } from "./remote/rules.ts";
+import type { OffloadPreference } from "./remote/spec.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
 import { prefix, resolveWorktree } from "./system.ts";
 import { formatJobId } from "./job-id.ts";
+
+/** The non-empty notes joined by "; ". */
+function joinNotes(...notes: string[]): string {
+  return notes.filter((note) => note !== "").join("; ");
+}
 
 /**
  * The queued path of run: register, wait for the grant, run the command, report its end. With `gpuTurn`, the job waits
@@ -50,7 +62,7 @@ export class QueuedRun {
   private readonly gpuTurn: boolean;
   private readonly host: RunHost;
   private readonly plugins?: PluginHost;
-  private readonly queuedAt = Date.now();
+  private queuedAt = Date.now(); // new when the turn queues again as exclusive
   private state: "waiting" | "running" | "done" = "waiting";
   private child: ChildProcess | null = null;
   private jobId = 0;
@@ -64,15 +76,42 @@ export class QueuedRun {
   private keys: CommandKeys | null = null;
   /** Precomputed memory budget when plugins are active and !gpuTurn; resolved once at the first registration. */
   private memoryMb: number | null = null;
+  /** Precomputed remote CPU offload preference; resolved once at the first registration. */
+  private offload: OffloadPreference | null = null;
+  /** Remote worker name granted by the scheduler (sent back in adopt after a scheduler restart). */
+  private grantedRemote: string | null = null;
   /**
    * The share a GPU turn asks for when plugins are active, classified once at the first registration: "shared" only
    * when the plugins answer exactly that and --gpu-exclusive is not set. Null until then, and without plugins.
    */
   private share: ShareMode | null = null;
+  /** The plugin's check that a shared answer still holds (see ShareAnswer), called once the shared turn is granted. */
+  private stillValid: ShareAnswer | null = null;
+  /** start() has begun for a grant: another grant, as one that arrives twice, does not start it again. */
+  private starting = false;
+  /** A "downgrade" was sent and not yet answered: the grants that arrive meanwhile are the old shared one. */
+  private downgrading = false;
   private registered = true; // false when the scheduler refused this client's protocol version
   private lastNotice = -Infinity;
   private lastPosition = 0;
   private lastStartAt: number | null = null;
+  /** What the job was last told it waits for (Outlook.waitFor): a change is told at once. */
+  private lastWaitFor: unknown = undefined;
+  /** The latest waiting notice whose new reason came too soon after the last notice, and the timer that tells it. */
+  private laterWaiting: Incoming | null = null;
+  private laterTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The digest of the worktree's content when the job was queued (plugins' contentDigest), taken once without waiting
+   * for it; compared with the one at the start. Null until the first registration, and for a GPU holder.
+   */
+  private queuedDigest: Promise<ContentDigest | undefined> | null = null;
+  /** The digest at the queue has come (whatever its answer): only then is one taken at the start. */
+  private queuedDigestDone = false;
+  /**
+   * The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first
+   * registration.
+   */
+  private environment: EnvironmentHash | null = null;
   /** The pause was told (once per run). */
   private pauseTold = false;
   /** Set once "done" was sent: called with true on the scheduler's receipt, with false when none comes. */
@@ -83,6 +122,10 @@ export class QueuedRun {
   private receipts = false;
   /** The scheduler cancelled this job: the command is being stopped, and its end decides how it is reported. */
   private cancelRequested = false;
+  /** Active execution cancellation signal (covers pre-child remote sync/resync and artifact pull). */
+  private abortController: AbortController | null = null;
+  /** Remote transport failed before execution: waiting for server "queued" + fresh local "granted". */
+  private fallingBackLocal = false;
 
   constructor(
     options: RunOptions,
@@ -118,6 +161,10 @@ export class QueuedRun {
       ).unref();
     }
 
+    await this.resolveShare();
+    if (!this.resolveOffloadAndMemory()) {
+      return;
+    }
     await this.attach();
   }
 
@@ -187,6 +234,7 @@ export class QueuedRun {
   private onSignal(signal: string, code: number): () => void {
     return (): void => {
       prefix(`${signal}: stopping the command and leaving the queue`);
+      this.abortController?.abort();
       const running = this.child;
       if (this.gpuTurn && process.platform === "win32" && running !== null && running.exitCode === null) {
         // The console delivers Ctrl+C to gpu-lock.js itself, which releases its lock and ends; killing it first would
@@ -213,11 +261,96 @@ export class QueuedRun {
     }
   }
 
+  /**
+   * A shared turn that rests on a measurement (ShareAnswer.stillValid) is checked again once it is granted, before the
+   * lock is taken: when the measurement no longer holds, the turn asks the scheduler to downgrade it ("downgrade":
+   * the same job, under the same id, waits again as an exclusive turn, so that `wait` and `--after` on its id still
+   * see the run). Only a scheduler that says so in the grant (`downgrade`) is asked; for an older one, and when the
+   * scheduler refuses, the turn takes the older way (requeueAsNewJob). Returns true when the turn waits again, so that
+   * start has nothing more to do.
+   */
+  private async requeueIfStale(granted: Incoming): Promise<boolean> {
+    const answer = this.stillValid;
+    if (answer === null || this.share !== "shared" || shareField(granted) !== "shared" || this.plugins === undefined) {
+      return false;
+    }
+    const valid = await this.plugins.stillValid(answer);
+    if (this.ended()) {
+      return true; // cancelled or interrupted meanwhile: finish has dealt with it
+    }
+    if (valid) {
+      return false;
+    }
+    prefix(
+      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} ` +
+        "no longer holds; waiting again as exclusive",
+    );
+    this.share = "exclusive";
+    this.stillValid = null;
+    if (granted.downgrade !== true) {
+      // A scheduler that does not know "downgrade" would close the connection at the message: the older way
+      await this.requeueAsNewJob();
+      return true;
+    }
+    // Grants that arrive until the scheduler answers are the old shared one: ignored
+    this.downgrading = true;
+    const message: ClientMessage = { type: "downgrade" };
+    send(this.socket, { version: wireVersion(message), ...message });
+    return true;
+  }
+
+  /**
+   * The older way back to exclusive, for a scheduler without "downgrade": the grant is given back (a "done" that
+   * records no run, under which the old id ends as cancelled) and the turn queues again as a new job.
+   */
+  private async requeueAsNewJob(): Promise<void> {
+    prefix("the scheduler cannot downgrade the turn; queueing it again as a new exclusive job");
+    this.downgrading = false;
+    this.starting = false;
+    const old = this.socket;
+    this.socket = null; // its close is then no loss of the scheduler
+    if (old !== null && !old.destroyed) {
+      send(old, { version: BaseProtocolVersion, type: "done", completed: false, exitCode: 0, cancelled: true });
+      old.end();
+    }
+    this.jobId = 0;
+    this.queuedAt = Date.now();
+    this.lastPosition = 0;
+    this.lastStartAt = null;
+    this.lastNotice = -Infinity;
+    await this.attach();
+  }
+
   private async start(granted: Incoming): Promise<void> {
     const { options, placement } = this;
+    if (this.starting) {
+      return; // a grant that arrives twice (or while the re-check runs) starts the turn once
+    }
+    this.starting = true;
+    if (await this.requeueIfStale(granted)) {
+      this.starting = false; // the turn queued again: its next grant starts it
+      return;
+    }
+    if (this.ended() || this.cancelRequested) {
+      this.starting = false;
+      if (this.cancelRequested && !this.ended()) {
+        this.finish(CancelledExitCode, false, true);
+      }
+      return;
+    }
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
+    const remoteName = remoteField(granted);
+    if (options.remote === true && remoteName === undefined) {
+      this.starting = false;
+      prefix("--remote requested, but the scheduler granted a local slot without a remote worker; refusing");
+      this.finish(UsageExitCode, false, false);
+      return;
+    }
+    this.grantedRemote = remoteName ?? null;
+    // Taken beside the start, never before it: the notice must not delay the command
+    void this.tellWorktreeChange(jobId);
     if (this.gpuTurn) {
       // Shared only when this turn asked for "shared" and the scheduler echoes exactly that: an older scheduler, or
       // one that counts the turn as exclusive, sends no echo, and the lock is then taken exclusively
@@ -229,34 +362,92 @@ export class QueuedRun {
       this.finish(end.exitCode, end.completed, end.cancelled);
       return;
     }
+    const controller = new AbortController();
+    this.abortController = controller;
     const cpus = numberField(granted, "cpus", 1);
     const cwd = process.cwd();
-    const prepared = this.plugins?.prepareCommand(
-      options.command,
-      { jobId, cpus, nested: false },
-      {
-        cwd,
-        worktree: this.worktree ?? resolveWorktree(cwd),
-        configRoot: this.plugins.configRoot,
-        shell: CommandShell.resolve(options.shell).name,
-        env: process.env,
-        log: prefix,
-      },
-    );
-    const command = prepared?.command ?? options.command;
-    const note = prepared?.note ?? `${cpus} cpus`;
+    const worktree = this.worktree ?? resolveWorktree(cwd);
+    const shell = CommandShell.resolve(options.shell).name;
     const waited = Math.round((Date.now() - this.queuedAt) / 1000);
-    prefix(`granted ${formatJobId(jobId)} after ${waited}s (weight ${placement.weight}, ${note})`);
-    const env = {
-      ...process.env,
-      ...prepared?.env,
-      [JobVariable]: String(jobId),
-      [CpusVariable]: String(cpus),
-    };
-    const result = await this.host.runCommand(command, env, (c) => this.started(c));
+    const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
+    const executor = new RemoteWithFallbackExecutor(this.host, (remote) => {
+      this.grantedRemote = remote;
+    });
+    const result = await executor.execute(
+      {
+        jobId,
+        cpus,
+        weight: placement.weight,
+        waitedSec: waited,
+        cwd,
+        worktree,
+        shell,
+        places,
+        options,
+        plugins: this.plugins,
+        context: this.plugins !== undefined ? this.contextOf(this.plugins) : undefined,
+        remoteName,
+      },
+      (c) => this.started(c),
+      controller.signal,
+    );
+    if (this.abortController === controller) {
+      this.abortController = null;
+    }
+    if (result.fallbackToLocal === true && !controller.signal.aborted && !this.cancelRequested && !this.ended()) {
+      this.requestLocalFallback(jobId);
+      return;
+    }
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
+  }
+
+  /** Transitions a remotely granted job back to waiting for a fresh local grant via the scheduler. */
+  private requestLocalFallback(jobId: number): void {
+    this.offload = "never";
+    this.grantedRemote = null;
+    this.child = null;
+    this.spawnedAt = 0;
+    this.state = "waiting";
+    this.starting = false;
+    this.fallingBackLocal = true;
+    const message: ClientMessage = { type: "fallback-local", id: jobId };
+    if (this.socket !== null && !this.socket.destroyed) {
+      send(this.socket, { version: wireVersion(message), ...message });
+    }
+  }
+
+  /**
+   * Compares the digest of the worktree's content at the start with the one at the queue, and says so in one line when
+   * they differ: the job runs on what is there now, not on what was there when it was queued. Silent when either has
+   * no digest.
+   */
+  private async tellWorktreeChange(jobId: number): Promise<void> {
+    const queued = this.queuedDigest;
+    // A job granted before its first digest came (a free queue) has nothing to compare: no second git run
+    if (queued === null || !this.queuedDigestDone || this.plugins === undefined) {
+      return;
+    }
+    const now = await this.plugins.contentDigest(this.digestContext(this.plugins));
+    const then = await queued;
+    if (now !== undefined && then !== undefined && now.digest !== then.digest) {
+      const at = new Date(this.queuedAt).toTimeString().slice(0, 5);
+      prefix(`${formatJobId(jobId)}: the worktree changed after it was queued (${at}); it builds what is there now`);
+    }
+  }
+
+  /** The context of the digest hooks: the worktree resolved at the first registration. */
+  private digestContext(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: this.worktree ?? resolveWorktree(cwd),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
   }
 
   private onMessage(message: Incoming): void {
@@ -272,7 +463,7 @@ export class QueuedRun {
         break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
-        if (this.state === "waiting") {
+        if (this.state === "waiting" && !this.downgrading && !this.fallingBackLocal) {
           void this.start(message);
         }
         break;
@@ -297,17 +488,20 @@ export class QueuedRun {
   }
 
   private onQueued(message: Incoming): void {
+    this.downgrading = false; // also the answer to a "downgrade"
+    this.fallingBackLocal = false; // also the answer to a "fallback-local"
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
-    const outlook = message.state === "waiting" ? describeOutlook(message, Date.now()) : "";
+    const outlook =
+      message.state === "waiting" ? joinNotes(describeOutlook(message, Date.now()), describeWaitFor(message)) : "";
     // The first waiting notice says the same: skip it
     this.lastPosition = numberField(message, "position");
     this.lastStartAt = typeof message.startAt === "number" ? message.startAt : null;
+    this.lastWaitFor = message.waitFor;
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
-    prefix(
-      `queued ${formatJobId(jobId)}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${formatJobId(jobId)}" shows it`,
-    );
+    const statusCmd = `"job-queue.js status ${formatJobId(jobId)}"`;
+    prefix(`queued ${formatJobId(jobId)}${role}${outlook ? `: ${outlook}` : ""}; ${statusCmd} shows it`);
     if (message.paused === true) {
       this.tellPaused();
     }
@@ -327,11 +521,40 @@ export class QueuedRun {
     const startAt = typeof message.startAt === "number" ? message.startAt : null;
     const position = numberField(message, "position");
     const moved = Math.abs((startAt ?? 0) - (this.lastStartAt ?? 0)) >= ForecastNoticeMs;
-    if (position !== this.lastPosition || moved || now - this.lastNotice >= NoticeIntervalMs) {
+    // A new reason is told, but no sooner than ReasonNoticeMs after the last notice: a reason that flips back and forth
+    // (slots, in line) as jobs come and go would otherwise print a line each time
+    const changed = message.waitFor !== this.lastWaitFor;
+    const reason = changed && now - this.lastNotice >= ReasonNoticeMs;
+    if (!changed) {
+      this.laterWaiting = null; // back to the reason told: nothing to tell later
+    }
+    if (changed && !reason) {
+      // Told once the limit has passed, if it still holds then (the latest notice is looked at again)
+      this.laterWaiting = message;
+      this.laterTimer ??= setTimeout(
+        () => {
+          this.laterTimer = null;
+          const later = this.laterWaiting;
+          this.laterWaiting = null;
+          if (later !== null && this.state === "waiting") {
+            this.onWaiting(later);
+          }
+        },
+        ReasonNoticeMs - (now - this.lastNotice),
+      ).unref();
+    }
+    if (position !== this.lastPosition || moved || reason || now - this.lastNotice >= NoticeIntervalMs) {
       this.lastPosition = position;
       this.lastStartAt = startAt;
+      this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
-      const outlook = describeOutlook(message, now);
+      // This notice tells the latest reason: a reason kept for later is moot, and its timer counted from the last
+      // notice
+      if (this.laterTimer !== null) {
+        clearTimeout(this.laterTimer);
+        this.laterTimer = null;
+      }
+      const outlook = joinNotes(describeOutlook(message, now), describeWaitFor(message));
       const slots = `${numberField(message, "used")}/${numberField(message, "capacity")} slots in use`;
       prefix(
         `waiting ${formatJobId(this.jobId)}: position ${position}, ${slots} ` +
@@ -364,6 +587,7 @@ export class QueuedRun {
       return; // the command had already ended
     }
     this.cancelRequested = true;
+    this.abortController?.abort();
     const reason = message.reason ? ` (${String(message.reason)})` : "";
     prefix(
       `job ${formatJobId(numberField(message, "id", this.jobId))} was cancelled${reason}` +
@@ -379,10 +603,16 @@ export class QueuedRun {
     if (running !== null && running.exitCode === null && running.signalCode === null) {
       setTimeout(() => this.finish(CancelledExitCode, false, true), 10000).unref(); // a command that does not stop
       this.host.stop(running, this.gpuTurn);
+    } else if (this.abortController !== null) {
+      setTimeout(() => this.finish(CancelledExitCode, false, true), 10000).unref();
     }
   }
 
   private onError(message: Incoming): void {
+    if (this.downgrading && this.state === "waiting") {
+      void this.requeueAsNewJob(); // an older scheduler, or a job that is not a granted shared turn
+      return;
+    }
     if (this.gpuTurn && message.code === "version" && this.state === "waiting" && this.options.after === 0) {
       // A scheduler of an older checkout has no GPU turns: take the GPU lock as such schedulers expect (the command
       // then registers as a GPU holder), without the fair order
@@ -396,7 +626,10 @@ export class QueuedRun {
     }
     prefix(`scheduler: ${String(message.message)}${message.code === "version" ? `; ${OlderSchedulerHint}` : ""}`);
     if (this.state === "waiting") {
-      this.host.exit(message.code === "unknown-job" ? UsageExitCode : 1);
+      this.state = "done";
+      this.socket?.destroy();
+      this.socket = null;
+      this.host.exit(message.code === "unknown-job" || message.code === "remote-ineligible" ? UsageExitCode : 1);
       return;
     }
     if (message.code === "version") {
@@ -440,15 +673,118 @@ export class QueuedRun {
       return;
     }
     this.register(current);
-    onMessages(current, (message) => this.onMessage(message));
+    // Only the current connection speaks for the job: what a replaced one still delivers is not read
+    onMessages(current, (message) => {
+      if (current === this.socket) {
+        this.onMessage(message);
+      }
+    });
     current.on("error", () => current.destroy());
     current.on("close", () => this.onClose(current));
+  }
+
+  /** What the plugins are told about this job: its directory, worktree and shell (resolved once, git). */
+  private contextOf(plugins: PluginHost): BaseClientContext {
+    const cwd = process.cwd();
+    return {
+      cwd,
+      worktree: (this.worktree ??= resolveWorktree(cwd)),
+      configRoot: plugins.configRoot,
+      shell: CommandShell.resolve(this.options.shell).name,
+      env: process.env,
+      log: prefix,
+    };
+  }
+
+  /** What the plugins' classify says of the share of this GPU turn; undefined when no plugin has an opinion. */
+  private classifyShare(plugins: PluginHost): ShareMode | undefined {
+    const resource = { name: "gpu", forcedExclusive: this.options.gpuExclusive === true };
+    return plugins.classify(this.options.command, resource, this.contextOf(plugins)).share;
+  }
+
+  /**
+   * Decides the share of a GPU turn before its first registration: classify (sync), and when no plugin has an opinion
+   * (an explicit "shared" or "exclusive" stands, a veto too) and neither --gpu-exclusive nor --after is set, the
+   * plugins' checkShare, which may take a while (a test list through the queue), so it runs before the connection is
+   * made, not during it. Once per run; a re-registration reuses the answer.
+   */
+  private async resolveShare(): Promise<void> {
+    const plugins = this.plugins;
+    if (!this.gpuTurn || plugins === undefined || plugins.plugins.length === 0 || this.share !== null) {
+      return;
+    }
+    let share = this.classifyShare(plugins);
+    // --after: the predecessor may still build what the test reads (a run split by run --gpu zeroes it: its build
+    // job already waited), so a list now could read the old assembly
+    if (share === undefined && this.options.gpuExclusive !== true && this.options.after === 0) {
+      const answer = await plugins.checkShare(this.options.command, this.contextOf(plugins));
+      share = answer?.share;
+      this.stillValid = answer?.share === "shared" && answer.stillValid !== undefined ? answer : null;
+    }
+    this.share = share === "shared" ? "shared" : "exclusive";
+  }
+
+  /**
+   * Resolves memory budget and remote offload eligibility once per run; exits with UsageExitCode on invalid `--remote`.
+   */
+  private resolveOffloadAndMemory(): boolean {
+    if (this.gpuTurn) {
+      return true;
+    }
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    if ((!hasPlugins || this.memoryMb !== null) && this.offload !== null) {
+      return true;
+    }
+    const { options } = this;
+    const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
+    if (!hasPlugins && options.remote !== true && enabledRemotes.length === 0) {
+      this.offload = "never";
+      return true;
+    }
+    const cwd = process.cwd();
+    const worktree = (this.worktree ??= resolveWorktree(cwd));
+    const places = (this.places ??= resolvePlaces(options.command, { cwd, worktree }, this.plugins));
+    const classified = hasPlugins
+      ? (this.plugins as PluginHost).classify(options.command, null, this.contextOf(this.plugins as PluginHost))
+      : {};
+    const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
+    const resolvedMemoryMb = classified.memoryMb ?? fallback;
+    const remoteRules = hasPlugins
+      ? (this.plugins as PluginHost).remoteOffload(this.contextOf(this.plugins as PluginHost))
+      : EmptyRemoteRules;
+    const decision = resolveOffloadPreference({
+      options,
+      inGpuLock: this.inGpuLock,
+      classifiedOffloadable: classified.offloadable === true,
+      memoryMb: resolvedMemoryMb,
+      cwd,
+      worktree,
+      shell: CommandShell.resolve(options.shell).name,
+      places,
+      remoteRules,
+    });
+    if (!decision.ok) {
+      prefix(decision.error);
+      this.state = "done";
+      this.socket?.destroy();
+      this.socket = null;
+      this.host.exit(UsageExitCode);
+      return false;
+    }
+    if (hasPlugins) {
+      this.memoryMb = resolvedMemoryMb;
+    }
+    this.offload = decision.offload;
+    return true;
   }
 
   /** Registers the job on a new connection: a request while it waits, an adopt once its command runs. */
   private register(current: net.Socket): void {
     const { options, placement } = this;
     const running = this.child;
+    if (!this.resolveOffloadAndMemory()) {
+      return;
+    }
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
     const cwd = process.cwd();
     const worktree = (this.worktree ??= resolveWorktree(cwd));
@@ -457,35 +793,36 @@ export class QueuedRun {
     const keys = hasPlugins
       ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
       : undefined;
-    const context = (plugins: PluginHost): BaseClientContext => ({
-      cwd,
-      worktree,
-      configRoot: plugins.configRoot,
-      shell: CommandShell.resolve(options.shell).name,
-      env: process.env,
-      log: prefix,
-    });
-    let memoryMb: number | undefined;
-    if (hasPlugins && !this.gpuTurn) {
-      if (this.memoryMb === null) {
-        const plugins = this.plugins as PluginHost;
-        const classified = plugins.classify(options.command, null, context(plugins));
-        const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
-        this.memoryMb = classified.memoryMb ?? fallback;
-      }
-      memoryMb = this.memoryMb;
-    }
+    const context = (plugins: PluginHost): BaseClientContext => this.contextOf(plugins);
+    const memoryMb = !this.gpuTurn ? (this.memoryMb ?? undefined) : undefined;
+    const offload = !this.gpuTurn ? (this.offload ?? undefined) : undefined;
     // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
     let share: ShareMode | undefined;
     if (hasPlugins && this.gpuTurn) {
       if (this.share === null) {
-        const plugins = this.plugins as PluginHost;
-        const resource = { name: "gpu", forcedExclusive: options.gpuExclusive === true };
-        const classified = plugins.classify(options.command, resource, context(plugins));
-        this.share = classified.share === "shared" ? "shared" : "exclusive";
+        // Normally set by resolveShare before the connection; kept for a run that registers without it
+        this.share = this.classifyShare(this.plugins as PluginHost) === "shared" ? "shared" : "exclusive";
       }
       share = this.share;
     }
+    // The worktree's content as queued, once, while the job waits; a GPU holder starts at once, under a turn that took
+    // its own
+    const digests = process.env[DigestVariable] !== "0";
+    if (
+      digests &&
+      this.queuedDigest === null &&
+      this.state === "waiting" &&
+      !this.inGpuLock &&
+      this.plugins !== undefined
+    ) {
+      this.queuedDigest = this.plugins.contentDigest(this.digestContext(this.plugins));
+      void this.queuedDigest.then(() => (this.queuedDigestDone = true));
+    }
+    // Without the variables that differ per run by nature, the core's and the plugins' (a chat session id)
+    const environment = (this.environment ??= environmentHash(process.env, [
+      ...VolatileEnv,
+      ...(this.plugins?.volatileEnv(context(this.plugins)) ?? []),
+    ]));
     const registration: ClientMessage = {
       type: this.state === "running" ? "adopt" : "request",
       weight: placement.weight,
@@ -500,7 +837,11 @@ export class QueuedRun {
       ...(memoryMb !== undefined ? { memoryMb } : {}),
       ...(this.gpuTurn ? { resource: "gpu" } : {}),
       ...(share !== undefined ? { share } : {}),
-      // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
+      ...(offload !== undefined && offload !== "never" ? { offload } : {}),
+      ...(this.state === "running" && this.grantedRemote !== null ? { remote: this.grantedRemote } : {}),
+      envHash: environment.hash,
+      envKeys: environment.keys,
+      // The chat that queued it (the plugins read it from the environment), so that the live view shows its jobs
       session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,
       queuedAt: this.queuedAt,
@@ -514,6 +855,10 @@ export class QueuedRun {
       turn: this.inGpuLock ? Number(process.env[TurnVariable]) || null : null,
     };
     send(current, { version: wireVersion(registration), ...registration });
+    if (this.fallingBackLocal) {
+      const fallbackMsg: ClientMessage = { type: "fallback-local", id: this.jobId };
+      send(current, { version: wireVersion(fallbackMsg), ...fallbackMsg });
+    }
   }
 
   private onClose(current: net.Socket): void {
@@ -522,6 +867,10 @@ export class QueuedRun {
     }
     if (this.state !== "done" && this.socket === current) {
       this.socket = null;
+      // A pending downgrade is lost with the connection. The turn is exclusive already (the re-check said so): it
+      // registers again as exclusive, and a grant that comes after the reconnect (also one that still says shared) is
+      // started at once, under an exclusive lock
+      this.downgrading = false;
       if (!this.registered) {
         return;
       }

@@ -20,7 +20,7 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels", "NoBarrierKernel", NativeStackObstacle.NoBlockBarrier)]
     [InlineData("NativeStackEligibilityCases.Kernels", "WarpShuffleAndBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.WarpActiveMask)]
+        "WarpActiveMaskAndBarrierKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels", "GridSyncAndBarrierKernel", NativeStackObstacle.GridSync)]
     [InlineData("NativeStackEligibilityCases.Kernels", "CooperativeBarrierKernel", NativeStackObstacle.Cooperative)]
     [InlineData("NativeStackEligibilityCases.Kernels", "SuspendingDeviceFunctionKernel", NativeStackObstacle.None)]
@@ -31,7 +31,7 @@ public class NativeStackEligibilityTests
     [InlineData("NativeStackEligibilityCases.Kernels",
         "ShuffleCallingShuffleKernel", NativeStackObstacle.WarpLayout)]
     [InlineData("NativeStackEligibilityCases.Kernels",
-        "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.WarpActiveMask)]
+        "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "FloatSwitchShuffleKernel", NativeStackObstacle.CaseValueWithoutLabel)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",

@@ -16,11 +16,12 @@
     {
       "name": "just",
       "options": {
-        "hookRecipes": "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
-        "hookDryRunRecipes": "^(mutate|long-checks)$"
+        "hookRecipes": "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|bench\\S*|doctest)$",
+        "hookDryRunRecipes": "^(mutate)$"
       }
     },
     { "name": "nvidia-gpu" },
+    { "name": "git" },
     {
       "name": "agents",
       "options": {
@@ -51,7 +52,7 @@
     }
   },
   "legacyClients": {
-    "testPattern": "\\bdotnet(\\.exe)?\"?\\s+(test|vstest)\\b|\\bjust\\b[^;&|\\n]*?\\s(test[\\w-]*|coverage-diff|mutate|long-checks)(\\s|$)",
+    "testPattern": "\\bdotnet(\\.exe)?\"?\\s+(test|vstest)\\b|\\bjust\\b[^;&|\\n]*?\\s(test[\\w-]*|coverage-diff|mutate)(\\s|$)",
     "testMemoryMb": 2880
   }
 }

@@ -1,9 +1,12 @@
 // The messages between the clients and the scheduler: one JSON object per line over a TCP connection to 127.0.0.1.
 
 import type { Socket } from "node:net";
-import { BaseProtocolVersion, ProtocolVersion } from "./constants.ts";
+import { BaseProtocolVersion, ProtocolVersion, type RemoteMode } from "./constants.ts";
+import { MaxEnvKeys } from "./environment-hash.ts";
 import type { CommandKeys, PathPlace } from "./estimate-key.ts";
+import { isRemoteName, type OffloadPreference } from "./remote/spec.ts";
 import { isResourceName, type ShareMode } from "./resources.ts";
+import type { WaitFor } from "./scheduler.ts";
 
 export const MaxMemoryMb = 2 ** 20;
 export const MaxKeyLength = 2000;
@@ -48,6 +51,13 @@ export interface JobRequest {
   resource?: string;
   /** "shared": the turn may run beside other shared turns; anything else, and absent, is exclusive. */
   share?: ShareMode;
+  /** Remote CPU offload preference: auto (eligible), force (--remote), never (--local / ineligible). */
+  offload?: OffloadPreference;
+  /** The remote worker name a running job is adopting on after a scheduler restart. */
+  remote?: string;
+  /** The hash of the client's environment and the hash of each variable's value by name (environment-hash.ts). */
+  envHash?: string;
+  envKeys?: Record<string, string>;
 }
 
 export type ClientMessage =
@@ -67,6 +77,18 @@ export type ClientMessage =
   /** Grants nothing new until resume; the running jobs finish. */
   | { type: "pause" }
   | { type: "resume" }
+  /**
+   * A granted shared GPU turn gives up its share (the client's check that it may share no longer holds): the same
+   * job, under the same id, waits again as an exclusive turn. Answered with "queued", or an error when the job is not
+   * a granted shared turn (an older scheduler answers "unknown message type").
+   */
+  | { type: "downgrade" }
+  /**
+   * A remotely granted job whose transport failed before execution gives up its remote slot and waits again under
+   * the same id for a local CPU slot (`offload` becomes "never"). Answered with "queued", or an error when not a
+   * remote job (an older scheduler answers "unknown message type").
+   */
+  | { type: "fallback-local"; id: number }
   /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
@@ -96,6 +118,8 @@ export interface JobView {
   cwd: string;
   /** The worktree it takes its turns for (absent from older schedulers). */
   worktree?: string;
+  /** The client sent no worktree: `worktree` is its directory (status --here then looks for it below the worktree). */
+  worktreeFromCwd?: true;
   /** The agent chat that queued it, for the chat panel (absent when none was known, and from older schedulers). */
   session?: string;
   command: string;
@@ -116,6 +140,10 @@ export interface JobView {
   share?: "shared";
   /** For a GPU holder: the id of the --gpu run whose turn started it (absent when it has none). */
   turn?: number;
+  /** The remote worker name when running on a remote worker (absent for local runs). */
+  remote?: string;
+  /** Remote offload preference (for state persistence across scheduler restarts). */
+  offload?: OffloadPreference;
 }
 
 /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -125,8 +153,14 @@ export interface Outlook {
   position: number;
   startAt: number | null;
   endAt: number | null;
+  /** The end at its longest recorded run time (absent without a record, and from older schedulers). */
+  latestEndAt?: number;
   /** The predecessor (--after) it waits for, while that one has not ended. */
   blockedBy: number | null;
+  /** What a waiting job waits for (Scheduler.waitFor; absent once it runs, and from older schedulers). */
+  waitFor?: WaitFor;
+  /** The turn resource a job that waits for a turn ("gpu", "gpu-memory") waits for. */
+  waitResource?: string;
 }
 
 export type StatusJob = JobView & Outlook;
@@ -140,6 +174,20 @@ export interface ResourceStatus {
   /** The ids of the jobs that use it exclusively: exclusive turns, and holders no running turn started. */
   exclusive: number[];
   /** The last probe; absent when none ran. */
+  probe?: { ok: boolean; value: number | null; at: number; why?: string };
+}
+
+/** One remote CPU worker as status shows it. */
+export interface RemoteStatus {
+  name: string;
+  host: string;
+  slots: number;
+  cpus: number;
+  memoryMb: number;
+  mode: RemoteMode;
+  /** The ids of the jobs running on this remote worker. */
+  running: number[];
+  /** The last health/memory probe; absent when none ran. */
   probe?: { ok: boolean; value: number | null; at: number; why?: string };
 }
 
@@ -159,6 +207,8 @@ export interface StatusReply {
   pausedAt?: number;
   /** The turn resources and who uses them (absent from older schedulers). */
   resources?: ResourceStatus[];
+  /** Configured remote CPU workers and who runs on them (absent when none are configured or from older schedulers). */
+  remotes?: RemoteStatus[];
   running: StatusJob[];
   waiting: StatusJob[];
 }
@@ -178,8 +228,20 @@ export type ServerMessage =
   /**
    * protocol: the scheduler's version (from 3 on; an older one sends none and gives no receipt for "done"). share:
    * "shared" only when the turn was asked to share and the scheduler counts it as shared (an older one never says it).
+   * downgrade: true on such a grant, when the scheduler knows the "downgrade" message (an older one never says it, and
+   * closes the connection of a message it does not know).
    */
-  | { type: "granted"; id: number; cpus: number; capacity: number; protocol?: number; share?: "shared" }
+  | {
+      type: "granted";
+      id: number;
+      cpus: number;
+      capacity: number;
+      protocol?: number;
+      share?: "shared";
+      downgrade?: true;
+      /** Set when the job was granted on a configured remote CPU worker instead of a local CPU slot. */
+      remote?: string;
+    }
   | { type: "adopted"; id: number; protocol?: number }
   | { type: "cancelled"; id: number; reason?: string }
   | ({ type: "updated"; id: number } & Placement)
@@ -211,6 +273,8 @@ export function wireVersion(message: ClientMessage): number {
     case "start":
     case "pause":
     case "resume":
+    case "downgrade":
+    case "fallback-local":
     case "await":
     case "report":
       return ProtocolVersion;
@@ -338,7 +402,45 @@ export function resourceField(message: Incoming): string | undefined {
   return isResourceName(message.resource) ? message.resource : undefined;
 }
 
+/**
+ * The `envHash` and `envKeys` of a JobRequest; undefined when missing or not shaped as environment-hash.ts makes them.
+ */
+export function environmentField(message: Incoming): { hash: string; keys: Record<string, string> } | undefined {
+  const { envHash, envKeys } = message;
+  if (typeof envHash !== "string" || !/^[0-9a-f]{1,64}$/.test(envHash)) {
+    return undefined;
+  }
+  if (typeof envKeys !== "object" || envKeys === null || Array.isArray(envKeys)) {
+    return undefined;
+  }
+  const entries = Object.entries(envKeys as Record<string, unknown>);
+  if (entries.length > MaxEnvKeys) {
+    return undefined;
+  }
+  // Without a prototype, so that a variable named "__proto__" stays a plain key
+  const keys = Object.create(null) as Record<string, string>;
+  for (const [name, value] of entries) {
+    if (name.length > 256 || typeof value !== "string" || !/^[0-9a-f]{1,64}$/.test(value)) {
+      return undefined;
+    }
+    keys[name] = value;
+  }
+  return { hash: envHash, keys };
+}
+
 /** The `share` of a JobRequest: "shared" for exactly that string, undefined (exclusive) for anything else. */
 export function shareField(message: Incoming): "shared" | undefined {
   return message.share === "shared" ? "shared" : undefined;
+}
+
+/** The `offload` preference of a JobRequest; undefined when missing or invalid. */
+export function offloadField(message: Incoming): OffloadPreference | undefined {
+  return message.offload === "auto" || message.offload === "force" || message.offload === "never"
+    ? message.offload
+    : undefined;
+}
+
+/** The `remote` worker name of a JobRequest or saved job; undefined when missing or invalid. */
+export function remoteField(message: Incoming): string | undefined {
+  return isRemoteName(message.remote) ? message.remote : undefined;
 }

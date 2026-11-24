@@ -221,7 +221,7 @@ internal sealed class IrInvariants
         }
         else
         {
-            CheckStatement(node, scopes);
+            CheckStatement(node, parent, scopes);
         }
 
         var inner = node switch
@@ -273,12 +273,12 @@ internal sealed class IrInvariants
         }
     }
 
-    private void CheckStatement(IrNode statement, ImmutableStack<ImmutableArray<IrVariable>> scopes)
+    private void CheckStatement(IrNode statement, IrNode? parent, ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
         switch (statement)
         {
             case IrLocalDeclaration declaration:
-                CheckDeclaration(declaration, scopes);
+                CheckDeclaration(declaration, parent is IrSequence, scopes);
                 break;
             case IrReturn { Value: { } value } @return:
                 Report(@return, IrNodeChecks.Return(_method.Symbol, value));
@@ -289,11 +289,15 @@ internal sealed class IrInvariants
         }
     }
 
-    private void CheckDeclaration(IrLocalDeclaration declaration, ImmutableStack<ImmutableArray<IrVariable>> scopes)
+    // I10: a declaration declares a local, or a temporary of the sequence that holds it
+    private void CheckDeclaration(IrLocalDeclaration declaration, bool inSequence,
+        ImmutableStack<ImmutableArray<IrVariable>> scopes)
     {
-        if (declaration.Variable.Kind != IrVariableKind.Local)
+        var kind = declaration.Variable.Kind;
+        if (kind != IrVariableKind.Local && !(inSequence && kind == IrVariableKind.Temporary))
         {
-            Report(declaration, "I10: a declaration declares a variable that is not a local");
+            Report(declaration,
+                "I10: a declaration declares a variable that is neither a local nor a temporary of a sequence");
         }
 
         CheckVariable(declaration.Variable, declaration, scopes);

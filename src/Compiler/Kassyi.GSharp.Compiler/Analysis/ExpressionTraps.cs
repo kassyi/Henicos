@@ -91,6 +91,12 @@ internal static class ExpressionTraps
             return false;
         }
 
+        // x is null and x is not null compare with null, which raises nothing; only the operand may trap
+        if (operation is IIsPatternOperation { Pattern: var pattern } test && IsNullPattern(pattern))
+        {
+            return MayTrap(test.Value);
+        }
+
         if (!IsTrapFree(operation))
         {
             return true;
@@ -106,6 +112,17 @@ internal static class ExpressionTraps
 
         return false;
     }
+
+    // The constant null pattern, or not null
+    private static bool IsNullPattern(IPatternOperation pattern) => pattern switch
+    {
+        IConstantPatternOperation { Value.ConstantValue: { HasValue: true, Value: null } } => true,
+        INegatedPatternOperation { Pattern: var negated } => negated is IConstantPatternOperation
+        {
+            Value.ConstantValue: { HasValue: true, Value: null }
+        },
+        _ => false
+    };
 
     // The operation of expression, or null for a node that lowering synthesized: a node without an operation, or one
     // whose original-span annotation leads to a node of another kind (the frame variable __gsharp_ctx->x of the
@@ -159,8 +176,11 @@ internal static class ExpressionTraps
             !MayFailCompoundDivision(compound),
         IIncrementOrDecrementOperation step => step is { OperatorMethod: null, IsChecked: false },
         IUnaryOperation unary => unary is { OperatorMethod: null, IsChecked: false },
+        // An implicit numeric conversion never overflows, so it is checked only in name
         IConversionOperation conversion =>
-            conversion is { OperatorMethod: null, IsChecked: false } && !UnwrapsNullable(conversion),
+            conversion.OperatorMethod is null &&
+            (!conversion.IsChecked || conversion.Conversion is { IsImplicit: true, IsNumeric: true }) &&
+            !UnwrapsNullable(conversion),
         IInvocationOperation invocation => IsFloatingPointMath(invocation.TargetMethod),
         _ => false
     };

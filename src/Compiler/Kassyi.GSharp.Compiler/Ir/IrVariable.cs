@@ -61,9 +61,13 @@ internal sealed class IrVariable
     /// <param name="refKind">Whether the temporary holds a reference.</param>
     /// <param name="nameHint">What the temporary is for (not a C++ name).</param>
     /// <param name="source">The node the temporary is created for.</param>
-    public static IrVariable CreateTemporary(ITypeSymbol type, RefKind refKind, string nameHint, IrSource source) =>
-        new(IrVariableKind.Temporary, null, type, refKind, nameHint, source.Region, source,
-            IrDeclaredTypeForm.Deduced);
+    /// <param name="declaredTypeForm">
+    /// Whether its declaration takes the type of its initializer (<see cref="IrDeclaredTypeForm.Deduced"/>) or names
+    /// <paramref name="type"/>.
+    /// </param>
+    public static IrVariable CreateTemporary(ITypeSymbol type, RefKind refKind, string nameHint, IrSource source,
+        IrDeclaredTypeForm declaredTypeForm = IrDeclaredTypeForm.Deduced) =>
+        new(IrVariableKind.Temporary, null, type, refKind, nameHint, source.Region, source, declaredTypeForm);
 
     // Locals, parameters and this are created by IrVariableTable only, once per symbol and region
     internal static IrVariable CreateLocal(ILocalSymbol local, int region, IrSource source,

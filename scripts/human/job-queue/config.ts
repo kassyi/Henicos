@@ -6,6 +6,15 @@ import { createRequire } from "node:module";
 import { EntryScript, UsageExitCode } from "./constants.ts";
 import { errorMessage } from "./history.ts";
 import type { ConfigFileModule, ConfigFileStatus } from "./lib/types.ts";
+import {
+  findDangerousSshOption,
+  loadLocalRemotesConfig as loadLocalRemotesWithProbe,
+  LocalRemotesFileName,
+  validateRemote,
+  type RemoteWorkerConfig,
+} from "./remote/config.ts";
+
+export { findDangerousSshOption, LocalRemotesFileName, type RemoteWorkerConfig };
 
 const require = createRequire(import.meta.url);
 const { loadConfigFile } = require("./lib/config-file.js") as ConfigFileModule;
@@ -75,6 +84,7 @@ export interface QueueConfig {
   plugins: PluginEntry[];
   pools?: PoolsConfig;
   resources?: Record<string, ResourceConfig>;
+  remotes?: Record<string, RemoteWorkerConfig>;
   legacyClients?: LegacyClientsConfig;
 }
 
@@ -82,6 +92,8 @@ export interface LoadConfigOptions {
   mode: string;
   configPath?: string;
   fromDirectory?: string;
+  /** Shared state directory (main checkout tmp/job-queue) holding untracked remotes.local.json. */
+  stateDir?: string;
   warn?: (message: string) => void;
   exit?: (code: number) => never;
 }
@@ -106,6 +118,7 @@ const TopLevelKeys = new Set([
   "plugins",
   "pools",
   "resources",
+  "remotes",
   "legacyClients",
 ]);
 const PluginKeys = new Set(["name", "options"]);
@@ -285,6 +298,33 @@ function validateResource(name: string, raw: unknown, warn: (message: string) =>
   return resource;
 }
 
+function validateProbe(scope: string, raw: unknown, warn: (message: string) => void): ResourceProbeConfig {
+  if (!isPlainObject(raw)) {
+    throw new Error(`config ${scope} must be an object`);
+  }
+  warnUnknownKeys(raw, ProbeKeys, scope, warn);
+  if (!Array.isArray(raw.argv) || raw.argv.length === 0 || !raw.argv.every(isNonEmptyString)) {
+    throw new Error(`config ${scope}.argv must be a non-empty array of strings`);
+  }
+  if (typeof raw.min !== "number" || !Number.isFinite(raw.min)) {
+    throw new Error(`config ${scope}.min must be a finite number`);
+  }
+  const probe: ResourceProbeConfig = { argv: [...raw.argv], min: raw.min };
+  if (raw.timeoutMs !== undefined) {
+    if (typeof raw.timeoutMs !== "number" || !Number.isFinite(raw.timeoutMs) || raw.timeoutMs <= 0) {
+      throw new Error(`config ${scope}.timeoutMs must be a positive finite number`);
+    }
+    probe.timeoutMs = raw.timeoutMs;
+  }
+  if (raw.settleMs !== undefined) {
+    if (typeof raw.settleMs !== "number" || !Number.isFinite(raw.settleMs) || raw.settleMs < 0) {
+      throw new Error(`config ${scope}.settleMs must be a non-negative finite number`);
+    }
+    probe.settleMs = raw.settleMs;
+  }
+  return probe;
+}
+
 function validateLegacyClients(raw: unknown, warn: (message: string) => void): LegacyClientsConfig {
   if (!isPlainObject(raw)) {
     throw new Error("config legacyClients must be an object");
@@ -395,6 +435,16 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
     }
     config.resources = resources;
   }
+  if (raw.remotes !== undefined) {
+    if (!isPlainObject(raw.remotes)) {
+      throw new Error("config remotes must be an object");
+    }
+    const remotes: Record<string, RemoteWorkerConfig> = {};
+    for (const [name, value] of Object.entries(raw.remotes)) {
+      remotes[name] = validateRemote(name, value, validateProbe, warn);
+    }
+    config.remotes = remotes;
+  }
   if (raw.legacyClients !== undefined) {
     config.legacyClients = validateLegacyClients(raw.legacyClients, warn);
   }
@@ -402,13 +452,27 @@ export function validateConfig(raw: unknown, warn: (message: string) => void = (
 }
 
 /**
+ * Reads machine-local remote worker definitions from `<stateDir>/remotes.local.json` (untracked, shared across all
+ * git worktrees of the main checkout). Returns undefined when absent or invalid (fail-closed to local execution).
+ */
+export function loadLocalRemotesConfig(
+  stateDir: string,
+  warn: (message: string) => void = () => {},
+): Record<string, RemoteWorkerConfig> | undefined {
+  return loadLocalRemotesWithProbe(stateDir, validateProbe, warn);
+}
+
+/**
  * Loads and validates job-queue.config.json.
  * - Missing config: returns defaults with status "missing".
  * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to
  *   defaults.
+ * - When `stateDir` is provided and no explicit `--config` / `JOB_QUEUE_CONFIG` override was given, `remotes` come
+ *   strictly from `<stateDir>/remotes.local.json` (untrusted checkout `remotes` in job-queue.config.json are ignored).
  */
 export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   const fromDirectory = options.fromDirectory ?? path.dirname(EntryScript);
+  const envExplicit = process.env.JOB_QUEUE_CONFIG !== undefined && process.env.JOB_QUEUE_CONFIG !== "";
   const warnings: string[] = [];
   const warn = (message: string): void => {
     warnings.push(message);
@@ -420,9 +484,24 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
   };
   const exit = options.exit ?? ((code: number): never => process.exit(code));
   const loaded = loadConfigFile(fromDirectory, options.configPath);
+  const attachLocalRemotes = (config: QueueConfig): QueueConfig => {
+    if (envExplicit || options.stateDir === undefined || options.stateDir === "") {
+      return config;
+    }
+    if (config.remotes !== undefined && Object.keys(config.remotes).length > 0) {
+      const localPath = path.join(options.stateDir, LocalRemotesFileName);
+      warn(`ignoring remotes defined in repo job-queue.config.json; configure machine-local workers in ${localPath}`);
+      delete config.remotes;
+    }
+    const localRemotes = loadLocalRemotesConfig(options.stateDir, warn);
+    if (localRemotes !== undefined) {
+      config.remotes = localRemotes;
+    }
+    return config;
+  };
   if (loaded.status === "missing") {
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,
@@ -438,7 +517,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     }
     warn(`invalid config${location}: ${detail}; using defaults`);
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,
@@ -446,7 +525,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     };
   }
   try {
-    const config = validateConfig(loaded.raw, warn);
+    const config = attachLocalRemotes(validateConfig(loaded.raw, warn));
     const resolvedPath = loaded.path as string;
     return {
       config,
@@ -464,7 +543,7 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
     }
     warn(`invalid config${location}: ${detail}; using defaults`);
     return {
-      config: defaultConfig(),
+      config: attachLocalRemotes(defaultConfig()),
       path: null,
       configRoot: fromDirectory,
       warnings,

@@ -175,9 +175,9 @@ export function checkForecast(assert: AssertModule): void {
   const d = job(4, 2, 3);
   [a, b, c, d].forEach((j) => s.enqueue(j, 0));
   let f = s.forecast(10000);
-  assert.deepStrictEqual(f.get(a), { startAt: 0, endAt: 100000 });
-  assert.deepStrictEqual(f.get(b), { startAt: 100000, endAt: 150000 });
-  assert.deepStrictEqual(f.get(c), { startAt: 100000, endAt: 120000 });
+  assert.deepStrictEqual(f.get(a), { startAt: 0, endAt: 100000, latestEndAt: 300000 });
+  assert.deepStrictEqual(f.get(b), { startAt: 100000, endAt: 150000, latestEndAt: 150000 });
+  assert.deepStrictEqual(f.get(c), { startAt: 100000, endAt: 120000, latestEndAt: 120000 });
   assert.deepStrictEqual(f.get(d), { startAt: 150000, endAt: 150000 + UnknownTypicalMs });
   assert.strictEqual(s.waiting.length, 3, "the forecast does not change the scheduler");
   f = s.forecast(200000);
@@ -304,7 +304,7 @@ export function checkDependencies(assert: AssertModule): void {
   assert.ok(s.isBlocked(b));
   assert.deepStrictEqual(
     s.forecast(0).get(b),
-    { startAt: 100000, endAt: 110000 },
+    { startAt: 100000, endAt: 110000, latestEndAt: 110000 },
     "forecast after the predecessor ends",
   );
   assert.deepStrictEqual(s.enqueue(c, 0), [c], "a blocked first job does not hold up the next one");

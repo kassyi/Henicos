@@ -7,19 +7,18 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { createRequire } from "node:module";
-import { QueuedRun } from "../job-queue/client-queued-run.ts";
-import type { RunOptions } from "../job-queue/client.ts";
 import { loadConfig } from "../job-queue/config.ts";
 import { EntryScript } from "../job-queue/constants.ts";
 import type { TargetDialectModule } from "../job-queue/lib/types.ts";
-import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
-import { withConfigEnv } from "../job-queue/plugin-checks.ts";
+import { type AssertModule } from "../job-queue/plugin-api.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
-import { FakeHost, FakeScheduler, quietly, until } from "../job-queue/self-test-client.ts";
+import { quietly } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
 import { selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
 import { cpuOnlyTestProjects, parseBudgets, testMemoryMb } from "./budgets.ts";
+import { checkNameFilter } from "./name-filter-checks.ts";
+import { checkOffloadClassification, checkQueuedRunMemoryMb, checkRepoBaselineConfig } from "./offload-checks.ts";
 import henicosPlugin, { isHenicosTest } from "./plugin.ts";
 
 const require = createRequire(import.meta.url);
@@ -68,6 +67,24 @@ const CharacterizationTable: readonly [string, boolean, number][] = [
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category!~Benchmark"', true, 2496],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter "Category=Stress"', true, 6720],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Benchmark"', true, 6784],
+  // The test list of the name-filter share names Stress and runs no test: the normal budget
+  [
+    'dotnet test "tests/Compiler/Kassyi.GSharp.Tests.Cuda" --no-build --list-tests --filter "(Name~A)&(Category=Stress|Category=Benchmark)"',
+    true,
+    2496,
+  ],
+  [
+    'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --no-build --filter "Category=Stress" --list-tests',
+    true,
+    2496,
+  ],
+  // Only when no step runs a test: one that does is a stress run
+  [
+    'dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --list-tests --filter "Category=Stress" && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress"',
+    true,
+    6784,
+  ],
+  ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category=Stress" ; echo --list-tests', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda --filter "Category!=Stress|Category=Benchmark"', true, 6784],
   ['dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter "Category != Stress&Category!=Benchmark"', true, 2880],
   ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter \"Category!='Stress'\"", true, 6720],
@@ -77,19 +94,27 @@ const CharacterizationTable: readonly [string, boolean, number][] = [
   ["just test", true, 7232],
   ["just -f justfile test-category Runtime", true, 7232],
   ['just test-category Stress "--project" kassyi.gsharp.tests.cpu', true, 6720],
-  ["just test-differential-cuda", true, 7232],
+  ["just test-differential-cuda", true, 2496],
+  ["just test-checked", true, 2496],
+  ["just test-gpu-trap", true, 2496],
+  ["just test-differential-cpu", true, 2880],
+  ["just test-sanitized", true, 2880],
   ["just a=1 test-coverage", true, 7232],
   ["just coverage-diff", true, 7232],
-  ["just mutate", true, 7232],
-  ["just long-checks", true, 7232],
+  ["just mutate", true, 1536],
+  ["just mutate compiler", true, 2880],
+  ["just mutate compiler-cuda", true, 2496],
+  ["just long-checks", false, 0],
   ["just build", false, 0],
   ["just doctest", false, 0],
   ["just queue-watch", false, 0],
   ["node scripts/human/test-stability.js --count 5", true, 7232],
   ["node scripts/human/test-memory.js Kassyi.GSharp.Tests.Cpu", true, 2880],
-  ["node scripts/human/test-sanitized.js", true, 7232],
-  ["node scripts/human/long-checks.js --dry-run", true, 7232],
-  ["node scripts/human/mutate.js --phase compiler", true, 7232],
+  ["node scripts/human/test-sanitized.js", true, 2880],
+  ["node scripts/human/long-checks.js --dry-run", false, 0],
+  ["node scripts/human/mutate.js --phase compiler", true, 2880],
+  ["node scripts/human/mutate.js --phase=compiler", true, 2880],
+  ["node scripts/human/mutate.js -- --phase compiler-cuda", true, 1536],
   ["node scripts/human/coverage-diff.js --base main", true, 7232],
   ["dotnet build Henicos.slnx", false, 0],
   ["dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu -c Release", false, 0],
@@ -128,24 +153,6 @@ function contextFor(worktree: string, configRoot: string): BaseClientContext {
     shell: "bash",
     env: {},
     log: () => {},
-  };
-}
-
-function baseRunOptions(command: string, defaultTestMemoryMb = 0): RunOptions {
-  return {
-    port: 0,
-    slots: 2,
-    memoryMb: 1024,
-    policy: "hrrn",
-    command,
-    commandWords: null,
-    weight: 1,
-    gpu: false,
-    shell: "",
-    timeoutMinutes: 0,
-    after: 0,
-    keepIfFailed: false,
-    defaultTestMemoryMb,
   };
 }
 
@@ -240,10 +247,13 @@ function checkCharacterizationAndBudgets(assert: AssertModule, host: PluginHost)
 }
 
 /**
- * Check 3 (mutant-verified): --gpu + fuzz-diff/long-checks -> refuse; --gpu + CPU-only project -> 1 hint, no refuse;
- * non-GPU -> no refuse and no hints.
+ * Check 3 (mutant-verified): --gpu + fuzz-diff -> refuse; long-checks -> refuse (with or without --gpu);
+ * --gpu + CPU-only project -> 1 hint, no refuse; non-GPU plain test -> no refuse and no hints.
  */
 function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
+  const expectedLongChecksRefusal =
+    "long-checks queues each step through job-queue.js itself: " +
+    "run 'just long-checks' directly without wrapping it in job-queue.js run.";
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-check-"));
   try {
     const wt = fs.realpathSync.native(dir);
@@ -265,15 +275,9 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     const gpu = { name: "gpu", forcedExclusive: false };
 
     const fuzz = host.check("node scripts/human/fuzz-differential.js --minutes 5", gpu, ctx);
-    assert.strictEqual(
-      fuzz.refuse,
-      "fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.",
-    );
-    const longChecks = host.check("just long-checks", gpu, ctx);
-    assert.strictEqual(
-      longChecks.refuse,
-      "fuzz-diff and long-checks take the GPU lock themselves: queue them without --gpu.",
-    );
+    assert.strictEqual(fuzz.refuse, "fuzz-diff takes the GPU lock itself: queue it without --gpu.");
+    const longChecksGpu = host.check("just long-checks", gpu, ctx);
+    assert.strictEqual(longChecksGpu.refuse, expectedLongChecksRefusal);
 
     const cpuHint = host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", gpu, ctx);
     assert.strictEqual(cpuHint.refuse, undefined, "CPU-only test project must warn via hint, never refuse");
@@ -285,8 +289,9 @@ function checkGpuCheckHook(assert: AssertModule, host: PluginHost): void {
     assert.strictEqual(cudaCheck.refuse, undefined);
     assert.strictEqual(cudaCheck.hints, undefined);
 
-    // Without --gpu (resource = null): neither refuse nor hints
-    assert.deepStrictEqual(host.check("just long-checks", null, ctx), {});
+    // Without --gpu (resource = null): long-checks still refuses double-queueing; plain CPU tests pass cleanly
+    const longChecksCpu = host.check("just long-checks", null, ctx);
+    assert.strictEqual(longChecksCpu.refuse, expectedLongChecksRefusal);
     assert.deepStrictEqual(host.check("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", null, ctx), {});
   } finally {
     removeDirectory(dir);
@@ -409,6 +414,15 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
     for (const [command, expected] of ShareTable) {
       assert.strictEqual(host.classify(command, Gpu, ctx).share, expected, `share of: ${command}`);
     }
+    // A command that nameFilterCheck reads has no opinion (checkShare judges it by the test list); a veto stays one
+    const named = 'dotnet test tests/X/X.csproj --no-build --filter "FullyQualifiedName~Foo"';
+    assert.strictEqual(host.classify(named, Gpu, ctx).share, undefined, "a readable name filter: no opinion");
+    assert.strictEqual(
+      host.classify(named.replace("~Foo", "!~Foo"), Gpu, ctx).share,
+      "exclusive",
+      "a negated name term is no name filter: exclusive",
+    );
+    assert.strictEqual(host.classify(named, { ...Gpu, forcedExclusive: true }, ctx).share, "exclusive");
     const filtered = `dotnet test X --filter "${Kept}"`;
     assert.strictEqual(host.classify(filtered, null, ctx).share, undefined, "no share without a resource");
     assert.strictEqual(host.classify(filtered, { name: "cpu", forcedExclusive: false }, ctx).share, undefined);
@@ -445,208 +459,11 @@ function checkShareRules(assert: AssertModule, host: PluginHost): void {
   }
 }
 
-/**
- * Check 5 (mutant-verified): QueuedRun sends plugin-computed memoryMb on request and adopt, omits it on gpuTurn and
- * JOB_QUEUE_PLUGINS=0, and uses defaultTestMemoryMb when a plugin classifies test: true without memoryMb.
- */
-async function checkQueuedRunMemoryMb(assert: AssertModule, host: PluginHost): Promise<void> {
-  const scheduler = new FakeScheduler();
-  await scheduler.listen();
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-henicos-run-"));
-  const prevCwd = process.cwd();
-  try {
-    const wt = fs.realpathSync.native(dir);
-    fs.mkdirSync(path.join(wt, "tests"), { recursive: true });
-    fs.writeFileSync(path.join(wt, "tests", "memory-budgets.yml"), FixedBudgetsYaml);
-    process.chdir(wt);
-
-    // 1. Normal test run: request and adopt carry memoryMb: 2880
-    const testCmd = "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu";
-    const fake1 = new FakeHost();
-    void new QueuedRun(
-      baseRunOptions(testCmd),
-      { weight: 1, pin: null, before: null },
-      false,
-      false,
-      fake1,
-      host,
-    ).run();
-    await until("client 1 connects", () => fake1.connects.length === 1);
-    fake1.connects[0]?.resolve(await scheduler.connect());
-    await until("scheduler accepts client 1", () => scheduler.accepted.length === 1);
-    const conn1 = scheduler.accepted[0];
-    assert.ok(conn1 !== undefined);
-    await until("request 1 arrives", () => conn1.messages.some((m) => m.type === "request"));
-    const req1 = conn1.messages.find((m) => m.type === "request");
-    assert.strictEqual(req1?.memoryMb, 2880, "non-turn request sends plugin memoryMb");
-
-    FakeScheduler.send(conn1, { type: "queued", id: 20, state: "waiting", ahead: 0, position: 1 });
-    FakeScheduler.send(conn1, { type: "granted", id: 20, cpus: 2, capacity: 4, protocol: 3 });
-    await until("command 1 starts", () => fake1.commands.length === 1);
-    conn1.socket.destroy();
-    await until("client 1 reconnects", () => fake1.connects.length === 2);
-    fake1.connects[1]?.resolve(await scheduler.connect());
-    await until("scheduler accepts adopt 1", () => scheduler.accepted.length === 2);
-    const conn1b = scheduler.accepted[1];
-    assert.ok(conn1b !== undefined);
-    await until("adopt 1 arrives", () => conn1b.messages.some((m) => m.type === "adopt"));
-    const adopt1 = conn1b.messages.find((m) => m.type === "adopt");
-    assert.strictEqual(adopt1?.memoryMb, 2880, "adopt carries identical memoryMb");
-    fake1.commands[0]?.end({ code: 0, signaled: false });
-    await until("done 1 arrives", () => conn1b.messages.some((m) => m.type === "done"));
-    FakeScheduler.send(conn1b, { type: "done-ok", id: 20 });
-    await until("client 1 exits", () => fake1.exits.length === 1);
-
-    // 2. gpuTurn: true -> omits memoryMb (the inner GPU holder sends its own memoryMb)
-    const fake2 = new FakeHost();
-    void new QueuedRun(baseRunOptions(testCmd), { weight: 1, pin: null, before: null }, false, true, fake2, host).run();
-    await until("client 2 connects", () => fake2.connects.length === 1);
-    fake2.connects[0]?.resolve(await scheduler.connect());
-    await until("scheduler accepts client 2", () => scheduler.accepted.length === 3);
-    const conn2 = scheduler.accepted[2];
-    assert.ok(conn2 !== undefined);
-    await until("request 2 arrives", () => conn2.messages.some((m) => m.type === "request"));
-    const req2 = conn2.messages.find((m) => m.type === "request");
-    assert.strictEqual(req2 !== undefined && "memoryMb" in req2, false, "gpuTurn omits memoryMb from request");
-    conn2.socket.destroy();
-
-    // 3. JOB_QUEUE_PLUGINS=0 (empty host) -> omits memoryMb
-    const loaded = loadConfig({ mode: "status", fromDirectory: path.dirname(EntryScript), warn: () => {} });
-    const disabledHost = await PluginHost.load(loaded.config, loaded.configRoot, () => {}, {
-      ...process.env,
-      JOB_QUEUE_PLUGINS: "0",
-    });
-    const fake3 = new FakeHost();
-    void new QueuedRun(
-      baseRunOptions(testCmd),
-      { weight: 1, pin: null, before: null },
-      false,
-      false,
-      fake3,
-      disabledHost,
-    ).run();
-    await until("client 3 connects", () => fake3.connects.length === 1);
-    fake3.connects[0]?.resolve(await scheduler.connect());
-    await until("scheduler accepts client 3", () => scheduler.accepted.length === 4);
-    const conn3 = scheduler.accepted[3];
-    assert.ok(conn3 !== undefined);
-    await until("request 3 arrives", () => conn3.messages.some((m) => m.type === "request"));
-    const req3 = conn3.messages.find((m) => m.type === "request");
-    assert.strictEqual(req3 !== undefined && "memoryMb" in req3, false, "JOB_QUEUE_PLUGINS=0 omits memoryMb");
-    conn3.socket.destroy();
-
-    // 4. Non-test command with active plugins sends explicit 0 (not omitted, so legacyClients does not fire)
-    const fake4 = new FakeHost();
-    void new QueuedRun(
-      baseRunOptions("dotnet build Henicos.slnx"),
-      { weight: 1, pin: null, before: null },
-      false,
-      false,
-      fake4,
-      host,
-    ).run();
-    await until("client 4 connects", () => fake4.connects.length === 1);
-    fake4.connects[0]?.resolve(await scheduler.connect());
-    await until("scheduler accepts client 4", () => scheduler.accepted.length === 5);
-    const conn4 = scheduler.accepted[4];
-    assert.ok(conn4 !== undefined);
-    await until("request 4 arrives", () => conn4.messages.some((m) => m.type === "request"));
-    const req4 = conn4.messages.find((m) => m.type === "request");
-    assert.strictEqual(req4?.memoryMb, 0, "non-test command with plugins sends explicit memoryMb: 0");
-    conn4.socket.destroy();
-
-    // 5. Plugin returning test: true without memoryMb uses pools.defaultTestMemoryMb
-    const testOnlyPlugin: QueuePlugin = {
-      name: "test-only",
-      apiVersion: PluginApiVersion,
-      classify: () => ({ test: true }),
-    };
-    const fallbackHost = new PluginHost([testOnlyPlugin], [undefined], wt, () => {});
-    const fake5 = new FakeHost();
-    void new QueuedRun(
-      baseRunOptions("custom-test", 777),
-      { weight: 1, pin: null, before: null },
-      false,
-      false,
-      fake5,
-      fallbackHost,
-    ).run();
-    await until("client 5 connects", () => fake5.connects.length === 1);
-    fake5.connects[0]?.resolve(await scheduler.connect());
-    await until("scheduler accepts client 5", () => scheduler.accepted.length === 6);
-    const conn5 = scheduler.accepted[5];
-    assert.ok(conn5 !== undefined);
-    await until("request 5 arrives", () => conn5.messages.some((m) => m.type === "request"));
-    const req5 = conn5.messages.find((m) => m.type === "request");
-    assert.strictEqual(req5?.memoryMb, 777, "defaultTestMemoryMb fills missing memoryMb when test: true");
-    conn5.socket.destroy();
-  } finally {
-    process.chdir(prevCwd);
-    scheduler.close();
-    removeDirectory(dir);
-  }
-}
-
 /** Check 6 (mutant-verified): shortCommand with plugins matches pre-move display including Kassyi.GSharp. removal. */
 function checkShortCommandWithPlugins(assert: AssertModule, host: PluginHost): void {
   for (const [command, expected] of ShortCharacterizationTable) {
     assert.strictEqual(shortCommand(command, host), expected, `shortCommand for: ${command}`);
   }
-}
-
-/** Moved from plugin-checks.ts: real repo baseline config check. */
-async function checkRepoBaselineConfig(assert: AssertModule): Promise<void> {
-  await withConfigEnv(undefined, () => {
-    const repoWarnings: string[] = [];
-    const repoConfig = loadConfig({
-      mode: "status",
-      fromDirectory: path.dirname(EntryScript),
-      warn: (msg) => repoWarnings.push(msg),
-    });
-    assert.strictEqual(repoConfig.status, "ok", "repo job-queue.config.json must load cleanly");
-    assert.deepStrictEqual(repoWarnings, [], "repo job-queue.config.json must have no warnings");
-    assert.deepStrictEqual(repoConfig.config.plugins, [
-      {
-        name: "./scripts/human/job-queue-henicos",
-        options: {
-          exclusiveCategories: ["Stress", "Benchmark", "GpuTrap"],
-          exclusiveEnv: ["GSHARP_CUDA_TRAP_TESTS"],
-          sharedRecipes: ["test", "test-coverage", "test-differential-cuda"],
-        },
-      },
-      { name: "dotnet" },
-      {
-        name: "just",
-        options: {
-          hookRecipes: "^(test\\S*|coverage-diff|fuzz-\\S+|mutate|long-checks|bench\\S*|doctest)$",
-          hookDryRunRecipes: "^(mutate|long-checks)$",
-        },
-      },
-      { name: "nvidia-gpu" },
-      {
-        name: "agents",
-        options: {
-          sessionEnv: ["CLAUDE_CODE_SESSION_ID", "ANTIGRAVITY_CONVERSATION_ID"],
-          chatStatus: "scripts/human/chat-status.js",
-        },
-      },
-    ]);
-    assert.strictEqual(repoConfig.config.resources?.gpu?.slots, 2);
-    assert.strictEqual(repoConfig.config.resources?.gpu?.lock?.seats.length, 2);
-    assert.deepStrictEqual(repoConfig.config.resources?.gpu?.probe, {
-      argv: ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
-      min: 3072,
-      timeoutMs: 3000,
-      settleMs: 15000,
-    });
-    assert.deepStrictEqual(repoConfig.config.legacyClients, {
-      testPattern: [
-        String.raw`\bdotnet(\.exe)?"?\s+(test|vstest)\b`,
-        String.raw`\bjust\b[^;&|\n]*?\s(test[\w-]*|coverage-diff|mutate|long-checks)(\s|$)`,
-      ].join("|"),
-      testMemoryMb: 2880,
-    });
-  });
 }
 
 /**
@@ -735,6 +552,8 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkShareRules(assert, host);
   const henicosOptions = loaded.config.plugins?.find((p) => p.name === "./scripts/human/job-queue-henicos")?.options;
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
-  await quietly(() => checkQueuedRunMemoryMb(assert, host));
+  await quietly(() => checkQueuedRunMemoryMb(assert, host, FixedBudgetsYaml));
   checkShortCommandWithPlugins(assert, host);
+  checkOffloadClassification(assert, host, loaded.configRoot);
+  await checkNameFilter(assert);
 }

@@ -62,7 +62,7 @@ public class WarpShuffleShapeTests
         Assert.Equal(value, shape.StackFunction);
     }
 
-    // The native stack model writes every collective but Warp.ActiveMask(), whose regions it does not place yet
+    // The native stack model writes every collective, Warp.ActiveMask() included
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [MemberData(nameof(CollectiveEntries))]
@@ -70,7 +70,7 @@ public class WarpShuffleShapeTests
     {
         var (_, _, preludeFile) = Assert.Single(GSharpInternalNames.All, e => e.Path == "StackWarp." + entry);
 
-        Assert.Equal(kind == nameof(WarpShuffleKind.ActiveMask) ? null : "StackThreads.hpp", preludeFile);
+        Assert.Equal("StackThreads.hpp", preludeFile);
     }
 
     [Fact]
