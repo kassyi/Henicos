@@ -1,11 +1,11 @@
 // Layer 3 Command Translator:
 // Translates a Windows (PowerShell / Git Bash / sh / cmd) CPU command into a POSIX bash plan for a remote Linux
-// worker via a `ShellDialect` Strategy Map and a 5-stage fail-closed pipeline.
+// worker via a `ShellDialect` Strategy Map and a five-step fail-closed pipeline.
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { KeepBuildServersWarmVariable, type ShellName } from "../constants.ts";
-import { bare, rawWords, segmentParts } from "../command-reader.ts";
+import { rawWords, segmentParts } from "../command-reader.ts";
 import type { PathPlace } from "../estimate-key.ts";
 import type { CollectPathSpec } from "./artifact-collector.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
@@ -45,9 +45,9 @@ interface ShellDialect {
   matchInlineEnvStatement(text: string): { key: string; value: string } | null;
 }
 
-const PwshLeadingEnv = /^\$env:([A-Za-z_]\w*)\s*=\s*(?:'([^']*)'|"([^"$`]*)"|([^\s;&|]+))\s*;\s*/;
-const PwshInlineEnv = /^\$env:([A-Za-z_]\w*)\s*=\s*(?:'([^']*)'|"([^"$`]*)"|([^\s;&|]+))$/;
-const PosixLeadingEnv = /^export\s+([A-Za-z_]\w*)=(?:'([^']*)'|"([^"$`\\]*)"|([^\s;&|]+))\s*;\s*/;
+const PwshLeadingEnv = /^\$env:([A-Za-z_]\w*)\s*=\s*(?:'([^']*)'|"([^"$`]*)"|([^\s;&|$`"'()\\]+))\s*;\s*/;
+const PwshInlineEnv = /^\$env:([A-Za-z_]\w*)\s*=\s*(?:'([^']*)'|"([^"$`]*)"|([^\s;&|$`"'()\\]+))$/;
+const PosixLeadingEnv = /^export\s+([A-Za-z_]\w*)=(?:'([^']*)'|"([^"$`\\]*)"|([^\s;&|$`"'()\\]+))\s*;\s*/;
 
 const PwshDialect: ShellDialect = {
   supportsSingleQuote: true,
@@ -88,6 +88,27 @@ const BasePathValueOptions = new Set(["-o", "--output"]);
 const BaseNonPathValueOptions = new Set(["-e", "--environment"]);
 const BasePathExtensions = new Set(["js", "ts", "json", "yml", "yaml"]);
 const BaseAllowedPrograms = new Set(["node", "echo"]);
+const BroadRepoDirs = new Set([".", "src", "tests", "docs", "tools", "scripts", ".github", ".agents"]);
+const MsbuildSwitchPattern = new RegExp(
+  [
+    String.raw`^\/[A-Za-z][A-Za-z0-9_-]*[:=]`,
+    String.raw`^\/(?:${[
+      "nologo",
+      "m",
+      "maxcpucount",
+      "tl",
+      "bl",
+      "noconlog",
+      "noconsolelogger",
+      "noautorsp",
+      "restore",
+      "t",
+      "warnaserror",
+      "nowarn",
+    ].join("|")})$`,
+  ].join("|"),
+  "i",
+);
 
 function normKey(p: string): string {
   const resolved = path.resolve(p);
@@ -108,8 +129,53 @@ function relativePosix(root: string, absolute: string): string {
   return (exactRel || rel).split(path.sep).join("/");
 }
 
+/** Strips outer/segment shell quotes while preserving internal quotes and unescaping PowerShell `''`/`""`. */
+function unquoteToken(word: string, shell: ShellName): string | null {
+  const isPwsh = shell === "pwsh" || shell === "powershell";
+  const supportsSingle = shell !== "cmd";
+  const startedWithQuote = word.startsWith('"') || (supportsSingle && word.startsWith("'"));
+  let out = "";
+  let quote = "";
+  for (let i = 0; i < word.length; i++) {
+    const ch = word.charAt(i);
+    if (quote !== "") {
+      if (ch === quote) {
+        const doubled = isPwsh && word.charAt(i + 1) === quote;
+        if (doubled) {
+          out += quote;
+          i++;
+        } else {
+          quote = "";
+          if ((isPwsh || shell === "cmd") && startedWithQuote && i < word.length - 1) {
+            return null;
+          }
+        }
+      } else {
+        out += ch;
+      }
+    } else if (ch === '"' || (ch === "'" && supportsSingle)) {
+      quote = ch;
+    } else {
+      out += ch;
+    }
+  }
+  return quote === "" ? out : null;
+}
+
+function resolveArgPath(token: string, cwd: string): string {
+  const isWin = process.platform === "win32" || /^[A-Za-z]:[\\/]/.test(cwd);
+  if (isWin) {
+    const mapped = /^\/(?:mnt\/)?([A-Za-z])\/(.*)$/.exec(token);
+    if (mapped !== null) {
+      return path.win32.resolve(cwd, `${mapped[1]}:/${mapped[2]}`);
+    }
+    return path.win32.resolve(cwd, token);
+  }
+  return path.resolve(cwd, token);
+}
+
 function looksLikePath(token: string, cwd: string, extraExtensions: ReadonlySet<string>): boolean {
-  if (token === "" || token.startsWith("-")) {
+  if (token === "" || token.startsWith("-") || MsbuildSwitchPattern.test(token)) {
     return false;
   }
   if (/^[A-Za-z]:[\\/]/.test(token) || token.includes("\\") || token.includes("/")) {
@@ -122,7 +188,7 @@ function looksLikePath(token: string, cwd: string, extraExtensions: ReadonlySet<
       return true;
     }
   }
-  return fs.existsSync(path.resolve(cwd, token));
+  return fs.existsSync(resolveArgPath(token, cwd));
 }
 
 function findWorktreeRoot(dir: string): string {
@@ -137,7 +203,7 @@ function findWorktreeRoot(dir: string): string {
   }
 }
 
-/** Stage 1: strips dialect-specific leading environment assignments. */
+/** Extracts dialect-specific leading environment assignments. */
 function extractLeadingEnv(command: string, dialect: ShellDialect): { env: Record<string, string>; rest: string } {
   const env: Record<string, string> = Object.create(null) as Record<string, string>;
   let rest = command.trim();
@@ -152,7 +218,7 @@ function extractLeadingEnv(command: string, dialect: ShellDialect): { env: Recor
   return { env, rest };
 }
 
-/** Stage 2: splits on top-level `&&` and `;` outside quotes; returns null on pipes, subshells, or newlines. */
+/** Splits on top-level `&&` and `;` outside quotes; returns null on pipes, subshells, or newlines. */
 function splitStatements(command: string, dialect: ShellDialect): { op: "&&" | ";"; text: string }[] | null {
   const out: { op: "&&" | ";"; text: string }[] = [];
   let quote = "";
@@ -203,19 +269,174 @@ function splitStatements(command: string, dialect: ShellDialect): { op: "&&" | "
 interface ParsedStatement {
   op: "&&" | ";";
   program: string;
-  words: string[];
+  args: string[];
   segEnv: Record<string, string>;
   redirections: string[];
   cwd: string;
 }
 
-/** Stage 3: validates programs, tracks `cd`, and collects every referenced worktree root. */
+type OptionKind = "path" | "non-path" | "unknown";
+
+function classifyOption(
+  rules: ResolvedRemoteRules,
+  program: string,
+  subcommand: string,
+  optionLower: string,
+): OptionKind {
+  const decision = rules.isOptionValuePath(program, subcommand, optionLower);
+  if (
+    decision === false ||
+    (decision === undefined && (BaseNonPathValueOptions.has(optionLower) || rules.nonPathValueOptions.has(optionLower)))
+  ) {
+    return "non-path";
+  }
+  if (decision === true || BasePathValueOptions.has(optionLower) || rules.pathValueOptions.has(optionLower)) {
+    return "path";
+  }
+  return "unknown";
+}
+
+function splitInlineOption(token: string): { option: string; sep: string; value: string } | null {
+  const longMatch = /^(--[A-Za-z][A-Za-z0-9-]*)([:=])(.*)$/.exec(token);
+  if (longMatch !== null) {
+    return { option: longMatch[1] as string, sep: longMatch[2] as string, value: longMatch[3] as string };
+  }
+  const shortMatch = /^(-[A-Za-z][A-Za-z0-9-]*)=(.*)$/.exec(token);
+  if (shortMatch !== null) {
+    return { option: shortMatch[1] as string, sep: "=", value: shortMatch[2] as string };
+  }
+  return null;
+}
+
+function normalizePlacesMap(places: Readonly<Record<string, PathPlace>>): Map<string, PathPlace> {
+  const map = new Map<string, PathPlace>();
+  for (const [key, place] of Object.entries(places)) {
+    map.set(normKey(key), place);
+  }
+  return map;
+}
+
+function registerPathWorktree(
+  token: string,
+  currentCwd: string,
+  placesMap: ReadonlyMap<string, PathPlace>,
+  worktrees: Set<string>,
+): boolean {
+  const abs = resolveArgPath(token, currentCwd);
+  const place = placesMap.get(normKey(abs));
+  if (place !== undefined) {
+    if (place.root === "" || place.ignored) {
+      return false;
+    }
+    worktrees.add(path.resolve(place.root));
+    return true;
+  }
+  const wt = findWorktreeRoot(abs);
+  if (wt === "") {
+    return false;
+  }
+  worktrees.add(wt);
+  return true;
+}
+
+function parseSegEnv(rawEnv: string, shell: ShellName): Record<string, string> | null {
+  const segEnv: Record<string, string> = Object.create(null) as Record<string, string>;
+  if (rawEnv === "") {
+    return segEnv;
+  }
+  const envWords = rawWords(rawEnv, shell);
+  if (envWords === null) {
+    return null;
+  }
+  for (const token of envWords) {
+    const eq = token.indexOf("=");
+    if (eq <= 0) {
+      return null;
+    }
+    const val = unquoteToken(token.slice(eq + 1), shell);
+    if (val === null) {
+      return null;
+    }
+    segEnv[token.slice(0, eq)] = val;
+  }
+  return segEnv;
+}
+
+function isInlinePathOption(
+  kind: OptionKind,
+  program: string,
+  value: string,
+  cwd: string,
+  rules: ResolvedRemoteRules,
+): boolean {
+  return (
+    kind === "path" || (kind === "unknown" && program !== "echo" && looksLikePath(value, cwd, rules.pathExtensions))
+  );
+}
+
+function validateStatementArgs(
+  args: readonly string[],
+  program: string,
+  currentCwd: string,
+  placesMap: ReadonlyMap<string, PathPlace>,
+  rules: ResolvedRemoteRules,
+  worktrees: Set<string>,
+): boolean {
+  const subcommand = (args[0] ?? "").toLowerCase();
+  let prevOption = "";
+  for (const token of args) {
+    if (token === "--") {
+      break;
+    }
+    if (prevOption !== "") {
+      const prevKind = classifyOption(rules, program, subcommand, prevOption);
+      if (prevKind === "non-path") {
+        prevOption = "";
+        continue;
+      }
+      if (prevKind === "path") {
+        if (!registerPathWorktree(token, currentCwd, placesMap, worktrees)) {
+          return false;
+        }
+        prevOption = "";
+        continue;
+      }
+    }
+    const inline = splitInlineOption(token);
+    if (inline !== null) {
+      const kind = classifyOption(rules, program, subcommand, inline.option.toLowerCase());
+      if (kind === "path" && inline.value === "") {
+        return false;
+      }
+      if (
+        isInlinePathOption(kind, program, inline.value, currentCwd, rules) &&
+        !registerPathWorktree(inline.value, currentCwd, placesMap, worktrees)
+      ) {
+        return false;
+      }
+      prevOption = "";
+      continue;
+    }
+    if (program !== "echo" && looksLikePath(token, currentCwd, rules.pathExtensions)) {
+      if (!registerPathWorktree(token, currentCwd, placesMap, worktrees)) {
+        return false;
+      }
+      prevOption = "";
+      continue;
+    }
+    prevOption = token.startsWith("-") ? token.toLowerCase() : "";
+  }
+  return true;
+}
+
+/** Validates programs, tracks leading directory changes, and collects every referenced worktree root. */
 function parseAndValidateStatements(
   statements: readonly { op: "&&" | ";"; text: string }[],
   options: TranslateOptions,
   dialect: ShellDialect,
   rules: ResolvedRemoteRules,
   env: Record<string, string>,
+  placesMap: ReadonlyMap<string, PathPlace>,
 ): { parsed: ParsedStatement[]; worktrees: Set<string>; finalCwd: string } | null {
   let currentCwd = path.resolve(options.cwd);
   const worktrees = new Set<string>();
@@ -224,6 +445,9 @@ function parseAndValidateStatements(
   for (const stmt of statements) {
     const inlineEnv = dialect.matchInlineEnvStatement(stmt.text);
     if (inlineEnv !== null) {
+      if (parsed.length > 0) {
+        return null;
+      }
       env[inlineEnv.key] = inlineEnv.value;
       continue;
     }
@@ -232,16 +456,24 @@ function parseAndValidateStatements(
     if (words === null || words.length === 0) {
       return null;
     }
+    const unquoted: string[] = [];
+    for (const w of words) {
+      const value = unquoteToken(w, options.shell);
+      if (value === null) {
+        return null;
+      }
+      unquoted.push(value);
+    }
     const progLower = path
-      .basename(bare(words[0] as string))
+      .basename(unquoted[0] as string)
       .toLowerCase()
       .replace(/\.exe$/, "");
 
     if (progLower === "cd" || progLower === "set-location" || progLower === "sl") {
-      if (words.length !== 2) {
+      if (parsed.length > 0 || unquoted.length !== 2) {
         return null;
       }
-      currentCwd = path.resolve(currentCwd, bare(words[1] as string));
+      currentCwd = resolveArgPath(unquoted[1] as string, currentCwd);
       const wt = findWorktreeRoot(currentCwd);
       if (wt === "") {
         return null;
@@ -253,63 +485,21 @@ function parseAndValidateStatements(
     if (!BaseAllowedPrograms.has(progLower) && !rules.allowedPrograms.has(progLower)) {
       return null;
     }
-
-    const segEnv: Record<string, string> = Object.create(null) as Record<string, string>;
-    if (parts.env !== "") {
-      for (const token of parts.env.split(/\s+/)) {
-        const eq = token.indexOf("=");
-        if (eq <= 0) {
-          return null;
-        }
-        segEnv[token.slice(0, eq)] = bare(token.slice(eq + 1));
-      }
+    const segEnv = parseSegEnv(parts.env, options.shell);
+    if (segEnv === null) {
+      return null;
     }
-
-    const subcommand = (words[1] ? bare(words[1]) : "").toLowerCase();
-    for (let i = 1; i < words.length; i++) {
-      const token = bare(words[i] as string);
-      if (token === "--") {
-        break;
-      }
-      const prev = i > 1 ? bare(words[i - 1] as string).toLowerCase() : "";
-      const decision = prev !== "" ? rules.isOptionValuePath(progLower, subcommand, prev) : undefined;
-      const isNonPath =
-        decision === false ||
-        (decision === undefined && (BaseNonPathValueOptions.has(prev) || rules.nonPathValueOptions.has(prev)));
-      if (isNonPath) {
-        continue;
-      }
-      const isPath =
-        decision === true ||
-        BasePathValueOptions.has(prev) ||
-        rules.pathValueOptions.has(prev) ||
-        (progLower !== "echo" && looksLikePath(token, currentCwd, rules.pathExtensions));
-      if (!isPath) {
-        continue;
-      }
-      const abs = path.resolve(currentCwd, token);
-      const place = options.places[abs];
-      if (place !== undefined) {
-        if (place.root === "" || place.ignored) {
-          return null;
-        }
-        worktrees.add(path.resolve(place.root));
-      } else {
-        const wt = findWorktreeRoot(abs);
-        if (wt === "") {
-          return null;
-        }
-        worktrees.add(wt);
-      }
+    const args = unquoted.slice(1);
+    if (!validateStatementArgs(args, progLower, currentCwd, placesMap, rules, worktrees)) {
+      return null;
     }
-
-    parsed.push({ op: stmt.op, program: progLower, words, segEnv, redirections: parts.redirections, cwd: currentCwd });
+    parsed.push({ op: stmt.op, program: progLower, args, segEnv, redirections: parts.redirections, cwd: currentCwd });
   }
 
   return parsed.length > 0 ? { parsed, worktrees, finalCwd: currentCwd } : null;
 }
 
-/** Stage 4: enforces the single-worktree invariant and resolves the remote working directory. */
+/** Enforces the single-worktree invariant and resolves the remote working directory. */
 function resolveSingleWorktree(
   worktrees: ReadonlySet<string>,
   finalCwd: string,
@@ -337,49 +527,151 @@ function resolveSingleWorktree(
   return { targetWorktree, remoteCwdRel, remoteBaseDir };
 }
 
-/** Stage 5: rewrites one parsed statement into POSIX bash and registers any collected paths. */
+function translatePathArg(
+  rawPath: string,
+  cwd: string,
+  targetWorktree: string,
+  remoteBaseDir: string,
+  collectAsDir: boolean,
+  addCollect: (rel: string, kind: "file" | "dir") => boolean,
+): string | null {
+  const abs = resolveArgPath(rawPath, cwd);
+  if (!isInside(targetWorktree, abs)) {
+    return null;
+  }
+  if (collectAsDir && !addCollect(relativePosix(targetWorktree, abs), "dir")) {
+    return null;
+  }
+  return path.relative(remoteBaseDir, abs).split(path.sep).join("/") || ".";
+}
+
+function translateArgsToPosix(
+  stmt: ParsedStatement,
+  targetWorktree: string,
+  remoteBaseDir: string,
+  rules: ResolvedRemoteRules,
+  addCollect: (rel: string, kind: "file" | "dir") => boolean,
+): string[] | null {
+  const subcommand = (stmt.args[0] ?? "").toLowerCase();
+  const translated: string[] = [];
+  let prevOption = "";
+
+  for (let i = 0; i < stmt.args.length; i++) {
+    const token = stmt.args[i] as string;
+    if (token === "--") {
+      translated.push("--", ...stmt.args.slice(i + 1));
+      break;
+    }
+    if (prevOption !== "") {
+      const prevKind = classifyOption(rules, stmt.program, subcommand, prevOption);
+      if (prevKind === "non-path") {
+        translated.push(token);
+        prevOption = "";
+        continue;
+      }
+      if (prevKind === "path") {
+        const rel = translatePathArg(
+          token,
+          stmt.cwd,
+          targetWorktree,
+          remoteBaseDir,
+          rules.collectDirOptions.has(prevOption),
+          addCollect,
+        );
+        if (rel === null) {
+          return null;
+        }
+        translated.push(rel);
+        prevOption = "";
+        continue;
+      }
+    }
+    const inline = splitInlineOption(token);
+    if (inline !== null) {
+      const optLower = inline.option.toLowerCase();
+      const kind = classifyOption(rules, stmt.program, subcommand, optLower);
+      if (isInlinePathOption(kind, stmt.program, inline.value, stmt.cwd, rules)) {
+        const rel = translatePathArg(
+          inline.value,
+          stmt.cwd,
+          targetWorktree,
+          remoteBaseDir,
+          rules.collectDirOptions.has(optLower),
+          addCollect,
+        );
+        if (rel === null) {
+          return null;
+        }
+        translated.push(`${inline.option}${inline.sep}${rel}`);
+      } else {
+        translated.push(token);
+      }
+      prevOption = "";
+      continue;
+    }
+    if (stmt.program !== "echo" && looksLikePath(token, stmt.cwd, rules.pathExtensions)) {
+      const rel = translatePathArg(token, stmt.cwd, targetWorktree, remoteBaseDir, false, addCollect);
+      if (rel === null) {
+        return null;
+      }
+      translated.push(rel);
+      prevOption = "";
+      continue;
+    }
+    translated.push(token);
+    prevOption = token.startsWith("-") ? token.toLowerCase() : "";
+  }
+  return translated;
+}
+
+function rewriteRedirections(
+  redirections: readonly string[],
+  cwd: string,
+  shell: ShellName,
+  targetWorktree: string,
+  remoteBaseDir: string,
+  addCollect: (rel: string, kind: "file" | "dir") => boolean,
+): string[] | null {
+  const outRedirs: string[] = [];
+  for (const redir of redirections) {
+    if (/^[12*]?&\d$/.test(redir) || redir === "2>&1") {
+      outRedirs.push("2>&1");
+      continue;
+    }
+    const m = /^([12&*]?)(>>?)\s*(.+)$/.exec(redir);
+    if (m === null) {
+      return null;
+    }
+    const fd = m[1] === "*" ? "&" : (m[1] ?? "");
+    const targetToken = unquoteToken(m[3] as string, shell);
+    if (targetToken === null) {
+      return null;
+    }
+    const abs = resolveArgPath(targetToken, cwd);
+    if (!isInside(targetWorktree, abs) || !addCollect(relativePosix(targetWorktree, abs), "file")) {
+      return null;
+    }
+    const rel = path.relative(remoteBaseDir, abs).split(path.sep).join("/");
+    outRedirs.push(`${fd}${m[2] as string} ${bashQuote(rel)}`);
+  }
+  return outRedirs;
+}
+
+/** Rewrites one parsed statement into POSIX bash and registers any collected paths. */
 function rewriteStatementToBash(
   stmt: ParsedStatement,
+  shell: ShellName,
   targetWorktree: string,
   remoteBaseDir: string,
   warmServers: boolean,
   cpus: number,
   rules: ResolvedRemoteRules,
-  addCollect: (rel: string, kind: "file" | "dir") => void,
+  addCollect: (rel: string, kind: "file" | "dir") => boolean,
 ): string | null {
-  const subcommand = (stmt.words[1] ? bare(stmt.words[1]) : "").toLowerCase();
-  const translatedArgs: string[] = [];
-
-  for (let i = 1; i < stmt.words.length; i++) {
-    const token = bare(stmt.words[i] as string);
-    if (token === "--") {
-      translatedArgs.push("--", ...stmt.words.slice(i + 1).map((w) => bare(w)));
-      break;
-    }
-    const prev = i > 1 ? bare(stmt.words[i - 1] as string).toLowerCase() : "";
-    const decision = prev !== "" ? rules.isOptionValuePath(stmt.program, subcommand, prev) : undefined;
-    const isNonPath =
-      decision === false ||
-      (decision === undefined && (BaseNonPathValueOptions.has(prev) || rules.nonPathValueOptions.has(prev)));
-
-    if (
-      !isNonPath &&
-      (decision === true ||
-        BasePathValueOptions.has(prev) ||
-        rules.pathValueOptions.has(prev) ||
-        (stmt.program !== "echo" && looksLikePath(token, stmt.cwd, rules.pathExtensions)))
-    ) {
-      const abs = path.resolve(stmt.cwd, token);
-      if (!isInside(targetWorktree, abs)) {
-        return null;
-      }
-      translatedArgs.push(path.relative(remoteBaseDir, abs).split(path.sep).join("/") || ".");
-      if (rules.collectDirOptions.has(prev)) {
-        addCollect(relativePosix(targetWorktree, abs), "dir");
-      }
-    } else {
-      translatedArgs.push(token);
-    }
+  const subcommand = (stmt.args[0] ?? "").toLowerCase();
+  const translatedArgs = translateArgsToPosix(stmt, targetWorktree, remoteBaseDir, rules, addCollect);
+  if (translatedArgs === null) {
+    return null;
   }
 
   const rewritten = rules.rewriteStatement({
@@ -390,33 +682,22 @@ function rewriteStatementToBash(
     cpus,
   });
   for (const extra of rewritten.collectPaths ?? []) {
-    addCollect(extra.path, extra.kind);
+    if (!addCollect(extra.path, extra.kind)) {
+      return null;
+    }
   }
-  const outWords = [stmt.program, ...(rewritten.args ?? translatedArgs).map((arg) => bashQuote(arg))];
-
-  const outRedirs: string[] = [];
-  for (const redir of stmt.redirections) {
-    if (/^[12*]?&\d$/.test(redir) || redir === "2>&1") {
-      outRedirs.push("2>&1");
-      continue;
-    }
-    const m = /^([12&*]?)(>>?)\s*(.+)$/.exec(redir);
-    if (m === null) {
-      return null;
-    }
-    const fd = m[1] === "*" ? "&" : (m[1] ?? "");
-    const abs = path.resolve(stmt.cwd, bare(m[3] as string));
-    if (!isInside(targetWorktree, abs)) {
-      return null;
-    }
-    addCollect(relativePosix(targetWorktree, abs), "file");
-    outRedirs.push(`${fd}${m[2] as string} ${bashQuote(path.relative(remoteBaseDir, abs).split(path.sep).join("/"))}`);
+  const outWords = [bashQuote(stmt.program), ...(rewritten.args ?? translatedArgs).map((arg) => bashQuote(arg))];
+  const outRedirs = rewriteRedirections(stmt.redirections, stmt.cwd, shell, targetWorktree, remoteBaseDir, addCollect);
+  if (outRedirs === null) {
+    return null;
   }
 
   const segEnvPrefix = Object.entries(stmt.segEnv)
     .map(([k, v]) => `${k}=${bashQuote(v)}`)
     .join(" ");
-  return `${segEnvPrefix ? `${segEnvPrefix} ` : ""}${outWords.join(" ")}${outRedirs.length > 0 ? ` ${outRedirs.join(" ")}` : ""}`;
+  const envPart = segEnvPrefix !== "" ? `${segEnvPrefix} ` : "";
+  const redirPart = outRedirs.length > 0 ? ` ${outRedirs.join(" ")}` : "";
+  return `${envPart}${outWords.join(" ")}${redirPart}`;
 }
 
 /**
@@ -440,8 +721,9 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   const rules = options.remoteRules ?? EmptyRemoteRules;
   const env: Record<string, string> = Object.assign(Object.create(null) as Record<string, string>, leading.env);
   const warmServers = options.keepBuildServersWarm && options.env[KeepBuildServersWarmVariable] !== "0";
+  const placesMap = normalizePlacesMap(options.places);
 
-  const validated = parseAndValidateStatements(statements, options, dialect, rules, env);
+  const validated = parseAndValidateStatements(statements, options, dialect, rules, env, placesMap);
   if (validated === null) {
     return null;
   }
@@ -451,11 +733,16 @@ export function translateForRemote(command: string, options: TranslateOptions): 
   }
 
   const collectMap = new Map<string, CollectPathSpec>();
-  const addCollect = (rel: string, kind: "file" | "dir"): void => {
+  const addCollect = (rel: string, kind: "file" | "dir"): boolean => {
     const clean = path.posix.normalize(rel).replace(/\/+$/, "");
-    if (clean !== "" && clean !== "." && !clean.startsWith("..")) {
-      collectMap.set(`${kind}:${clean}`, { path: clean, kind });
+    if (clean === "" || clean === "." || clean.startsWith("..")) {
+      return false;
     }
+    if (kind === "dir" && BroadRepoDirs.has(clean.toLowerCase())) {
+      return false;
+    }
+    collectMap.set(`${kind}:${clean}`, { path: clean, kind });
+    return true;
   };
 
   const bashParts: string[] = [];
@@ -463,6 +750,7 @@ export function translateForRemote(command: string, options: TranslateOptions): 
     const stmt = validated.parsed[i] as ParsedStatement;
     const core = rewriteStatementToBash(
       stmt,
+      options.shell,
       target.targetWorktree,
       target.remoteBaseDir,
       warmServers,

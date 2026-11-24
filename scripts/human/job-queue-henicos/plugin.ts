@@ -1,6 +1,7 @@
 // Repository plugin for Henicos: test classification, memory budgets, the GPU share of a --gpu run (share-rules.ts),
 // --gpu checks/hints, and short command labels.
 
+import * as path from "node:path";
 import {
   PluginApiVersion,
   type CheckResult,
@@ -56,17 +57,249 @@ const OffloadableJustRecipes = new Set([
 /** Filters targeting Windows-only implementation tests stay on Windows so they do not skip on Linux. */
 const WindowsOnlyFilterPattern = /(?:^|[^A-Za-z0-9])(?:Windows|Win32|Msvc|Wmi|Event153)/i;
 
+const DotnetStepValueOptions = new Set([
+  "-c",
+  "--configuration",
+  "-f",
+  "--framework",
+  "-r",
+  "--runtime",
+  "-a",
+  "--arch",
+  "--os",
+  "-o",
+  "--output",
+  "-v",
+  "--verbosity",
+  "--artifacts-path",
+  "-p",
+  "--property",
+  "--filter",
+  "-l",
+  "--logger",
+  "-s",
+  "--settings",
+  "--results-directory",
+  "--collect",
+  "-d",
+  "--diag",
+  "--blame-crash-dump-type",
+  "--blame-hang-dump-type",
+  "--blame-hang-timeout",
+  "-e",
+  "--environment",
+  "--test-adapter-path",
+  "--project",
+  "--source",
+  "--configfile",
+]);
+
+interface DotnetBuildOrTestStep {
+  verb: "build" | "test";
+  target: string;
+  config: string;
+  framework: string;
+  runtime: string;
+  output: string;
+  artifactsPath: string;
+  noBuild: boolean;
+  listTests: boolean;
+}
+
+function normalizeTargetPath(rawTarget: string, stepCwd: string): string {
+  const mapped = /^\/(?:mnt\/)?([A-Za-z])\/(.*)$/.exec(rawTarget);
+  const adjusted = mapped !== null && process.platform === "win32" ? `${mapped[1]}:/${mapped[2]}` : rawTarget;
+  const resolved = adjusted === "" ? path.resolve(stepCwd) : path.resolve(stepCwd, adjusted);
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+
+function dotnetTargetsMatch(buildTarget: string, testTarget: string): boolean {
+  if (buildTarget === testTarget) {
+    return true;
+  }
+  const isProj = (p: string): boolean => /\.(?:csproj|fsproj|vbproj)$/i.test(p);
+  if (isProj(testTarget) && path.dirname(testTarget) === buildTarget) {
+    return true;
+  }
+  return isProj(buildTarget) && path.dirname(buildTarget) === testTarget;
+}
+
+interface MutableDotnetStep {
+  verb: "build" | "test";
+  config: string | undefined;
+  framework: string;
+  runtime: string;
+  output: string;
+  artifactsPath: string;
+  projectOpt: string | undefined;
+  noBuild: boolean;
+  listTests: boolean;
+  positional: string[];
+}
+
+function setStepConfig(state: MutableDotnetStep, value: string): boolean {
+  const next = value.toLowerCase();
+  if (next === "" || (state.config !== undefined && state.config !== next)) {
+    return false;
+  }
+  state.config = next;
+  return true;
+}
+
+function applyInlineDotnetOpt(state: MutableDotnetStep, word: string, stepCwd: string): "matched" | "invalid" | "none" {
+  const inlineCfg = /^(?:-c|--configuration)[:=](.+)$/i.exec(word);
+  if (inlineCfg !== null) {
+    return setStepConfig(state, inlineCfg[1] ?? "") ? "matched" : "invalid";
+  }
+  const propCfg = /^(?:--|[-/])(?:p|property):configuration=(.+)$/i.exec(word);
+  if (propCfg !== null) {
+    return setStepConfig(state, propCfg[1] ?? "") ? "matched" : "invalid";
+  }
+  const inlineProj = /^--project[:=](.+)$/i.exec(word);
+  if (inlineProj !== null) {
+    if (state.projectOpt !== undefined) {
+      return "invalid";
+    }
+    state.projectOpt = inlineProj[1] ?? "";
+    return "matched";
+  }
+  const inlineFw = /^(?:-f|--framework)[:=](.+)$/i.exec(word);
+  if (inlineFw !== null) {
+    state.framework = (inlineFw[1] ?? "").toLowerCase();
+    return "matched";
+  }
+  const inlineRt = /^(?:-r|--runtime)[:=](.+)$/i.exec(word);
+  if (inlineRt !== null) {
+    state.runtime = (inlineRt[1] ?? "").toLowerCase();
+    return "matched";
+  }
+  const inlineOut = /^(?:-o|--output)[:=](.+)$/i.exec(word);
+  if (inlineOut !== null) {
+    state.output = normalizeTargetPath(inlineOut[1] ?? "", stepCwd);
+    return "matched";
+  }
+  const inlineArt = /^--artifacts-path[:=](.+)$/i.exec(word);
+  if (inlineArt !== null) {
+    state.artifactsPath = normalizeTargetPath(inlineArt[1] ?? "", stepCwd);
+    return "matched";
+  }
+  return /^(?:--?|\/)[\w-]+[:=]/.test(word) ? "matched" : "none";
+}
+
+function applySpaceDotnetOpt(state: MutableDotnetStep, lower: string, val: string, stepCwd: string): boolean {
+  if (lower === "-c" || lower === "--configuration") {
+    return setStepConfig(state, val);
+  }
+  if (lower === "-f" || lower === "--framework") {
+    state.framework = val.toLowerCase();
+  } else if (lower === "-r" || lower === "--runtime") {
+    state.runtime = val.toLowerCase();
+  } else if (lower === "-o" || lower === "--output") {
+    state.output = normalizeTargetPath(val, stepCwd);
+  } else if (lower === "--artifacts-path") {
+    state.artifactsPath = normalizeTargetPath(val, stepCwd);
+  } else if (lower === "--project") {
+    if (state.projectOpt !== undefined) {
+      return false;
+    }
+    state.projectOpt = val;
+  } else if (lower === "-p" || lower === "--property") {
+    const m = /^configuration=(.+)$/i.exec(val);
+    if (m !== null && !setStepConfig(state, m[1] ?? "")) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function parseDotnetBuildOrTestStep(words: readonly string[], stepCwd: string): DotnetBuildOrTestStep | null {
+  const verb = (words[1] ?? "").toLowerCase();
+  if (verb !== "build" && verb !== "test") {
+    return null;
+  }
+  const state: MutableDotnetStep = {
+    verb,
+    config: undefined,
+    framework: "",
+    runtime: "",
+    output: "",
+    artifactsPath: "",
+    projectOpt: undefined,
+    noBuild: false,
+    listTests: false,
+    positional: [],
+  };
+  for (let i = 2; i < words.length; i++) {
+    const word = words[i] ?? "";
+    const lower = word.toLowerCase();
+    if (word === "--") {
+      break;
+    }
+    if (lower === "--no-build") {
+      state.noBuild = true;
+      continue;
+    }
+    if (lower === "--list-tests" || lower === "-t") {
+      state.listTests = true;
+      continue;
+    }
+    const inlineStatus = applyInlineDotnetOpt(state, word, stepCwd);
+    if (inlineStatus === "invalid") {
+      return null;
+    }
+    if (inlineStatus === "matched") {
+      continue;
+    }
+    if (DotnetStepValueOptions.has(lower)) {
+      const val = words[++i];
+      if (val === undefined || !applySpaceDotnetOpt(state, lower, val, stepCwd)) {
+        return null;
+      }
+      continue;
+    }
+    if (!word.startsWith("-") && !/^\/[A-Za-z]/.test(word)) {
+      state.positional.push(word);
+    }
+  }
+  if (state.positional.length > 1 || (state.projectOpt !== undefined && state.positional.length > 0)) {
+    return null;
+  }
+  return {
+    verb: state.verb,
+    target: normalizeTargetPath(state.projectOpt ?? state.positional[0] ?? "", stepCwd),
+    config: state.config ?? "debug",
+    framework: state.framework,
+    runtime: state.runtime,
+    output: state.output,
+    artifactsPath: state.artifactsPath,
+    noBuild: state.noBuild,
+    listTests: state.listTests,
+  };
+}
+
+function buildMatchesTest(build: DotnetBuildOrTestStep, test: DotnetBuildOrTestStep): boolean {
+  return (
+    dotnetTargetsMatch(build.target, test.target) &&
+    build.config === test.config &&
+    build.framework === test.framework &&
+    build.runtime === test.runtime &&
+    build.output === test.output &&
+    build.artifactsPath === test.artifactsPath
+  );
+}
+
 /**
  * True when `command` is a self-contained CPU test run eligible for transparent offload to a headless Linux worker:
  * - No GPU resource requested, no pipe, no Windows-only filter
  * - Either an allowlisted CPU-only `just` recipe, or plain `dotnet build` / `dotnet test` steps ending in a test
- *   (never a bare `dotnet build` or a standalone `dotnet test --no-build` that relies on local bin/win/)
+ *   (never a bare `dotnet build` or a `--no-build` test without a matching preceding build target & configuration)
  * - Every named test project is headless-CPU-safe (GSharpTargetDialect Cpu, pure managed, or Category!=GpuExecution).
  */
 function isOffloadableCommand(
   command: string,
   budgets: ReadonlyMap<string, unknown>,
   testsDir: string,
+  cwd: string,
   log: (text: string) => void,
 ): boolean {
   if (WindowsOnlyFilterPattern.test(command)) {
@@ -76,42 +309,56 @@ function isOffloadableCommand(
   if (line === null || line.piped) {
     return false;
   }
-  const work = line.steps.filter((step) => {
-    if (isTrivialStep(step)) {
-      return false;
-    }
+  const cdCmds = new Set(["cd", "chdir", "set-location", "sl"]);
+  let currentCwd = path.resolve(cwd);
+  const workSteps: { words: string[]; cwd: string }[] = [];
+  for (const step of line.steps) {
     const prog = programOf(step.words[0] ?? "");
-    return prog !== "cd" && prog !== "set-location" && prog !== "sl";
-  });
-  if (work.length === 0) {
+    if (cdCmds.has(prog)) {
+      if (workSteps.length > 0) {
+        return false;
+      }
+      const target = step.words.slice(1).find((w) => !w.startsWith("-"));
+      if (target === undefined) {
+        return false;
+      }
+      currentCwd = normalizeTargetPath(target, currentCwd);
+      continue;
+    }
+    if (!isTrivialStep(step)) {
+      workSteps.push({ words: step.words, cwd: currentCwd });
+    }
+  }
+  if (workSteps.length === 0) {
     return false;
   }
   // Allowlisted CPU-only just recipes (single step)
-  if (work.length === 1 && programOf(work[0]?.words[0] ?? "") === "just") {
-    const recipe = work[0]?.words.slice(1).find((w) => !w.startsWith("-") && !w.includes("="));
+  if (workSteps.length === 1 && programOf(workSteps[0]?.words[0] ?? "") === "just") {
+    const recipe = workSteps[0]?.words.slice(1).find((w) => !w.startsWith("-") && !w.includes("="));
     return recipe !== undefined && OffloadableJustRecipes.has(recipe);
   }
-  // Plain dotnet build/test sequence: must include at least one dotnet test, and any --no-build test must be preceded
-  // by a dotnet build in the same command (standalone --no-build reads local bin/win/)
-  let sawBuild = false;
+  // Plain dotnet build/test sequence: must include at least one dotnet test, and any --no-build test must follow a
+  // matching dotnet build (target + -c config) in the same command (standalone --no-build reads local bin/win/)
+  const builtSteps: DotnetBuildOrTestStep[] = [];
   let sawTest = false;
-  for (const step of work) {
+  for (const step of workSteps) {
     if (programOf(step.words[0] ?? "") !== "dotnet") {
       return false;
     }
-    const verb = (step.words[1] ?? "").toLowerCase();
-    if (verb === "build") {
-      sawBuild = true;
-    } else if (verb === "test") {
-      if (step.words.includes("--list-tests") || step.words.includes("-t")) {
+    const parsed = parseDotnetBuildOrTestStep(step.words, step.cwd);
+    if (parsed === null) {
+      return false;
+    }
+    if (parsed.verb === "build") {
+      builtSteps.push(parsed);
+    } else {
+      if (parsed.listTests) {
         return false;
       }
-      if (step.words.includes("--no-build") && !sawBuild) {
+      if (parsed.noBuild && !builtSteps.some((b) => buildMatchesTest(b, parsed))) {
         return false;
       }
       sawTest = true;
-    } else {
-      return false;
     }
   }
   if (!sawTest) {
@@ -180,8 +427,8 @@ const plugin = {
       optionString(context, "budgetsFile", DefaultBudgetsFile),
       context.log,
     );
-    // The test list of the name-filter share names the exclusive categories to look for; it runs no test, so it takes the
-    // normal budget
+    // The test list of the name-filter share names the exclusive categories to look for; it runs no test, so it uses
+    // the normal budget
     const memoryMb = testMemoryMb(
       command,
       true,
@@ -193,7 +440,9 @@ const plugin = {
       context.configRoot,
       optionString(context, "testsDir", DefaultTestsDir),
     );
-    const offloadable = resource === null ? isOffloadableCommand(command, budgets, testsDir, context.log) : false;
+    const baseCwd = context.cwd !== "" ? context.cwd : context.worktree;
+    const offloadable =
+      resource === null ? isOffloadableCommand(command, budgets, testsDir, baseCwd, context.log) : false;
     return share !== undefined ? { test: true, memoryMb, share, offloadable } : { test: true, memoryMb, offloadable };
   },
 

@@ -6,11 +6,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ReadStep } from "./command-reader.ts";
-import { loadConfig, type QueueConfig } from "./config.ts";
-import { EntryScript } from "./constants.ts";
+import type { QueueConfig } from "./config.ts";
 import {
   PluginApiVersion,
-  type AssertModule,
   type CheckResult,
   type Classification,
   type ClientContext,
@@ -25,23 +23,28 @@ import {
   type StepKeys,
   type ViewPanel,
 } from "./plugin-api.ts";
+import {
+  DefaultImportTimeoutMs,
+  DefaultPluginsRoot,
+  importWithTimeout,
+  isPlainObject,
+  resolvePluginFolder,
+  runPluginChecks,
+  type PluginChecksOptions,
+} from "./plugin-checks-runner.ts";
 import { errorMessage } from "./history.ts";
 import { isCommandKeys, isMemoryMb } from "./protocol.ts";
 import { resolveRemoteRules, type RemoteContributionEntry, type ResolvedRemoteRules } from "./remote/rules.ts";
 
+export { DefaultPluginsRoot, runPluginChecks, type PluginChecksOptions };
+
 export type BaseClientContext = Omit<ClientContext, "options">;
 
-const DefaultImportTimeoutMs = 5000;
 const DefaultSlowHookMs = 500;
 /** How long one plugin may take to answer checkShare (the answer may run a test list through the queue). */
 export const CheckShareTimeoutMs = 180_000;
 /** How long the `stillValid` of a shared answer may take (it should only compare what was measured). */
 export const StillValidTimeoutMs = 30_000;
-export const DefaultPluginsRoot = path.resolve(import.meta.dirname, "plugins");
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
 
 function isValidSplitPlan(value: unknown): value is SplitPlan {
   if (!isPlainObject(value)) {
@@ -69,36 +72,6 @@ function isValidViewPanel(value: unknown): value is ViewPanel {
     typeof value.summary === "function" &&
     typeof value.help === "function"
   );
-}
-
-function resolvePluginFolder(name: string, configRoot: string, pluginsRoot = DefaultPluginsRoot): string | null {
-  if (name.startsWith("./") || name.startsWith(".\\")) {
-    return path.resolve(configRoot, name);
-  }
-  if (name.includes("/") || name.includes("\\") || name.includes("..")) {
-    return null;
-  }
-  const resolved = path.resolve(pluginsRoot, name);
-  const relative = path.relative(pluginsRoot, resolved);
-  if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
-    return null;
-  }
-  return resolved;
-}
-
-async function importWithTimeout(fileUrl: string, timeoutMs: number): Promise<unknown> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs} ms`)), timeoutMs);
-    timer.unref?.();
-  });
-  try {
-    return await Promise.race([import(fileUrl), timeout]);
-  } finally {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-    }
-  }
 }
 
 export interface PluginHostLoadOptions {
@@ -347,7 +320,7 @@ export class PluginHost {
           return { share: res };
         }
         if (isPlainObject(res) && (res.share === "shared" || res.share === "exclusive")) {
-          // An exclusive answer needs no re-check; a stillValid that is no function is ignored (the client then has none)
+          // An exclusive answer needs no re-check; a non-function stillValid is ignored (the client then has none)
           const stillValid =
             res.share === "shared" && typeof res.stillValid === "function"
               ? (res.stillValid as () => Promise<boolean>)
@@ -556,100 +529,5 @@ export class PluginHost {
       }
     }
     return resolveRemoteRules(entries);
-  }
-}
-
-export interface PluginChecksOptions {
-  config?: QueueConfig;
-  configRoot?: string;
-  pluginsRoot?: string;
-  importTimeoutMs?: number;
-}
-
-function bundledPluginOrder(name: string): number {
-  return name === "dotnet" ? 0 : name === "just" ? 1 : 2;
-}
-
-/**
- * Discovers and runs `checks(assert)` for all bundled `plugins/<name>/checks.ts` (dotnet, just, then sorted others)
- * plus `config.plugins[]` entries, regardless of `JOB_QUEUE_PLUGINS=0`. Rejects if an enabled config plugin
- * lacks `checks.ts` or if any `checks(assert)` throws.
- */
-export async function runPluginChecks(assert: AssertModule, options: PluginChecksOptions = {}): Promise<void> {
-  const pluginsRoot = options.pluginsRoot ?? DefaultPluginsRoot;
-  const timeoutMs = options.importTimeoutMs ?? DefaultImportTimeoutMs;
-  let config = options.config;
-  let configRoot = options.configRoot;
-  if (config === undefined) {
-    const loaded =
-      configRoot !== undefined
-        ? loadConfig({
-            mode: "status",
-            configPath: path.join(configRoot, "job-queue.config.json"),
-            fromDirectory: configRoot,
-            warn: () => {},
-          })
-        : loadConfig({
-            mode: "status",
-            fromDirectory: path.dirname(EntryScript),
-          });
-    config = loaded.config;
-    configRoot = loaded.configRoot;
-  } else if (configRoot === undefined) {
-    configRoot = path.dirname(EntryScript);
-  }
-
-  const targets: { name: string; checksPath: string }[] = [];
-  const seen = new Set<string>();
-  const addTarget = (name: string, checksPath: string): void => {
-    const realPath = fs.realpathSync.native(checksPath);
-    if (seen.has(realPath)) {
-      return;
-    }
-    seen.add(realPath);
-    targets.push({ name, checksPath: realPath });
-  };
-
-  if (fs.existsSync(pluginsRoot)) {
-    const bundledNames = fs
-      .readdirSync(pluginsRoot, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort((a, b) => bundledPluginOrder(a) - bundledPluginOrder(b) || (a < b ? -1 : a > b ? 1 : 0));
-    for (const name of bundledNames) {
-      const folder = resolvePluginFolder(name, configRoot, pluginsRoot);
-      if (folder === null) {
-        continue;
-      }
-      const checksPath = path.join(folder, "checks.ts");
-      if (fs.existsSync(checksPath)) {
-        addTarget(name, checksPath);
-      }
-    }
-  }
-
-  for (const entry of config.plugins) {
-    const folder = resolvePluginFolder(entry.name, configRoot, pluginsRoot);
-    if (folder === null) {
-      throw new Error(`plugin ${entry.name} has an invalid bare name`);
-    }
-    const checksPath = path.join(folder, "checks.ts");
-    if (!fs.existsSync(checksPath)) {
-      throw new Error(`plugin ${entry.name} has no checks.ts (${checksPath})`);
-    }
-    addTarget(entry.name, checksPath);
-  }
-
-  for (const target of targets) {
-    try {
-      const moduleValue = await importWithTimeout(pathToFileURL(target.checksPath).href, timeoutMs);
-      const checks = isPlainObject(moduleValue) ? moduleValue.checks : undefined;
-      if (typeof checks !== "function") {
-        throw new Error("missing exported checks(assert) function");
-      }
-      await (checks as (assert: AssertModule) => void | Promise<void>)(assert);
-    } catch (error) {
-      throw new Error(`plugin ${target.name} checks failed: ${errorMessage(error)}`, { cause: error });
-    }
   }
 }

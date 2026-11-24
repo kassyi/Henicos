@@ -3,7 +3,7 @@
 import * as fs from "node:fs";
 import { createRequire } from "node:module";
 import * as path from "node:path";
-import { errorCode, errorMessage } from "../job-queue/plugin-api.ts";
+import { errorCode, errorMessage, isTrivialStep, programOf, readCommandLine } from "../job-queue/plugin-api.ts";
 
 interface TestProjectEntry {
   name: string;
@@ -142,11 +142,85 @@ export function cpuOnlyTestProjects(
   return named.every(runsOnCpu) ? named : [];
 }
 
+function stepExcludesGpuExecution(words: readonly string[]): boolean {
+  const filters: string[] = [];
+  let afterDoubleDash = false;
+  for (let i = 2; i < words.length; i++) {
+    const raw = words[i] ?? "";
+    const lower = raw.toLowerCase();
+    if (lower.includes("testcasefilter")) {
+      return false;
+    }
+    if (raw === "--") {
+      afterDoubleDash = true;
+      continue;
+    }
+    if (afterDoubleDash) {
+      continue;
+    }
+    if (lower === "--filter") {
+      const value = words[++i];
+      if (value === undefined) {
+        return false;
+      }
+      filters.push(value);
+    } else if (lower.startsWith("--filter=")) {
+      filters.push(raw.slice("--filter=".length));
+    } else if (lower.startsWith("--filter")) {
+      return false;
+    }
+  }
+  if (filters.length !== 1) {
+    return false;
+  }
+  const normalized = (filters[0] ?? "").toLowerCase().replace(/\s+/g, "");
+  if (normalized.includes("|")) {
+    return false;
+  }
+  return new Set(normalized.split("&")).has("category!=gpuexecution");
+}
+
+function commandExcludesGpuExecution(command: string): boolean {
+  const line = readCommandLine(command);
+  if (line === null || line.piped) {
+    return false;
+  }
+  const testSteps = line.steps.filter((step, index) => {
+    if (line.expands[index] === true && !isTrivialStep(step)) {
+      return true;
+    }
+    return programOf(step.words[0] ?? "") === "dotnet" && (step.words[1] ?? "").toLowerCase() === "test";
+  });
+  return (
+    testSteps.length > 0 &&
+    testSteps.every(
+      (step) =>
+        programOf(step.words[0] ?? "") === "dotnet" &&
+        (step.words[1] ?? "").toLowerCase() === "test" &&
+        stepExcludesGpuExecution(step.words),
+    )
+  );
+}
+
+function referencesCudaProject(projectFile: string, content: string): boolean {
+  const dir = path.dirname(projectFile);
+  for (const match of content.matchAll(/<ProjectReference\s+[^>]*Include\s*=\s*"([^"]+)"/gi)) {
+    const rel = (match[1] ?? "").split("\\").join("/");
+    if (rel === "") {
+      continue;
+    }
+    if (dialectOf(path.resolve(dir, rel)) === "cuda") {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * True when every test project named in `command` (at least one named) can run on a headless Linux CPU worker without
  * CUDA: either `<GSharpTargetDialect>Cpu</GSharpTargetDialect>`, a pure managed test project without
- * `Kassyi.GSharp.Compiler.targets` (excluding `Kassyi.GSharp.Tests.Integration`), or `command` explicitly filters out
- * `Category!=GpuExecution`.
+ * `Kassyi.GSharp.Compiler.targets` or CUDA project references (excluding `Kassyi.GSharp.Tests.Integration`), or
+ * `command` explicitly filters out `Category!=GpuExecution` without any `|` OR-clause.
  */
 export function isHeadlessCpuSafe(
   command: string,
@@ -159,7 +233,7 @@ export function isHeadlessCpuSafe(
   if (named.length === 0) {
     return false;
   }
-  const excludesGpuExecution = /category\s*!=\s*gpuexecution/i.test(command);
+  const excludesGpuExecution = commandExcludesGpuExecution(command);
   let projects: TestProjectEntry[];
   try {
     projects = testProjectFiles(testsDir);
@@ -186,10 +260,17 @@ export function isHeadlessCpuSafe(
     if (dialect === "cuda") {
       return false;
     }
-    // No GSharpTargetDialect: safe if pure managed (no compiler targets) or Category!=GpuExecution is set
+    if (name === "Henicos.Benchmarks.Tests") {
+      return excludesGpuExecution;
+    }
+    // No GSharpTargetDialect: safe if pure managed (no compiler targets, CudaCapability, or CUDA refs)
     try {
       const content = fs.readFileSync(project, "utf8");
-      if (!content.includes("Kassyi.GSharp.Compiler.targets")) {
+      if (
+        !content.includes("Kassyi.GSharp.Compiler.targets") &&
+        !content.includes("CudaCapability") &&
+        !referencesCudaProject(project, content)
+      ) {
         return true;
       }
     } catch {

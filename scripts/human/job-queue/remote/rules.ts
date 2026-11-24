@@ -60,6 +60,7 @@ export interface RemoteContributionEntry {
 }
 
 const SafeRelPosixPattern = /^[A-Za-z0-9_./-]+$/;
+const SafeProgramPattern = /^[A-Za-z0-9._-]+$/;
 const SafeFindNamePattern = /^[A-Za-z0-9_.*?-]+$/;
 const SafeEnvKeyPattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const SafeProcessNamePattern = /^[A-Za-z0-9_.+-]{1,32}$/;
@@ -72,10 +73,20 @@ function normalizeSafeDir(value: unknown): string | null {
   if (typeof value !== "string" || value === "" || value.startsWith("/") || !SafeRelPosixPattern.test(value)) {
     return null;
   }
+  if (value.split("/").some((seg) => seg.startsWith("-"))) {
+    return null;
+  }
   const normalized = path.posix.normalize(value).replace(/\/+$/, "");
-  return normalized !== "" && normalized !== "." && normalized !== ".." && !normalized.startsWith("../")
-    ? normalized
-    : null;
+  if (
+    normalized === "" ||
+    normalized === "." ||
+    normalized === ".." ||
+    normalized.startsWith("../") ||
+    normalized.split("/").some((seg) => seg.startsWith("-"))
+  ) {
+    return null;
+  }
+  return normalized;
 }
 
 function normalizeSafeDirs(value: unknown): string[] | null {
@@ -178,7 +189,8 @@ function collectCrashSummaries(target: RemoteCrashSummaryRule[], raw: unknown, e
   }
 }
 
-const asProgram = (s: string): string | null => (s.trim() !== "" ? s.trim().toLowerCase() : null);
+const asProgram = (s: string): string | null =>
+  SafeProgramPattern.test(s) && s !== "." && s !== ".." ? s.toLowerCase() : null;
 const asOption = (s: string): string | null => (s.startsWith("-") ? s.toLowerCase() : null);
 const asExtension = (s: string): string | null => (/^[A-Za-z0-9]+$/.test(s) ? s.toLowerCase() : null);
 const asPrefix = (s: string): string | null => {

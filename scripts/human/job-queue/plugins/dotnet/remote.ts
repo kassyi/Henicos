@@ -11,13 +11,21 @@ import type {
   RemoteStatementContext,
   RemoteStatementRewrite,
 } from "../../plugin-api.ts";
-import { limitMsbuildNodes } from "./msbuild-nodes.ts";
 
 const MsbuildArgsVariable = "GSHARP_JOB_QUEUE_MSBUILD_ARGS";
 const CoreLimitVariable = "MSBUILDCORELIMIT";
 const CoreWeightVariable = "MSBUILDNODECOREALLOCATIONWEIGHT";
 
-const DotnetPathValueOptions = ["--results-directory", "-s", "--settings", "--artifacts-path", "--project"] as const;
+const DotnetPathValueOptions = [
+  "--results-directory",
+  "-s",
+  "--settings",
+  "--artifacts-path",
+  "--project",
+  "-d",
+  "--diag",
+  "--test-adapter-path",
+] as const;
 
 const DotnetNonPathValueOptions = [
   "--filter",
@@ -75,12 +83,15 @@ export function parseSequenceXmlInProgress(xml: string): string[] {
 
 /** VSTest `--blame` `Sequence_*.xml` crash attribution rule parsed in memory on non-zero exit. */
 export const DotnetCrashSummaryRule: RemoteCrashSummaryRule = {
-  searchDirs: ["TestResults"],
+  searchDirs: ["TestResults", "tests"],
   findName: "Sequence_*.xml",
-  pathPattern: /^TestResults\/.*Sequence_[^/]+\.xml$/i,
+  pathPattern: /(?:^|\/)TestResults\/.*Sequence_[^/]+\.xml$/i,
   cleanBeforeRun: true,
   parse: parseSequenceXmlInProgress,
 };
+
+const MsbuildVerbs = new Set(["build", "test", "msbuild", "publish", "pack"]);
+const NodeLimitArgPattern = /^(?:--?|\/)(?:m|maxcpucount|max-cpu-count)(?:[:=].*)?$/i;
 
 function rewriteDotnetStatement(stmt: RemoteStatementContext): RemoteStatementRewrite | undefined {
   if (stmt.program !== "dotnet") {
@@ -89,6 +100,8 @@ function rewriteDotnetStatement(stmt: RemoteStatementContext): RemoteStatementRe
   const outArgs: string[] = [];
   let hasBlame = false;
   let hasListTests = false;
+  let hasNodeLimit = false;
+  let hasPrebuiltTest = false;
   let seenDoubleDash = false;
 
   for (let i = 0; i < stmt.args.length; i++) {
@@ -108,6 +121,14 @@ function rewriteDotnetStatement(stmt: RemoteStatementContext): RemoteStatementRe
     } else if (lower === "--list-tests" || lower === "-t") {
       hasListTests = true;
     }
+    if (i > 0) {
+      if (NodeLimitArgPattern.test(token)) {
+        hasNodeLimit = true;
+      }
+      if (stmt.subcommand === "test" && /\.(dll|exe)$/i.test(token)) {
+        hasPrebuiltTest = true;
+      }
+    }
     // Optionally keep VBCSCompiler warm on Linux by dropping Windows file-lock workarounds
     if (stmt.keepBuildServersWarm) {
       if (lower === "--disable-build-servers" || /^[-/](nodereuse|nr)[:=]false$/.test(lower)) {
@@ -115,6 +136,11 @@ function rewriteDotnetStatement(stmt: RemoteStatementContext): RemoteStatementRe
       }
     }
     outArgs.push(token);
+  }
+
+  // Inject -m:<cpus> on parsed AST args instead of regex-rewriting bashCommand so quoted filters stay intact.
+  if (stmt.cpus > 0 && MsbuildVerbs.has(stmt.subcommand) && !hasNodeLimit && !hasPrebuiltTest && outArgs.length > 0) {
+    outArgs.splice(1, 0, `-m:${stmt.cpus}`);
   }
 
   // Automatically attach lightweight `--blame` to remote `dotnet test` so native crashes record the exact in-progress
@@ -140,7 +166,7 @@ function prepareDotnetRemoteCommand(command: string, grant: RemoteCommandGrant):
     env[CoreWeightVariable] = "100";
   }
   return {
-    command: limitMsbuildNodes(command, grant.cpus),
+    command,
     env,
     note: `${grant.cpus} MSBuild nodes`,
   };
