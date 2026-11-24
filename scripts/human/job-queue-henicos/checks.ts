@@ -750,32 +750,35 @@ function checkOffloadClassification(assert: AssertModule, host: PluginHost, repo
     env: {},
     log: () => {},
   };
+  const cpuTests = "tests/Compiler/Kassyi.GSharp.Tests.Cpu";
+  const genTests = "tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests";
+  const gpuMathTests = "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests";
+  const benchTests = "tests/Apps/Henicos.Benchmarks.Tests";
   const cases: readonly [string, boolean][] = [
-    [
-      "dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'",
-      true,
-    ],
-    [
-      "$env:DiffEngine_Disabled='true'; dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj",
-      true,
-    ],
-    [
-      "dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu && dotnet test --no-build tests/Compiler/Kassyi.GSharp.Tests.Cpu",
-      true,
-    ],
-    [
-      "dotnet test tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests/Kassyi.GSharp.Compiler.Generators.Tests.csproj",
-      true,
-    ],
-    ["dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests --filter 'Category!=GpuExecution'", true],
+    [`dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'`, true],
+    [`$env:DiffEngine_Disabled='true'; dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}`, true],
+    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests} -c Release`, true],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
+    [`dotnet test ${genTests}/Kassyi.GSharp.Compiler.Generators.Tests.csproj`, true],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution'`, true],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution'`, true],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution&Category!=Stress'`, true],
     ["just test-differential-cpu", true],
     ["just test-sanitized", true],
-    // Ineligible: bare build, standalone --no-build, CUDA project, GpuMath without Category!=GpuExecution, Windows filter, Integration
-    ["dotnet build tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj", false],
-    ["dotnet test --no-build tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj", false],
+    // Ineligible: bare build, standalone or mismatched --no-build, CUDA, unfiltered GpuMath/Benchmarks, `|` filter
+    [`dotnet build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
+    [`dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
+    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests} -c Release`, false],
+    [`dotnet build ${genTests} && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet build ${cpuTests} -o tmp/out && dotnet test --no-build ${cpuTests}`, false],
     ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj", false],
-    ["dotnet test tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj", false],
-    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu --filter 'FullyQualifiedName~WindowsJobObjectTests'", false],
+    [`dotnet test ${gpuMathTests}/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj`, false],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution|Category=GpuExecution'`, false],
+    [`dotnet test ${benchTests}/Henicos.Benchmarks.Tests.csproj`, false],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution|Category=GpuExecution'`, false],
+    [`dotnet test ${cpuTests} --filter 'FullyQualifiedName~WindowsJobObjectTests'`, false],
     ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj", false],
     ["just test", false],
   ];
@@ -804,7 +807,9 @@ function checkOffloadClassification(assert: AssertModule, host: PluginHost, repo
   );
   const prune = buildRemoteFindPruneExpr(syncRules);
   assert.ok(prune.includes("-path './src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded'"));
-  assert.ok(prune.includes("! -name '*.received.*'"));
+  assert.ok(prune.includes("! -iname '*.received.*'"));
+  assert.ok(prune.includes("! -iname '*.user'"));
+  assert.ok(prune.includes("! -iname '*.log'"));
 
   const plan = translateForRemote("just test-differential-cpu", {
     cwd: repoRoot,
