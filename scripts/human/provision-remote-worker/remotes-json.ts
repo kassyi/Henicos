@@ -1,7 +1,6 @@
-// Target Generator: `remotes.local.json` derived from `WorkerProfile`, sharing `MandatorySshOptions` from
-// `job-queue/remote/spec.ts` as the single source of truth.
+// Target Generator: `remotes.local.json` derived from `WorkerProfile`.
+// Emits only non-mandatory SSH overrides; `job-queue/remote/spec.ts` prepends `MandatorySshOptions` at runtime.
 
-import { MandatorySshOptions } from "../job-queue/remote/spec.ts";
 import type { WorkerProfile } from "./profile.ts";
 
 export interface RemotesLocalDocument {
@@ -26,11 +25,11 @@ export interface RemotesLocalDocument {
   >;
 }
 
-/** Single-source SSH hardening options for `remotes.local.json` (reusing MandatorySshOptions from job-queue). */
+/** Builds `remotes.local.json` with non-mandatory SSH timeout overrides (`spec.ts` prepends `MandatorySshOptions`). */
 export function buildRemotesLocalJson(profile: WorkerProfile): RemotesLocalDocument {
   const sshTarget = `${profile.runnerUser}@${profile.connectHost}`;
-  const hardenedSshOptions = [...MandatorySshOptions, "-o", "ConnectTimeout=5"];
-  const probeSshOptions = [...MandatorySshOptions.slice(0, -4), "-o", "ConnectTimeout=3"];
+  const sshOptions = ["-o", "ConnectTimeout=5"];
+  const probeSshOptions = ["-o", "ConnectTimeout=3"];
   return {
     remotes: {
       [profile.workerName]: {
@@ -41,7 +40,7 @@ export function buildRemotesLocalJson(profile: WorkerProfile): RemotesLocalDocum
         memoryMb: profile.memoryMb,
         mode: "prefer-remote",
         maxJobMinutes: profile.maxJobMinutes,
-        sshOptions: hardenedSshOptions,
+        sshOptions,
         keepBuildServersWarm: true,
         probe: {
           argv: [

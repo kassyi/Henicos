@@ -4,11 +4,11 @@
   "connectHost": "ubuntu-server.lan",
   "network": {
     "dhcp4": false,
-    "address": "192.168.100.100/24",
-    "gateway4": "192.168.100.1",
-    "nameservers": ["192.168.100.1", "1.1.1.1"]
+    "address": "192.0.2.100/24",
+    "gateway4": "192.0.2.1",
+    "nameservers": ["192.0.2.1", "1.1.1.1"]
   },
-  "adminUser": "tonbo",
+  "adminUser": "ubuntu",
   "runnerUser": "jobrunner",
   "workspace": "~/henicos",
   "cpus": 4,
@@ -30,11 +30,13 @@
     "libicu-dev"
   ],
   "setupCommands": [
-    "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel 10.0 --install-dir /usr/local/share/dotnet && ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh",
+    "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh",
+    "bash /tmp/dotnet-install.sh --channel 10.0 --install-dir /usr/local/share/dotnet",
+    "ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh",
     "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin"
   ],
   "cacheDirs": [
     ".nuget/packages"
   ],
-  "timezone": "Asia/Tokyo"
+  "timezone": "UTC"
 }

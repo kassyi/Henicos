@@ -1,4 +1,5 @@
-// Target Generator: idempotent `jobrunner` user isolation, sshd Match User hardening, nproc limits, and UFW egress block.
+// Target Generator: idempotent `jobrunner` user isolation, sshd Match User hardening,
+// nproc limits, and UID-scoped UFW egress block.
 
 import * as path from "node:path";
 import type { WorkerProfile } from "./profile.ts";
@@ -16,6 +17,7 @@ export function buildSshdMatchConfig(profile: WorkerProfile): string {
     "    AllowStreamLocalForwarding no",
     "    X11Forwarding no",
     "    PermitTunnel no",
+    "Match all",
     "",
   ].join("\n");
 }
@@ -41,18 +43,22 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     : profile.blockedLanCidrs
         .map(
           (cidr) =>
-            `  echo "-A ufw-before-output -m owner --uid-owner \${RUNNER_UID} -d ${cidr} -j REJECT --reject-with icmp-port-unreachable"`,
+            `  echo "-A ufw-before-output -m owner --uid-owner \${RUNNER_UID} -d ${cidr} ` +
+            '-j REJECT --reject-with icmp-port-unreachable"',
         )
         .join("\n");
   const ipv6RejectLines = profile.blockAllEgress
     ? '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -j REJECT --reject-with icmp6-port-unreachable"'
     : [
-        '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fc00::/7 -j REJECT --reject-with icmp6-port-unreachable"',
-        '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fe80::/10 -j REJECT --reject-with icmp6-port-unreachable"',
+        '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fc00::/7 ' +
+          '-j REJECT --reject-with icmp6-port-unreachable"',
+        '  echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -d fe80::/10 ' +
+          '-j REJECT --reject-with icmp6-port-unreachable"',
       ].join("\n");
 
   const workspaceRel = profile.workspace.startsWith("~/") ? profile.workspace.slice(2).replace(/\/+$/, "") : "";
-  const runnerWorkspaceExpr = workspaceRel !== "" ? `/home/$RUNNER_USER/${workspaceRel}` : profile.workspace;
+  const absWorkspace = profile.workspace.replace(/\/+$/, "") || "/";
+  const runnerWorkspaceExpr = workspaceRel !== "" ? `/home/$RUNNER_USER/${workspaceRel}` : absWorkspace;
   const adminWorkspaceExpr = workspaceRel !== "" ? `/home/$ADMIN_USER/${workspaceRel}` : "";
   const migrateCacheLines: string[] = [];
   if (migrateCache) {
@@ -60,8 +66,12 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
       migrateCacheLines.push(
         "# 6. Migrate existing warm build workspace from admin user if runner workspace does not exist yet",
         `if [ ! -d "${runnerWorkspaceExpr}" ] && [ -d "${adminWorkspaceExpr}" ]; then`,
+        `  mkdir -p "$(dirname "${runnerWorkspaceExpr}")"`,
+        `  chown_runner_parents "$(dirname "${runnerWorkspaceExpr}")"`,
         `  cp -a "${adminWorkspaceExpr}" "${runnerWorkspaceExpr}"`,
-        `  rm -rf "${runnerWorkspaceExpr}/.claude/worktrees" "${runnerWorkspaceExpr}/.job-queue-manifest.digest" "${runnerWorkspaceExpr}/.job-queue-manifest.sha256"`,
+        `  rm -rf "${runnerWorkspaceExpr}/.claude/worktrees"`,
+        `  rm -rf "${runnerWorkspaceExpr}/.job-queue-manifest.digest"`,
+        `  rm -rf "${runnerWorkspaceExpr}/.job-queue-manifest.sha256"`,
         `  chown -R "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
         "fi",
       );
@@ -72,8 +82,9 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
       migrateCacheLines.push(
         `if [ ! -d "/home/$RUNNER_USER/${cacheDir}" ] && [ -d "/home/$ADMIN_USER/${cacheDir}" ]; then`,
         `  mkdir -p "${runnerParent}"`,
+        `  chown_runner_parents "${runnerParent}"`,
         `  cp -a "/home/$ADMIN_USER/${cacheDir}" "/home/$RUNNER_USER/${cacheDir}"`,
-        `  chown -R "$RUNNER_USER:$RUNNER_USER" "${runnerParent}"`,
+        `  chown -R "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/${cacheDir}"`,
         "fi",
       );
     }
@@ -86,7 +97,20 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     `ADMIN_USER=${JSON.stringify(profile.adminUser)}`,
     `RUNNER_USER=${JSON.stringify(profile.runnerUser)}`,
     "",
-    '# 1. Create dedicated unprivileged runner user (no sudo, password disabled with "*" so pubkey SSH works, 0750 home)',
+    "chown_runner_parents() {",
+    '  local dir="$1"',
+    '  local home_dir="/home/$RUNNER_USER"',
+    '  while [ "$dir" != "$home_dir" ] && [ "$dir" != "/" ] && [ "$dir" != "." ]; do',
+    '    case "$dir" in',
+    '      "$home_dir"/*) chown "$RUNNER_USER:$RUNNER_USER" "$dir" ;;',
+    "      *) break ;;",
+    "    esac",
+    '    dir=$(dirname "$dir")',
+    "  done",
+    "}",
+    "",
+    "# 1. Create dedicated unprivileged runner user",
+    '# (no sudo, password disabled with "*" so pubkey SSH works, 0750 home)',
     'if ! id -u "$RUNNER_USER" >/dev/null 2>&1; then',
     '  useradd -m -s /bin/bash "$RUNNER_USER"',
     "fi",
@@ -126,60 +150,88 @@ export function buildHardeningShellScript(profile: WorkerProfile, pubKey: string
     "",
     "# 5. Block runner UID outbound traffic (IPv4 & IPv6) via UFW before.rules / before6.rules",
     'RUNNER_UID=$(id -u "$RUNNER_USER")',
+    "if ! command -v ufw >/dev/null 2>&1 || [ ! -f /etc/ufw/before.rules ]; then",
+    '  echo "ERROR: ufw and /etc/ufw/before.rules are required for egress isolation" >&2',
+    "  exit 1",
+    "fi",
     "patch_ufw_rules() {",
     '  local rules_path="$1"',
     '  local block_path="$2"',
-    '  [ -f "$rules_path" ] || return 0',
     '  python3 - "$rules_path" "$block_path" <<\'__GSHARP_PY__\'',
+    "import re",
     "import sys",
     "rules_path, block_path = sys.argv[1], sys.argv[2]",
     'text = open(rules_path, "r", encoding="utf-8").read()',
     'block = open(block_path, "r", encoding="utf-8").read().strip() + "\\n"',
     'start_marker = "# BEGIN GSHARP-JOBRUNNER-ISOLATION"',
     'end_marker = "# END GSHARP-JOBRUNNER-ISOLATION"',
-    "if start_marker in text and end_marker in text:",
-    "    a = text.index(start_marker)",
-    "    b = text.index(end_marker) + len(end_marker)",
+    "a = text.find(start_marker)",
+    "if a >= 0:",
+    "    end_pos = text.find(end_marker, a)",
+    "    if end_pos < 0:",
+    '        raise SystemExit("unclosed isolation marker in " + rules_path)',
+    "    b = end_pos + len(end_marker)",
     '    if b < len(text) and text[b] == "\\n":',
     "        b += 1",
+    '    if a >= 2 and text[a - 2:a] == "\\n\\n":',
+    "        a -= 1",
+    '    elif a == 1 and text[0] == "\\n":',
+    "        a = 0",
     "    text = text[:a] + text[b:]",
-    'idx = text.rfind("\\nCOMMIT")',
-    "if idx < 0:",
-    '    raise SystemExit("COMMIT marker not found in " + rules_path)',
-    'new_text = text[:idx + 1] + "\\n" + block + text[idx + 1:]',
+    'm_filter = re.search(r"(?m)^[ \\t]*\\*filter[ \\t]*$", text)',
+    "if not m_filter:",
+    '    raise SystemExit("*filter table not found in " + rules_path)',
+    'm_commit = re.search(r"(?m)^[ \\t]*COMMIT[ \\t]*$", text[m_filter.end():])',
+    "if not m_commit:",
+    '    raise SystemExit("COMMIT marker for *filter not found in " + rules_path)',
+    "idx = m_filter.end() + m_commit.start()",
+    'if re.search(r"(?m)^[ \\t]*\\*", text[m_filter.end():idx]):',
+    '    raise SystemExit("COMMIT missing before next table in " + rules_path)',
+    'new_text = text[:idx] + "\\n" + block + text[idx:]',
     'open(rules_path, "w", encoding="utf-8").write(new_text)',
     "__GSHARP_PY__",
     "}",
-    "if [ -f /etc/ufw/before.rules ]; then",
-    "  TMP_V4=$(mktemp)",
-    "  {",
-    '    echo "# BEGIN GSHARP-JOBRUNNER-ISOLATION"',
-    '    echo "-A ufw-before-output -m owner --uid-owner ${RUNNER_UID} -o lo -j ACCEPT"',
-    '    echo "-A ufw-before-output -m owner --uid-owner ${RUNNER_UID} -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"',
+    "TMP_V4=$(mktemp)",
+    "{",
+    '  echo "# BEGIN GSHARP-JOBRUNNER-ISOLATION"',
+    '  echo "-A ufw-before-output -m owner --uid-owner ${RUNNER_UID} -o lo -j ACCEPT"',
+    '  echo "-A ufw-before-output -m owner --uid-owner ${RUNNER_UID} ' +
+      '-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"',
     ipv4RejectLines,
-    '    echo "# END GSHARP-JOBRUNNER-ISOLATION"',
-    '  } > "$TMP_V4"',
-    '  patch_ufw_rules /etc/ufw/before.rules "$TMP_V4"',
-    '  rm -f "$TMP_V4"',
+    '  echo "# END GSHARP-JOBRUNNER-ISOLATION"',
+    '} > "$TMP_V4"',
+    'patch_ufw_rules /etc/ufw/before.rules "$TMP_V4"',
+    'rm -f "$TMP_V4"',
+    "if [ -e /proc/net/if_inet6 ] && [ ! -f /etc/ufw/before6.rules ]; then",
+    '  echo "ERROR: /etc/ufw/before6.rules is required for IPv6 egress isolation" >&2',
+    "  exit 1",
     "fi",
     "if [ -f /etc/ufw/before6.rules ]; then",
     "  TMP_V6=$(mktemp)",
     "  {",
     '    echo "# BEGIN GSHARP-JOBRUNNER-ISOLATION"',
     '    echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -o lo -j ACCEPT"',
-    '    echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"',
+    '    echo "-A ufw6-before-output -m owner --uid-owner ${RUNNER_UID} ' +
+      '-m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"',
     ipv6RejectLines,
     '    echo "# END GSHARP-JOBRUNNER-ISOLATION"',
     '  } > "$TMP_V6"',
     '  patch_ufw_rules /etc/ufw/before6.rules "$TMP_V6"',
     '  rm -f "$TMP_V6"',
     "fi",
-    "ufw limit 22/tcp >/dev/null 2>&1 || true",
-    "ufw --force enable >/dev/null 2>&1 || true",
-    "ufw reload >/dev/null 2>&1 || true",
+    "if command -v ischroot >/dev/null 2>&1 && ischroot; then",
+    "  ufw limit 22/tcp >/dev/null 2>&1 || true",
+    "  ufw --force enable >/dev/null 2>&1 || true",
+    "  ufw reload >/dev/null 2>&1 || true",
+    "else",
+    "  ufw limit 22/tcp >/dev/null",
+    "  ufw --force enable >/dev/null",
+    "  ufw reload >/dev/null",
+    "fi",
     "",
     ...migrateCacheLines,
     `mkdir -p "${runnerWorkspaceExpr}"`,
+    `chown_runner_parents "$(dirname "${runnerWorkspaceExpr}")"`,
     `chown "$RUNNER_USER:$RUNNER_USER" "${runnerWorkspaceExpr}"`,
     'echo "PROVISION_OK runner=$RUNNER_USER uid=$RUNNER_UID"',
     "",

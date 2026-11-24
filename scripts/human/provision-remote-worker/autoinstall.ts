@@ -17,6 +17,9 @@ const BaseAutoinstallPackages = [
 
 export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string): string {
   const net = profile.network;
+  const nameservers =
+    net.dhcp4 === false && net.nameservers && net.nameservers.length > 0 ? net.nameservers : ["1.1.1.1"];
+  const nameserverItems = nameservers.map((ns) => JSON.stringify(ns)).join(", ");
   const networkBlock =
     net.dhcp4 === false
       ? [
@@ -27,12 +30,12 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
           "        match:",
           '          name: "e*"',
           "        dhcp4: false",
-          `        addresses: ["${net.address}"]`,
+          `        addresses: [${JSON.stringify(net.address)}]`,
           "        routes:",
           "          - to: default",
-          `            via: ${net.gateway4}`,
+          `            via: ${JSON.stringify(net.gateway4)}`,
           "        nameservers:",
-          `          addresses: [${(net.nameservers && net.nameservers.length > 0 ? net.nameservers : ["1.1.1.1"]).join(", ")}]`,
+          `          addresses: [${nameserverItems}]`,
         ].join("\n")
       : [
           "  network:",
@@ -47,7 +50,15 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
   const hardeningB64 = Buffer.from(buildHardeningShellScript(profile, pubKey, false), "utf8").toString("base64");
   const allPackages = [...new Set([...BaseAutoinstallPackages, ...profile.packages])];
   const packageLines = allPackages.map((pkg) => `    - ${pkg}`);
-  const setupLines = profile.setupCommands.map((cmd) => `    - curtin in-target -- bash -c ${JSON.stringify(cmd)}`);
+  const setupLines = profile.setupCommands.map((cmd) => {
+    const cmdB64 = Buffer.from(cmd, "utf8").toString("base64");
+    const curtinCmd = `curtin in-target -- bash -c 'echo ${cmdB64} | base64 -d | bash -euo pipefail'`;
+    return `    - ${JSON.stringify(curtinCmd)}`;
+  });
+  const hardenPath = "/usr/local/sbin/jobrunner-harden-worker.sh";
+  const hardenCurtinCmd =
+    `curtin in-target -- bash -c 'echo ${hardeningB64} | base64 -d > ${hardenPath} && ` +
+    `chmod 0700 ${hardenPath} && ${hardenPath}'`;
 
   return [
     "#cloud-config",
@@ -75,7 +86,7 @@ export function buildAutoinstallUserData(profile: WorkerProfile, pubKey: string)
     ...packageLines,
     "  late-commands:",
     ...setupLines,
-    `    - curtin in-target -- bash -c "echo '${hardeningB64}' | base64 -d > /usr/local/sbin/jobrunner-harden-worker.sh && chmod 0700 /usr/local/sbin/jobrunner-harden-worker.sh && /usr/local/sbin/jobrunner-harden-worker.sh"`,
+    `    - ${JSON.stringify(hardenCurtinCmd)}`,
     "",
   ].join("\n");
 }

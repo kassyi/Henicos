@@ -60,7 +60,9 @@ jobs:
           node scripts/human/check-rule-frontmatter.js
 
       - name: Job queue self-test
-        run: node scripts/human/job-queue.js --self-test
+        run: |
+          node scripts/human/job-queue.js --self-test
+          node scripts/human/provision-remote-worker.js --self-test
 
       - name: Job queue hook self-test
         run: node scripts/agent/check-queued-command.js --self-test

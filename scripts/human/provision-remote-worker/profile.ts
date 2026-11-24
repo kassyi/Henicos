@@ -1,6 +1,7 @@
 // Immutable `WorkerProfile` Value Object & validation for remote worker provisioning.
 
 import * as fs from "node:fs";
+import * as net from "node:net";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -43,13 +44,23 @@ const NamePattern = /^[a-z][a-z0-9-]{0,31}$/;
 const UserPattern = /^[a-z_][a-z0-9_-]{0,31}$/;
 const HostPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const CidrPattern = /^(?:\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
-const PubKeyPattern =
-  /^(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\.com)\s+[A-Za-z0-9+/=]+(?:\s+[^\r\n]+)?$/;
+const KeyTypes = "(?:ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(?:256|384|521)|sk-ssh-ed25519@openssh\\.com)";
+const PubKeyPattern = new RegExp(`^${KeyTypes}[ \\t]+[A-Za-z0-9+/=]+(?:[ \\t]+[^\\r\\n\\0]+)?$`);
 const PackageNamePattern = /^[a-z0-9][a-z0-9.+_-]{0,63}$/;
 const WorkspacePattern = /^(?:~\/[A-Za-z0-9_./-]+|\/[A-Za-z0-9_./-]+)$/;
 const RelativeCacheDirPattern = /^[A-Za-z0-9_.][A-Za-z0-9_./-]*$/;
 
 const DefaultBlockedLanCidrs = ["192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "169.254.0.0/16"] as const;
+
+function isValidIpv4Cidr(value: string): boolean {
+  if (!CidrPattern.test(value)) {
+    return false;
+  }
+  const slash = value.indexOf("/");
+  const ip = value.slice(0, slash);
+  const bits = Number(value.slice(slash + 1));
+  return net.isIPv4(ip) && bits >= 0 && bits <= 32;
+}
 
 function expandHome(filePath: string): string {
   if (filePath === "~") {
@@ -109,22 +120,32 @@ export function validateProfile(raw: unknown): WorkerProfile {
   }
   const blockedLanCidrs = Array.isArray(raw.blockedLanCidrs) ? raw.blockedLanCidrs : [...DefaultBlockedLanCidrs];
   for (const cidr of blockedLanCidrs) {
-    if (typeof cidr !== "string" || !CidrPattern.test(cidr)) {
+    if (typeof cidr !== "string" || !isValidIpv4Cidr(cidr)) {
       throw new Error(`invalid blockedLanCidrs entry: ${String(cidr)}`);
     }
   }
   const rawNet = isPlainObject(raw.network) ? raw.network : { dhcp4: true };
   let network: WorkerNetworkConfig;
   if (rawNet.dhcp4 === false) {
-    if (typeof rawNet.address !== "string" || !CidrPattern.test(rawNet.address)) {
+    if (typeof rawNet.address !== "string" || !isValidIpv4Cidr(rawNet.address)) {
       throw new Error("network.address (CIDR) is required when network.dhcp4 is false");
     }
-    if (typeof rawNet.gateway4 !== "string" || !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(rawNet.gateway4)) {
+    if (typeof rawNet.gateway4 !== "string" || !net.isIPv4(rawNet.gateway4)) {
       throw new Error("network.gateway4 is required when network.dhcp4 is false");
     }
-    const nameservers = Array.isArray(rawNet.nameservers)
-      ? rawNet.nameservers.filter((n): n is string => typeof n === "string" && n !== "")
-      : undefined;
+    let nameservers: string[] | undefined;
+    if (rawNet.nameservers !== undefined) {
+      if (!Array.isArray(rawNet.nameservers)) {
+        throw new Error("network.nameservers must be an array of IP addresses");
+      }
+      nameservers = [];
+      for (const ns of rawNet.nameservers) {
+        if (typeof ns !== "string" || net.isIP(ns) === 0) {
+          throw new Error(`invalid network.nameservers entry: ${String(ns)}`);
+        }
+        nameservers.push(ns);
+      }
+    }
     network = { dhcp4: false, address: rawNet.address, gateway4: rawNet.gateway4, nameservers };
   } else {
     network = { dhcp4: true };
@@ -159,7 +180,9 @@ export function validateProfile(raw: unknown): WorkerProfile {
     }
   } else if (typeof raw.dotnetChannel === "string" && /^\d+\.\d+$/.test(raw.dotnetChannel)) {
     setupCommands.push(
-      `curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && bash /tmp/dotnet-install.sh --channel ${raw.dotnetChannel} --install-dir /usr/local/share/dotnet && ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh`,
+      "curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && " +
+        `bash /tmp/dotnet-install.sh --channel ${raw.dotnetChannel} --install-dir /usr/local/share/dotnet && ` +
+        "ln -sf /usr/local/share/dotnet/dotnet /usr/local/bin/dotnet && rm -f /tmp/dotnet-install.sh",
     );
   }
   const cacheDirs: string[] = [];
@@ -200,11 +223,10 @@ export function validateProfile(raw: unknown): WorkerProfile {
 
 /** Resolves and validates the OpenSSH public key line from `profile`. */
 export function resolvePublicKey(profile: WorkerProfile): string {
-  const key =
-    profile.sshPublicKey !== ""
-      ? profile.sshPublicKey
-      : fs.readFileSync(expandHome(profile.sshPublicKeyPath), "utf8").trim();
-  if (!PubKeyPattern.test(key)) {
+  const raw =
+    profile.sshPublicKey !== "" ? profile.sshPublicKey : fs.readFileSync(expandHome(profile.sshPublicKeyPath), "utf8");
+  const key = raw.trim();
+  if (/[\r\n\0]/.test(key) || !PubKeyPattern.test(key)) {
     throw new Error("SSH public key is missing or not a valid OpenSSH public key line");
   }
   return key;

@@ -46,9 +46,14 @@ export function buildSeedIso(outDir: string, profile: WorkerProfile, isoViaSsh: 
       `echo '${uB64}' | base64 -d > "$D/user-data"`,
       `echo '${mB64}' | base64 -d > "$D/meta-data"`,
       "if command -v xorriso >/dev/null 2>&1; then",
-      '  xorriso -as mkisofs -output "$D/cidata.iso" -volid cidata -joliet -rock "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
+      '  xorriso -as mkisofs -output "$D/cidata.iso" -volid cidata -joliet -rock \\',
+      '    "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
       "elif command -v genisoimage >/dev/null 2>&1; then",
-      '  genisoimage -output "$D/cidata.iso" -volid cidata -joliet -rock "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
+      '  genisoimage -output "$D/cidata.iso" -volid cidata -joliet -rock \\',
+      '    "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
+      "elif command -v mkisofs >/dev/null 2>&1; then",
+      '  mkisofs -output "$D/cidata.iso" -volid cidata -joliet -rock \\',
+      '    "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
       "elif command -v cloud-localds >/dev/null 2>&1; then",
       '  cloud-localds "$D/cidata.iso" "$D/user-data" "$D/meta-data" >/dev/null 2>&1',
       "else",
@@ -66,11 +71,13 @@ export function buildSeedIso(outDir: string, profile: WorkerProfile, isoViaSsh: 
       fs.writeFileSync(isoPath, res.stdout);
       return isoPath;
     }
-    throw new Error(`failed to build cidata.iso via SSH (${adminTarget}): ${res.stderr.toString("utf8").trim()}`);
+    const detail = (res.error?.message ?? res.stderr?.toString("utf8") ?? "").trim();
+    throw new Error(`failed to build cidata.iso via SSH (${adminTarget}): ${detail}`);
   }
 
   throw new Error(
     "no local ISO tool found (xorriso / genisoimage / mkisofs / cloud-localds). " +
-      "Re-run with --iso-via-ssh (after installing xorriso on Ubuntu) or copy user-data & meta-data onto a FAT32 volume labeled CIDATA.",
+      "Re-run with --iso-via-ssh (after installing xorriso on Ubuntu) " +
+      "or copy user-data & meta-data onto a FAT32 volume labeled CIDATA.",
   );
 }
