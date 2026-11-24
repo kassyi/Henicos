@@ -83,11 +83,100 @@ export function resolveTestsDir(worktree: string, configRoot: string, relativePa
   return path.resolve(configRoot, relativePath);
 }
 
+const SingleProjectJustRecipes: Readonly<Record<string, string>> = {
+  "test-differential-cpu": "Kassyi.GSharp.Tests.Cpu",
+  "test-native-stack": "Kassyi.GSharp.Tests.Cpu",
+  "test-managed-stack": "Kassyi.GSharp.Tests.Cpu",
+  "test-sanitized": "Kassyi.GSharp.Tests.Cpu",
+  "test-differential-cuda": "Kassyi.GSharp.Tests.Cuda",
+  "test-checked": "Kassyi.GSharp.Tests.Cuda",
+  "test-gpu-trap": "Kassyi.GSharp.Tests.Cuda",
+};
+
+const MutatePhaseProjects: Readonly<Record<string, string>> = {
+  gpumath: "Kassyi.GSharp.Stdlib.GpuMath.Tests",
+  compiler: "Kassyi.GSharp.Tests.Cpu",
+  "compiler-cuda": "Kassyi.GSharp.Tests.Cuda",
+};
+
+function implicitProjectOfStep(words: readonly string[]): string | null {
+  const prog = programOf(words[0] ?? "");
+  if (prog === "just") {
+    const positional = words.slice(1).filter((w) => !w.startsWith("-") && !w.includes("="));
+    const recipe = positional[0];
+    if (recipe === undefined) {
+      return null;
+    }
+    const direct = SingleProjectJustRecipes[recipe];
+    if (direct !== undefined) {
+      return direct;
+    }
+    if (recipe === "mutate") {
+      const phase = positional[1] === undefined || positional[1] === "" ? "gpumath" : positional[1];
+      return MutatePhaseProjects[phase] ?? null;
+    }
+    return null;
+  }
+  if (prog === "node") {
+    const scriptIdx = words.findIndex((w, i) => i > 0 && !w.startsWith("-"));
+    if (scriptIdx < 0) {
+      return null;
+    }
+    const base = path.basename((words[scriptIdx] as string).replace(/\\/g, "/")).toLowerCase();
+    if (base === "test-sanitized.js") {
+      return "Kassyi.GSharp.Tests.Cpu";
+    }
+    if (base === "mutate.js") {
+      let phase = "gpumath";
+      for (let i = scriptIdx + 1; i < words.length; i++) {
+        const arg = words[i] as string;
+        if (arg === "--") {
+          break;
+        }
+        if (arg === "--phase" && i + 1 < words.length) {
+          phase = words[++i] as string;
+        } else if (arg.startsWith("--phase=")) {
+          phase = arg.slice("--phase=".length);
+        }
+      }
+      return MutatePhaseProjects[phase] ?? null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolves the implied single-assembly test projects for known `just` recipes and scripts that do not spell their
+ * `.csproj` name on the command line (e.g. `just test-sanitized` -> `Kassyi.GSharp.Tests.Cpu`), or null when any
+ * non-trivial step targets the whole solution or is unrecognized.
+ */
+export function implicitTestProjects(command: string): string[] | null {
+  const line = readCommandLine(command);
+  if (line === null || line.piped) {
+    return null;
+  }
+  const work = line.steps.filter((step) => !isTrivialStep(step));
+  if (work.length === 0) {
+    return null;
+  }
+  const projects: string[] = [];
+  for (const step of work) {
+    const project = implicitProjectOfStep(step.words);
+    if (project === null) {
+      return null;
+    }
+    if (!projects.includes(project)) {
+      projects.push(project);
+    }
+  }
+  return projects;
+}
+
 /**
  * The memory a test run needs in MB: the largest budget among the assemblies the command names (a project path or
- * name), or, when it names none (a run of the whole solution, whose test hosts run side by side), the sum of every
- * budget. A command that selects Stress or Benchmark tests counts the stress budgets. 0 for a command that runs no
- * tests.
+ * name, or a known single-project `just` recipe / script), or, when it names none (a run of the whole solution, whose
+ * test hosts run side by side), the sum of every budget. A command that selects Stress or Benchmark tests counts the
+ * stress budgets. 0 for a command that runs no tests.
  */
 export function testMemoryMb(
   command: string,
@@ -104,6 +193,16 @@ export function testMemoryMb(
   const named = [...budgets].filter(([name]) => lower.includes(name.toLowerCase())).map(([, budget]) => of(budget));
   if (named.length > 0) {
     return Math.max(...named);
+  }
+  const implied = implicitTestProjects(command);
+  if (implied !== null) {
+    const impliedBudgets = implied
+      .map((name) => budgets.get(name))
+      .filter((budget): budget is Budget => budget !== undefined)
+      .map((budget) => of(budget));
+    if (impliedBudgets.length === implied.length && impliedBudgets.length > 0) {
+      return Math.max(...impliedBudgets);
+    }
   }
   return [...budgets.values()].reduce((sum, budget) => sum + of(budget), 0);
 }
