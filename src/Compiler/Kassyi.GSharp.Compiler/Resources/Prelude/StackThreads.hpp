@@ -1,8 +1,8 @@
 // --- One stack per GPU thread (GSharpNativeBarrierModel=Stack) ---
 // A kernel that reaches Gpu.SyncThreads() or a warp collective runs as it is written, each GPU thread of a block on a
 // stack of its own, all on the OpenMP thread that runs the block. A thread leaves its stack only at Gpu.SyncThreads(), at
-// a warp collective and when it ends; the launcher's rounds decide which thread runs next, as they do for a state
-// machine.
+// a warp collective, where a thread-dependent branch ends in a method that reaches Warp.ActiveMask(), and when it ends;
+// the launcher's rounds decide which thread runs next, as they do for a state machine.
 
 // The address space reserved for each stack. Only the pages a thread touches are committed
 #ifndef __GSHARP_STACK_RESERVE_BYTES
@@ -75,8 +75,8 @@ struct __gsharp_stack_thread {
 
 // A GPU thread of a kernel that reaches a warp collective: the members that the warp functions of WarpAndHints.hpp read
 // from a state machine context, under the same names, so that the launcher's rounds and the meeting of the lanes are
-// the ones of the state machine. The members of the reconvergence regions stay unused until a kernel that reaches
-// Warp.ActiveMask() runs on stacks; the warp functions then answer as for a context without them
+// the ones of the state machine. Only a kernel that reaches Warp.ActiveMask() enters the reconvergence regions; for any
+// other kernel they stay empty, and the warp functions answer as for a context without them
 struct __gsharp_stack_warp_thread : __gsharp_stack_thread {
     __gsharp_stack_warp_thread* __gsharp_all_contexts = nullptr;
     __gsharp_warp_record __gsharp_warp_records[2] = {};
@@ -403,24 +403,39 @@ inline void __gsharp_stack_warp_begin(uint32_t* visits, uint32_t size) {
     self->__gsharp_warp_visit_size = size;
 }
 
-// The counts of the frame at offset frame, whose collective site is about to count a visit. The compiler fixes every
-// offset and site (WarpFrameLayout), so a count outside the kernel's counts is a G# bug: it is reported, never written
-inline __gsharp_stack_warp_frame __gsharp_stack_warp_frame_at(__gsharp_stack_warp_thread* self, uint32_t frame,
-                                                              uint32_t site) {
+// Traps unless slot lies in the visit counts the kernel set up. The compiler fixes every offset and site
+// (WarpFrameLayout), so a slot outside them is a G# bug: it is reported, never read or written
+inline void __gsharp_stack_warp_check_slot(const __gsharp_stack_warp_thread* self, uint64_t slot, const char* what) {
     if (self->__gsharp_warp_visit_root == nullptr) {
-        __gsharp_trap(GSharpErrorCode::InvalidOperation,
-                      "G#: internal error: a warp collective of the stack model runs before its kernel set up its visit "
-                      "counts (please report this G# bug)");
-    }
-    uint32_t size = self->__gsharp_warp_visit_size;
-    if ((uint64_t)frame + 1u + site >= size) {
         char text[320];
         std::snprintf(text, sizeof(text),
-                      "G#: internal error: a warp collective of the stack model counts at %llu, outside the %u counts "
-                      "of its kernel (please report this G# bug)",
-                      (unsigned long long)frame + 1u + site, size);
+                      "G#: internal error: %s of the stack model runs before its kernel set up its visit counts "
+                      "(please report this G# bug)",
+                      what);
         __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
     }
+    uint32_t size = self->__gsharp_warp_visit_size;
+    if (slot >= size) {
+        char text[320];
+        std::snprintf(text, sizeof(text),
+                      "G#: internal error: %s of the stack model counts at %llu, outside the %u counts of its kernel "
+                      "(please report this G# bug)",
+                      what, (unsigned long long)slot, size);
+        __gsharp_trap(GSharpErrorCode::InvalidOperation, text);
+    }
+}
+
+// The counts of the frame at offset frame, whose collective site is about to count a visit
+inline __gsharp_stack_warp_frame __gsharp_stack_warp_frame_at(__gsharp_stack_warp_thread* self, uint32_t frame,
+                                                              uint32_t site) {
+    __gsharp_stack_warp_check_slot(self, (uint64_t)frame + 1u + site, "a warp collective");
+    return {self->__gsharp_warp_visit_root + frame + 1u, frame};
+}
+
+// The frame at offset frame for one of its reconvergence regions. A region number counts no visit, so only the frame's
+// own slot is checked: a region is matched by the frame's path and its number, as in the state machine
+inline __gsharp_stack_warp_frame __gsharp_stack_warp_region_frame(__gsharp_stack_warp_thread* self, uint32_t frame) {
+    __gsharp_stack_warp_check_slot(self, frame, "a reconvergence region");
     return {self->__gsharp_warp_visit_root + frame + 1u, frame};
 }
 
@@ -577,6 +592,38 @@ inline void __gsharp_stack_warp_syncwarp(uint32_t frame, uint32_t site, const ch
     __gsharp_stack_warp_thread* self = __gsharp_stack_warp_self();
     __gsharp_stack_warp_frame at = __gsharp_stack_warp_meet(self, frame, site, mask, 0, "Gpu.SyncWarp", location);
     __gsharp_warp_sync_read(self, &at, site, mask, location);
+}
+
+// Warp.ActiveMask(): the lane publishes the mask 0, which waits for no lane, and leaves its stack; in the next round it
+// reads the lanes that stopped at the same call in the same round (#844)
+inline uint32_t __gsharp_stack_warp_active_mask(uint32_t frame, uint32_t site, const char* location) {
+    __gsharp_stack_warp_thread* self = __gsharp_stack_warp_self();
+    __gsharp_stack_warp_frame at = __gsharp_stack_warp_meet(self, frame, site, 0u, 0, "Warp.ActiveMask", location);
+    return __gsharp_warp_active_mask_read(self, &at, site, location);
+}
+
+// The reconvergence regions of a method that reaches Warp.ActiveMask(), placed where the state machine places them
+// (ReconvergenceInserter): the lane enters a thread-dependent branch or loop, or leaves it by a jump
+inline void __gsharp_stack_warp_region_enter(uint32_t frame, uint32_t site) {
+    __gsharp_stack_warp_thread* self = __gsharp_stack_warp_self();
+    __gsharp_stack_warp_frame at = __gsharp_stack_warp_region_frame(self, frame);
+    __gsharp_warp_region_enter(self, &at, site);
+}
+
+inline void __gsharp_stack_warp_region_leave(uint32_t frame, uint32_t site) {
+    __gsharp_stack_warp_thread* self = __gsharp_stack_warp_self();
+    __gsharp_stack_warp_frame at = __gsharp_stack_warp_region_frame(self, frame);
+    __gsharp_warp_region_leave(self, &at, site);
+}
+
+// The lane arrives where the innermost branch it is inside ends and leaves its stack: the launcher resumes it once the
+// lanes that entered the branch with it have arrived or left (__gsharp_warp_can_run); then it leaves the branch
+inline void __gsharp_stack_warp_reconverge(uint32_t frame, uint32_t site, const char* location) {
+    __gsharp_stack_warp_thread* self = __gsharp_stack_warp_self();
+    __gsharp_stack_warp_frame at = __gsharp_stack_warp_region_frame(self, frame);
+    __gsharp_warp_reconverge_arrive(self, &at, site, location);
+    __gsharp_stack_yield(self);
+    __gsharp_warp_reconverge_pass(self, &at, site);
 }
 
 #if defined(__linux__) && defined(__x86_64__)

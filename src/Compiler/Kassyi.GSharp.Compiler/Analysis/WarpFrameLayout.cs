@@ -33,11 +33,14 @@ internal sealed class WarpFrameLayout
 
     private static readonly PerCompilationSymbolCache<IMethodSymbol, WarpFrameLayout?> s_layouts = new();
 
+    private readonly SyntaxTree _tree;
     private readonly Dictionary<TextSpan, int> _sites;
     private readonly Dictionary<TextSpan, int> _callOffsets;
 
-    private WarpFrameLayout(int size, Dictionary<TextSpan, int> sites, Dictionary<TextSpan, int> callOffsets)
+    private WarpFrameLayout(SyntaxTree tree, int size, Dictionary<TextSpan, int> sites,
+        Dictionary<TextSpan, int> callOffsets)
     {
+        _tree = tree;
         Size = size;
         _sites = sites;
         _callOffsets = callOffsets;
@@ -101,14 +104,15 @@ internal sealed class WarpFrameLayout
     }
 
     // [WHY] A node of a lowered tree finds its site by the span of the source it stands for. A node that carries an
-    // original span only for another tree or an inlined copy (another method's body) has no site here; its own span
-    // would be a position in the lowered tree, which could match an unrelated call
-    private static bool TryGetKey(InvocationExpressionSyntax call, int treeOrdinal, out TextSpan key)
+    // original span only for another tree or an inlined copy (another method's body) has no site here, and neither
+    // has a node without one outside the method's tree (a call the lowering wrote): its own span would be a position
+    // in the lowered tree, which could match an unrelated call
+    private bool TryGetKey(InvocationExpressionSyntax call, int treeOrdinal, out TextSpan key)
     {
         if (!call.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
             key = call.Span;
-            return true;
+            return call.SyntaxTree == _tree;
         }
 
         if (IrSyntaxIndex.OriginalSpanOf(call, treeOrdinal) is { } span)
@@ -191,6 +195,6 @@ internal sealed class WarpFrameLayout
             }
         }
 
-        return new WarpFrameLayout((int)offset, sites, callOffsets);
+        return new WarpFrameLayout(declaration.SyntaxTree, (int)offset, sites, callOffsets);
     }
 }
