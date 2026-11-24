@@ -1,3 +1,4 @@
+using System;
 using Kassyi.GSharp.Core;
 
 namespace ManagedStackFallbackGeneratorCases;
@@ -5,6 +6,13 @@ namespace ManagedStackFallbackGeneratorCases;
 file struct StepValue
 {
     public int V;
+}
+
+public struct Guard : IDisposable
+{
+    public int V;
+
+    public void Dispose() => V = 0;
 }
 
 public struct WarpValue
@@ -71,6 +79,24 @@ public static partial class FallbackKernels
         x.V = data[ThreadIndex.X];
         x = x + x;
         data[ThreadIndex.X] = x.V + 2;
+    }
+
+    // A using declaration after a continue that leaves the region of the loop body, in a kernel that reaches
+    // Warp.ActiveMask(): the goto of the region would pass the declaration (CS8648), so the kernel keeps its state
+    // machine with the reason
+    [GpuKernel]
+    public static void UsingAfterContinueKernel(int[] data)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (ThreadIndex.X % 2 == 0)
+            {
+                continue;
+            }
+
+            using var guard = new Guard { V = i };
+            data[ThreadIndex.X] += (int)Warp.ActiveMask() + guard.V;
+        }
     }
 
     [GpuDeviceFunction]

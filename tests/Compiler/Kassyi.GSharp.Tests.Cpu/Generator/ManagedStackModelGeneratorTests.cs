@@ -84,11 +84,16 @@ public class ManagedStackModelGeneratorTests
             StringComparison.Ordinal);
         Assert.Contains("FallbackKernels.CallsChainKernel: calls a function without a stack form", failures.SourceText,
             StringComparison.Ordinal);
+        // A using declaration that a goto of the reconvergence regions would pass (CS8648) keeps the kernel on its
+        // state machine, with the reason
+        Assert.Contains("FallbackKernels.UsingAfterContinueKernel: it reaches Warp.ActiveMask() and declares a local " +
+                        "with using", failures.SourceText, StringComparison.Ordinal);
         // The kernels and the functions of the chain keep their state machines: no stack form is emitted for them, and
         // the kernel file is the default build's. Only AddShuffled, the target of the operator, has a form of its own
         foreach (var name in new[]
                  {
-                     "PassesSuspendingGroupKernel", "BarrierStep", "CallsChainKernel", "Outer", "Middle", "Inner"
+                     "PassesSuspendingGroupKernel", "BarrierStep", "CallsChainKernel", "Outer", "Middle", "Inner",
+                     "UsingAfterContinueKernel"
                  })
         {
             var formName = GSharpInternalNames.StackModel.MethodPrefix +
@@ -159,7 +164,7 @@ public class ManagedStackModelGeneratorTests
                 .Any(static a => a.Name is IdentifierNameSyntax { Identifier.ValueText: "GpuKernel" }))
             .Select(static m => m.Identifier.ValueText)
             .ToArray();
-        Assert.Equal(16, kernels.Length);
+        Assert.Equal(17, kernels.Length);
         foreach (var kernel in kernels)
         {
             Assert.Contains($"sharedMemBytes, \"StackBodyLocalsKernels.{kernel}\", true,", kernelFile.SourceText,

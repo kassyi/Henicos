@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
@@ -264,6 +265,18 @@ public static partial class StackBodyLocalsKernels
         int tid = ThreadIndex.X;
         Swap(tid, out var h);
         result[tid] = (uint)h + Warp.ActiveMask();
+    }
+
+    // A scoped span declared without a value: its default names the type without scoped
+    [GpuKernel]
+    public static void ScopedSpanKernel(uint[] result)
+    {
+        int tid = ThreadIndex.X;
+        scoped Span<uint> s;
+        s = stackalloc uint[2];
+        s[0] = Warp.ActiveMask();
+        s[1] = (uint)tid;
+        result[tid] = s[0] ^ s[1];
     }
 
     // out var of a callee that waits at a block barrier, in a kernel that reaches Warp.ActiveMask()

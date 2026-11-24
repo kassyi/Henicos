@@ -21,6 +21,9 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "WithWarpShuffle", true)]
     [InlineData("EligibilityKernels", "WithActiveMask", true)]
     [InlineData("EligibilityKernels", "CallsActiveMaskReachingDeviceFunction", true)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", false)]
+    [InlineData("EligibilityKernels", "CallsActiveMaskWithUsing", false)]
+    [InlineData("EligibilityKernels", "ShuffleWithUsing", true)]
     [InlineData("EligibilityKernels", "CooperativeKernel", false)]
     [InlineData("EligibilityKernels", "WithoutBarrier", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceKernelWithBarrier", false)]
@@ -41,6 +44,7 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "StackDeviceWait", true)]
     [InlineData("EligibilityKernels", "ShuffleDeviceWait", true)]
     [InlineData("EligibilityKernels", "ActiveMaskDeviceWait", true)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsingHelper", false)]
     [InlineData("WarpEligibilityKernels", "Chain10", true)]
     [InlineData("WarpEligibilityKernels", "RecursiveShuffle", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceDeviceWait", false)]
@@ -68,12 +72,13 @@ public class ManagedStackEligibilityTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("CallsRecursiveShuffle", "cannot be placed")]
-    [InlineData("OverTheVisitLimit", "4097 visit counts")]
-    public void GetWarpFailure_KernelWhoseCollectivesCannotRunOnItsStack_StatesTheReason(string methodName,
-        string reason)
+    [InlineData("WarpEligibilityKernels", "CallsRecursiveShuffle", "cannot be placed")]
+    [InlineData("WarpEligibilityKernels", "OverTheVisitLimit", "4097 visit counts")]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", "declares a local with using")]
+    public void GetWarpFailure_KernelWhoseCollectivesCannotRunOnItsStack_StatesTheReason(string typeName,
+        string methodName, string reason)
     {
-        var method = GetMethod("WarpEligibilityKernels", methodName);
+        var method = GetMethod(typeName, methodName);
 
         Assert.Contains(reason, ManagedStackEligibility.GetWarpFailure(method, s_compilation), StringComparison.Ordinal);
     }

@@ -233,9 +233,13 @@ internal static class StackBodyLocals
         _ => throw new InvalidOperationException("A moved local of a stack body has no name.")
     };
 
-    // default(<type>), typed for the outputs through the source of the type
-    private static DefaultExpressionSyntax DefaultOf(TypeSyntax type) =>
-        SyntaxFactory.DefaultExpression(type).WithSpilledTypeSpanFrom(type);
+    // default(<type>), typed for the outputs through the source of the type. [WHY] scoped belongs to the local, not to
+    // its type: default(scoped Span<T>) does not parse (CS1026), so the default names the type alone
+    private static DefaultExpressionSyntax DefaultOf(TypeSyntax type)
+    {
+        var valueType = type is ScopedTypeSyntax { Type: var scopedType } ? scopedType : type;
+        return SyntaxFactory.DefaultExpression(valueType).WithSpilledTypeSpanFrom(valueType);
+    }
 
     // <type> <name> = default(<type>);
     private static LocalDeclarationStatementSyntax DeclareWithDefault(Move move)
