@@ -1,5 +1,4 @@
 #nullable enable
-using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
@@ -267,16 +266,23 @@ public static partial class StackBodyLocalsKernels
         result[tid] = (uint)h + Warp.ActiveMask();
     }
 
-    // A scoped span declared without a value: its default names the type without scoped
+    // out var of a call that splits, declared in one switch section and assigned and read in another: the C++ of a
+    // switch declares such a local before the switch (SwitchSectionLocals), from the declaration of the stack body
     [GpuKernel]
-    public static void ScopedSpanKernel(uint[] result)
+    public static void OutVarAcrossSectionsKernel(uint[] result)
     {
         int tid = ThreadIndex.X;
-        scoped Span<uint> s;
-        s = stackalloc uint[2];
-        s[0] = Warp.ActiveMask();
-        s[1] = (uint)tid;
-        result[tid] = s[0] ^ s[1];
+        switch (tid % 2)
+        {
+            case 0:
+                GetMask(tid, out var a);
+                result[tid] = a;
+                break;
+            default:
+                a = 3u;
+                result[tid] = a + Warp.ActiveMask();
+                break;
+        }
     }
 
     // out var of a callee that waits at a block barrier, in a kernel that reaches Warp.ActiveMask()

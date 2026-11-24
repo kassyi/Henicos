@@ -143,6 +143,10 @@
     ir:     check(s[i]) split(SyncThenCount(counts))
     syntax: split(SyncThenCount(counts))
 #991 a location C# checks before the split
+  StackBodyScopedCases.cs ScopedKernels.ScopedSpanKernel: s[0] = Warp.ActiveMask();
+    ir:     check(s[0]) split(Warp.ActiveMask())
+    syntax: split(Warp.ActiveMask())
+#991 a location C# checks before the split
   WarpShuffleArgumentOrderKernels.cu.cs WarpShuffleArgumentOrderKernels.RefElementIndexWrittenLaterKernel: AddAfterBarrier(ref data[i], i++);
     ir:     spill(i) check(data[i]) spill(i++) split(AddAfterBarrier(ref data[i], i++))
     syntax: spill(i) spill(i++) split(AddAfterBarrier(ref data[i], i++))

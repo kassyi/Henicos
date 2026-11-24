@@ -172,6 +172,41 @@ public class ManagedStackModelGeneratorTests
         }
     }
 
+    // A scoped span declared without a value: its stack form declares it with default(Span<uint>), and the form holds no
+    // C# error. Only the stack form is checked: the state machine of the same kernel does not compile yet (it writes
+    // scoped twice), which is a problem of the default build of its own
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void ScopedLocalWithoutValue_StackModel_FormDeclaresItWithTheDefaultOfItsType()
+    {
+        var tree = RoslynTestUtility.GetTestCaseContext("Generators/StackBodyScopedCases.cs").Tree;
+        var compilation = CSharpCompilation.Create("ManagedStackModelCase")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, allowUnsafe: true))
+            .AddReferences(RoslynTestUtility.BaseReferences)
+            .AddSyntaxTrees(tree);
+        CSharpGeneratorDriver.Create(
+                generators: [new GpuKernelGenerator().AsSourceGenerator()],
+                additionalTexts: null,
+                parseOptions: s_parseOptions,
+                optionsProvider: new TestAnalyzerConfigOptionsProvider("Cpu",
+                    new Dictionary<string, string> { ["build_property.GSharpManagedBarrierModel"] = "Stack" }))
+            .RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        var form = output.SyntaxTrees
+            .SelectMany(static t => t.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            .Single(static m => m.Identifier.ValueText ==
+                                GSharpInternalNames.StackModel.MethodPrefix +
+                                "StackBodyScopedCases__ScopedKernels__ScopedSpanKernel");
+        var declaration = form.DescendantNodes()
+            .OfType<VariableDeclaratorSyntax>()
+            .Single(static d => d.Identifier.ValueText == "s");
+        var initializer = Assert.IsType<DefaultExpressionSyntax>(declaration.Initializer?.Value);
+        Assert.IsNotType<ScopedTypeSyntax>(initializer.Type);
+        Assert.Empty(output.GetSemanticModel(form.SyntaxTree)
+            .GetDiagnostics(form.Span)
+            .Where(static d => d.Severity == DiagnosticSeverity.Error));
+    }
+
     private static readonly SyntaxTree s_macroTree =
         RoslynTestUtility.GetTestCaseContext("Generators/ManagedStackOperatorMacroCases.cs").Tree;
 

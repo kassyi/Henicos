@@ -461,7 +461,10 @@
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.LocalsOnly", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.LoggingUsing", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.QuietUsing", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ActiveMaskWithUsing", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ActiveMaskWithUsingHelper", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.PassesStackExtensionGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ShuffleWithUsing", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "InstanceEligibilityTarget.CallsInstanceDeviceFunction", node: "expression", reason: "UnsupportedShape", operation: "ObjectCreation", syntax: "ObjectCreationExpression", detail: "class", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "WarpEligibilityKernels.PassesActiveMaskGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "WarpEligibilityKernels.PassesShuffleGroup", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "SimpleMemberAccessExpression", count: 1}
@@ -1329,6 +1332,7 @@
 - {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", node: "expression", reason: "UnsupportedOperation", operation: "TypeOf", syntax: "TypeOfExpression", count: 2}
 - {file: "TestCases/Generators/ManagedQualification.cs", method: "CaseKernels.QualifyKernel", node: "expression", reason: "UnsupportedShape", operation: "IsPattern", syntax: "IsPatternExpression", count: 1}
 - {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.PassesSuspendingGroupKernel", node: "expression", reason: "UnsupportedOperation", operation: "DelegateCreation", syntax: "IdentifierName", count: 1}
+- {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.UsingAfterContinueKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.MaskOfOddValues", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForStatement", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.IteratorKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
 - {file: "TestCases/Generators/ShadowingScopeKernels.cs", method: "ShadowedKernels.LoopKernel", node: "statement", reason: "UnsupportedOperation", operation: "Loop", syntax: "ForEachStatement", count: 1}
@@ -1341,6 +1345,7 @@
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeSwitchKernels.SecondKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.FirstKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.SecondKernel", node: "statement", reason: "UnsupportedOperation", operation: "Using", syntax: "UsingStatement", count: 1}
+- {file: "TestCases/Generators/StackBodyScopedCases.cs", method: "ScopedKernels.ScopedSpanKernel", node: "expression", reason: "UnsupportedOperation", operation: "None", syntax: "StackAllocArrayCreationExpression", count: 1}
 - {file: "TestCases/Generators/ThreeAssemblies_App.cs", method: "AppKernels.LenKernel", node: "expression", reason: "Invalid", operation: "Invalid", syntax: "InvocationExpression", count: 2}
 - {file: "TestCases/Generators/ThreeAssemblies_B.cs", method: "LibB.Borrow", node: "expression", reason: "Invalid", operation: "Binary", syntax: "AddExpression", count: 1}
 - {file: "TestCases/Generators/ThreeAssemblies_B.cs", method: "LibB.Borrow", node: "statement", reason: "UnsupportedOperation", operation: "UsingDeclaration", syntax: "LocalDeclarationStatement", count: 1}

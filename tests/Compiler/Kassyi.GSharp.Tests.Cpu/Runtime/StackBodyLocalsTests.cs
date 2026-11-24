@@ -51,7 +51,8 @@ public class StackBodyLocalsTests
             StackBodyLocalsKernels.LaunchOutVarAndInSwitchSectionKernel(r, blockDimX: Threads),
         ["OutVarOfShuffleCallee"] = static r =>
             StackBodyLocalsKernels.LaunchOutVarOfShuffleCalleeKernel(r, blockDimX: Threads),
-        ["ScopedSpan"] = static r => StackBodyLocalsKernels.LaunchScopedSpanKernel(r, blockDimX: Threads),
+        ["OutVarAcrossSections"] = static r =>
+            StackBodyLocalsKernels.LaunchOutVarAcrossSectionsKernel(r, blockDimX: Threads),
         ["OutVarOfBarrierCallee"] = static r =>
             StackBodyLocalsKernels.LaunchOutVarOfBarrierCalleeKernel(r, blockDimX: Threads),
     };
