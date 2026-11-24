@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // Runs the long checks that need no one at the keyboard through scripts/human/job-queue.js and writes one summary:
-//   Stage 1 (serial, for clean measurements): benchmark baselines (generator, compute, GPU Pi).
-//   Stage 2 (parallel lanes by default; pass --serial for sequential execution):
-//     - Sanitizer lane: Windows MSVC ASan (`sanitized`) + Linux GCC ASan/UBSan (`sanitized-linux`, offloaded to a
-//       healthy configured remote Linux worker via `job-queue.js run --remote`, falling back to WSL on Windows).
+//   - Serial benchmarks (noise-free): generator, compute, GPU Pi.
+//   - Serial local sanitizer (`sanitized`, Windows MSVC ASan): runs before parallel lanes so main-worktree
+//     IncludeEmbeddedStackLinq writes never collide with GPU-lane builds.
+//   - Parallel check lanes (default; pass --serial for sequential execution):
+//     - Remote Linux sanitizer (`sanitized-linux`, legacy alias `sanitized-wsl`): runs `just test-sanitized` on a
+//       configured remote Linux worker via `job-queue.js run --remote`, falling back to WSL on Windows if remote
+//       offload is unconfigured or unreachable before execution.
 //     - GPU lane (main worktree): differential fuzzer, test-stability loop, coverage, mutate-gpumath,
 //       mutate-compiler-cuda.
-//     - Heavy CPU lane (isolated temporary git worktree when clean and running alongside other lanes):
-//       `mutate-compiler`, avoiding MSBuild bin/obj file-lock collisions with the GPU lane.
+//     - Heavy CPU lane (isolated temporary git worktree when clean): `mutate-compiler`, avoiding MSBuild bin/obj
+//       file-lock collisions with the GPU lane.
 // Each step is queued as its own job-queue.js job, so live progress appears in `just queue-watch` and other chats can
 // interleave between steps. A failing step is recorded and the run goes on.
 //
@@ -31,19 +34,25 @@ const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const faultWatch = require('./gpu-fault-watch.js');
-const { mainCheckout } = require('./job-queue/lib/main-checkout.js');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const jobQueueScript = path.join(repoRoot, 'scripts', 'human', 'job-queue.js');
 const benchmarksProject = path.join('src', 'Apps', 'Henicos.Benchmarks');
 
-// Default memory budget required for `just test-sanitized` (Kassyi.GSharp.Tests.Cpu).
-const SanitizedMemoryMb = 2880;
 const ParallelMutateCompilerWeight = 4;
 const ParallelMutateCompilerConcurrency = '8';
+const QueueEnvVarsToStrip = [
+  'GSHARP_JOB_QUEUE_JOB',
+  'GSHARP_JOB_QUEUE_CPUS',
+  'GSHARP_JOB_QUEUE_IN_GPU_LOCK',
+  'GSHARP_GPU_LOCK_HELD',
+  'GSHARP_JOB_QUEUE_GPU_TURN',
+  'GSHARP_JOB_QUEUE_COMMAND',
+  'GSHARP_JOB_QUEUE_MSBUILD_ARGS',
+];
 
-// The comments give the measured serial time of each step, for reference only: one Windows 11 machine with an NVIDIA
-// GPU, default options, 2026-11. Running Stage 2 lanes in parallel cuts wall-clock time from ~23h to ~17h.
+// Measured serial times on a Windows 11 host with an NVIDIA GPU (default options, 2026-11).
+// Running the parallel check lanes cuts wall-clock time from ~23h to ~17h.
 const allSteps = [
   'bench-generator', // 1m56s
   'bench-compute', // 1m05s
@@ -58,11 +67,9 @@ const allSteps = [
   'mutate-compiler-cuda', // 1h15m (build 2m13s)
 ];
 
-const stepAliases = {
-  'sanitized-wsl': 'sanitized-linux',
-};
-
+const stepAliases = { 'sanitized-wsl': 'sanitized-linux' };
 const benchStepNames = new Set(['bench-generator', 'bench-compute', 'bench-pi']);
+const gpuLaneStepNames = new Set(['fuzz', 'stability', 'coverage', 'mutate-gpumath', 'mutate-compiler-cuda']);
 
 // P:\a\b -> /mnt/p/a/b, for running the same checkout inside WSL.
 function toWslPath(windowsPath) {
@@ -77,17 +84,16 @@ const usage = [
   `  --steps <list>                Comma-separated steps to run (default: ${allSteps.join(',')}).`,
   '                                Legacy alias: sanitized-wsl -> sanitized-linux.',
   '  --fuzz-minutes <n>            Minutes of differential fuzzing on all paths, CUDA included (default: 120).',
-  '  --stability <count|duration>  Argument of `just test-stability`: a count (10) or a duration (3h, 1h30m) (default: 3h).',
+  '  --stability <count|duration>  Argument of `just test-stability`: count (10) or duration (3h) (default: 3h).',
   '  --pi-digits <n>               Digits for the GPU Pi benchmark (default: 1M).',
   '  --serial                      Run every selected step sequentially in the main worktree (no parallel lanes).',
-  '  --dry-run                     Print the planned stages and queued commands without running them.',
+  '  --dry-run                     Print the planned order and queued commands without running them.',
   '  --help, -h                    Show this help.',
 ].join('\n');
 
 function parseArgs(argv) {
   const options = {
     steps: allSteps,
-    explicitSteps: false,
     fuzzMinutes: '120',
     stability: '3h',
     piDigits: '1M',
@@ -100,87 +106,27 @@ function parseArgs(argv) {
       if (i + 1 >= argv.length) throw new Error(`${arg} needs a value`);
       return argv[++i];
     };
-    if (arg === '--help' || arg === '-h') {
-      options.help = true;
-    } else if (arg === '--steps') {
-      options.explicitSteps = true;
+    if (arg === '--help' || arg === '-h') options.help = true;
+    else if (arg === '--steps') {
       const raw = value().split(',').map((s) => s.trim()).filter(Boolean);
       const normalized = [];
       for (const item of raw) {
         const mapped = stepAliases[item] || item;
         if (!normalized.includes(mapped)) normalized.push(mapped);
       }
+      if (normalized.length === 0) throw new Error('--steps must name at least one step');
       options.steps = normalized;
-    } else if (arg === '--fuzz-minutes') {
-      options.fuzzMinutes = value();
-    } else if (arg === '--stability') {
-      options.stability = value();
-    } else if (arg === '--pi-digits') {
-      options.piDigits = value();
-    } else if (arg === '--serial') {
-      options.serial = true;
-    } else if (arg === '--dry-run') {
-      options.dryRun = true;
-    } else {
-      throw new Error(`unknown option ${arg}`);
-    }
+    } else if (arg === '--fuzz-minutes') options.fuzzMinutes = value();
+    else if (arg === '--stability') options.stability = value();
+    else if (arg === '--pi-digits') options.piDigits = value();
+    else if (arg === '--serial') options.serial = true;
+    else if (arg === '--dry-run') options.dryRun = true;
+    else throw new Error(`unknown option ${arg}`);
   }
   const unknown = options.steps.filter((s) => !allSteps.includes(s));
   if (unknown.length > 0) throw new Error(`unknown step(s): ${unknown.join(', ')}`);
   if (!/^\d+$/.test(options.fuzzMinutes)) throw new Error('--fuzz-minutes must be a whole number');
   return options;
-}
-
-/**
- * Inspects `<mainCheckout>/tmp/job-queue/remotes.local.json` and runs the configured probe for the first enabled
- * remote worker whose memory budget fits `SanitizedMemoryMb`. Returns `{ name }` when healthy, or `null` when
- * offload is disabled, no worker fits, or every fitting worker is unreachable.
- */
-function probeHealthyRemoteWorker() {
-  if (process.env.GSHARP_JOB_QUEUE_OFFLOAD === '0') {
-    return null;
-  }
-  const mainRoot = mainCheckout(repoRoot, repoRoot);
-  const remotesPath = path.join(mainRoot, 'tmp', 'job-queue', 'remotes.local.json');
-  if (!fs.existsSync(remotesPath)) {
-    return null;
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(fs.readFileSync(remotesPath, 'utf8'));
-  } catch {
-    return null;
-  }
-  const remotes = parsed && typeof parsed.remotes === 'object' && parsed.remotes !== null ? parsed.remotes : null;
-  if (!remotes) {
-    return null;
-  }
-  for (const [name, entry] of Object.entries(remotes)) {
-    if (!entry || typeof entry !== 'object') continue;
-    if (entry.mode === 'off') continue;
-    const mem = typeof entry.memoryMb === 'number' ? entry.memoryMb : 0;
-    if (mem < SanitizedMemoryMb) continue;
-    const probe = entry.probe;
-    if (!probe || !Array.isArray(probe.argv) || probe.argv.length === 0) {
-      return { name };
-    }
-    const timeoutMs = typeof probe.timeoutMs === 'number' && probe.timeoutMs > 0 ? probe.timeoutMs : 5000;
-    const res = spawnSync(String(probe.argv[0]), probe.argv.slice(1).map(String), {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      timeout: timeoutMs,
-    });
-    if (res.status !== 0) {
-      continue;
-    }
-    const min = typeof probe.min === 'number' ? probe.min : 0;
-    const match = /-?\d+(?:\.\d+)?/.exec(res.stdout || '');
-    const value = match ? Number(match[0]) : NaN;
-    if (Number.isFinite(value) && value >= min) {
-      return { name };
-    }
-  }
-  return null;
 }
 
 function isWorktreeClean() {
@@ -196,102 +142,82 @@ function queuedStep(queueArgs, command, args, meta) {
   };
 }
 
+function buildWslSanitizedStep() {
+  return queuedStep(
+    ['--local'],
+    'wsl.exe',
+    process.platform === 'win32'
+      ? ['--', 'bash', '-lc', `cd '${toWslPath(repoRoot)}' && node scripts/human/test-sanitized.js`]
+      : [],
+    { gpu: false, lane: 'remote-sanitizer', windowsOnly: true, target: 'local:wsl' },
+  );
+}
+
 // Each step: how it is queued through job-queue.js, its lane, GPU usage, and target label for summary.md.
-function buildSteps(options, outDir, envInfo) {
+function buildSteps(options, outDir, isolateMutateCompiler) {
   const benchRun = (...args) => ['run', '--project', benchmarksProject, '-c', 'Release', '--', ...args];
-  const useIsolatedMutate = envInfo.isolateMutateCompiler;
-
-  const sanitizedLinuxStep = envInfo.remoteWorker
-    ? queuedStep(['--remote', '--timeout-minutes', '30'], 'just', ['test-sanitized'], {
-        gpu: false,
-        lane: 'sanitizer',
-        target: `remote:${envInfo.remoteWorker.name}`,
-      })
-    : queuedStep(
-        ['--local'],
-        'wsl.exe',
-        process.platform === 'win32'
-          ? ['--', 'bash', '-lc', `cd '${toWslPath(repoRoot)}' && node scripts/human/test-sanitized.js`]
-          : [],
-        {
+  const wslFallback = buildWslSanitizedStep();
+  const sanitizedLinuxStep =
+    process.env.GSHARP_JOB_QUEUE_OFFLOAD !== '0'
+      ? queuedStep(['--remote', '--timeout-minutes', '30'], 'just', ['test-sanitized'], {
           gpu: false,
-          lane: 'sanitizer',
-          windowsOnly: true,
-          target: 'local:wsl',
-        },
-      );
-
-  const mutateCompilerArgs = useIsolatedMutate
-    ? [path.join('scripts', 'human', 'mutate.js'), '--phase', 'compiler', '--', '-c', ParallelMutateCompilerConcurrency]
-    : [path.join('scripts', 'human', 'mutate.js'), '--phase', 'compiler'];
+          lane: 'remote-sanitizer',
+          target: 'remote',
+          wslFallback: process.platform === 'win32' ? wslFallback : null,
+        })
+      : wslFallback;
+  const mutateScript = path.join('scripts', 'human', 'mutate.js');
+  const mutateCompilerArgs = isolateMutateCompiler
+    ? [mutateScript, '--phase', 'compiler', '--', '-c', ParallelMutateCompilerConcurrency]
+    : [mutateScript, '--phase', 'compiler'];
+  const fuzzArgs = [
+    path.join('scripts', 'human', 'fuzz-differential.js'),
+    '--profile', 'all', '--minutes', options.fuzzMinutes, '--metamorphic',
+  ];
 
   return {
     'bench-generator': queuedStep(
-      ['--local'],
-      'dotnet',
-      benchRun('generator-bench', '--artifacts', path.join(outDir, 'bench', 'generator')),
+      ['--local'], 'dotnet', benchRun('generator-bench', '--artifacts', path.join(outDir, 'bench', 'generator')),
       { gpu: false, lane: 'bench', target: 'local' },
     ),
-    'bench-compute': queuedStep(['--gpu-exclusive'], 'dotnet', benchRun('compute-bench', 'all', '--json'), {
-      gpu: true,
-      lane: 'bench',
-      target: 'local:gpu',
-    }),
-    'bench-pi': queuedStep(['--gpu-exclusive'], 'dotnet', benchRun('gpu-pi', options.piDigits), {
-      gpu: true,
-      lane: 'bench',
-      target: 'local:gpu',
-    }),
-    fuzz: queuedStep(
-      ['--local', '--weight', '2'],
-      'node',
-      [
-        path.join('scripts', 'human', 'fuzz-differential.js'),
-        '--profile',
-        'all',
-        '--minutes',
-        options.fuzzMinutes,
-        '--metamorphic',
-      ],
+    'bench-compute': queuedStep(
+      ['--gpu-exclusive'], 'dotnet', benchRun('compute-bench', 'all', '--json'),
+      { gpu: true, lane: 'bench', target: 'local:gpu' },
+    ),
+    'bench-pi': queuedStep(
+      ['--gpu-exclusive'], 'dotnet', benchRun('gpu-pi', options.piDigits),
+      { gpu: true, lane: 'bench', target: 'local:gpu' },
+    ),
+    fuzz: queuedStep(['--local', '--weight', '2'], 'node', fuzzArgs, { gpu: true, lane: 'gpu', target: 'local:gpu' }),
+    sanitized: queuedStep(
+      ['--local'], 'node', [path.join('scripts', 'human', 'test-sanitized.js')],
+      { gpu: false, lane: 'local-pre', target: 'local' },
+    ),
+    'sanitized-linux': sanitizedLinuxStep,
+    stability: queuedStep(
+      ['--gpu'], 'just', ['test-stability', options.stability, 'true'],
       { gpu: true, lane: 'gpu', target: 'local:gpu' },
     ),
-    sanitized: queuedStep(['--local'], 'node', [path.join('scripts', 'human', 'test-sanitized.js')], {
-      gpu: false,
-      lane: 'sanitizer',
-      target: 'local',
-    }),
-    'sanitized-linux': sanitizedLinuxStep,
-    stability: queuedStep(['--gpu'], 'just', ['test-stability', options.stability, 'true'], {
-      gpu: true,
-      lane: 'gpu',
-      target: 'local:gpu',
-    }),
-    coverage: queuedStep(['--gpu'], 'just', ['test-coverage'], {
-      gpu: true,
-      lane: 'gpu',
-      target: 'local:gpu',
-    }),
+    coverage: queuedStep(['--gpu'], 'just', ['test-coverage'], { gpu: true, lane: 'gpu', target: 'local:gpu' }),
     'mutate-compiler': queuedStep(
-      useIsolatedMutate ? ['--local', '--weight', String(ParallelMutateCompilerWeight)] : ['--local'],
+      isolateMutateCompiler ? ['--local', '--weight', String(ParallelMutateCompilerWeight)] : ['--local'],
       'node',
       mutateCompilerArgs,
       {
         gpu: false,
         lane: 'cpu',
-        isolatedWorktree: useIsolatedMutate,
-        target: useIsolatedMutate ? 'local:worktree' : 'local',
+        isolatedWorktree: isolateMutateCompiler,
+        target: isolateMutateCompiler ? 'local:worktree' : 'local',
       },
     ),
-    'mutate-gpumath': queuedStep(['--gpu'], 'just', ['mutate', 'gpumath'], {
-      gpu: true,
-      lane: 'gpu',
-      target: 'local:gpu',
-    }),
-    'mutate-compiler-cuda': queuedStep(['--gpu'], 'just', ['mutate', 'compiler-cuda'], {
-      gpu: true,
-      lane: 'gpu',
-      target: 'local:gpu',
-    }),
+    'mutate-gpumath': queuedStep(
+      ['--gpu'], 'just', ['mutate', 'gpumath'],
+      { gpu: true, lane: 'gpu', target: 'local:gpu' },
+    ),
+    'mutate-compiler-cuda': queuedStep(
+      ['--gpu'], 'just', ['mutate', 'compiler-cuda'],
+      { gpu: true, lane: 'gpu', target: 'local:gpu' },
+    ),
   };
 }
 
@@ -313,13 +239,9 @@ function describe(step) {
   return [step.command === process.execPath ? 'node' : step.command, ...step.args].join(' ');
 }
 
-/** Strips outer job-queue session variables so child steps always schedule cleanly through job-queue.js. */
 function cleanChildEnv() {
   const env = { ...process.env, DiffEngine_Disabled: 'true', CI: 'true' };
-  delete env.GSHARP_JOB_QUEUE_JOB;
-  delete env.GSHARP_JOB_QUEUE_CPUS;
-  delete env.GSHARP_JOB_QUEUE_IN_GPU_LOCK;
-  delete env.GSHARP_GPU_LOCK_HELD;
+  for (const key of QueueEnvVarsToStrip) delete env[key];
   return env;
 }
 
@@ -328,47 +250,57 @@ const activeChildren = new Set();
 function runStep(name, step, logPath, options = {}) {
   const cwd = options.cwd || repoRoot;
   const prefixOutput = Boolean(options.prefixOutput);
+  const append = Boolean(options.append);
   return new Promise((resolve) => {
-    const log = fs.createWriteStream(logPath);
-    log.write(`$ ${describe(step)}\n`);
-    if (cwd !== repoRoot) {
-      log.write(`# cwd: ${cwd}\n`);
-    }
+    const log = fs.createWriteStream(logPath, { flags: append ? 'a' : 'w' });
+    log.write(`${append ? '\n' : ''}$ ${describe(step)}\n`);
+    if (cwd !== repoRoot) log.write(`# cwd: ${cwd}\n`);
     log.write('\n');
     const started = Date.now();
-    const child = spawn(step.command, step.args, {
-      cwd,
-      env: cleanChildEnv(),
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn(step.command, step.args, { cwd, env: cleanChildEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
     activeChildren.add(child);
     let partial = '';
+    let captured = '';
     const forward = (chunk) => {
       log.write(chunk);
+      const text = chunk.toString('utf8');
+      if (captured.length < 8192) captured += text.slice(0, 8192 - captured.length);
       if (!prefixOutput) {
         process.stdout.write(chunk);
         return;
       }
-      partial += chunk.toString('utf8');
+      partial += text;
       const lines = partial.split(/\r?\n/);
       partial = lines.pop() ?? '';
-      for (const line of lines) {
-        process.stdout.write(`[${name}] ${line}\n`);
-      }
+      for (const line of lines) process.stdout.write(`[${name}] ${line}\n`);
     };
     child.stdout.on('data', forward);
     child.stderr.on('data', forward);
     const finish = (code, error) => {
       activeChildren.delete(child);
-      if (prefixOutput && partial !== '') {
-        process.stdout.write(`[${name}] ${partial}\n`);
-      }
+      if (prefixOutput && partial !== '') process.stdout.write(`[${name}] ${partial}\n`);
       if (error) log.write(`\n[long-checks] ${error.message}\n`);
-      log.end(() => resolve({ name, code, ms: Date.now() - started, target: step.target }));
+      log.end(() => resolve({ name, code, ms: Date.now() - started, target: step.target, outputHead: captured }));
     };
     child.on('error', (error) => finish(-1, error));
     child.on('close', (code, signal) => finish(code ?? (signal ? `signal ${signal}` : -1)));
   });
+}
+
+function shouldFallbackRemoteToWsl(result) {
+  if (result.code === 0) return false;
+  if (result.code === 2 || result.code === 255) return true;
+  const text = result.outputHead || '';
+  return (
+    /transport failed before execution/i.test(text) ||
+    /--remote requested, but /i.test(text) ||
+    /could not run this command; refusing local execution/i.test(text)
+  );
+}
+
+function extractGrantedRemote(outputHead) {
+  const match = /granted j\d+ on remote ([^\s(]+)/.exec(outputHead || '');
+  return match ? `remote:${match[1]}` : 'remote';
 }
 
 function poolCells(before, after) {
@@ -379,7 +311,6 @@ function poolCells(before, after) {
   return ` ${mb(after.nonpagedBytes)} / ${mb(after.pagedBytes)}${why} | ${entries === null ? 'unknown' : entries} |`;
 }
 
-// The pool lines under the table: the reading before the first step and, on Windows, the change over the whole run.
 function poolLines(poolsBefore, poolsAfter) {
   if (!poolsBefore.supported) return [];
   const lines = ['', `- Before the first step: ${faultWatch.describe(poolsBefore)}`];
@@ -432,18 +363,69 @@ function removeIsolatedWorktree(worktreeDir) {
   if (!worktreeDir) return;
   spawnSync('git', ['worktree', 'remove', '--force', worktreeDir], { cwd: repoRoot, encoding: 'utf8' });
   if (fs.existsSync(worktreeDir)) {
-    fs.rmSync(worktreeDir, { recursive: true, force: true });
+    try {
+      fs.rmSync(worktreeDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch (error) {
+      console.error(`[long-checks] warning: could not remove ${worktreeDir}: ${error.message}`);
+    }
   }
   spawnSync('git', ['worktree', 'prune'], { cwd: repoRoot, encoding: 'utf8' });
 }
 
 function copyMutateCompilerReport(worktreeDir) {
   const srcDir = path.join(worktreeDir, 'tmp', 'stryker', 'compiler');
-  if (!fs.existsSync(srcDir)) return;
+  const marker = path.join(srcDir, 'run-started');
+  const report = path.join(srcDir, 'reports', 'mutation-report.json');
+  if (!fs.existsSync(report)) return;
+  if (fs.existsSync(marker) && fs.statSync(report).mtimeMs < fs.statSync(marker).mtimeMs) return;
   const dstDir = path.join(repoRoot, 'tmp', 'stryker', 'compiler');
   fs.rmSync(dstDir, { recursive: true, force: true });
   fs.mkdirSync(path.dirname(dstDir), { recursive: true });
   fs.cpSync(srcDir, dstDir, { recursive: true });
+}
+
+async function stopActiveChildren(signal) {
+  const children = [...activeChildren];
+  if (children.length === 0) return;
+  const closed = (c) => c.exitCode !== null || c.signalCode !== null;
+  const onClosed = (c) => (closed(c) ? Promise.resolve() : new Promise((r) => c.once('close', r)));
+  const waitClosed = Promise.all(children.map(onClosed));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  if (process.platform === 'win32') {
+    if (signal === 'SIGINT') await Promise.race([waitClosed, sleep(2000)]);
+    for (const c of children) {
+      if (!closed(c) && c.pid) spawnSync('taskkill', ['/PID', String(c.pid), '/T', '/F'], { stdio: 'ignore' });
+    }
+    await Promise.race([waitClosed, sleep(3000)]);
+    return;
+  }
+  for (const c of children) {
+    try { c.kill('SIGTERM'); } catch { /* already exited */ }
+  }
+  await Promise.race([waitClosed, sleep(3000)]);
+}
+
+function printDryRun(options, steps, plan) {
+  console.log(`mode: ${options.serial ? 'serial' : 'parallel'}`);
+  if (plan.deferMutateCompiler) {
+    console.log('note: working tree has uncommitted changes; mutate-compiler will run serially after GPU steps.');
+  }
+  if (plan.benchSteps.length > 0) {
+    console.log('\n[benchmarks (serial)]');
+    for (const name of plan.benchSteps) console.log(`  ${name} [${steps[name].target}]: ${describe(steps[name])}`);
+  }
+  if (!options.serial && plan.localPreSteps.length > 0) {
+    console.log('\n[local pre-checks (serial)]');
+    for (const name of plan.localPreSteps) console.log(`  ${name} [${steps[name].target}]: ${describe(steps[name])}`);
+  }
+  const remaining = options.serial ? plan.postBenchSteps : plan.parallelSteps;
+  if (remaining.length > 0) {
+    console.log(`\n[checks (${options.serial ? 'serial' : 'parallel lanes'})]`);
+    for (const name of remaining) {
+      const target = steps[name].wslFallback ? `${steps[name].target} (fallback: local:wsl)` : steps[name].target;
+      console.log(`  ${name} (${steps[name].lane}) [${target}]: ${describe(steps[name])}`);
+    }
+  }
 }
 
 async function main() {
@@ -464,32 +446,21 @@ async function main() {
   const started = new Date();
   const outDir = path.join(repoRoot, 'tmp', 'long-checks', `${timestamp(started)}-${commit}`);
 
-  const remoteWorker = options.steps.includes('sanitized-linux') ? probeHealthyRemoteWorker() : null;
   const wantsParallel = !options.serial;
   const hasMutateCompiler = options.steps.includes('mutate-compiler');
-  const hasGpuSteps = options.steps.some((name) => !benchStepNames.has(name) && name !== 'mutate-compiler' && name !== 'sanitized' && name !== 'sanitized-linux');
+  const hasGpuSteps = options.steps.some((name) => gpuLaneStepNames.has(name));
   const clean = hasMutateCompiler && wantsParallel && hasGpuSteps ? isWorktreeClean() : true;
   const isolateMutateCompiler = hasMutateCompiler && wantsParallel && hasGpuSteps && clean;
+  const deferMutateCompiler = hasMutateCompiler && wantsParallel && hasGpuSteps && !isolateMutateCompiler;
 
-  const steps = buildSteps(options, outDir, { remoteWorker, isolateMutateCompiler });
+  const steps = buildSteps(options, outDir, isolateMutateCompiler);
   const benchSteps = options.steps.filter((name) => benchStepNames.has(name));
   const postBenchSteps = options.steps.filter((name) => !benchStepNames.has(name));
+  const localPreSteps = postBenchSteps.filter((name) => steps[name].lane === 'local-pre');
+  const parallelSteps = postBenchSteps.filter((name) => steps[name].lane !== 'local-pre');
 
   if (options.dryRun) {
-    console.log(`mode: ${wantsParallel ? 'parallel' : 'serial'}`);
-    if (hasMutateCompiler && wantsParallel && hasGpuSteps && !clean) {
-      console.log('note: working tree has uncommitted changes; mutate-compiler will run serially after GPU steps.');
-    }
-    if (benchSteps.length > 0) {
-      console.log('\n[stage 1: benchmarks (serial)]');
-      for (const name of benchSteps) console.log(`  ${name} [${steps[name].target}]: ${describe(steps[name])}`);
-    }
-    if (postBenchSteps.length > 0) {
-      console.log(`\n[stage 2: ${wantsParallel ? 'parallel lanes' : 'serial'}]`);
-      for (const name of postBenchSteps) {
-        console.log(`  ${name} (${steps[name].lane}) [${steps[name].target}]: ${describe(steps[name])}`);
-      }
-    }
+    printDryRun(options, steps, { benchSteps, postBenchSteps, localPreSteps, parallelSteps, deferMutateCompiler });
     return 0;
   }
 
@@ -502,31 +473,25 @@ async function main() {
     `- Mode: ${wantsParallel ? 'parallel' : 'serial'}`,
     `- Steps: ${options.steps.join(', ')}`,
     `- Fuzz minutes: ${options.fuzzMinutes}; stability: ${options.stability}; Pi digits: ${options.piDigits}`,
-    `- Generator benchmark reports: bench/generator (compare with \`just bench-compare <base dir> <head dir>\`)`,
-    '- Fuzzer findings: tmp/differential-fuzz; test-stability logs: TestResults/<os>/<time>; sanitizer log: tmp/test-sanitized.log',
+    '- Generator benchmark reports: bench/generator (compare with `just bench-compare <base dir> <head dir>`)',
+    '- Fuzzer: tmp/differential-fuzz; stability: TestResults/<os>/<time>; sanitizer: tmp/test-sanitized.log',
   ];
 
   let activeWorktreeDir = null;
   let stopping = false;
-  const stopAll = (signal) => {
+  const stopAll = async (signal) => {
     if (stopping) return;
     stopping = true;
     console.error(`\n[long-checks] received ${signal}; stopping active steps...`);
-    for (const child of activeChildren) {
-      try {
-        child.kill('SIGTERM');
-      } catch {
-        // Ignore already-exited child processes
-      }
-    }
+    await stopActiveChildren(signal);
     if (activeWorktreeDir) {
       removeIsolatedWorktree(activeWorktreeDir);
       activeWorktreeDir = null;
     }
     process.exit(signal === 'SIGINT' ? 130 : 143);
   };
-  process.on('SIGINT', () => stopAll('SIGINT'));
-  process.on('SIGTERM', () => stopAll('SIGTERM'));
+  process.on('SIGINT', () => void stopAll('SIGINT'));
+  process.on('SIGTERM', () => void stopAll('SIGTERM'));
 
   const resultsByName = new Map();
   const poolsBefore = faultWatch.measure({ slowFallback: true });
@@ -537,13 +502,18 @@ async function main() {
       console.log(`\n[long-checks] ${name}: skipped (Windows only; no remote Linux worker configured)`);
       return;
     }
-    if (name === 'sanitized-linux' && !remoteWorker && process.platform !== 'win32' && !options.explicitSteps) {
-      console.log(`\n[long-checks] ${name}: skipped (already covered by sanitized on ${process.platform})`);
-      return;
-    }
+    const logPath = path.join(outDir, `${name}.log`);
     console.log(`\n[long-checks] ${name} [${step.target}]: ${describe(step)}`);
     const stepPoolsBefore = faultWatch.measure({ slowFallback: true });
-    const result = await runStep(name, step, path.join(outDir, `${name}.log`), execOptions);
+    let result = await runStep(name, step, logPath, execOptions);
+    if (step.target === 'remote') {
+      if (step.wslFallback && shouldFallbackRemoteToWsl(result)) {
+        console.log(`\n[long-checks] ${name}: remote unavailable; falling back to WSL [${step.wslFallback.target}]`);
+        result = await runStep(name, step.wslFallback, logPath, { ...execOptions, append: true });
+      } else {
+        result.target = extractGrantedRemote(result.outputHead);
+      }
+    }
     result.poolsBefore = stepPoolsBefore;
     result.poolsAfter = faultWatch.measure({ slowFallback: true });
     resultsByName.set(name, result);
@@ -551,81 +521,64 @@ async function main() {
   };
 
   if (options.serial) {
-    for (const name of options.steps) {
-      await executeOne(name, { prefixOutput: false });
-    }
+    for (const name of options.steps) await executeOne(name, { prefixOutput: false });
   } else {
-    // Stage 1: Benchmarks serially to keep measurements free of background CPU/GPU noise.
-    for (const name of benchSteps) {
-      await executeOne(name, { prefixOutput: false });
-    }
+    for (const name of benchSteps) await executeOne(name, { prefixOutput: false });
+    for (const name of localPreSteps) await executeOne(name, { prefixOutput: false });
 
-    // Stage 2: Run sanitizer, GPU, and heavy-CPU lanes in parallel.
-    const sanitizerSteps = postBenchSteps.filter((name) => steps[name].lane === 'sanitizer');
-    const gpuSteps = postBenchSteps.filter((name) => steps[name].lane === 'gpu');
-    const cpuSteps = postBenchSteps.filter((name) => steps[name].lane === 'cpu');
+    const remoteSanitizerSteps = parallelSteps.filter((name) => steps[name].lane === 'remote-sanitizer');
+    const gpuSteps = parallelSteps.filter((name) => steps[name].lane === 'gpu');
+    const cpuSteps = parallelSteps.filter((name) => steps[name].lane === 'cpu');
 
-    const deferMutateCompiler = hasMutateCompiler && hasGpuSteps && !isolateMutateCompiler;
     if (deferMutateCompiler) {
       console.log(
-        '\n[long-checks] working tree has uncommitted changes; deferring mutate-compiler until GPU lane finishes to avoid bin/obj collisions.',
+        '\n[long-checks] working tree has uncommitted changes; ' +
+          'deferring mutate-compiler until GPU lane finishes to avoid bin/obj collisions.',
       );
     }
 
     const activeLaneCount =
-      (sanitizerSteps.length > 0 ? 1 : 0) +
+      (remoteSanitizerSteps.length > 0 ? 1 : 0) +
       (gpuSteps.length > 0 ? 1 : 0) +
       (cpuSteps.length > 0 && !deferMutateCompiler ? 1 : 0);
     const prefixOutput = activeLaneCount > 1;
 
+    const runLane = async (names, runEach) => {
+      for (const name of names) await runEach(name);
+    };
+
     const lanes = [];
-    if (sanitizerSteps.length > 0) {
-      lanes.push(
-        (async () => {
-          for (const name of sanitizerSteps) {
-            await executeOne(name, { prefixOutput });
-          }
-        })(),
-      );
+    if (remoteSanitizerSteps.length > 0) {
+      lanes.push(runLane(remoteSanitizerSteps, (name) => executeOne(name, { prefixOutput })));
     }
     if (gpuSteps.length > 0) {
-      lanes.push(
-        (async () => {
-          for (const name of gpuSteps) {
-            await executeOne(name, { prefixOutput });
-          }
-        })(),
-      );
+      lanes.push(runLane(gpuSteps, (name) => executeOne(name, { prefixOutput })));
     }
     if (cpuSteps.length > 0 && !deferMutateCompiler) {
       lanes.push(
-        (async () => {
-          for (const name of cpuSteps) {
-            if (steps[name].isolatedWorktree) {
-              const wtDir = path.join(outDir, 'cpu-worktree');
-              try {
-                createIsolatedWorktree(wtDir);
-                activeWorktreeDir = wtDir;
-                await executeOne(name, { cwd: wtDir, prefixOutput });
-                copyMutateCompilerReport(wtDir);
-              } finally {
-                removeIsolatedWorktree(wtDir);
-                if (activeWorktreeDir === wtDir) activeWorktreeDir = null;
-              }
-            } else {
-              await executeOne(name, { prefixOutput });
-            }
+        runLane(cpuSteps, async (name) => {
+          if (!steps[name].isolatedWorktree) {
+            await executeOne(name, { prefixOutput });
+            return;
           }
-        })(),
+          const wtDir = path.join(outDir, 'cpu-worktree');
+          try {
+            createIsolatedWorktree(wtDir);
+            activeWorktreeDir = wtDir;
+            await executeOne(name, { cwd: wtDir, prefixOutput });
+            copyMutateCompilerReport(wtDir);
+          } finally {
+            removeIsolatedWorktree(wtDir);
+            if (activeWorktreeDir === wtDir) activeWorktreeDir = null;
+          }
+        }),
       );
     }
 
     await Promise.all(lanes);
 
     if (deferMutateCompiler) {
-      for (const name of cpuSteps) {
-        await executeOne(name, { prefixOutput: false });
-      }
+      for (const name of cpuSteps) await executeOne(name, { prefixOutput: false });
     }
   }
 

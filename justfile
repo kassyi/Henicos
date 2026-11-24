@@ -172,7 +172,8 @@ trusted-key-line key:
     printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
 
 
-# Run every long check in one go (benchmarks serially, then GPU / sanitizer / CPU-mutation lanes in parallel via job-queue.js); see scripts/human/long-checks.js --help
+# Run every long check in one go (benchmarks serially, then GPU / remote sanitizer / CPU-mutation lanes in parallel
+# via job-queue.js); see scripts/human/long-checks.js --help
 long-checks *args="":
     node scripts/human/long-checks.js {{args}}
 
