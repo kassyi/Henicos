@@ -31,20 +31,99 @@ public partial class MandelbrotKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(941978960u, "MandelbrotKernels.cs", 28, 13, "MandelbrotKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(774788820u, "MandelbrotKernels.cs", 53, 13, "MandelbrotKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+public unsafe partial struct MandelbrotDimensions
+{
+public const string DebugName_Width = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Int32 Width;
+public const string DebugName_Height = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Int32 Height;
+public const string DebugName_MaxIterations = "global::System.Int32";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Int32 MaxIterations;
 }
-public const string MandelbrotKernel_Source = @"struct __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel {
+public static unsafe void Marshal_MandelbrotDimensions(ref global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions host, ref AotContexts.MandelbrotDimensions native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, AotContexts.MandelbrotDimensions>(ref host);
+}
+public static unsafe void Unmarshal_MandelbrotDimensions(ref global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions host, ref AotContexts.MandelbrotDimensions native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.MandelbrotDimensions, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions>(ref native);
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
+public unsafe partial struct MandelbrotViewport
+{
+public const string DebugName_XMin = "global::System.Single";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::System.Single XMin;
+public const string DebugName_XMax = "global::System.Single";
+[global::System.Runtime.InteropServices.FieldOffset(4)]
+public global::System.Single XMax;
+public const string DebugName_YMin = "global::System.Single";
+[global::System.Runtime.InteropServices.FieldOffset(8)]
+public global::System.Single YMin;
+public const string DebugName_YMax = "global::System.Single";
+[global::System.Runtime.InteropServices.FieldOffset(12)]
+public global::System.Single YMax;
+}
+public static unsafe void Marshal_MandelbrotViewport(ref global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport host, ref AotContexts.MandelbrotViewport native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, AotContexts.MandelbrotViewport>(ref host);
+}
+public static unsafe void Unmarshal_MandelbrotViewport(ref global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport host, ref AotContexts.MandelbrotViewport native, global::System.IntPtr hStream = default)
+{
+host = global::System.Runtime.CompilerServices.Unsafe.As<AotContexts.MandelbrotViewport, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport>(ref native);
+}
+#pragma warning restore CS8500
+}
+public const string MandelbrotKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions__
+#define __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions__
+struct __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions
+{
+int __gsharp_mb_Width;
+int __gsharp_mb_Height;
+int __gsharp_mb_MaxIterations;
+}
+;
+static_assert(sizeof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions)==12,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions: size"");
+static_assert(alignof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions)==4,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions: alignment"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions,__gsharp_mb_Width)==0,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions.Width: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions,__gsharp_mb_Height)==4,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions.Height: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions,__gsharp_mb_MaxIterations)==8,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions.MaxIterations: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport__
+#define __GSHARP_STRUCT___gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport__
+struct __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport
+{
+float __gsharp_mb_XMin;
+float __gsharp_mb_XMax;
+float __gsharp_mb_YMin;
+float __gsharp_mb_YMax;
+}
+;
+static_assert(sizeof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport)==16,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport: size"");
+static_assert(alignof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport)==4,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport: alignment"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport,__gsharp_mb_XMin)==0,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport.XMin: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport,__gsharp_mb_XMax)==4,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport.XMax: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport,__gsharp_mb_YMin)==8,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport.YMin: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport,__gsharp_mb_YMax)==12,""Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport.YMax: offset"");
+#endif
+struct __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel {
 int __gsharp_state = 0;
 __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel* __gsharp_all_contexts = nullptr;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_width, int __gsharp_id_2_height, int __gsharp_id_3_maxIter, float __gsharp_id_4_xMin, float __gsharp_id_5_xMax, float __gsharp_id_6_yMin, float __gsharp_id_7_yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(GSharpArray<int> __gsharp_id_0_output, __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions __gsharp_id_1_dimensions, __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport __gsharp_id_2_viewport, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -54,23 +133,30 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-auto __gsharp_id_8_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-auto __gsharp_id_9_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
-if(__gsharp_id_8_col<__gsharp_id_1_width&&__gsharp_id_9_row<__gsharp_id_2_height)
+auto __gsharp_id_3_width = __gsharp_id_1_dimensions.__gsharp_mb_Width;
+auto __gsharp_id_4_height = __gsharp_id_1_dimensions.__gsharp_mb_Height;
+auto __gsharp_id_5_maxIter = __gsharp_id_1_dimensions.__gsharp_mb_MaxIterations;
+auto __gsharp_id_6_xMin = __gsharp_id_2_viewport.__gsharp_mb_XMin;
+auto __gsharp_id_7_xMax = __gsharp_id_2_viewport.__gsharp_mb_XMax;
+auto __gsharp_id_8_yMin = __gsharp_id_2_viewport.__gsharp_mb_YMin;
+auto __gsharp_id_9_yMax = __gsharp_id_2_viewport.__gsharp_mb_YMax;
+auto __gsharp_id_10_col = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
+auto __gsharp_id_11_row = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.y,(int)blockDim.y),(int)threadIdx.y);
+if(__gsharp_id_10_col<__gsharp_id_3_width&&__gsharp_id_11_row<__gsharp_id_4_height)
 {
-auto __gsharp_id_10_x0 = __gsharp_id_4_xMin+(__gsharp_id_5_xMax-__gsharp_id_4_xMin)*__gsharp_id_8_col/__gsharp_id_1_width;
-auto __gsharp_id_11_y0 = __gsharp_id_6_yMin+(__gsharp_id_7_yMax-__gsharp_id_6_yMin)*__gsharp_id_9_row/__gsharp_id_2_height;
-auto __gsharp_id_12_x = 0.0f;
-auto __gsharp_id_13_y = 0.0f;
-int __gsharp_id_14_iter = 0;
-while(__gsharp_id_12_x*__gsharp_id_12_x+__gsharp_id_13_y*__gsharp_id_13_y<=4.0f&&__gsharp_id_14_iter<__gsharp_id_3_maxIter)
+auto __gsharp_id_12_x0 = __gsharp_id_6_xMin+(__gsharp_id_7_xMax-__gsharp_id_6_xMin)*__gsharp_id_10_col/__gsharp_id_3_width;
+auto __gsharp_id_13_y0 = __gsharp_id_8_yMin+(__gsharp_id_9_yMax-__gsharp_id_8_yMin)*__gsharp_id_11_row/__gsharp_id_4_height;
+auto __gsharp_id_14_x = 0.0f;
+auto __gsharp_id_15_y = 0.0f;
+int __gsharp_id_16_iter = 0;
+while(__gsharp_id_14_x*__gsharp_id_14_x+__gsharp_id_15_y*__gsharp_id_15_y<=4.0f&&__gsharp_id_16_iter<__gsharp_id_5_maxIter)
 {
-auto __gsharp_id_15_xtemp = __gsharp_id_12_x*__gsharp_id_12_x-__gsharp_id_13_y*__gsharp_id_13_y+__gsharp_id_10_x0;
-__gsharp_id_13_y=2.0f*__gsharp_id_12_x*__gsharp_id_13_y+__gsharp_id_11_y0;
-__gsharp_id_12_x=__gsharp_id_15_xtemp;
-__gsharp_id_14_iter=__gsharp_add_i32(__gsharp_id_14_iter,1);
+auto __gsharp_id_17_xtemp = __gsharp_id_14_x*__gsharp_id_14_x-__gsharp_id_15_y*__gsharp_id_15_y+__gsharp_id_12_x0;
+__gsharp_id_15_y=2.0f*__gsharp_id_14_x*__gsharp_id_15_y+__gsharp_id_13_y0;
+__gsharp_id_14_x=__gsharp_id_17_xtemp;
+__gsharp_id_16_iter=__gsharp_add_i32(__gsharp_id_16_iter,1);
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_9_row,__gsharp_id_1_width),__gsharp_id_8_col), 941978960u)=__gsharp_id_14_iter;
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_11_row,__gsharp_id_3_width),__gsharp_id_10_col), 774788820u)=__gsharp_id_16_iter;
 }
 __gsharp_state=-1;
 return;
@@ -80,8 +166,10 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_width, int __gsharp_id_2_height, int __gsharp_id_3_maxIter, float __gsharp_id_4_xMin, float __gsharp_id_5_xMax, float __gsharp_id_6_yMin, float __gsharp_id_7_yMax)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<int> __gsharp_id_0_output, const __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions* __gsharp_arg_1, const __gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport* __gsharp_arg_2)
 {
+__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotDimensions __gsharp_id_1_dimensions = *__gsharp_arg_1;
+__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotViewport __gsharp_id_2_viewport = *__gsharp_arg_2;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 #pragma omp parallel for schedule(dynamic)
@@ -115,7 +203,7 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contex
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(__gsharp_id_0_output, __gsharp_id_1_width, __gsharp_id_2_height, __gsharp_id_3_maxIter, __gsharp_id_4_xMin, __gsharp_id_5_xMax, __gsharp_id_6_yMin, __gsharp_id_7_yMax, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(__gsharp_id_0_output, __gsharp_id_1_dimensions, __gsharp_id_2_viewport, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in MandelbrotKernels.MandelbrotKernel, which is not [GpuKernel(Cooperative = true)]"");
@@ -167,12 +255,19 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(int[] output, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions dimensions, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport viewport, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+var width = dimensions.Width;
+var height = dimensions.Height;
+var maxIter = dimensions.MaxIterations;
+var xMin = viewport.XMin;
+var xMax = viewport.XMax;
+var yMin = viewport.YMin;
+var yMax = viewport.YMax;
 var col = global::Kassyi.GSharp.Core.BlockIndex.X * global::Kassyi.GSharp.Core.BlockDimension.X + global::Kassyi.GSharp.Core.ThreadIndex.X;
 var row = global::Kassyi.GSharp.Core.BlockIndex.Y * global::Kassyi.GSharp.Core.BlockDimension.Y + global::Kassyi.GSharp.Core.ThreadIndex.Y;
 if (col < width && row < height)
@@ -200,26 +295,22 @@ return;
 }
 }
 
+private static bool __gsharp_layout_checked_MandelbrotKernel;
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_MandelbrotKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax);
+private unsafe delegate void __gsharp_delegate_MandelbrotKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions* dimensions, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport* viewport);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchMandelbrotKernel(global::System.Int32[] output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMandelbrotKernel(global::System.Int32[] output, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions dimensions, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport viewport, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "MandelbrotKernels.MandelbrotKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "MandelbrotKernels.MandelbrotKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
 global::System.Int32[] __gsharp_csharp_arg_0 = output;
-global::System.Int32 __gsharp_csharp_arg_1 = width;
-global::System.Int32 __gsharp_csharp_arg_2 = height;
-global::System.Int32 __gsharp_csharp_arg_3 = maxIter;
-global::System.Single __gsharp_csharp_arg_4 = xMin;
-global::System.Single __gsharp_csharp_arg_5 = xMax;
-global::System.Single __gsharp_csharp_arg_6 = yMin;
-global::System.Single __gsharp_csharp_arg_7 = yMax;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.MandelbrotKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5, __gsharp_csharp_arg_6, __gsharp_csharp_arg_7));
+global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions __gsharp_csharp_arg_1 = dimensions;
+global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport __gsharp_csharp_arg_2 = viewport;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.MandelbrotKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2));
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -282,7 +373,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(output, width, height, maxIter, xMin, xMax, yMin, yMax, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel(output, dimensions, viewport, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("MandelbrotKernels.MandelbrotKernel");
@@ -336,6 +427,25 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.EndGrid();
 __gsharp_first_failure?.Throw();
 return;
 }
+if (!__gsharp_layout_checked_MandelbrotKernel)
+{
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions>());
+{
+global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Width))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions", "Width", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Width))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Height))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions", "Height", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.Height))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MaxIterations))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions", "MaxIterations", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotDimensions, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Int32, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.MaxIterations))));
+}
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport>() != 16) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport", 16, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport>());
+{
+global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport __gsharp_layout_probe = default;
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.XMin))) != 0) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport", "XMin", 0, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.XMin))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.XMax))) != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport", "XMax", 4, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.XMax))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.YMin))) != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport", "YMin", 8, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.YMin))));
+if (global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.YMax))) != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowFieldOffsetMismatch("Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport", "YMax", 12, (long)global::System.Runtime.CompilerServices.Unsafe.ByteOffset(ref global::System.Runtime.CompilerServices.Unsafe.As<global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotViewport, byte>(ref __gsharp_layout_probe), ref global::System.Runtime.CompilerServices.Unsafe.As<global::System.Single, byte>(ref global::System.Runtime.CompilerServices.Unsafe.AsRef(in __gsharp_layout_probe.YMax))));
+}
+__gsharp_layout_checked_MandelbrotKernel = true;
+}
 __gsharp_delegate_MandelbrotKernel __gsharp_hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<__gsharp_delegate_MandelbrotKernel>("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
@@ -343,7 +453,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dl
 }
 fixed (global::System.Int32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(output))
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (output?.Length ?? 0) }, width, height, maxIter, xMin, xMax, yMin, yMax);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (output?.Length ?? 0) }, &dimensions, &viewport);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 }
@@ -351,7 +461,7 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dl
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchMandelbrotKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMandelbrotKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotDimensions dimensions, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotViewport viewport, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length < 0){
 throw new global::System.ArgumentOutOfRangeException("output", output.Length, "The array length must not be negative.");
@@ -372,12 +482,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchMandelbrotKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchMandelbrotKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, global::System.Int32, global::System.Int32, global::System.Single, global::System.Single, global::System.Single, global::System.Single, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::System.Int32, global::System.Int32, global::System.Int32, global::System.Single, global::System.Single, global::System.Single, global::System.Single, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotDimensions*, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotViewport*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotDimensions*, global::Henicos.Benchmarks.ComputeBenchmarks.MandelbrotKernels.AotContexts.MandelbrotViewport*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Henicos__Benchmarks__ComputeBenchmarks__MandelbrotKernels__MandelbrotKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length }, width, height, maxIter, xMin, xMax, yMin, yMax);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = output.Data, Length = output.Length }, &dimensions, &viewport);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500

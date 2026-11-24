@@ -125,7 +125,8 @@ public class NativeStackTests
         var after = Enumerable.Repeat(Sentinel, 4).ToArray();
 
         var exception = Assert.Throws<IndexOutOfRangeException>(() =>
-            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+            NativeStackKernels.LaunchFailureAfterBarrierKernel(
+                buffers: new FailureAfterBarrierBuffers { Source = source, Before = before, After = after },
                 failingThread: 2, badIndex: 5, blockDimX: 4));
 
         Assert.Equal("(2,0,0)", exception.Data["GSharp.ThreadIndex"]);
@@ -172,12 +173,14 @@ public class NativeStackTests
         var after = Enumerable.Repeat(Sentinel, 4).ToArray();
 
         Assert.Throws<IndexOutOfRangeException>(() =>
-            NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+            NativeStackKernels.LaunchFailureAfterBarrierKernel(
+                buffers: new FailureAfterBarrierBuffers { Source = source, Before = before, After = after },
                 failingThread: 2, badIndex: 5, blockDimX: 4));
 
         before = Enumerable.Repeat(Sentinel, 4).ToArray();
         after = Enumerable.Repeat(Sentinel, 4).ToArray();
-        NativeStackKernels.LaunchFailureAfterBarrierKernel(source, before, after,
+        NativeStackKernels.LaunchFailureAfterBarrierKernel(
+            buffers: new FailureAfterBarrierBuffers { Source = source, Before = before, After = after },
             failingThread: 2, badIndex: 1, blockDimX: 4);
 
         Assert.Equal([100, 101, 102, 103], before);

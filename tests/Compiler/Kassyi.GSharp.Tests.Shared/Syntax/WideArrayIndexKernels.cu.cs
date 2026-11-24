@@ -8,6 +8,13 @@ public struct WideIndexHolder
     public int[] Data;
 }
 
+public struct WideIndexBuffers
+{
+    public int[] Target;
+    public WideIndexHolder Holder;
+    public int[] Results;
+}
+
 public static partial class WideArrayIndexKernels
 {
     [GpuDeviceFunction]
@@ -94,12 +101,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseSByteIndexKernel(int[] a, WideIndexHolder h, sbyte i0, sbyte i1, sbyte i2, int[] o)
+    public static void ExerciseSByteIndexKernel(
+        WideIndexBuffers buffers,
+        sbyte firstIndex,
+        sbyte secondIndex,
+        sbyte thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        sbyte i0 = firstIndex;
+        sbyte i1 = secondIndex;
+        sbyte i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -118,12 +136,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseByteIndexKernel(int[] a, WideIndexHolder h, byte i0, byte i1, byte i2, int[] o)
+    public static void ExerciseByteIndexKernel(
+        WideIndexBuffers buffers,
+        byte firstIndex,
+        byte secondIndex,
+        byte thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        byte i0 = firstIndex;
+        byte i1 = secondIndex;
+        byte i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -142,12 +171,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseShortIndexKernel(int[] a, WideIndexHolder h, short i0, short i1, short i2, int[] o)
+    public static void ExerciseShortIndexKernel(
+        WideIndexBuffers buffers,
+        short firstIndex,
+        short secondIndex,
+        short thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        short i0 = firstIndex;
+        short i1 = secondIndex;
+        short i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -166,12 +206,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseUShortIndexKernel(int[] a, WideIndexHolder h, ushort i0, ushort i1, ushort i2, int[] o)
+    public static void ExerciseUShortIndexKernel(
+        WideIndexBuffers buffers,
+        ushort firstIndex,
+        ushort secondIndex,
+        ushort thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        ushort i0 = firstIndex;
+        ushort i1 = secondIndex;
+        ushort i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -190,12 +241,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseCharIndexKernel(int[] a, WideIndexHolder h, char i0, char i1, char i2, int[] o)
+    public static void ExerciseCharIndexKernel(
+        WideIndexBuffers buffers,
+        char firstIndex,
+        char secondIndex,
+        char thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        char i0 = firstIndex;
+        char i1 = secondIndex;
+        char i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -214,12 +276,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseIntIndexKernel(int[] a, WideIndexHolder h, int i0, int i1, int i2, int[] o)
+    public static void ExerciseIntIndexKernel(
+        WideIndexBuffers buffers,
+        int firstIndex,
+        int secondIndex,
+        int thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        int i0 = firstIndex;
+        int i1 = secondIndex;
+        int i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -238,12 +311,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseUIntIndexKernel(int[] a, WideIndexHolder h, uint i0, uint i1, uint i2, int[] o)
+    public static void ExerciseUIntIndexKernel(
+        WideIndexBuffers buffers,
+        uint firstIndex,
+        uint secondIndex,
+        uint thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        uint i0 = firstIndex;
+        uint i1 = secondIndex;
+        uint i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -262,12 +346,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseLongIndexKernel(int[] a, WideIndexHolder h, long i0, long i1, long i2, int[] o)
+    public static void ExerciseLongIndexKernel(
+        WideIndexBuffers buffers,
+        long firstIndex,
+        long secondIndex,
+        long thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        long i0 = firstIndex;
+        long i1 = secondIndex;
+        long i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;
@@ -286,12 +381,23 @@ public static partial class WideArrayIndexKernels
     }
 
     [GpuKernel]
-    public static void ExerciseULongIndexKernel(int[] a, WideIndexHolder h, ulong i0, ulong i1, ulong i2, int[] o)
+    public static void ExerciseULongIndexKernel(
+        WideIndexBuffers buffers,
+        ulong firstIndex,
+        ulong secondIndex,
+        ulong thirdIndex)
     {
         if (ThreadIndex.X != 0)
         {
             return;
         }
+
+        int[] a = buffers.Target;
+        WideIndexHolder h = buffers.Holder;
+        int[] o = buffers.Results;
+        ulong i0 = firstIndex;
+        ulong i1 = secondIndex;
+        ulong i2 = thirdIndex;
 
         int read0 = a[i0];
         a[i1] = 20;

@@ -20,11 +20,10 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
         uint[] calls = [0];
 
         ManagedKernelRun.Run(() => OperatorMacroContextKernels.LaunchParameterContextKernel(
-            new OperatorMacroContextState { Offset = 100 },
-            [3],
-            [4],
-            result,
-            calls
+            bigCtx: new OperatorMacroContextState { Offset = 100 },
+            operands: new OperatorMacroBinaryOperands { Left = [3], Right = [4] },
+            result: result,
+            calls: calls
         ));
 
         Assert.Equal(107u, result[0]);
@@ -52,11 +51,10 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
         uint[] calls = [0];
 
         ManagedKernelRun.Run(() => OperatorMacroContextKernels.LaunchRefParameterContextKernel(
-            new OperatorMacroContextState { Offset = 10 },
-            [1],
-            [2],
-            result,
-            calls
+            bigCtx: new OperatorMacroContextState { Offset = 10 },
+            operands: new OperatorMacroBinaryOperands { Left = [1], Right = [2] },
+            result: result,
+            calls: calls
         ));
 
         // (1 + 2 + 10) + 2 + 10
@@ -72,7 +70,11 @@ public class OperatorMacroContextManagedTests : TranspilerTestBase
         uint[] result = [0];
         uint[] calls = [0];
 
-        ManagedKernelRun.Run(() => OperatorMacroContextKernels.LaunchHoistedContextKernel([20], [5], [6], result, calls));
+        ManagedKernelRun.Run(() => OperatorMacroContextKernels.LaunchHoistedContextKernel(
+            offset: [20],
+            operands: new OperatorMacroBinaryOperands { Left = [5], Right = [6] },
+            result: result,
+            calls: calls));
 
         Assert.Equal(31u, result[0]);
         Assert.Equal(1u, calls[0]);

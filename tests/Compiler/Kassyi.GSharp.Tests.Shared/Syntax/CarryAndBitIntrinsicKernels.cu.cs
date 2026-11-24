@@ -3,6 +3,22 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+public struct CarryChainOperands
+{
+    [GpuReadOnly]
+    public uint[] Left;
+    [GpuReadOnly]
+    public uint[] Right;
+}
+
+public struct CarryChainResults
+{
+    public uint[] Sum;
+    public ulong[] CarryOut;
+    public uint[] Difference;
+    public long[] BorrowOut;
+}
+
 /// <summary>Kernels that use the carry, funnel shift and bit reverse intrinsics, which the C++ prelude implements on the CPU.</summary>
 public static partial class CarryAndBitIntrinsicKernels
 {
@@ -19,9 +35,14 @@ public static partial class CarryAndBitIntrinsicKernels
     }
 
     [GpuKernel]
-    public static void CarryChainKernel(uint[] a, uint[] b, uint[] sum, ulong[] carryOut, uint[] difference,
-        long[] borrowOut)
+    public static void CarryChainKernel(CarryChainOperands operands, CarryChainResults results)
     {
+        uint[] a = operands.Left;
+        uint[] b = operands.Right;
+        uint[] sum = results.Sum;
+        ulong[] carryOut = results.CarryOut;
+        uint[] difference = results.Difference;
+        long[] borrowOut = results.BorrowOut;
         int tid = ThreadIndex.X;
         ulong carry = (ulong)(tid & 1);
         sum[tid] = Gpu.AddWithCarry(a[tid], b[tid], ref carry);

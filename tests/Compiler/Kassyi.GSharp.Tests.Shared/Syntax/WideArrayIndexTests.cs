@@ -23,24 +23,33 @@ public class WideArrayIndexTests : TranspilerTestBase
     public void AllIntegerIndexTypes_ReadWriteCompoundRefStructDeviceAndSequenced_ProduceExpectedValues(
         bool forceManaged)
     {
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseSByteIndexKernel(a, h, 0, 1, 2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseByteIndexKernel(a, h, 0, 1, 2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseShortIndexKernel(a, h, 0, 1, 2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseUShortIndexKernel(a, h, 0, 1, 2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseCharIndexKernel(a, h, (char)0, (char)1, (char)2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseIntIndexKernel(a, h, 0, 1, 2, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseUIntIndexKernel(a, h, 0u, 1u, 2u, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseLongIndexKernel(a, h, 0L, 1L, 2L, o));
-        AssertIndexType(forceManaged, static (a, h, o) =>
-            WideArrayIndexKernels.LaunchExerciseULongIndexKernel(a, h, 0UL, 1UL, 2UL, o));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseSByteIndexKernel(
+                buffers: buffers, firstIndex: 0, secondIndex: 1, thirdIndex: 2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseByteIndexKernel(
+                buffers: buffers, firstIndex: 0, secondIndex: 1, thirdIndex: 2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseShortIndexKernel(
+                buffers: buffers, firstIndex: 0, secondIndex: 1, thirdIndex: 2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseUShortIndexKernel(
+                buffers: buffers, firstIndex: 0, secondIndex: 1, thirdIndex: 2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseCharIndexKernel(
+                buffers: buffers, firstIndex: (char)0, secondIndex: (char)1, thirdIndex: (char)2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseIntIndexKernel(
+                buffers: buffers, firstIndex: 0, secondIndex: 1, thirdIndex: 2));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseUIntIndexKernel(
+                buffers: buffers, firstIndex: 0u, secondIndex: 1u, thirdIndex: 2u));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseLongIndexKernel(
+                buffers: buffers, firstIndex: 0L, secondIndex: 1L, thirdIndex: 2L));
+        AssertIndexType(forceManaged, static buffers =>
+            WideArrayIndexKernels.LaunchExerciseULongIndexKernel(
+                buffers: buffers, firstIndex: 0UL, secondIndex: 1UL, thirdIndex: 2UL));
     }
 
     // mutant: ElementIndex(long long) with > instead of >= lets index == 3 pass; truncating to unsigned int lets
@@ -339,13 +348,14 @@ public class WideArrayIndexTests : TranspilerTestBase
         Assert.Equal([10, 20, 30], a);
     }
 
-    private void AssertIndexType(bool forceManaged, Action<int[], WideIndexHolder, int[]> launch)
+    private void AssertIndexType(bool forceManaged, Action<WideIndexBuffers> launch)
     {
         int[] a = [10, 1, 2];
         var h = new WideIndexHolder { Data = [100, 0, 0] };
         int[] o = [-1, -1, -1];
+        var buffers = new WideIndexBuffers { Target = a, Holder = h, Results = o };
 
-        Run(forceManaged, () => launch(a, h, o));
+        Run(forceManaged, () => launch(buffers));
 
         Assert.Equal([13, 36, 413], a);
         Assert.Equal([100, 107, 0], h.Data);

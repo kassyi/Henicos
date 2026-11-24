@@ -31,25 +31,235 @@ public partial class CarryAndBitIntrinsicKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1698306469u, "CarryAndBitIntrinsicKernels.cs", 13, 22, "BitIntrinsicsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(863442647u, "CarryAndBitIntrinsicKernels.cs", 14, 21, "BitIntrinsicsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1723238993u, "CarryAndBitIntrinsicKernels.cs", 14, 27, "BitIntrinsicsKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2127788457u, "CarryAndBitIntrinsicKernels.cs", 16, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(210997727u, "CarryAndBitIntrinsicKernels.cs", 17, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(984191457u, "CarryAndBitIntrinsicKernels.cs", 18, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(900836744u, "CarryAndBitIntrinsicKernels.cs", 27, 9, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1968332607u, "CarryAndBitIntrinsicKernels.cs", 27, 37, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1449897895u, "CarryAndBitIntrinsicKernels.cs", 27, 45, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(686334385u, "CarryAndBitIntrinsicKernels.cs", 28, 9, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(990515019u, "CarryAndBitIntrinsicKernels.cs", 31, 9, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1590812927u, "CarryAndBitIntrinsicKernels.cs", 31, 45, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(56735791u, "CarryAndBitIntrinsicKernels.cs", 31, 53, "CarryChainKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(249784218u, "CarryAndBitIntrinsicKernels.cs", 32, 9, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240982649u, "CarryAndBitIntrinsicKernels.cs", 29, 22, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(746901827u, "CarryAndBitIntrinsicKernels.cs", 30, 21, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1467847453u, "CarryAndBitIntrinsicKernels.cs", 30, 27, "BitIntrinsicsKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(173644397u, "CarryAndBitIntrinsicKernels.cs", 32, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(292388747u, "CarryAndBitIntrinsicKernels.cs", 33, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(456673765u, "CarryAndBitIntrinsicKernels.cs", 34, 9, "BitIntrinsicsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1947060854u, "CarryAndBitIntrinsicKernels.cs", 48, 9, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(846952579u, "CarryAndBitIntrinsicKernels.cs", 48, 37, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(72833579u, "CarryAndBitIntrinsicKernels.cs", 48, 45, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1767116583u, "CarryAndBitIntrinsicKernels.cs", 49, 9, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(63555053u, "CarryAndBitIntrinsicKernels.cs", 52, 9, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2076443715u, "CarryAndBitIntrinsicKernels.cs", 52, 45, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1857616987u, "CarryAndBitIntrinsicKernels.cs", 52, 53, "CarryChainKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1920870228u, "CarryAndBitIntrinsicKernels.cs", 53, 9, "CarryChainKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
+public unsafe partial struct CarryChainOperands
+{
+public const string DebugName_Left = "global::System.UInt32[]";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Left;
+public const string DebugName_Right = "global::System.UInt32[]";
+[global::System.Runtime.InteropServices.FieldOffset(16)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Right;
+}
+public static unsafe void Marshal_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, ref AotContexts.CarryChainOperands native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.Left != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Left, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Left.Data = handle.AddrOfPinnedObject();
+native.Left.Length = host.Left.Length;
+}
+if (host.Right != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Right, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Right.Data = handle.AddrOfPinnedObject();
+native.Right.Length = host.Right.Length;
+}
+}
+public static unsafe void Unmarshal_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, ref AotContexts.CarryChainOperands native, global::System.IntPtr hStream = default)
+{
+if (native.Left.Data == global::System.IntPtr.Zero)
+{
+host.Left = default;
+}
+if (native.Right.Data == global::System.IntPtr.Zero)
+{
+host.Right = default;
+}
+}
+public static void AliasHeldArrays_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Left != null)
+{
+held.Add(host.Left, 4, 0, false);
+}
+if (host.Right != null)
+{
+held.Add(host.Right, 4, 0, false);
+}
+}
+public static void CopyArrays_CarryChainOperands(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+{
+_ = copies.Copy(ref host.Left);
+_ = copies.Copy(ref host.Right);
+}
+public static bool HoldsArray_CarryChainOperands(global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Left, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Right, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_CarryChainOperands(global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_CarryChainOperands(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
+[global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+public unsafe partial struct CarryChainResults
+{
+public const string DebugName_Sum = "global::System.UInt32[]";
+[global::System.Runtime.InteropServices.FieldOffset(0)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Sum;
+public const string DebugName_CarryOut = "global::System.UInt64[]";
+[global::System.Runtime.InteropServices.FieldOffset(16)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy CarryOut;
+public const string DebugName_Difference = "global::System.UInt32[]";
+[global::System.Runtime.InteropServices.FieldOffset(32)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Difference;
+public const string DebugName_BorrowOut = "global::System.Int64[]";
+[global::System.Runtime.InteropServices.FieldOffset(48)]
+public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy BorrowOut;
+}
+public static unsafe void Marshal_CarryChainResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, ref AotContexts.CarryChainResults native, global::System.Collections.Generic.List<global::System.IntPtr>? allocatedPtrs, global::System.IntPtr hStream = default)
+{
+native = default;
+if (host.Sum != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Sum, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Sum.Data = handle.AddrOfPinnedObject();
+native.Sum.Length = host.Sum.Length;
+}
+if (host.CarryOut != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.CarryOut, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.CarryOut.Data = handle.AddrOfPinnedObject();
+native.CarryOut.Length = host.CarryOut.Length;
+}
+if (host.Difference != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.Difference, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.Difference.Data = handle.AddrOfPinnedObject();
+native.Difference.Length = host.Difference.Length;
+}
+if (host.BorrowOut != null)
+{
+global::System.Collections.Generic.List<global::System.IntPtr> pinnedHandles = allocatedPtrs ?? throw new global::System.ArgumentNullException("allocatedPtrs");
+global::System.Runtime.InteropServices.GCHandle handle = global::System.Runtime.InteropServices.GCHandle.Alloc(host.BorrowOut, global::System.Runtime.InteropServices.GCHandleType.Pinned);
+pinnedHandles.Add(global::System.Runtime.InteropServices.GCHandle.ToIntPtr(handle));
+native.BorrowOut.Data = handle.AddrOfPinnedObject();
+native.BorrowOut.Length = host.BorrowOut.Length;
+}
+}
+public static unsafe void Unmarshal_CarryChainResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, ref AotContexts.CarryChainResults native, global::System.IntPtr hStream = default)
+{
+if (native.Sum.Data == global::System.IntPtr.Zero)
+{
+host.Sum = default;
+}
+if (native.CarryOut.Data == global::System.IntPtr.Zero)
+{
+host.CarryOut = default;
+}
+if (native.Difference.Data == global::System.IntPtr.Zero)
+{
+host.Difference = default;
+}
+if (native.BorrowOut.Data == global::System.IntPtr.Zero)
+{
+host.BorrowOut = default;
+}
+}
+public static void AliasHeldArrays_CarryChainResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, global::Kassyi.GSharp.Runtime.Interop.HostAliasHeldArrays held)
+{
+if (host.Sum != null)
+{
+held.Add(host.Sum, 4, 0, false);
+}
+if (host.CarryOut != null)
+{
+held.Add(host.CarryOut, 8, 0, false);
+}
+if (host.Difference != null)
+{
+held.Add(host.Difference, 4, 0, false);
+}
+if (host.BorrowOut != null)
+{
+held.Add(host.BorrowOut, 8, 0, false);
+}
+}
+public static void CopyArrays_CarryChainResults(ref global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, global::Kassyi.GSharp.Runtime.Interop.HostArrayCopies copies)
+{
+_ = copies.Copy(ref host.Sum);
+_ = copies.Copy(ref host.CarryOut);
+_ = copies.Copy(ref host.Difference);
+_ = copies.Copy(ref host.BorrowOut);
+}
+public static bool HoldsArray_CarryChainResults(global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults host, object array)
+{
+if (global::System.Object.ReferenceEquals(host.Sum, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.CarryOut, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.Difference, array))
+{
+return true;
+}
+if (global::System.Object.ReferenceEquals(host.BorrowOut, array))
+{
+return true;
+}
+return false;
+}
+public static bool HoldsArray_CarryChainResults(global::System.ReadOnlySpan<global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults> items, object array)
+{
+for (int i = 0; i < items.Length; i++)
+{
+if (HoldsArray_CarryChainResults(items[i], array))
+{
+return true;
+}
+}
+return false;
+}
+#pragma warning restore CS8500
 }
 public const string BitIntrinsicsKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__BitIntrinsicsKernel {
 int __gsharp_state = 0;
@@ -68,12 +278,12 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_tid = (int)threadIdx.x;
-unsigned int __gsharp_id_4_value = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_tid, 1698306469u);
-unsigned int __gsharp_id_5_next = __gsharp_array_at(__gsharp_id_0_input, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_tid,1),__gsharp_id_2_n,1723238993u), 863442647u);
+unsigned int __gsharp_id_4_value = __gsharp_array_at(__gsharp_id_0_input, __gsharp_id_3_tid, 240982649u);
+unsigned int __gsharp_id_5_next = __gsharp_array_at(__gsharp_id_0_input, __gsharp_rem_i32(__gsharp_add_i32(__gsharp_id_3_tid,1),__gsharp_id_2_n,1467847453u), 746901827u);
 unsigned int __gsharp_id_6_shift = (unsigned int)__gsharp_id_3_tid;
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_mul_i32(__gsharp_id_3_tid,3), 2127788457u)=__brev(__gsharp_id_4_value);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1), 210997727u)=__funnelshift_l(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
-__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2), 984191457u)=__funnelshift_r(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_mul_i32(__gsharp_id_3_tid,3), 173644397u)=__brev(__gsharp_id_4_value);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),1), 292388747u)=__funnelshift_l(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
+__gsharp_array_at(__gsharp_id_1_output, __gsharp_add_i32(__gsharp_mul_i32(__gsharp_id_3_tid,3),2), 456673765u)=__funnelshift_r(__gsharp_id_4_value,__gsharp_id_5_next,__gsharp_id_6_shift);
 __gsharp_state=-1;
 return;
 }
@@ -372,13 +582,43 @@ __gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sh
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
-public const string CarryChainKernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel {
+public const string CarryChainKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands
+{
+GSharpArray<const unsigned int> __gsharp_mb_Left;
+GSharpArray<const unsigned int> __gsharp_mb_Right;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands)==32,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands,__gsharp_mb_Left)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands.Left: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands,__gsharp_mb_Right)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands.Right: offset"");
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults
+{
+GSharpArray<unsigned int> __gsharp_mb_Sum;
+GSharpArray<unsigned long long> __gsharp_mb_CarryOut;
+GSharpArray<unsigned int> __gsharp_mb_Difference;
+GSharpArray<long long> __gsharp_mb_BorrowOut;
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults)==64,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults,__gsharp_mb_Sum)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults.Sum: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults,__gsharp_mb_CarryOut)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults.CarryOut: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults,__gsharp_mb_Difference)==32,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults.Difference: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults,__gsharp_mb_BorrowOut)==48,""Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults.BorrowOut: offset"");
+#endif
+struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel* __gsharp_all_contexts = nullptr;
 bool __gsharp_yielded_for_grid_sync = false;
 bool __gsharp_yielded_for_block_barrier = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(GSharpArray<unsigned int> __gsharp_id_0_a, GSharpArray<unsigned int> __gsharp_id_1_b, GSharpArray<unsigned int> __gsharp_id_2_sum, GSharpArray<unsigned long long> __gsharp_id_3_carryOut, GSharpArray<unsigned int> __gsharp_id_4_difference, GSharpArray<long long> __gsharp_id_5_borrowOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands __gsharp_id_0_operands, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults __gsharp_id_1_results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 #define __gsharp_yielded_for_block_barrier __gsharp_ctx->__gsharp_yielded_for_block_barrier
@@ -388,13 +628,19 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_6_tid = (int)threadIdx.x;
-unsigned long long __gsharp_id_7_carry = (unsigned long long)(__gsharp_id_6_tid&1);
-__gsharp_array_at(__gsharp_id_2_sum, __gsharp_id_6_tid, 900836744u)=__gsharp_add_cc(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_6_tid, 1968332607u),__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_6_tid, 1449897895u),&__gsharp_id_7_carry);
-__gsharp_array_at(__gsharp_id_3_carryOut, __gsharp_id_6_tid, 686334385u)=__gsharp_id_7_carry;
-long long __gsharp_id_8_borrow = __gsharp_id_6_tid&1;
-__gsharp_array_at(__gsharp_id_4_difference, __gsharp_id_6_tid, 990515019u)=__gsharp_sub_cc(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_6_tid, 1590812927u),__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_6_tid, 56735791u),&__gsharp_id_8_borrow);
-__gsharp_array_at(__gsharp_id_5_borrowOut, __gsharp_id_6_tid, 249784218u)=__gsharp_id_8_borrow;
+GSharpArray<unsigned int> __gsharp_id_2_a = __gsharp_id_0_operands.__gsharp_mb_Left;
+GSharpArray<unsigned int> __gsharp_id_3_b = __gsharp_id_0_operands.__gsharp_mb_Right;
+GSharpArray<unsigned int> __gsharp_id_4_sum = __gsharp_id_1_results.__gsharp_mb_Sum;
+GSharpArray<unsigned long long> __gsharp_id_5_carryOut = __gsharp_id_1_results.__gsharp_mb_CarryOut;
+GSharpArray<unsigned int> __gsharp_id_6_difference = __gsharp_id_1_results.__gsharp_mb_Difference;
+GSharpArray<long long> __gsharp_id_7_borrowOut = __gsharp_id_1_results.__gsharp_mb_BorrowOut;
+int __gsharp_id_8_tid = (int)threadIdx.x;
+unsigned long long __gsharp_id_9_carry = (unsigned long long)(__gsharp_id_8_tid&1);
+__gsharp_array_at(__gsharp_id_4_sum, __gsharp_id_8_tid, 1947060854u)=__gsharp_add_cc(__gsharp_array_at(__gsharp_id_2_a, __gsharp_id_8_tid, 846952579u),__gsharp_array_at(__gsharp_id_3_b, __gsharp_id_8_tid, 72833579u),&__gsharp_id_9_carry);
+__gsharp_array_at(__gsharp_id_5_carryOut, __gsharp_id_8_tid, 1767116583u)=__gsharp_id_9_carry;
+long long __gsharp_id_10_borrow = __gsharp_id_8_tid&1;
+__gsharp_array_at(__gsharp_id_6_difference, __gsharp_id_8_tid, 63555053u)=__gsharp_sub_cc(__gsharp_array_at(__gsharp_id_2_a, __gsharp_id_8_tid, 2076443715u),__gsharp_array_at(__gsharp_id_3_b, __gsharp_id_8_tid, 1857616987u),&__gsharp_id_10_borrow);
+__gsharp_array_at(__gsharp_id_7_borrowOut, __gsharp_id_8_tid, 1920870228u)=__gsharp_id_10_borrow;
 __gsharp_state=-1;
 return;
 }
@@ -403,8 +649,10 @@ return;
 #undef __gsharp_yielded_for_grid_sync
 #undef __gsharp_yielded_for_block_barrier
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, GSharpArray<unsigned int> __gsharp_id_0_a, GSharpArray<unsigned int> __gsharp_id_1_b, GSharpArray<unsigned int> __gsharp_id_2_sum, GSharpArray<unsigned long long> __gsharp_id_3_carryOut, GSharpArray<unsigned int> __gsharp_id_4_difference, GSharpArray<long long> __gsharp_id_5_borrowOut)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, uint32_t __gsharp_shared_mem_bytes, int64_t __gsharp_total_blocks, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands* __gsharp_arg_0, const __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults* __gsharp_arg_1)
 {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainOperands __gsharp_id_0_operands = *__gsharp_arg_0;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CarryChainResults __gsharp_id_1_results = *__gsharp_arg_1;
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
 #pragma omp parallel for schedule(dynamic)
@@ -438,7 +686,7 @@ if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1 && !__gsharp_contex
 try
 {
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(__gsharp_id_0_a, __gsharp_id_1_b, __gsharp_id_2_sum, __gsharp_id_3_carryOut, __gsharp_id_4_difference, __gsharp_id_5_borrowOut, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(__gsharp_id_0_operands, __gsharp_id_1_results, &__gsharp_contexts[__gsharp_ctx_tid]);
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_yielded_for_grid_sync)
 {
 __gsharp_trap(GSharpErrorCode::InvalidOperation, ""G#: Gpu.SyncGrid reached in CarryAndBitIntrinsicKernels.CarryChainKernel, which is not [GpuKernel(Cooperative = true)]"");
@@ -490,12 +738,18 @@ return next;
 }
 }
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(uint[] a, uint[] b, uint[] sum, ulong[] carryOut, uint[] difference, long[] borrowOut, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel __gsharp_ctx) {
+public static void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands operands, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults results, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel __gsharp_ctx) {
 {
 switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
+uint[] a = operands.Left;
+uint[] b = operands.Right;
+uint[] sum = results.Sum;
+ulong[] carryOut = results.CarryOut;
+uint[] difference = results.Difference;
+long[] borrowOut = results.BorrowOut;
 int tid = global::Kassyi.GSharp.Core.ThreadIndex.X;
 ulong carry = (ulong)(tid & 1);
 sum[tid] = global::Kassyi.GSharp.Core.Gpu.AddWithCarry(a[tid], b[tid], ref carry);
@@ -511,23 +765,19 @@ return;
 }
 
 [global::System.Runtime.InteropServices.UnmanagedFunctionPointer(global::System.Runtime.InteropServices.CallingConvention.Cdecl, CharSet = global::System.Runtime.InteropServices.CharSet.Unicode)]
-private unsafe delegate void __gsharp_delegate_CarryChainKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy sum, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy carryOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy difference, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy borrowOut);
+private unsafe delegate void __gsharp_delegate_CarryChainKernel(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, long __gsharp_launch_block_count, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainOperands* operands, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainResults* results);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCarryChainKernel(global::System.UInt32[] a, global::System.UInt32[] b, global::System.UInt32[] sum, global::System.UInt64[] carryOut, global::System.UInt32[] difference, global::System.Int64[] borrowOut, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCarryChainKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands operands, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CarryAndBitIntrinsicKernels.CarryChainKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CarryAndBitIntrinsicKernels.CarryChainKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
 {
-global::System.UInt32[] __gsharp_csharp_arg_0 = a;
-global::System.UInt32[] __gsharp_csharp_arg_1 = b;
-global::System.UInt32[] __gsharp_csharp_arg_2 = sum;
-global::System.UInt64[] __gsharp_csharp_arg_3 = carryOut;
-global::System.UInt32[] __gsharp_csharp_arg_4 = difference;
-global::System.Int64[] __gsharp_csharp_arg_5 = borrowOut;
-global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.CarryChainKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1, __gsharp_csharp_arg_2, __gsharp_csharp_arg_3, __gsharp_csharp_arg_4, __gsharp_csharp_arg_5));
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainOperands __gsharp_csharp_arg_0 = operands;
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryChainResults __gsharp_csharp_arg_1 = results;
+global::Kassyi.GSharp.Runtime.Aot.CSharpKernelRunner.Run(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, __gsharp_csharp_thread => global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.CarryChainKernel(__gsharp_csharp_arg_0, __gsharp_csharp_arg_1));
 return;
 }
 string __gsharp_arch_suffix = global::System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == global::System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
@@ -590,7 +840,7 @@ try
 {
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockBarrierRequested = false;
-__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(a, b, sum, carryOut, difference, borrowOut, __gsharp_contexts[__gsharp_linear_tid]);
+__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel(operands, results, __gsharp_contexts[__gsharp_linear_tid]);
 if (global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncRequested)
 {
 throw global::Kassyi.GSharp.Core.ManagedGpuContext.GridSyncInKernelThatIsNotCooperative("CarryAndBitIntrinsicKernels.CarryChainKernel");
@@ -649,59 +899,31 @@ if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-fixed (global::System.UInt32* __gsharp_p_0 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(a))
-fixed (global::System.UInt32* __gsharp_p_1 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(b))
-fixed (global::System.UInt32* __gsharp_p_2 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(sum))
-fixed (global::System.UInt64* __gsharp_p_3 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(carryOut))
-fixed (global::System.UInt32* __gsharp_p_4 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(difference))
-fixed (global::System.Int64* __gsharp_p_5 = &global::Kassyi.GSharp.Runtime.Interop.ArrayPinning.GetPinnableReference(borrowOut))
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainOperands __gsharp_native_0 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_0 = new();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainResults __gsharp_native_1 = default;
+global::System.Collections.Generic.List<global::System.IntPtr> __gsharp_allocated_ptrs_1 = new();
+try
 {
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_0, Length = (a?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_1, Length = (b?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_2, Length = (sum?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_3, Length = (carryOut?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_4, Length = (difference?.Length ?? 0) }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (global::System.IntPtr)__gsharp_p_5, Length = (borrowOut?.Length ?? 0) });
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.Marshal_CarryChainOperands(ref operands, ref __gsharp_native_0, __gsharp_allocated_ptrs_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.Marshal_CarryChainResults(ref results, ref __gsharp_native_1, __gsharp_allocated_ptrs_1, hStream);
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &__gsharp_native_0, &__gsharp_native_1);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.Unmarshal_CarryChainOperands(ref operands, ref __gsharp_native_0, hStream);
+global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.Unmarshal_CarryChainResults(ref results, ref __gsharp_native_1, hStream);
+}
+finally
+{
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_0) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
+foreach (global::System.IntPtr __gsharp_handle in __gsharp_allocated_ptrs_1) global::System.Runtime.InteropServices.GCHandle.FromIntPtr(__gsharp_handle).Free();
 }
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-public static unsafe void LaunchCarryChainKernelPtr(global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy sum, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy carryOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy difference, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy borrowOut, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchCarryChainKernelPtr(global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainOperands operands, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainResults results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, global::System.IntPtr hStream = default, global::System.ReadOnlySpan<global::System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (a.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("a", a.Length, "The array length must not be negative.");
-}
-if (a.Data == global::System.IntPtr.Zero && a.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "a");
-}
-if (b.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("b", b.Length, "The array length must not be negative.");
-}
-if (b.Data == global::System.IntPtr.Zero && b.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "b");
-}
-if (sum.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("sum", sum.Length, "The array length must not be negative.");
-}
-if (sum.Data == global::System.IntPtr.Zero && sum.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "sum");
-}
-if (carryOut.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("carryOut", carryOut.Length, "The array length must not be negative.");
-}
-if (carryOut.Data == global::System.IntPtr.Zero && carryOut.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "carryOut");
-}
-if (difference.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("difference", difference.Length, "The array length must not be negative.");
-}
-if (difference.Data == global::System.IntPtr.Zero && difference.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "difference");
-}
-if (borrowOut.Length < 0){
-throw new global::System.ArgumentOutOfRangeException("borrowOut", borrowOut.Length, "The array length must not be negative.");
-}
-if (borrowOut.Data == global::System.IntPtr.Zero && borrowOut.Length != 0){
-throw new global::System.ArgumentException("A null array has no elements, so its length must be 0.", "borrowOut");
-}
 long __gsharp_launch_block_count = global::Kassyi.GSharp.Runtime.LaunchLimits.CheckLaunch(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, "CarryAndBitIntrinsicKernels.CarryChainKernel");
 global::Kassyi.GSharp.Runtime.LaunchLimits.CheckTargetSharedMemory(sharedMemBytes, 0, 101376, "sm_86", "CarryAndBitIntrinsicKernels.CarryChainKernel");
 if (global::Kassyi.GSharp.Runtime.GpuExecution.Current == global::Kassyi.GSharp.Runtime.KernelExecution.CSharp)
@@ -715,12 +937,12 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 {
 throw new global::System.NotSupportedException("LaunchCarryChainKernelPtr runs only on the native CPU path: the managed CPU path (KernelExecution.Managed, or a build without the native library) does not run pointer launchers yet. Build the native library, or call LaunchCarryChainKernel, which runs on both paths.");
 }
-delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel", __gsharp_dll_path);
+delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainOperands*, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainResults*, void> __gsharp_hfunc = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, long, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainOperands*, global::Kassyi.GSharp.Tests.Shared.Syntax.CarryAndBitIntrinsicKernels.AotContexts.CarryChainResults*, void>)global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernelPtr("__gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__CarryAndBitIntrinsicKernels__CarryChainKernel", __gsharp_dll_path);
 if (s_errorSites.Length > 0)
 {
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.RegisterErrorSites(__gsharp_dll_path, s_errorSites);
 }
-__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = a.Data, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = b.Data, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = sum.Data, Length = sum.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = carryOut.Data, Length = carryOut.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = difference.Data, Length = difference.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = borrowOut.Data, Length = borrowOut.Length });
+__gsharp_hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, __gsharp_launch_block_count, &operands, &results);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(__gsharp_dll_path);
 }
 #pragma warning restore CS8500
