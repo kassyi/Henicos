@@ -228,25 +228,51 @@ internal static class NativeStackEligibility
     // [WHY] The native stack form of a method that reaches Warp.ActiveMask() writes the body that
     // AstLoweringPipeline.LowerForStack makes; when that lowering fails, the method keeps its state machine, as the
     // managed stack model keeps it (ManagedStackForms), instead of a stack form that fails the native build. The
-    // failure is the lowering's: the state machine form, which lowers the same body further, reports it
+    // body is lowered once (StackBodies): the stack form writes the same one, and the reason of a failure is stated
+    // in the kernel's text (StackBodyFailure)
     private static bool CanLowerForStack(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        !declaration.HasBody() || GetStackBody(method, declaration, semanticModel).Failure is null;
+
+    private static StackBodies.Result GetStackBody(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        StackBodies.Get(declaration, semanticModel, method.OriginalDefinition,
+            isDeviceFunction: !method.HasAttribute(KnownAttributes.GpuKernel));
+
+    /// <summary>
+    /// Why <paramref name="kernel"/> keeps its state machine with <see cref="NativeStackObstacle.StackBodyLowering"/>:
+    /// the method of its closure (the kernel or a device function it reaches through calls that suspend) whose stack
+    /// body could not be lowered, and the failure; <see langword="null"/> when none failed.
+    /// </summary>
+    public static string? StackBodyFailure(IMethodSymbol kernel, MethodDeclarationSyntax declaration,
         SemanticModel semanticModel)
     {
-        if (!declaration.HasBody())
+        var compilation = semanticModel.Compilation;
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var queue = new Queue<(IMethodSymbol Method, MethodDeclarationSyntax Declaration)>();
+        queue.Enqueue((kernel, declaration));
+        visited.Add(kernel);
+        while (queue.Count > 0)
         {
-            return true;
+            var (method, methodDeclaration) = queue.Dequeue();
+            var model = compilation.GetCachedSemanticModel(methodDeclaration.SyntaxTree);
+            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMask(method, compilation) &&
+                GetStackBody(method, methodDeclaration, model).Reason is { } reason)
+            {
+                return MessageText.Name(method) + ": " + reason;
+            }
+
+            foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration, compilation))
+            {
+                if (visited.Add(callee) &&
+                    SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                {
+                    queue.Enqueue((callee, calleeDeclaration));
+                }
+            }
         }
 
-        try
-        {
-            AstLoweringPipeline.LowerForStack(declaration, semanticModel, method,
-                isDeviceFunction: !method.HasAttribute(KnownAttributes.GpuKernel));
-            return true;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            return false;
-        }
+        return null;
     }
 
     private static BodyFacts ScanBody(MethodDeclarationSyntax declaration, SemanticModel semanticModel)

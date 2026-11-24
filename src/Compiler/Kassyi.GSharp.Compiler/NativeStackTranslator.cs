@@ -19,9 +19,19 @@ internal static class NativeStackTranslator
     {
         var stateMachine = new KernelCppText(cppSource, GpuKernelGenerator.ToIncludes(cppIncludes),
             errorSites.Entries.AsEquatableArray());
-        if (!context.OnStacks || context.TargetSymbol is not IMethodSymbol methodSymbol ||
-            NativeStackEligibility.Classify(methodSymbol, plan.Declaration, plan.SemanticModel) !=
-                NativeStackObstacle.None)
+        if (!context.OnStacks || context.TargetSymbol is not IMethodSymbol methodSymbol)
+        {
+            return stateMachine;
+        }
+
+        var obstacle = NativeStackEligibility.Classify(methodSymbol, plan.Declaration, plan.SemanticModel);
+        if (obstacle == NativeStackObstacle.StackBodyLowering &&
+            NativeStackEligibility.StackBodyFailure(methodSymbol, plan.Declaration, plan.SemanticModel) is { } reason)
+        {
+            return stateMachine with { Source = StackBodyFailureComment(reason) + cppSource };
+        }
+
+        if (obstacle != NativeStackObstacle.None)
         {
             return stateMachine;
         }
@@ -111,5 +121,23 @@ internal static class NativeStackTranslator
         return existing[existing.Length - 1] == '\n'
             ? existing + addition
             : existing + "\n" + addition;
+    }
+
+    // // G#: runs on the state machine under GSharpNativeBarrierModel=Stack, as its stack body could not be lowered:
+    // <method>: <failure>
+    // The reason of NativeStackObstacle.StackBodyLowering in the build output, as the managed stack model lists its
+    // failures (ManagedStackPipeline); one line, without a backslash that would continue the comment
+    internal static string StackBodyFailureComment(string reason)
+    {
+        using var writer = new SourceWriter();
+        writer.Append("// G#: runs on the state machine under GSharpNativeBarrierModel=Stack, ");
+        writer.Append("as its stack body could not be lowered: ");
+        foreach (var c in reason)
+        {
+            writer.Append(c is '\r' or '\n' or '\\' ? ' ' : c);
+        }
+
+        writer.AppendLine();
+        return writer.ToString();
     }
 }
