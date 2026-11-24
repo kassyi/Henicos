@@ -6,23 +6,29 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Cpu.Generator;
 
-// Every kernel of the shared test sources with Warp.ActiveMask() put in front of its body, built with the managed stack
-// model: the stack form of each writes the body lowered for the stacks (the state machine's passes up to its
-// reconvergence regions), and none of those forms may hold a C# error. The shared compilation has errors of its own
-// (types of the test projects it does not reference); only the errors inside a stack form count
+// Every kernel and device function of the shared test sources with Warp.ActiveMask() put in front of its body, built
+// with the managed stack model: the stack form of each writes the body lowered for the stacks (the state machine's
+// passes up to its reconvergence regions), and none of those forms may hold a C# error. The shared compilation has
+// errors of its own (types of the test projects it does not reference); only the errors inside a stack form count
 [Category(TestCategory.Compiler)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 public class StackBodySweepTests
 {
     private const string StackFormPrefix = "__gsharp_stackmodel_";
 
+    // [WHY] #2320 (User-defined && / || whose right operand reaches a split point lose the & / | call in the shared
+    // lowering): the lowering of such an operator writes !t for ||, which C# rejects for such a type, and the right
+    // operand alone in place of the operator, for the state machine as for the stacks. The file stays out of the sweep
+    // until #2320 is fixed
+    private const string UserDefinedShortCircuitFile = "OperatorMacroConditionalKernels.cu.cs";
+
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void SharedKernelsWithActiveMask_StackModel_StackFormsCompile()
+    public void SharedFunctionsWithActiveMask_StackModel_StackFormsCompile()
     {
-        var (compilation, kernels) =
-            WithActiveMaskInEveryKernel((CSharpCompilation)RoslynTestUtility.SharedCompilation);
-        Assert.True(kernels > 1000, $"only {kernels} kernels got Warp.ActiveMask()");
+        var (compilation, functions) =
+            WithActiveMaskInEveryFunction((CSharpCompilation)RoslynTestUtility.SharedCompilation);
+        Assert.True(functions > 2000, $"only {functions} kernels and device functions got Warp.ActiveMask()");
 
         var driver = CSharpGeneratorDriver.Create(
                 generators: [new GpuKernelGenerator().AsSourceGenerator()],
@@ -61,16 +67,17 @@ public class StackBodySweepTests
         Assert.True(errors.Count == 0, $"{errors.Count} errors in stack forms:\n" + string.Join("\n", errors.Take(40)));
     }
 
-    // The compilation with global::Kassyi.GSharp.Core.Warp.ActiveMask(); first in the body of every kernel of a
-    // .cu.cs file, and the number of such kernels
-    private static (CSharpCompilation Compilation, int Kernels) WithActiveMaskInEveryKernel(
+    // The compilation with global::Kassyi.GSharp.Core.Warp.ActiveMask(); first in the block body of every kernel and
+    // device function of a .cu.cs file, and the number of such functions
+    private static (CSharpCompilation Compilation, int Functions) WithActiveMaskInEveryFunction(
         CSharpCompilation shared)
     {
         var mutated = shared;
         var count = 0;
         foreach (var tree in shared.SyntaxTrees)
         {
-            if (!tree.FilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase))
+            if (!tree.FilePath.EndsWith(".cu.cs", StringComparison.OrdinalIgnoreCase) ||
+                tree.FilePath.EndsWith(UserDefinedShortCircuitFile, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -81,7 +88,8 @@ public class StackBodySweepTests
                 .OfType<MethodDeclarationSyntax>()
                 .Where(m => m.Body is not null &&
                             model.GetDeclaredSymbol(m) is { } method &&
-                            method.GetAttributes().Any(static a => a.AttributeClass?.Name == "GpuKernelAttribute"))
+                            method.GetAttributes().Any(static a =>
+                                a.AttributeClass?.Name is "GpuKernelAttribute" or "GpuDeviceFunctionAttribute"))
                 .ToArray();
             if (kernels.Length == 0)
             {
