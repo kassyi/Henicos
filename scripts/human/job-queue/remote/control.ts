@@ -5,6 +5,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { prefix, resolveStateDirectory } from "../system.ts";
+import { sanitizeRemoteLogText } from "./artifact-collector.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
 import {
   bashQuote,
@@ -12,6 +13,7 @@ import {
   RemoteLockFile,
   RemoteManifestDigestFile,
   RemoteManifestSha256File,
+  RemoteWorkspaceMarkerFile,
   type RemoteSpec,
 } from "./spec.ts";
 import { SshTransport, type RemoteTransport } from "./transport.ts";
@@ -39,8 +41,8 @@ export function buildResetScript(
   const cleanDirs = [...new Set([...BaseResetCleanDirs, ...remoteRules.resetCleanDirs])];
   const cleanSteps = clean
     ? [
-        'find "$WS" \\( -name bin -o -name obj \\) -type d -prune -exec rm -rf -- {} + 2>/dev/null || true',
-        `rm -rf -- ${cleanDirs.map((d) => `"$WS"/${bashQuote(d)}`).join(" ")} 2>/dev/null || true`,
+        '  find -- "$WS" \\( -name bin -o -name obj \\) -type d -prune -exec rm -rf -- {} + 2>/dev/null || true',
+        `  rm -rf -- ${cleanDirs.map((d) => `"$WS"/${bashQuote(d)}`).join(" ")} 2>/dev/null || true`,
       ].join("\n")
     : "";
 
@@ -48,7 +50,7 @@ export function buildResetScript(
     .filter((rule) => rule.searchDirs.length > 0)
     .map((rule) => {
       const dirs = rule.searchDirs.map((d) => `"$WS"/${bashQuote(d)}`).join(" ");
-      return `  find ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`;
+      return `  find -- ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`;
     });
 
   return [
@@ -61,7 +63,7 @@ export function buildResetScript(
     `  ps -u "$(id -u)" -o pid=,comm= | PROC_REGEX=${bashQuote(procRegex)} awk '$2 ~ ENVIRON["PROC_REGEX"] {print $1}'`,
     "}",
     "lock_pids() {",
-    '  if [ -d "$WS" ]; then',
+    `  if [ -d "$WS" ] && [ -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then`,
     `    fuser "$WS/${RemoteLockFile}" 2>/dev/null || true`,
     "  fi",
     "}",
@@ -81,7 +83,7 @@ export function buildResetScript(
     "    fi",
     "  done",
     "fi",
-    'if [ -d "$WS" ]; then',
+    `if [ -d "$WS" ] && [ -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then`,
     `  rm -f -- "$WS/${RemoteManifestDigestFile}" "$WS/${RemoteManifestSha256File}"`,
     ...artifactCleanLines,
     cleanSteps,
@@ -144,7 +146,9 @@ export async function remoteReset(
     const result = await resetWorker(new SshTransport(remote), clean, stateDir, remoteRules);
     if (!result.ok) {
       failures++;
-      prefix(`remote-reset ${remote.name} (${remote.host}) failed: ${result.error ?? "unknown"}`);
+      prefix(
+        `remote-reset ${remote.name} (${remote.host}) failed: ${sanitizeRemoteLogText(result.error ?? "unknown")}`,
+      );
       continue;
     }
     const cleanLabel = clean ? "yes" : "no";

@@ -154,6 +154,15 @@ export class RemoteStreamSanitizer {
   }
 }
 
+/** Sanitizes untrusted remote text for single-line logs: strips OSC/CSI/SGR and escapes C0/DEL/C1 controls. */
+export function sanitizeRemoteLogText(text: string): string {
+  const san = new RemoteStreamSanitizer();
+  const cleaned = san.push(text) + san.flush();
+  return cleaned
+    .replace(/\x1b\[[0-9;]*m/g, "")
+    .replace(/[\x00-\x1f\x7f-\x9f]/g, (ch) => `\\u${ch.charCodeAt(0).toString(16).padStart(4, "0")}`);
+}
+
 /** One decoded length-framed record from the remote artifact stream. */
 export interface ArtifactFrame {
   readonly relPosix: string;
@@ -266,7 +275,9 @@ function normKey(p: string): string {
 
 function isInsideRoot(root: string, target: string): boolean {
   const rel = path.relative(normKey(root), normKey(target));
-  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+  return (
+    rel === "" || (rel !== ".." && !rel.startsWith(`..${path.sep}`) && !rel.startsWith("../") && !path.isAbsolute(rel))
+  );
 }
 
 function normalizeTrackedFiles(knownTrackedFiles?: ReadonlySet<string>): ReadonlySet<string> | null {
@@ -529,7 +540,7 @@ export function writeValidatedFrames(
     const rejected = validateFrame(frame, ctx, seenLower);
     if (rejected !== null) {
       rejectedFiles.push({ path: frame.relPosix, reason: rejected });
-      warn(`rejected remote artifact ${frame.relPosix}: ${rejected}`);
+      warn(`rejected remote artifact ${sanitizeRemoteLogText(frame.relPosix)}: ${sanitizeRemoteLogText(rejected)}`);
       continue;
     }
 
@@ -539,7 +550,7 @@ export function writeValidatedFrames(
     const realParent = fs.realpathSync.native(parentDir);
     if (!isInsideRoot(realWorktree, realParent)) {
       rejectedFiles.push({ path: frame.relPosix, reason: "resolved parent escapes worktree" });
-      warn(`rejected remote artifact ${frame.relPosix}: parent escapes worktree`);
+      warn(`rejected remote artifact ${sanitizeRemoteLogText(frame.relPosix)}: parent escapes worktree`);
       continue;
     }
 
@@ -562,11 +573,16 @@ export function validateAndWriteArtifacts(payload: Buffer, options: ArtifactWrit
   const warn = options.warn ?? (() => {});
   const parsed = parseArtifactFrames(payload, maxFiles, maxTotalBytes);
   for (const err of parsed.errors) {
-    warn(`remote artifact stream rejected (${err.path}): ${err.reason}`);
+    warn(`remote artifact stream rejected (${sanitizeRemoteLogText(err.path)}): ${sanitizeRemoteLogText(err.reason)}`);
   }
   const result = writeValidatedFrames(parsed.frames, options);
   result.rejectedFiles.unshift(...parsed.errors);
   return result;
+}
+
+function toDotRel(relPath: string): string {
+  const stripped = relPath.replace(/^(?:\.\/)+/, "");
+  return stripped === "" ? "." : `./${stripped}`;
 }
 
 /** Builds the remote bash script that streams matching failure artifacts, crash summaries, and collectPaths. */
@@ -577,19 +593,19 @@ export function buildArtifactPullScript(
   remoteRules: ResolvedRemoteRules,
 ): string | null {
   const collectLines = collectPaths.map((spec) => {
-    const q = bashQuote(spec.path);
+    const q = bashQuote(toDotRel(spec.path));
     return spec.kind === "file"
       ? `if [ -f ${q} ] && [ ! -L ${q} ]; then printf '%s\\0' ${q}; fi`
       : `if [ -d ${q} ] && [ ! -L ${q} ]; then ` +
-          `find ${q} -type f ! -type l ! -name '*.dmp' -print0 2>/dev/null || true; fi`;
+          `find -- ${q} -type f ! -type l ! -name '*.dmp' -print0 2>/dev/null || true; fi`;
   });
   const failureFindLines: string[] = [];
   if (allowFailureArtifacts) {
     for (const rule of [...remoteRules.failureArtifacts, ...remoteRules.crashSummaries]) {
       if (rule.searchDirs.length > 0) {
-        const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
+        const dirs = rule.searchDirs.map((d) => bashQuote(toDotRel(d))).join(" ");
         failureFindLines.push(
-          `find ${dirs} -type f ! -type l -name ${bashQuote(rule.findName)} -print0 2>/dev/null || true`,
+          `find -- ${dirs} -type f ! -type l -name ${bashQuote(rule.findName)} -print0 2>/dev/null || true`,
         );
       }
     }
@@ -603,11 +619,12 @@ export function buildArtifactPullScript(
     `cd "$WS"`,
     "emit_file() {",
     '  local f="${1#./}"',
-    '  [ -f "$f" ] && [ ! -L "$f" ] || return 0',
-    '  local sz=$(stat -c %s "$f" 2>/dev/null || echo -1)',
+    '  local p="./$f"',
+    '  [ -f "$p" ] && [ ! -L "$p" ] || return 0',
+    '  local sz=$(stat -c %s -- "$p" 2>/dev/null || echo -1)',
     '  [ "$sz" -ge 0 ] || return 0',
     '  printf "%s\\0%s\\n" "$f" "$sz"',
-    '  cat "$f"',
+    '  cat -- "$p"',
     "}",
     "{",
     ...failureFindLines.map((l) => `  ${l}`),
@@ -680,7 +697,9 @@ export class ArtifactCollector {
     }
     const parsed = parseArtifactFrames(payload);
     for (const err of parsed.errors) {
-      warn(`remote artifact stream rejected (${err.path}): ${err.reason}`);
+      warn(
+        `remote artifact stream rejected (${sanitizeRemoteLogText(err.path)}): ${sanitizeRemoteLogText(err.reason)}`,
+      );
     }
 
     const crashedTests: string[] = [];
@@ -699,7 +718,10 @@ export class ArtifactCollector {
       const hygiene = gatePathHygiene(frame.relPosix);
       if (!hygiene.ok) {
         crashRejected.push({ path: frame.relPosix, reason: hygiene.reason });
-        warn(`rejected remote crash summary ${frame.relPosix}: ${hygiene.reason}`);
+        warn(
+          `rejected remote crash summary ${sanitizeRemoteLogText(frame.relPosix)}: ` +
+            `${sanitizeRemoteLogText(hygiene.reason)}`,
+        );
         continue;
       }
       const quota = gateQuotas(frame, {
@@ -715,7 +737,10 @@ export class ArtifactCollector {
       });
       if (!quota.ok) {
         crashRejected.push({ path: frame.relPosix, reason: quota.reason });
-        warn(`rejected remote crash summary ${frame.relPosix}: ${quota.reason}`);
+        warn(
+          `rejected remote crash summary ${sanitizeRemoteLogText(frame.relPosix)}: ` +
+            `${sanitizeRemoteLogText(quota.reason)}`,
+        );
         continue;
       }
       crashTotalBytes += frame.data.length;

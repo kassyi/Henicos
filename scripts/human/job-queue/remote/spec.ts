@@ -20,7 +20,39 @@ export const MaxRemoteSlots = 1;
 export const RemoteManifestDigestFile = ".job-queue-manifest.digest";
 export const RemoteManifestSha256File = ".job-queue-manifest.sha256";
 export const RemoteLockFile = ".job-queue-slot.lock";
-export const RemoteMetadataFiles = [RemoteManifestDigestFile, RemoteManifestSha256File, RemoteLockFile] as const;
+export const RemoteWorkspaceMarkerFile = ".job-queue-workspace";
+export const RemoteMetadataFiles = [
+  RemoteManifestDigestFile,
+  RemoteManifestSha256File,
+  RemoteLockFile,
+  RemoteWorkspaceMarkerFile,
+] as const;
+
+const WorkspaceSafePattern = /^(?:~\/[A-Za-z0-9_./-]+|\/[A-Za-z0-9_./-]+)$/;
+
+/**
+ * Validates a remote workspace POSIX path: requires `~/subdir...` (>= 1 segment) or `/a/b...` (>= 2 segments),
+ * safe ASCII path characters without control chars or backslashes, and no `.`, `..`, empty, or `-`-prefixed segments.
+ */
+export function isValidRemoteWorkspace(raw: unknown): boolean {
+  if (typeof raw !== "string" || /[\u0000-\u001f\u007f\\]/.test(raw)) {
+    return false;
+  }
+  const trimmed = raw.trim();
+  if (!WorkspaceSafePattern.test(trimmed)) {
+    return false;
+  }
+  const isHomeRel = trimmed.startsWith("~/");
+  const body = (isHomeRel ? trimmed.slice(2) : trimmed.slice(1)).replace(/\/+$/, "");
+  if (body === "") {
+    return false;
+  }
+  const segments = body.split("/");
+  if (segments.length < (isHomeRel ? 1 : 2)) {
+    return false;
+  }
+  return segments.every((seg) => seg !== "" && seg !== "." && seg !== ".." && !seg.startsWith("-"));
+}
 
 /** Mandatory OpenSSH hardening and dead-connection keepalive flags enforced on every remote SSH invocation. */
 export const MandatorySshOptions: readonly string[] = [

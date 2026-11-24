@@ -6,7 +6,7 @@ import * as path from "node:path";
 import type { ResourceProbeConfig } from "../config.ts";
 import { isRemoteMode, type RemoteMode } from "../constants.ts";
 import { errorMessage } from "../history.ts";
-import { MaxRemoteSlots } from "./spec.ts";
+import { isValidRemoteWorkspace, MaxRemoteSlots } from "./spec.ts";
 
 export interface RemoteWorkerConfig {
   /** SSH host (e.g. "jobrunner@ubuntu-server.lan"). */
@@ -261,9 +261,9 @@ export function validateRemote(
   if (!isNonEmptyString(raw.host) || !RemoteHostPattern.test(raw.host)) {
     throw new Error(`config remotes.${name}.host must be a valid [user@]hostname without leading "-"`);
   }
-  if (!isNonEmptyString(raw.workspace) || raw.workspace.trimStart().startsWith("-") || /[\r\n\0]/.test(raw.workspace)) {
+  if (!isValidRemoteWorkspace(raw.workspace)) {
     throw new Error(
-      `config remotes.${name}.workspace must be a non-empty POSIX path without leading "-" or control characters`,
+      `config remotes.${name}.workspace must be a safe ~/subdir or /a/b POSIX path without ".", "..", control characters, or leading "-" segments`,
     );
   }
   if (typeof raw.cpus !== "number" || !Number.isInteger(raw.cpus) || raw.cpus < 1) {
@@ -274,7 +274,7 @@ export function validateRemote(
   }
   const remote: RemoteWorkerConfig = {
     host: raw.host,
-    workspace: raw.workspace,
+    workspace: (raw.workspace as string).trim(),
     cpus: raw.cpus,
     memoryMb: raw.memoryMb,
   };

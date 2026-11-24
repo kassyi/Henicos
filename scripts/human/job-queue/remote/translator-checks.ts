@@ -228,13 +228,140 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
       assert.strictEqual(translateForRemote("node scripts/a.js && cd scripts && node a.js", baseOpts), null);
       assert.strictEqual(translateForRemote("node scripts/a.js; Set-Location scripts; node a.js", baseOpts), null);
 
+      // NB5: cd -, cd ~, nonexistent cd, and file-target cd fail closed across shells (even if "-" or "~" dirs exist)
+      fs.mkdirSync(path.join(wt, "-"), { recursive: true });
+      fs.mkdirSync(path.join(wt, "~"), { recursive: true });
+      for (const shell of ["bash", "pwsh", "cmd"] as const) {
+        assert.strictEqual(
+          translateForRemote("cd - && echo hi", { ...baseOpts, shell }),
+          null,
+          `${shell} rejects cd -`,
+        );
+        assert.strictEqual(
+          translateForRemote("cd ~ && echo hi", { ...baseOpts, shell }),
+          null,
+          `${shell} rejects cd ~`,
+        );
+        assert.strictEqual(
+          translateForRemote("cd ~/scripts && echo hi", { ...baseOpts, shell }),
+          null,
+          `${shell} rejects cd ~/scripts`,
+        );
+        assert.strictEqual(
+          translateForRemote("cd nonexistent && echo hi", { ...baseOpts, shell }),
+          null,
+          `${shell} rejects missing cd target`,
+        );
+        assert.strictEqual(
+          translateForRemote("cd scripts/a.js && echo hi", { ...baseOpts, shell }),
+          null,
+          `${shell} rejects file cd target`,
+        );
+      }
+      assert.strictEqual(translateForRemote("Set-Location -; echo hi", baseOpts), null);
+      assert.strictEqual(translateForRemote("Set-Location ~; echo hi", baseOpts), null);
+      assert.strictEqual(translateForRemote("Set-Location -Path scripts; echo hi", baseOpts), null);
+      assert.strictEqual(translateForRemote("sl nonexistent; echo hi", baseOpts), null);
+      assert.strictEqual(translateForRemote('cd "" && echo hi', { ...baseOpts, shell: "bash" }), null);
+      const pwshCd = translateForRemote("Set-Location scripts; node a.js", baseOpts);
+      assert.ok(pwshCd !== null && pwshCd.remoteCwdRel === "scripts");
+
+      // B3: reject variable expansion across bash, pwsh, and cmd while keeping single-quoted literals safe
+      for (const badBash of [
+        'node scripts/a.js --filter "FullyQualifiedName~$NAME"',
+        'node scripts/a.js --filter "FullyQualifiedName~${NAME}"',
+        "node scripts/a.js --filter $NAME",
+      ]) {
+        assert.strictEqual(
+          translateForRemote(badBash, { ...baseOpts, shell: "bash" }),
+          null,
+          `bash rejects ${badBash}`,
+        );
+      }
+      const bashSingleQuotedDollar = translateForRemote("node scripts/a.js --filter 'FullyQualifiedName~$NAME'", {
+        ...baseOpts,
+        shell: "bash",
+      });
+      assert.ok(
+        bashSingleQuotedDollar !== null && bashSingleQuotedDollar.bashCommand.includes("'FullyQualifiedName~$NAME'"),
+        "bash preserves single-quoted literal $NAME",
+      );
+      const bashPercentLiteral = translateForRemote('node scripts/a.js --filter "Name~100%"', {
+        ...baseOpts,
+        shell: "bash",
+      });
+      assert.ok(bashPercentLiteral !== null && bashPercentLiteral.bashCommand.includes("'Name~100%'"));
+
+      for (const badPwsh of [
+        `node ${script} --filter "FullyQualifiedName~$NAME"`,
+        `node ${script} --filter "FullyQualifiedName~$env:NAME"`,
+        `node ${script} --filter $env:NAME`,
+      ]) {
+        assert.strictEqual(translateForRemote(badPwsh, baseOpts), null, `pwsh rejects ${badPwsh}`);
+      }
+      const pwshLeadingEnv = translateForRemote(`$env:CI='true'; node ${script}`, baseOpts);
+      assert.ok(pwshLeadingEnv !== null && pwshLeadingEnv.env.CI === "true");
+
+      for (const badCmd of [
+        `node ${script} --filter "FullyQualifiedName~%NAME%"`,
+        `node ${script} --filter %NAME%`,
+        `node ${script} --filter 'FullyQualifiedName~%NAME%'`,
+      ]) {
+        assert.strictEqual(translateForRemote(badCmd, { ...baseOpts, shell: "cmd" }), null, `cmd rejects ${badCmd}`);
+      }
+      const cmdLiteral = translateForRemote(`node ${script} --filter "FullyQualifiedName~SmokeTests"`, {
+        ...baseOpts,
+        shell: "cmd",
+      });
+      assert.ok(cmdLiteral !== null && cmdLiteral.bashCommand.includes("FullyQualifiedName~SmokeTests"));
+
+      // NB2: fd duplication redirections (1>&2, 1>&1, *>&1, 2>&1) vs unsupported &-targets
+      const bash12 = translateForRemote("node scripts/a.js 1>&2", { ...baseOpts, shell: "bash" });
+      assert.ok(bash12 !== null && bash12.bashCommand.endsWith(" 1>&2"));
+      assert.deepStrictEqual(bash12.collectPaths, []);
+      const bash11 = translateForRemote("node scripts/a.js 1>&1", { ...baseOpts, shell: "bash" });
+      assert.ok(bash11 !== null && bash11.bashCommand.endsWith(" 1>&1"));
+      assert.deepStrictEqual(bash11.collectPaths, []);
+      const pwshStar1 = translateForRemote("node scripts/a.js *>&1", baseOpts);
+      assert.ok(pwshStar1 !== null && pwshStar1.bashCommand.endsWith(" 2>&1"));
+      assert.deepStrictEqual(pwshStar1.collectPaths, []);
+      assert.strictEqual(translateForRemote("node scripts/a.js 3>&1", baseOpts), null);
+      assert.strictEqual(translateForRemote("node scripts/a.js 2>&-", { ...baseOpts, shell: "bash" }), null);
+      assert.strictEqual(translateForRemote("node scripts/a.js >&2", { ...baseOpts, shell: "bash" }), null);
+      assert.strictEqual(translateForRemote('node scripts/a.js > "&2"', { ...baseOpts, shell: "bash" }), null);
+
+      // NB7-c: > NUL / > /dev/null rewrite without collection; > CON and reserved devices fail closed
+      for (const nulShell of ["cmd", "pwsh"] as const) {
+        const nulPlan = translateForRemote("node scripts/a.js > NUL", { ...baseOpts, shell: nulShell });
+        assert.ok(nulPlan !== null && nulPlan.bashCommand.includes("> /dev/null"));
+        assert.deepStrictEqual(nulPlan.collectPaths, []);
+        const nul2Plan = translateForRemote("node scripts/a.js 2> nul 2>&1", { ...baseOpts, shell: nulShell });
+        assert.ok(nul2Plan !== null && nul2Plan.bashCommand.includes("2> /dev/null 2>&1"));
+        assert.deepStrictEqual(nul2Plan.collectPaths, []);
+      }
+      const devNullBash = translateForRemote("node scripts/a.js > /dev/null", { ...baseOpts, shell: "bash" });
+      assert.ok(devNullBash !== null && devNullBash.bashCommand.includes("> /dev/null"));
+      assert.deepStrictEqual(devNullBash.collectPaths, []);
+      assert.strictEqual(translateForRemote("node scripts/a.js > NUL", { ...baseOpts, shell: "bash" }), null);
+      for (const badRedir of ["> CON", "> con", "2> CON", "> PRN", "> AUX", "> COM1", "> tmp/CON.log"]) {
+        assert.strictEqual(translateForRemote(`node scripts/a.js ${badRedir}`, baseOpts), null, `rejects ${badRedir}`);
+        assert.strictEqual(
+          translateForRemote(`node scripts/a.js ${badRedir}`, { ...baseOpts, shell: "bash" }),
+          null,
+          `bash rejects ${badRedir}`,
+        );
+      }
+
       // Broad --results-directory rejected while narrow tmp/trx allowed; /nr:false & /p:... not treated as paths
       const runnerPlugin: QueuePlugin = {
         name: "test-runner",
         apiVersion: PluginApiVersion,
         remoteOffload: () => ({
           allowedPrograms: ["dotnet"],
-          pathValueOptions: ["--results-directory"],
+          pathValueOptions: ["--results-directory", "-d", "-o"],
+          nonPathValueOptions: ["--filter", "--property", "-l", "--logger"],
+          isOptionValuePath: (program, subcommand, option) =>
+            program === "dotnet" && option === "-p" ? subcommand === "run" : undefined,
           collectDirOptions: ["--results-directory"],
         }),
       };
@@ -265,6 +392,168 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
       assert.deepStrictEqual(narrow.collectPaths, [{ path: "tmp/trx", kind: "dir" }]);
       assert.ok(narrow.bashCommand.includes("/nr:false"));
       assert.ok(narrow.bashCommand.includes("/p:Configuration=Release"));
+
+      // B5: reject leading "-" paths/segments in --results-directory, -d, redirections, and plugin collectPaths
+      for (const dashCmd of [
+        "dotnet test --results-directory -delete",
+        "dotnet test --results-directory=-delete",
+        "dotnet test --results-directory ./-delete",
+        "cd scripts && dotnet test --results-directory -delete",
+        "dotnet test -d -evil.log",
+        "node scripts/a.js > -evil.log",
+        "node scripts/a.js > tmp/-evil.log",
+      ]) {
+        assert.strictEqual(
+          translateForRemote(dashCmd, { ...baseOpts, remoteRules: runnerRules }),
+          null,
+          `rejects leading dash path: ${dashCmd}`,
+        );
+      }
+      const dashPlugin: QueuePlugin = {
+        name: "dash-collect",
+        apiVersion: PluginApiVersion,
+        remoteOffload: () => ({
+          allowedPrograms: ["node"],
+          rewriteStatement: () => ({ collectPaths: [{ path: "-delete", kind: "dir" }] }),
+        }),
+      };
+      const dashRules = new PluginHost([dashPlugin], [{}], wt, () => {}).remoteOffload({
+        cwd: wt,
+        worktree: wt,
+        configRoot: wt,
+        shell: "pwsh",
+        env: {},
+        log: () => {},
+      });
+      assert.strictEqual(translateForRemote("node scripts/a.js", { ...baseOpts, remoteRules: dashRules }), null);
+
+      // NB7-a: reject forbidden collect targets early in addCollect
+      for (const forbiddenDir of [
+        ".git",
+        ".git/hooks",
+        ".claude",
+        ".vscode",
+        "node_modules",
+        "sub/node_modules",
+        "docs/spec",
+        "scripts/sub",
+        ".agents/sub",
+        ".github/workflows",
+        "src/App/bin",
+        "src/App/obj",
+      ]) {
+        assert.strictEqual(
+          translateForRemote(`dotnet test --results-directory ${forbiddenDir}`, {
+            ...baseOpts,
+            remoteRules: runnerRules,
+          }),
+          null,
+          `rejects forbidden collect dir: ${forbiddenDir}`,
+        );
+      }
+      for (const forbiddenRedir of [
+        "node scripts/a.js > .git/hooks/pre-commit",
+        "node scripts/a.js > docs/spec/en/a.md",
+        "node scripts/a.js > scripts/out.log",
+        "node scripts/a.js > tests/Snap.verified.txt",
+        "node scripts/a.js > src/App/obj/a.log",
+      ]) {
+        assert.strictEqual(
+          translateForRemote(forbiddenRedir, baseOpts),
+          null,
+          `rejects forbidden redir: ${forbiddenRedir}`,
+        );
+      }
+      const badCollectPlugin: QueuePlugin = {
+        name: "bad-collect",
+        apiVersion: PluginApiVersion,
+        remoteOffload: () => ({
+          allowedPrograms: ["node"],
+          rewriteStatement: () => ({ collectPaths: [{ path: "docs/spec", kind: "dir" }] }),
+        }),
+      };
+      const badCollectRules = new PluginHost([badCollectPlugin], [{}], wt, () => {}).remoteOffload({
+        cwd: wt,
+        worktree: wt,
+        configRoot: wt,
+        shell: "pwsh",
+        env: {},
+        log: () => {},
+      });
+      assert.strictEqual(translateForRemote("node scripts/a.js", { ...baseOpts, remoteRules: badCollectRules }), null);
+
+      // NB7-b: allow valid "..foo" names while still rejecting ".." and "../escape"
+      fs.mkdirSync(path.join(wt, "..foo"), { recursive: true });
+      fs.writeFileSync(path.join(wt, "..foo", "a.js"), "console.log('ok');");
+      const dotdotFooCmd = translateForRemote("node ..foo/a.js", baseOpts);
+      assert.ok(dotdotFooCmd !== null && dotdotFooCmd.bashCommand.includes("..foo/a.js"));
+      const dotdotFooDir = translateForRemote("dotnet test --results-directory ..foo", {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(dotdotFooDir !== null);
+      assert.deepStrictEqual(dotdotFooDir.collectPaths, [{ path: "..foo", kind: "dir" }]);
+      const dotdotFooRedir = translateForRemote("node scripts/a.js > ..foo.log", baseOpts);
+      assert.ok(dotdotFooRedir !== null);
+      assert.deepStrictEqual(dotdotFooRedir.collectPaths, [{ path: "..foo.log", kind: "file" }]);
+      assert.strictEqual(translateForRemote("node ../escape.js", baseOpts), null);
+
+      // NB6: worktree containment after --, in MSBuild /p /bl /flp /l -p --property switches, and @rsp
+      const outsideFile = path.join(tmp, "outside.txt");
+      for (const nb6Reject of [
+        "dotnet test -- ../outside.txt",
+        "dotnet test -- /etc/passwd",
+        `dotnet test -- ${outsideFile}`,
+        "dotnet test -- --output=../outside.txt",
+        "dotnet test -- -o ../outside.txt",
+        "dotnet test -- RunConfiguration.ResultsDirectory=../outside",
+        'dotnet test -- \'TestRunParameters.Parameter(name="x", value="../outside")\'',
+        "dotnet test -- /m",
+        "dotnet test /p:OutDir=../outside",
+        "dotnet test /p:Configuration=Release;OutDir=../outside",
+        "dotnet test -p:OutDir=../outside",
+        "dotnet test --property:OutDir=../outside",
+        "dotnet test --property OutDir=../outside",
+        "dotnet test /bl:../outside.binlog",
+        "dotnet test /bl:LogFile=../outside.binlog;ProjectImports=None",
+        "dotnet test -bl:../outside.binlog",
+        "dotnet test /flp:LogFile=../outside.log;Verbosity=diag",
+        "dotnet test /flp1:LogFile=../outside.log",
+        "dotnet test -flp:LogFile=../outside.log",
+        "dotnet test /l:FileLogger,../outside.dll;logfile=../outside.log",
+        'dotnet test --logger "trx;LogFileName=../outside.trx"',
+        "dotnet test @local.rsp",
+        "dotnet test @../outside.rsp",
+        "dotnet test -- @local.rsp",
+      ]) {
+        assert.strictEqual(
+          translateForRemote(nb6Reject, { ...baseOpts, remoteRules: runnerRules }),
+          null,
+          `NB6 rejects: ${nb6Reject}`,
+        );
+      }
+      const ddAllowed = translateForRemote(`dotnet test -- RunConfiguration.X=1 ${path.join(wt, "tests", "in.txt")}`, {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(ddAllowed !== null && ddAllowed.bashCommand.includes("tests/in.txt"));
+      const bareMsbuild = translateForRemote("dotnet test /bl /nologo /m /flp:Verbosity=diag", {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(bareMsbuild !== null);
+      const slashFilter = translateForRemote('dotnet test --filter "FullyQualifiedName~Name/WithSlash"', {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(slashFilter !== null);
+      const nodeEval = translateForRemote('node -e "console.log(1/2)"', baseOpts);
+      assert.ok(nodeEval !== null);
+      const blInside = translateForRemote(`dotnet test /bl:${path.join(wt, "tmp", "build.binlog")}`, {
+        ...baseOpts,
+        remoteRules: runnerRules,
+      });
+      assert.ok(blInside !== null && blInside.bashCommand.includes("/bl:tmp/build.binlog"));
 
       // Windows-specific Git Bash /c/... and case-insensitive options.places
       if (process.platform === "win32") {

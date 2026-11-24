@@ -1,15 +1,21 @@
 // Unit checks for RemoteStreamSanitizer, 1-pass artifact frame parsing, and the 6-gate ArtifactCollector boundary.
 
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { gitBashPath } from "../shell.ts";
 import {
+  ArtifactCollector,
+  buildArtifactPullScript,
   MaxControlSeqLen,
   parseArtifactFrames,
   RemoteStreamSanitizer,
+  sanitizeRemoteLogText,
   validateAndWriteArtifacts,
 } from "./artifact-collector.ts";
-import { makeFrame, type AssertModule } from "./checks-support.ts";
+import { FakeRemoteTransport, makeFrame, makeRemote, type AssertModule } from "./checks-support.ts";
+import { EmptyRemoteRules } from "./rules.ts";
 
 function sanitizeAll(chunks: (string | Buffer)[]): string {
   const san = new RemoteStreamSanitizer();
@@ -20,7 +26,7 @@ function sanitizeAll(chunks: (string | Buffer)[]): string {
   return out + san.flush();
 }
 
-export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void> = {
+export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void | Promise<void>> = {
   remoteStreamSanitizerStripsDangerousEscapes(assert: AssertModule): void {
     const san = new RemoteStreamSanitizer();
     const raw =
@@ -222,6 +228,147 @@ export const RemoteArtifactChecks: Record<string, (assert: AssertModule) => void
       });
       assert.deepStrictEqual(big.writtenFiles, []);
       assert.strictEqual(big.rejectedFiles.length, 1);
+
+      // NB3a: *.verified.* inside an explicitly allowed collectPaths dir must still be blocked by Gate 2
+      const verifiedInsideCollect = validateAndWriteArtifacts(
+        makeFrame("tmp/trx/Snap.Foo.verified.txt", "snapshot tamper"),
+        {
+          worktree: wt,
+          allowReceived: true,
+          knownLocalDirs: new Set(),
+          collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+        },
+      );
+      assert.deepStrictEqual(verifiedInsideCollect.writtenFiles, []);
+      assert.strictEqual(verifiedInsideCollect.rejectedFiles.length, 1);
+      assert.ok(verifiedInsideCollect.rejectedFiles[0]?.reason.includes(".verified."));
+      assert.ok(!fs.existsSync(path.join(wt, "tmp", "trx", "Snap.Foo.verified.txt")));
+
+      // NB7: ..foo directory/files are valid paths inside worktree (not parent traversal)
+      const dotdotNameRes = validateAndWriteArtifacts(makeFrame("..foo/run1.trx", "<TestRun />"), {
+        worktree: wt,
+        allowReceived: false,
+        knownLocalDirs: new Set(),
+        collectPaths: [{ path: "..foo", kind: "dir" }],
+      });
+      assert.deepStrictEqual(dotdotNameRes.writtenFiles, ["..foo/run1.trx"]);
+      assert.strictEqual(dotdotNameRes.rejectedFiles.length, 0);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  },
+
+  async remoteArtifactWarningsSanitizeAndPullUsesDashDash(assert: AssertModule): Promise<void> {
+    assert.strictEqual(
+      sanitizeRemoteLogText("\x1b]52;c;ZXZpbA==\x07\x1b[31mSuite.Evil\x1b[0m\r\n\x1b[2J"),
+      "Suite.Evil\\u000d\\u000a",
+    );
+
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "job-queue-art-nb1-b5-"));
+    try {
+      const wt = path.join(tmp, "wt");
+      fs.mkdirSync(path.join(wt, "tmp"), { recursive: true });
+      const warnings: string[] = [];
+
+      // NB1: rejected artifact path and malformed frame stream warnings strip OSC 52, SGR, CSI, and CR/LF
+      validateAndWriteArtifacts(
+        Buffer.concat([
+          makeFrame("tmp/trx/\x1b]52;c;ZXZpbA==\x07\x1b[31mevil\x1b[0m\n.txt", "bad"),
+          Buffer.from("tmp/\x1b]52;c;ZXZpbA==\x07bad\x00notanint\nhi", "utf8"),
+        ]),
+        {
+          worktree: wt,
+          allowReceived: false,
+          knownLocalDirs: new Set(),
+          collectPaths: [{ path: "tmp/trx", kind: "dir" }],
+          warn: (msg) => warnings.push(msg),
+        },
+      );
+      assert.strictEqual(warnings.length, 2);
+      for (const msg of warnings) {
+        assert.ok(!msg.includes("\x1b"), `no ESC in warning: ${msg}`);
+        assert.ok(!msg.includes("\x07"), `no BEL in warning: ${msg}`);
+        assert.ok(!msg.includes("52;c;"), `no OSC 52 payload in warning: ${msg}`);
+        assert.ok(!/[\r\n]/.test(msg), `single-line warning: ${msg}`);
+      }
+
+      // NB1: ArtifactCollector.pull sanitizes invalid crash summary paths & malformed frames
+      const pullWarnings: string[] = [];
+      const transport = new FakeRemoteTransport(makeRemote({ workspace: "~/demo" }));
+      transport.binaryHandler = () =>
+        Buffer.concat([
+          makeFrame("TestResults/\x1b]52;c;ZXZpbA==\x07/Sequence_1.xml", "<TestSequence />"),
+          Buffer.from("TestResults/x\x00bad\nhi", "utf8"),
+        ]);
+      const collector = new ArtifactCollector(transport, {
+        ...EmptyRemoteRules,
+        crashSummaries: [
+          {
+            searchDirs: ["TestResults"],
+            findName: "Sequence_*.xml",
+            pathPattern: /(?:^|\/)TestResults\/.*Sequence_[^/]+\.xml$/i,
+            cleanBeforeRun: false,
+            parse: () => [],
+          },
+        ],
+      });
+      await collector.pull(wt, true, new Set(), [], { warn: (m) => pullWarnings.push(m) });
+      assert.strictEqual(pullWarnings.length, 2);
+      for (const msg of pullWarnings) {
+        assert.ok(!msg.includes("\x1b") && !msg.includes("\x07") && !msg.includes("52;c;"));
+      }
+
+      // B5: buildArtifactPullScript prefixes ./ on find targets and adds -- to find, stat, and cat
+      const pullScript = buildArtifactPullScript(
+        "~/demo",
+        true,
+        [
+          { path: "tmp/trx", kind: "dir" },
+          { path: "-delete", kind: "dir" },
+        ],
+        {
+          ...EmptyRemoteRules,
+          failureArtifacts: [
+            {
+              searchDirs: ["tests"],
+              findName: "*.actual.txt",
+              allowPattern: /^tests\/.*\.actual\.txt$/,
+              requireKnownLocalDir: true,
+              cleanBeforeRun: false,
+            },
+          ],
+        },
+      );
+      assert.ok(pullScript !== null);
+      assert.ok(pullScript.includes("find -- ./tmp/trx "));
+      assert.ok(pullScript.includes("find -- ./-delete "));
+      assert.ok(pullScript.includes("find -- ./tests "));
+      assert.ok(pullScript.includes('stat -c %s -- "$p"'));
+      assert.ok(pullScript.includes('cat -- "$p"'));
+
+      const bashBin = gitBashPath();
+      const canRunBash =
+        (process.platform !== "win32" || bashBin !== "bash") &&
+        spawnSync(bashBin, ["-c", "command -v find stat cat printf >/dev/null"], { windowsHide: true }).status === 0;
+      if (canRunBash) {
+        const fakeHome = path.join(tmp, "home");
+        const wsDir = path.join(fakeHome, "demo");
+        fs.mkdirSync(path.join(wsDir, "-delete"), { recursive: true });
+        fs.mkdirSync(path.join(wsDir, "tmp", "trx"), { recursive: true });
+        fs.writeFileSync(path.join(wsDir, "keep.txt"), "keep", "utf8");
+        fs.writeFileSync(path.join(wsDir, "-delete", "a.txt"), "dash-data", "utf8");
+        fs.writeFileSync(path.join(wsDir, "tmp", "trx", "run1.trx"), "<TestRun />", "utf8");
+
+        const res = spawnSync(bashBin, ["-c", pullScript], {
+          env: { ...process.env, HOME: fakeHome.replace(/\\/g, "/") },
+          windowsHide: true,
+        });
+        assert.strictEqual(res.status, 0, res.stderr?.toString("utf8"));
+        assert.strictEqual(fs.existsSync(path.join(wsDir, "keep.txt")), true, "GNU find must not delete keep.txt");
+        const parsed = parseArtifactFrames(res.stdout);
+        assert.deepStrictEqual(parsed.errors, []);
+        assert.deepStrictEqual(parsed.frames.map((f) => f.relPosix).sort(), ["-delete/a.txt", "tmp/trx/run1.trx"]);
+      }
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

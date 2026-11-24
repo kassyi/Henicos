@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { QueueConfig } from "../job-queue/config.ts";
-import { buildSshArgs, remoteSpecsFromConfig } from "../job-queue/remote/spec.ts";
+import { buildSshArgs, remoteSpecsFromConfig, RemoteWorkspaceMarkerFile } from "../job-queue/remote/spec.ts";
 import { buildAutoinstallMetaData, buildAutoinstallUserData } from "./autoinstall.ts";
 import { CliUsageError, main, parseArgs } from "./cli.ts";
 import { buildHardeningShellScript, buildSshdMatchConfig } from "./hardening.ts";
@@ -90,7 +90,35 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
   assert.throws(() => validateProfile({ ...sampleRaw, packages: ["clang; rm -rf /"] }));
   assert.throws(() => validateProfile({ ...sampleRaw, setupCommands: ["echo ok\nrm -rf /"] }));
   assert.throws(() => validateProfile({ ...sampleRaw, cacheDirs: ["../etc"] }));
-  assert.throws(() => validateProfile({ ...sampleRaw, workspace: "~/../etc" }));
+  for (const badWorkspace of [
+    "~",
+    "/",
+    "~/",
+    "///",
+    "~user/henicos",
+    "~/.",
+    "~/..",
+    "~/./a",
+    "~/a/.",
+    "~/a/..",
+    "~/../etc",
+    "/.",
+    "/..",
+    "/a/..",
+    "/tmp",
+    "-rf",
+    "~/a/-rf",
+    "~/a//b",
+    "~/henicos\n",
+  ]) {
+    assert.throws(
+      () => validateProfile({ ...sampleRaw, workspace: badWorkspace }),
+      `rejects unsafe workspace ${JSON.stringify(badWorkspace)}`,
+    );
+  }
+  for (const goodWorkspace of ["~/henicos", "~/sub/henicos", "~/my..repo", "/srv/henicos", "/home/jobrunner/henicos"]) {
+    assert.strictEqual(validateProfile({ ...sampleRaw, workspace: goodWorkspace }).workspace, goodWorkspace);
+  }
 
   const ipv6DnsProfile = validateProfile({
     ...sampleRaw,
@@ -146,6 +174,11 @@ export function runProvisionerSelfTest(exampleProfilePath: string): void {
     assert.ok(script.includes("ufw6-before-output -m owner --uid-owner ${RUNNER_UID} -j REJECT"));
     assert.ok(script.includes("BEGIN GSHARP-JOBRUNNER-ISOLATION"));
     assert.ok(script.includes("/home/$RUNNER_USER/henicos"));
+    assert.ok(
+      script.includes(`: > "/home/$RUNNER_USER/henicos/${RemoteWorkspaceMarkerFile}"`) &&
+        script.includes(`chown "$RUNNER_USER:$RUNNER_USER" "/home/$RUNNER_USER/henicos/${RemoteWorkspaceMarkerFile}"`),
+      "creates and chowns workspace marker file",
+    );
     assert.ok(script.includes("/home/$RUNNER_USER/.nuget/packages"));
     assert.ok(script.includes("Match all"));
     assert.ok(script.includes("[ ! -f /etc/ufw/before.rules ]"), "fails when /etc/ufw/before.rules is absent");

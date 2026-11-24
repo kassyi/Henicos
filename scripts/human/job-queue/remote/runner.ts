@@ -8,7 +8,7 @@ import * as crypto from "node:crypto";
 import * as path from "node:path";
 import type { ShellResult } from "../shell.ts";
 import { prefix, resolveStateDirectory } from "../system.ts";
-import { ArtifactCollector, RemoteStreamSanitizer } from "./artifact-collector.ts";
+import { ArtifactCollector, RemoteStreamSanitizer, sanitizeRemoteLogText } from "./artifact-collector.ts";
 import type { RemoteCommandPlan } from "./command-translator.ts";
 import { EmptyRemoteRules, type ResolvedRemoteRules } from "./rules.ts";
 import {
@@ -17,6 +17,7 @@ import {
   RemoteLockFile,
   RemoteManifestDigestFile,
   RemoteManifestSha256File,
+  RemoteWorkspaceMarkerFile,
   type RemoteSpec,
 } from "./spec.ts";
 import { manifestParentDirs, WorkspaceSyncer } from "./syncer.ts";
@@ -49,8 +50,8 @@ function buildCleanupLines(remoteRules: ResolvedRemoteRules): string[] {
   const lines: string[] = [];
   for (const rule of [...remoteRules.failureArtifacts, ...remoteRules.crashSummaries]) {
     if (rule.cleanBeforeRun && rule.searchDirs.length > 0) {
-      const dirs = rule.searchDirs.map((d) => bashQuote(d)).join(" ");
-      lines.push(`find ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`);
+      const dirs = rule.searchDirs.map((d) => bashQuote(`./${d.replace(/^(?:\.\/)+/, "")}`)).join(" ");
+      lines.push(`find -- ${dirs} -name ${bashQuote(rule.findName)} -delete 2>/dev/null || true`);
     }
   }
   return lines;
@@ -83,7 +84,7 @@ export function buildExecScript(options: ExecScriptOptions): string {
   const quotedDigest = bashQuote(options.expectedDigest);
   const integrityCheck = options.verifyIntegrity
     ? [
-        `if [ "$(cat ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${quotedDigest} ]; then`,
+        `if [ "$(cat -- ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${quotedDigest} ]; then`,
         "  exit 254",
         "fi",
         `if [ ! -f ${RemoteManifestSha256File} ]; then exit 254; fi`,
@@ -104,6 +105,7 @@ export function buildExecScript(options: ExecScriptOptions): string {
   return [
     "set -euo pipefail",
     `WS=${ws}`,
+    `if [ ! -f "$WS/${RemoteWorkspaceMarkerFile}" ]; then exit 254; fi`,
     `exec 9>"$WS/${RemoteLockFile}"`,
     "flock 9",
     `cd "$WS"`,
@@ -293,7 +295,7 @@ export class RemoteRunner {
       return { code: 1, signaled: true };
     }
     let attempt = await this.runOnce(plan, synced.digest, true, onChild, signal);
-    if (attempt.code === 254 && !attempt.signaled && !signal?.aborted) {
+    if (attempt.code === 254 && !attempt.signaled && !attempt.execStarted && !signal?.aborted) {
       prefix(`remote ${spec.name}: workspace integrity mismatch detected; re-syncing clean sources`);
       const healed = await this.syncer.resyncClean(
         plan.worktree,
@@ -346,7 +348,10 @@ export class RemoteRunner {
         return { code: attempt.code !== 0 ? attempt.code : 1, signaled: true };
       }
       if (pulled.crashedTests.length > 0) {
-        prefix(`remote ${spec.name}: test host crashed/aborted while running: ${pulled.crashedTests.join(", ")}`);
+        prefix(
+          `remote ${spec.name}: test host crashed/aborted while running: ` +
+            `${pulled.crashedTests.map(sanitizeRemoteLogText).join(", ")}`,
+        );
       }
       if (pulled.written > 0) {
         const kb = Math.max(1, Math.round(pulled.bytes / 1024));
