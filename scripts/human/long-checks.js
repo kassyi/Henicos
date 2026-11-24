@@ -52,7 +52,8 @@ const QueueEnvVarsToStrip = [
 ];
 
 // Measured serial times on a Windows 11 host with an NVIDIA GPU (default options, 2026-11).
-// Running the parallel check lanes cuts wall-clock time from ~23h to ~17h.
+// The serial total is ~32h. The parallel check lanes take ~17h, bound by mutate-compiler; the GPU lane alone takes
+// ~15h. A parallel run on 2026-11-24, in which six steps failed early, took 13h18m.
 const allSteps = [
   'bench-generator', // 1m56s
   'bench-compute', // 1m05s
@@ -63,8 +64,8 @@ const allSteps = [
   'stability', // 3h04m (--stability 3h)
   'coverage', // 3m11s
   'mutate-compiler', // 16h50m (CPU-only; runs in parallel with GPU lane in an isolated worktree)
-  'mutate-gpumath', // not measured: the run stops within minutes (#1191)
-  'mutate-compiler-cuda', // 1h15m (build 2m13s)
+  'mutate-gpumath', // 8h47m (in the parallel GPU lane)
+  'mutate-compiler-cuda', // 1h15m (build 2m13s); 56m04s in the parallel GPU lane
 ];
 
 const stepAliases = { 'sanitized-wsl': 'sanitized-linux' };
