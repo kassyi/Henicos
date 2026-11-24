@@ -38,6 +38,7 @@ import {
 } from "./protocol.ts";
 import type { ShareAnswer } from "./plugin-api.ts";
 import { RemoteWithFallbackExecutor, resolveOffloadPreference } from "./remote/executor.ts";
+import { EmptyRemoteRules } from "./remote/rules.ts";
 import type { OffloadPreference } from "./remote/spec.ts";
 import type { ShareMode } from "./resources.ts";
 import { CommandShell } from "./shell.ts";
@@ -106,7 +107,10 @@ export class QueuedRun {
   private queuedDigest: Promise<ContentDigest | undefined> | null = null;
   /** The digest at the queue has come (whatever its answer): only then is one taken at the start. */
   private queuedDigestDone = false;
-  /** The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first registration. */
+  /**
+   * The hash of the client's environment, for the scheduler's log (environment-hash.ts); taken at the first
+   * registration.
+   */
   private environment: EnvironmentHash | null = null;
   /** The pause was told (once per run). */
   private pauseTold = false;
@@ -118,6 +122,10 @@ export class QueuedRun {
   private receipts = false;
   /** The scheduler cancelled this job: the command is being stopped, and its end decides how it is reported. */
   private cancelRequested = false;
+  /** Active execution cancellation signal (covers pre-child remote sync/resync and artifact pull). */
+  private abortController: AbortController | null = null;
+  /** Remote transport failed before execution: waiting for server "queued" + fresh local "granted". */
+  private fallingBackLocal = false;
 
   constructor(
     options: RunOptions,
@@ -154,6 +162,9 @@ export class QueuedRun {
     }
 
     await this.resolveShare();
+    if (!this.resolveOffloadAndMemory()) {
+      return;
+    }
     await this.attach();
   }
 
@@ -223,6 +234,7 @@ export class QueuedRun {
   private onSignal(signal: string, code: number): () => void {
     return (): void => {
       prefix(`${signal}: stopping the command and leaving the queue`);
+      this.abortController?.abort();
       const running = this.child;
       if (this.gpuTurn && process.platform === "win32" && running !== null && running.exitCode === null) {
         // The console delivers Ctrl+C to gpu-lock.js itself, which releases its lock and ends; killing it first would
@@ -251,10 +263,11 @@ export class QueuedRun {
 
   /**
    * A shared turn that rests on a measurement (ShareAnswer.stillValid) is checked again once it is granted, before the
-   * lock is taken: when the measurement no longer holds, the turn asks the scheduler to downgrade it ("downgrade": the
-   * same job, under the same id, waits again as an exclusive turn, so that `wait` and `--after` on its id still see
-   * the run). Only a scheduler that says so in the grant (`downgrade`) is asked; for an older one, and when the scheduler
-   * refuses, the turn takes the older way (requeueAsNewJob). Returns true when the turn waits again, so that start has nothing more to do.
+   * lock is taken: when the measurement no longer holds, the turn asks the scheduler to downgrade it ("downgrade":
+   * the same job, under the same id, waits again as an exclusive turn, so that `wait` and `--after` on its id still
+   * see the run). Only a scheduler that says so in the grant (`downgrade`) is asked; for an older one, and when the
+   * scheduler refuses, the turn takes the older way (requeueAsNewJob). Returns true when the turn waits again, so that
+   * start has nothing more to do.
    */
   private async requeueIfStale(granted: Incoming): Promise<boolean> {
     const answer = this.stillValid;
@@ -269,7 +282,8 @@ export class QueuedRun {
       return false;
     }
     prefix(
-      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} no longer holds; waiting again as exclusive`,
+      `the shared GPU turn of ${formatJobId(numberField(granted, "id", this.jobId))} ` +
+        "no longer holds; waiting again as exclusive",
     );
     this.share = "exclusive";
     this.stillValid = null;
@@ -317,9 +331,24 @@ export class QueuedRun {
       this.starting = false; // the turn queued again: its next grant starts it
       return;
     }
+    if (this.ended() || this.cancelRequested) {
+      this.starting = false;
+      if (this.cancelRequested && !this.ended()) {
+        this.finish(CancelledExitCode, false, true);
+      }
+      return;
+    }
     this.state = "running";
     this.jobId = numberField(granted, "id", this.jobId);
     const jobId = this.jobId;
+    const remoteName = remoteField(granted);
+    if (options.remote === true && remoteName === undefined) {
+      this.starting = false;
+      prefix("--remote requested, but the scheduler granted a local slot without a remote worker; refusing");
+      this.finish(UsageExitCode, false, false);
+      return;
+    }
+    this.grantedRemote = remoteName ?? null;
     // Taken beside the start, never before it: the notice must not delay the command
     void this.tellWorktreeChange(jobId);
     if (this.gpuTurn) {
@@ -333,14 +362,16 @@ export class QueuedRun {
       this.finish(end.exitCode, end.completed, end.cancelled);
       return;
     }
+    const controller = new AbortController();
+    this.abortController = controller;
     const cpus = numberField(granted, "cpus", 1);
     const cwd = process.cwd();
     const worktree = this.worktree ?? resolveWorktree(cwd);
     const shell = CommandShell.resolve(options.shell).name;
     const waited = Math.round((Date.now() - this.queuedAt) / 1000);
     const places = this.places ?? resolvePlaces(options.command, { cwd, worktree }, this.plugins);
-    const executor = new RemoteWithFallbackExecutor(this.host, (remoteName) => {
-      this.grantedRemote = remoteName;
+    const executor = new RemoteWithFallbackExecutor(this.host, (remote) => {
+      this.grantedRemote = remote;
     });
     const result = await executor.execute(
       {
@@ -355,13 +386,36 @@ export class QueuedRun {
         options,
         plugins: this.plugins,
         context: this.plugins !== undefined ? this.contextOf(this.plugins) : undefined,
-        remoteName: remoteField(granted),
+        remoteName,
       },
       (c) => this.started(c),
+      controller.signal,
     );
+    if (this.abortController === controller) {
+      this.abortController = null;
+    }
+    if (result.fallbackToLocal === true && !controller.signal.aborted && !this.cancelRequested && !this.ended()) {
+      this.requestLocalFallback(jobId);
+      return;
+    }
     // The command's result decides, also after a cancel; a run a signal cut short is not recorded
     const end = commandEnd(result, this.cancelRequested);
     this.finish(end.exitCode, end.completed, end.cancelled);
+  }
+
+  /** Transitions a remotely granted job back to waiting for a fresh local grant via the scheduler. */
+  private requestLocalFallback(jobId: number): void {
+    this.offload = "never";
+    this.grantedRemote = null;
+    this.child = null;
+    this.spawnedAt = 0;
+    this.state = "waiting";
+    this.starting = false;
+    this.fallingBackLocal = true;
+    const message: ClientMessage = { type: "fallback-local", id: jobId };
+    if (this.socket !== null && !this.socket.destroyed) {
+      send(this.socket, { version: wireVersion(message), ...message });
+    }
   }
 
   /**
@@ -409,7 +463,7 @@ export class QueuedRun {
         break;
       case "granted":
         this.receipts = numberField(message, "protocol") >= 3;
-        if (this.state === "waiting" && !this.downgrading) {
+        if (this.state === "waiting" && !this.downgrading && !this.fallingBackLocal) {
           void this.start(message);
         }
         break;
@@ -435,6 +489,7 @@ export class QueuedRun {
 
   private onQueued(message: Incoming): void {
     this.downgrading = false; // also the answer to a "downgrade"
+    this.fallingBackLocal = false; // also the answer to a "fallback-local"
     this.jobId = numberField(message, "id", this.jobId);
     const jobId = this.jobId;
     const outlook =
@@ -445,9 +500,8 @@ export class QueuedRun {
     this.lastWaitFor = message.waitFor;
     this.lastNotice = Date.now();
     const role = this.options.role ? ` (${this.options.role})` : "";
-    prefix(
-      `queued ${formatJobId(jobId)}${role}${outlook ? `: ${outlook}` : ""}; "job-queue.js status ${formatJobId(jobId)}" shows it`,
-    );
+    const statusCmd = `"job-queue.js status ${formatJobId(jobId)}"`;
+    prefix(`queued ${formatJobId(jobId)}${role}${outlook ? `: ${outlook}` : ""}; ${statusCmd} shows it`);
     if (message.paused === true) {
       this.tellPaused();
     }
@@ -494,7 +548,8 @@ export class QueuedRun {
       this.lastStartAt = startAt;
       this.lastWaitFor = message.waitFor;
       this.lastNotice = now;
-      // This notice tells the latest reason: a reason kept for later is moot, and its timer counted from the last notice
+      // This notice tells the latest reason: a reason kept for later is moot, and its timer counted from the last
+      // notice
       if (this.laterTimer !== null) {
         clearTimeout(this.laterTimer);
         this.laterTimer = null;
@@ -532,6 +587,7 @@ export class QueuedRun {
       return; // the command had already ended
     }
     this.cancelRequested = true;
+    this.abortController?.abort();
     const reason = message.reason ? ` (${String(message.reason)})` : "";
     prefix(
       `job ${formatJobId(numberField(message, "id", this.jobId))} was cancelled${reason}` +
@@ -547,6 +603,8 @@ export class QueuedRun {
     if (running !== null && running.exitCode === null && running.signalCode === null) {
       setTimeout(() => this.finish(CancelledExitCode, false, true), 10000).unref(); // a command that does not stop
       this.host.stop(running, this.gpuTurn);
+    } else if (this.abortController !== null) {
+      setTimeout(() => this.finish(CancelledExitCode, false, true), 10000).unref();
     }
   }
 
@@ -568,7 +626,10 @@ export class QueuedRun {
     }
     prefix(`scheduler: ${String(message.message)}${message.code === "version" ? `; ${OlderSchedulerHint}` : ""}`);
     if (this.state === "waiting") {
-      this.host.exit(message.code === "unknown-job" ? UsageExitCode : 1);
+      this.state = "done";
+      this.socket?.destroy();
+      this.socket = null;
+      this.host.exit(message.code === "unknown-job" || message.code === "remote-ineligible" ? UsageExitCode : 1);
       return;
     }
     if (message.code === "version") {
@@ -663,10 +724,67 @@ export class QueuedRun {
     this.share = share === "shared" ? "shared" : "exclusive";
   }
 
+  /**
+   * Resolves memory budget and remote offload eligibility once per run; exits with UsageExitCode on invalid `--remote`.
+   */
+  private resolveOffloadAndMemory(): boolean {
+    if (this.gpuTurn) {
+      return true;
+    }
+    const hasPlugins = this.plugins !== undefined && this.plugins.plugins.length > 0;
+    if ((!hasPlugins || this.memoryMb !== null) && this.offload !== null) {
+      return true;
+    }
+    const { options } = this;
+    const enabledRemotes = (options.remotes ?? []).filter((r) => r.mode !== "off");
+    if (!hasPlugins && options.remote !== true && enabledRemotes.length === 0) {
+      this.offload = "never";
+      return true;
+    }
+    const cwd = process.cwd();
+    const worktree = (this.worktree ??= resolveWorktree(cwd));
+    const places = (this.places ??= resolvePlaces(options.command, { cwd, worktree }, this.plugins));
+    const classified = hasPlugins
+      ? (this.plugins as PluginHost).classify(options.command, null, this.contextOf(this.plugins as PluginHost))
+      : {};
+    const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
+    const resolvedMemoryMb = classified.memoryMb ?? fallback;
+    const remoteRules = hasPlugins
+      ? (this.plugins as PluginHost).remoteOffload(this.contextOf(this.plugins as PluginHost))
+      : EmptyRemoteRules;
+    const decision = resolveOffloadPreference({
+      options,
+      inGpuLock: this.inGpuLock,
+      classifiedOffloadable: classified.offloadable === true,
+      memoryMb: resolvedMemoryMb,
+      cwd,
+      worktree,
+      shell: CommandShell.resolve(options.shell).name,
+      places,
+      remoteRules,
+    });
+    if (!decision.ok) {
+      prefix(decision.error);
+      this.state = "done";
+      this.socket?.destroy();
+      this.socket = null;
+      this.host.exit(UsageExitCode);
+      return false;
+    }
+    if (hasPlugins) {
+      this.memoryMb = resolvedMemoryMb;
+    }
+    this.offload = decision.offload;
+    return true;
+  }
+
   /** Registers the job on a new connection: a request while it waits, an adopt once its command runs. */
   private register(current: net.Socket): void {
     const { options, placement } = this;
     const running = this.child;
+    if (!this.resolveOffloadAndMemory()) {
+      return;
+    }
     // Resolved once per job (git), kept for the re-registrations after a scheduler restart
     const cwd = process.cwd();
     const worktree = (this.worktree ??= resolveWorktree(cwd));
@@ -676,35 +794,8 @@ export class QueuedRun {
       ? (this.keys ??= commandKeys(options.command, { cwd, worktree, places }, this.plugins))
       : undefined;
     const context = (plugins: PluginHost): BaseClientContext => this.contextOf(plugins);
-    let memoryMb: number | undefined;
-    let offload: OffloadPreference | undefined;
-    if (hasPlugins && !this.gpuTurn) {
-      if (this.memoryMb === null || this.offload === null) {
-        const plugins = this.plugins as PluginHost;
-        const ctx = context(plugins);
-        const classified = plugins.classify(options.command, null, ctx);
-        const fallback = classified.test ? (options.defaultTestMemoryMb ?? 0) : 0;
-        this.memoryMb = classified.memoryMb ?? fallback;
-        const decision = resolveOffloadPreference({
-          options,
-          inGpuLock: this.inGpuLock,
-          classifiedOffloadable: classified.offloadable === true,
-          cwd,
-          worktree,
-          shell: CommandShell.resolve(options.shell).name,
-          places,
-          remoteRules: plugins.remoteOffload(ctx),
-        });
-        if (!decision.ok) {
-          prefix(decision.error);
-          this.host.exit(UsageExitCode);
-          return;
-        }
-        this.offload = decision.offload;
-      }
-      memoryMb = this.memoryMb;
-      offload = this.offload;
-    }
+    const memoryMb = !this.gpuTurn ? (this.memoryMb ?? undefined) : undefined;
+    const offload = !this.gpuTurn ? (this.offload ?? undefined) : undefined;
     // A GPU turn names its resource and asks for its share; a GPU holder does not (the scheduler ties it to its turn)
     let share: ShareMode | undefined;
     if (hasPlugins && this.gpuTurn) {
@@ -750,7 +841,7 @@ export class QueuedRun {
       ...(this.state === "running" && this.grantedRemote !== null ? { remote: this.grantedRemote } : {}),
       envHash: environment.hash,
       envKeys: environment.keys,
-      // The chat that queued it (the plugins read it from the environment), so that the live view can show its jobs on its row
+      // The chat that queued it (the plugins read it from the environment), so that the live view shows its jobs
       session: this.plugins === undefined ? undefined : this.plugins.session(context(this.plugins)),
       command: options.command,
       queuedAt: this.queuedAt,
@@ -764,6 +855,10 @@ export class QueuedRun {
       turn: this.inGpuLock ? Number(process.env[TurnVariable]) || null : null,
     };
     send(current, { version: wireVersion(registration), ...registration });
+    if (this.fallingBackLocal) {
+      const fallbackMsg: ClientMessage = { type: "fallback-local", id: this.jobId };
+      send(current, { version: wireVersion(fallbackMsg), ...fallbackMsg });
+    }
   }
 
   private onClose(current: net.Socket): void {

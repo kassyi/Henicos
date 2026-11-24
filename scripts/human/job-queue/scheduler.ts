@@ -242,8 +242,8 @@ export class Scheduler<J extends SchedulerJob> {
   }
 
   /**
-   * True when `job` must not spill over to local CPU slots: either the caller forced `--remote` (`offload === "force"`),
-   * or a healthy/probing `remote-only` worker can accept it. Falls back to local when every `remote-only` worker is down.
+   * True when `job` must not spill over to local CPU slots: either the caller forced `--remote` (`offload` "force"),
+   * or a healthy/probing `remote-only` worker accepts it. Falls back to local when every `remote-only` worker is down.
    */
   private mustRunRemotely(job: SchedulerJob, now: number): boolean {
     if (job.offload === "force") {
@@ -262,6 +262,38 @@ export class Scheduler<J extends SchedulerJob> {
       }
     }
     return false;
+  }
+
+  /**
+   * Why a `force`-remote (`--remote`) job can never be granted on any configured remote worker, or null when at least
+   * one enabled remote worker can accept its memory budget.
+   */
+  remoteRefusalReason(job: SchedulerJob): string | null {
+    if (job.offload !== "force") {
+      return null;
+    }
+    if (job.gpu || job.gpuTurn === true) {
+      return "--remote cannot be used for GPU jobs";
+    }
+    const enabled = [...this.remotes.values()].filter((state) => state.spec.mode !== "off");
+    if (enabled.length === 0) {
+      return "--remote requested, but no enabled remote worker is configured";
+    }
+    if (!enabled.some((state) => remoteAcceptsJob(job, state.spec))) {
+      const memory = this.memoryOf(job);
+      return `--remote requested, but job memory (${memory} MB) exceeds every enabled remote worker`;
+    }
+    return null;
+  }
+
+  /** First healthy enabled remote worker with a free slot that accepts `job`, for `start <id>`. */
+  pickFreeRemoteForStart(job: SchedulerJob, now = Date.now()): RemoteState | undefined {
+    for (const state of this.remotes.values()) {
+      if (fitsRemote(job, state, this.running, now)) {
+        return state;
+      }
+    }
+    return undefined;
   }
 
   /**
@@ -327,7 +359,8 @@ export class Scheduler<J extends SchedulerJob> {
 
   /**
    * The resources whose first waiting turn waits for a probe (turnVerdict "probe") while every shared turn that runs
-   * has used the resource for settleMs (sharedTurnsSettled): the server measures them. Nothing while paused or before holdUntil, when nothing is granted.
+   * has used the resource for settleMs (sharedTurnsSettled): the server measures them. Nothing while paused or before
+   * holdUntil, when nothing is granted.
    */
   probeWanted(now: number): string[] {
     if (this.paused || now < this.holdUntil) {
@@ -467,8 +500,11 @@ export class Scheduler<J extends SchedulerJob> {
     if (now < this.holdUntil) {
       return "restart";
     }
-    // A GPU holder and a job started by hand are granted at once, also while paused
-    if ((job.gpu || job.startNow === true) && job.gpuTurn !== true) {
+    // A GPU holder and a local job started by hand are granted at once, also while paused
+    if ((job.gpu || (job.startNow === true && job.offload !== "force")) && job.gpuTurn !== true) {
+      return undefined;
+    }
+    if (job.startNow === true && job.offload === "force" && !job.gpuTurn && this.pickFreeRemoteForStart(job, now)) {
       return undefined;
     }
     if (this.paused) {
@@ -696,10 +732,25 @@ export class Scheduler<J extends SchedulerJob> {
       this.start(job);
       granted.push(job);
     };
-    // GPU holders and the jobs started by hand, over the pools
+    // GPU holders and local jobs started by hand, over the pools
     this.waiting
-      .filter((job) => (job.gpu || job.startNow === true) && !job.gpuTurn && !this.isBlocked(job))
+      .filter(
+        (job) =>
+          (job.gpu || (job.startNow === true && job.offload !== "force")) && !job.gpuTurn && !this.isBlocked(job),
+      )
       .forEach(take);
+    // Forced-remote jobs started by hand may only take a free accepting remote slot, never a local slot.
+    for (const job of this.waiting.filter(
+      (other) => other.startNow === true && other.offload === "force" && !other.gpuTurn && !this.isBlocked(other),
+    )) {
+      const target = this.pickFreeRemoteForStart(job, now);
+      if (target !== undefined) {
+        job.remote = target.spec.name;
+        take(job);
+      } else {
+        job.startNow = false;
+      }
+    }
     this.order(now);
     if (this.paused) {
       return granted; // the places are told (order), but no waiting job starts

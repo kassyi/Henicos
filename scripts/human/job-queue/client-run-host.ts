@@ -99,13 +99,13 @@ function runGpuLocked(
  * signal: Windows' taskkill /F ends it with 1, Unix a signal); any other end after a cancel is the cancel's.
  */
 export function commandEnd(
-  result: ShellResult,
+  result: ShellResult & { timedOut?: boolean },
   cancelRequested: boolean,
 ): { exitCode: number; completed: boolean; cancelled: boolean } {
   const cancelled = cancelRequested && !(result.code === 0 && !result.signaled);
   return {
     exitCode: cancelled ? CancelledExitCode : result.code,
-    completed: !result.signaled && !cancelled,
+    completed: !result.signaled && !cancelled && result.timedOut !== true,
     cancelled,
   };
 }
@@ -133,6 +133,7 @@ export interface RunHost {
     plan: RemoteCommandPlan,
     onChild: (child: ChildProcess) => void,
     remoteRules?: ResolvedRemoteRules,
+    signal?: AbortSignal,
   ): Promise<RemoteRunResult>;
   /**
    * Runs the command under gpu-lock.js for a GPU turn (`turn`: the run's job id, 0 when unknown), on one seat of the
@@ -184,8 +185,9 @@ export class ProcessRunHost implements RunHost {
     plan: RemoteCommandPlan,
     onChild: (child: ChildProcess) => void,
     remoteRules?: ResolvedRemoteRules,
+    signal?: AbortSignal,
   ): Promise<RemoteRunResult> {
-    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules);
+    return executeRemotePlan(remote, plan, onChild, undefined, remoteRules, signal);
   }
 
   runUnderGpuLock(

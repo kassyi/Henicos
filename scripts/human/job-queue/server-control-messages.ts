@@ -122,7 +122,7 @@ function setWeight(connection: Connection, message: Incoming): void {
 
 /**
  * start: grants a waiting job at once, over the pools; refused for a GPU turn, for a job whose client is away (nobody
- * would receive the grant) and before its predecessor ended.
+ * would receive the grant), before its predecessor ended, and for `--remote` when no accepting remote is free.
  */
 function startNow(server: JobServer, message: Incoming): ServerMessage {
   const id = idField(message, "id") ?? 0;
@@ -134,7 +134,9 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
     return {
       type: "error",
       code: "not-started",
-      message: `${formatJobId(id)} waits for the GPU, which runs one job at a time; move ${formatJobId(id)} --first puts it next`,
+      message:
+        `${formatJobId(id)} waits for the GPU, which runs one job at a time; ` +
+        `move ${formatJobId(id)} --first puts it next`,
     };
   }
   if (job.detached) {
@@ -142,8 +144,8 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       type: "error",
       code: "not-started",
       message:
-        `the client of ${formatJobId(id)} is away (its connection dropped or the scheduler restarted): nobody would receive ` +
-        "the grant; start it once its client is back",
+        `the client of ${formatJobId(id)} is away (its connection dropped or the scheduler restarted): ` +
+        "nobody would receive the grant; start it once its client is back",
     };
   }
   if (server.scheduler.awaitsPredecessor(job)) {
@@ -151,6 +153,13 @@ function startNow(server: JobServer, message: Incoming): ServerMessage {
       type: "error",
       code: "not-started",
       message: `${formatJobId(id)} waits for ${formatJobId(job.after ?? 0)} to end`,
+    };
+  }
+  if (job.offload === "force" && server.scheduler.pickFreeRemoteForStart(job, Date.now()) === undefined) {
+    return {
+      type: "error",
+      code: "not-started",
+      message: `${formatJobId(id)} requires a remote worker (--remote), and none is healthy and free`,
     };
   }
   job.startNow = true;

@@ -84,6 +84,12 @@ export type ClientMessage =
    */
   | { type: "downgrade" }
   /**
+   * A remotely granted job whose transport failed before execution gives up its remote slot and waits again under
+   * the same id for a local CPU slot (`offload` becomes "never"). Answered with "queued", or an error when not a
+   * remote job (an older scheduler answers "unknown message type").
+   */
+  | { type: "fallback-local"; id: number }
+  /**
    * Resolves when the job has ended, with its outcome (the --gpu path waits for its predecessor before the GPU lock).
    */
   | { type: "await"; id: number }
@@ -268,6 +274,7 @@ export function wireVersion(message: ClientMessage): number {
     case "pause":
     case "resume":
     case "downgrade":
+    case "fallback-local":
     case "await":
     case "report":
       return ProtocolVersion;
@@ -395,7 +402,9 @@ export function resourceField(message: Incoming): string | undefined {
   return isResourceName(message.resource) ? message.resource : undefined;
 }
 
-/** The `envHash` and `envKeys` of a JobRequest; undefined when missing or not shaped as environment-hash.ts makes them. */
+/**
+ * The `envHash` and `envKeys` of a JobRequest; undefined when missing or not shaped as environment-hash.ts makes them.
+ */
 export function environmentField(message: Incoming): { hash: string; keys: Record<string, string> } | undefined {
   const { envHash, envKeys } = message;
   if (typeof envHash !== "string" || !/^[0-9a-f]{1,64}$/.test(envHash)) {

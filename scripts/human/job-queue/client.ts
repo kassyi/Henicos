@@ -88,6 +88,9 @@ export async function run(options: RunOptions, plugins: PluginHost): Promise<voi
     // wrapper resolves --after before it takes the lock and does not pass it to the client it starts inside.)
     usageError("--after cannot be used inside a queued job or the GPU lock; queue the chain from outside.");
   }
+  if (options.remote === true && (process.env[JobVariable] || inGpuLock)) {
+    usageError("--remote cannot be used inside a queued job or the GPU lock; queue the remote job from outside.");
+  }
   if (process.env[JobVariable] && (inGpuLock || !options.gpu)) {
     // Inside a queued job: its slot covers this command, with the same node limit.
     const cpus = Number(process.env[CpusVariable]) || 0;

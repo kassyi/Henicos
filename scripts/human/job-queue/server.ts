@@ -215,7 +215,9 @@ export class JobServer {
     }
     const shown = names.slice(0, MaxDifferingNames).join(", ");
     const more = names.length > MaxDifferingNames ? ` and ${names.length - MaxDifferingNames} more` : "";
-    return `${formatJobId(job.id)}: env differs from ${formatJobId(before.id)} (same command and worktree): ${shown}${more}`;
+    const diffSummary = `${shown}${more}`;
+    const prefixText = `${formatJobId(job.id)}: env differs from ${formatJobId(before.id)}`;
+    return `${prefixText} (same command and worktree): ${diffSummary}`;
   }
 
   /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
