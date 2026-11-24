@@ -13,6 +13,9 @@ export type OffloadPreference = "auto" | "force" | "never";
 /** Default hard wall-clock timeout (minutes) for a remote command. */
 export const DefaultMaxJobMinutes = 30;
 
+/** Maximum concurrent slots per remote worker (capped at 1 until isolated per-slot workspaces exist). */
+export const MaxRemoteSlots = 1;
+
 /** Remote workspace metadata filenames kept at the root of the remote workspace. */
 export const RemoteManifestDigestFile = ".job-queue-manifest.digest";
 export const RemoteManifestSha256File = ".job-queue-manifest.sha256";
@@ -116,7 +119,7 @@ export function remoteSpecsFromConfig(config: QueueConfig): RemoteSpec[] {
       name,
       host: remote.host,
       workspace: remote.workspace,
-      slots: remote.slots ?? 1,
+      slots: Math.min(MaxRemoteSlots, Math.max(1, remote.slots ?? 1)),
       cpus: remote.cpus,
       memoryMb: remote.memoryMb,
       mode: remote.mode ?? "prefer-remote",
@@ -180,7 +183,9 @@ export function remoteNeedsProbe(state: RemoteState, now: number): boolean {
   return probe.ok ? now - probe.at > RemoteProbeFreshMs : now - probe.at >= RemoteProbeRetryMs;
 }
 
-/** True when `job` can be placed on `state` given its offload preference and memory budget (ignoring current occupancy). */
+/**
+ * True when `job` can be placed on `state` given its offload preference and memory budget (ignoring current occupancy).
+ */
 export function remoteAcceptsJob(job: RemoteJob, spec: RemoteSpec): boolean {
   if (spec.mode === "off" || job.gpu || job.gpuTurn === true) {
     return false;

@@ -467,7 +467,7 @@ export function loadLocalRemotesConfig(
  * - Missing config: returns defaults with status "missing".
  * - Invalid config: in `run` mode warns and exits with UsageExitCode (2); in all other modes warns and falls back to
  *   defaults.
- * - When `stateDir` is provided and no explicit `--config` / `JOB_QUEUE_CONFIG` override was given, `remotes` are loaded
+ * - When `stateDir` is provided and no explicit `--config` / `JOB_QUEUE_CONFIG` override was given, `remotes` come
  *   strictly from `<stateDir>/remotes.local.json` (untrusted checkout `remotes` in job-queue.config.json are ignored).
  */
 export function loadConfig(options: LoadConfigOptions): LoadedConfig {
@@ -489,9 +489,8 @@ export function loadConfig(options: LoadConfigOptions): LoadedConfig {
       return config;
     }
     if (config.remotes !== undefined && Object.keys(config.remotes).length > 0) {
-      warn(
-        `ignoring remotes defined in repo job-queue.config.json; configure machine-local workers in ${path.join(options.stateDir, LocalRemotesFileName)}`,
-      );
+      const localPath = path.join(options.stateDir, LocalRemotesFileName);
+      warn(`ignoring remotes defined in repo job-queue.config.json; configure machine-local workers in ${localPath}`);
       delete config.remotes;
     }
     const localRemotes = loadLocalRemotesConfig(options.stateDir, warn);

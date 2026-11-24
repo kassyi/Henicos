@@ -20,7 +20,7 @@ const BaseResetProcessNames = ["timeout", "sed"] as const;
 const BaseResetCleanDirs = ["tmp", ".claude/worktrees"] as const;
 
 function escapeAwkRegex(literal: string): string {
-  return literal.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -57,23 +57,25 @@ export function buildResetScript(
     "MY_PID=$$",
     "MY_PPID=$PPID",
     "KILLED=0",
-    `PROC_REGEX=${bashQuote(procRegex)}`,
-    'matching_pids() { ps -u "$(id -u)" -o pid=,comm= | awk -v re="$PROC_REGEX" \'$2 ~ re {print $1}\'; }',
-    "for pid in $(matching_pids); do",
+    "matching_pids() {",
+    `  ps -u "$(id -u)" -o pid=,comm= | PROC_REGEX=${bashQuote(procRegex)} awk '$2 ~ ENVIRON["PROC_REGEX"] {print $1}'`,
+    "}",
+    "lock_pids() {",
+    '  if [ -d "$WS" ]; then',
+    `    fuser "$WS/${RemoteLockFile}" 2>/dev/null || true`,
+    "  fi",
+    "}",
+    "all_target_pids() {",
+    "  { matching_pids; lock_pids; } | tr ' \\t' '\\n' | awk 'NF && !seen[$0]++'",
+    "}",
+    "for pid in $(all_target_pids); do",
     '  if [ "$pid" != "$MY_PID" ] && [ "$pid" != "$MY_PPID" ]; then',
     '    kill -TERM "$pid" 2>/dev/null && KILLED=$((KILLED + 1)) || true',
     "  fi",
     "done",
-    'if [ -d "$WS" ]; then',
-    `  for pid in $(fuser "$WS/${RemoteLockFile}" 2>/dev/null || true); do`,
-    '    if [ "$pid" != "$MY_PID" ] && [ "$pid" != "$MY_PPID" ]; then',
-    '      kill -TERM "$pid" 2>/dev/null && KILLED=$((KILLED + 1)) || true',
-    "    fi",
-    "  done",
-    "fi",
     'if [ "$KILLED" -gt 0 ]; then',
     "  sleep 1",
-    "  for pid in $(matching_pids); do",
+    "  for pid in $(all_target_pids); do",
     '    if [ "$pid" != "$MY_PID" ] && [ "$pid" != "$MY_PPID" ]; then',
     '      kill -KILL "$pid" 2>/dev/null || true',
     "    fi",
@@ -116,7 +118,8 @@ export async function resetWorker(
 }
 
 /**
- * Resets one or all configured remote CPU workers. Returns exit code 0 when all selected workers succeeded, 1 otherwise.
+ * Resets one or all configured remote CPU workers.
+ * Returns exit code 0 when all selected workers succeeded, 1 otherwise.
  */
 export async function remoteReset(
   remotes: readonly RemoteSpec[],
@@ -144,8 +147,10 @@ export async function remoteReset(
       prefix(`remote-reset ${remote.name} (${remote.host}) failed: ${result.error ?? "unknown"}`);
       continue;
     }
+    const cleanLabel = clean ? "yes" : "no";
     process.stdout.write(
-      `remote-reset ${remote.name} (${remote.host}): stopped ${result.killed} process(es), clean=${clean ? "yes" : "no"}, MemAvailable=${result.memMb} MiB\n`,
+      `remote-reset ${remote.name} (${remote.host}): ` +
+        `stopped ${result.killed} process(es), clean=${cleanLabel}, MemAvailable=${result.memMb} MiB\n`,
     );
   }
   return failures === 0 ? 0 : 1;

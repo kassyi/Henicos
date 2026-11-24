@@ -115,18 +115,20 @@ function singleQuote(value: string): string {
  * source-file sets stay identical while keeping build outputs warm.
  */
 export function buildRemoteFindPruneExpr(rules?: RemoteSyncRules, extraRootFiles: readonly string[] = []): string {
-  const pruneTerms: string[] = [];
+  const dirPruneTerms: string[] = [];
   for (const p of allExcludedPrefixes(rules)) {
-    pruneTerms.push(`-path ${singleQuote(`./${p.replace(/\/+$/, "")}`)}`);
+    dirPruneTerms.push(`-path ${singleQuote(`./${p.replace(/\/+$/, "")}`)}`);
   }
-  for (const file of extraRootFiles) {
-    pruneTerms.push(`-path ${singleQuote(`./${file}`)}`);
-  }
-  pruneTerms.push("-name 'bin'", "-name 'obj'", "-name 'node_modules'");
+  dirPruneTerms.push("-name 'bin'", "-name 'obj'", "-name 'node_modules'");
+  const pruneTerms: string[] = [
+    ...extraRootFiles.map((file) => `-path ${singleQuote(`./${file}`)}`),
+    `-type d \\( ${dirPruneTerms.join(" -o ")} \\)`,
+  ];
   const nameNegations = allExcludedFindNames(rules)
-    .map((glob) => `! -name ${singleQuote(glob)}`)
+    .map((glob) => `! -iname ${singleQuote(glob)}`)
     .join(" ");
-  return `\\( ${pruneTerms.join(" -o ")} \\) -prune -o \\( -type f ${nameNegations} -print0 \\)`;
+  const fileFilter = nameNegations !== "" ? `-type f ${nameNegations} -print0` : "-type f -print0";
+  return `\\( ${pruneTerms.join(" -o ")} \\) -prune -o \\( ${fileFilter} \\)`;
 }
 
 /** True when a worktree-relative POSIX path should be excluded from remote source sync. */
@@ -209,7 +211,7 @@ export function diffManifests(
 }
 
 /** Parses `sha256sum` output (`<hex>  ./<rel>` or `<hex>  <rel>`) into a relPosix -> sha256 map. */
-export function parseRemoteSha256Output(stdout: string, rules?: RemoteSyncRules): Record<string, string> {
+export function parseRemoteSha256Output(stdout: string, _rules?: RemoteSyncRules): Record<string, string> {
   const files = Object.create(null) as Record<string, string>;
   for (const rawLine of stdout.split("\n")) {
     const line = rawLine.replace(/\r$/, "");
@@ -227,7 +229,7 @@ export function parseRemoteSha256Output(stdout: string, rules?: RemoteSyncRules)
     if (escaped) {
       rel = rel.replace(/\\([\\n])/g, (_, ch: string) => (ch === "n" ? "\n" : "\\"));
     }
-    if (!isExcludedSyncPath(rel, rules)) {
+    if (rel !== "" && !rel.startsWith("..") && !rel.startsWith("/")) {
       files[rel] = sha;
     }
   }
@@ -243,7 +245,7 @@ function loadJson<T>(filePath: string): T | null {
 }
 
 function saveJsonAtomic(filePath: string, value: unknown): void {
-  const temp = `${filePath}.${process.pid}.tmp`;
+  const temp = `${filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
   try {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(temp, JSON.stringify(value));
@@ -359,7 +361,10 @@ export class WorkspaceSyncer {
   }
 
   /** Fetches the remote workspace's current file->sha256 map. */
-  async fetchRemoteManifest(): Promise<Record<string, string> | null> {
+  async fetchRemoteManifest(signal?: AbortSignal): Promise<Record<string, string> | null> {
+    if (signal?.aborted) {
+      return null;
+    }
     const ws = bashWorkspaceExpr(this.transport.spec.workspace);
     const script = [
       "set -euo pipefail",
@@ -368,7 +373,7 @@ export class WorkspaceSyncer {
       `cd "$WS"`,
       `find . ${this.pruneExpr} | xargs -0 -r sha256sum`,
     ].join("\n");
-    const res = await this.transport.exec(script);
+    const res = await this.transport.exec(script, signal);
     return res.code === 0 ? parseRemoteSha256Output(res.stdout, this.syncRules) : null;
   }
 
@@ -378,15 +383,26 @@ export class WorkspaceSyncer {
     diff: ManifestDiff,
     sha256ManifestText: string,
     expectedRemoteDigest?: string,
+    signal?: AbortSignal,
   ): Promise<{ ok: boolean; stale?: boolean; error?: string }> {
+    if (signal?.aborted) {
+      return { ok: false, error: "aborted" };
+    }
     const ws = bashWorkspaceExpr(this.transport.spec.workspace);
     const deleteBuf =
       diff.toDelete.length === 0 ? Buffer.alloc(0) : Buffer.from(`${diff.toDelete.join("\0")}\0`, "utf8");
     const manifestBuf = Buffer.from(sha256ManifestText, "utf8");
+    const quotedDigest = expectedRemoteDigest !== undefined ? bashQuote(expectedRemoteDigest) : "";
     const guard =
       expectedRemoteDigest !== undefined
-        ? `if [ "$(cat ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${bashQuote(expectedRemoteDigest)} ]; then exit 254; fi`
+        ? [
+            `if [ "$(cat ${RemoteManifestDigestFile} 2>/dev/null || true)" != ${quotedDigest} ]; then`,
+            "  exit 254",
+            "fi",
+          ].join("\n")
         : "";
+    const delCmd = 'dd iflag=fullblock bs="$DEL_BYTES" count=1 2>/dev/null | xargs -0 -r rm -f --';
+    const manCmd = `dd iflag=fullblock bs="$MANIFEST_BYTES" count=1 2>/dev/null > ${RemoteManifestSha256File}.tmp`;
     const remoteCmd = [
       "bash -c",
       bashQuote(
@@ -399,9 +415,9 @@ export class WorkspaceSyncer {
           `cd "$WS"`,
           guard,
           "IFS= read -r DEL_BYTES",
-          'if [ "$DEL_BYTES" -gt 0 ]; then dd iflag=fullblock bs="$DEL_BYTES" count=1 2>/dev/null | xargs -0 -r rm -f --; fi',
+          `if [ "$DEL_BYTES" -gt 0 ]; then ${delCmd}; fi`,
           "IFS= read -r MANIFEST_BYTES",
-          `if [ "$MANIFEST_BYTES" -gt 0 ]; then dd iflag=fullblock bs="$MANIFEST_BYTES" count=1 2>/dev/null > ${RemoteManifestSha256File}.tmp; else : > ${RemoteManifestSha256File}.tmp; fi`,
+          `if [ "$MANIFEST_BYTES" -gt 0 ]; then ${manCmd}; else : > ${RemoteManifestSha256File}.tmp; fi`,
           diff.toUpload.length > 0 ? "tar -xf -" : "",
           `mv -f ${RemoteManifestSha256File}.tmp ${RemoteManifestSha256File}`,
           `printf '%s\\n' ${bashQuote(diff.localDigest)} > ${RemoteManifestDigestFile}`,
@@ -417,7 +433,7 @@ export class WorkspaceSyncer {
     }
     headerChunks.push(Buffer.from(`${manifestBuf.length}\n`, "utf8"), manifestBuf);
 
-    const res = await this.transport.streamUpload(remoteCmd, headerChunks, worktree, diff.toUpload);
+    const res = await this.transport.streamUpload(remoteCmd, headerChunks, worktree, diff.toUpload, signal);
     if (res.code === 254) {
       return { ok: false, stale: true };
     }
@@ -429,25 +445,37 @@ export class WorkspaceSyncer {
     worktree: string,
     localManifest: Record<string, string>,
     sha256ManifestText: string,
+    signal?: AbortSignal,
   ): Promise<{ uploaded: number; deleted: number; digest: string } | null> {
-    const fetched = await this.fetchRemoteManifest();
-    if (fetched === null) {
+    if (signal?.aborted) {
+      return null;
+    }
+    const fetched = await this.fetchRemoteManifest(signal);
+    if (fetched === null || signal?.aborted) {
       return null;
     }
     const diff = diffManifests(localManifest, fetched);
-    const applied = await this.applyDelta(worktree, diff, sha256ManifestText);
+    const applied = await this.applyDelta(worktree, diff, sha256ManifestText, undefined, signal);
     if (!applied.ok) {
-      prefix(
-        `remote sync to ${this.transport.spec.name} (${this.transport.spec.host}) failed: ${applied.error ?? "unknown"}`,
-      );
+      const target = `${this.transport.spec.name} (${this.transport.spec.host})`;
+      prefix(`remote sync to ${target} failed: ${applied.error ?? "unknown"}`);
       return null;
     }
     saveRemoteManifestCache(this.remoteCachePath, localManifest);
     return { uploaded: diff.toUpload.length, deleted: diff.toDelete.length, digest: diff.localDigest };
   }
 
-  /** Computes the local manifest and syncs changes to the remote workspace (falling back to full resync on stale cache). */
-  async sync(worktree: string, localManifestOverride?: Record<string, string>): Promise<SyncOutcome | SyncFailure> {
+  /**
+   * Computes the local manifest and syncs changes to the remote workspace (falling back to full resync on stale cache).
+   */
+  async sync(
+    worktree: string,
+    localManifestOverride?: Record<string, string>,
+    signal?: AbortSignal,
+  ): Promise<SyncOutcome | SyncFailure> {
+    if (signal?.aborted) {
+      return { ok: false, error: "aborted" };
+    }
     const syncStart = performance.now();
     const localManifest = localManifestOverride ?? collectLocalManifest(worktree, this.statCachePath, this.syncRules);
     const sha256ManifestText = formatSha256Manifest(localManifest);
@@ -458,7 +486,7 @@ export class WorkspaceSyncer {
     let digest = "";
 
     if (cached === null) {
-      const res = await this.resyncClean(worktree, localManifest, sha256ManifestText);
+      const res = await this.resyncClean(worktree, localManifest, sha256ManifestText, signal);
       if (res === null) {
         return { ok: false, error: "failed to fetch/sync remote manifest" };
       }
@@ -469,18 +497,17 @@ export class WorkspaceSyncer {
       const diff = diffManifests(localManifest, cached.files);
       digest = diff.localDigest;
       if (diff.toUpload.length > 0 || diff.toDelete.length > 0) {
-        const applied = await this.applyDelta(worktree, diff, sha256ManifestText, cached.digest);
+        const applied = await this.applyDelta(worktree, diff, sha256ManifestText, cached.digest, signal);
         if (applied.stale) {
-          const res = await this.resyncClean(worktree, localManifest, sha256ManifestText);
+          const res = await this.resyncClean(worktree, localManifest, sha256ManifestText, signal);
           if (res === null) {
             return { ok: false, error: "failed to heal stale remote manifest" };
           }
           uploaded = res.uploaded;
           deleted = res.deleted;
         } else if (!applied.ok) {
-          prefix(
-            `remote sync to ${this.transport.spec.name} (${this.transport.spec.host}) failed: ${applied.error ?? "unknown"}`,
-          );
+          const target = `${this.transport.spec.name} (${this.transport.spec.host})`;
+          prefix(`remote sync to ${target} failed: ${applied.error ?? "unknown"}`);
           return { ok: false, error: applied.error ?? "unknown" };
         } else {
           uploaded = diff.toUpload.length;
