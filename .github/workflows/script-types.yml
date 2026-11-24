@@ -70,4 +70,5 @@ jobs:
       # The GPU lock (both seats, stale takeover, a run killed while it holds the seats) needs no GPU: without
       # nvidia-smi the hold is recorded as not sampled. It uses a private lock path, never the real lock.
       - name: GPU lock self-test
+        timeout-minutes: 5
         run: node scripts/human/gpu-lock.js --self-test
