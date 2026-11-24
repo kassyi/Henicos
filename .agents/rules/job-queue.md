@@ -17,8 +17,9 @@ node scripts/human/job-queue.js status [<id>]               # the jobs ahead and
 ```
 
 - `--gpu` only for a command that uses the GPU (a CUDA test project, `just test-category Runtime`, a benchmark): a CPU
-  suite under `--gpu` keeps the GPU from the jobs that need it. `just fuzz-diff`, `just long-checks` and
-  `fuzz-differential.js` take the GPU lock themselves: queue them without `--gpu`.
+  suite under `--gpu` keeps the GPU from the jobs that need it. `just fuzz-diff` and `fuzz-differential.js` take the
+  GPU lock themselves: queue them without `--gpu`. `just long-checks` (`scripts/human/long-checks.js`) is a slot-free
+  orchestrator that queues each step through `job-queue.js` itself: run it directly without wrapping it in `run`.
 - Whether a `--gpu` run shares the GPU or uses it alone is decided for it: only a test run whose filter excludes
   Stress, Benchmark and GpuTrap (as `just test` does) may share; a filter that names tests alone uses the GPU alone.
   `--gpu-exclusive` asks for the GPU alone.
