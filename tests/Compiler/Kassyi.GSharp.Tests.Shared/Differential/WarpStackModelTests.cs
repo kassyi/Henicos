@@ -92,4 +92,25 @@ public partial class WarpStackModelTests
             output => WarpStackModelKernels.LaunchContinuePastLocalKernel(output, blockDimX: 4),
             [0x5 + 0x3, 0xA + 0x3, 0x5 + 0xC * 2, 0xA + 0xC * 2]);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ContinuePastNullable_LanesContinueBeforeTheNullable_ReadTheLanesThatTookTheBranch()
+    {
+        // Iteration 0: the odd lanes go on and lanes 5 and 7 take the mask 0xA0; iteration 1: the even lanes go on and
+        // lanes 4 and 6 take 0x50; a lane 3 or below adds 9 in the iteration it goes on
+        RunOnEveryPath(8,
+            output => WarpStackModelKernels.LaunchContinuePastNullableKernel(output, blockDimX: 8),
+            [9, 9, 9, 9, 0x50, 0xA0, 0x50, 0xA0]);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void ContinuePastUsing_LanesContinueBeforeTheUsing_ReadTheLanesOfTheIteration()
+    {
+        // Iteration 0: the odd lanes 0xAA; iteration 1: the even lanes 0x55; each lane adds its index
+        RunOnEveryPath(8,
+            output => WarpStackModelKernels.LaunchContinuePastUsingKernel(output, blockDimX: 8),
+            [0x55, 0xAA + 1, 0x55 + 2, 0xAA + 3, 0x55 + 4, 0xAA + 5, 0x55 + 6, 0xAA + 7]);
+    }
 }

@@ -1545,6 +1545,8 @@
 - {file: "Differential/WarpRendezvousDifferentialKernels.cu.cs", method: "WarpRendezvousDifferentialKernels.VotesAfterExitKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.CallSiteFramesKernel", status: "Compared", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ContinuePastLocalKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ContinuePastNullableKernel", status: "Reconvergence", count: 1}
+- {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ContinuePastUsingKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.EndInsideBranchKernel", status: "Reconvergence", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.ForUnrollSkewedShuffleKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
 - {file: "Differential/WarpStackModelKernels.cu.cs", method: "WarpStackModelKernels.MaybeShuffle", status: "Compared", count: 1}
@@ -2033,6 +2035,7 @@
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoOverSharedMemoryKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoPastLabeledDeclarationKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoPastLabeledStructKernel", status: "OpaqueStatement", count: 1}
+- {file: "Syntax/GotoScopeKernels.cu.cs", method: "GotoScopeKernels.GotoPastNullableKernel", status: "OpaqueStatement", count: 1}
 - {file: "Syntax/GridStrideLoopKernels.cu.cs", method: "GridStrideLoopKernels.CountCallOnceKernel", status: "Compared", count: 1}
 - {file: "Syntax/GridStrideLoopKernels.cu.cs", method: "GridStrideLoopKernels.CountReadOnceKernel", status: "Compared", count: 1}
 - {file: "Syntax/GridStrideLoopKernels.cu.cs", method: "GridStrideLoopKernels.CountVisitsKernel", status: "Compared", count: 1}

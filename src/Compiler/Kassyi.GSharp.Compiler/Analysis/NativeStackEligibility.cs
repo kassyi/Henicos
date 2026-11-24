@@ -23,7 +23,11 @@ internal static class NativeStackEligibility
         WarpCollective = 2,
         GridSync = 4,
         CaseWithoutLabel = 8,
-        WarpOperatorMacro = 16
+        WarpOperatorMacro = 16,
+        // A using declaration in a method that reaches Warp.ActiveMask()
+        UsingDeclarationWithActiveMask = 32,
+        // A method that reaches Warp.ActiveMask() whose body the stack lowering fails on
+        StackBodyLowering = 64
     }
 
     public static bool CanRunOnStack(MethodDeclarationSyntax declaration, SemanticModel semanticModel) =>
@@ -109,6 +113,16 @@ internal static class NativeStackEligibility
             return NativeStackObstacle.WarpOperatorMacro;
         }
 
+        if ((facts & BodyFacts.UsingDeclarationWithActiveMask) != 0)
+        {
+            return NativeStackObstacle.UsingDeclarationWithActiveMask;
+        }
+
+        if ((facts & BodyFacts.StackBodyLowering) != 0)
+        {
+            return NativeStackObstacle.StackBodyLowering;
+        }
+
         if ((facts & (BodyFacts.BlockBarrier | BodyFacts.WarpCollective)) != 0 &&
             (facts & BodyFacts.CaseWithoutLabel) != 0)
         {
@@ -186,7 +200,7 @@ internal static class NativeStackEligibility
     {
         if (method is null)
         {
-            return ScanBody(declaration, semanticModel);
+            return ScanBody(declaration, semanticModel) & ~BodyFacts.UsingDeclarationWithActiveMask;
         }
 
         var bodies = s_bodies.For(semanticModel.Compilation);
@@ -195,9 +209,70 @@ internal static class NativeStackEligibility
             return cached;
         }
 
+        // [WHY] Only a method that reaches Warp.ActiveMask() gets the reconvergence regions, whose gotos a using
+        // declaration would put inside a try (NativeStackObstacle.UsingDeclarationWithActiveMask)
         var facts = ScanBody(declaration, semanticModel);
+        if (!SuspensionAnalysis.ReachesActiveMask(method, semanticModel.Compilation))
+        {
+            facts &= ~BodyFacts.UsingDeclarationWithActiveMask;
+        }
+        else if (!CanLowerForStack(method, declaration, semanticModel))
+        {
+            facts |= BodyFacts.StackBodyLowering;
+        }
+
         bodies.TryAdd(method, facts);
         return facts;
+    }
+
+    // [WHY] The native stack form of a method that reaches Warp.ActiveMask() writes the body that
+    // AstLoweringPipeline.LowerForStack makes; when that lowering fails, the method keeps its state machine, as the
+    // managed stack model keeps it (ManagedStackForms), instead of a stack form that fails the native build. The
+    // body is lowered once (StackBodies): the stack form writes the same one, and the reason of a failure is stated
+    // in the kernel's text (StackBodyFailure)
+    private static bool CanLowerForStack(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        !declaration.HasBody() || GetStackBody(method, declaration, semanticModel).Failure is null;
+
+    private static StackBodies.Result GetStackBody(IMethodSymbol method, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel) =>
+        StackBodies.Get(declaration, semanticModel, method.OriginalDefinition,
+            isDeviceFunction: !method.HasAttribute(KnownAttributes.GpuKernel));
+
+    /// <summary>
+    /// Why <paramref name="kernel"/> keeps its state machine with <see cref="NativeStackObstacle.StackBodyLowering"/>:
+    /// the method of its closure (the kernel or a device function it reaches through calls that suspend) whose stack
+    /// body could not be lowered, and the failure; <see langword="null"/> when none failed.
+    /// </summary>
+    public static string? StackBodyFailure(IMethodSymbol kernel, MethodDeclarationSyntax declaration,
+        SemanticModel semanticModel)
+    {
+        var compilation = semanticModel.Compilation;
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var queue = new Queue<(IMethodSymbol Method, MethodDeclarationSyntax Declaration)>();
+        queue.Enqueue((kernel, declaration));
+        visited.Add(kernel);
+        while (queue.Count > 0)
+        {
+            var (method, methodDeclaration) = queue.Dequeue();
+            var model = compilation.GetCachedSemanticModel(methodDeclaration.SyntaxTree);
+            if (methodDeclaration.HasBody() && SuspensionAnalysis.ReachesActiveMask(method, compilation) &&
+                GetStackBody(method, methodDeclaration, model).Reason is { } reason)
+            {
+                return MessageText.Name(method) + ": " + reason;
+            }
+
+            foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration, compilation))
+            {
+                if (visited.Add(callee) &&
+                    SuspensionAnalysis.TryGetDeviceFunctionBody(callee, compilation, out var calleeDeclaration))
+                {
+                    queue.Enqueue((callee, calleeDeclaration));
+                }
+            }
+        }
+
+        return null;
     }
 
     private static BodyFacts ScanBody(MethodDeclarationSyntax declaration, SemanticModel semanticModel)
@@ -209,6 +284,12 @@ internal static class NativeStackEligibility
                 IsWarpOperatorMacro((ExpressionSyntax)node, semanticModel))
             {
                 facts |= BodyFacts.WarpOperatorMacro;
+                continue;
+            }
+
+            if (StackBodyObstacles.IsUsingDeclaration(node))
+            {
+                facts |= BodyFacts.UsingDeclarationWithActiveMask;
                 continue;
             }
 

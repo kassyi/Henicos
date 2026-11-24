@@ -32,6 +32,11 @@ public class NativeStackEligibilityTests
         "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "FloatSwitchShuffleKernel", NativeStackObstacle.CaseValueWithoutLabel)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationInActiveMaskCalleeKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels", "UsingDeclarationShuffleKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
         "MacroAfterBarrierKernel", NativeStackObstacle.WarpOperatorMacro)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
@@ -61,6 +66,22 @@ public class NativeStackEligibilityTests
     }
 
     // The visit counts of a kernel with size - 1 collectives of its own and no calls take size slots
+    // The reason of a failed stack lowering goes into the kernel's C++ text as one comment line: a line break or a
+    // backslash (which would continue the comment) becomes a space
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StackBodyFailureComment_ReasonWithLineBreaksAndBackslash_IsOneCommentLine()
+    {
+        var comment = Kassyi.GSharp.Compiler.NativeStackTranslator.StackBodyFailureComment(
+            "Kernels.K: InvalidOperationException: a\r\nb\\");
+
+        Assert.StartsWith("// G#: runs on the state machine", comment, StringComparison.Ordinal);
+        Assert.EndsWith("Kernels.K: InvalidOperationException: a  b " + Environment.NewLine, comment,
+            StringComparison.Ordinal);
+        Assert.Equal(comment.Length - Environment.NewLine.Length,
+            comment.IndexOfAny(['\r', '\n']));
+    }
+
     [Theory]
     [Scenario(TestScenario.Boundary)]
     [InlineData(WarpFrameLayout.MaxSize, NativeStackObstacle.None)]
