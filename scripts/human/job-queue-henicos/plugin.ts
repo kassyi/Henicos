@@ -15,7 +15,14 @@ import {
   readCommandLine,
 } from "../job-queue/plugin-api.ts";
 import { isDotnetTest, selectsCategory } from "../job-queue/plugins/dotnet/plugin.ts";
-import { cpuOnlyTestProjects, isHeadlessCpuSafe, resolveBudgets, resolveTestsDir, testMemoryMb } from "./budgets.ts";
+import {
+  cpuOnlyTestProjects,
+  isHeadlessCpuSafe,
+  justPositionals,
+  resolveBudgets,
+  resolveTestsDir,
+  testMemoryMb,
+} from "./budgets.ts";
 import { nameFilterShare } from "./name-filter.ts";
 import { shareOf } from "./share-rules.ts";
 
@@ -334,7 +341,7 @@ function isOffloadableCommand(
   }
   // Allowlisted CPU-only just recipes (single step)
   if (workSteps.length === 1 && programOf(workSteps[0]?.words[0] ?? "") === "just") {
-    const recipe = workSteps[0]?.words.slice(1).find((w) => !w.startsWith("-") && !w.includes("="));
+    const recipe = justPositionals(workSteps[0]?.words ?? [])[0];
     return recipe !== undefined && OffloadableJustRecipes.has(recipe);
   }
   // Plain dotnet build/test sequence: must include at least one dotnet test, and any --no-build test must follow a
@@ -376,23 +383,98 @@ function optionString(context: ClientContext, key: string, fallback: string): st
   return typeof value === "string" && value !== "" ? value : fallback;
 }
 
+/** Splits a command on unquoted pipes so checks inspect executed programs on every pipeline stage, not data args. */
+function splitPipelineSegments(command: string): string[] {
+  const segments: string[] = [];
+  let start = 0;
+  let quote = "";
+  for (let i = 0; i < command.length; i++) {
+    const ch = command.charAt(i);
+    if (quote !== "") {
+      if (ch === "\\" && quote === '"' && i + 1 < command.length) {
+        i++;
+      } else if (ch === quote) {
+        quote = "";
+      }
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch;
+    } else if (ch === "|") {
+      if (command.charAt(i + 1) === "|") {
+        i++;
+        continue;
+      }
+      segments.push(command.slice(start, i));
+      start = i + 1;
+    }
+  }
+  segments.push(command.slice(start));
+  return segments;
+}
+
+/** True when any executed step invokes one of `justRecipes` or `nodeScripts` (ignores paths, filters, and data). */
+function invokesTarget(command: string, justRecipes: ReadonlySet<string>, nodeScripts: ReadonlySet<string>): boolean {
+  for (const segment of splitPipelineSegments(command)) {
+    const line = readCommandLine(segment);
+    if (line === null) {
+      continue;
+    }
+    for (const step of line.steps) {
+      if (isTrivialStep(step)) {
+        continue;
+      }
+      const first = step.words[0] ?? "";
+      const prog = programOf(first);
+      if (prog === "just") {
+        const recipe = justPositionals(step.words)[0];
+        if (recipe !== undefined && justRecipes.has(recipe)) {
+          return true;
+        }
+        continue;
+      }
+      if (prog === "node") {
+        const script = step.words.slice(1).find((w) => !w.startsWith("-"));
+        if (script !== undefined) {
+          const base = path.basename(script.replace(/\\/g, "/")).toLowerCase();
+          if (nodeScripts.has(base)) {
+            return true;
+          }
+        }
+        continue;
+      }
+      const directBase = path.basename(first.replace(/\\/g, "/")).toLowerCase();
+      if (nodeScripts.has(directBase)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const LongChecksRecipes = new Set(["long-checks"]);
+const LongChecksScripts = new Set(["long-checks.js"]);
+const FuzzDiffRecipes = new Set(["fuzz-diff"]);
+const FuzzDiffScripts = new Set(["fuzz-differential.js"]);
+
+const LongChecksRefusal =
+  "long-checks queues each step through job-queue.js itself: " +
+  "run 'just long-checks' directly without wrapping it in job-queue.js run.";
+
 const plugin = {
   name: "./scripts/human/job-queue-henicos",
   apiVersion: PluginApiVersion,
 
   check(command: string, resource: ResourceRequest | null, context: ClientContext): CheckResult | undefined {
-    if (/\blong-checks(?:\.js)?\b/.test(command)) {
+    if (invokesTarget(command, LongChecksRecipes, LongChecksScripts)) {
       // long-checks.js is a slot-free orchestrator that queues each step through job-queue.js itself; wrapping it in
       // an outer queued job wastes a slot and can deadlock small-slot pools when inner steps ask for --weight 2+.
-      return {
-        refuse:
-          "long-checks queues each step through job-queue.js itself: run 'just long-checks' directly without wrapping it in job-queue.js run.",
-      };
+      return { refuse: LongChecksRefusal };
     }
     if (resource === null || resource.name !== "gpu") {
       return undefined;
     }
-    if (/fuzz-diff|fuzz-differential/.test(command)) {
+    if (invokesTarget(command, FuzzDiffRecipes, FuzzDiffScripts)) {
       // It takes the GPU lock itself for its GPU steps; holding it here would make it wait for ever
       return {
         refuse: "fuzz-diff takes the GPU lock itself: queue it without --gpu.",
