@@ -19,7 +19,11 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "SpanParameterWithBarrier", true)]
     [InlineData("EligibilityKernels", "CallsStackEligibleDeviceFunction", true)]
     [InlineData("EligibilityKernels", "WithWarpShuffle", true)]
-    [InlineData("EligibilityKernels", "WithActiveMask", false)]
+    [InlineData("EligibilityKernels", "WithActiveMask", true)]
+    [InlineData("EligibilityKernels", "CallsActiveMaskReachingDeviceFunction", true)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", false)]
+    [InlineData("EligibilityKernels", "CallsActiveMaskWithUsing", false)]
+    [InlineData("EligibilityKernels", "ShuffleWithUsing", true)]
     [InlineData("EligibilityKernels", "CooperativeKernel", false)]
     [InlineData("EligibilityKernels", "WithoutBarrier", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceKernelWithBarrier", false)]
@@ -39,6 +43,8 @@ public class ManagedStackEligibilityTests
     [Scenario(TestScenario.Boundary)]
     [InlineData("EligibilityKernels", "StackDeviceWait", true)]
     [InlineData("EligibilityKernels", "ShuffleDeviceWait", true)]
+    [InlineData("EligibilityKernels", "ActiveMaskDeviceWait", true)]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsingHelper", false)]
     [InlineData("WarpEligibilityKernels", "Chain10", true)]
     [InlineData("WarpEligibilityKernels", "RecursiveShuffle", false)]
     [InlineData("InstanceEligibilityTarget", "InstanceDeviceWait", false)]
@@ -66,12 +72,13 @@ public class ManagedStackEligibilityTests
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("CallsRecursiveShuffle", "cannot be placed")]
-    [InlineData("OverTheVisitLimit", "4097 visit counts")]
-    public void GetWarpFailure_KernelWhoseCollectivesCannotRunOnItsStack_StatesTheReason(string methodName,
-        string reason)
+    [InlineData("WarpEligibilityKernels", "CallsRecursiveShuffle", "cannot be placed")]
+    [InlineData("WarpEligibilityKernels", "OverTheVisitLimit", "4097 visit counts")]
+    [InlineData("EligibilityKernels", "ActiveMaskWithUsing", "declares a local with using")]
+    public void GetWarpFailure_KernelWhoseCollectivesCannotRunOnItsStack_StatesTheReason(string typeName,
+        string methodName, string reason)
     {
-        var method = GetMethod("WarpEligibilityKernels", methodName);
+        var method = GetMethod(typeName, methodName);
 
         Assert.Contains(reason, ManagedStackEligibility.GetWarpFailure(method, s_compilation), StringComparison.Ordinal);
     }
@@ -81,7 +88,7 @@ public class ManagedStackEligibilityTests
     [InlineData("EligibilityKernels", "WithActiveMask")]
     [InlineData("EligibilityKernels", "BlockBarrierOnly")]
     [InlineData("WarpEligibilityKernels", "WarpOnly")]
-    public void GetWarpFailure_NoWarpCollectiveOrActiveMaskOrPlacedCounts_HasNoReason(string typeName,
+    public void GetWarpFailure_NoWarpCollectiveOrPlacedCounts_HasNoReason(string typeName,
         string methodName)
     {
         Assert.Null(ManagedStackEligibility.GetWarpFailure(GetMethod(typeName, methodName), s_compilation));
@@ -106,12 +113,16 @@ public class ManagedStackEligibilityTests
     }
 
     // A delegate cannot pass the frame offset that the stack form of a function reaching a warp collective takes: the
-    // form of the kernel fails, and the collector keeps the kernel on its state machine with the reason
-    [Fact]
+    // form of the kernel fails, and the collector keeps the kernel on its state machine with the reason. The same holds
+    // for a kernel that reaches Warp.ActiveMask() and passes a function that reaches it, whose form writes the body
+    // lowered for the stacks
+    [Theory]
     [Scenario(TestScenario.SadPath)]
-    public void GenerateStackForm_PassesAWarpFunctionAsAMethodGroup_Throws()
+    [InlineData("PassesShuffleGroup")]
+    [InlineData("PassesActiveMaskGroup")]
+    public void GenerateStackForm_PassesAWarpFunctionAsAMethodGroup_Throws(string methodName)
     {
-        var method = GetMethod("WarpEligibilityKernels", "PassesShuffleGroup");
+        var method = GetMethod("WarpEligibilityKernels", methodName);
         var declaration = (MethodDeclarationSyntax)method.DeclaringSyntaxReferences[0].GetSyntax();
         var plan = MethodEmissionPlan.Create(declaration, s_compilation.GetSemanticModel(declaration.SyntaxTree),
             isKernel: true);

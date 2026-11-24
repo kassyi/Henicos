@@ -12,7 +12,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// form with the gotos and labels of <see cref="ReconvergenceInserter"/>, and the gotos and labels of
 /// <see cref="LabeledJumpRewriter"/>, so that every labeled jump names a target in the tree. It has no state, no frame
 /// and no context: no state variable, state switch, hoisted local or resume point. The regions are those of the state
-/// machine: the same calls, region numbers and places.
+/// machine: the same calls, region numbers and places. Its locals are declared where every use sees them, with their
+/// types written out and a value (<see cref="StackBodyLocals"/>), so that the body can be written as it is.
 /// </remarks>
 /// <param name="Body">The body, with the region calls of the stack form (<c>__gsharp_stack_warp_*</c>).</param>
 /// <param name="RegionCount">
