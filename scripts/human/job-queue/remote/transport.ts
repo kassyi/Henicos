@@ -8,6 +8,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import type { ShellResult } from "../shell.ts";
 import { prefix, ProcessTable } from "../system.ts";
 import { bashQuote, buildSshArgs, type RemoteSpec } from "./spec.ts";
@@ -76,6 +77,9 @@ export class SshTransport implements RemoteTransport {
       let stdout = "";
       let stderr = "";
       let settled = false;
+      // A StringDecoder keeps a multi-byte UTF-8 character split across two chunks intact.
+      const outDecoder = new StringDecoder("utf8");
+      const errDecoder = new StringDecoder("utf8");
       const cleanupAbort = bindAbort(signal, () => child.kill());
       const finish = (result: CaptureResult): void => {
         if (!settled) {
@@ -84,12 +88,14 @@ export class SshTransport implements RemoteTransport {
           resolve(result);
         }
       };
-      child.stdout?.on("data", (d: Buffer) => (stdout += d.toString("utf8")));
-      child.stderr?.on("data", (d: Buffer) => (stderr += d.toString("utf8")));
+      child.stdout?.on("data", (d: Buffer) => (stdout += outDecoder.write(d)));
+      child.stderr?.on("data", (d: Buffer) => (stderr += errDecoder.write(d)));
       child.on("error", (err) => finish({ code: 255, stdout, stderr: err.message }));
       child.stdin?.on("error", () => {});
       child.stdin?.end(script.replace(/\r\n/g, "\n"));
-      child.on("close", (code) => finish({ code: code ?? 1, stdout, stderr }));
+      child.on("close", (code) =>
+        finish({ code: code ?? 1, stdout: stdout + outDecoder.end(), stderr: stderr + errDecoder.end() }),
+      );
     });
   }
 

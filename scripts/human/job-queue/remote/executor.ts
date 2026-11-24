@@ -227,6 +227,7 @@ export class RemoteWithFallbackExecutor implements JobExecutor {
       return remoteResult;
     }
     if (options.remote === true) {
+      prefix(`remote ${remoteName} transport failed before execution; refusing local execution`);
       return { code: remoteResult.code, signaled: remoteResult.signaled };
     }
     prefix(`remote ${remoteName} transport failed before execution; requesting local slot`);
