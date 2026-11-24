@@ -481,3 +481,4 @@
 - {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqCapturingLambdaLocalKernels.cu.cs", method: "UnfusedStackLinqCapturingLambdaLocalKernels.UnfusedQueryWithCapturingLambdaInLocalKernel", reason: "known, a by-value extension receiver is not written", count: 2}
 - {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs", method: "UnfusedStackLinqMissingTemplatesKernels.TakeLastElementAtOrDefaultKernel", reason: "known, a by-value extension receiver is not written", count: 2}
 - {file: "TestCases/Transpiler/PendingBugs/UnfusedStackLinqMissingTemplatesKernels.cu.cs", method: "UnfusedStackLinqMissingTemplatesKernels.UnfusedSelectorSumAndPredicateLastOrDefaultKernel", reason: "known, a by-value extension receiver is not written", count: 1}
+- {file: "TestCases/Transpiler/SequentialSumRewriteCases.cs", method: "SequentialSumForms.RewriteAllForms", reason: "known, a by-value extension receiver is not written", count: 14}

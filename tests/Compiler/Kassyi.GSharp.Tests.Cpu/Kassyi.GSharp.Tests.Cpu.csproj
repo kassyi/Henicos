@@ -28,6 +28,8 @@
     <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
     <Compile Remove="Analysis\Cases\**\*.cs" />
     <None Include="Analysis\Cases\**\*.cs" />
+    <Compile Remove="Generator\Cases\**\*.cs" />
+    <None Include="Generator\Cases\**\*.cs" />
     <Compile Include="..\Kassyi.GSharp.Tests.Shared\TestCases\Layout\HostLayoutCases.cs" />
   </ItemGroup>
 
