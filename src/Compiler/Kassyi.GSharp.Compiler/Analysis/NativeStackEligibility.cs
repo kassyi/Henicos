@@ -261,7 +261,7 @@ internal static class NativeStackEligibility
                 continue;
             }
 
-            if (node is LocalDeclarationStatementSyntax { UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword })
+            if (StackBodyObstacles.IsUsingDeclaration(node))
             {
                 facts |= BodyFacts.UsingDeclarationWithActiveMask;
                 continue;
