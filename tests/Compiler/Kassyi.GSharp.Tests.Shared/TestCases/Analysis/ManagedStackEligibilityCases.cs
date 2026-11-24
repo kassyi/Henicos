@@ -35,6 +35,73 @@ public static partial class EligibilityKernels
         data[tid] = (int)Warp.ActiveMask();
     }
 
+    [GpuKernel]
+    public static void CallsActiveMaskReachingDeviceFunction(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        if (tid % 2 == 0)
+        {
+            data[tid] = ActiveMaskDeviceWait(data[tid]);
+        }
+    }
+
+    // A using declaration after a continue that leaves the region of the loop body: the goto of the region would pass
+    // the declaration (CS8648), so the kernel keeps its state machine
+    [GpuKernel]
+    public static void ActiveMaskWithUsing(int[] data)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (ThreadIndex.X % 2 == 0)
+            {
+                continue;
+            }
+
+            using var guard = new Guard { V = i };
+            data[ThreadIndex.X] += (int)Warp.ActiveMask() + guard.V;
+        }
+    }
+
+    [GpuKernel]
+    public static void CallsActiveMaskWithUsing(int[] data)
+    {
+        data[ThreadIndex.X] = (int)ActiveMaskWithUsingHelper(ThreadIndex.X);
+    }
+
+    [GpuDeviceFunction]
+    public static uint ActiveMaskWithUsingHelper(int v)
+    {
+        using var guard = new Guard { V = v };
+        return Warp.ActiveMask() + (uint)guard.V;
+    }
+
+    // A using declaration in a kernel that reaches warp collectives but not Warp.ActiveMask(): no regions, so the
+    // kernel runs on its stacks
+    [GpuKernel]
+    public static void ShuffleWithUsing(int[] data)
+    {
+        using var guard = new Guard { V = ThreadIndex.X };
+        data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, guard.V, 1);
+    }
+
+    public struct Guard : IDisposable
+    {
+        public int V;
+
+        public void Dispose() => V = 0;
+    }
+
+    [GpuDeviceFunction]
+    public static int ActiveMaskDeviceWait(int value)
+    {
+        if (value > 0)
+        {
+            value += (int)Warp.ActiveMask();
+        }
+
+        return value;
+    }
+
     [GpuKernel(Cooperative = true)]
     public static void CooperativeKernel(int[] data)
     {
@@ -177,6 +244,24 @@ public static partial class WarpEligibilityKernels
     public static void ShuffleAt(this int[] data, int i)
     {
         data[i] = Warp.ShuffleXorSync(0xFFFFFFFFu, data[i], 1);
+    }
+
+    // The kernel reaches Warp.ActiveMask() itself, so its stack form writes the body lowered for the stacks
+    [GpuKernel]
+    public static void PassesActiveMaskGroup(int[] data)
+    {
+        if (ThreadIndex.X % 2 == 0)
+        {
+            data[ThreadIndex.X] = (int)Warp.ActiveMask();
+        }
+
+        Gpu.ForUnroll(0, 2, data.ActiveMaskAt);
+    }
+
+    [GpuDeviceFunction]
+    public static void ActiveMaskAt(this int[] data, int i)
+    {
+        data[i] += (int)Warp.ActiveMask();
     }
 
     // 1 + 1 + 3071 + 767 + 191 + 47 + 11 + 5 + 2 = 4096 visit counts

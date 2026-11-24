@@ -287,9 +287,11 @@ function runStep(name, step, logPath, options = {}) {
   });
 }
 
+// Falls back only when job-queue says the remote never ran the command. Exit codes are not used: the command's own
+// exit code (including 255 from a dropped SSH connection mid-run) would otherwise re-run the tests on WSL and hide
+// the remote result.
 function shouldFallbackRemoteToWsl(result) {
   if (result.code === 0) return false;
-  if (result.code === 2 || result.code === 255) return true;
   const text = result.outputHead || '';
   return (
     /transport failed before execution/i.test(text) ||
@@ -328,7 +330,8 @@ function writeSummary(summaryPath, header, resultsByName, steps, poolsBefore, po
   const ordered = allSteps.filter((name) => resultsByName.has(name)).map((name) => resultsByName.get(name));
   const rows = ordered.map((r) => {
     const status = r.code === 0 ? 'ok' : `failed (${r.code})`;
-    const cells = pools ? poolCells(r.poolsBefore, r.poolsAfter) : '';
+    // Parallel lanes overlap, so their pool and Event 153 deltas are not attributed to a step: shown as '-'.
+    const cells = !pools ? '' : r.poolsBefore ? poolCells(r.poolsBefore, r.poolsAfter) : ' - | - |';
     const gpu = steps[r.name].gpu ? 'yes' : 'no';
     return `| ${r.name} | ${gpu} | ${r.target} | ${status} | ${formatDuration(r.ms)} |${cells} ${r.name}.log |`;
   });
@@ -466,6 +469,7 @@ async function main() {
 
   fs.mkdirSync(outDir, { recursive: true });
   const summaryPath = path.join(outDir, 'summary.md');
+  const poolsBefore = faultWatch.measure({ slowFallback: true });
   const header = [
     `# Long checks ${timestamp(started)}`,
     '',
@@ -475,6 +479,9 @@ async function main() {
     `- Fuzz minutes: ${options.fuzzMinutes}; stability: ${options.stability}; Pi digits: ${options.piDigits}`,
     '- Generator benchmark reports: bench/generator (compare with `just bench-compare <base dir> <head dir>`)',
     '- Fuzzer: tmp/differential-fuzz; stability: TestResults/<os>/<time>; sanitizer: tmp/test-sanitized.log',
+    ...(wantsParallel && poolsBefore.supported
+      ? ['- Pools per step: `-` in parallel mode (lanes overlap, so a per-step delta would blame the wrong step); see the run-level lines']
+      : []),
   ];
 
   let activeWorktreeDir = null;
@@ -494,7 +501,6 @@ async function main() {
   process.on('SIGTERM', () => void stopAll('SIGTERM'));
 
   const resultsByName = new Map();
-  const poolsBefore = faultWatch.measure({ slowFallback: true });
 
   const executeOne = async (name, execOptions = {}) => {
     const step = steps[name];
@@ -504,7 +510,8 @@ async function main() {
     }
     const logPath = path.join(outDir, `${name}.log`);
     console.log(`\n[long-checks] ${name} [${step.target}]: ${describe(step)}`);
-    const stepPoolsBefore = faultWatch.measure({ slowFallback: true });
+    // Per-step pool and Event 153 deltas are only meaningful when no other step runs at the same time (serial mode).
+    const stepPoolsBefore = options.serial ? faultWatch.measure({ slowFallback: true }) : null;
     let result = await runStep(name, step, logPath, execOptions);
     if (step.target === 'remote') {
       if (step.wslFallback && shouldFallbackRemoteToWsl(result)) {
@@ -514,8 +521,10 @@ async function main() {
         result.target = extractGrantedRemote(result.outputHead);
       }
     }
-    result.poolsBefore = stepPoolsBefore;
-    result.poolsAfter = faultWatch.measure({ slowFallback: true });
+    if (options.serial) {
+      result.poolsBefore = stepPoolsBefore;
+      result.poolsAfter = faultWatch.measure({ slowFallback: true });
+    }
     resultsByName.set(name, result);
     writeSummary(summaryPath, header, resultsByName, steps, poolsBefore, result.poolsAfter);
   };
@@ -566,7 +575,17 @@ async function main() {
             createIsolatedWorktree(wtDir);
             activeWorktreeDir = wtDir;
             await executeOne(name, { cwd: wtDir, prefixOutput });
-            copyMutateCompilerReport(wtDir);
+            try {
+              copyMutateCompilerReport(wtDir);
+            } catch (error) {
+              // The step's own result stands; only the copy of its report failed.
+              console.error(`[long-checks] warning: could not copy the mutation report: ${error.message}`);
+            }
+          } catch (error) {
+            // Record the failure and keep the other lanes and the summary; an escaped error would end the run.
+            console.error(`\n[long-checks] ${name}: ${error.message}`);
+            resultsByName.set(name, { name, code: 1, ms: 0, target: 'local:worktree', outputHead: '' });
+            writeSummary(summaryPath, header, resultsByName, steps, poolsBefore, null);
           } finally {
             removeIsolatedWorktree(wtDir);
             if (activeWorktreeDir === wtDir) activeWorktreeDir = null;
