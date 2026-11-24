@@ -29,211 +29,153 @@ public class WarpCollectiveDifferentialTests
         new LaunchShape(1, 1, 1, 8, 5, 1, 40),
     ];
 
-    internal static readonly DifferentialCase s_warpIdentity =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.WarpIdentityKernel)}")
+    internal static readonly DifferentialCase s_warpIdentity = DiffCases.Create(
+        WarpCollectiveDifferentialKernels.LaunchWarpIdentityKernel,
+        inputs: static (_, s) => new DiffBuffers()
+            .Out<int>("laneOut", s.Rows, ["beforeBarrier", "afterBarrier"], OutputPolicy.Exact)
+            .Out<int>("warpOut", s.Rows, ["beforeBarrier", "afterBarrier"], OutputPolicy.Exact),
+        shapes: s_identityShapes,
+        inputName: "laneOut",
+        outputName: "warpOut",
+        seeds: [1],
+        reference: static (b, s) =>
         {
-            Shapes = s_identityShapes,
-            Seeds = [1],
-            Inputs = static (_, s) => new DiffBuffers()
-                .Out<int>("laneOut", s.Rows, ["beforeBarrier", "afterBarrier"], OutputPolicy.Exact)
-                .Out<int>("warpOut", s.Rows, ["beforeBarrier", "afterBarrier"], OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchWarpIdentityKernel(
-                b.Get<int>("laneOut"),
-                b.Get<int>("warpOut"),
-                gridDimX: s.GridX,
-                gridDimY: s.GridY,
-                gridDimZ: s.GridZ,
-                blockDimX: s.BlockX,
-                blockDimY: s.BlockY,
-                blockDimZ: s.BlockZ
-            ),
-            Reference = static (b, s) =>
+            var laneOut = b.Get<int>("laneOut");
+            var warpOut = b.Get<int>("warpOut");
+            for (int gid = 0; gid < s.ThreadCount; gid++)
             {
-                var laneOut = b.Get<int>("laneOut");
-                var warpOut = b.Get<int>("warpOut");
-                for (int gid = 0; gid < s.ThreadCount; gid++)
+                int local = gid % s.ThreadsPerBlock;
+                laneOut[gid * 2] = laneOut[gid * 2 + 1] = local & 31;
+                warpOut[gid * 2] = warpOut[gid * 2 + 1] = local >> 5;
+            }
+        });
+
+    internal static readonly DifferentialCase s_warpVoteAndReduce = DiffCases.Create<int, uint>(
+        WarpCollectiveDifferentialKernels.LaunchWarpVoteAndReduceKernel,
+        inputs: static (rng, s) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, s.Rows))
+            .Out<uint>("output", s.Rows, WarpCollectiveDifferentialKernels.VoteColumns, OutputPolicy.Exact),
+        shapes: s_voteShapes,
+        inputName: "input",
+        outputName: "output",
+        reference: static (b, s) => VoteReference(b.Get<int>("input"), b.Get<uint>("output"), s));
+
+    internal static readonly DifferentialCase s_voteInDeviceFunction = DiffCases.Create<int, uint>(
+        WarpCollectiveDifferentialKernels.LaunchVoteInDeviceFunctionKernel,
+        inputs: static (rng, s) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, s.Rows))
+            .Out<uint>("output", s.Rows, ["oddLanes", "ballotNamed"], OutputPolicy.Exact),
+        shapes: s_voteShapes,
+        inputName: "input",
+        outputName: "output",
+        reference: static (b, s) =>
+        {
+            var input = b.Get<int>("input");
+            var output = b.Get<uint>("output");
+            for (int gid = 0; gid < s.ThreadCount; gid++)
+            {
+                int local = gid % s.ThreadsPerBlock;
+                int lane = local & 31;
+                int lanes = Math.Min(32, s.ThreadsPerBlock - (local - lane));
+                uint odd = 0;
+                uint ballot = 0;
+                for (int l = 0; l < lanes; l++)
                 {
-                    int local = gid % s.ThreadsPerBlock;
-                    laneOut[gid * 2] = laneOut[gid * 2 + 1] = local & 31;
-                    warpOut[gid * 2] = warpOut[gid * 2 + 1] = local >> 5;
+                    int x = input[gid - lane + l];
+                    odd += (uint)(x & 1);
+                    ballot |= (x & 4) != 0 ? 1u << l : 0u;
                 }
-            },
-        };
 
-    internal static readonly DifferentialCase s_warpVoteAndReduce =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.WarpVoteAndReduceKernel)}")
-        {
-            Shapes = s_voteShapes,
-            Inputs = static (rng, s) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, s.Rows))
-                .Out<uint>("output", s.Rows, WarpCollectiveDifferentialKernels.VoteColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchWarpVoteAndReduceKernel(
-                b.Get<int>("input"),
-                b.Get<uint>("output"),
-                gridDimX: s.GridX,
-                gridDimY: s.GridY,
-                gridDimZ: s.GridZ,
-                blockDimX: s.BlockX,
-                blockDimY: s.BlockY,
-                blockDimZ: s.BlockZ
-            ),
-            Reference = static (b, s) => VoteReference(b.Get<int>("input"), b.Get<uint>("output"), s),
-        };
+                output[gid * 2] = odd;
+                output[gid * 2 + 1] = ballot;
+            }
+        });
 
-    internal static readonly DifferentialCase s_voteInDeviceFunction =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.VoteInDeviceFunctionKernel)}")
+    internal static readonly DifferentialCase s_gridStrideBallot = DiffCases.Create<int, uint>(
+        WarpCollectiveDifferentialKernels.LaunchGridStrideBallotKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, rows * 2))
+            .Out<uint>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(128, blockX: 64),
+        inputName: "input",
+        outputName: "output",
+        reference: static (b, _) =>
         {
-            Shapes = s_voteShapes,
-            Inputs = static (rng, s) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, s.Rows))
-                .Out<uint>("output", s.Rows, ["oddLanes", "ballotNamed"], OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchVoteInDeviceFunctionKernel(
-                b.Get<int>("input"),
-                b.Get<uint>("output"),
-                gridDimX: s.GridX,
-                gridDimY: s.GridY,
-                gridDimZ: s.GridZ,
-                blockDimX: s.BlockX,
-                blockDimY: s.BlockY,
-                blockDimZ: s.BlockZ
-            ),
-            Reference = static (b, s) =>
+            var input = b.Get<int>("input");
+            var output = b.Get<uint>("output");
+            int totalThreads = output.Length / 2;
+            for (int round = 0; round < 2; round++)
             {
-                var input = b.Get<int>("input");
-                var output = b.Get<uint>("output");
-                for (int gid = 0; gid < s.ThreadCount; gid++)
+                for (int tid = 0; tid < totalThreads; tid++)
                 {
-                    int local = gid % s.ThreadsPerBlock;
-                    int lane = local & 31;
-                    int lanes = Math.Min(32, s.ThreadsPerBlock - (local - lane));
-                    uint odd = 0;
+                    int warpBase = round * totalThreads + tid - (tid & 31);
                     uint ballot = 0;
-                    for (int l = 0; l < lanes; l++)
+                    for (int l = 0; l < 32; l++)
                     {
-                        int x = input[gid - lane + l];
-                        odd += (uint)(x & 1);
-                        ballot |= (x & 4) != 0 ? 1u << l : 0u;
+                        ballot |= (input[warpBase + l] & 1) != 0 ? 1u << l : 0u;
                     }
 
-                    output[gid * 2] = odd;
-                    output[gid * 2 + 1] = ballot;
+                    output[tid * 2 + round] = ballot;
                 }
-            },
-        };
+            }
+        });
 
-    internal static readonly DifferentialCase s_gridStrideBallot =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideBallotKernel)}")
+    internal static readonly DifferentialCase s_ballotCallerOutsideMask = DiffCases.Create<uint>(
+        WarpCollectiveDifferentialKernels.LaunchBallotCallerOutsideMaskKernel,
+        inputs: static (_, s) => new DiffBuffers()
+            .Out<uint>("output", s.Rows, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(32, blockX: 32),
+        bufferName: "output",
+        oracleIsLaunch: false,
+        seeds: [1],
+        expectedException: static (_, _) => ExceptionPolicy.For<InvalidOperationException>(
+            DiffPath.Managed | DiffPath.Native,
+            messageContains: "Warp.BallotSync"),
+        // Undefined on CUDA, which does not check it
+        skippedPaths: new System.Collections.Generic.Dictionary<DiffPath, string>
         {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, rows * 2))
-                .Out<uint>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchGridStrideBallotKernel(
-                b.Get<int>("input"),
-                b.Get<uint>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
-            {
-                var input = b.Get<int>("input");
-                var output = b.Get<uint>("output");
-                int totalThreads = output.Length / 2;
-                for (int round = 0; round < 2; round++)
-                {
-                    for (int tid = 0; tid < totalThreads; tid++)
-                    {
-                        int warpBase = round * totalThreads + tid - (tid & 31);
-                        uint ballot = 0;
-                        for (int l = 0; l < 32; l++)
-                        {
-                            ballot |= (input[warpBase + l] & 1) != 0 ? 1u << l : 0u;
-                        }
+            [DiffPath.Cuda] = "A mask without the caller's lane is undefined on CUDA.",
+        });
 
-                        output[tid * 2 + round] = ballot;
-                    }
-                }
-            },
-        };
-
-    internal static readonly DifferentialCase s_ballotCallerOutsideMask =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.BallotCallerOutsideMaskKernel)}")
+    internal static readonly DifferentialCase s_reduceCallerOutsideMask = DiffCases.Create(
+        WarpCollectiveDifferentialKernels.LaunchReduceCallerOutsideMaskKernel,
+        inputs: static (_, s) => new DiffBuffers()
+            .Out<int>("output", s.Rows, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(40, blockX: 40),
+        bufferName: "output",
+        oracleIsLaunch: false,
+        seeds: [1],
+        expectedException: static (_, _) => ExceptionPolicy.For<InvalidOperationException>(
+            DiffPath.Managed | DiffPath.Native,
+            messageContains: "Warp.ReduceMinSync"),
+        skippedPaths: new System.Collections.Generic.Dictionary<DiffPath, string>
         {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Seeds = [1],
-            Inputs = static (_, s) => new DiffBuffers()
-                .Out<uint>("output", s.Rows, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchBallotCallerOutsideMaskKernel(
-                b.Get<uint>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            // Undefined on CUDA, which does not check it
-            SkippedPaths = new System.Collections.Generic.Dictionary<DiffPath, string>
-            {
-                [DiffPath.Cuda] = "A mask without the caller's lane is undefined on CUDA.",
-            },
-            ExpectedException = static (_, _) => ExceptionPolicy.For<InvalidOperationException>(
-                DiffPath.Managed | DiffPath.Native,
-                messageContains: "Warp.BallotSync"),
-        };
+            [DiffPath.Cuda] = "A mask without the caller's lane is undefined on CUDA.",
+        });
 
-    internal static readonly DifferentialCase s_reduceCallerOutsideMask =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.ReduceCallerOutsideMaskKernel)}")
-        {
-            Shape = LaunchShape.ForRows(40, blockX: 40),
-            Seeds = [1],
-            Inputs = static (_, s) => new DiffBuffers()
-                .Out<int>("output", s.Rows, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchReduceCallerOutsideMaskKernel(
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            SkippedPaths = new System.Collections.Generic.Dictionary<DiffPath, string>
-            {
-                [DiffPath.Cuda] = "A mask without the caller's lane is undefined on CUDA.",
-            },
-            ExpectedException = static (_, _) => ExceptionPolicy.For<InvalidOperationException>(
-                DiffPath.Managed | DiffPath.Native,
-                messageContains: "Warp.ReduceMinSync"),
-        };
+    internal static readonly DifferentialCase s_gridStrideShuffleInDeviceFunction = DiffCases.Create(
+        WarpCollectiveDifferentialKernels.LaunchGridStrideShuffleInDeviceFunctionKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, rows * 2))
+            .Out<int>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(128, blockX: 64),
+        inputName: "input",
+        outputName: "output",
+        seeds: [1],
+        reference: static (b, _) =>
+            GridStrideReference(b.Get<int>("input"), b.Get<int>("output"), static lane => lane + 1 < 32 ? 1 : 0));
 
-    internal static readonly DifferentialCase s_gridStrideShuffleInDeviceFunction =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideShuffleInDeviceFunctionKernel)}")
-        {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Seeds = [1],
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, rows * 2))
-                .Out<int>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchGridStrideShuffleInDeviceFunctionKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
-                GridStrideReference(b.Get<int>("input"), b.Get<int>("output"), static lane => lane + 1 < 32 ? 1 : 0),
-        };
-
-    internal static readonly DifferentialCase s_gridStrideShuffleWithContext =
-        new($"{nameof(WarpCollectiveDifferentialKernels)}.{nameof(WarpCollectiveDifferentialKernels.GridStrideShuffleWithContextKernel)}")
-        {
-            Shape = LaunchShape.ForRows(96, blockX: 32),
-            Seeds = [1],
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("input", DiffValues.Int32(rng, rows * 2))
-                .Out<int>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => WarpCollectiveDifferentialKernels.LaunchGridStrideShuffleWithContextKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
-                GridStrideReference(b.Get<int>("input"), b.Get<int>("output"), static lane => lane > 0 ? -1 : 0),
-        };
+    internal static readonly DifferentialCase s_gridStrideShuffleWithContext = DiffCases.Create(
+        WarpCollectiveDifferentialKernels.LaunchGridStrideShuffleWithContextKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("input", DiffValues.Int32(rng, rows * 2))
+            .Out<int>("output", rows, WarpCollectiveDifferentialKernels.GridStrideColumns, OutputPolicy.Exact),
+        shape: LaunchShape.ForRows(96, blockX: 32),
+        inputName: "input",
+        outputName: "output",
+        seeds: [1],
+        reference: static (b, _) =>
+            GridStrideReference(b.Get<int>("input"), b.Get<int>("output"), static lane => lane > 0 ? -1 : 0));
 
     // Each thread runs rounds 0 and 1 of the loop over 2 * totalThreads indices; offset gives the lane read relative to
     // the caller's

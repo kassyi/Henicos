@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -18,12 +19,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.IntegerTrapAndCheckedDifferential)]
 public class IntegerMinValueOverflowDifferentialTests
 {
-    internal static readonly DifferentialCase s_int32MinValueDivide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueDivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int32MinValueDivide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueDivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             (int Num, int Den)[] safePairs =
@@ -56,14 +54,11 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["i_quot"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueDivideKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        reference: static (b, s) =>
         {
             var nums = b.Get<int>("nums");
             var denoms = b.Get<int>("denoms");
@@ -72,15 +67,11 @@ public class IntegerMinValueOverflowDifferentialTests
             {
                 dst[t] = nums[t] == int.MinValue && denoms[t] == -1 ? int.MinValue : nums[t] / denoms[t];
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_int32MinValueRemainder = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int32MinValueRemainderKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int32MinValueRemainder = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueRemainderKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             (int Num, int Den)[] safePairs =
@@ -113,14 +104,11 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["i_rem"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt32MinValueRemainderKernel(
-            b.Get<int>("nums"),
-            b.Get<int>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        reference: static (b, s) =>
         {
             var nums = b.Get<int>("nums");
             var denoms = b.Get<int>("denoms");
@@ -129,15 +117,11 @@ public class IntegerMinValueOverflowDifferentialTests
             {
                 dst[t] = nums[t] == int.MinValue && denoms[t] == -1 ? 0 : nums[t] % denoms[t];
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_int64MinValueDivide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueDivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int64MinValueDivide = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueDivideKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             (long Num, long Den)[] safePairs =
@@ -170,14 +154,11 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<long>("dst", rows, ["l_quot"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueDivideKernel(
-            b.Get<long>("nums"),
-            b.Get<long>("denoms"),
-            b.Get<long>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        reference: static (b, s) =>
         {
             var nums = b.Get<long>("nums");
             var denoms = b.Get<long>("denoms");
@@ -186,15 +167,11 @@ public class IntegerMinValueOverflowDifferentialTests
             {
                 dst[t] = nums[t] == long.MinValue && denoms[t] == -1L ? long.MinValue : nums[t] / denoms[t];
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_int64MinValueRemainder = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.Int64MinValueRemainderKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_int64MinValueRemainder = DiffCases.Create(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueRemainderKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             (long Num, long Den)[] safePairs =
@@ -227,14 +204,11 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<long>("dst", rows, ["l_rem"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchInt64MinValueRemainderKernel(
-            b.Get<long>("nums"),
-            b.Get<long>("denoms"),
-            b.Get<long>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms",
+        seeds: [0, 1],
+        reference: static (b, s) =>
         {
             var nums = b.Get<long>("nums");
             var denoms = b.Get<long>("denoms");
@@ -243,14 +217,11 @@ public class IntegerMinValueOverflowDifferentialTests
             {
                 dst[t] = nums[t] == long.MinValue && denoms[t] == -1L ? 0L : nums[t] % denoms[t];
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_shortMinValueDivide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.ShortMinValueDivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Inputs = static (_, shape) =>
+    internal static readonly DifferentialCase s_shortMinValueDivide = DiffCases.CreateRows<short, short, int>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchShortMinValueDivideKernel,
+        inputs: static (_, shape) =>
         {
             int rows = shape.Rows;
             var nums = new short[rows];
@@ -266,21 +237,13 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["s_min_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchShortMinValueDivideKernel(
-            b.Get<short>("nums"),
-            b.Get<short>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms");
 
-    internal static readonly DifferentialCase s_sbyteMinValueDivide = new(
-        KernelName(nameof(IntegerTrapAndCheckedDifferentialKernels.SByteMinValueDivideKernel)))
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Inputs = static (_, shape) =>
+    internal static readonly DifferentialCase s_sbyteMinValueDivide = DiffCases.CreateRows<sbyte, sbyte, int>(
+        IntegerTrapAndCheckedDifferentialKernels.LaunchSByteMinValueDivideKernel,
+        inputs: static (_, shape) =>
         {
             int rows = shape.Rows;
             var nums = new sbyte[rows];
@@ -296,15 +259,9 @@ public class IntegerMinValueOverflowDifferentialTests
                 .In("denoms", denoms, readOnly: true)
                 .Out<int>("dst", rows, ["sb_min_div"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => IntegerTrapAndCheckedDifferentialKernels.LaunchSByteMinValueDivideKernel(
-            b.Get<sbyte>("nums"),
-            b.Get<sbyte>("denoms"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "nums",
+        secondInputName: "denoms");
 
     [SkippableFact]
     public void IntegerOverflow_Int32MinValueDivide_MatchesTheReferenceOnEveryPath() =>
@@ -338,318 +295,169 @@ public class IntegerMinValueOverflowDifferentialTests
 
     [SkippableFact]
     public void IntegerOverflow_Int32Div_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivKernel),
-            int.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32DivKernel, int.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int64Div_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivKernel),
-            long.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64DivKernel, long.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int32DivAssign_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivAssignKernel),
-            int.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivAssignKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32DivAssignKernel, int.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int64DivAssign_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivAssignKernel),
-            long.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivAssignKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64DivAssignKernel, long.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int32Rem_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemKernel),
-            0,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemKernel, 0));
 
     [SkippableFact]
     public void IntegerOverflow_Int64Rem_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemKernel),
-            0L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemKernel, 0L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32RemAssign_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemAssignKernel),
-            0,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemAssignKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemAssignKernel, 0));
 
     [SkippableFact]
     public void IntegerOverflow_Int64RemAssign_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemAssignKernel),
-            0L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemAssignKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemAssignKernel, 0L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32DivCall_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivCallKernel),
-            int.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivCallKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32DivCallKernel, int.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int64DivCall_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivCallKernel),
-            long.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivCallKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64DivCallKernel, long.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int32RemCall_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemCallKernel),
-            0,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemCallKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemCallKernel, 0));
 
     [SkippableFact]
     public void IntegerOverflow_Int64RemCall_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemCallKernel),
-            0L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemCallKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemCallKernel, 0L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32DivRuntimeDivisor_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivRuntimeDivisorKernel),
-            int.MinValue,
-            true,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivRuntimeDivisorKernel(
-                b.Get<int>("denoms"),
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(
+            IntegerMinValueConstantKernels.LaunchInt32DivRuntimeDivisorKernel,
+            int.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int64DivRuntimeDivisor_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivRuntimeDivisorKernel),
-            long.MinValue,
-            true,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivRuntimeDivisorKernel(
-                b.Get<long>("denoms"),
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(
+            IntegerMinValueConstantKernels.LaunchInt64DivRuntimeDivisorKernel,
+            long.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int32DivConstDivisor_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivConstDivisorKernel),
-            int.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivConstDivisorKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(
+            IntegerMinValueConstantKernels.LaunchInt32DivConstDivisorKernel,
+            int.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int64DivConstDivisor_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivConstDivisorKernel),
-            long.MinValue,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivConstDivisorKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(
+            IntegerMinValueConstantKernels.LaunchInt64DivConstDivisorKernel,
+            long.MinValue));
 
     [SkippableFact]
     public void IntegerOverflow_Int32RemPlusFive_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemPlusFiveKernel),
-            5,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemPlusFiveKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemPlusFiveKernel, 5));
 
     [SkippableFact]
     public void IntegerOverflow_Int64RemPlusFive_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemPlusFiveKernel),
-            5L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemPlusFiveKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemPlusFiveKernel, 5L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32RemCompare_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemCompareKernel),
-            1,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemCompareKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemCompareKernel, 1));
 
     [SkippableFact]
     public void IntegerOverflow_Int64RemCompare_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemCompareKernel),
-            1L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemCompareKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemCompareKernel, 1L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32RemCallCompare_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32RemCallCompareKernel),
-            1,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32RemCallCompareKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32RemCallCompareKernel, 1));
 
     [SkippableFact]
     public void IntegerOverflow_Int64RemCallCompare_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64RemCallCompareKernel),
-            1L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64RemCallCompareKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64RemCallCompareKernel, 1L));
 
     [SkippableFact]
     public void IntegerOverflow_Int32DivShift_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<int>(
-            nameof(IntegerMinValueConstantKernels.Int32DivShiftKernel),
-            -1,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt32DivShiftKernel(
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt32DivShiftKernel, -1));
 
     [SkippableFact]
     public void IntegerOverflow_Int64DivShift_MatchesTheReferenceOnEveryPath() =>
-        DifferentialRunner.Run(ConstCase<long>(
-            nameof(IntegerMinValueConstantKernels.Int64DivShiftKernel),
-            -2147483648L,
-            false,
-            static (b, s) => IntegerMinValueConstantKernels.LaunchInt64DivShiftKernel(
-                b.Get<long>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX)));
+        DifferentialRunner.Run(ConstCase(IntegerMinValueConstantKernels.LaunchInt64DivShiftKernel, -2147483648L));
 
-    private static DifferentialCase ConstCase<T>(
-        string kernel,
-        T expected,
-        bool withDenominators,
-        Action<DiffBuffers, LaunchShape> launch)
+    private static DiffBuffers ConstBuffers<T>(int rows, bool withDenominators)
         where T : unmanaged, INumberBase<T>
     {
-        return new DifferentialCase(DiffKernelNames.Of(typeof(IntegerMinValueConstantKernels), kernel))
+        var buffers = new DiffBuffers();
+        if (withDenominators)
         {
-            Shape = LaunchShapes.Linear(DefaultRows, 32),
-            Inputs = (_, shape) =>
-            {
-                var buffers = new DiffBuffers();
-                if (withDenominators)
-                {
-                    var denominators = new T[shape.Rows];
-                    Array.Fill(denominators, -T.One);
-                    buffers.In("denoms", denominators, readOnly: true);
-                }
+            var denominators = new T[rows];
+            Array.Fill(denominators, -T.One);
+            buffers.In("denoms", denominators, readOnly: true);
+        }
 
-                return buffers.Out<T>("dst", shape.Rows, OutputPolicy.Exact);
-            },
-            Launch = launch,
-            Reference = (b, s) => Array.Fill(b.Get<T>("dst"), expected),
-        };
+        return buffers.Out<T>("dst", rows, OutputPolicy.Exact);
     }
+
+    private static DifferentialCase ConstCase(
+        Int32ScalarLaunch launch,
+        int expected,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (_, shape) => ConstBuffers<int>(shape.Rows, withDenominators: false),
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            bufferName: "dst",
+            reference: (b, _) => Array.Fill(b.Get<int>("dst"), expected),
+            launchExpression: launchExpression);
+
+    private static DifferentialCase ConstCase(
+        Int64ScalarLaunch launch,
+        long expected,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (_, shape) => ConstBuffers<long>(shape.Rows, withDenominators: false),
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            bufferName: "dst",
+            reference: (b, _) => Array.Fill(b.Get<long>("dst"), expected),
+            launchExpression: launchExpression);
+
+    private static DifferentialCase ConstCase(
+        Int32RowsLaunch launch,
+        int expected,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (_, shape) => ConstBuffers<int>(shape.Rows, withDenominators: true),
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            inputName: "denoms",
+            outputName: "dst",
+            reference: (b, _) => Array.Fill(b.Get<int>("dst"), expected),
+            launchExpression: launchExpression);
+
+    private static DifferentialCase ConstCase(
+        Int64RowsLaunch launch,
+        long expected,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (_, shape) => ConstBuffers<long>(shape.Rows, withDenominators: true),
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            inputName: "denoms",
+            outputName: "dst",
+            reference: (b, _) => Array.Fill(b.Get<long>("dst"), expected),
+            launchExpression: launchExpression);
 }

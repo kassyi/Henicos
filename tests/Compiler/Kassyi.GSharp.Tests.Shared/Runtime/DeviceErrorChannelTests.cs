@@ -451,19 +451,7 @@ public partial class DeviceErrorChannelTests
     public void CheckedBuildOption_CheckedAndUncheckedConfigurations_ControlsPostLaunchStreamSynchronization(
         bool isCheckedBuild)
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
-
-            namespace SampleNamespace;
-
-            public static partial class SampleKernels
-            {
-                [GpuKernel]
-                public static void VoidScalarKernel(int value)
-                {
-                }
-            }
-            """;
+        var source = RoslynTestUtility.ReadTestCase("Runtime/CheckedBuildSampleKernels.cs");
 
         var compilation = RoslynTestUtility.CreateCompilation(source)
             .WithAssemblyName("SampleAssembly");

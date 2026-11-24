@@ -109,11 +109,9 @@ public sealed class MarshalingNullableDifferentialTests
         },
     };
 
-    internal static readonly DifferentialCase s_arrays = new(
-        $"{Kernels}.{nameof(MarshalingNullableDifferentialKernels.ArraysKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: BlockX),
-        Inputs = static (rng, s) =>
+    internal static readonly DifferentialCase s_arrays = DiffCases.Create<Vector2?, NullableDiffInner?, int?, float>(
+        MarshalingNullableDifferentialKernels.LaunchArraysKernel,
+        inputs: static (rng, s) =>
         {
             var a = new Vector2?[s.Rows];
             var b = new NullableDiffInner?[s.Rows];
@@ -134,15 +132,11 @@ public sealed class MarshalingNullableDifferentialTests
                 .In("c", c, OutputPolicy.ForStruct(NullableComparer<int>.Instance), NullableComparer<int>.Instance)
                 .Out<float>("probe", s.Rows, MarshalingNullableDifferentialKernels.ArrayColumns, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) => MarshalingNullableDifferentialKernels.LaunchArraysKernel(
-            b.Get<Vector2?>("a"),
-            b.Get<NullableDiffInner?>("b"),
-            b.Get<int?>("c"),
-            b.Get<float>("probe"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: BlockX),
+        firstInputName: "a",
+        secondInputName: "b",
+        thirdInputName: "c",
+        outputName: "probe");
 
     internal static readonly DifferentialCase s_returnVector2 = new(
         $"{Kernels}.{nameof(MarshalingNullableDifferentialKernels.ReturnVector2Kernel)}")
@@ -172,11 +166,9 @@ public sealed class MarshalingNullableDifferentialTests
             MarshalingNullableDifferentialKernels.LaunchReturnInnerKernel(gridDimX: s.GridX, blockDimX: s.BlockX)),
     };
 
-    internal static readonly DifferentialCase s_fields = new(
-        $"{Kernels}.{nameof(MarshalingNullableDifferentialKernels.FieldsKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: BlockX),
-        Inputs = static (rng, s) =>
+    internal static readonly DifferentialCase s_fields = DiffCases.Create<NullableDiffHolder, float>(
+        MarshalingNullableDifferentialKernels.LaunchFieldsKernel,
+        inputs: static (rng, s) =>
         {
             var h = new NullableDiffHolder[s.Rows];
             for (int i = 0; i < s.Rows; i++)
@@ -195,13 +187,9 @@ public sealed class MarshalingNullableDifferentialTests
                 .In("h", h, OutputPolicy.ForStruct(HolderComparer), HolderComparer)
                 .Out<float>("probe", s.Rows, MarshalingNullableDifferentialKernels.FieldColumns, OutputPolicy.Exact);
         },
-        OracleIsLaunch = true,
-        Launch = static (b, s) => MarshalingNullableDifferentialKernels.LaunchFieldsKernel(
-            b.Get<NullableDiffHolder>("h"),
-            b.Get<float>("probe"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: BlockX),
+        inputName: "h",
+        outputName: "probe");
 
     internal static readonly DifferentialCase s_arrayFields = new(
         $"{Kernels}.{nameof(MarshalingNullableDifferentialKernels.ArrayFieldsKernel)}")

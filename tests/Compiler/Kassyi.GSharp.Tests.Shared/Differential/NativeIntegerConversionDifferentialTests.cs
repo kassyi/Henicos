@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -57,25 +58,23 @@ public class NativeIntegerConversionDifferentialTests
         return result;
     }
 
-    private static DifferentialCase Case<TSource, TResult>(string kernel, Func<int, TSource[]> source,
-        Action<TSource[], TResult[], int, uint, uint> launch)
+    private static DifferentialCase Case<TSource, TResult>(
+        DiffLaunch<TSource[], TResult[], int> launch,
+        Func<int, TSource[]> source,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "")
         where TSource : unmanaged
         where TResult : unmanaged =>
-        new($"{nameof(NativeIntegerConversionKernels)}.{kernel}Kernel")
-        {
-            Shapes = s_shapes,
-            Inputs = (rng, shape) => new DiffBuffers()
+        DiffCases.CreateRows(
+            launch,
+            inputs: (_, shape) => new DiffBuffers()
                 .In("a", source(shape.Rows), readOnly: true)
                 .Out<TResult>("dst", shape.Rows, OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<TSource>("a"), b.Get<TResult>("dst"), s.Rows, s.GridX, s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shapes: s_shapes,
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_nintToFloat = Case<long, float>(
-        "NintToFloat",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToFloatKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToFloatKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -85,10 +84,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToFloat);
 
     internal static readonly DifferentialCase s_nintToDouble = Case<long, double>(
-        "NintToDouble",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToDoubleKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToDoubleKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -98,10 +95,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToDouble);
 
     internal static readonly DifferentialCase s_nintToInt = Case<long, int>(
-        "NintToInt",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToIntKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -111,10 +106,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToInt);
 
     internal static readonly DifferentialCase s_nintToUInt = Case<long, uint>(
-        "NintToUInt",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToUIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToUIntKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -124,10 +117,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToUInt);
 
     internal static readonly DifferentialCase s_nintToULong = Case<long, ulong>(
-        "NintToULong",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToULongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToULongKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -137,10 +128,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToULong);
 
     internal static readonly DifferentialCase s_nuintToFloat = Case<long, float>(
-        "NuintToFloat",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintToFloatKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintToFloatKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -150,10 +139,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintToFloat);
 
     internal static readonly DifferentialCase s_nuintToDouble = Case<long, double>(
-        "NuintToDouble",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintToDoubleKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintToDoubleKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -163,10 +150,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintToDouble);
 
     internal static readonly DifferentialCase s_nuintToInt = Case<long, int>(
-        "NuintToInt",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintToIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintToIntKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -176,10 +161,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintToInt);
 
     internal static readonly DifferentialCase s_nuintToUInt = Case<long, uint>(
-        "NuintToUInt",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintToUIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintToUIntKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -189,10 +172,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintToUInt);
 
     internal static readonly DifferentialCase s_nuintToULong = Case<long, ulong>(
-        "NuintToULong",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintToULongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintToULongKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -202,10 +183,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintToULong);
 
     internal static readonly DifferentialCase s_nintToLong = Case<long, long>(
-        "NintToLong",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintToLongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintToLongKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -215,10 +194,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintToLong);
 
     internal static readonly DifferentialCase s_nintFromInt = Case<int, long>(
-        "NintFromInt",
-        static rows => Cast(s_longs, rows, static v => (int)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintFromIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintFromIntKernel,
+        static rows => Cast(s_longs, rows, static v => (int)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -228,10 +205,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintFromInt);
 
     internal static readonly DifferentialCase s_nintFromUInt = Case<uint, long>(
-        "NintFromUInt",
-        static rows => Cast(s_longs, rows, static v => (uint)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintFromUIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintFromUIntKernel,
+        static rows => Cast(s_longs, rows, static v => (uint)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -241,10 +216,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintFromUInt);
 
     internal static readonly DifferentialCase s_nintFromULong = Case<ulong, long>(
-        "NintFromULong",
-        static rows => Cast(s_longs, rows, static v => (ulong)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintFromULongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintFromULongKernel,
+        static rows => Cast(s_longs, rows, static v => (ulong)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -254,10 +227,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintFromULong);
 
     internal static readonly DifferentialCase s_nintFromFloat = Case<float, long>(
-        "NintFromFloat",
-        static rows => Cast(s_doubles, rows, static v => (float)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintFromFloatKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintFromFloatKernel,
+        static rows => Cast(s_doubles, rows, static v => (float)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -267,10 +238,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintFromFloat);
 
     internal static readonly DifferentialCase s_nintFromDouble = Case<double, long>(
-        "NintFromDouble",
-        static rows => Cast(s_doubles, rows),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNintFromDoubleKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNintFromDoubleKernel,
+        static rows => Cast(s_doubles, rows));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -280,10 +249,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nintFromDouble);
 
     internal static readonly DifferentialCase s_nuintFromInt = Case<int, ulong>(
-        "NuintFromInt",
-        static rows => Cast(s_longs, rows, static v => (int)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromIntKernel,
+        static rows => Cast(s_longs, rows, static v => (int)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -293,10 +260,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintFromInt);
 
     internal static readonly DifferentialCase s_nuintFromUInt = Case<uint, ulong>(
-        "NuintFromUInt",
-        static rows => Cast(s_longs, rows, static v => (uint)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromUIntKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromUIntKernel,
+        static rows => Cast(s_longs, rows, static v => (uint)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -306,10 +271,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintFromUInt);
 
     internal static readonly DifferentialCase s_nuintFromULong = Case<ulong, ulong>(
-        "NuintFromULong",
-        static rows => Cast(s_longs, rows, static v => (ulong)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromULongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromULongKernel,
+        static rows => Cast(s_longs, rows, static v => (ulong)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -319,10 +282,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintFromULong);
 
     internal static readonly DifferentialCase s_nuintFromFloat = Case<float, ulong>(
-        "NuintFromFloat",
-        static rows => Cast(s_doublesUnsigned, rows, static v => (float)v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromFloatKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromFloatKernel,
+        static rows => Cast(s_doublesUnsigned, rows, static v => (float)v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -332,10 +293,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintFromFloat);
 
     internal static readonly DifferentialCase s_nuintFromDouble = Case<double, ulong>(
-        "NuintFromDouble",
-        static rows => Cast(s_doublesUnsigned, rows),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromDoubleKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromDoubleKernel,
+        static rows => Cast(s_doublesUnsigned, rows));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -345,10 +304,8 @@ public class NativeIntegerConversionDifferentialTests
         DifferentialRunner.Run(s_nuintFromDouble);
 
     internal static readonly DifferentialCase s_nuintFromLong = Case<long, ulong>(
-        "NuintFromLong",
-        static rows => Cast(s_longs, rows, static v => v),
-        static (a, d, n, g, x) =>
-            NativeIntegerConversionKernels.LaunchNuintFromLongKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerConversionKernels.LaunchNuintFromLongKernel,
+        static rows => Cast(s_longs, rows, static v => v));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

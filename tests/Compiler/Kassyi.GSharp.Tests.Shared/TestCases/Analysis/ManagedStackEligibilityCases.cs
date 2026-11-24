@@ -45,6 +45,52 @@ public static partial class EligibilityKernels
         }
     }
 
+    // A using declaration after a continue that leaves the region of the loop body: the goto of the region would pass
+    // the declaration (CS8648), so the kernel keeps its state machine
+    [GpuKernel]
+    public static void ActiveMaskWithUsing(int[] data)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if (ThreadIndex.X % 2 == 0)
+            {
+                continue;
+            }
+
+            using var guard = new Guard { V = i };
+            data[ThreadIndex.X] += (int)Warp.ActiveMask() + guard.V;
+        }
+    }
+
+    [GpuKernel]
+    public static void CallsActiveMaskWithUsing(int[] data)
+    {
+        data[ThreadIndex.X] = (int)ActiveMaskWithUsingHelper(ThreadIndex.X);
+    }
+
+    [GpuDeviceFunction]
+    public static uint ActiveMaskWithUsingHelper(int v)
+    {
+        using var guard = new Guard { V = v };
+        return Warp.ActiveMask() + (uint)guard.V;
+    }
+
+    // A using declaration in a kernel that reaches warp collectives but not Warp.ActiveMask(): no regions, so the
+    // kernel runs on its stacks
+    [GpuKernel]
+    public static void ShuffleWithUsing(int[] data)
+    {
+        using var guard = new Guard { V = ThreadIndex.X };
+        data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, guard.V, 1);
+    }
+
+    public struct Guard : IDisposable
+    {
+        public int V;
+
+        public void Dispose() => V = 0;
+    }
+
     [GpuDeviceFunction]
     public static int ActiveMaskDeviceWait(int value)
     {

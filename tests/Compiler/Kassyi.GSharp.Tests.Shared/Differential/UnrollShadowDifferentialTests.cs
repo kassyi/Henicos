@@ -13,24 +13,18 @@ public class UnrollShadowDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_unrollShadow = new(
-        $"{nameof(UnrollShadowDifferentialKernels)}.{nameof(UnrollShadowDifferentialKernels.UnrollShadowKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_unrollShadow = DiffCases.Create(
+        UnrollShadowDifferentialKernels.LaunchUnrollShadowKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, UnrollShadowDifferentialKernels.Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => UnrollShadowDifferentialKernels.LaunchUnrollShadowKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r");
 
     [SkippableFact]
     public void LoopUnroll_ShadowVariable_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_unrollShadow);

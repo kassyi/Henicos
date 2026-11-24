@@ -266,6 +266,25 @@ public static partial class StackBodyLocalsKernels
         result[tid] = (uint)h + Warp.ActiveMask();
     }
 
+    // out var of a call that splits, declared in one switch section and assigned and read in another: the C++ of a
+    // switch declares such a local before the switch (SwitchSectionLocals), from the declaration of the stack body
+    [GpuKernel]
+    public static void OutVarAcrossSectionsKernel(uint[] result)
+    {
+        int tid = ThreadIndex.X;
+        switch (tid % 2)
+        {
+            case 0:
+                GetMask(tid, out var a);
+                result[tid] = a;
+                break;
+            default:
+                a = 3u;
+                result[tid] = a + Warp.ActiveMask();
+                break;
+        }
+    }
+
     // out var of a callee that waits at a block barrier, in a kernel that reaches Warp.ActiveMask()
     [GpuKernel]
     public static void OutVarOfBarrierCalleeKernel(uint[] result)

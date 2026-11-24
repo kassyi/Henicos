@@ -11,6 +11,39 @@ public struct DiffNullablePairHolder
     public int Tag;
 }
 
+public struct NullableCoalesceOperands
+{
+    [GpuReadOnly] public int[] FirstPresence;
+    [GpuReadOnly] public int[] FirstValues;
+    [GpuReadOnly] public int[] SecondPresence;
+    [GpuReadOnly] public int[] SecondValues;
+    [GpuReadOnly] public int[] Fallbacks;
+}
+
+public struct NullablePairOperands
+{
+    [GpuReadOnly] public int[] FirstPresence;
+    [GpuReadOnly] public int[] FirstValues;
+    [GpuReadOnly] public int[] SecondPresence;
+    [GpuReadOnly] public int[] SecondValues;
+}
+
+public struct WiderWithNarrowerNullableOperands
+{
+    [GpuReadOnly] public int[] WidePresence;
+    [GpuReadOnly] public int[] WideValues;
+    [GpuReadOnly] public int[] NarrowPresence;
+    [GpuReadOnly] public short[] NarrowSignedValues;
+    [GpuReadOnly] public ushort[] NarrowUnsignedValues;
+}
+
+public struct NarrowCoalescePromotionOperands
+{
+    [GpuReadOnly] public int[] Conditions;
+    [GpuReadOnly] public byte[] ByteValues;
+    [GpuReadOnly] public ushort[] UInt16Values;
+}
+
 /// <summary>
 /// Differential kernels (<c>Nullable&lt;T&gt;</c> / <c>T?</c> representation, <c>HasValue</c>,
 /// <c>Value</c>, null-coalescing <c>??</c>, compound <c>??=</c>, type promotion in <c>??</c>, and null comparisons of empty
@@ -122,18 +155,21 @@ public static partial class NullableDifferentialKernels
 
     [GpuKernel]
     public static void NullableCoalesceAndSideEffects(
-        int[] hasA,
-        int[] valsA,
-        int[] hasB,
-        int[] valsB,
-        int[] fallbacks,
-        int[] r)
+        NullableCoalesceOperands operands,
+        int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (tid >= hasA.Length)
+        if (tid >= operands.FirstPresence.Length)
         {
             return;
         }
+
+        var hasA = operands.FirstPresence;
+        var valsA = operands.FirstValues;
+        var hasB = operands.SecondPresence;
+        var valsB = operands.SecondValues;
+        var fallbacks = operands.Fallbacks;
+        var r = results;
 
         int f = fallbacks[tid];
 
@@ -188,17 +224,20 @@ public static partial class NullableDifferentialKernels
 
     [GpuKernel]
     public static void NullableDeviceFunctionsAndKleeneLogic(
-        int[] hasA,
-        int[] valsA,
-        int[] hasB,
-        int[] valsB,
-        int[] r)
+        NullablePairOperands operands,
+        int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (tid >= hasA.Length)
+        if (tid >= operands.FirstPresence.Length)
         {
             return;
         }
+
+        var hasA = operands.FirstPresence;
+        var valsA = operands.FirstValues;
+        var hasB = operands.SecondPresence;
+        var valsB = operands.SecondValues;
+        var r = results;
 
         int? a = default;
         if (hasA[tid] != 0)
@@ -270,18 +309,21 @@ public static partial class NullableDifferentialKernels
     /// </summary>
     [GpuKernel]
     public static void CoalesceWiderNullableWithNarrowerNullable(
-        int[] hasA,
-        int[] valsA,
-        int[] hasB,
-        short[] valsB,
-        ushort[] uValsB,
-        int[] r)
+        WiderWithNarrowerNullableOperands operands,
+        int[] results)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (tid >= hasA.Length)
+        if (tid >= operands.WidePresence.Length)
         {
             return;
         }
+
+        var hasA = operands.WidePresence;
+        var valsA = operands.WideValues;
+        var hasB = operands.NarrowPresence;
+        var valsB = operands.NarrowSignedValues;
+        var uValsB = operands.NarrowUnsignedValues;
+        var r = results;
 
         int? a = default;
         if (hasA[tid] != 0)
@@ -367,13 +409,21 @@ public static partial class NullableDifferentialKernels
     // incrementing overflows past 255/65535 into int instead of wrapping in byte/ushort.
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void NarrowNullableCoalesceVarPromotionReproKernel(int[] conds, byte[] ba, ushort[] usa, int[] dst, int n)
+    public static void NarrowNullableCoalesceVarPromotionReproKernel(
+        NarrowCoalescePromotionOperands operands,
+        int[] results,
+        int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
+
+        var conds = operands.Conditions;
+        var ba = operands.ByteValues;
+        var usa = operands.UInt16Values;
+        var dst = results;
 
         int c = conds[t];
         byte? mb = (c & 1) == 0 ? new byte?(255) : new byte?(ba[t]);

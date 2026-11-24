@@ -210,7 +210,11 @@ public class SyncGridBodyTests : TranspilerTestBase
         var c = new int[Threads];
         var counter = new int[Threads];
 
-        Run(forceManaged, () => SyncGridBodyKernels.LaunchDeclarationAfterReturnKernel(a, b, c, counter, n, gridDimX: Blocks, blockDimX: ThreadsPerBlock));
+        Run(forceManaged, () => SyncGridBodyKernels.LaunchDeclarationAfterReturnKernel(
+            buffers: new DeclarationAfterReturnBuffers { Input = a, SumOutput = b, StepOutput = c, Counters = counter },
+            count: n,
+            gridDimX: Blocks,
+            blockDimX: ThreadsPerBlock));
 
         // v = a[t], w = 2v, x = 1, y = x + w, k = 5: b = v + y + k = 3v + 6; the returned threads run no initializer
         Assert.Equal(Enumerable.Range(0, Threads).Select(static t => t < n ? 3 * (t * 3) + 6 : 0), b);

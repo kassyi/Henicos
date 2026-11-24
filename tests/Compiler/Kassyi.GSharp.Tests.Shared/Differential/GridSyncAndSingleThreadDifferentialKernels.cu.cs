@@ -3,6 +3,12 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
+public struct MultiPhaseReductionWorkspace
+{
+    public int[] BlockSums;
+    public int[] GridStats;
+}
+
 /// <summary>
 /// Differential test kernels for <see cref="Gpu.SyncGrid(GridSyncMode)"/>, <see cref="Gpu.SyncGrid(System.Action)"/>,
 /// <see cref="Gpu.SingleThread(System.Action)"/>, and cooperative multi-phase barrier + atomic workflows.
@@ -77,11 +83,14 @@ public static partial class GridSyncAndSingleThreadDifferentialKernels
     [GpuKernel(Cooperative = true)]
     public static void CooperativeMultiPhaseReduceNormalizeKernel(
         int[] input,
-        int[] blockSums,
-        int[] gridStats,
+        MultiPhaseReductionWorkspace workspace,
         int[] output,
-        int dynBlockCap)
+        int sharedBlockCapacity)
     {
+        var blockSums = workspace.BlockSums;
+        var gridStats = workspace.GridStats;
+        int dynBlockCap = sharedBlockCapacity;
+
         int localTid = ThreadIndex.X + (ThreadIndex.Y * BlockDimension.X);
         int blockId = BlockIndex.X + (BlockIndex.Y * GridDimension.X);
         int blockSize = BlockDimension.X * BlockDimension.Y;

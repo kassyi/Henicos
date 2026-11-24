@@ -227,7 +227,10 @@ internal static class EvaluationOrderScenarios
         var rotated = new uint[1];
         var sums = new int[1];
 
-        run(() => EvaluationOrderKernels.LaunchNoSpillBinaryKernel(input, a, b, rotated, sums, blockDimX: 1));
+        run(() => EvaluationOrderKernels.LaunchNoSpillBinaryKernel(
+            inputs: new NoSpillBinaryInputs { RotateValues = input, LeftAddends = a, RightAddends = b },
+            results: new NoSpillBinaryResults { Rotated = rotated, Sums = sums },
+            blockDimX: 1));
 
         Assert.Equal(uint.RotateRight(0x12345678u, 2) ^ uint.RotateRight(0x12345678u, 13), rotated[0]);
         Assert.Equal(42, sums[0]);

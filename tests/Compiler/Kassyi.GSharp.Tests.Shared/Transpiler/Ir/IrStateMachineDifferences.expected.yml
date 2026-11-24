@@ -2913,8 +2913,11 @@
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.WriteOut", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analysis/DeviceFunctionEffectCases.cs", method: "Effects.WriteStatic", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ActiveMaskDeviceWait", status: "Reconvergence", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ActiveMaskWithUsing", status: "Reconvergence", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ActiveMaskWithUsingHelper", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.BlockBarrierOnly", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.CallsActiveMaskReachingDeviceFunction", status: "Reconvergence", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.CallsActiveMaskWithUsing", status: "Reconvergence", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.CallsShuffleReachingDeviceFunction", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.CallsStackEligibleDeviceFunction", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.CallsStackExtension", status: "Compared", count: 1}
@@ -2922,6 +2925,7 @@
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.NonSpanRefStructParameter", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.PassesStackExtensionGroup", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ShuffleDeviceWait", status: "Compared", count: 1}
+- {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.ShuffleWithUsing", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.SpanParameterWithBarrier", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.StackDeviceWait", status: "Compared", count: 1}
 - {file: "TestCases/Analysis/ManagedStackEligibilityCases.cs", method: "EligibilityKernels.WaitAndAdd", status: "Compared", count: 1}
@@ -4195,6 +4199,7 @@
 - {file: "TestCases/Diagnostics/GpuMacroCallForms.cs", method: "GpuMacroCallFormKernels.MethodGroupBodyKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuMacroCallForms.cs", method: "GpuMacroCallFormKernels.StatementKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/GpuMacroCallForms.cs", method: "GpuMacroCallFormKernels.SyncGridExpressionKernel", status: "Fallback:OpaqueHoldsSplit", count: 1}
+- {file: "TestCases/Diagnostics/ImmutableArrayLengthDiagnostics.cs", method: "ImmutableLengthKernels.ImmutableLengthKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ImplicitCallForms.cu.cs", method: "BarrierBagBuilder.Create", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ImplicitCallForms.cu.cs", method: "ImplicitCallFormKernels.BarrierBuilderKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/ImplicitCallForms.cu.cs", method: "ImplicitCallFormKernels.BclBuilderKernel", status: "Compared", count: 1}
@@ -4250,6 +4255,8 @@
 - {file: "TestCases/Diagnostics/NonCooperativeSyncGridSadPath.cs", method: "NonCooperativeSyncGridAuditKernels.DirectNonCooperativeKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NonCooperativeSyncGridSadPath.cs", method: "NonCooperativeSyncGridAuditKernels.HelperWithSyncGrid", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NonCooperativeSyncGridSadPath.cs", method: "NonCooperativeSyncGridAuditKernels.IndirectNonCooperativeKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/NullableDeepStructDiagnostics.cs", method: "NullableDeepStructKernels.NullableDeepBagKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/NullableReturnNullDiagnostics.cs", method: "NullableReturnNullKernels.ReturnNullKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NullableStructValueDiagnostics.cs", method: "NullableStructValueKernels.NullableReferenceFieldKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/NullableVector2DirectDiagnostics.cs", method: "NullableVector2DirectKernels.NullableVec2AllDirectKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/OperatorMacroContext.cu.cs", method: "OperatorMacroContextKernels.NoContextKernel", status: "Compared", count: 1}
@@ -4616,6 +4623,7 @@
 - {file: "TestCases/Diagnostics/UniformDynamicSharedMemory.cu.cs", method: "UniformDynamicSharedMemoryKernels.UniformConditionKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/UnimplementedIntrinsics.cu.cs", method: "Kernels.ArriveAndWait", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/UnimplementedIntrinsics.cu.cs", method: "Kernels.UnimplementedKernel", status: "Compared", count: 1}
+- {file: "TestCases/Diagnostics/UnmappedBclReturnDiagnostics.cs", method: "UnmappedBclReturnKernels.UnmappedReturnKernel", status: "Compared", count: 1}
 - {file: "TestCases/Diagnostics/UnmappedCall.cs", method: "UnmappedCallKernels.Body", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Diagnostics/UnmappedCall.cs", method: "UnmappedCallKernels.MappedKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Diagnostics/UnmappedCall.cs", method: "UnmappedCallKernels.MethodGroupBodyKernel", status: "Compared", count: 1}
@@ -4715,6 +4723,7 @@
 - {file: "TestCases/Generator/OversizedSharedMemoryKernelCases.cs", method: "OversizedSharedMemoryKernelCases.Marked", status: "Compared", count: 1}
 - {file: "TestCases/Generator/OversizedSharedMemoryKernelCases.cs", method: "OversizedSharedMemoryKernelCases.Unmarked", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SadPathDiagnostics.cu.cs", method: "ErrorSpecKernel.BadKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/SharedPreludeHeaderDummy.cs", method: "Dummy.Kernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.Countdown", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.CreateBag", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/SpillSuppression.cu.cs", method: "Kernels.GetPinnableReference", status: "NoStateMachine", count: 1}
@@ -4803,6 +4812,8 @@
 - {file: "TestCases/Generator/SpillSuppressionTypeParameterDispose.cu.cs", method: "Kernels.ViaTypeParameterDispose", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generator/UnsupportedFeatures.cu.cs", method: "ErrorKernels.ManagedParamKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generator/UnsupportedFeatures.cu.cs", method: "ErrorKernels.NonVoidReturnKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generator/WarningCheckKernels.cs", method: "WarningCheckKernels.SyncHelper", status: "Compared", count: 1}
+- {file: "TestCases/Generator/WarningCheckKernels.cs", method: "WarningCheckKernels.TestKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Add", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Kept", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generators/ConditionalCallDefines.cs", method: "CallOps.Marker", status: "NoStateMachine", count: 1}
@@ -4934,6 +4945,7 @@
 - {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.Middle", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.Outer", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.PassesSuspendingGroupKernel", status: "Compared", count: 1}
+- {file: "TestCases/Generators/ManagedStackFallbackCases.cs", method: "FallbackKernels.UsingAfterContinueKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.ActiveMaskKernel", status: "Reconvergence", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.HalfThenFull", status: "Compared", count: 1}
 - {file: "TestCases/Generators/ManagedStackModelCases.cs", method: "StackModelKernels.MaskOfOddValues", status: "Reconvergence", count: 1}
@@ -4969,6 +4981,7 @@
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeSwitchKernels.SecondKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.FirstKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Generators/SharedMemberErrorSiteCases.cs", method: "DisposeThrowKernels.SecondKernel", status: "OpaqueStatement", count: 1}
+- {file: "TestCases/Generators/StackBodyScopedCases.cs", method: "ScopedKernels.ScopedSpanKernel", status: "Compared", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "Inner.WaitNested", status: "Compared", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "LibSm.MakeSecret", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Generators/StateMachineVisibility.cs", method: "LibSm.UseSecret", status: "NoStateMachine", count: 1}
@@ -5209,6 +5222,7 @@
 - {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "ProtectedLauncherDerived.CallProtectedDeviceKernel", status: "Compared", count: 1}
 - {file: "TestCases/Marshaling/ProtectedNestedLauncherSource.cs", method: "UnrelatedSuspendingCaller.CallPublicProtectedFrameKernel", status: "Compared", count: 1}
 - {file: "TestCases/NativeApi/GenericIntrinsicCalls.cu.cs", method: "GenericIntrinsicCallKernels.CopyAndReleaseKernel", status: "Compared", count: 1}
+- {file: "TestCases/Runtime/CheckedBuildSampleKernels.cs", method: "SampleKernels.VoidScalarKernel", status: "Compared", count: 1}
 - {file: "TestCases/Runtime/ErrorSiteLineEndingCases.cs", method: "ErrorSiteLineEndingKernels.SitesOnSeveralLinesKernel", status: "Compared", count: 1}
 - {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.HellPattern", status: "Compared", count: 1}
 - {file: "TestCases/StackLinqFusionTestCases.cu.cs", method: "StackLinqFusionTestCases.MultipleSelect", status: "Compared", count: 1}
@@ -5525,6 +5539,7 @@
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.ShufflesOnlyInRemovedCall", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.SplitArgumentsKernel", status: "OpaqueStatement", count: 1}
 - {file: "TestCases/Transpiler/RemovedCallCases.cs", method: "RemovedCallOps.Trace", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Transpiler/SequentialSumRewriteCases.cs", method: "SequentialSumForms.RewriteAllForms", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Transpiler/SharedMemorySiblingScopeHoistKernels.cu.cs", method: "SharedMemorySiblingScopeHoistKernels.FlattenedSiblingExplicitAndVarSharedMemoryKernel", status: "Compared", count: 1}
 - {file: "TestCases/Transpiler/SharedMemorySiblingScopeHoistKernels.cu.cs", method: "SharedMemorySiblingScopeHoistKernels.SiblingExplicitAndVarSharedMemoryKernel", status: "Compared", count: 1}
 - {file: "TestCases/WrapperOptimization.cu.cs", method: "WrapperOptimizationKernels.ComplexSignatureKernel", status: "Compared", count: 1}

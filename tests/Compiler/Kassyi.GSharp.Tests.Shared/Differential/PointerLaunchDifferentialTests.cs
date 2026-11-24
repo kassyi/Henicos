@@ -43,13 +43,7 @@ public partial class PointerLaunchDifferentialTests
                 .Out<int>("lengths", 2, OutputPolicy.Exact);
         },
         OracleIsLaunch = true,
-        Launch = static (b, s) => PointerLaunchDifferentialKernels.LaunchTwoLengthsKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("lengths"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
+        Launch = DiffLaunches.Bind(PointerLaunchDifferentialKernels.LaunchTwoLengthsKernel, "a", "b", "lengths"),
         LaunchPtr = GetTwoLengthsLaunchPtr(),
     };
 

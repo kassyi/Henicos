@@ -88,6 +88,7 @@ public static partial class MarshalingNullableDifferentialKernels
         "holder_first",
     ];
 
+    // The parameter list is the subject of this test: Nullable<T> scalar marshaling across value, convert, deep-bag, and blit parameter forms.
     [GpuKernel]
     public static void ScalarsKernel(Vector2? v, NullableDiffInner? inner, NullableDiffBag? bag, int? i, float[] probe)
     {
@@ -119,6 +120,7 @@ public static partial class MarshalingNullableDifferentialKernels
         probe[o + 6] = i ?? -5;
     }
 
+    // The parameter list is the subject of this test: Nullable<T> directly in top-level ref and out kernel parameter positions.
     [GpuKernel]
     public static void RefsKernel(ref Vector2? v, ref NullableDiffInner? inner, ref int? i, out Vector2? made, int[] o)
     {

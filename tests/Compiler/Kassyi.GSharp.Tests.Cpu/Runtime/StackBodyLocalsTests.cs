@@ -7,9 +7,12 @@ using Kassyi.GSharp.Tests.Shared.Differential;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
-// The kernels of StackBodyLocalsKernels give the same values on every CPU path. Under the managed stack model the
-// managed path runs them on the stacks (the body lowered for the stacks, with its locals moved, typed and initialized)
-// while the native path runs the state machine, so the comparison checks the stack model against the state machine
+// The kernels of StackBodyLocalsKernels give the same values on every CPU path. Each stack model is a build variant of
+// its own: under the managed one (GSharpManagedBarrierModel=Stack) the managed path runs them on the stacks (the body
+// lowered for the stacks, with its locals moved, typed and initialized) and the native path runs the state machine;
+// under the native one (GSharpNativeBarrierModel=Stack) it is the other way round. Either way the comparison checks a
+// stack model against the state machine. The values stay on the CPU paths: inside a branch, Warp.ActiveMask() on a GPU
+// may hold fewer lanes than the CPU paths return, so a CUDA run has no single expected value to compare with
 [Collection(TestCollections.GlobalStateSequential)]
 [TestTarget(ExecutionTarget.CpuExecution)]
 [Category(TestCategory.Runtime)]
@@ -48,6 +51,8 @@ public class StackBodyLocalsTests
             StackBodyLocalsKernels.LaunchOutVarAndInSwitchSectionKernel(r, blockDimX: Threads),
         ["OutVarOfShuffleCallee"] = static r =>
             StackBodyLocalsKernels.LaunchOutVarOfShuffleCalleeKernel(r, blockDimX: Threads),
+        ["OutVarAcrossSections"] = static r =>
+            StackBodyLocalsKernels.LaunchOutVarAcrossSectionsKernel(r, blockDimX: Threads),
         ["OutVarOfBarrierCallee"] = static r =>
             StackBodyLocalsKernels.LaunchOutVarOfBarrierCalleeKernel(r, blockDimX: Threads),
     };

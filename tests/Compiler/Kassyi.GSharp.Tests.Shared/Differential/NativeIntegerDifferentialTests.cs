@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -54,16 +55,17 @@ public class NativeIntegerDifferentialTests
     }
 
     private static DifferentialCase SortCase(
-        string kernel, bool unsigned, Action<long[], long[], LaunchShape> launch) =>
-        new($"{nameof(NativeIntegerDifferentialKernels)}.{kernel}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        Int64RowsLaunch launch,
+        bool unsigned,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("a", SortRows(rng, rows.Rows))
                 .Out<long>("dst", rows.Rows, ["k0", "k1", "k2", "k3"], OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<long>("a"), b.Get<long>("dst"), s),
+            shapes: LaunchShapes.OneDimensionalMatrix(Rows),
             // The host sort of each row of four is the result
-            Reference = (b, s) =>
+            reference: (b, s) =>
             {
                 var a = b.Get<long>("a");
                 var dst = b.Get<long>("dst");
@@ -84,17 +86,15 @@ public class NativeIntegerDifferentialTests
                     keys.CopyTo(dst, row * 4);
                 }
             },
-        };
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_sortNint = SortCase(
-        nameof(NativeIntegerDifferentialKernels.NativeIntegerSortKernel), unsigned: false,
-        static (a, dst, s) => NativeIntegerDifferentialKernels.LaunchNativeIntegerSortKernel(
-            a, dst, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        NativeIntegerDifferentialKernels.LaunchNativeIntegerSortKernel,
+        unsigned: false);
 
     internal static readonly DifferentialCase s_sortNuint = SortCase(
-        nameof(NativeIntegerDifferentialKernels.NativeUnsignedIntegerSortKernel), unsigned: true,
-        static (a, dst, s) => NativeIntegerDifferentialKernels.LaunchNativeUnsignedIntegerSortKernel(
-            a, dst, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        NativeIntegerDifferentialKernels.LaunchNativeUnsignedIntegerSortKernel,
+        unsigned: true);
 
     private static DifferentialCase ParameterCase(nint p, nuint q) =>
         new($"{nameof(NativeIntegerDifferentialKernels)}." +

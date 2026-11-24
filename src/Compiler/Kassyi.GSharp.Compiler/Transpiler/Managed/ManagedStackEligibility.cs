@@ -109,6 +109,12 @@ internal static class ManagedStackEligibility
                    $"{WarpFrameLayout.MaxSize}";
         }
 
+        if (StackBodyObstacles.DeclaresUsingWithActiveMask(kernel, compilation))
+        {
+            return "it reaches Warp.ActiveMask() and declares a local with using: a jump of its reconvergence " +
+                   "regions may pass the declaration";
+        }
+
         return null;
     }
 
@@ -130,7 +136,8 @@ internal static class ManagedStackEligibility
         }
 
         if (SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
-            !WarpFrameLayout.TryGet(function, compilation, out _))
+            !WarpFrameLayout.TryGet(function, compilation, out _) ||
+            StackBodyObstacles.DeclaresUsingWithActiveMask(function, compilation))
         {
             return false;
         }

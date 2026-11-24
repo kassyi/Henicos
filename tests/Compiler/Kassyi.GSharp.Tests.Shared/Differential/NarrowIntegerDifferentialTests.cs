@@ -88,10 +88,9 @@ public class NarrowIntegerDifferentialTests
         long.MinValue,
     ];
 
-    internal static readonly DifferentialCase s_narrowCompoundAndStep = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowCompoundAndStepMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_narrowCompoundAndStep = DiffCases.Create(
+        NarrowIntegerDifferentialKernels.LaunchNarrowCompoundAndStepMatrixKernel,
+        inputs: static (rng, rows) =>
         {
             var a = NarrowIntValues(rng, rows);
             var b = NarrowIntValues(rng, rows);
@@ -102,33 +101,18 @@ public class NarrowIntegerDifferentialTests
                 .In("sh", sh)
                 .Out<int>("r", rows, NarrowIntegerDifferentialKernels.NarrowCompoundAndStepColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => NarrowIntegerDifferentialKernels.LaunchNarrowCompoundAndStepMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("sh"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        thirdName: "sh",
+        fourthName: "r");
 
-    internal static readonly DifferentialCase s_narrowEnumAndSignedEnum = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_narrowEnumAndSignedEnum = DiffCases.Create(
+        NarrowIntegerDifferentialKernels.LaunchNarrowEnumAndSignedEnumMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", NarrowIntValues(rng, rows))
             .In("b", NarrowIntValues(rng, rows))
             .Out<int>("r", rows, NarrowIntegerDifferentialKernels.NarrowEnumAndSignedEnumColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => NarrowIntegerDifferentialKernels.LaunchNarrowEnumAndSignedEnumMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("b"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        outputName: "r");
 
     internal static readonly DifferentialCase s_mixedSignDivRem = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.MixedSignDivRemMatrixKernel)}")
     {
@@ -147,21 +131,23 @@ public class NarrowIntegerDifferentialTests
                 .Out<long>("r", rows, NarrowIntegerDifferentialKernels.MixedSignDivRemColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => NarrowIntegerDifferentialKernels.LaunchMixedSignDivRemMatrixKernel(
-            b.Get<long>("l"),
-            b.Get<int>("iNz"),
-            b.Get<uint>("uNz"),
-            b.Get<long>("lNz"),
-            b.Get<long>("r"),
+            operands: new MixedSignDivRemOperands
+            {
+                Signed64Values = b.Get<long>("l"),
+                NonZeroSigned32Divisors = b.Get<int>("iNz"),
+                NonZeroUnsigned32Divisors = b.Get<uint>("uNz"),
+                NonZeroSigned64Divisors = b.Get<long>("lNz"),
+            },
+            results: b.Get<long>("r"),
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_bitOpsReturnSign = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.BitOpsReturnSignMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(32),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_bitOpsReturnSign = DiffCases.Create<uint, ulong, int>(
+        NarrowIntegerDifferentialKernels.LaunchBitOpsReturnSignMatrixKernel,
+        inputs: static (rng, rows) =>
         {
             var u = Array.ConvertAll(DiffValues.Int32(rng, rows), static v => unchecked((uint)v));
             var ul = Array.ConvertAll(Int64Values(rng, rows), static v => unchecked((ulong)v));
@@ -170,30 +156,18 @@ public class NarrowIntegerDifferentialTests
                 .In("ul", ul)
                 .Out<int>("r", rows, NarrowIntegerDifferentialKernels.BitOpsReturnSignColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => NarrowIntegerDifferentialKernels.LaunchBitOpsReturnSignMatrixKernel(
-            b.Get<uint>("u"),
-            b.Get<ulong>("ul"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(32),
+        firstInputName: "u",
+        secondInputName: "ul",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_targetEvaluationOrder = new($"{nameof(NarrowIntegerDifferentialKernels)}.{nameof(NarrowIntegerDifferentialKernels.TargetEvaluationOrderMatrixKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(16),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_targetEvaluationOrder = DiffCases.Create(
+        NarrowIntegerDifferentialKernels.LaunchTargetEvaluationOrderMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, NarrowIntegerDifferentialKernels.TargetEvaluationOrderColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => NarrowIntegerDifferentialKernels.LaunchTargetEvaluationOrderMatrixKernel(
-            b.Get<int>("a"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(16),
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

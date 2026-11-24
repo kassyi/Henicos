@@ -1,8 +1,8 @@
 name: Script types
 
 # Type-checks the TypeScript scripts (scripts/**/*.ts) with tsc, checks the frontmatter of the agent rule files, and
-# runs the job queue's self-test on Ubuntu and Windows. Node runs the scripts as they are by stripping the types, so
-# a type error would otherwise only show when the code runs. It needs no .NET build, only Node.
+# runs the self-tests of the job queue and the GPU lock on Ubuntu and Windows. Node runs the scripts as they are by
+# stripping the types, so a type error would otherwise only show when the code runs. It needs no .NET build, only Node.
 on:
   push:
     branches: ["main"]
@@ -66,3 +66,9 @@ jobs:
 
       - name: Job queue hook self-test
         run: node scripts/agent/check-queued-command.js --self-test
+
+      # The GPU lock (both seats, stale takeover, a run killed while it holds the seats) needs no GPU: without
+      # nvidia-smi the hold is recorded as not sampled. It uses a private lock path, never the real lock.
+      - name: GPU lock self-test
+        timeout-minutes: 5
+        run: node scripts/human/gpu-lock.js --self-test

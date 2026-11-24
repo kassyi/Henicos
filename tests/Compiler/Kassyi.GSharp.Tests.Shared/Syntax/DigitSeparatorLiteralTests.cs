@@ -15,7 +15,16 @@ public class DigitSeparatorLiteralTests : TranspilerTestBase
         float[] floats = [0];
         double[] doubles = [0];
 
-        DigitSeparatorLiteralKernels.LaunchDigitSeparatorKernel(ints, uints, longs, ulongs, floats, doubles);
+        DigitSeparatorLiteralKernels.LaunchDigitSeparatorKernel(
+            results: new DigitSeparatorLiteralResults
+            {
+                Int32Values = ints,
+                UInt32Values = uints,
+                Int64Values = longs,
+                UInt64Values = ulongs,
+                SingleValues = floats,
+                DoubleValues = doubles,
+            });
 
         Assert.Equal(1_000_000, ints[0]);
         Assert.Equal(0xFFFF0000u, uints[0]);

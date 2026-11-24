@@ -45,7 +45,15 @@ public class CarryAndBitIntrinsicTests : TranspilerTestBase
         var difference = new uint[Length];
         var borrowOut = new long[Length];
 
-        CarryAndBitIntrinsicKernels.LaunchCarryChainKernel(a, b, sum, carryOut, difference, borrowOut,
+        CarryAndBitIntrinsicKernels.LaunchCarryChainKernel(
+            operands: new CarryChainOperands { Left = a, Right = b },
+            results: new CarryChainResults
+            {
+                Sum = sum,
+                CarryOut = carryOut,
+                Difference = difference,
+                BorrowOut = borrowOut,
+            },
             blockDimX: Length);
 
         for (int i = 0; i < Length; i++)

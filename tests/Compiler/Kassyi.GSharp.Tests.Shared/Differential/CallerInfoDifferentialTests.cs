@@ -22,61 +22,44 @@ public class CallerInfoDifferentialTests
     private static readonly int s_suspendingCallLine =
         LineOfCall(nameof(CallerInfoDifferentialKernels.LineAcrossBarrier));
 
-    internal static readonly DifferentialCase s_callerLine = new(
-        nameof(CallerInfoDifferentialKernels) + "." + nameof(CallerInfoDifferentialKernels.CallerLineKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_callerLine = DiffCases.Create(
+        CallerInfoDifferentialKernels.LaunchCallerLineKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, CallerInfoDifferentialKernels.Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => CallerInfoDifferentialKernels.LaunchCallerLineKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r");
 
     // The oracle cannot run a float Sum as C#; the reference is LineWithSum(data) called at s_managedVersionCallLine
-    internal static readonly DifferentialCase s_managedVersion = new(
-        nameof(CallerInfoDifferentialKernels) + "." +
-        nameof(CallerInfoDifferentialKernels.CallerLineManagedVersionKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_managedVersion = DiffCases.Create<float, int>(
+        CallerInfoDifferentialKernels.LaunchCallerLineManagedVersionKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("data", DiffValues.Int32Pairs(rng, 4).Item1.Select(static v => (float)(v & 0xFF)).ToArray())
             .Out<int>("r", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => CallerInfoDifferentialKernels.LaunchCallerLineManagedVersionKernel(
-            b.Get<float>("data"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, _) => Array.Fill(b.Get<int>("r"), s_managedVersionCallLine),
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "data",
+        outputName: "r",
+        reference: static (b, _) => Array.Fill(b.Get<int>("r"), s_managedVersionCallLine));
 
     // The oracle cannot run barriers; the reference is LineAcrossBarrier(x) called at s_suspendingCallLine
-    internal static readonly DifferentialCase s_suspendingCall = new(
-        nameof(CallerInfoDifferentialKernels) + "." +
-        nameof(CallerInfoDifferentialKernels.CallerLineSuspendingCallKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_suspendingCall = DiffCases.Create(
+        CallerInfoDifferentialKernels.LaunchCallerLineSuspendingCallKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => CallerInfoDifferentialKernels.LaunchCallerLineSuspendingCallKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, _) =>
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) =>
         {
             var xs = b.Get<int>("xs");
             var r = b.Get<int>("r");
@@ -84,27 +67,20 @@ public class CallerInfoDifferentialTests
             {
                 r[tid] = ((xs[tid] & 0x3FF) * 1000) + s_suspendingCallLine;
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_iterator = new(
-        nameof(CallerInfoDifferentialKernels) + "." + nameof(CallerInfoDifferentialKernels.CallerLineIteratorKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_iterator = DiffCases.Create(
+        CallerInfoDifferentialKernels.LaunchCallerLineIteratorKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => CallerInfoDifferentialKernels.LaunchCallerLineIteratorKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r");
 
     [SkippableFact]
     public void OmittedCallerLineNumber_CallsInGpuCode_ReceiveTheLineOfTheCallOnEveryPath() =>

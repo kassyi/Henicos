@@ -63,14 +63,14 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1615682337u, "CppIdentifie
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1091944787u, "CppIdentifierRenameKernels.cs", 137, 33, "StructMemberNamesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(306926280u, "CppIdentifierRenameKernels.cs", 152, 9, "StructMemberNamesKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2137688175u, "CppIdentifierRenameKernels.cs", 153, 9, "StructMemberNamesKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(776637460u, "CppIdentifierRenameKernels.cs", 163, 24, "BarrierHoistedNamesKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1243854533u, "CppIdentifierRenameKernels.cs", 167, 9, "BarrierHoistedNamesKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1699514753u, "CppIdentifierRenameKernels.cs", 173, 46, "GridStrideLambdaParameterKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1444187405u, "CppIdentifierRenameKernels.cs", 185, 9, "KeywordLabelKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(799495289u, "CppIdentifierRenameKernels.cs", 188, 9, "KeywordLabelKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1728543190u, "CppIdentifierRenameKernels.cs", 188, 31, "KeywordLabelKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1404768533u, "CppIdentifierRenameKernels.cs", 202, 9, "template", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1195652360u, "CppIdentifierRenameKernels.cs", 202, 35, "template", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2085774974u, "CppIdentifierRenameKernels.cs", 164, 24, "BarrierHoistedNamesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1456659777u, "CppIdentifierRenameKernels.cs", 168, 9, "BarrierHoistedNamesKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2036281059u, "CppIdentifierRenameKernels.cs", 174, 46, "GridStrideLambdaParameterKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1178381861u, "CppIdentifierRenameKernels.cs", 186, 9, "KeywordLabelKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(156805317u, "CppIdentifierRenameKernels.cs", 189, 9, "KeywordLabelKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(466684808u, "CppIdentifierRenameKernels.cs", 189, 31, "KeywordLabelKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(134784089u, "CppIdentifierRenameKernels.cs", 203, 9, "template", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(856181094u, "CppIdentifierRenameKernels.cs", 203, 35, "template", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1865,7 +1865,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_5_tid=(int)threadIdx.x;
 __gsharp_ctx->__gsharp_id_6_template={ (int*)__gsharp_allocate_smem_static(0x5baa53526ed1de37ull, (32) * sizeof(int), alignof(int)) };
-__gsharp_ctx->__gsharp_id_7_register=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_5_tid, 776637460u),__gsharp_ctx->__gsharp_id_1_bx),__gsharp_ctx->__gsharp_id_2_tx),__gsharp_ctx->__gsharp_id_3_ctx),__gsharp_ctx->__gsharp_id_4_anyActive);
+__gsharp_ctx->__gsharp_id_7_register=__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_5_tid, 2085774974u),__gsharp_ctx->__gsharp_id_1_bx),__gsharp_ctx->__gsharp_id_2_tx),__gsharp_ctx->__gsharp_id_3_ctx),__gsharp_ctx->__gsharp_id_4_anyActive);
 __gsharp_ctx->__gsharp_id_6_template[__gsharp_ctx->__gsharp_id_5_tid]=__gsharp_ctx->__gsharp_id_7_register;
 __gsharp_yielded_for_block_barrier=true;
 __gsharp_state=1;
@@ -1875,7 +1875,7 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 int __gsharp_id_8_union = __gsharp_ctx->__gsharp_id_6_template[(__gsharp_add_i32(__gsharp_ctx->__gsharp_id_5_tid,1))%32];
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_5_tid, 1243854533u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_7_register,1000),__gsharp_id_8_union);
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_data, __gsharp_ctx->__gsharp_id_5_tid, 1456659777u)=__gsharp_add_i32(__gsharp_mul_i32(__gsharp_ctx->__gsharp_id_7_register,1000),__gsharp_id_8_union);
 __gsharp_state=-1;
 return;
 }
@@ -2206,7 +2206,7 @@ for(unsigned int __gsharp_gsl_0 = __gsharp_grid_stride_start(); __gsharp_gsl_0 <
 {
 int __gsharp_id_2_union = (int)__gsharp_gsl_0;
 {
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_union, 1699514753u)=__gsharp_mul_i32(__gsharp_id_2_union,2);
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_2_union, 2036281059u)=__gsharp_mul_i32(__gsharp_id_2_union,2);
 }
 }
 }
@@ -2523,10 +2523,10 @@ if(__gsharp_id_1_rounds>0)
 {
 goto __gsharp_id_2_register;
 }
-__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 1444187405u)=0;
+__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 1178381861u)=0;
 __gsharp_state = -1;return;
 __gsharp_id_2_register:
-__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 799495289u)=__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 1728543190u),__gsharp_id_1_rounds);
+__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 156805317u)=__gsharp_mul_i32(__gsharp_array_at(__gsharp_id_0_data, (int)threadIdx.x, 466684808u),__gsharp_id_1_rounds);
 __gsharp_state=-1;
 return;
 }
@@ -2840,7 +2840,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = (int)threadIdx.x;
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1404768533u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__friend(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 1195652360u)));
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 134784089u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__friend(__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_1_tid, 856181094u)));
 __gsharp_state=-1;
 return;
 }
