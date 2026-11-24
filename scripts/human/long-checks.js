@@ -469,6 +469,7 @@ async function main() {
 
   fs.mkdirSync(outDir, { recursive: true });
   const summaryPath = path.join(outDir, 'summary.md');
+  const poolsBefore = faultWatch.measure({ slowFallback: true });
   const header = [
     `# Long checks ${timestamp(started)}`,
     '',
@@ -478,7 +479,7 @@ async function main() {
     `- Fuzz minutes: ${options.fuzzMinutes}; stability: ${options.stability}; Pi digits: ${options.piDigits}`,
     '- Generator benchmark reports: bench/generator (compare with `just bench-compare <base dir> <head dir>`)',
     '- Fuzzer: tmp/differential-fuzz; stability: TestResults/<os>/<time>; sanitizer: tmp/test-sanitized.log',
-    ...(wantsParallel
+    ...(wantsParallel && poolsBefore.supported
       ? ['- Pools per step: `-` in parallel mode (lanes overlap, so a per-step delta would blame the wrong step); see the run-level lines']
       : []),
   ];
@@ -500,7 +501,6 @@ async function main() {
   process.on('SIGTERM', () => void stopAll('SIGTERM'));
 
   const resultsByName = new Map();
-  const poolsBefore = faultWatch.measure({ slowFallback: true });
 
   const executeOne = async (name, execOptions = {}) => {
     const step = steps[name];
@@ -575,7 +575,12 @@ async function main() {
             createIsolatedWorktree(wtDir);
             activeWorktreeDir = wtDir;
             await executeOne(name, { cwd: wtDir, prefixOutput });
-            copyMutateCompilerReport(wtDir);
+            try {
+              copyMutateCompilerReport(wtDir);
+            } catch (error) {
+              // The step's own result stands; only the copy of its report failed.
+              console.error(`[long-checks] warning: could not copy the mutation report: ${error.message}`);
+            }
           } catch (error) {
             // Record the failure and keep the other lanes and the summary; an escaped error would end the run.
             console.error(`\n[long-checks] ${name}: ${error.message}`);
