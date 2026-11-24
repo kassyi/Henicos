@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-using C = Kassyi.GSharp.Tests.Shared.Differential.ArrayCalls;
-using K = Kassyi.GSharp.Tests.Shared.Differential.ArrayCallSourceDifferentialKernels;
-
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
 /// <summary>
@@ -26,14 +23,14 @@ public sealed class ArrayCallSourceDifferentialTests
     // The launch of each kernel of ArrayCallSourceDifferentialKernels with the array in its source
     private static readonly (string Kernel, Launcher Launch)[] s_sources =
     [
-        (nameof(K.FieldArrayCallKernel), static (array, call, o, s) => K.LaunchFieldArrayCallKernel(
+        (nameof(ArrayCallSourceDifferentialKernels.FieldArrayCallKernel), static (array, call, o, s) => ArrayCallSourceDifferentialKernels.LaunchFieldArrayCallKernel(
             new ArrayCallHolder { Data = array, Tag = 3 }, call, o, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        (nameof(K.ElementArrayCallKernel), static (array, call, o, s) => K.LaunchElementArrayCallKernel(
+        (nameof(ArrayCallSourceDifferentialKernels.ElementArrayCallKernel), static (array, call, o, s) => ArrayCallSourceDifferentialKernels.LaunchElementArrayCallKernel(
             [new ArrayCallHolder { Data = array, Tag = 3 }, new ArrayCallHolder { Data = [1, 2], Tag = 4 }],
             call, o, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        (nameof(K.LocalArrayCallKernel), static (array, call, o, s) => K.LaunchLocalArrayCallKernel(
+        (nameof(ArrayCallSourceDifferentialKernels.LocalArrayCallKernel), static (array, call, o, s) => ArrayCallSourceDifferentialKernels.LaunchLocalArrayCallKernel(
             array, call, o, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        (nameof(K.ParameterArrayCallKernel), static (array, call, o, s) => K.LaunchParameterArrayCallKernel(
+        (nameof(ArrayCallSourceDifferentialKernels.ParameterArrayCallKernel), static (array, call, o, s) => ArrayCallSourceDifferentialKernels.LaunchParameterArrayCallKernel(
             array, call, o, gridDimX: s.GridX, blockDimX: s.BlockX)),
     ];
 
@@ -62,7 +59,7 @@ public sealed class ArrayCallSourceDifferentialTests
     {
         foreach (var (kernel, launch) in s_sources)
         {
-            for (int call = 0; call < C.Count; call++)
+            for (int call = 0; call < ArrayCalls.Count; call++)
             {
                 foreach (var (valueName, create) in s_values)
                 {
@@ -81,7 +78,7 @@ public sealed class ArrayCallSourceDifferentialTests
         string value,
         Func<int[]?> create
     ) =>
-        new(DiffKernelNames.Of(typeof(K), kernel, $"{CallName(call)}.{value}"))
+        new(DiffKernelNames.Of(typeof(ArrayCallSourceDifferentialKernels), kernel, $"{CallName(call)}.{value}"))
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = [0],
@@ -98,25 +95,25 @@ public sealed class ArrayCallSourceDifferentialTests
 
     private static string ParameterName(int call) => call switch
     {
-        C.CopyFrom or C.CopyRangeFrom or C.CopyFromPastEnd => "sourceArray",
-        C.CopyTo or C.CopyRangeTo => "destinationArray",
+        ArrayCalls.CopyFrom or ArrayCalls.CopyRangeFrom or ArrayCalls.CopyFromPastEnd => "sourceArray",
+        ArrayCalls.CopyTo or ArrayCalls.CopyRangeTo => "destinationArray",
         _ => "array",
     };
 
     private static string CallName(int call) => call switch
     {
-        C.Fill => "Fill",
-        C.FillRange => "FillRange",
-        C.Clear => "Clear",
-        C.ClearRange => "ClearRange",
-        C.Reverse => "Reverse",
-        C.ReverseRange => "ReverseRange",
-        C.CopyFrom => "CopyFrom",
-        C.CopyRangeFrom => "CopyRangeFrom",
-        C.CopyTo => "CopyTo",
-        C.CopyRangeTo => "CopyRangeTo",
-        C.FillPastEnd => "FillPastEnd",
-        C.ClearPastEnd => "ClearPastEnd",
+        ArrayCalls.Fill => "Fill",
+        ArrayCalls.FillRange => "FillRange",
+        ArrayCalls.Clear => "Clear",
+        ArrayCalls.ClearRange => "ClearRange",
+        ArrayCalls.Reverse => "Reverse",
+        ArrayCalls.ReverseRange => "ReverseRange",
+        ArrayCalls.CopyFrom => "CopyFrom",
+        ArrayCalls.CopyRangeFrom => "CopyRangeFrom",
+        ArrayCalls.CopyTo => "CopyTo",
+        ArrayCalls.CopyRangeTo => "CopyRangeTo",
+        ArrayCalls.FillPastEnd => "FillPastEnd",
+        ArrayCalls.ClearPastEnd => "ClearPastEnd",
         _ => "CopyFromPastEnd",
     };
 }

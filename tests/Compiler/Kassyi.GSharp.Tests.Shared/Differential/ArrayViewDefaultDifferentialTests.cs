@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
-using static Kassyi.GSharp.Tests.Shared.Differential.ArrayViewDefaultDifferentialKernels;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -38,19 +37,26 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
             .In("mode", mode, readOnly: true)
             .Out<int>("dst", 2, OutputPolicy.Exact);
 
-    internal static readonly DifferentialCase s_segmentSlice = new(Name(nameof(SegmentSliceKernel)))
+    internal static readonly DifferentialCase s_segmentSlice = new(
+        Name(nameof(ArrayViewDefaultDifferentialKernels.SegmentSliceKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
         // 0, 1: Slice(1, 1) and Slice(1) of a segment; 2, 3: the same of a default segment
         Seeds = [0, 1, 2, 3],
         OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, _) => Buffers(Mode(rng.Seed < 2 ? ReceiverArgument : ReceiverDefault, rng.Seed % 2)),
-        Launch = static (b, s) => LaunchSegmentSliceKernel(Segment(), b.Get<int>("mode"), b.Get<int>("dst"),
+        Inputs = static (rng, _) => Buffers(Mode(
+            rng.Seed < 2
+                ? ArrayViewDefaultDifferentialKernels.ReceiverArgument
+                : ArrayViewDefaultDifferentialKernels.ReceiverDefault,
+            rng.Seed % 2)),
+        Launch = static (b, s) => ArrayViewDefaultDifferentialKernels.LaunchSegmentSliceKernel(
+            Segment(), b.Get<int>("mode"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_segmentCopyTo = new(Name(nameof(SegmentCopyToKernel)))
+    internal static readonly DifferentialCase s_segmentCopyTo = new(
+        Name(nameof(ArrayViewDefaultDifferentialKernels.SegmentCopyToKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: a segment into a long enough array; 1: a default segment; 2: a segment into null; 3: an empty slice into
@@ -61,9 +67,9 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         {
             var receiver = rng.Seed switch
             {
-                1 or 5 => ReceiverDefault,
-                3 => ReceiverEmpty,
-                _ => ReceiverArgument,
+                1 or 5 => ArrayViewDefaultDifferentialKernels.ReceiverDefault,
+                3 => ArrayViewDefaultDifferentialKernels.ReceiverEmpty,
+                _ => ArrayViewDefaultDifferentialKernels.ReceiverArgument,
             };
             int[]? target = rng.Seed switch
             {
@@ -73,27 +79,35 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
             };
             return Buffers(Mode(receiver)).InNullable("target", target, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => LaunchSegmentCopyToKernel(Segment(), b.Get<int>("mode"), b.GetNullable<int>("target"),
+        Launch = static (b, s) => ArrayViewDefaultDifferentialKernels.LaunchSegmentCopyToKernel(
+            Segment(), b.Get<int>("mode"), b.GetNullable<int>("target"),
             b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_segmentCopyToSegment = new(Name(nameof(SegmentCopyToSegmentKernel)))
+    internal static readonly DifferentialCase s_segmentCopyToSegment = new(
+        Name(nameof(ArrayViewDefaultDifferentialKernels.SegmentCopyToSegmentKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: a segment into a segment; 1: a default segment; 2: into a default segment
         Seeds = [0, 1, 2],
         OracleExceptions = OracleExceptionMode.MatchOracle,
         Inputs = static (rng, _) =>
-            Buffers(Mode(rng.Seed == 1 ? ReceiverDefault : ReceiverArgument, rng.Seed == 2 ? 1 : 0))
+            Buffers(Mode(
+                rng.Seed == 1
+                    ? ArrayViewDefaultDifferentialKernels.ReceiverDefault
+                    : ArrayViewDefaultDifferentialKernels.ReceiverArgument,
+                rng.Seed == 2 ? 1 : 0))
                 .In("destination", new int[5], OutputPolicy.Exact),
-        Launch = static (b, s) => LaunchSegmentCopyToSegmentKernel(Segment(),
+        Launch = static (b, s) => ArrayViewDefaultDifferentialKernels.LaunchSegmentCopyToSegmentKernel(
+            Segment(),
             new ArraySegment<int>(b.Get<int>("destination"), 1, 4), b.Get<int>("mode"), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_immutableCopyTo = new(Name(nameof(ImmutableCopyToKernel)))
+    internal static readonly DifferentialCase s_immutableCopyTo = new(
+        Name(nameof(ArrayViewDefaultDifferentialKernels.ImmutableCopyToKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: an immutable array into a long enough array; 1: a default immutable array; 2: into null; 3: into a short
@@ -108,15 +122,19 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
                 3 => new int[1],
                 _ => new int[3],
             };
-            return Buffers(Mode(rng.Seed is 1 or 4 ? ReceiverDefault : ReceiverArgument))
+            return Buffers(Mode(rng.Seed is 1 or 4
+                ? ArrayViewDefaultDifferentialKernels.ReceiverDefault
+                : ArrayViewDefaultDifferentialKernels.ReceiverArgument))
                 .InNullable("target", target, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => LaunchImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), b.Get<int>("mode"),
+        Launch = static (b, s) => ArrayViewDefaultDifferentialKernels.LaunchImmutableCopyToKernel(
+            ImmutableArray.Create(4, 5, 6), b.Get<int>("mode"),
             b.GetNullable<int>("target"), b.Get<int>("dst"), gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nullableImmutable = new(Name(nameof(NullableImmutableKernel)))
+    internal static readonly DifferentialCase s_nullableImmutable = new(
+        Name(nameof(ArrayViewDefaultDifferentialKernels.NullableImmutableKernel)))
     {
         Shape = LaunchShapes.SingleThread(),
         // 0: three elements; 1: null
@@ -124,7 +142,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         Inputs = static (rng, _) => new DiffBuffers()
             .In("present", new[] { rng.Seed == 0 ? 1 : 0 }, readOnly: true)
             .Out<int>("dst", 2, OutputPolicy.Exact),
-        Launch = static (b, s) => LaunchNullableImmutableKernel(Argument(b), b.Get<int>("dst"),
+        Launch = static (b, s) => ArrayViewDefaultDifferentialKernels.LaunchNullableImmutableKernel(
+            Argument(b), b.Get<int>("dst"),
             gridDimX: s.GridX, blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
@@ -162,7 +181,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         var dst = new int[2];
 
         AssertStopsWith<InvalidOperationException>(forceManaged, dst,
-            () => LaunchSegmentSliceKernel(Segment(), Mode(ReceiverDefault), dst));
+            () => ArrayViewDefaultDifferentialKernels.LaunchSegmentSliceKernel(
+                Segment(), Mode(ArrayViewDefaultDifferentialKernels.ReceiverDefault), dst));
     }
 
     [SkippableTheory]
@@ -174,7 +194,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         var dst = new int[2];
 
         var exception = AssertStopsWith<ArgumentNullException>(forceManaged, dst,
-            () => LaunchSegmentCopyToKernel(Segment(), Mode(ReceiverEmpty), null, dst));
+            () => ArrayViewDefaultDifferentialKernels.LaunchSegmentCopyToKernel(
+                Segment(), Mode(ArrayViewDefaultDifferentialKernels.ReceiverEmpty), null, dst));
         Assert.Contains("Value cannot be null.", exception.Message, StringComparison.Ordinal);
     }
 
@@ -188,7 +209,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         var target = new[] { -1, -1, -1 };
 
         AssertStopsWith<NullReferenceException>(forceManaged, dst,
-            () => LaunchImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), Mode(ReceiverDefault), target, dst));
+            () => ArrayViewDefaultDifferentialKernels.LaunchImmutableCopyToKernel(
+                ImmutableArray.Create(4, 5, 6), Mode(ArrayViewDefaultDifferentialKernels.ReceiverDefault), target, dst));
         Assert.Equal([-1, -1, -1], target);
     }
 
@@ -202,7 +224,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         var target = new int[4];
 
         Run(forceManaged, () =>
-            LaunchImmutableCopyToKernel(ImmutableArray.Create(4, 5, 6), Mode(ReceiverArgument), target, dst));
+            ArrayViewDefaultDifferentialKernels.LaunchImmutableCopyToKernel(
+                ImmutableArray.Create(4, 5, 6), Mode(ArrayViewDefaultDifferentialKernels.ReceiverArgument), target, dst));
 
         Assert.Equal([4, 5, 6, 0], target);
         Assert.Equal([1, 100], dst);
@@ -216,7 +239,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
     {
         var dst = new int[2];
 
-        Run(forceManaged, () => LaunchNullableImmutableKernel(ImmutableArray.Create(1, 2, 3), dst));
+        Run(forceManaged, () => ArrayViewDefaultDifferentialKernels.LaunchNullableImmutableKernel(
+            ImmutableArray.Create(1, 2, 3), dst));
 
         Assert.Equal([1, 13], dst);
     }
@@ -232,7 +256,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
     {
         var dst = new int[2];
 
-        Run(forceManaged, () => LaunchNullableImmutableHasValueKernel(EmptyOrDefault(isDefault), dst));
+        Run(forceManaged, () => ArrayViewDefaultDifferentialKernels.LaunchNullableImmutableHasValueKernel(
+            EmptyOrDefault(isDefault), dst));
 
         Assert.Equal(1, dst[0]);
     }
@@ -249,7 +274,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
     {
         var dst = new int[2];
 
-        Run(forceManaged, () => LaunchNullableImmutableHasValueKernel(EmptyOrDefault(isDefault), dst));
+        Run(forceManaged, () => ArrayViewDefaultDifferentialKernels.LaunchNullableImmutableHasValueKernel(
+            EmptyOrDefault(isDefault), dst));
 
         Assert.Equal([1, 10], dst);
     }
@@ -262,7 +288,8 @@ public sealed class ArrayViewDefaultDifferentialTests : TranspilerTestBase
         var dst = new int[2];
 
         Assert.Throws<NullReferenceException>(() =>
-            Run(forceManaged: true, () => LaunchNullableImmutableKernel(default(ImmutableArray<int>), dst)));
+            Run(forceManaged: true, () => ArrayViewDefaultDifferentialKernels.LaunchNullableImmutableKernel(
+                default(ImmutableArray<int>), dst)));
         Assert.Equal([1, 0], dst);
     }
 

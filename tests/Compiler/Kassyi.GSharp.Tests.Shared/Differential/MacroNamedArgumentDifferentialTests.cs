@@ -13,12 +13,9 @@ public class MacroNamedArgumentDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_forUnroll = new(
-        nameof(MacroNamedArgumentDifferentialKernels) + "." +
-        nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_forUnroll = DiffCases.Create(
+        MacroNamedArgumentDifferentialKernels.LaunchForUnrollNamedArgumentsKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, ys) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -26,14 +23,10 @@ public class MacroNamedArgumentDifferentialTests
                 .In("ys", ys)
                 .Out<int>("r", rows, MacroNamedArgumentDifferentialKernels.ForUnrollColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => MacroNamedArgumentDifferentialKernels.LaunchForUnrollNamedArgumentsKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("ys"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        firstInputName: "xs",
+        secondInputName: "ys",
+        outputName: "r");
 
     internal static readonly DifferentialCase s_gridStrideLoop = new(
         nameof(MacroNamedArgumentDifferentialKernels) + "." +
@@ -69,24 +62,19 @@ public class MacroNamedArgumentDifferentialTests
     };
 
     // The oracle cannot run barriers; the reference is the loop with start 1, count 3 and start 2, count 2
-    internal static readonly DifferentialCase s_forUnrollWithBarrier = new(
-        nameof(MacroNamedArgumentDifferentialKernels) + "." +
-        nameof(MacroNamedArgumentDifferentialKernels.ForUnrollNamedArgumentsWithBarrierKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_forUnrollWithBarrier = DiffCases.Create(
+        MacroNamedArgumentDifferentialKernels.LaunchForUnrollNamedArgumentsWithBarrierKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, MacroNamedArgumentDifferentialKernels.BarrierColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => MacroNamedArgumentDifferentialKernels.LaunchForUnrollNamedArgumentsWithBarrierKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, _) =>
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) =>
         {
             var xs = b.Get<int>("xs");
             var r = b.Get<int>("r");
@@ -108,8 +96,7 @@ public class MacroNamedArgumentDifferentialTests
                 r[tid * 2] = reordered;
                 r[(tid * 2) + 1] = acc;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     public void MacroNamedArguments_ForUnroll_MatchesTheOracleOnEveryPath() => DifferentialRunner.Run(s_forUnroll);

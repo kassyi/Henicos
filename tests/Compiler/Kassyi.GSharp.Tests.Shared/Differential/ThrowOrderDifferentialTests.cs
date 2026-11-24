@@ -1,9 +1,8 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Xunit;
-
-using K = Kassyi.GSharp.Tests.Shared.Differential.ThrowOrderDifferentialKernels;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -30,62 +29,29 @@ public sealed class ThrowOrderDifferentialTests
 
     internal static readonly DifferentialCase[] s_cases =
     [
-        WithArray(nameof(K.CallThenLengthKernel),
-            static (o, a, s) => K.LaunchCallThenLengthKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.AssignmentThenLengthKernel),
-            static (o, a, s) => K.LaunchAssignmentThenLengthKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.IncrementThenLengthKernel),
-            static (o, a, s) => K.LaunchIncrementThenLengthKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.CallThenLengthArgumentKernel),
-            static (o, a, s) => K.LaunchCallThenLengthArgumentKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.CallThenCheckedArgumentKernel),
-            static (o, a, s) => K.LaunchCallThenCheckedArgumentKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.CallThenNotNullKernel),
-            static (o, a, s) => K.LaunchCallThenNotNullKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.IndexCallThenCompoundLengthKernel),
-            static (o, a, s) =>
-                K.LaunchIndexCallThenCompoundLengthKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.IndexCallThenAssignedLengthKernel),
-            static (o, a, s) =>
-                K.LaunchIndexCallThenAssignedLengthKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.LengthThenCallKernel),
-            static (o, a, s) => K.LaunchLengthThenCallKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.LengthThenAssignmentKernel),
-            static (o, a, s) => K.LaunchLengthThenAssignmentKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.LengthThenIncrementKernel),
-            static (o, a, s) => K.LaunchLengthThenIncrementKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.LengthArgumentThenCallKernel),
-            static (o, a, s) => K.LaunchLengthArgumentThenCallKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.IndexLengthThenCompoundCallKernel),
-            static (o, a, s) =>
-                K.LaunchIndexLengthThenCompoundCallKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.IndexLengthThenAssignedCallKernel),
-            static (o, a, s) =>
-                K.LaunchIndexLengthThenAssignedCallKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.CheckedArgumentThenCallKernel),
-            static (o, a, s) => K.LaunchCheckedArgumentThenCallKernel(o, a, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.NullElementThenAssignedCallKernel),
-            static (o, a, s) =>
-                K.LaunchNullElementThenAssignedCallKernel(o, a, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithArray(nameof(K.DeconstructionElementThenCallKernel),
-            static (o, a, s) =>
-                K.LaunchDeconstructionElementThenCallKernel(o, a, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithStructs(nameof(K.StructElementThenAssignedCallKernel),
-            static (o, p, s) =>
-                K.LaunchStructElementThenAssignedCallKernel(o, p, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithStructs(nameof(K.StructReadIndexElementThenAssignedCallKernel),
-            static (o, p, s) =>
-                K.LaunchStructReadIndexElementThenAssignedCallKernel(o, p, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithStructs(nameof(K.DeconstructionStructElementThenCallKernel),
-            static (o, p, s) =>
-                K.LaunchDeconstructionStructElementThenCallKernel(o, p, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithoutNull(nameof(K.ElementThenAssignedCallKernel),
-            static (o, s) => K.LaunchElementThenAssignedCallKernel(o, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithoutNull(nameof(K.ReadIndexElementThenAssignedCallKernel),
-            static (o, s) =>
-                K.LaunchReadIndexElementThenAssignedCallKernel(o, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
-        WithoutNull(nameof(K.ElementThenCompoundCallKernel),
-            static (o, s) => K.LaunchElementThenCompoundCallKernel(o, K0, gridDimX: s.GridX, blockDimX: s.BlockX)),
+        WithArray(ThrowOrderDifferentialKernels.LaunchCallThenLengthKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchAssignmentThenLengthKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchIncrementThenLengthKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchCallThenLengthArgumentKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchCallThenCheckedArgumentKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchCallThenNotNullKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchIndexCallThenCompoundLengthKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchIndexCallThenAssignedLengthKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchLengthThenCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchLengthThenAssignmentKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchLengthThenIncrementKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchLengthArgumentThenCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchIndexLengthThenCompoundCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchIndexLengthThenAssignedCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchCheckedArgumentThenCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchNullElementThenAssignedCallKernel),
+        WithArray(ThrowOrderDifferentialKernels.LaunchDeconstructionElementThenCallKernel),
+        WithStructs(ThrowOrderDifferentialKernels.LaunchStructElementThenAssignedCallKernel),
+        WithStructs(ThrowOrderDifferentialKernels.LaunchStructReadIndexElementThenAssignedCallKernel),
+        WithStructs(ThrowOrderDifferentialKernels.LaunchDeconstructionStructElementThenCallKernel),
+        WithoutNull(ThrowOrderDifferentialKernels.LaunchElementThenAssignedCallKernel),
+        WithoutNull(ThrowOrderDifferentialKernels.LaunchReadIndexElementThenAssignedCallKernel),
+        WithoutNull(ThrowOrderDifferentialKernels.LaunchElementThenCompoundCallKernel),
     ];
 
     public static TheoryData<string> CaseNames => [.. s_cases.Select(static c => ShortName(c.Name))];
@@ -99,20 +65,54 @@ public sealed class ThrowOrderDifferentialTests
     private static string ShortName(string name) => name[(nameof(ThrowOrderDifferentialKernels).Length + 1)..];
 
     // a: null on seed 0, [7] on seed 1
-    private static DifferentialCase WithArray(string kernel, Action<int[], int[]?, LaunchShape> launch) =>
-        Create(kernel, [0, 1], (o, isNull, s) => launch(o, isNull ? null : [7], s));
+    private static DifferentialCase WithArray(
+        Int32NullablePairLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.CreateNullablePair(
+            launch,
+            inputs: static (rng, _) => new DiffBuffers()
+                .In("o", new[] { -1, -1 }, OutputPolicy.Exact)
+                .InNullable("a", rng.Seed == 0 ? null : new[] { 7 }, OutputPolicy.Exact, readOnly: true),
+            shape: LaunchShapes.SingleThread(),
+            firstName: "o",
+            nullableSecondName: "a",
+            seeds: [0, 1],
+            oracleExceptions: OracleExceptionMode.MatchOracle,
+            launchExpression: launchExpression);
+
+    // a: null on seed 0, [7] on seed 1
+    private static DifferentialCase WithArray(
+        DiffLaunch<int[], int[]?, int> launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        Create(launchExpression, [0, 1], (b, s) => launch(
+            b.Get<int>("o"),
+            b.Get<int>("isNull")[0] == 1 ? null : [7],
+            K0,
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default));
 
     // s: null on seed 0, one pair on seed 1
-    private static DifferentialCase WithStructs(string kernel, Action<int[], ThrowOrderPair[]?, LaunchShape> launch) =>
-        Create(kernel, [0, 1], (o, isNull, s) => launch(o, isNull ? null : [new ThrowOrderPair()], s));
+    private static DifferentialCase WithStructs(
+        DiffLaunch<int[], ThrowOrderPair[]?, int> launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        Create(launchExpression, [0, 1], (b, s) => launch(
+            b.Get<int>("o"),
+            b.Get<int>("isNull")[0] == 1 ? null : [new ThrowOrderPair()],
+            K0,
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default));
 
     // No null input: the form checks an element of o, in range (#718)
-    private static DifferentialCase WithoutNull(string kernel, Action<int[], LaunchShape> launch) =>
-        Create(kernel, [1], (o, _, s) => launch(o, s));
+    private static DifferentialCase WithoutNull(
+        Int32ScalarLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        Create(launchExpression, [1], (b, s) => launch(
+            b.Get<int>("o"),
+            K0,
+            s.GridX, s.GridY, s.GridZ, s.BlockX, s.BlockY, s.BlockZ, 0, default, default));
 
     // The case of one kernel: o starts as {-1, -1}, and seed 0 asks the launch for a null array
-    private static DifferentialCase Create(string kernel, int[] seeds, Action<int[], bool, LaunchShape> launch) =>
-        new(DiffKernelNames.Of(typeof(ThrowOrderDifferentialKernels), kernel))
+    private static DifferentialCase Create(
+        string launchExpression, int[] seeds, Action<DiffBuffers, LaunchShape> launch) =>
+        new(DiffKernelNames.FromLaunchExpression(launchExpression, paramName: nameof(launch)))
         {
             Shape = LaunchShapes.SingleThread(),
             Seeds = seeds,
@@ -120,7 +120,7 @@ public sealed class ThrowOrderDifferentialTests
             Inputs = static (rng, _) => new DiffBuffers()
                 .In("o", new[] { -1, -1 }, OutputPolicy.Exact)
                 .In("isNull", new[] { rng.Seed == 0 ? 1 : 0 }, OutputPolicy.Exact, readOnly: true),
-            Launch = (b, s) => launch(b.Get<int>("o"), b.Get<int>("isNull")[0] == 1, s),
+            Launch = launch,
             OracleIsLaunch = true,
         };
 }

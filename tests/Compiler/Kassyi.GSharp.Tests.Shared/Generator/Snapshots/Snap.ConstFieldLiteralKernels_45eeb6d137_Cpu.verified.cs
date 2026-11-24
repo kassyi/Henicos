@@ -160,46 +160,46 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(536175128u, "ConstFieldLit
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(679684948u, "ConstFieldLiteralKernels.cs", 177, 9, "OmittedArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(264074904u, "ConstFieldLiteralKernels.cs", 178, 9, "OmittedArgumentKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2140646812u, "ConstFieldLiteralKernels.cs", 179, 9, "OmittedArgumentKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1609881990u, "ConstFieldLiteralKernels.cs", 196, 9, "KernelDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(955162718u, "ConstFieldLiteralKernels.cs", 197, 9, "KernelDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1709734110u, "ConstFieldLiteralKernels.cs", 198, 9, "KernelDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1874335576u, "ConstFieldLiteralKernels.cs", 199, 9, "KernelDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(839718006u, "ConstFieldLiteralKernels.cs", 199, 9, "KernelDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(532859344u, "ConstFieldLiteralKernels.cs", 200, 9, "KernelDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1310289020u, "ConstFieldLiteralKernels.cs", 201, 9, "KernelDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1852232737u, "ConstFieldLiteralKernels.cs", 212, 9, "EnumDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(74441671u, "ConstFieldLiteralKernels.cs", 213, 9, "EnumDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1120952243u, "ConstFieldLiteralKernels.cs", 220, 17, "NegativeOperandKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1531940701u, "ConstFieldLiteralKernels.cs", 221, 9, "NegativeOperandKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1926264548u, "ConstFieldLiteralKernels.cs", 202, 9, "KernelDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1172336577u, "ConstFieldLiteralKernels.cs", 213, 9, "EnumDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1536437975u, "ConstFieldLiteralKernels.cs", 214, 9, "EnumDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(739758013u, "ConstFieldLiteralKernels.cs", 221, 17, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1708591257u, "ConstFieldLiteralKernels.cs", 222, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(666936369u, "ConstFieldLiteralKernels.cs", 223, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(20170429u, "ConstFieldLiteralKernels.cs", 224, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1470891725u, "ConstFieldLiteralKernels.cs", 225, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1681849425u, "ConstFieldLiteralKernels.cs", 226, 9, "NegativeOperandKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1379602952u, "ConstFieldLiteralKernels.cs", 227, 9, "NegativeOperandKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1586008898u, "ConstFieldLiteralKernels.cs", 228, 9, "NegativeOperandKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(179541913u, "ConstFieldLiteralKernels.cs", 227, 9, "NegativeOperandKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(251498084u, "ConstFieldLiteralKernels.cs", 228, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1678768306u, "ConstFieldLiteralKernels.cs", 229, 9, "NegativeOperandKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(67934412u, "ConstFieldLiteralKernels.cs", 236, 9, "NegativeLiteralKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2105850426u, "ConstFieldLiteralKernels.cs", 230, 9, "NegativeOperandKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(162387648u, "ConstFieldLiteralKernels.cs", 237, 9, "NegativeLiteralKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(396460252u, "ConstFieldLiteralKernels.cs", 238, 9, "NegativeLiteralKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(203333742u, "ConstFieldLiteralKernels.cs", 239, 9, "NegativeLiteralKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(57046416u, "ConstFieldLiteralKernels.cs", 239, 9, "NegativeLiteralKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1202460270u, "ConstFieldLiteralKernels.cs", 240, 9, "NegativeLiteralKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1805671810u, "ConstFieldLiteralKernels.cs", 241, 9, "NegativeLiteralKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1838234391u, "ConstFieldLiteralKernels.cs", 248, 9, "SuffixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1432123346u, "ConstFieldLiteralKernels.cs", 242, 9, "NegativeLiteralKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1232904891u, "ConstFieldLiteralKernels.cs", 249, 9, "SuffixKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(89491575u, "ConstFieldLiteralKernels.cs", 250, 9, "SuffixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1300694471u, "ConstFieldLiteralKernels.cs", 253, 9, "SuffixKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1640057658u, "ConstFieldLiteralKernels.cs", 268, 9, "NullableDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(684777676u, "ConstFieldLiteralKernels.cs", 269, 9, "NullableDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1920966359u, "ConstFieldLiteralKernels.cs", 251, 9, "SuffixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1238928855u, "ConstFieldLiteralKernels.cs", 254, 9, "SuffixKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1426056906u, "ConstFieldLiteralKernels.cs", 269, 9, "NullableDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(36225252u, "ConstFieldLiteralKernels.cs", 270, 9, "NullableDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2086444632u, "ConstFieldLiteralKernels.cs", 310, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1693952672u, "ConstFieldLiteralKernels.cs", 271, 9, "NullableDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1066463904u, "ConstFieldLiteralKernels.cs", 311, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(928951688u, "ConstFieldLiteralKernels.cs", 312, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1733026494u, "ConstFieldLiteralKernels.cs", 313, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(676161951u, "ConstFieldLiteralKernels.cs", 317, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1019253661u, "ConstFieldLiteralKernels.cs", 323, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2119578926u, "ConstFieldLiteralKernels.cs", 330, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1773626625u, "ConstFieldLiteralKernels.cs", 339, 17, "NegativeUnrollKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1913445894u, "ConstFieldLiteralKernels.cs", 347, 13, "NegativeUnrollKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1654753504u, "ConstFieldLiteralKernels.cs", 313, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1253376318u, "ConstFieldLiteralKernels.cs", 314, 9, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1934547541u, "ConstFieldLiteralKernels.cs", 318, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1954372979u, "ConstFieldLiteralKernels.cs", 324, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(376838768u, "ConstFieldLiteralKernels.cs", 331, 13, "SynthesizedDefaultKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1085149493u, "ConstFieldLiteralKernels.cs", 340, 17, "NegativeUnrollKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1499436516u, "ConstFieldLiteralKernels.cs", 348, 13, "NegativeUnrollKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2172,12 +2172,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_singles, 0, 1609881990u)=__gsharp_id_4_k;
-__gsharp_array_at(__gsharp_id_0_singles, 1, 955162718u)=__gsharp_id_9_nan;
-__gsharp_array_at(__gsharp_id_1_doubles, 0, 1709734110u)=__gsharp_id_5_h;
-__gsharp_array_at(__gsharp_id_2_longs, 0, 1874335576u)=__gsharp_id_6_n;
-__gsharp_array_at(__gsharp_id_2_longs, 1, 532859344u)=__gsharp_id_7_m;
-__gsharp_array_at(__gsharp_id_3_codes, 0, 1310289020u)=__gsharp_id_8_c;
+__gsharp_array_at(__gsharp_id_0_singles, 0, 955162718u)=__gsharp_id_4_k;
+__gsharp_array_at(__gsharp_id_0_singles, 1, 1709734110u)=__gsharp_id_9_nan;
+__gsharp_array_at(__gsharp_id_1_doubles, 0, 839718006u)=__gsharp_id_5_h;
+__gsharp_array_at(__gsharp_id_2_longs, 0, 532859344u)=__gsharp_id_6_n;
+__gsharp_array_at(__gsharp_id_2_longs, 1, 1310289020u)=__gsharp_id_7_m;
+__gsharp_array_at(__gsharp_id_3_codes, 0, 1926264548u)=__gsharp_id_8_c;
 __gsharp_state=-1;
 return;
 }
@@ -2512,8 +2512,8 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_wide, 0, 1852232737u)=(unsigned long long)__gsharp_id_2_w;
-__gsharp_array_at(__gsharp_id_1_signed, 0, 74441671u)=(int)__gsharp_id_3_s;
+__gsharp_array_at(__gsharp_id_0_wide, 0, 1172336577u)=(unsigned long long)__gsharp_id_2_w;
+__gsharp_array_at(__gsharp_id_1_signed, 0, 1536437975u)=(int)__gsharp_id_3_s;
 __gsharp_state=-1;
 return;
 }
@@ -2824,16 +2824,16 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_3_values, 0, 1120952243u);
-__gsharp_array_at(__gsharp_id_0_ints, 0, 1531940701u)=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
-__gsharp_array_at(__gsharp_id_0_ints, 1, 1708591257u)=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
-__gsharp_array_at(__gsharp_id_0_ints, 2, 666936369u)=__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x));
-__gsharp_array_at(__gsharp_id_0_ints, 3, 20170429u)=__gsharp_add_i32(__gsharp_id_4_x,+__gsharp_id_4_x);
-__gsharp_array_at(__gsharp_id_0_ints, 4, 1470891725u)=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_mul_i32(__gsharp_neg_i32(__gsharp_id_4_x),2));
-__gsharp_array_at(__gsharp_id_0_ints, 5, 1681849425u)=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x)));
-__gsharp_array_at(__gsharp_id_1_longs, 0, 1379602952u)=__gsharp_id_4_x-(-7LL);
-__gsharp_array_at(__gsharp_id_2_singles, 0, 1586008898u)=-(-0.0f);
-__gsharp_array_at(__gsharp_id_2_singles, 1, 1678768306u)=1.0f- -(-0.0f);
+int __gsharp_id_4_x = __gsharp_array_at(__gsharp_id_3_values, 0, 739758013u);
+__gsharp_array_at(__gsharp_id_0_ints, 0, 1708591257u)=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_array_at(__gsharp_id_0_ints, 1, 666936369u)=__gsharp_sub_i32(__gsharp_id_4_x,(-5));
+__gsharp_array_at(__gsharp_id_0_ints, 2, 20170429u)=__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x));
+__gsharp_array_at(__gsharp_id_0_ints, 3, 1470891725u)=__gsharp_add_i32(__gsharp_id_4_x,+__gsharp_id_4_x);
+__gsharp_array_at(__gsharp_id_0_ints, 4, 1681849425u)=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_mul_i32(__gsharp_neg_i32(__gsharp_id_4_x),2));
+__gsharp_array_at(__gsharp_id_0_ints, 5, 179541913u)=__gsharp_sub_i32(__gsharp_id_4_x,__gsharp_neg_i32(__gsharp_neg_i32(__gsharp_id_4_x)));
+__gsharp_array_at(__gsharp_id_1_longs, 0, 251498084u)=__gsharp_id_4_x-(-7LL);
+__gsharp_array_at(__gsharp_id_2_singles, 0, 1678768306u)=-(-0.0f);
+__gsharp_array_at(__gsharp_id_2_singles, 1, 2105850426u)=1.0f- -(-0.0f);
 __gsharp_state=-1;
 return;
 }
@@ -3166,12 +3166,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_longs, 0, 67934412u)=(-2147483648LL);
-__gsharp_array_at(__gsharp_id_0_longs, 1, 162387648u)=(-9223372036854775807LL-1);
-__gsharp_array_at(__gsharp_id_0_longs, 2, 396460252u)=(-5LL);
-__gsharp_array_at(__gsharp_id_1_doubles, 0, 203333742u)=(double)(-2147483647-1);
-__gsharp_array_at(__gsharp_id_1_doubles, 1, 1202460270u)=(-0.0);
-__gsharp_array_at(__gsharp_id_1_doubles, 2, 1805671810u)=(-1.5);
+__gsharp_array_at(__gsharp_id_0_longs, 0, 162387648u)=(-2147483648LL);
+__gsharp_array_at(__gsharp_id_0_longs, 1, 396460252u)=(-9223372036854775807LL-1);
+__gsharp_array_at(__gsharp_id_0_longs, 2, 57046416u)=(-5LL);
+__gsharp_array_at(__gsharp_id_1_doubles, 0, 1202460270u)=(double)(-2147483647-1);
+__gsharp_array_at(__gsharp_id_1_doubles, 1, 1805671810u)=(-0.0);
+__gsharp_array_at(__gsharp_id_1_doubles, 2, 1432123346u)=(-1.5);
 __gsharp_state=-1;
 return;
 }
@@ -3484,11 +3484,11 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_output, 0, 1838234391u)=4294967295U*__gsharp_id_1_factor;
-__gsharp_array_at(__gsharp_id_0_output, 1, 1232904891u)=(unsigned long long)(__gsharp_shl_i64(1LL,__gsharp_id_2_shift));
-__gsharp_array_at(__gsharp_id_0_output, 2, 89491575u)=1ULL<<(__gsharp_add_i32(__gsharp_id_2_shift,23)&63);
+__gsharp_array_at(__gsharp_id_0_output, 0, 1232904891u)=4294967295U*__gsharp_id_1_factor;
+__gsharp_array_at(__gsharp_id_0_output, 1, 89491575u)=(unsigned long long)(__gsharp_shl_i64(1LL,__gsharp_id_2_shift));
+__gsharp_array_at(__gsharp_id_0_output, 2, 1920966359u)=1ULL<<(__gsharp_add_i32(__gsharp_id_2_shift,23)&63);
 auto __gsharp_id_3_seven = 7U;
-__gsharp_array_at(__gsharp_id_0_output, 3, 1300694471u)=__gsharp_id_3_seven-8;
+__gsharp_array_at(__gsharp_id_0_output, 3, 1238928855u)=__gsharp_id_3_seven-8;
 __gsharp_state=-1;
 return;
 }
@@ -3795,9 +3795,9 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_array_at(__gsharp_id_0_singles, 0, 1640057658u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableNaN(__gsharp_nan_f);
-__gsharp_array_at(__gsharp_id_1_codes, 0, 684777676u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableCodeByAttribute((char16_t)65);
-__gsharp_array_at(__gsharp_id_1_codes, 1, 36225252u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableCode((char16_t)65);
+__gsharp_array_at(__gsharp_id_0_singles, 0, 1426056906u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableNaN(__gsharp_nan_f);
+__gsharp_array_at(__gsharp_id_1_codes, 0, 36225252u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableCodeByAttribute((char16_t)65);
+__gsharp_array_at(__gsharp_id_1_codes, 1, 1693952672u)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralKernels__NullableCode((char16_t)65);
 __gsharp_state=-1;
 return;
 }
@@ -4133,10 +4133,10 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 auto __gsharp_id_3_defaults = __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__ConstFieldLiteralDefaults(1, (-2147483647-1), (-9223372036854775807LL-1), __gsharp_nan_f);
-__gsharp_array_at(__gsharp_id_0_longs, 0, 2086444632u)=__gsharp_id_3_defaults.__gsharp_mb_First;
-__gsharp_array_at(__gsharp_id_0_longs, 1, 1066463904u)=__gsharp_id_3_defaults.__gsharp_mb_Narrow;
-__gsharp_array_at(__gsharp_id_0_longs, 2, 928951688u)=__gsharp_id_3_defaults.__gsharp_mb_Wide;
-__gsharp_array_at(__gsharp_id_1_singles, 0, 1733026494u)=__gsharp_id_3_defaults.__gsharp_mb_NaN;
+__gsharp_array_at(__gsharp_id_0_longs, 0, 1066463904u)=__gsharp_id_3_defaults.__gsharp_mb_First;
+__gsharp_array_at(__gsharp_id_0_longs, 1, 928951688u)=__gsharp_id_3_defaults.__gsharp_mb_Narrow;
+__gsharp_array_at(__gsharp_id_0_longs, 2, 1654753504u)=__gsharp_id_3_defaults.__gsharp_mb_Wide;
+__gsharp_array_at(__gsharp_id_1_singles, 0, 1253376318u)=__gsharp_id_3_defaults.__gsharp_mb_NaN;
 int __gsharp_id_4_k = 3;
 {
 int __gsharp_il_1_0_narrow = (-2147483647-1);
@@ -4144,7 +4144,7 @@ long long __gsharp_il_1_1_wide = (-9223372036854775807LL-1);
 {
 long long __gsharp_il_2_5_value = __gsharp_il_1_0_narrow;
 {
-__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 676161951u)=__gsharp_il_2_5_value;
+__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1934547541u)=__gsharp_il_2_5_value;
 __gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_0:;
@@ -4152,7 +4152,7 @@ __gsharp_iter_next_1_0:;
 {
 long long __gsharp_il_3_5_value = __gsharp_il_1_1_wide;
 {
-__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 676161951u)=__gsharp_il_3_5_value;
+__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1934547541u)=__gsharp_il_3_5_value;
 __gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_1_1:;
@@ -4165,7 +4165,7 @@ long long __gsharp_il_4_1_wide = (-9223372036854775807LL-1);
 {
 long long __gsharp_il_5_6_value = __gsharp_il_4_0_narrow;
 {
-__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1019253661u)=__gsharp_il_5_6_value;
+__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1954372979u)=__gsharp_il_5_6_value;
 __gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_0:;
@@ -4173,7 +4173,7 @@ __gsharp_iter_next_4_0:;
 {
 long long __gsharp_il_6_6_value = __gsharp_il_4_1_wide;
 {
-__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1019253661u)=__gsharp_il_6_6_value;
+__gsharp_array_at(__gsharp_id_0_longs, __gsharp_id_4_k, 1954372979u)=__gsharp_il_6_6_value;
 __gsharp_id_4_k=__gsharp_add_i32(__gsharp_id_4_k,1);
 }
 __gsharp_iter_next_4_1:;
@@ -4190,7 +4190,7 @@ double __gsharp_il_7_4_zero = {};
 {
 double __gsharp_il_8_8_value = __gsharp_il_7_0_nan;
 {
-__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 2119578926u)=__gsharp_il_8_8_value;
+__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 376838768u)=__gsharp_il_8_8_value;
 __gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_0:;
@@ -4198,7 +4198,7 @@ __gsharp_iter_next_7_0:;
 {
 double __gsharp_il_9_8_value = __gsharp_il_7_1_infinity;
 {
-__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 2119578926u)=__gsharp_il_9_8_value;
+__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 376838768u)=__gsharp_il_9_8_value;
 __gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_1:;
@@ -4206,7 +4206,7 @@ __gsharp_iter_next_7_1:;
 {
 double __gsharp_il_10_8_value = __gsharp_il_7_2_doubleNaN;
 {
-__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 2119578926u)=__gsharp_il_10_8_value;
+__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 376838768u)=__gsharp_il_10_8_value;
 __gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_2:;
@@ -4214,7 +4214,7 @@ __gsharp_iter_next_7_2:;
 {
 double __gsharp_il_11_8_value = __gsharp_il_7_3_negativeInfinity;
 {
-__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 2119578926u)=__gsharp_il_11_8_value;
+__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 376838768u)=__gsharp_il_11_8_value;
 __gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_3:;
@@ -4222,7 +4222,7 @@ __gsharp_iter_next_7_3:;
 {
 double __gsharp_il_12_8_value = __gsharp_il_7_4_zero;
 {
-__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 2119578926u)=__gsharp_il_12_8_value;
+__gsharp_array_at(__gsharp_id_2_doubles, __gsharp_id_7_d, 376838768u)=__gsharp_il_12_8_value;
 __gsharp_id_7_d=__gsharp_add_i32(__gsharp_id_7_d,1);
 }
 __gsharp_iter_next_7_4:;
@@ -4568,14 +4568,14 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int __gsharp_id_2_x = __gsharp_array_at(__gsharp_id_1_values, 0, 1773626625u);
+int __gsharp_id_2_x = __gsharp_array_at(__gsharp_id_1_values, 0, 1085149493u);
 // [GpuUnroll] start=-2, count=4
 {
 if((-2)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m2;
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32((-2),2), 1913445894u)=__gsharp_sub_i32(__gsharp_id_2_x,(-2));
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32((-2),2), 1499436516u)=__gsharp_sub_i32(__gsharp_id_2_x,(-2));
 __gsharp_id_4_skip_Unroll_m2:;
 }
 {
@@ -4583,7 +4583,7 @@ if((-1)==0)
 {
 goto __gsharp_id_4_skip_Unroll_m1;
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32((-1),2), 1913445894u)=__gsharp_sub_i32(__gsharp_id_2_x,(-1));
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32((-1),2), 1499436516u)=__gsharp_sub_i32(__gsharp_id_2_x,(-1));
 __gsharp_id_4_skip_Unroll_m1:;
 }
 {
@@ -4591,7 +4591,7 @@ if(0==0)
 {
 goto __gsharp_id_4_skip_Unroll_0;
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(0,2), 1913445894u)=__gsharp_sub_i32(__gsharp_id_2_x,0);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(0,2), 1499436516u)=__gsharp_sub_i32(__gsharp_id_2_x,0);
 __gsharp_id_4_skip_Unroll_0:;
 }
 {
@@ -4599,7 +4599,7 @@ if(1==0)
 {
 goto __gsharp_id_4_skip_Unroll_1;
 }
-__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(1,2), 1913445894u)=__gsharp_sub_i32(__gsharp_id_2_x,1);
+__gsharp_array_at(__gsharp_id_0_output, __gsharp_add_i32(1,2), 1499436516u)=__gsharp_sub_i32(__gsharp_id_2_x,1);
 __gsharp_id_4_skip_Unroll_1:;
 }
 __gsharp_state=-1;

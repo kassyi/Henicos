@@ -13,53 +13,32 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public partial class MathDifferentialTests
 {
-    internal static readonly DifferentialCase s_mathOfSingle =
-        new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathOfSingleMatrixKernel)}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(SingleRoundBoundaries.Length * 4),
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("f", SingleRoundValues(rng, rows))
-                .Out<double>("r", rows, MathDifferentialKernels.MathOfSingleColumns, OutputPolicy.Bitwise),
-            Launch = static (b, s) => MathDifferentialKernels.LaunchMathOfSingleMatrixKernel(
-                b.Get<float>("f"),
-                b.Get<double>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            OracleIsLaunch = true,
-        };
+    internal static readonly DifferentialCase s_mathOfSingle = DiffCases.Create<float, double>(
+        MathDifferentialKernels.LaunchMathOfSingleMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("f", SingleRoundValues(rng, rows))
+            .Out<double>("r", rows, MathDifferentialKernels.MathOfSingleColumns, OutputPolicy.Bitwise),
+        shapes: LaunchShapes.OneDimensionalMatrix(SingleRoundBoundaries.Length * 4),
+        inputName: "f",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_singleRoundingAndUnary =
-        new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleRoundingAndUnaryMatrixKernel)}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(SingleRoundBoundaries.Length * 4),
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("f", SingleRoundValues(rng, rows))
-                .Out<float>("r", rows, MathDifferentialKernels.SingleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
-            Launch = static (b, s) => MathDifferentialKernels.LaunchSingleRoundingAndUnaryMatrixKernel(
-                b.Get<float>("f"),
-                b.Get<float>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            OracleIsLaunch = true,
-        };
+    internal static readonly DifferentialCase s_singleRoundingAndUnary = DiffCases.Create(
+        MathDifferentialKernels.LaunchSingleRoundingAndUnaryMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("f", SingleRoundValues(rng, rows))
+            .Out<float>("r", rows, MathDifferentialKernels.SingleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
+        shapes: LaunchShapes.OneDimensionalMatrix(SingleRoundBoundaries.Length * 4),
+        inputName: "f",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_doubleRoundingAndUnary =
-        new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.DoubleRoundingAndUnaryMatrixKernel)}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(DoubleBoundaries.Length * 4),
-            Inputs = static (rng, rows) => new DiffBuffers()
-                .In("d", DoubleValues(rng, rows))
-                .Out<double>("r", rows, MathDifferentialKernels.DoubleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
-            Launch = static (b, s) => MathDifferentialKernels.LaunchDoubleRoundingAndUnaryMatrixKernel(
-                b.Get<double>("d"),
-                b.Get<double>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            OracleIsLaunch = true,
-        };
+    internal static readonly DifferentialCase s_doubleRoundingAndUnary = DiffCases.Create<double, double>(
+        MathDifferentialKernels.LaunchDoubleRoundingAndUnaryMatrixKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
+            .In("d", DoubleValues(rng, rows))
+            .Out<double>("r", rows, MathDifferentialKernels.DoubleRoundingAndUnaryColumns, OutputPolicy.Bitwise),
+        shapes: LaunchShapes.OneDimensionalMatrix(DoubleBoundaries.Length * 4),
+        inputName: "d",
+        outputName: "r");
 
     internal static readonly DifferentialCase s_singleMaxMinClamp =
         new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.SingleMaxMinClampMatrixKernel)}")
@@ -79,11 +58,14 @@ public partial class MathDifferentialTests
                     .Out<float>("r", rows, MathDifferentialKernels.SingleMaxMinClampColumns, OutputPolicy.Bitwise);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchSingleMaxMinClampMatrixKernel(
-                b.Get<float>("a"),
-                b.Get<float>("b"),
-                b.Get<float>("min"),
-                b.Get<float>("max"),
-                b.Get<float>("r"),
+                inputs: new SingleMaxMinClampInputs
+                {
+                    LeftValues = b.Get<float>("a"),
+                    RightValues = b.Get<float>("b"),
+                    Minimums = b.Get<float>("min"),
+                    Maximums = b.Get<float>("max"),
+                },
+                results: b.Get<float>("r"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -106,11 +88,14 @@ public partial class MathDifferentialTests
                     .Out<double>("r", rows, MathDifferentialKernels.DoubleMaxMinClampColumns, OutputPolicy.Bitwise);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchDoubleMaxMinClampMatrixKernel(
-                b.Get<double>("a"),
-                b.Get<double>("b"),
-                b.Get<double>("min"),
-                b.Get<double>("max"),
-                b.Get<double>("r"),
+                inputs: new DoubleMaxMinClampInputs
+                {
+                    LeftValues = b.Get<double>("a"),
+                    RightValues = b.Get<double>("b"),
+                    Minimums = b.Get<double>("min"),
+                    Maximums = b.Get<double>("max"),
+                },
+                results: b.Get<double>("r"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -133,11 +118,14 @@ public partial class MathDifferentialTests
                     .Out<double>("rd", rows, MathDifferentialKernels.MixedDoubleMaxMinColumns, OutputPolicy.Bitwise);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchMixedFloatMaxMinMatrixKernel(
-                b.Get<float>("f"),
-                b.Get<double>("d"),
-                b.Get<int>("i"),
-                b.Get<float>("rf"),
-                b.Get<double>("rd"),
+                inputs: new MixedFloatMaxMinInputs
+                {
+                    SingleValues = b.Get<float>("f"),
+                    DoubleValues = b.Get<double>("d"),
+                    IntegerValues = b.Get<int>("i"),
+                },
+                singleResults: b.Get<float>("rf"),
+                doubleResults: b.Get<double>("rd"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -164,43 +152,39 @@ public partial class MathDifferentialTests
                     .Out<int>("r", rows, MathDifferentialKernels.Int32MathColumns, OutputPolicy.Exact);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchInt32MathMatrixKernel(
-                b.Get<int>("a"),
-                b.Get<int>("b"),
-                b.Get<short>("s"),
-                b.Get<sbyte>("sb"),
-                b.Get<int>("min"),
-                b.Get<int>("max"),
-                b.Get<int>("r"),
+                inputs: new Int32MathInputs
+                {
+                    LeftValues = b.Get<int>("a"),
+                    RightValues = b.Get<int>("b"),
+                    Signed16Values = b.Get<short>("s"),
+                    Signed8Values = b.Get<sbyte>("sb"),
+                    Minimums = b.Get<int>("min"),
+                    Maximums = b.Get<int>("max"),
+                },
+                results: b.Get<int>("r"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
             OracleIsLaunch = true,
         };
 
-    internal static readonly DifferentialCase s_mathFIntArgument =
-        new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.MathFIntArgumentMatrixKernel)}")
+    internal static readonly DifferentialCase s_mathFIntArgument = DiffCases.Create<int, int, int, float>(
+        MathDifferentialKernels.LaunchMathFIntArgumentMatrixKernel,
+        inputs: static (rng, rows) =>
         {
-            Shapes = LaunchShapes.OneDimensionalMatrix(IntSafeAbsBoundaries.Length * 4),
-            Inputs = static (rng, rows) =>
-            {
-                var (v, rawBound) = SafeAbsInt32Pairs(rng, rows);
-                var (min, max) = OrderedBounds(rng, rows, rawBound, IntSafeAbsBoundaries, NextSafeAbsInt32);
-                return new DiffBuffers()
-                    .In("v", v)
-                    .In("min", min)
-                    .In("max", max)
-                    .Out<float>("rf", rows, MathDifferentialKernels.MathFIntSingleColumns, OutputPolicy.Bitwise);
-            },
-            Launch = static (b, s) => MathDifferentialKernels.LaunchMathFIntArgumentMatrixKernel(
-                b.Get<int>("v"),
-                b.Get<int>("min"),
-                b.Get<int>("max"),
-                b.Get<float>("rf"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            OracleIsLaunch = true,
-        };
+            var (v, rawBound) = SafeAbsInt32Pairs(rng, rows);
+            var (min, max) = OrderedBounds(rng, rows, rawBound, IntSafeAbsBoundaries, NextSafeAbsInt32);
+            return new DiffBuffers()
+                .In("v", v)
+                .In("min", min)
+                .In("max", max)
+                .Out<float>("rf", rows, MathDifferentialKernels.MathFIntSingleColumns, OutputPolicy.Bitwise);
+        },
+        shapes: LaunchShapes.OneDimensionalMatrix(IntSafeAbsBoundaries.Length * 4),
+        firstInputName: "v",
+        secondInputName: "min",
+        thirdInputName: "max",
+        outputName: "rf");
 
     // Subnormal IEEE 754 0-ulp arithmetic and Sqrt without FTZ
     internal static readonly DifferentialCase s_subnormalIeeeExact =
@@ -223,12 +207,18 @@ public partial class MathDifferentialTests
                     .Out<double>("rd", rows, MathDifferentialKernels.SubnormalIeeeDoubleColumns, OutputPolicy.Bitwise);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchSubnormalIeeeExactMatrixKernel(
-                b.Get<float>("fa"),
-                b.Get<float>("fb"),
-                b.Get<double>("da"),
-                b.Get<double>("db"),
-                b.Get<float>("rf"),
-                b.Get<double>("rd"),
+                singleOperands: new SingleOperandPair
+                {
+                    LeftValues = b.Get<float>("fa"),
+                    RightValues = b.Get<float>("fb"),
+                },
+                doubleOperands: new DoubleOperandPair
+                {
+                    LeftValues = b.Get<double>("da"),
+                    RightValues = b.Get<double>("db"),
+                },
+                singleResults: b.Get<float>("rf"),
+                doubleResults: b.Get<double>("rd"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -236,68 +226,61 @@ public partial class MathDifferentialTests
         };
 
     // System.Numerics.BitOperations all 18 mapped overloads + shift count masking + named arguments
-    internal static readonly DifferentialCase s_bitOperations =
-        new($"{nameof(MathDifferentialKernels)}.{nameof(MathDifferentialKernels.BitOperationsMatrixKernel)}")
+    internal static readonly DifferentialCase s_bitOperations = DiffCases.Create<uint, ulong, int, ulong>(
+        MathDifferentialKernels.LaunchBitOperationsMatrixKernel,
+        inputs: static (rng, rows) =>
         {
-            Shape = LaunchShape.ForRows(
-                DiffValues.BitOperationUInt32Boundaries.Length * DiffValues.ShiftCounts.Length,
-                blockX: 64
-            ),
-            Inputs = static (rng, rows) =>
+            var u32 = new uint[rows];
+            var u64 = new ulong[rows];
+            var offsets = new int[rows];
+            int nVal = DiffValues.BitOperationUInt32Boundaries.Length;
+            int nVal64 = DiffValues.BitOperationUInt64Boundaries.Length;
+            int nShift = DiffValues.ShiftCounts.Length;
+
+            for (int r = 0; r < rows; r++)
             {
-                var u32 = new uint[rows];
-                var u64 = new ulong[rows];
-                var offsets = new int[rows];
-                int nVal = DiffValues.BitOperationUInt32Boundaries.Length;
-                int nVal64 = DiffValues.BitOperationUInt64Boundaries.Length;
-                int nShift = DiffValues.ShiftCounts.Length;
-
-                for (int r = 0; r < rows; r++)
+                if (rng.IsBoundarySeed)
                 {
-                    if (rng.IsBoundarySeed)
-                    {
-                        u32[r] = DiffValues.BitOperationUInt32Boundaries[r / nShift % nVal];
-                        u64[r] = DiffValues.BitOperationUInt64Boundaries[r / nShift % nVal64];
-                        offsets[r] = DiffValues.ShiftCounts[r % nShift];
-                    }
-                    else
-                    {
-                        u32[r] = rng.NextBool()
-                            ? DiffValues.BitOperationUInt32Boundaries[rng.NextBelow(nVal)]
-                            : rng.NextUInt32();
-                        u64[r] = rng.NextBool()
-                            ? DiffValues.BitOperationUInt64Boundaries[rng.NextBelow(nVal64)]
-                            : rng.NextUInt64();
-                        offsets[r] = rng.NextBool()
-                            ? DiffValues.ShiftCounts[rng.NextBelow(nShift)]
-                            : rng.NextInt32();
-                    }
+                    u32[r] = DiffValues.BitOperationUInt32Boundaries[r / nShift % nVal];
+                    u64[r] = DiffValues.BitOperationUInt64Boundaries[r / nShift % nVal64];
+                    offsets[r] = DiffValues.ShiftCounts[r % nShift];
                 }
-
-                // Guarantee the named-argument witness (v32 = 0x1234_5678u, s = 4) is present on every seed
-                if (rows > 0)
+                else
                 {
-                    u32[0] = 0x1234_5678u;
-                    u64[0] = 0x1234_5678_9ABC_DEF0UL;
-                    offsets[0] = 4;
+                    u32[r] = rng.NextBool()
+                        ? DiffValues.BitOperationUInt32Boundaries[rng.NextBelow(nVal)]
+                        : rng.NextUInt32();
+                    u64[r] = rng.NextBool()
+                        ? DiffValues.BitOperationUInt64Boundaries[rng.NextBelow(nVal64)]
+                        : rng.NextUInt64();
+                    offsets[r] = rng.NextBool()
+                        ? DiffValues.ShiftCounts[rng.NextBelow(nShift)]
+                        : rng.NextInt32();
                 }
+            }
 
-                return new DiffBuffers()
-                    .In("u32", u32, OutputPolicy.Exact)
-                    .In("u64", u64, OutputPolicy.Exact)
-                    .In("offsets", offsets, OutputPolicy.Exact)
-                    .Out<ulong>("r", rows, MathDifferentialKernels.BitOperationsColumns, OutputPolicy.Exact);
-            },
-            Launch = static (b, s) => MathDifferentialKernels.LaunchBitOperationsMatrixKernel(
-                b.Get<uint>("u32"),
-                b.Get<ulong>("u64"),
-                b.Get<int>("offsets"),
-                b.Get<ulong>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            OracleIsLaunch = true,
-        };
+            // Guarantee the named-argument witness (v32 = 0x1234_5678u, s = 4) is present on every seed
+            if (rows > 0)
+            {
+                u32[0] = 0x1234_5678u;
+                u64[0] = 0x1234_5678_9ABC_DEF0UL;
+                offsets[0] = 4;
+            }
+
+            return new DiffBuffers()
+                .In("u32", u32, OutputPolicy.Exact)
+                .In("u64", u64, OutputPolicy.Exact)
+                .In("offsets", offsets, OutputPolicy.Exact)
+                .Out<ulong>("r", rows, MathDifferentialKernels.BitOperationsColumns, OutputPolicy.Exact);
+        },
+        shape: LaunchShape.ForRows(
+            DiffValues.BitOperationUInt32Boundaries.Length * DiffValues.ShiftCounts.Length,
+            blockX: 64
+        ),
+        firstInputName: "u32",
+        secondInputName: "u64",
+        thirdInputName: "offsets",
+        outputName: "r");
 
     // IEEE 754 unordered comparisons and large-exponent Round ties
     internal static readonly DifferentialCase s_floatComparisonAndLargeTie = new(
@@ -338,13 +321,25 @@ public partial class MathDifferentialTests
                 .Out<double>("rRound", rows, MathDifferentialKernels.LargeTieRoundColumns, OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => MathDifferentialKernels.LaunchFloatComparisonAndLargeTieMatrixKernel(
-            b.Get<float>("fa"),
-            b.Get<float>("fb"),
-            b.Get<double>("da"),
-            b.Get<double>("db"),
-            b.Get<int>("ia"),
-            b.Get<byte>("rCmp"),
-            b.Get<double>("rRound"),
+            inputs: new FloatComparisonInputs
+            {
+                SingleOperands = new SingleOperandPair
+                {
+                    LeftValues = b.Get<float>("fa"),
+                    RightValues = b.Get<float>("fb"),
+                },
+                DoubleOperands = new DoubleOperandPair
+                {
+                    LeftValues = b.Get<double>("da"),
+                    RightValues = b.Get<double>("db"),
+                },
+                IntegerValues = b.Get<int>("ia"),
+            },
+            results: new FloatComparisonResults
+            {
+                Comparisons = b.Get<byte>("rCmp"),
+                RoundedValues = b.Get<double>("rRound"),
+            },
             gridDimX: s.GridX,
             blockDimX: s.BlockX
         ),
@@ -389,11 +384,14 @@ public partial class MathDifferentialTests
                     .Out<float>("rContract", rows, OutputPolicy.Ignore);
             },
             Launch = static (b, s) => MathDifferentialKernels.LaunchMulAddExactAndContractionKernel(
-                b.Get<float>("fa"),
-                b.Get<float>("fb"),
-                b.Get<float>("fc"),
-                b.Get<float>("rExact"),
-                b.Get<float>("rContract"),
+                inputs: new MulAddSingleInputs
+                {
+                    Multiplicands = b.Get<float>("fa"),
+                    Multipliers = b.Get<float>("fb"),
+                    Addends = b.Get<float>("fc"),
+                },
+                exactResults: b.Get<float>("rExact"),
+                contractedResults: b.Get<float>("rContract"),
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),

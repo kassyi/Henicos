@@ -13,12 +13,9 @@ public class CollectionInitializerDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_collectionInitializer = new(
-        nameof(CollectionInitializerDifferentialKernels) + "." +
-        nameof(CollectionInitializerDifferentialKernels.CollectionInitializerKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_collectionInitializer = DiffCases.Create(
+        CollectionInitializerDifferentialKernels.LaunchCollectionInitializerKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -26,31 +23,22 @@ public class CollectionInitializerDifferentialTests
                 .In("cells", DiffValues.Int32Pairs(rng, rows).Item1.Select(static v => v & 0xFFFF).ToArray())
                 .Out<int>("r", rows, CollectionInitializerDifferentialKernels.Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => CollectionInitializerDifferentialKernels.LaunchCollectionInitializerKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("cells"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        firstInputName: "xs",
+        secondInputName: "cells",
+        outputName: "r");
 
     // C# cannot run a kernel that reaches a warp shuffle, so the reference computes the exchange with the lane
     // tid ^ 1
-    internal static readonly DifferentialCase s_suspendingElements = new(
-        nameof(CollectionInitializerDifferentialKernels) + "." +
-        nameof(CollectionInitializerDifferentialKernels.CollectionInitializerSuspendingKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_suspendingElements = DiffCases.Create(
+        CollectionInitializerDifferentialKernels.LaunchCollectionInitializerSuspendingKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, CollectionInitializerDifferentialKernels.SuspendingColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => CollectionInitializerDifferentialKernels.LaunchCollectionInitializerSuspendingKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, _) =>
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) =>
         {
             var xs = b.Get<int>("xs");
             var r = b.Get<int>("r");
@@ -71,27 +59,20 @@ public class CollectionInitializerDifferentialTests
                 r[o + 8] = p;
                 r[o + 9] = 3 * p;
             }
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_acrossBarrier = new(
-        nameof(CollectionInitializerDifferentialKernels) + "." +
-        nameof(CollectionInitializerDifferentialKernels.CollectionInitializerAcrossBarrierKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_acrossBarrier = DiffCases.Create(
+        CollectionInitializerDifferentialKernels.LaunchCollectionInitializerAcrossBarrierKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", DiffValues.Int32(rng, rows))
             .In("cells", DiffValues.Int32(rng, rows).Select(static v => v & 0xFFFF).ToArray())
             .Out<int>("r", rows, CollectionInitializerDifferentialKernels.AcrossBarrierColumns, OutputPolicy.Exact),
-        Launch = static (b, s) =>
-            CollectionInitializerDifferentialKernels.LaunchCollectionInitializerAcrossBarrierKernel(
-                b.Get<int>("xs"),
-                b.Get<int>("cells"),
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        firstInputName: "xs",
+        secondInputName: "cells",
+        outputName: "r",
         // C# cannot run a kernel that reaches Gpu.SyncThreads()
-        Reference = static (b, _) =>
+        reference: static (b, _) =>
         {
             var xs = b.Get<int>("xs");
             var cells = b.Get<int>("cells");
@@ -109,8 +90,7 @@ public class CollectionInitializerDifferentialTests
                 r[o + 4] = cell + cell + 100;
                 cells[tid] = cell + 100;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     public void CollectionInitializers_EveryForm_MatchTheOracleOnEveryPath() =>

@@ -31,17 +31,17 @@ public static partial class DeviceErrorChannelKernels
         result[tid] = data.AsStackEnumerable().First(x => x > 1000000);
     }
 
+    // Traps when the current 3D thread and block coordinates match target
     [GpuKernel]
     public static void Coordinate3DTrapKernel(
-        int[] data,
-        int targetTx,
-        int targetTy,
-        int targetTz,
-        int targetBx,
-        int targetBy,
-        int targetBz,
-        int[] result)
+        int[] data, TrapTargetCoordinates target, int[] result)
     {
+        int targetTx = target.ThreadX;
+        int targetTy = target.ThreadY;
+        int targetTz = target.ThreadZ;
+        int targetBx = target.BlockX;
+        int targetBy = target.BlockY;
+        int targetBz = target.BlockZ;
         if (ThreadIndex.X == targetTx &&
             ThreadIndex.Y == targetTy &&
             ThreadIndex.Z == targetTz &&
@@ -107,4 +107,14 @@ public static partial class DeviceErrorChannelKernels
     [GpuDeviceFunction]
     public static int ArmValue(int key) => key switch { 0 => 10, 1 => 20 };
 #pragma warning restore CS8509
+}
+
+public struct TrapTargetCoordinates
+{
+    public int ThreadX;
+    public int ThreadY;
+    public int ThreadZ;
+    public int BlockX;
+    public int BlockY;
+    public int BlockZ;
 }

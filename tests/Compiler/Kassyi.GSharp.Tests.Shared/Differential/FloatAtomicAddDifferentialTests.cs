@@ -37,10 +37,9 @@ public class FloatAtomicAddDifferentialTests
         BitConverter.UInt32BitsToSingle(0xFFC05678u), // negative quiet NaN with payload
     ];
 
-    internal static readonly DifferentialCase s_floatAtomicAdd = new("FloatAtomicAddMatrixKernels.FloatAtomicAddMatrixKernel")
-    {
-        Shape = LaunchShape.ForRows(s_boundaries.Length * s_boundaries.Length, blockX: FloatAtomicAddMatrixKernels.StaticSharedCount),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_floatAtomicAdd = DiffCases.Create<float, float, float>(
+        FloatAtomicAddMatrixKernels.LaunchFloatAtomicAddMatrixKernel,
+        inputs: static (rng, rows) =>
         {
             var (left, right) = DiffValues.Pairs(rng, rows, s_boundaries, NextValue);
             return new DiffBuffers()
@@ -48,15 +47,12 @@ public class FloatAtomicAddDifferentialTests
                 .In("right", right, OutputPolicy.Exact)
                 .Out<float>("r", rows, FloatAtomicAddMatrixKernels.Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => FloatAtomicAddMatrixKernels.LaunchFloatAtomicAddMatrixKernel(
-            b.Get<float>("left"),
-            b.Get<float>("right"),
-            b.Get<float>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX,
-            sharedMemBytes: s.BlockX * sizeof(float) * 2u
-        ),
-        Reference = static (b, _) =>
+        shape: LaunchShape.ForRows(s_boundaries.Length * s_boundaries.Length, blockX: FloatAtomicAddMatrixKernels.StaticSharedCount),
+        firstInputName: "left",
+        secondInputName: "right",
+        outputName: "r",
+        sharedMemBytes: (uint)FloatAtomicAddMatrixKernels.StaticSharedCount * sizeof(float) * 2u,
+        reference: static (b, _) =>
         {
             var left = b.Get<float>("left");
             var right = b.Get<float>("right");
@@ -81,8 +77,7 @@ public class FloatAtomicAddDifferentialTests
                 r[o + 7] = a;
                 r[o + 8] = sharedSum;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

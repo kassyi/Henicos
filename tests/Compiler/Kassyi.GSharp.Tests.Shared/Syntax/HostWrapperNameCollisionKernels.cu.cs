@@ -33,6 +33,7 @@ public static partial class HostWrapperNameCollisionKernels
         public int Scale;
     }
 
+    // The parameter list is the subject of this test: parameter names collide with generated host wrapper locals (hModule, hFunc, args, totalThreads, dllPath, hLib, fnPtr, invoke, etc.).
     [GpuKernel]
     public static int ExecuteCollisionKernel(
         int hModule,

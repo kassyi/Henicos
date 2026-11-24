@@ -51,12 +51,7 @@ public class DifferentialExceptionTests
                     .Out<int>("r", shape.Rows, OutputPolicy.Exact);
             },
             Launch = static (b, shape) => DoubleIndexOnHost(b, shape, ThreadStop.FailingThread),
-            Oracle = static (b, s) => HarnessProbeKernels.LaunchDoubleIndexKernel(
-                b.Get<int>("idx"),
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
+            Oracle = DiffLaunches.Bind(HarnessProbeKernels.LaunchDoubleIndexKernel, "idx", "r"),
         };
 
         DiffPathRunner[] bothCpuPaths =
@@ -134,12 +129,7 @@ public class DifferentialExceptionTests
                 .In("idx", new[] { -1, 1, 2, 3 })
                 .Out<int>("r", shape.Rows, OutputPolicy.Exact),
             Launch = (b, shape) => DoubleIndexOnHost(b, shape, threadStop),
-            Oracle = static (b, s) => HarnessProbeKernels.LaunchDoubleIndexKernel(
-                b.Get<int>("idx"),
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
+            Oracle = DiffLaunches.Bind(HarnessProbeKernels.LaunchDoubleIndexKernel, "idx", "r"),
         };
         // mutant: DifferentialRunner.RunOneShape skips RunOracleExpecting for an explicit policy (no comparison)
         testCase = explicitPolicy
@@ -179,12 +169,7 @@ public class DifferentialExceptionTests
             "HarnessTests.RacingWriteThenThrowKernel",
             [-1, 1, 2, 3],
             2,
-            static (b, s) => HarnessProbeKernels.LaunchRacingWriteThenThrowKernel(
-                b.Get<int>("idx"),
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            )
+            HarnessProbeKernels.LaunchRacingWriteThenThrowKernel
         );
 
         var ex = Assert.Throws<DifferentialHarnessException>(() =>
@@ -206,12 +191,7 @@ public class DifferentialExceptionTests
             "HarnessTests.TwoExceptionTypesKernel",
             [-1, 1, 2, 0],
             4,
-            static (b, s) => HarnessProbeKernels.LaunchTwoExceptionTypesKernel(
-                b.Get<int>("idx"),
-                b.Get<int>("r"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            )
+            HarnessProbeKernels.LaunchTwoExceptionTypesKernel
         );
 
         var ex = Assert.Throws<DifferentialHarnessException>(() =>
@@ -228,7 +208,7 @@ public class DifferentialExceptionTests
         string name,
         int[] idx,
         int outputs,
-        Action<DiffBuffers, LaunchShape> oracle
+        Int32PairLaunch oracle
     ) =>
         new(name)
         {
@@ -240,7 +220,7 @@ public class DifferentialExceptionTests
                 .In("idx", (int[])idx.Clone())
                 .Out<int>("r", outputs, OutputPolicy.Exact),
             Launch = static (_, _) => throw new InvalidOperationException("The launch is not reached."),
-            Oracle = oracle,
+            Oracle = DiffLaunches.Bind(oracle, "idx", "r"),
         };
 
     [Fact]

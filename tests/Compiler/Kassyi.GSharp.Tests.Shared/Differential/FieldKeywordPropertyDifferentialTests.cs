@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Xunit;
 
@@ -14,97 +15,65 @@ public class FieldKeywordPropertyDifferentialTests
 {
     private const int Rows = 441;
 
-    private const string Kernels = nameof(FieldKeywordPropertyDifferentialKernels);
-
     internal static readonly DifferentialCase s_setterOnly = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordSetterOnly),
-        FieldKeywordPropertyDifferentialKernels.SetterOnlyColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordSetterOnly(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordSetterOnly,
+        FieldKeywordPropertyDifferentialKernels.SetterOnlyColumns);
 
     internal static readonly DifferentialCase s_getterOnly = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordGetterOnly),
-        FieldKeywordPropertyDifferentialKernels.GetterOnlyColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordGetterOnly(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordGetterOnly,
+        FieldKeywordPropertyDifferentialKernels.GetterOnlyColumns);
 
     internal static readonly DifferentialCase s_compound = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordCompound),
-        FieldKeywordPropertyDifferentialKernels.CompoundColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordCompound(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordCompound,
+        FieldKeywordPropertyDifferentialKernels.CompoundColumns);
 
     internal static readonly DifferentialCase s_blockBodies = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordBlockBodies),
-        FieldKeywordPropertyDifferentialKernels.BlockBodiesColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordBlockBodies(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordBlockBodies,
+        FieldKeywordPropertyDifferentialKernels.BlockBodiesColumns);
 
     internal static readonly DifferentialCase s_steps = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordSteps),
-        FieldKeywordPropertyDifferentialKernels.StepColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordSteps(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordSteps,
+        FieldKeywordPropertyDifferentialKernels.StepColumns);
 
     internal static readonly DifferentialCase s_init = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordInit),
-        FieldKeywordPropertyDifferentialKernels.InitColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordInit(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordInit,
+        FieldKeywordPropertyDifferentialKernels.InitColumns);
 
     internal static readonly DifferentialCase s_with = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordWith),
-        FieldKeywordPropertyDifferentialKernels.WithColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordWith(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordWith,
+        FieldKeywordPropertyDifferentialKernels.WithColumns);
 
     internal static readonly DifferentialCase s_constructor = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructor),
-        FieldKeywordPropertyDifferentialKernels.ConstructorColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordConstructor(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordConstructor,
+        FieldKeywordPropertyDifferentialKernels.ConstructorColumns);
 
     internal static readonly DifferentialCase s_constructorStep = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordConstructorStep),
-        FieldKeywordPropertyDifferentialKernels.ConstructorStepColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordConstructorStep(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordConstructorStep,
+        FieldKeywordPropertyDifferentialKernels.ConstructorStepColumns);
 
     internal static readonly DifferentialCase s_mutatingGetter = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordMutatingGetter),
-        FieldKeywordPropertyDifferentialKernels.MutatingGetterColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordMutatingGetter(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordMutatingGetter,
+        FieldKeywordPropertyDifferentialKernels.MutatingGetterColumns);
 
     internal static readonly DifferentialCase s_computedReader = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordComputedReader),
-        FieldKeywordPropertyDifferentialKernels.ComputedReaderColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordComputedReader(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordComputedReader,
+        FieldKeywordPropertyDifferentialKernels.ComputedReaderColumns);
 
     internal static readonly DifferentialCase s_partial = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordPartial),
-        FieldKeywordPropertyDifferentialKernels.PartialColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPartial(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPartial,
+        FieldKeywordPropertyDifferentialKernels.PartialColumns);
 
     internal static readonly DifferentialCase s_deconstruction = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordDeconstruction),
-        FieldKeywordPropertyDifferentialKernels.DeconstructionColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordDeconstruction(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordDeconstruction,
+        FieldKeywordPropertyDifferentialKernels.DeconstructionColumns);
 
     internal static readonly DifferentialCase s_library = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordLibrary),
-        FieldKeywordPropertyDifferentialKernels.LibraryColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordLibrary(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordLibrary,
+        FieldKeywordPropertyDifferentialKernels.LibraryColumns);
 
     internal static readonly DifferentialCase s_libraryMacroTarget = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordLibraryMacroTarget),
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordLibraryMacroTarget,
         FieldKeywordPropertyDifferentialKernels.LibraryMacroColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordLibraryMacroTarget(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX),
         static (i, r) =>
         {
             // The operator macro has no host body, so the reference adds the values the target adds
@@ -115,10 +84,8 @@ public class FieldKeywordPropertyDifferentialTests
         });
 
     internal static readonly DifferentialCase s_order = IntCase(
-        nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordOrder),
-        FieldKeywordPropertyDifferentialKernels.OrderColumns,
-        static (i, r, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordOrder(
-            i, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordOrder,
+        FieldKeywordPropertyDifferentialKernels.OrderColumns);
 
     private static readonly IElementComparer<DiffFieldKeywordPacked> s_packedComparer =
         new StructElementComparer<DiffFieldKeywordPacked>(static (ctx, o, a) =>
@@ -129,11 +96,9 @@ public class FieldKeywordPropertyDifferentialTests
             ctx.Field(nameof(DiffFieldKeywordPacked.Q), o.Q, a.Q);
         });
 
-    internal static readonly DifferentialCase s_blockCopy = new(
-        $"{Kernels}.{nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyBlockCopy)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_blockCopy = DiffCases.Create<DiffFieldKeywordPacked, long>(
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPropertyBlockCopy,
+        inputs: static (rng, rows) =>
         {
             var values = DiffValues.Int32(rng, rows);
             var items = new DiffFieldKeywordPacked[rows];
@@ -149,19 +114,13 @@ public class FieldKeywordPropertyDifferentialTests
                 .In("items", items, comparer: s_packedComparer)
                 .Out<long>("r", rows, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPropertyBlockCopy(
-            b.Get<DiffFieldKeywordPacked>("items"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "items",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_memberwise = new(
-        $"{Kernels}.{nameof(FieldKeywordPropertyDifferentialKernels.FieldKeywordPropertyMemberwise)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_memberwise = DiffCases.Create<DiffFieldKeywordWithArray, int>(
+        FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPropertyMemberwise,
+        inputs: static (rng, rows) =>
         {
             var values = DiffValues.Int32(rng, rows);
             var items = new DiffFieldKeywordWithArray[rows];
@@ -175,13 +134,9 @@ public class FieldKeywordPropertyDifferentialTests
                 .InDeep("items", items, CloneWithArray, CompareWithArray)
                 .Out<int>("r", rows, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => FieldKeywordPropertyDifferentialKernels.LaunchFieldKeywordPropertyMemberwise(
-            b.Get<DiffFieldKeywordWithArray>("items"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        inputName: "items",
+        outputName: "r");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -307,18 +262,21 @@ public class FieldKeywordPropertyDifferentialTests
 
     // A case of a kernel (int[] inputs, int[] r) with one row of columns per input
     // The launch is the oracle, unless the case gives a reference model of the inputs and the results
-    private static DifferentialCase IntCase(string kernel, string[] columns,
-        Action<int[], int[], LaunchShape> launch, Action<int[], int[]>? reference = null) =>
-        new($"{Kernels}.{kernel}")
-        {
-            Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-            Inputs = (rng, rows) => new DiffBuffers()
+    private static DifferentialCase IntCase(
+        Int32PairLaunch launch,
+        string[] columns,
+        Action<int[], int[]>? reference = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, rows) => new DiffBuffers()
                 .In("inputs", DiffValues.Int32(rng, rows))
                 .Out<int>("r", rows, columns, OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<int>("inputs"), b.Get<int>("r"), s),
-            OracleIsLaunch = reference is null,
-            Reference = reference is null ? null : (b, _) => reference(b.Get<int>("inputs"), b.Get<int>("r")),
-        };
+            shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+            inputName: "inputs",
+            outputName: "r",
+            reference: reference is null ? null : (b, _) => reference(b.Get<int>("inputs"), b.Get<int>("r")),
+            launchExpression: launchExpression);
 
     // [WHY] A copy of the struct keeps the stored value; an object initializer would run the accessors
     private static DiffFieldKeywordWithArray CloneWithArray(DiffFieldKeywordWithArray source, DiffArrayCloneScope scope)

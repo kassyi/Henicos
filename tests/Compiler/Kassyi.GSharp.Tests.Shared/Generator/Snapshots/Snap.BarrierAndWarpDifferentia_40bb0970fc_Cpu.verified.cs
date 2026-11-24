@@ -77,11 +77,11 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(445612401u, "BarrierAndWar
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1944608097u, "BarrierAndWarpDifferentialKernels.cs", 419, 28, "GenericStructStaticSharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(423265473u, "BarrierAndWarpDifferentialKernels.cs", 436, 13, "GenericStructStaticSharedMemoryKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2145730335u, "BarrierAndWarpDifferentialKernels.cs", 437, 13, "GenericStructStaticSharedMemoryKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2110846299u, "BarrierAndWarpDifferentialKernels.cs", 465, 17, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(115786289u, "BarrierAndWarpDifferentialKernels.cs", 475, 9, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(776948849u, "BarrierAndWarpDifferentialKernels.cs", 466, 17, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(723403573u, "BarrierAndWarpDifferentialKernels.cs", 476, 9, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(402974161u, "BarrierAndWarpDifferentialKernels.cs", 477, 9, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(21851037u, "BarrierAndWarpDifferentialKernels.cs", 478, 9, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1640298577u, "BarrierAndWarpDifferentialKernels.cs", 479, 9, "RefTernaryParameterWriteAcrossBarrierReproKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -3749,7 +3749,7 @@ if(__gsharp_ctx->__gsharp_id_6_t>=__gsharp_ctx->__gsharp_id_5_n)
 {
 __gsharp_state = -1;return;
 }
-__gsharp_ctx->__gsharp_id_7_c=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_conds, __gsharp_ctx->__gsharp_id_6_t, 2110846299u);
+__gsharp_ctx->__gsharp_id_7_c=__gsharp_array_at(__gsharp_ctx->__gsharp_id_0_conds, __gsharp_ctx->__gsharp_id_6_t, 776948849u);
 __gsharp_ctx->__gsharp_id_8_localFallback=10;
 ((*((__gsharp_ctx->__gsharp_id_7_c&1)==0?&__gsharp_ctx->__gsharp_id_2_paramAssign:&__gsharp_ctx->__gsharp_id_8_localFallback)))=777;
 ((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_ctx->__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)))=__gsharp_add_i32((*((__gsharp_ctx->__gsharp_id_7_c&2)==0?&__gsharp_ctx->__gsharp_id_3_paramCompound:&__gsharp_ctx->__gsharp_id_8_localFallback)),100);
@@ -3762,10 +3762,10 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 int __gsharp_id_9_col = __gsharp_mul_i32(__gsharp_ctx->__gsharp_id_6_t,4);
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_id_9_col+0, 115786289u)=__gsharp_ctx->__gsharp_id_2_paramAssign;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,1), 723403573u)=__gsharp_ctx->__gsharp_id_3_paramCompound;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,2), 402974161u)=__gsharp_ctx->__gsharp_id_4_paramInc;
-__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,3), 21851037u)=__gsharp_ctx->__gsharp_id_8_localFallback;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_id_9_col+0, 723403573u)=__gsharp_ctx->__gsharp_id_2_paramAssign;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,1), 402974161u)=__gsharp_ctx->__gsharp_id_3_paramCompound;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,2), 21851037u)=__gsharp_ctx->__gsharp_id_4_paramInc;
+__gsharp_array_at(__gsharp_ctx->__gsharp_id_1_dst, __gsharp_add_i32(__gsharp_id_9_col,3), 1640298577u)=__gsharp_ctx->__gsharp_id_8_localFallback;
 __gsharp_state=-1;
 return;
 }

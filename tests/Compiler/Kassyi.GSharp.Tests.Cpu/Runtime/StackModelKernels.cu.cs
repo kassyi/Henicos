@@ -3,6 +3,13 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Cpu.Runtime;
 
+public struct StackModelRefOutBuffers
+{
+    [GpuReadOnly]
+    public int[] Input;
+    public int[] Output;
+}
+
 [SkipSnapshotConsistency("Verified by StackModelTests under both managed barrier models")]
 public static partial class StackModelKernels
 {
@@ -64,8 +71,10 @@ public static partial class StackModelKernels
     }
 
     [GpuKernel]
-    public static void RefOutKernel(int[] input, int[] output, ref int refTotal, out int outValue, int n)
+    public static void RefOutKernel(StackModelRefOutBuffers buffers, ref int refTotal, out int outValue, int n)
     {
+        int[] input = buffers.Input;
+        int[] output = buffers.Output;
         outValue = 0;
         var s = new SharedMemory<int>(64);
         int tid = ThreadIndex.X;

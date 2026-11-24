@@ -87,56 +87,56 @@ public partial class MarshalingNullableDifferentialKernels
 {
 private static readonly global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[] s_errorSites = new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite[]
 {
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1343037405u, "MarshalingNullableDifferentialKernels.cs", 95, 20, "ScalarsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(133826836u, "MarshalingNullableDifferentialKernels.cs", 101, 9, "ScalarsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1360858217u, "MarshalingNullableDifferentialKernels.cs", 96, 20, "ScalarsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(223287868u, "MarshalingNullableDifferentialKernels.cs", 102, 9, "ScalarsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(47774528u, "MarshalingNullableDifferentialKernels.cs", 103, 9, "ScalarsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1505986880u, "MarshalingNullableDifferentialKernels.cs", 104, 9, "ScalarsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(704215116u, "MarshalingNullableDifferentialKernels.cs", 105, 9, "ScalarsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(769339604u, "MarshalingNullableDifferentialKernels.cs", 110, 33, "ScalarsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1064248068u, "MarshalingNullableDifferentialKernels.cs", 112, 24, "ScalarsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1813157712u, "MarshalingNullableDifferentialKernels.cs", 118, 9, "ScalarsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(918842388u, "MarshalingNullableDifferentialKernels.cs", 106, 9, "ScalarsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1049431582u, "MarshalingNullableDifferentialKernels.cs", 111, 33, "ScalarsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1216118814u, "MarshalingNullableDifferentialKernels.cs", 113, 24, "ScalarsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2109704680u, "MarshalingNullableDifferentialKernels.cs", 119, 9, "ScalarsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1826031696u, "MarshalingNullableDifferentialKernels.cs", 131, 9, "RefsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1464077323u, "MarshalingNullableDifferentialKernels.cs", 149, 20, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1508181464u, "MarshalingNullableDifferentialKernels.cs", 155, 9, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2020841169u, "MarshalingNullableDifferentialKernels.cs", 155, 24, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1203355153u, "MarshalingNullableDifferentialKernels.cs", 155, 42, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(465722720u, "MarshalingNullableDifferentialKernels.cs", 156, 9, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1975337103u, "MarshalingNullableDifferentialKernels.cs", 156, 24, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(698078899u, "MarshalingNullableDifferentialKernels.cs", 156, 42, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1518758888u, "MarshalingNullableDifferentialKernels.cs", 120, 9, "ScalarsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(334146232u, "MarshalingNullableDifferentialKernels.cs", 133, 9, "RefsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(489945697u, "MarshalingNullableDifferentialKernels.cs", 151, 20, "ArraysKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(364189152u, "MarshalingNullableDifferentialKernels.cs", 157, 9, "ArraysKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285608305u, "MarshalingNullableDifferentialKernels.cs", 157, 24, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1933071476u, "MarshalingNullableDifferentialKernels.cs", 158, 9, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(779420124u, "MarshalingNullableDifferentialKernels.cs", 159, 9, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(263967297u, "MarshalingNullableDifferentialKernels.cs", 157, 42, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(959108096u, "MarshalingNullableDifferentialKernels.cs", 158, 9, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(750349211u, "MarshalingNullableDifferentialKernels.cs", 158, 24, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1612484375u, "MarshalingNullableDifferentialKernels.cs", 158, 42, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1500648072u, "MarshalingNullableDifferentialKernels.cs", 159, 9, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1561951937u, "MarshalingNullableDifferentialKernels.cs", 159, 24, "ArraysKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1410380844u, "MarshalingNullableDifferentialKernels.cs", 160, 9, "ArraysKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(10361171u, "MarshalingNullableDifferentialKernels.cs", 181, 20, "FieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1817500193u, "MarshalingNullableDifferentialKernels.cs", 186, 20, "FieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1785893264u, "MarshalingNullableDifferentialKernels.cs", 188, 9, "FieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1478174356u, "MarshalingNullableDifferentialKernels.cs", 189, 9, "FieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(73375940u, "MarshalingNullableDifferentialKernels.cs", 161, 9, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1993100016u, "MarshalingNullableDifferentialKernels.cs", 162, 9, "ArraysKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(28932627u, "MarshalingNullableDifferentialKernels.cs", 183, 20, "FieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(240225949u, "MarshalingNullableDifferentialKernels.cs", 188, 20, "FieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1143628560u, "MarshalingNullableDifferentialKernels.cs", 190, 9, "FieldsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(807692312u, "MarshalingNullableDifferentialKernels.cs", 191, 9, "FieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(65838444u, "MarshalingNullableDifferentialKernels.cs", 195, 9, "FieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1548552197u, "MarshalingNullableDifferentialKernels.cs", 202, 20, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1566102160u, "MarshalingNullableDifferentialKernels.cs", 208, 9, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1623906402u, "MarshalingNullableDifferentialKernels.cs", 208, 24, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(290943898u, "MarshalingNullableDifferentialKernels.cs", 208, 48, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(31014444u, "MarshalingNullableDifferentialKernels.cs", 209, 9, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1782464557u, "MarshalingNullableDifferentialKernels.cs", 209, 24, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1124505863u, "MarshalingNullableDifferentialKernels.cs", 209, 49, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(245590542u, "MarshalingNullableDifferentialKernels.cs", 210, 9, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(629808189u, "MarshalingNullableDifferentialKernels.cs", 211, 9, "ArrayFieldsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(210991127u, "MarshalingNullableDifferentialKernels.cs", 218, 20, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(848851412u, "MarshalingNullableDifferentialKernels.cs", 225, 9, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(347232480u, "MarshalingNullableDifferentialKernels.cs", 226, 9, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(160170807u, "MarshalingNullableDifferentialKernels.cs", 226, 39, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1448591541u, "MarshalingNullableDifferentialKernels.cs", 226, 50, "BagsKernel", "Attempted to divide by zero."),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(100298297u, "MarshalingNullableDifferentialKernels.cs", 226, 56, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1669607319u, "MarshalingNullableDifferentialKernels.cs", 227, 22, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(745936344u, "MarshalingNullableDifferentialKernels.cs", 192, 9, "FieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(75180832u, "MarshalingNullableDifferentialKernels.cs", 193, 9, "FieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(450247412u, "MarshalingNullableDifferentialKernels.cs", 197, 9, "FieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1289574693u, "MarshalingNullableDifferentialKernels.cs", 204, 20, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1091336368u, "MarshalingNullableDifferentialKernels.cs", 210, 9, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(156632384u, "MarshalingNullableDifferentialKernels.cs", 210, 24, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(222240424u, "MarshalingNullableDifferentialKernels.cs", 210, 48, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(410261840u, "MarshalingNullableDifferentialKernels.cs", 211, 9, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(56133999u, "MarshalingNullableDifferentialKernels.cs", 211, 24, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1538166309u, "MarshalingNullableDifferentialKernels.cs", 211, 49, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(446068750u, "MarshalingNullableDifferentialKernels.cs", 212, 9, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(424300605u, "MarshalingNullableDifferentialKernels.cs", 213, 9, "ArrayFieldsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(769372705u, "MarshalingNullableDifferentialKernels.cs", 220, 20, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(951136648u, "MarshalingNullableDifferentialKernels.cs", 227, 9, "BagsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1970515428u, "MarshalingNullableDifferentialKernels.cs", 228, 9, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1925223060u, "MarshalingNullableDifferentialKernels.cs", 229, 9, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(2097966654u, "MarshalingNullableDifferentialKernels.cs", 229, 42, "BagsKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(735289306u, "MarshalingNullableDifferentialKernels.cs", 232, 13, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1462167123u, "MarshalingNullableDifferentialKernels.cs", 228, 39, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1723071089u, "MarshalingNullableDifferentialKernels.cs", 228, 50, "BagsKernel", "Attempted to divide by zero."),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(946144245u, "MarshalingNullableDifferentialKernels.cs", 228, 56, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(622519635u, "MarshalingNullableDifferentialKernels.cs", 229, 22, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(393220220u, "MarshalingNullableDifferentialKernels.cs", 230, 9, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1250320544u, "MarshalingNullableDifferentialKernels.cs", 231, 9, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(883537352u, "MarshalingNullableDifferentialKernels.cs", 231, 42, "BagsKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1605976766u, "MarshalingNullableDifferentialKernels.cs", 234, 13, "BagsKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -625,28 +625,28 @@ static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ScalarsKernel(System_Nullable<float2> __gsharp_id_0_v, System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner> __gsharp_id_1_inner, System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag> __gsharp_id_2_bag, System_Nullable<int> __gsharp_id_3_i, GSharpArray<float> __gsharp_id_4_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_5_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_5_tid>=__gsharp_array_ref(__gsharp_id_4_probe, 1343037405u).length/7)
+if(__gsharp_id_5_tid>=__gsharp_array_ref(__gsharp_id_4_probe, 1360858217u).length/7)
 {
 return;
 }
 int __gsharp_id_6_o = __gsharp_mul_i32(__gsharp_id_5_tid,7);
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_id_6_o+0, 133826836u)=(__gsharp_id_0_v.HasValue?1.0f:0.0f);
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,1), 223287868u)=(__gsharp_id_0_v.HasValue?__gsharp_id_0_v.Value:__gsharp_type<float2>()).y;
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,2), 47774528u)=(__gsharp_id_1_inner.HasValue?1.0f:0.0f);
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,3), 1505986880u)=(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y+(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_X;
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,4), 704215116u)=(__gsharp_id_2_bag.HasValue?1.0f:0.0f);
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_id_6_o+0, 223287868u)=(__gsharp_id_0_v.HasValue?1.0f:0.0f);
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,1), 47774528u)=(__gsharp_id_0_v.HasValue?__gsharp_id_0_v.Value:__gsharp_type<float2>()).y;
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,2), 1505986880u)=(__gsharp_id_1_inner.HasValue?1.0f:0.0f);
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,3), 704215116u)=(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y+(__gsharp_id_1_inner.HasValue?__gsharp_id_1_inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_X;
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,4), 918842388u)=(__gsharp_id_2_bag.HasValue?1.0f:0.0f);
 float __gsharp_id_7_sum = 0.0f;
 if(__gsharp_id_2_bag.HasValue)
 {
 auto __gsharp_id_8_data = (__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data;
-for(int __gsharp_id_9_k = 0;__gsharp_id_9_k<__gsharp_array_ref(__gsharp_id_8_data, 769339604u).length;__gsharp_id_9_k++)
+for(int __gsharp_id_9_k = 0;__gsharp_id_9_k<__gsharp_array_ref(__gsharp_id_8_data, 1049431582u).length;__gsharp_id_9_k++)
 {
-__gsharp_id_7_sum+=__gsharp_array_at(__gsharp_id_8_data, __gsharp_id_9_k, 1064248068u);
+__gsharp_id_7_sum+=__gsharp_array_at(__gsharp_id_8_data, __gsharp_id_9_k, 1216118814u);
 }
 __gsharp_id_7_sum+=(__gsharp_id_2_bag.HasValue?__gsharp_id_2_bag.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Tag;
 }
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,5), 1813157712u)=__gsharp_id_7_sum;
-__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,6), 2109704680u)=([&]() {
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,5), 2109704680u)=__gsharp_id_7_sum;
+__gsharp_array_at(__gsharp_id_4_probe, __gsharp_add_i32(__gsharp_id_6_o,6), 1518758888u)=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_3_i;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-5);
 }());
@@ -831,7 +831,7 @@ if(__gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threa
 {
 return;
 }
-__gsharp_array_at(__gsharp_id_4_o, 0, 1826031696u)=((*__gsharp_id_0_v).HasValue?1:0);
+__gsharp_array_at(__gsharp_id_4_o, 0, 334146232u)=((*__gsharp_id_0_v).HasValue?1:0);
 auto __gsharp_id_5_old = ((*__gsharp_id_0_v).HasValue?(*__gsharp_id_0_v).Value:__gsharp_type<float2>());
 (*__gsharp_id_0_v)=((*__gsharp_id_0_v).HasValue?float2{__gsharp_id_5_old.x+10.0f, __gsharp_id_5_old.y+20.0f}:float2{7.0f, 8.0f});
 if((*__gsharp_id_1_inner).HasValue)
@@ -1243,28 +1243,28 @@ static_assert(offsetof(System_Nullable<int>,Value)==4,""int?: value offset"");
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArraysKernel(GSharpArray<System_Nullable<float2>> __gsharp_id_0_a, GSharpArray<System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>> __gsharp_id_1_b, GSharpArray<System_Nullable<int>> __gsharp_id_2_c, GSharpArray<float> __gsharp_id_3_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_4_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_4_tid>=__gsharp_array_ref(__gsharp_id_0_a, 1464077323u).length)
+if(__gsharp_id_4_tid>=__gsharp_array_ref(__gsharp_id_0_a, 489945697u).length)
 {
 return;
 }
 int __gsharp_id_5_o = __gsharp_mul_i32(__gsharp_id_4_tid,3);
-__gsharp_array_at(__gsharp_id_3_probe, __gsharp_id_5_o+0, 1508181464u)=(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 2020841169u).HasValue?([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 1203355153u);
+__gsharp_array_at(__gsharp_id_3_probe, __gsharp_id_5_o+0, 364189152u)=(__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 1285608305u).HasValue?([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 263967297u);
 return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_type<float2>();
 }()).y:(-1.0f));
-__gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,1), 465722720u)=(__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 1975337103u).HasValue?([&]() {
-auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 698078899u);
+__gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,1), 959108096u)=(__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 750349211u).HasValue?([&]() {
+auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 1612484375u);
 return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>();
 }()).__gsharp_mb_V.y:(-1.0f));
-__gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,2), 364189152u)=([&]() {
-auto __gsharp_coalesce_tmp = __gsharp_array_at(__gsharp_id_2_c, __gsharp_id_4_tid, 1285608305u);
+__gsharp_array_at(__gsharp_id_3_probe, __gsharp_add_i32(__gsharp_id_5_o,2), 1500648072u)=([&]() {
+auto __gsharp_coalesce_tmp = __gsharp_array_at(__gsharp_id_2_c, __gsharp_id_4_tid, 1561951937u);
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());
-__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 1933071476u)=((__gsharp_id_4_tid&1)==0?System_Nullable<float2>(float2{(float)__gsharp_id_4_tid, __gsharp_id_4_tid*2.0f}):System_Nullable<float2>());
-__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 779420124u)=((__gsharp_id_4_tid&2)==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>(([&]() {
+__gsharp_array_at(__gsharp_id_0_a, __gsharp_id_4_tid, 1410380844u)=((__gsharp_id_4_tid&1)==0?System_Nullable<float2>(float2{(float)__gsharp_id_4_tid, __gsharp_id_4_tid*2.0f}):System_Nullable<float2>());
+__gsharp_array_at(__gsharp_id_1_b, __gsharp_id_4_tid, 73375940u)=((__gsharp_id_4_tid&2)==0?System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>():System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>(([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_id_4_tid; __gsharp_tmp.__gsharp_mb_V = float2{__gsharp_id_4_tid+1.0f, __gsharp_id_4_tid+2.0f}; return __gsharp_tmp; }
 ())));
-__gsharp_array_at(__gsharp_id_2_c, __gsharp_id_4_tid, 1410380844u)=((__gsharp_id_4_tid&4)==0?System_Nullable<int>(__gsharp_mul_i32(__gsharp_id_4_tid,3)):System_Nullable<int>());
+__gsharp_array_at(__gsharp_id_2_c, __gsharp_id_4_tid, 1993100016u)=((__gsharp_id_4_tid&4)==0?System_Nullable<int>(__gsharp_mul_i32(__gsharp_id_4_tid,3)):System_Nullable<int>());
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ArraysKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArraysKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -1934,16 +1934,16 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__FieldsKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffHolder> __gsharp_id_0_h, GSharpArray<float> __gsharp_id_1_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_h, 10361171u).length)
+if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_h, 28932627u).length)
 {
 return;
 }
-auto __gsharp_id_3_item = __gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 1817500193u);
+auto __gsharp_id_3_item = __gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 240225949u);
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_2_tid,4);
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_4_o+0, 1785893264u)=__gsharp_id_3_item.__gsharp_mb_A;
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 1478174356u)=(__gsharp_id_3_item.__gsharp_mb_V.HasValue?(__gsharp_id_3_item.__gsharp_mb_V.HasValue?__gsharp_id_3_item.__gsharp_mb_V.Value:__gsharp_type<float2>()).y:(-1.0f));
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1143628560u)=(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?__gsharp_id_3_item.__gsharp_mb_Inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y:(-1.0f));
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 807692312u)=([&]() {
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_4_o+0, 1143628560u)=__gsharp_id_3_item.__gsharp_mb_A;
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 807692312u)=(__gsharp_id_3_item.__gsharp_mb_V.HasValue?(__gsharp_id_3_item.__gsharp_mb_V.HasValue?__gsharp_id_3_item.__gsharp_mb_V.Value:__gsharp_type<float2>()).y:(-1.0f));
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 745936344u)=(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?(__gsharp_id_3_item.__gsharp_mb_Inner.HasValue?__gsharp_id_3_item.__gsharp_mb_Inner.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>()).__gsharp_mb_V.y:(-1.0f));
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 75180832u)=([&]() {
 auto __gsharp_coalesce_tmp = __gsharp_id_3_item.__gsharp_mb_N;
 return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : (-1);
 }());
@@ -1952,7 +1952,7 @@ __gsharp_id_3_item.__gsharp_mb_Inner=([&]() {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_id_3_item.__gsharp_mb_A; __gsharp_tmp.__gsharp_mb_V = float2{__gsharp_id_2_tid*0.5f, __gsharp_id_2_tid*0.25f}; return __gsharp_tmp; }
 ());
 __gsharp_id_3_item.__gsharp_mb_N=(__gsharp_id_3_item.__gsharp_mb_N.HasValue?System_Nullable<int>(__gsharp_add_i32((__gsharp_id_3_item.__gsharp_mb_N.HasValue?__gsharp_id_3_item.__gsharp_mb_N.Value:__gsharp_type<int>()),1)):System_Nullable<int>());
-__gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 65838444u)=__gsharp_id_3_item;
+__gsharp_array_at(__gsharp_id_0_h, __gsharp_id_2_tid, 450247412u)=__gsharp_id_3_item;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_FieldsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__FieldsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2166,21 +2166,21 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArrayFieldsKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffArrayHolder __gsharp_id_0_h, GSharpArray<float> __gsharp_id_1_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_2_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Items, 1548552197u).length)
+if(__gsharp_id_2_tid>=__gsharp_array_ref(__gsharp_id_0_h.__gsharp_mb_Items, 1289574693u).length)
 {
 return;
 }
 int __gsharp_id_3_o = __gsharp_mul_i32(__gsharp_id_2_tid,2);
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_3_o+0, 1566102160u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 1623906402u).HasValue?([&]() {
-auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 290943898u);
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_id_3_o+0, 1091336368u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 156632384u).HasValue?([&]() {
+auto&& __gsharp_seq_0 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 222240424u);
 return __gsharp_seq_0.HasValue?__gsharp_seq_0.Value:__gsharp_type<float2>();
 }()).y:(-1.0f));
-__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_3_o,1), 31014444u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 1782464557u).HasValue?([&]() {
-auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 1124505863u);
+__gsharp_array_at(__gsharp_id_1_probe, __gsharp_add_i32(__gsharp_id_3_o,1), 410261840u)=(__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 56133999u).HasValue?([&]() {
+auto&& __gsharp_seq_1 = __gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 1538166309u);
 return __gsharp_seq_1.HasValue?__gsharp_seq_1.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffInner>();
 }()).__gsharp_mb_V.y:(-1.0f));
-__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 245590542u)=float2{__gsharp_id_2_tid*3.0f, __gsharp_id_2_tid*5.0f};
-__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 629808189u)=nullptr;
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Items, __gsharp_id_2_tid, 446068750u)=float2{__gsharp_id_2_tid*3.0f, __gsharp_id_2_tid*5.0f};
+__gsharp_array_at(__gsharp_id_0_h.__gsharp_mb_Inners, __gsharp_id_2_tid, 424300605u)=nullptr;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_ArrayFieldsKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__ArrayFieldsKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
@@ -2346,20 +2346,20 @@ static_assert(offsetof(System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Differential__MarshalingNullableDifferentialKernels__BagsKernel(System_Nullable<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>* __gsharp_id_0_bag, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBagHolder> __gsharp_id_1_holders, GSharpArray<int> __gsharp_id_2_probe, unsigned int __gsharp_epoch){
 __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_3_tid = __gsharp_add_i32(__gsharp_mul_i32((int)blockIdx.x,(int)blockDim.x),(int)threadIdx.x);
-if(__gsharp_id_3_tid>=__gsharp_array_ref(__gsharp_id_1_holders, 210991127u).length)
+if(__gsharp_id_3_tid>=__gsharp_array_ref(__gsharp_id_1_holders, 769372705u).length)
 {
 return;
 }
 int __gsharp_id_4_o = __gsharp_mul_i32(__gsharp_id_3_tid,4);
 auto __gsharp_id_5_value = ((*__gsharp_id_0_bag).HasValue?(*__gsharp_id_0_bag).Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>());
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_id_4_o+0, 848851412u)=((*__gsharp_id_0_bag).HasValue?__gsharp_id_5_value.__gsharp_mb_Tag:(-1));
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 347232480u)=((*__gsharp_id_0_bag).HasValue?__gsharp_array_at(__gsharp_id_5_value.__gsharp_mb_Data, __gsharp_rem_i32(__gsharp_id_3_tid,__gsharp_array_ref(__gsharp_id_5_value.__gsharp_mb_Data, 100298297u).length,1448591541u), 160170807u):(-1));
-auto __gsharp_id_6_holder = __gsharp_array_at(__gsharp_id_1_holders, __gsharp_id_3_tid, 1669607319u).__gsharp_mb_Bag;
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 1970515428u)=(__gsharp_id_6_holder.HasValue?1:0);
-__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 1925223060u)=(__gsharp_id_6_holder.HasValue?__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 2097966654u):(-1));
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_id_4_o+0, 951136648u)=((*__gsharp_id_0_bag).HasValue?__gsharp_id_5_value.__gsharp_mb_Tag:(-1));
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,1), 1970515428u)=((*__gsharp_id_0_bag).HasValue?__gsharp_array_at(__gsharp_id_5_value.__gsharp_mb_Data, __gsharp_rem_i32(__gsharp_id_3_tid,__gsharp_array_ref(__gsharp_id_5_value.__gsharp_mb_Data, 946144245u).length,1723071089u), 1462167123u):(-1));
+auto __gsharp_id_6_holder = __gsharp_array_at(__gsharp_id_1_holders, __gsharp_id_3_tid, 622519635u).__gsharp_mb_Bag;
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,2), 393220220u)=(__gsharp_id_6_holder.HasValue?1:0);
+__gsharp_array_at(__gsharp_id_2_probe, __gsharp_add_i32(__gsharp_id_4_o,3), 1250320544u)=(__gsharp_id_6_holder.HasValue?__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 883537352u):(-1));
 if(__gsharp_id_6_holder.HasValue)
 {
-__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 735289306u)=__gsharp_add_i32(__gsharp_id_3_tid,100);
+__gsharp_array_at((__gsharp_id_6_holder.HasValue?__gsharp_id_6_holder.Value:__gsharp_type<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Differential__NullableDiffBag>()).__gsharp_mb_Data, 0, 1605976766u)=__gsharp_add_i32(__gsharp_id_3_tid,100);
 }
 }
 ";

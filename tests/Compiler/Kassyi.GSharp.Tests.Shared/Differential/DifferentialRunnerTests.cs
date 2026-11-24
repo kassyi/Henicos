@@ -20,11 +20,9 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 /// </summary>
 public partial class DifferentialRunnerTests
 {
-    internal static readonly DifferentialCase s_uint32Add = new("HarnessProbeKernels.UInt32AddMatrixKernel")
-    {
-        // Seed 0: the 441 rows of the boundary cross product, 7 blocks of 64 (the last block is partly idle)
-        Shape = LaunchShape.ForRows(DiffValues.Int32Boundaries.Length * DiffValues.Int32Boundaries.Length, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_uint32Add = DiffCases.Create(
+        HarnessProbeKernels.LaunchUInt32AddMatrixKernel,
+        inputs: static (rng, rows) =>
         {
             var (a, b) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
@@ -32,15 +30,9 @@ public partial class DifferentialRunnerTests
                 .In("b", Array.ConvertAll(b, static v => unchecked((uint)v)))
                 .Out<uint>("r", rows, HarnessProbeKernels.UInt32AddColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => HarnessProbeKernels.LaunchUInt32AddMatrixKernel(
-            b.Get<uint>("a"),
-            b.Get<uint>("b"),
-            b.Get<uint>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        // Seed 0: the 441 rows of the boundary cross product, 7 blocks of 64 (the last block is partly idle)
+        shape: LaunchShape.ForRows(DiffValues.Int32Boundaries.Length * DiffValues.Int32Boundaries.Length, blockX: 64),
+        outputName: "r");
 
     // ---- The runner ----
 

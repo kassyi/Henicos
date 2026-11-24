@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
 
@@ -29,39 +30,24 @@ public class StackLinqUnfusedDifferentialTests
         [-1, 7, -1, -1],
     ];
 
-    internal static readonly DifferentialCase s_unfusedOperators = new(
-        $"{nameof(StackLinqUnfusedDifferentialKernels)}.{nameof(StackLinqUnfusedDifferentialKernels.UnfusedOperatorKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_unfusedOperators = DiffCases.Create(
+        StackLinqUnfusedDifferentialKernels.LaunchUnfusedOperatorKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSlices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqUnfusedDifferentialKernels.UnfusedOperatorColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedOperatorKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_unfusedDoubleSum = new(DiffKernelNames.Of(
-        typeof(StackLinqUnfusedDifferentialKernels),
-        nameof(StackLinqUnfusedDifferentialKernels.UnfusedDoubleSumKernel)
-    ))
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_unfusedDoubleSum = DiffCases.Create(
+        StackLinqUnfusedDifferentialKernels.LaunchUnfusedDoubleSumKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSlices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedDoubleSumKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        Reference = static (b, _) => UnfusedDoubleSumReference(b.Get<int>("xs"), b.Get<long>("r")),
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r",
+        reference: static (b, _) => UnfusedDoubleSumReference(b.Get<int>("xs"), b.Get<long>("r")));
 
     // A floating-point Sum stops the C# run of the launcher (it cannot tell that a sum of four ints does not depend on
     // the order), so the reference sums each slice in order, as the generated code does; four ints sum exactly
@@ -79,47 +65,29 @@ public class StackLinqUnfusedDifferentialTests
         }
     }
 
-    internal static readonly DifferentialCase s_indexedLambdas = new(
-        $"{nameof(StackLinqUnfusedDifferentialKernels)}.{nameof(StackLinqUnfusedDifferentialKernels.IndexedLambdaKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_indexedLambdas = DiffCases.Create(
+        StackLinqUnfusedDifferentialKernels.LaunchIndexedLambdaKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", BuildSlices(rng, rows), OutputPolicy.Exact)
             .Out<long>("r", rows, StackLinqUnfusedDifferentialKernels.IndexedLambdaColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => StackLinqUnfusedDifferentialKernels.LaunchIndexedLambdaKernel(
-            b.Get<int>("xs"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX
-        ),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(64),
+        inputName: "xs",
+        outputName: "r");
 
     // Seed 1 gives row 3 a threshold above every element: Last(predicate) finds no match and throws the message of
     // C# and System.Linq, on the fused and the unfused path alike
     internal static readonly DifferentialCase s_fusedLastNoMatch = LastPredicateCase(
-        nameof(StackLinqUnfusedDifferentialKernels.LastPredicateNoMatchKernel),
-        static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchLastPredicateNoMatchKernel(
-            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        StackLinqUnfusedDifferentialKernels.LaunchLastPredicateNoMatchKernel);
 
     internal static readonly DifferentialCase s_unfusedLastNoMatch = LastPredicateCase(
-        nameof(StackLinqUnfusedDifferentialKernels.UnfusedLastPredicateNoMatchKernel),
-        static (x, t, d, s) => StackLinqUnfusedDifferentialKernels.LaunchUnfusedLastPredicateNoMatchKernel(
-            x, t, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        StackLinqUnfusedDifferentialKernels.LaunchUnfusedLastPredicateNoMatchKernel);
 
-    private delegate void LastLaunch(int[] xs, int[] thresholds, int[] dst, LaunchShape shape);
-
-    private static DifferentialCase LastPredicateCase(string kernel, LastLaunch launch) =>
-        new($"{nameof(StackLinqUnfusedDifferentialKernels)}.{kernel}")
-        {
-            Shape = LaunchShapes.Linear(TrapRows, 32),
-            Seeds = [0, 1],
-            ExpectedException = static (rng, _) => rng.Seed == 1
-                ? ExceptionPolicy.For<InvalidOperationException>(
-                    DiffPaths.CheckedPaths(),
-                    messageContains: "Sequence contains no matching element")
-                : null,
-            Inputs = static (rng, shape) =>
+    private static DifferentialCase LastPredicateCase(
+        Int32PairRowsLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (rng, shape) =>
             {
                 int rows = shape.Rows;
                 var xs = new int[rows * SliceLen];
@@ -142,9 +110,17 @@ public class StackLinqUnfusedDifferentialTests
                     .In("thresholds", thresholds, readOnly: true)
                     .Out<int>("dst", rows, StackLinqUnfusedDifferentialKernels.LastPredicateColumns, OutputPolicy.Exact);
             },
-            Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("thresholds"), b.Get<int>("dst"), s),
-            OracleIsLaunch = true,
-        };
+            shape: LaunchShapes.Linear(TrapRows, 32),
+            firstInputName: "xs",
+            secondInputName: "thresholds",
+            outputName: "dst",
+            seeds: [0, 1],
+            expectedException: static (rng, _) => rng.Seed == 1
+                ? ExceptionPolicy.For<InvalidOperationException>(
+                    DiffPaths.CheckedPaths(),
+                    messageContains: "Sequence contains no matching element")
+                : null,
+            launchExpression: launchExpression);
 
     [SkippableFact]
     public void StackLinq_UnfusedOperators_MatchTheOracleOnEveryPath() => DifferentialRunner.Run(s_unfusedOperators);

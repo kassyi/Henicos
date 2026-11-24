@@ -114,7 +114,12 @@ public class StackModelTests
         int outValue = 0;
 
         RunManaged(() =>
-            StackModelKernels.LaunchRefOutKernel(input, output, ref refTotal, out outValue, n, blockDimX: n));
+            StackModelKernels.LaunchRefOutKernel(
+                buffers: new StackModelRefOutBuffers { Input = input, Output = output },
+                refTotal: ref refTotal,
+                outValue: out outValue,
+                n: n,
+                blockDimX: n));
 
         for (int i = 0; i < n; i++)
         {

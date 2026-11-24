@@ -18,6 +18,45 @@ public enum DiffSwitchByteTag : byte
     High = 255,
 }
 
+public struct SwitchNarrowIntegerOperands
+{
+    [GpuReadOnly] public byte[] Unsigned8Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+    [GpuReadOnly] public short[] Signed16Values;
+    [GpuReadOnly] public ushort[] Unsigned16Values;
+}
+
+public struct SwitchIntAndLongOperands
+{
+    [GpuReadOnly] public int[] FirstInt32Values;
+    [GpuReadOnly] public int[] SecondInt32Values;
+    [GpuReadOnly] public long[] Int64Values;
+}
+
+public struct TernaryConditionOperands
+{
+    [GpuReadOnly] public int[] FirstValues;
+    [GpuReadOnly] public int[] SecondValues;
+    [GpuReadOnly] public int[] ThirdValues;
+}
+
+public struct TernaryMixedWidthOperands
+{
+    [GpuReadOnly] public int[] Conditions;
+    [GpuReadOnly] public uint[] Unsigned32Values;
+    [GpuReadOnly] public int[] Signed32Values;
+    [GpuReadOnly] public short[] Signed16Values;
+    [GpuReadOnly] public ushort[] Unsigned16Values;
+    [GpuReadOnly] public byte[] Unsigned8Values;
+    [GpuReadOnly] public sbyte[] Signed8Values;
+}
+
+public struct TernaryMixedWidthResults
+{
+    public long[] Int64Results;
+    public double[] DoubleResults;
+}
+
 /// <summary>
 /// Differential kernels (<c>switch</c> statements, <c>switch</c> expressions,
 /// pattern matching <c>is null</c> / <c>is not null</c>, ternary <c>?:</c>, null-coalescing <c>??</c> / <c>??=</c>,
@@ -219,23 +258,21 @@ public static partial class SwitchDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void SwitchNarrowCharEnumStatementKernel(
-        byte[] ba,
-        sbyte[] sba,
-        short[] sa,
-        ushort[] usa,
-        int[] dst,
-        int n)
+        SwitchNarrowIntegerOperands operands,
+        int[] results,
+        int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
 
-        byte bv = ba[t];
-        sbyte sbv = sba[t];
-        short sv = sa[t];
-        ushort usv = usa[t];
+        byte bv = operands.Unsigned8Values[t];
+        sbyte sbv = operands.Signed8Values[t];
+        short sv = operands.Signed16Values[t];
+        ushort usv = operands.Unsigned16Values[t];
+        var dst = results;
         int col = t * 4;
 
         // Col 0: byte and sbyte switches
@@ -505,17 +542,21 @@ public static partial class SwitchDifferentialKernels
     // 5. Switch expressions: int, long, ulong, nested switch expressions, side-effecting governing expr
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void SwitchExpressionIntAndLongKernel(int[] a, int[] b, long[] la, long[] dst, int n)
+    public static void SwitchExpressionIntAndLongKernel(
+        SwitchIntAndLongOperands operands,
+        long[] results,
+        int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
 
-        int v = a[t];
-        int w = b[t];
-        long lv = la[t];
+        int v = operands.FirstInt32Values[t];
+        int w = operands.SecondInt32Values[t];
+        long lv = operands.Int64Values[t];
+        var dst = results;
         int col = t * 4;
 
         // Col 0: int switch expression with boundary constants
@@ -625,17 +666,18 @@ public static partial class SwitchDifferentialKernels
     // 7. Ternary (?:): nested associativity, short-circuit side effects, ref ternary
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void TernaryNestedAndRefKernel(int[] a, int[] b, int[] c, int[] dst, int n)
+    public static void TernaryNestedAndRefKernel(TernaryConditionOperands operands, int[] results, int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
 
-        int x = a[t];
-        int y = b[t];
-        int z = c[t];
+        int x = operands.FirstValues[t];
+        int y = operands.SecondValues[t];
+        int z = operands.ThirdValues[t];
+        var dst = results;
         int col = t * 4;
 
         // Col 0: right-associative chain c1 ? v1 : c2 ? v2 : c3 ? v3 : v4
@@ -676,30 +718,25 @@ public static partial class SwitchDifferentialKernels
     // -------------------------------------------------------------------------
     [GpuKernel]
     public static void TernaryTargetTypedAndNarrowKernel(
-        int[] conds,
-        uint[] ua,
-        int[] ia,
-        short[] sa,
-        ushort[] usa,
-        byte[] ba,
-        sbyte[] sba,
-        long[] ldst,
-        double[] ddst,
-        int n)
+        TernaryMixedWidthOperands operands,
+        TernaryMixedWidthResults results,
+        int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
 
-        int c = conds[t];
-        uint uv = ua[t];
-        int iv = ia[t];
-        short sv = sa[t];
-        ushort usv = usa[t];
-        byte bv = ba[t];
-        sbyte sbv = sba[t];
+        int c = operands.Conditions[t];
+        uint uv = operands.Unsigned32Values[t];
+        int iv = operands.Signed32Values[t];
+        short sv = operands.Signed16Values[t];
+        ushort usv = operands.Unsigned16Values[t];
+        byte bv = operands.Unsigned8Values[t];
+        sbyte sbv = operands.Signed8Values[t];
+        var ldst = results.Int64Results;
+        var ddst = results.DoubleResults;
         int lcol = t * 4;
         int dcol = t * 2;
 

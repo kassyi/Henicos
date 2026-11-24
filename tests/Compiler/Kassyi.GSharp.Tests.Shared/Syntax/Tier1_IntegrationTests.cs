@@ -29,13 +29,10 @@ public class Tier1_IntegrationTests : TranspilerTestBase
 
         // We can just execute the CPU JIT which sets the thread index properly!
         Tier1IntegrationKernels.LaunchAllInOneKernel(
-            intInput,
-            floatInput,
-            gpuResults,
-            config,
-            gpuCounter,
-            count,
-            count, // dynamicSharedSize: the element count of the kernel's SharedMemory<float>
+            inputs: new Tier1IntegrationInputs { Integers = intInput, Singles = floatInput, Config = config },
+            outputs: new Tier1IntegrationOutputs { Results = gpuResults, GlobalCounter = gpuCounter },
+            count: count,
+            dynamicSharedSize: count, // the element count of the kernel's SharedMemory<float>
             blockDimX: count,
             sharedMemBytes: (uint)(count * sizeof(float))
         );

@@ -13,24 +13,20 @@ public class GenericPhantomDifferentialTests
 {
     private const int Rows = 128;
 
-    internal static readonly DifferentialCase s_phantom = new(
-        $"{nameof(GenericPhantomDifferentialKernels)}.{nameof(GenericPhantomDifferentialKernels.PhantomKernel)}")
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_phantom = DiffCases.Create(
+        GenericPhantomDifferentialKernels.LaunchPhantomKernel,
+        inputs: static (rng, rows) =>
         {
             var (xs, _) = DiffValues.Int32Pairs(rng, rows);
             return new DiffBuffers()
                 .In("xs", xs)
                 .Out<int>("r", rows, GenericPhantomDifferentialKernels.Columns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => GenericPhantomDifferentialKernels.LaunchPhantomKernel(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "xs",
+        outputName: "r",
         // The kernel waits at a barrier, which the C# execution cannot run thread by thread
-        Reference = static (b, s) =>
+        reference: static (b, s) =>
         {
             var xs = b.Get<int>("xs");
             var r = b.Get<int>("r");
@@ -42,8 +38,7 @@ public class GenericPhantomDifferentialTests
                 r[(tid * 4) + 2] = (x - 5) * 2;
                 r[(tid * 4) + 3] = (x * 3) + 4;
             }
-        },
-    };
+        });
 
     [SkippableFact]
     public void PhantomKernel_TypeParametersNamedNowhere_MatchesTheOracleOnEveryPath() =>

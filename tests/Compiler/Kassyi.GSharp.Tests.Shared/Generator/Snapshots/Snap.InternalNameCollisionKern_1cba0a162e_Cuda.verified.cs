@@ -97,7 +97,7 @@ new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(375075184u, "InternalNameC
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1249029793u, "InternalNameCollisionKernels.cs", 74, 9, "LoweringLabelNamedLabelsKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(661852531u, "InternalNameCollisionKernels.cs", 82, 27, "WarpTempNamedLocalKernel", "G#: a null array is read"),
 new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(1285238897u, "InternalNameCollisionKernels.cs", 85, 9, "WarpTempNamedLocalKernel", "G#: a null array is read"),
-new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(633094941u, "InternalNameCollisionKernels.cs", 98, 9, "LauncherLocalNamedParametersKernel", "G#: a null array is read"),
+new global::Kassyi.GSharp.Runtime.Aot.GSharpErrorSite(235502467u, "InternalNameCollisionKernels.cs", 99, 9, "LauncherLocalNamedParametersKernel", "G#: a null array is read"),
 };
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -826,7 +826,7 @@ __gsharp_launch_epoch = __gsharp_epoch;
 int __gsharp_id_10_tid = (int)threadIdx.x;
 int __gsharp_id_11_sum = __gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_add_i32(__gsharp_id_1__gsharp_contexts,__gsharp_id_2__gsharp_total_blocks),__gsharp_id_3__gsharp_threads_per_block),__gsharp_id_4__gsharp_total_threads),__gsharp_id_5__gsharp_launch_error),__gsharp_id_6__b_idx),__gsharp_id_7__t_idx),__gsharp_id_8__ctxtid),__gsharp_id_9__cudaCtxScope);
 __syncthreads();
-__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_10_tid, 633094941u)=__gsharp_id_11_sum;
+__gsharp_array_at(__gsharp_id_0_data, __gsharp_id_10_tid, 235502467u)=__gsharp_id_11_sum;
 }
 ";
 private static readonly global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction __gsharp_hfunc_LauncherLocalNamedParametersKernel = new global::Kassyi.GSharp.Runtime.Aot.CudaKernelFunction("__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionKernels__LauncherLocalNamedParametersKernel", global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetFatbin);
