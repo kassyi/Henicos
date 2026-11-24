@@ -109,36 +109,13 @@ internal static class ManagedStackEligibility
                    $"{WarpFrameLayout.MaxSize}";
         }
 
-        if (DeclaresUsingWithActiveMask(kernel, compilation))
+        if (StackBodyObstacles.DeclaresUsingWithActiveMask(kernel, compilation))
         {
             return "it reaches Warp.ActiveMask() and declares a local with using: a jump of its reconvergence " +
                    "regions may pass the declaration";
         }
 
         return null;
-    }
-
-    // [WHY] A method that reaches Warp.ActiveMask() gets the reconvergence regions, whose gotos (a continue that leaves
-    // the region of a loop body) go to a label after the statements they skip. A using declaration among those
-    // statements makes such a goto jump past it, which C# forbids (CS8648) and C++ forbids as a jump into the try that
-    // the declaration becomes; the native stack model keeps the method on its state machine for the same reason
-    // (NativeStackObstacle.UsingDeclarationWithActiveMask)
-    private static bool DeclaresUsingWithActiveMask(IMethodSymbol method, Compilation compilation)
-    {
-        if (!SuspensionAnalysis.ReachesActiveMask(method, compilation) ||
-            !method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var declaration) ||
-            !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
-        {
-            return false;
-        }
-
-        var semanticModel = compilation.GetCachedSemanticModel(declaration.SyntaxTree);
-        return RemovedCalls.DescendantNodesThatRun(declaration, semanticModel)
-            .AsStackEnumerable()
-            .Any(static node => node is LocalDeclarationStatementSyntax
-            {
-                UsingKeyword.RawKind: (int)SyntaxKind.UsingKeyword
-            });
     }
 
     private static bool ComputeIsStackFunction(IMethodSymbol function, Compilation compilation)
@@ -160,7 +137,7 @@ internal static class ManagedStackEligibility
 
         if (SuspensionAnalysis.ReachesWarpShuffle(function, compilation) &&
             !WarpFrameLayout.TryGet(function, compilation, out _) ||
-            DeclaresUsingWithActiveMask(function, compilation))
+            StackBodyObstacles.DeclaresUsingWithActiveMask(function, compilation))
         {
             return false;
         }
