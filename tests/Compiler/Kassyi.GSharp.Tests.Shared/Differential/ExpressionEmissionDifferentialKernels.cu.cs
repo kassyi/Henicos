@@ -36,6 +36,18 @@ public struct DiffInitWithConstructor
     }
 }
 
+public struct ImplicitConversionInputs
+{
+    [GpuReadOnly] public int[] Int32Values;
+    [GpuReadOnly] public long[] Int64Values;
+}
+
+public struct ImplicitConversionResults
+{
+    public float[] SingleResults;
+    public double[] DoubleResults;
+}
+
 /// <summary>
 /// Differential kernels for expression forms whose C++ needs the conversions or the shape C# gives them: switch
 /// expressions whose arms have different types and switch expressions over <see cref="float"/> and
@@ -320,13 +332,21 @@ public static partial class ExpressionEmissionDifferentialKernels
     // 4. Arguments that C# converts implicitly reach brace-initialized constructors and array initializers converted
     // -------------------------------------------------------------------------
     [GpuKernel]
-    public static void ImplicitArgumentConversionKernel(int[] a, long[] la, float[] dst, double[] ddst, int n)
+    public static void ImplicitArgumentConversionKernel(
+        ImplicitConversionInputs inputs,
+        ImplicitConversionResults results,
+        int rowCount)
     {
         int t = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (t >= n)
+        if (t >= rowCount)
         {
             return;
         }
+
+        var a = inputs.Int32Values;
+        var la = inputs.Int64Values;
+        var dst = results.SingleResults;
+        var ddst = results.DoubleResults;
 
         int v = a[t];
         long l = la[t];

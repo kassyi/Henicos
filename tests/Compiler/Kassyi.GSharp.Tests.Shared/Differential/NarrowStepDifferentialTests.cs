@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -30,57 +31,32 @@ public class NarrowStepDifferentialTests
     ];
 
     private static DifferentialCase CreateStepCase(
-        string kernelName,
-        Action<DiffBuffers, LaunchShape> launch) =>
-        new($"{nameof(NarrowStepDifferentialKernels)}.{kernelName}")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        Int32ToInt64Launch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("a", DiffValues.Mixed(rng, rows, s_narrowStepBoundaries, static r => unchecked((int)r.NextUInt64())))
                 .Out<long>("r", rows, NarrowStepDifferentialKernels.NarrowStepColumns, OutputPolicy.Exact),
-            Launch = launch,
-            OracleIsLaunch = true,
-        };
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "a",
+            outputName: "r",
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_sbyteStep = CreateStepCase(
-        nameof(NarrowStepDifferentialKernels.SByteStepKernel),
-        static (b, s) => NarrowStepDifferentialKernels.LaunchSByteStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX));
+        NarrowStepDifferentialKernels.LaunchSByteStepKernel);
 
     internal static readonly DifferentialCase s_byteStep = CreateStepCase(
-        nameof(NarrowStepDifferentialKernels.ByteStepKernel),
-        static (b, s) => NarrowStepDifferentialKernels.LaunchByteStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX));
+        NarrowStepDifferentialKernels.LaunchByteStepKernel);
 
     internal static readonly DifferentialCase s_int16Step = CreateStepCase(
-        nameof(NarrowStepDifferentialKernels.Int16StepKernel),
-        static (b, s) => NarrowStepDifferentialKernels.LaunchInt16StepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX));
+        NarrowStepDifferentialKernels.LaunchInt16StepKernel);
 
     internal static readonly DifferentialCase s_uint16Step = CreateStepCase(
-        nameof(NarrowStepDifferentialKernels.UInt16StepKernel),
-        static (b, s) => NarrowStepDifferentialKernels.LaunchUInt16StepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX));
+        NarrowStepDifferentialKernels.LaunchUInt16StepKernel);
 
     internal static readonly DifferentialCase s_charStep = CreateStepCase(
-        nameof(NarrowStepDifferentialKernels.CharStepKernel),
-        static (b, s) => NarrowStepDifferentialKernels.LaunchCharStepKernel(
-            b.Get<int>("a"),
-            b.Get<long>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX));
+        NarrowStepDifferentialKernels.LaunchCharStepKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

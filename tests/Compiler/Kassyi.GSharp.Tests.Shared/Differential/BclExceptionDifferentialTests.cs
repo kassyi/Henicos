@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Kassyi.ZeroAlloc.Linq;
 using Xunit;
@@ -35,13 +36,9 @@ public sealed class BclExceptionDifferentialTests
         (0.0, 0.0, 1.0),
     ];
 
-    internal static readonly DifferentialCase s_nullableInt32ValueAccess = new(
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableInt32ValueAccessKernel)}")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_nullableInt32ValueAccess = DiffCases.Create(
+        BclExceptionDifferentialKernels.LaunchNullableInt32ValueAccessKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var hasInt = new int[rows];
@@ -58,15 +55,11 @@ public sealed class BclExceptionDifferentialTests
                 .In("intVals", intVals, readOnly: true)
                 .Out<int>("dst", rows, BclExceptionDifferentialKernels.NullableInt32ValueColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchNullableInt32ValueAccessKernel(
-            b.Get<int>("hasInt"),
-            b.Get<int>("intVals"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "hasInt",
+        secondInputName: "intVals",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
     internal static readonly DifferentialCase s_nullableStructValueAccess = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.NullableStructValueAccessKernel)}")
@@ -94,11 +87,14 @@ public sealed class BclExceptionDifferentialTests
                 .Out<int>("dst", rows, BclExceptionDifferentialKernels.NullableStructValueColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchNullableStructValueAccessKernel(
-            b.Get<int>("hasPair"),
-            b.Get<int>("pairX"),
-            b.Get<int>("pairY"),
-            b.Get<int>("dst"),
-            s.Rows,
+            inputs: new NullableStructPairInputs
+            {
+                HasPairFlags = b.Get<int>("hasPair"),
+                PairXValues = b.Get<int>("pairX"),
+                PairYValues = b.Get<int>("pairY"),
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -137,11 +133,14 @@ public sealed class BclExceptionDifferentialTests
                 .Out<int>("dst", rows, BclExceptionDifferentialKernels.MathClampIntColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchMathClampInt32Kernel(
-            b.Get<int>("vals"),
-            b.Get<int>("mins"),
-            b.Get<int>("maxs"),
-            b.Get<int>("dst"),
-            s.Rows,
+            inputs: new Int32ClampInputs
+            {
+                Values = b.Get<int>("vals"),
+                Minimums = b.Get<int>("mins"),
+                Maximums = b.Get<int>("maxs"),
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -181,11 +180,14 @@ public sealed class BclExceptionDifferentialTests
                 .Out<float>("dst", rows, BclExceptionDifferentialKernels.MathClampFloatColumns, OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchMathClampSingleKernel(
-            b.Get<float>("vals"),
-            b.Get<float>("mins"),
-            b.Get<float>("maxs"),
-            b.Get<float>("dst"),
-            s.Rows,
+            inputs: new SingleClampInputs
+            {
+                Values = b.Get<float>("vals"),
+                Minimums = b.Get<float>("mins"),
+                Maximums = b.Get<float>("maxs"),
+            },
+            results: b.Get<float>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -225,17 +227,18 @@ public sealed class BclExceptionDifferentialTests
                 .Out<double>("dst", rows, BclExceptionDifferentialKernels.MathClampDoubleColumns, OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchMathClampDoubleKernel(
-            b.Get<double>("vals"),
-            b.Get<double>("mins"),
-            b.Get<double>("maxs"),
-            b.Get<double>("dst"),
-            s.Rows,
+            inputs: new DoubleClampInputs
+            {
+                Values = b.Get<double>("vals"),
+                Minimums = b.Get<double>("mins"),
+                Maximums = b.Get<double>("maxs"),
+            },
+            results: b.Get<double>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
-
-    private delegate void SliceLaunch(int[] backing, int[] lengths, int[] dst, LaunchShape shape);
 
     private static DiffBuffers SliceInputs(int rows, int validLength, int faultLength)
     {
@@ -259,80 +262,67 @@ public sealed class BclExceptionDifferentialTests
     }
 
     private static DifferentialCase SliceCase(
-        string kernel, int validLength, int faultLength, SliceLaunch launch) =>
-        new($"{nameof(BclExceptionDifferentialKernels)}.{kernel}")
-        {
-            Shape = LaunchShapes.Linear(DefaultRows, 32),
-            Seeds = [0, 1],
-            OracleExceptions = OracleExceptionMode.MatchOracle,
-            Inputs = (rng, shape) => SliceInputs(shape.Rows, validLength, rng.Seed == 1 ? faultLength : validLength),
-            Launch = (b, s) => launch(b.Get<int>("backing"), b.Get<int>("lengths"), b.Get<int>("dst"), s),
-            OracleIsLaunch = true,
-        };
+        Int32PairRowsLaunch launch,
+        int validLength,
+        int faultLength,
+        string? suffix = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, shape) => SliceInputs(shape.Rows, validLength, rng.Seed == 1 ? faultLength : validLength),
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            firstInputName: "backing",
+            secondInputName: "lengths",
+            suffix: suffix,
+            seeds: [0, 1],
+            oracleExceptions: OracleExceptionMode.MatchOracle,
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_firstOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqFirstKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqFirstKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqFirstKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_lastOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqLastKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqLastKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqLastKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_singleOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqSingleKernel,
         validLength: 1,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqSingleKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_singleOnTwoElements = SliceCase(
-        $"{nameof(BclExceptionDifferentialKernels.StackLinqSingleKernel)}_TwoElements",
+        BclExceptionDifferentialKernels.LaunchStackLinqSingleKernel,
         validLength: 1,
         faultLength: 2,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqSingleKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        suffix: "_TwoElements");
 
     internal static readonly DifferentialCase s_minOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqMinKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqMinKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqMinKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_maxOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqMaxKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqMaxKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqMaxKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_averageOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqAverageKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqAverageKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqAverageKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     internal static readonly DifferentialCase s_aggregateOnEmpty = SliceCase(
-        nameof(BclExceptionDifferentialKernels.StackLinqAggregateKernel),
+        BclExceptionDifferentialKernels.LaunchStackLinqAggregateKernel,
         validLength: SliceWidth,
-        faultLength: 0,
-        static (x, n, d, s) => BclExceptionDifferentialKernels.LaunchStackLinqAggregateKernel(
-            x, n, d, s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX));
+        faultLength: 0);
 
     private static DifferentialCase ElementAtCase(string suffix, int validIdx, int faultIdx) =>
-        new($"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.StackLinqElementAtKernel)}_{suffix}")
-        {
-            Shape = LaunchShapes.Linear(DefaultRows, 32),
-            Seeds = [0, 1],
-            OracleExceptions = OracleExceptionMode.MatchOracle,
-            Inputs = (rng, shape) =>
+        DiffCases.Create(
+            BclExceptionDifferentialKernels.LaunchStackLinqElementAtKernel,
+            inputs: (rng, shape) =>
             {
                 int rows = shape.Rows;
                 var backing = new int[rows * SliceWidth];
@@ -356,25 +346,19 @@ public sealed class BclExceptionDifferentialTests
                     .In("indices", indices, readOnly: true)
                     .Out<int>("dst", rows, BclExceptionDifferentialKernels.StackLinqElementAtColumns, OutputPolicy.Exact);
             },
-            Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchStackLinqElementAtKernel(
-                b.Get<int>("backing"),
-                b.Get<int>("indices"),
-                b.Get<int>("dst"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shape: LaunchShapes.Linear(DefaultRows, 32),
+            firstInputName: "backing",
+            secondInputName: "indices",
+            suffix: $"_{suffix}",
+            seeds: [0, 1],
+            oracleExceptions: OracleExceptionMode.MatchOracle);
 
     internal static readonly DifferentialCase s_elementAtNegative = ElementAtCase("NegativeIndex", validIdx: 1, faultIdx: -1);
     internal static readonly DifferentialCase s_elementAtPastEnd = ElementAtCase("PastEnd", validIdx: 1, faultIdx: SliceWidth);
 
-    internal static readonly DifferentialCase s_elementAtOrDefaultNegativeIndexSideEffect = new(
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.ElementAtOrDefaultNegativeIndexSideEffectKernel)}")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0],
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_elementAtOrDefaultNegativeIndexSideEffect = DiffCases.Create(
+        BclExceptionDifferentialKernels.LaunchElementAtOrDefaultNegativeIndexSideEffectKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var backing = new int[rows * SliceWidth];
@@ -398,18 +382,14 @@ public sealed class BclExceptionDifferentialTests
                     ],
                     OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchElementAtOrDefaultNegativeIndexSideEffectKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        Reference = static (b, s) =>
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        inputName: "backing",
+        seeds: [0],
+        reference: static (b, s) =>
         {
             // Reference: ElementAtOrDefault(-1) returns default (0) without running any upstream side effects.
             // All dst entries remain zero (default buffer state).
-        },
-    };
+        });
 
     internal static readonly DifferentialCase s_sortLengthMismatch = new(
         $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortLengthMismatchKernel)}")
@@ -446,23 +426,22 @@ public sealed class BclExceptionDifferentialTests
                 .Out<int>("dst", rows, BclExceptionDifferentialKernels.SortExceptionColumns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchMemoryExtensionsSortLengthMismatchKernel(
-            b.Get<int>("keys"),
-            b.Get<int>("items"),
-            b.Get<int>("itemLens"),
-            b.Get<int>("dst"),
-            s.Rows,
+            buffers: new SortLengthMismatchBuffers
+            {
+                KeysBacking = b.Get<int>("keys"),
+                ItemsBacking = b.Get<int>("items"),
+                ItemLengths = b.Get<int>("itemLens"),
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_sortComparerTrap = new(
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.MemoryExtensionsSortComparerTrapKernel)}")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_sortComparerTrap = DiffCases.Create(
+        BclExceptionDifferentialKernels.LaunchMemoryExtensionsSortComparerTrapKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var keys = new int[rows * SliceWidth];
@@ -487,23 +466,15 @@ public sealed class BclExceptionDifferentialTests
                 .In("trapTriggers", trapTriggers, readOnly: true)
                 .Out<int>("dst", rows, BclExceptionDifferentialKernels.SortExceptionColumns, OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchMemoryExtensionsSortComparerTrapKernel(
-            b.Get<int>("keys"),
-            b.Get<int>("trapTriggers"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "keys",
+        secondInputName: "trapTriggers",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
-    internal static readonly DifferentialCase s_trapNonContinuationGuard = new(
-        $"{nameof(BclExceptionDifferentialKernels)}.{nameof(BclExceptionDifferentialKernels.TrapNonContinuationGuardKernel)}")
-    {
-        Shape = LaunchShapes.Linear(DefaultRows, 32),
-        Seeds = [0, 1],
-        OracleExceptions = OracleExceptionMode.MatchOracle,
-        Inputs = static (rng, shape) =>
+    internal static readonly DifferentialCase s_trapNonContinuationGuard = DiffCases.Create(
+        BclExceptionDifferentialKernels.LaunchTrapNonContinuationGuardKernel,
+        inputs: static (rng, shape) =>
         {
             int rows = shape.Rows;
             var backing = new int[rows * SliceWidth];
@@ -528,15 +499,11 @@ public sealed class BclExceptionDifferentialTests
                 .In("thresholds", thresholds, readOnly: true)
                 .Out<int>("dst", rows, ["quot_after_first"], OutputPolicy.Exact);
         },
-        Launch = static (b, s) => BclExceptionDifferentialKernels.LaunchTrapNonContinuationGuardKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("thresholds"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.Linear(DefaultRows, 32),
+        firstInputName: "backing",
+        secondInputName: "thresholds",
+        seeds: [0, 1],
+        oracleExceptions: OracleExceptionMode.MatchOracle);
 
     [SkippableFact]
     public void ValueAccess_NullableInt32_MatchesTheOracleOnEveryPath() =>

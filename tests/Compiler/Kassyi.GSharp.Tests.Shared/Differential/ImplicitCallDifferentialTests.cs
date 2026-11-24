@@ -14,37 +14,23 @@ public class ImplicitCallDifferentialTests
 {
     private const int Rows = 128;
 
-    private const string Kernels = nameof(ImplicitCallDifferentialKernels);
-
-    internal static readonly DifferentialCase s_collectionBuilder = new(
-        Kernels + "." + nameof(ImplicitCallDifferentialKernels.CollectionBuilderKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_collectionBuilder = DiffCases.Create(
+        ImplicitCallDifferentialKernels.LaunchCollectionBuilderKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("inputs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, ImplicitCallDifferentialKernels.BuilderColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => ImplicitCallDifferentialKernels.LaunchCollectionBuilderKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "inputs",
+        outputName: "r");
 
-    internal static readonly DifferentialCase s_pinnableReference = new(
-        Kernels + "." + nameof(ImplicitCallDifferentialKernels.PinnableReferenceKernel))
-    {
-        Shape = LaunchShape.ForRows(Rows, blockX: 64),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_pinnableReference = DiffCases.Create(
+        ImplicitCallDifferentialKernels.LaunchPinnableReferenceKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("inputs", DiffValues.Int32(rng, rows))
             .Out<int>("r", rows, ImplicitCallDifferentialKernels.PinnableColumns, OutputPolicy.Exact),
-        Launch = static (b, s) => ImplicitCallDifferentialKernels.LaunchPinnableReferenceKernel(
-            b.Get<int>("inputs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShape.ForRows(Rows, blockX: 64),
+        inputName: "inputs",
+        outputName: "r");
 
     [SkippableFact]
     public void CollectionExpression_CollectionBuilderType_MatchesTheOracleOnEveryPath() =>

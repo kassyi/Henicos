@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
@@ -51,14 +52,14 @@ public class NativeIntegerOperatorDifferentialTests
 
     // model: the result that G# gives on every path for a signed division, where C# throws for MinValue / -1 (the
     // spec: implementation-defined in an unchecked context): MinValue, and 0 for the remainder
-    private static DifferentialCase Binary(string kernel, string kind,
-        Action<long[], long[], long[], int, uint, uint> launch, Func<long, long, long>? model = null) =>
-        new($"{nameof(NativeIntegerOperatorKernels)}.{kernel}Kernel")
-        {
-            Shapes = s_shapes,
-            Seeds = kind switch { "div" => [0, 1, 2], "sdivzero" => [1], _ => [0] },
-            OracleExceptions = OracleExceptionMode.MatchOracle,
-            Inputs = (rng, shape) =>
+    private static DifferentialCase Binary(
+        Int64PairRowsLaunch launch,
+        string kind,
+        Func<long, long, long>? model = null,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: (rng, shape) =>
             {
                 var a = Cycle(s_edges, shape.Rows, 1);
                 var b = Cycle(kind == "shift" ? s_counts : s_edges, shape.Rows, s_edges.Length);
@@ -88,10 +89,10 @@ public class NativeIntegerOperatorDifferentialTests
                     .In("b", b, readOnly: true)
                     .Out<long>("dst", shape.Rows, OutputPolicy.Exact);
             },
-            Launch = (b, s) =>
-                launch(b.Get<long>("a"), b.Get<long>("b"), b.Get<long>("dst"), s.Rows, s.GridX, s.BlockX),
-            OracleIsLaunch = model is null,
-            Reference = model is null
+            shapes: s_shapes,
+            seeds: kind switch { "div" => [0, 1, 2], "sdivzero" => [1], _ => [0] },
+            oracleExceptions: OracleExceptionMode.MatchOracle,
+            reference: model is null
                 ? null
                 : (b, s) =>
                 {
@@ -103,23 +104,21 @@ public class NativeIntegerOperatorDifferentialTests
                         dst[i] = model(a[i], divisors[i]);
                     }
                 },
-        };
+            launchExpression: launchExpression);
 
-    private static DifferentialCase Unary(string kernel, Action<long[], long[], int, uint, uint> launch) =>
-        new($"{nameof(NativeIntegerOperatorKernels)}.{kernel}Kernel")
-        {
-            Shapes = s_shapes,
-            Inputs = static (rng, shape) => new DiffBuffers()
+    private static DifferentialCase Unary(
+        Int64RowsLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (_, shape) => new DiffBuffers()
                 .In("a", Cycle(s_edges, shape.Rows, 1), readOnly: true)
                 .Out<long>("dst", shape.Rows, OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<long>("a"), b.Get<long>("dst"), s.Rows, s.GridX, s.BlockX),
-            OracleIsLaunch = true,
-        };
+            shapes: s_shapes,
+            launchExpression: launchExpression);
 
     internal static readonly DifferentialCase s_nintAdd = Binary(
-        "NintAdd", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintAddKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintAddKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -129,9 +128,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintAdd);
 
     internal static readonly DifferentialCase s_nintSubtract = Binary(
-        "NintSubtract", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintSubtractKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintSubtractKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -141,9 +138,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintSubtract);
 
     internal static readonly DifferentialCase s_nintMultiply = Binary(
-        "NintMultiply", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintMultiplyKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintMultiplyKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -153,9 +148,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintMultiply);
 
     internal static readonly DifferentialCase s_nintAnd = Binary(
-        "NintAnd", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintAndKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintAndKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -165,9 +158,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintAnd);
 
     internal static readonly DifferentialCase s_nintOr = Binary(
-        "NintOr", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintOrKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintOrKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -177,9 +168,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintOr);
 
     internal static readonly DifferentialCase s_nintXor = Binary(
-        "NintXor", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintXorKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintXorKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -189,9 +178,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintXor);
 
     internal static readonly DifferentialCase s_nintLessThan = Binary(
-        "NintLessThan", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintLessThanKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintLessThanKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -201,9 +188,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintLessThan);
 
     internal static readonly DifferentialCase s_nintDivide = Binary(
-        "NintDivide", "sdiv",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintDivideKernel(a, b, d, n, gridDimX: g, blockDimX: x),
+        NativeIntegerOperatorKernels.LaunchNintDivideKernel, "sdiv",
         static (a, b) => b == -1 ? unchecked(-a) : a / b);
 
     [SkippableFact]
@@ -214,9 +199,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintDivide);
 
     internal static readonly DifferentialCase s_nintDivideByZero = Binary(
-        "NintDivide", "sdivzero",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintDivideKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintDivideKernel, "sdivzero");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -226,9 +209,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintDivideByZero);
 
     internal static readonly DifferentialCase s_nintRemainder = Binary(
-        "NintRemainder", "sdiv",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintRemainderKernel(a, b, d, n, gridDimX: g, blockDimX: x),
+        NativeIntegerOperatorKernels.LaunchNintRemainderKernel, "sdiv",
         static (a, b) => b == -1 ? 0 : a % b);
 
     [SkippableFact]
@@ -239,9 +220,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintRemainder);
 
     internal static readonly DifferentialCase s_nintRemainderByZero = Binary(
-        "NintRemainder", "sdivzero",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintRemainderKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintRemainderKernel, "sdivzero");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -251,9 +230,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintRemainderByZero);
 
     internal static readonly DifferentialCase s_nintShiftLeft = Binary(
-        "NintShiftLeft", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintShiftLeftKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintShiftLeftKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -263,9 +240,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintShiftLeft);
 
     internal static readonly DifferentialCase s_nintShiftRight = Binary(
-        "NintShiftRight", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintShiftRightKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintShiftRightKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -275,9 +250,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintShiftRight);
 
     internal static readonly DifferentialCase s_nintUnsignedShiftRight = Binary(
-        "NintUnsignedShiftRight", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintUnsignedShiftRightKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintUnsignedShiftRightKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -287,9 +260,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintUnsignedShiftRight);
 
     internal static readonly DifferentialCase s_nintNegate = Unary(
-        "NintNegate",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintNegateKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintNegateKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -299,9 +270,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintNegate);
 
     internal static readonly DifferentialCase s_nintComplement = Unary(
-        "NintComplement",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintComplementKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintComplementKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -311,9 +280,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintComplement);
 
     internal static readonly DifferentialCase s_nintIncrement = Unary(
-        "NintIncrement",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintIncrementKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintIncrementKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -323,9 +290,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintIncrement);
 
     internal static readonly DifferentialCase s_nintDecrement = Unary(
-        "NintDecrement",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintDecrementKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintDecrementKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -335,9 +300,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintDecrement);
 
     internal static readonly DifferentialCase s_nintAddAssign = Binary(
-        "NintAddAssign", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintAddAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintAddAssignKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -347,9 +310,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintAddAssign);
 
     internal static readonly DifferentialCase s_nintSubtractAssign = Binary(
-        "NintSubtractAssign", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintSubtractAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintSubtractAssignKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -359,9 +320,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintSubtractAssign);
 
     internal static readonly DifferentialCase s_nintMultiplyAssign = Binary(
-        "NintMultiplyAssign", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintMultiplyAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintMultiplyAssignKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -371,9 +330,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintMultiplyAssign);
 
     internal static readonly DifferentialCase s_nintDivideAssign = Binary(
-        "NintDivideAssign", "sdiv",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintDivideAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x),
+        NativeIntegerOperatorKernels.LaunchNintDivideAssignKernel, "sdiv",
         static (a, b) => b == -1 ? unchecked(-a) : a / b);
 
     [SkippableFact]
@@ -384,9 +341,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintDivideAssign);
 
     internal static readonly DifferentialCase s_nintDivideAssignByZero = Binary(
-        "NintDivideAssign", "sdivzero",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintDivideAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintDivideAssignKernel, "sdivzero");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -396,9 +351,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintDivideAssignByZero);
 
     internal static readonly DifferentialCase s_nintRemainderAssign = Binary(
-        "NintRemainderAssign", "sdiv",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintRemainderAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x),
+        NativeIntegerOperatorKernels.LaunchNintRemainderAssignKernel, "sdiv",
         static (a, b) => b == -1 ? 0 : a % b);
 
     [SkippableFact]
@@ -409,9 +362,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintRemainderAssign);
 
     internal static readonly DifferentialCase s_nintRemainderAssignByZero = Binary(
-        "NintRemainderAssign", "sdivzero",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintRemainderAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintRemainderAssignKernel, "sdivzero");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -421,9 +372,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintRemainderAssignByZero);
 
     internal static readonly DifferentialCase s_nintShiftLeftAssign = Binary(
-        "NintShiftLeftAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintShiftLeftAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintShiftLeftAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -433,9 +382,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintShiftLeftAssign);
 
     internal static readonly DifferentialCase s_nintShiftRightAssign = Binary(
-        "NintShiftRightAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintShiftRightAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintShiftRightAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -445,10 +392,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintShiftRightAssign);
 
     internal static readonly DifferentialCase s_nintUnsignedShiftRightAssign = Binary(
-        "NintUnsignedShiftRightAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNintUnsignedShiftRightAssignKernel(
-                a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNintUnsignedShiftRightAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -458,9 +402,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nintUnsignedShiftRightAssign);
 
     internal static readonly DifferentialCase s_nuintAdd = Binary(
-        "NuintAdd", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintAddKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintAddKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -470,9 +412,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintAdd);
 
     internal static readonly DifferentialCase s_nuintSubtract = Binary(
-        "NuintSubtract", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintSubtractKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintSubtractKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -482,9 +422,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintSubtract);
 
     internal static readonly DifferentialCase s_nuintMultiply = Binary(
-        "NuintMultiply", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintMultiplyKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintMultiplyKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -494,9 +432,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintMultiply);
 
     internal static readonly DifferentialCase s_nuintLessThan = Binary(
-        "NuintLessThan", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintLessThanKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintLessThanKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -506,9 +442,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintLessThan);
 
     internal static readonly DifferentialCase s_nuintDivide = Binary(
-        "NuintDivide", "div",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintDivideKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintDivideKernel, "div");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -518,9 +452,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintDivide);
 
     internal static readonly DifferentialCase s_nuintRemainder = Binary(
-        "NuintRemainder", "div",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintRemainderKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintRemainderKernel, "div");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -530,9 +462,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintRemainder);
 
     internal static readonly DifferentialCase s_nuintShiftLeft = Binary(
-        "NuintShiftLeft", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintShiftLeftKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintShiftLeftKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -542,9 +472,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintShiftLeft);
 
     internal static readonly DifferentialCase s_nuintShiftRight = Binary(
-        "NuintShiftRight", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintShiftRightKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintShiftRightKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -554,9 +482,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintShiftRight);
 
     internal static readonly DifferentialCase s_nuintUnsignedShiftRight = Binary(
-        "NuintUnsignedShiftRight", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintUnsignedShiftRightKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintUnsignedShiftRightKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -566,9 +492,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintUnsignedShiftRight);
 
     internal static readonly DifferentialCase s_nuintComplement = Unary(
-        "NuintComplement",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintComplementKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintComplementKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -578,9 +502,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintComplement);
 
     internal static readonly DifferentialCase s_nuintAddAssign = Binary(
-        "NuintAddAssign", "pair",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintAddAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintAddAssignKernel, "pair");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -590,9 +512,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintAddAssign);
 
     internal static readonly DifferentialCase s_nuintDivideAssign = Binary(
-        "NuintDivideAssign", "div",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintDivideAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintDivideAssignKernel, "div");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -602,9 +522,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintDivideAssign);
 
     internal static readonly DifferentialCase s_nuintShiftLeftAssign = Binary(
-        "NuintShiftLeftAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintShiftLeftAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintShiftLeftAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -614,9 +532,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintShiftLeftAssign);
 
     internal static readonly DifferentialCase s_nuintShiftRightAssign = Binary(
-        "NuintShiftRightAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintShiftRightAssignKernel(a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintShiftRightAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -626,10 +542,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintShiftRightAssign);
 
     internal static readonly DifferentialCase s_nuintUnsignedShiftRightAssign = Binary(
-        "NuintUnsignedShiftRightAssign", "shift",
-        static (a, b, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintUnsignedShiftRightAssignKernel(
-                a, b, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintUnsignedShiftRightAssignKernel, "shift");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -639,9 +552,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintUnsignedShiftRightAssign);
 
     internal static readonly DifferentialCase s_nuintLeadingZeroCount = Unary(
-        "NuintLeadingZeroCount",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintLeadingZeroCountKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintLeadingZeroCountKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -651,9 +562,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintLeadingZeroCount);
 
     internal static readonly DifferentialCase s_nuintTrailingZeroCount = Unary(
-        "NuintTrailingZeroCount",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintTrailingZeroCountKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintTrailingZeroCountKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -663,9 +572,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintTrailingZeroCount);
 
     internal static readonly DifferentialCase s_nuintPopCount = Unary(
-        "NuintPopCount",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintPopCountKernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintPopCountKernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -675,9 +582,7 @@ public class NativeIntegerOperatorDifferentialTests
         DifferentialRunner.Run(s_nuintPopCount);
 
     internal static readonly DifferentialCase s_nuintLog2 = Unary(
-        "NuintLog2",
-        static (a, d, n, g, x) =>
-            NativeIntegerOperatorKernels.LaunchNuintLog2Kernel(a, d, n, gridDimX: g, blockDimX: x));
+        NativeIntegerOperatorKernels.LaunchNuintLog2Kernel);
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -686,18 +591,16 @@ public class NativeIntegerOperatorDifferentialTests
     public void NativeInteger_Nuint_BitOperationsLog2_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nuintLog2);
 
-    internal static readonly DifferentialCase s_nuintRotateLeft = new(
-        $"{nameof(NativeIntegerOperatorKernels)}.{nameof(NativeIntegerOperatorKernels.NuintRotateLeftKernel)}")
-    {
-        Shapes = s_shapes,
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nuintRotateLeft = DiffCases.CreateRows<long, int, long>(
+        NativeIntegerOperatorKernels.LaunchNuintRotateLeftKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .In("a", Cycle(s_edges, shape.Rows, 1), readOnly: true)
             .In("counts", Cycle(s_rotateCounts, shape.Rows, s_edges.Length), readOnly: true)
             .Out<long>("dst", shape.Rows, OutputPolicy.Exact),
-        Launch = static (b, s) => NativeIntegerOperatorKernels.LaunchNuintRotateLeftKernel(
-            b.Get<long>("a"), b.Get<int>("counts"), b.Get<long>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: s_shapes,
+        firstInputName: "a",
+        secondInputName: "counts",
+        outputName: "dst");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -706,18 +609,16 @@ public class NativeIntegerOperatorDifferentialTests
     public void NativeInteger_Nuint_BitOperationsRotateLeft_MatchesTheOracleOnEveryPath() =>
         DifferentialRunner.Run(s_nuintRotateLeft);
 
-    internal static readonly DifferentialCase s_nuintRotateRight = new(
-        $"{nameof(NativeIntegerOperatorKernels)}.{nameof(NativeIntegerOperatorKernels.NuintRotateRightKernel)}")
-    {
-        Shapes = s_shapes,
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nuintRotateRight = DiffCases.CreateRows<long, int, long>(
+        NativeIntegerOperatorKernels.LaunchNuintRotateRightKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .In("a", Cycle(s_edges, shape.Rows, 1), readOnly: true)
             .In("counts", Cycle(s_rotateCounts, shape.Rows, s_edges.Length), readOnly: true)
             .Out<long>("dst", shape.Rows, OutputPolicy.Exact),
-        Launch = static (b, s) => NativeIntegerOperatorKernels.LaunchNuintRotateRightKernel(
-            b.Get<long>("a"), b.Get<int>("counts"), b.Get<long>("dst"), s.Rows, gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: s_shapes,
+        firstInputName: "a",
+        secondInputName: "counts",
+        outputName: "dst");
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

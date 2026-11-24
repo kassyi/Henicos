@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -18,84 +19,52 @@ public class LabeledJumpDifferentialTests
     private static readonly LaunchShape s_shape = LaunchShape.ForRows(Rows, blockX: 32);
 
     internal static readonly DifferentialCase s_breakAndContinueOuterFor = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.BreakAndContinueOuterFor),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchBreakAndContinueOuterFor(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchBreakAndContinueOuterFor);
 
     internal static readonly DifferentialCase s_labeledWhile = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.LabeledWhile),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchLabeledWhile(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchLabeledWhile);
 
     internal static readonly DifferentialCase s_switchInLabeledLoop = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.SwitchInLabeledLoop),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchSwitchInLabeledLoop(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchSwitchInLabeledLoop);
 
     internal static readonly DifferentialCase s_continueOuterRunsTheIncrement = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.ContinueOuterRunsTheIncrement),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchContinueOuterRunsTheIncrement(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchContinueOuterRunsTheIncrement);
 
     internal static readonly DifferentialCase s_continueOuterEvaluatesTheDoCondition = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.ContinueOuterEvaluatesTheDoCondition),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchContinueOuterEvaluatesTheDoCondition(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchContinueOuterEvaluatesTheDoCondition);
 
     internal static readonly DifferentialCase s_middleOfThreeLoops = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.MiddleOfThreeLoops),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchMiddleOfThreeLoops(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchMiddleOfThreeLoops);
 
     internal static readonly DifferentialCase s_twoLoopsWithTheSameLabel = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.TwoLoopsWithTheSameLabel),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchTwoLoopsWithTheSameLabel(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchTwoLoopsWithTheSameLabel);
 
     internal static readonly DifferentialCase s_forEachOverAnArray = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.ForEachOverAnArray),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchForEachOverAnArray(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchForEachOverAnArray);
 
     internal static readonly DifferentialCase s_forEachOverAnIterator = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.ForEachOverAnIterator),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchForEachOverAnIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchForEachOverAnIterator);
 
     internal static readonly DifferentialCase s_breakLabeledSwitchFromALoop = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.BreakLabeledSwitchFromALoop),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchBreakLabeledSwitchFromALoop(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchBreakLabeledSwitchFromALoop);
 
-    internal static readonly DifferentialCase s_usingInsideTheLabeledLoop = new(
-        $"{nameof(LabeledJumpDifferentialKernels)}.{nameof(LabeledJumpDifferentialKernels.UsingInsideTheLabeledLoop)}")
-    {
-        Shape = s_shape,
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_usingInsideTheLabeledLoop = DiffCases.Create(
+        LabeledJumpDifferentialKernels.LaunchUsingInsideTheLabeledLoop,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("xs", CreateInputs(rng, rows))
             .Out<int>("r", rows, ["dispose_log", "acc"], OutputPolicy.Exact),
-        Launch = static (b, s) => LabeledJumpDifferentialKernels.LaunchUsingInsideTheLabeledLoop(
-            b.Get<int>("xs"),
-            b.Get<int>("r"),
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: s_shape,
+        inputName: "xs",
+        outputName: "r");
 
     internal static readonly DifferentialCase s_labeledLoopInAKernelWithoutABarrier = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.LabeledLoopInAKernelWithoutABarrier),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchLabeledLoopInAKernelWithoutABarrier(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchLabeledLoopInAKernelWithoutABarrier);
 
     internal static readonly DifferentialCase s_unlabeledJumpsNextToLabeledOnes = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.UnlabeledJumpsNextToLabeledOnes),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchUnlabeledJumpsNextToLabeledOnes(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchUnlabeledJumpsNextToLabeledOnes);
 
     internal static readonly DifferentialCase s_unrolledLabeledLoops = CreateSingleColumn(
-        nameof(LabeledJumpDifferentialKernels.UnrolledLabeledLoops),
-        static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchUnrolledLabeledLoops(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        LabeledJumpDifferentialKernels.LaunchUnrolledLabeledLoops);
 
     [SkippableFact]
     public void BreakAndContinueOuterFor_MatchesOracle() =>
@@ -166,9 +135,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task BarrierLabeledKernel_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.BarrierLabeledKernel),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchBarrierLabeledKernel(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchBarrierLabeledKernel,
             uValue,
             static (tid, _, _) =>
             {
@@ -197,9 +164,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task BarrierInTheOuterBodyOnly_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.BarrierInTheOuterBodyOnly),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchBarrierInTheOuterBodyOnly(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchBarrierInTheOuterBodyOnly,
             uValue,
             static (_, x, u) =>
             {
@@ -238,9 +203,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task BarrierOutsideTheLabeledLoop_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.BarrierOutsideTheLabeledLoop),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchBarrierOutsideTheLabeledLoop(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchBarrierOutsideTheLabeledLoop,
             uValue,
             static (_, x, u) =>
             {
@@ -283,9 +246,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task SwitchWithABarrierInALabeledLoop_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.SwitchWithABarrierInALabeledLoop),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchSwitchWithABarrierInALabeledLoop(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchSwitchWithABarrierInALabeledLoop,
             uValue,
             static (_, x, u) =>
             {
@@ -332,9 +293,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task DoWhileWithABarrier_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.DoWhileWithABarrier),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchDoWhileWithABarrier(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchDoWhileWithABarrier,
             uValue,
             static (_, x, u) =>
             {
@@ -374,16 +333,17 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task ForEachWithABarrier_MatchesReference(int uValue) =>
         await Task.Run(() => DifferentialRunner.Run(
-            new DifferentialCase($"{nameof(LabeledJumpDifferentialKernels)}.{nameof(LabeledJumpDifferentialKernels.ForEachWithABarrier)}")
-            {
-                Shape = s_shape,
-                Inputs = (rng, rows) => new DiffBuffers()
+            DiffCases.Create(
+                LabeledJumpDifferentialKernels.LaunchForEachWithABarrier,
+                inputs: (rng, rows) => new DiffBuffers()
                     .In("xs", CreateInputs(rng, rows, uValue))
                     .In("items", [2 + uValue, 5, 4 + (uValue & 1), 7 + (uValue >> 1)], OutputPolicy.Exact, readOnly: true)
                     .Out<int>("r", rows, OutputPolicy.Exact),
-                Launch = static (b, s) => LabeledJumpDifferentialKernels.LaunchForEachWithABarrier(
-                    b.Get<int>("xs"), b.Get<int>("items"), b.Get<int>("r"), gridDimX: s.GridX, blockDimX: s.BlockX),
-                Reference = static (b, _) =>
+                shape: s_shape,
+                firstInputName: "xs",
+                secondInputName: "items",
+                outputName: "r",
+                reference: static (b, _) =>
                 {
                     var xs = b.Get<int>("xs");
                     var items = b.Get<int>("items");
@@ -418,8 +378,7 @@ public class LabeledJumpDifferentialTests
 
                         r[tid] = s;
                     }
-                },
-            })).WaitAsync(TimeSpan.FromSeconds(60));
+                }))).WaitAsync(TimeSpan.FromSeconds(60));
 
     [SkippableTheory(Timeout = 60000)]
     [InlineData(0)]
@@ -428,9 +387,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task ForUnrollBarrierInALabeledLoop_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.ForUnrollBarrierInALabeledLoop),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchForUnrollBarrierInALabeledLoop(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchForUnrollBarrierInALabeledLoop,
             uValue,
             static (_, x, u) =>
             {
@@ -474,9 +431,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task SuspendingCallInALabeledLoop_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.SuspendingCallInALabeledLoop),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchSuspendingCallInALabeledLoop(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchSuspendingCallInALabeledLoop,
             uValue,
             static (_, x, u) =>
             {
@@ -516,15 +471,15 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task SyncGridBodyInALabeledLoop_MatchesReference(int uValue) =>
         await Task.Run(() => DifferentialRunner.Run(
-            new DifferentialCase($"{nameof(LabeledJumpDifferentialKernels)}.{nameof(LabeledJumpDifferentialKernels.SyncGridBodyInALabeledLoop)}")
-            {
-                Shapes = [LaunchShapes.Grid1D(2u, 32u)],
-                Inputs = (rng, s) => new DiffBuffers()
+            DiffCases.Create(
+                LabeledJumpDifferentialKernels.LaunchSyncGridBodyInALabeledLoop,
+                inputs: (rng, s) => new DiffBuffers()
                     .In("xs", CreateInputs(rng, s.ThreadCount, uValue))
                     .Out<int>("r", s.ThreadCount, OutputPolicy.Exact),
-                Launch = static (b, s) => LabeledJumpDifferentialKernels.LaunchSyncGridBodyInALabeledLoop(
-                    b.Get<int>("xs"), b.Get<int>("r"), gridDimX: s.GridX, blockDimX: s.BlockX),
-                Reference = static (b, _) =>
+                shapes: [LaunchShapes.Grid1D(2u, 32u)],
+                inputName: "xs",
+                outputName: "r",
+                reference: static (b, _) =>
                 {
                     var xs = b.Get<int>("xs");
                     var r = b.Get<int>("r");
@@ -561,8 +516,7 @@ public class LabeledJumpDifferentialTests
 
                         r[gid] = bodyRuns + (s * 100);
                     }
-                },
-            })).WaitAsync(TimeSpan.FromSeconds(60));
+                }))).WaitAsync(TimeSpan.FromSeconds(60));
 
     [SkippableTheory(Timeout = 60000)]
     [InlineData(0)]
@@ -571,9 +525,7 @@ public class LabeledJumpDifferentialTests
     [InlineData(3)]
     public async Task WarpShuffleInTheLabeledLoopCondition_MatchesReference(int uValue) =>
         await RunBarrierCase(
-            nameof(LabeledJumpDifferentialKernels.WarpShuffleInTheLabeledLoopCondition),
-            static (xs, r, s) => LabeledJumpDifferentialKernels.LaunchWarpShuffleInTheLabeledLoopCondition(
-                xs, r, gridDimX: s.GridX, blockDimX: s.BlockX),
+            LabeledJumpDifferentialKernels.LaunchWarpShuffleInTheLabeledLoopCondition,
             uValue,
             static (_, x, u) =>
             {
@@ -606,19 +558,20 @@ public class LabeledJumpDifferentialTests
             });
 
     private static async Task RunBarrierCase(
-        string kernelName,
-        Action<int[], int[], LaunchShape> launch,
+        Int32PairLaunch launch,
         int uValue,
-        Func<int, int, int, int> reference) =>
+        Func<int, int, int, int> reference,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
         await Task.Run(() => DifferentialRunner.Run(
-            new DifferentialCase($"{nameof(LabeledJumpDifferentialKernels)}.{kernelName}")
-            {
-                Shape = s_shape,
-                Inputs = (rng, rows) => new DiffBuffers()
+            DiffCases.Create(
+                launch,
+                inputs: (rng, rows) => new DiffBuffers()
                     .In("xs", CreateInputs(rng, rows, uValue))
                     .Out<int>("r", rows, OutputPolicy.Exact),
-                Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("r"), s),
-                Reference = (b, _) =>
+                shape: s_shape,
+                inputName: "xs",
+                outputName: "r",
+                reference: (b, _) =>
                 {
                     var xs = b.Get<int>("xs");
                     var r = b.Get<int>("r");
@@ -627,18 +580,20 @@ public class LabeledJumpDifferentialTests
                         r[tid] = reference(tid, xs[tid] & 0x3FF, xs[0] & 7);
                     }
                 },
-            })).WaitAsync(TimeSpan.FromSeconds(60));
+                launchExpression: launchExpression))).WaitAsync(TimeSpan.FromSeconds(60));
 
-    private static DifferentialCase CreateSingleColumn(string kernelName, Action<int[], int[], LaunchShape> launch) =>
-        new($"{nameof(LabeledJumpDifferentialKernels)}.{kernelName}")
-        {
-            Shape = s_shape,
-            Inputs = static (rng, rows) => new DiffBuffers()
+    private static DifferentialCase CreateSingleColumn(
+        Int32PairLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("xs", CreateInputs(rng, rows))
                 .Out<int>("r", rows, OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("r"), s),
-            OracleIsLaunch = true,
-        };
+            shape: s_shape,
+            inputName: "xs",
+            outputName: "r",
+            launchExpression: launchExpression);
 
     private static int[] CreateInputs(DiffRandom rng, int rows)
     {

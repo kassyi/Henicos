@@ -12,19 +12,15 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 public class BarrierAndWarpDifferentialTests
 {
     internal static readonly DifferentialCase s_sharedMemoryBlockReductionAndScan =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SharedMemoryBlockReductionAndScanKernel)}")
-        {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            BarrierAndWarpDifferentialKernels.LaunchSharedMemoryBlockReductionAndScanKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.SharedMemoryColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchSharedMemoryBlockReductionAndScanKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(128, blockX: 64),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -73,23 +69,18 @@ public class BarrierAndWarpDifferentialTests
                         }
                     }
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_warpShuffleFullWidth =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.WarpShuffleFullWidthKernel)}")
-        {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            BarrierAndWarpDifferentialKernels.LaunchWarpShuffleFullWidthKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.FullWarpShuffleColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchWarpShuffleFullWidthKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(128, blockX: 64),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -132,23 +123,18 @@ public class BarrierAndWarpDifferentialTests
                         output[o + 10] = prefix;
                     }
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_warpShuffleSubWarpWidths =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.WarpShuffleSubWarpWidthsKernel)}")
-        {
-            Shape = LaunchShape.ForRows(64, blockX: 64),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            BarrierAndWarpDifferentialKernels.LaunchWarpShuffleSubWarpWidthsKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.SubWarpShuffleColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchWarpShuffleSubWarpWidthsKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(64, blockX: 64),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -196,25 +182,20 @@ public class BarrierAndWarpDifferentialTests
                         output[o + 9] = down0W1;
                     }
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_hybridWarpAndSharedMemoryBlockReduce =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.HybridWarpAndSharedMemoryBlockReduceKernel)}")
-        {
-            Shape = LaunchShape.ForRows(128, blockX: 64),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create<int, int, float>(
+            BarrierAndWarpDifferentialKernels.LaunchHybridWarpAndSharedMemoryBlockReduceKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.HybridReduceColumns, OutputPolicy.Exact)
                 .Out<float>("floatOutput", rows, BarrierAndWarpDifferentialKernels.HybridFloatShuffleColumns, OutputPolicy.Bitwise),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchHybridWarpAndSharedMemoryBlockReduceKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                b.Get<float>("floatOutput"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(128, blockX: 64),
+            firstInputName: "input",
+            secondInputName: "output",
+            outputName: "floatOutput",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -266,23 +247,18 @@ public class BarrierAndWarpDifferentialTests
                         floatOutput[fo + 1] = fUp;
                     }
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_subWarpConditionalShuffle =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleKernel)}")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            BarrierAndWarpDifferentialKernels.LaunchSubWarpConditionalShuffleKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.SubWarpConditionalShuffleColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchSubWarpConditionalShuffleKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -308,23 +284,18 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 0] = a;
                     output[o + 1] = bVal;
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_genericStructStaticSharedMemory =
-        new($"{nameof(BarrierAndWarpDifferentialKernels)}.{nameof(BarrierAndWarpDifferentialKernels.GenericStructStaticSharedMemoryKernel)}")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            BarrierAndWarpDifferentialKernels.LaunchGenericStructStaticSharedMemoryKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, BarrierAndWarpDifferentialKernels.GenericStructSharedColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => BarrierAndWarpDifferentialKernels.LaunchGenericStructStaticSharedMemoryKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -346,8 +317,7 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 0] = sharedInt[mirror];
                     output[o + 1] = sharedUint[mirror];
                 }
-            },
-        };
+            });
 
     // The reproduction of #1000 runs 64 rows in blocks of 32; the kernel has a barrier, so the reference is the same
     // computation without it
@@ -432,19 +402,15 @@ public class BarrierAndWarpDifferentialTests
         DifferentialRunner.Run(s_genericStructStaticSharedMemory);
 
     internal static readonly DifferentialCase s_subWarpUpperHalfConditionalShuffle =
-        new("M1DiffWarpExtraKernels.SubWarpUpperHalfConditionalShuffleKernel")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            M1DiffWarpExtraKernels.LaunchSubWarpUpperHalfConditionalShuffleKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, M1DiffWarpExtraKernels.UpperHalfConditionalShuffleColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchSubWarpUpperHalfConditionalShuffleKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -477,23 +443,18 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 1] = fromUpper;
                     output[o + 2] = xor16;
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_genericPairStructStaticSharedMemory =
-        new("M1DiffWarpExtraKernels.GenericPairStructStaticSharedMemoryKernel")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            M1DiffWarpExtraKernels.LaunchGenericPairStructStaticSharedMemoryKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericPairStructSharedColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericPairStructStaticSharedMemoryKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -518,23 +479,18 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 1] = sharedB[mirror];
                     output[o + 2] = sharedC[mirror];
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_warpMatchAnyAndAllSync =
-        new("M1DiffWarpExtraKernels.WarpMatchAnyAndAllSyncKernel")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create<int, uint>(
+            M1DiffWarpExtraKernels.LaunchWarpMatchAnyAndAllSyncKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<uint>("output", rows, M1DiffWarpExtraKernels.WarpMatchColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchWarpMatchAnyAndAllSyncKernel(
-                b.Get<int>("input"),
-                b.Get<uint>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<uint>("output");
@@ -604,23 +560,18 @@ public class BarrierAndWarpDifferentialTests
                     output[o + 16] = 0u;
                     output[o + 17] = 0u;
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_genericStructNestedCalleeSharedMemory =
-        new("M1DiffWarpExtraKernels.GenericStructNestedCalleeSharedMemoryKernel")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            M1DiffWarpExtraKernels.LaunchGenericStructNestedCalleeSharedMemoryKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedCalleeColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedCalleeSharedMemoryKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -629,23 +580,18 @@ public class BarrierAndWarpDifferentialTests
                 {
                     output[tid] = tid + 100;
                 }
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_genericStructNestedInnerSharedMemory =
-        new("M1DiffWarpExtraKernels.GenericStructNestedInnerSharedMemoryKernel")
-        {
-            Shape = LaunchShape.ForRows(32, blockX: 32),
-            Inputs = static (rng, rows) => new DiffBuffers()
+        DiffCases.Create(
+            M1DiffWarpExtraKernels.LaunchGenericStructNestedInnerSharedMemoryKernel,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("input", DiffValues.Int32(rng, rows))
                 .Out<int>("output", rows, M1DiffWarpExtraKernels.GenericStructNestedInnerColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => M1DiffWarpExtraKernels.LaunchGenericStructNestedInnerSharedMemoryKernel(
-                b.Get<int>("input"),
-                b.Get<int>("output"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, _) =>
+            shape: LaunchShape.ForRows(32, blockX: 32),
+            inputName: "input",
+            outputName: "output",
+            reference: static (b, _) =>
             {
                 var input = b.Get<int>("input");
                 var output = b.Get<int>("output");
@@ -654,8 +600,7 @@ public class BarrierAndWarpDifferentialTests
                 {
                     output[tid] = tid + 100;
                 }
-            },
-        };
+            });
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

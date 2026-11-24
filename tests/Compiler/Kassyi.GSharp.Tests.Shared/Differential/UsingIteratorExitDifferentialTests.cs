@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -17,34 +18,22 @@ public class UsingIteratorExitDifferentialTests
     private static readonly LaunchShape s_shape = LaunchShape.ForRows(Rows, blockX: 32);
 
     internal static readonly DifferentialCase s_usingStatementReturn = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.UsingStatementReturnFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchUsingStatementReturnFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchUsingStatementReturnFromIterator);
 
     internal static readonly DifferentialCase s_usingDeclarationReturn = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.UsingDeclarationReturnFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchUsingDeclarationReturnFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchUsingDeclarationReturnFromIterator);
 
     internal static readonly DifferentialCase s_deviceFunctionReturn = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.DeviceFunctionReturnFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchDeviceFunctionReturnFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchDeviceFunctionReturnFromIterator);
 
     internal static readonly DifferentialCase s_breakContinueAndGotoOutsideUsing = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.BreakContinueAndGotoOutsideUsingFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchBreakContinueAndGotoOutsideUsingFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchBreakContinueAndGotoOutsideUsingFromIterator);
 
     internal static readonly DifferentialCase s_nestedUsingsReturn = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.NestedUsingsReturnFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchNestedUsingsReturnFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchNestedUsingsReturnFromIterator);
 
     internal static readonly DifferentialCase s_normalCompletionWithoutReturn = CreateTwoColumnCase(
-        nameof(UsingIteratorExitDifferentialKernels.NormalCompletionWithoutReturnFromIterator),
-        static (xs, r, s) => UsingIteratorExitDifferentialKernels.LaunchNormalCompletionWithoutReturnFromIterator(
-            xs, r, gridDimX: s.GridX, blockDimX: s.BlockX));
+        UsingIteratorExitDifferentialKernels.LaunchNormalCompletionWithoutReturnFromIterator);
 
     [SkippableFact]
     public void UsingStatementReturnFromIterator_MatchesOracle() =>
@@ -70,16 +59,18 @@ public class UsingIteratorExitDifferentialTests
     public void NormalCompletionWithoutReturnFromIterator_MatchesOracle() =>
         DifferentialRunner.Run(s_normalCompletionWithoutReturn);
 
-    private static DifferentialCase CreateTwoColumnCase(string kernelName, Action<int[], int[], LaunchShape> launch) =>
-        new($"{nameof(UsingIteratorExitDifferentialKernels)}.{kernelName}")
-        {
-            Shape = s_shape,
-            Inputs = static (rng, rows) => new DiffBuffers()
+    private static DifferentialCase CreateTwoColumnCase(
+        Int32PairLaunch launch,
+        [CallerArgumentExpression(nameof(launch))] string launchExpression = "") =>
+        DiffCases.Create(
+            launch,
+            inputs: static (rng, rows) => new DiffBuffers()
                 .In("xs", CreateInputs(rng, rows))
                 .Out<int>("r", rows, ["dispose_log", "acc"], OutputPolicy.Exact),
-            Launch = (b, s) => launch(b.Get<int>("xs"), b.Get<int>("r"), s),
-            OracleIsLaunch = true,
-        };
+            shape: s_shape,
+            inputName: "xs",
+            outputName: "r",
+            launchExpression: launchExpression);
 
     private static int[] CreateInputs(DiffRandom rng, int rows)
     {

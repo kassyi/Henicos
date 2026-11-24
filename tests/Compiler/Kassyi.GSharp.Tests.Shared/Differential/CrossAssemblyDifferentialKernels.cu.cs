@@ -206,6 +206,7 @@ public static partial class CrossAssemblyDifferentialKernels
         r[o + 9] = diffPair;
     }
 
+    // The parameter list is the subject of this test: top-level T[] marshaling and LayoutGuard checks for external explicit, packed, sized, and union structs.
     [GpuKernel]
     public static void CrossAssemblyExplicitLayoutArrayKernel(
         SwapPair[] swaps,

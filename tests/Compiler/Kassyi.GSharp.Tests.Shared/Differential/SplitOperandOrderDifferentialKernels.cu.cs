@@ -119,6 +119,7 @@ public static partial class SplitOperandOrderDifferentialKernels
     [GpuDeviceFunction]
     public static int BumpPlusSync(int[] data, int i) => Bump(data, i) + SyncThen(data[i]);
 
+    // The parameter list is the subject of this test: #991/#1535/#1256 operand-order spill and IR expectations inspect direct parameter expressions.
     [GpuKernel]
     public static void OperandOrderKernel(int[] a, int[] b, int[] c, int[] d, int[] e, int[] f, int[] counter,
         SplitOrderCell[] cells, bool flag, int[] output)
@@ -217,6 +218,7 @@ public static partial class SplitOperandOrderDifferentialKernels
         return 1;
     }
 
+    // The parameter list is the subject of this test: #991/#1535/#1256 operand-order spill and IR expectations inspect direct parameter expressions.
     [GpuKernel]
     public static void CompoundOrderKernel(int[] a, int[] b, int[] c, int[] d, int[] e, int x, int y, int[] output)
     {

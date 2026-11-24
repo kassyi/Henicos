@@ -28,11 +28,17 @@ public class AtomicsIntegerDifferentialTests
                 .Out<int>("oldValuesOut", rows, AtomicsDifferentialKernels.SameStepOldColumns, OutputPolicy.Multiset)
                 .Out<ulong>("oldULongOut", rows, OutputPolicy.Multiset),
             Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerSameStepAtomicsKernel(
-                b.Get<int>("stateInt"),
-                b.Get<uint>("stateUInt"),
-                b.Get<ulong>("stateULong"),
-                b.Get<int>("oldValuesOut"),
-                b.Get<ulong>("oldULongOut"),
+                states: new SameStepAtomicStates
+                {
+                    Int32States = b.Get<int>("stateInt"),
+                    UInt32States = b.Get<uint>("stateUInt"),
+                    UInt64States = b.Get<ulong>("stateULong"),
+                },
+                oldValues: new SameStepAtomicOldValues
+                {
+                    Packed32BitOldValues = b.Get<int>("oldValuesOut"),
+                    UInt64OldValues = b.Get<ulong>("oldULongOut"),
+                },
                 gridDimX: s.GridX,
                 blockDimX: s.BlockX
             ),
@@ -91,16 +97,9 @@ public class AtomicsIntegerDifferentialTests
         };
 
     internal static readonly DifferentialCase s_integerArbitraryAtomicsInt32 =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsInt32Kernel)}")
-        {
-            Shapes =
-            [
-                LaunchShape.ForRows(64, blockX: 32),
-                LaunchShape.ForRows(64, blockX: 64),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create<int, int, int, DiffAtomicPacket>(
+            AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsInt32Kernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var inInt = DiffValues.Int32(rng, rows);
@@ -116,15 +115,16 @@ public class AtomicsIntegerDifferentialTests
                     .Out<int>("oldExchAndCasInt", rows * 2, OutputPolicy.Ignore)
                     .In("packets", packets, OutputPolicy.Exact);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsInt32Kernel(
-                b.Get<int>("inInt"),
-                b.Get<int>("stateInt"),
-                b.Get<int>("oldExchAndCasInt"),
-                b.Get<DiffAtomicPacket>("packets"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (b, s) =>
+            shapes:
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(64, blockX: 64),
+            ],
+            firstInputName: "inInt",
+            secondInputName: "stateInt",
+            thirdInputName: "oldExchAndCasInt",
+            outputName: "packets",
+            reference: static (b, s) =>
             {
                 var inInt = b.Get<int>("inInt");
                 var packets = b.Get<DiffAtomicPacket>("packets");
@@ -138,7 +138,7 @@ public class AtomicsIntegerDifferentialTests
                     packets[bucket].Flags |= 1u << (tid & 31);
                 }
             },
-            VerifyAgainstInitial = static (initial, actual, s) =>
+            verifyAgainstInitial: static (initial, actual, s) =>
             {
                 int rows = s.ThreadCount;
                 var inInt = initial.Get<int>("inInt");
@@ -166,20 +166,12 @@ public class AtomicsIntegerDifferentialTests
 
                 return AtomicsDifferentialTestHelpers.CheckExchangeAndCas<int>(
                     initial, actual, rows, "inInt", "oldExchAndCasInt", "stateInt", 7, -999999, 100000);
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_integerArbitraryAtomicsUInt32 =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt32Kernel)}")
-        {
-            Shapes =
-            [
-                LaunchShape.ForRows(64, blockX: 32),
-                LaunchShape.ForRows(64, blockX: 64),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create(
+            AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt32Kernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var inUInt = new uint[rows];
@@ -199,15 +191,16 @@ public class AtomicsIntegerDifferentialTests
                         OutputPolicy.Ignore)
                     .Out<uint>("oldExchAndCasUInt", rows * 2, OutputPolicy.Ignore);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt32Kernel(
-                b.Get<uint>("inUInt"),
-                b.Get<uint>("stateUInt"),
-                b.Get<uint>("oldExchAndCasUInt"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (_, _) => { },
-            VerifyAgainstInitial = static (initial, actual, s) =>
+            shapes:
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(64, blockX: 64),
+            ],
+            firstInputName: "inUInt",
+            secondInputName: "stateUInt",
+            outputName: "oldExchAndCasUInt",
+            reference: static (_, _) => { },
+            verifyAgainstInitial: static (initial, actual, s) =>
             {
                 int rows = s.ThreadCount;
                 var inUInt = initial.Get<uint>("inUInt");
@@ -238,20 +231,12 @@ public class AtomicsIntegerDifferentialTests
 
                 return AtomicsDifferentialTestHelpers.CheckExchangeAndCas<uint>(
                     initial, actual, rows, "inUInt", "oldExchAndCasUInt", "stateUInt", 9, 0xCAFEBABEu, 0x12345678u);
-            },
-        };
+            });
 
     internal static readonly DifferentialCase s_integerArbitraryAtomicsUInt64 =
-        new(
-            $"{nameof(AtomicsDifferentialKernels)}." +
-            $"{nameof(AtomicsDifferentialKernels.IntegerArbitraryAtomicsUInt64Kernel)}")
-        {
-            Shapes =
-            [
-                LaunchShape.ForRows(64, blockX: 32),
-                LaunchShape.ForRows(64, blockX: 64),
-            ],
-            Inputs = static (rng, s) =>
+        DiffCases.Create<ulong, ulong, ulong>(
+            AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt64Kernel,
+            inputs: static (rng, s) =>
             {
                 int rows = s.ThreadCount;
                 var inULong = new ulong[rows];
@@ -273,15 +258,16 @@ public class AtomicsIntegerDifferentialTests
                         OutputPolicy.Ignore)
                     .Out<ulong>("oldExchAndCasULong", rows * 2, OutputPolicy.Ignore);
             },
-            Launch = static (b, s) => AtomicsDifferentialKernels.LaunchIntegerArbitraryAtomicsUInt64Kernel(
-                b.Get<ulong>("inULong"),
-                b.Get<ulong>("stateULong"),
-                b.Get<ulong>("oldExchAndCasULong"),
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX
-            ),
-            Reference = static (_, _) => { },
-            VerifyAgainstInitial = static (initial, actual, s) =>
+            shapes:
+            [
+                LaunchShape.ForRows(64, blockX: 32),
+                LaunchShape.ForRows(64, blockX: 64),
+            ],
+            firstInputName: "inULong",
+            secondInputName: "stateULong",
+            outputName: "oldExchAndCasULong",
+            reference: static (_, _) => { },
+            verifyAgainstInitial: static (initial, actual, s) =>
             {
                 int rows = s.ThreadCount;
                 var inULong = initial.Get<ulong>("inULong");
@@ -312,8 +298,7 @@ public class AtomicsIntegerDifferentialTests
                 return AtomicsDifferentialTestHelpers.CheckExchangeAndCas<ulong>(
                     initial, actual, rows, "inULong", "oldExchAndCasULong", "stateULong",
                     8, 0xDEADBEEF_CAFEBABEUL, 0x01020304_05060708UL);
-            },
-        };
+            });
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]

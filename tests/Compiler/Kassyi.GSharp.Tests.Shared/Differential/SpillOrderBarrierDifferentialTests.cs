@@ -126,7 +126,9 @@ public partial class SpillOrderBarrierDifferentialTests : TranspilerTestBase
         uint[] calls = [0];
 
         SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnKernelValueParameterAcrossBarrierKernel(
-            initialState, [3], [4], result, calls);
+            bigCtx: initialState,
+            operands: new OperatorMacroOperands { Left = [3], Right = [4] },
+            results: new OperatorMacroResults { Result = result, Calls = calls });
         Assert.Equal(107u, result[0]);
         Assert.Equal(1u, calls[0]);
 
@@ -135,7 +137,9 @@ public partial class SpillOrderBarrierDifferentialTests : TranspilerTestBase
             uint[] managedResult = [0];
             uint[] managedCalls = [0];
             SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnKernelValueParameterAcrossBarrierKernel(
-                initialState, [3], [4], managedResult, managedCalls);
+                bigCtx: initialState,
+                operands: new OperatorMacroOperands { Left = [3], Right = [4] },
+                results: new OperatorMacroResults { Result = managedResult, Calls = managedCalls });
             Assert.Equal(107u, managedResult[0]);
             Assert.Equal(1u, managedCalls[0]);
         });
@@ -155,7 +159,9 @@ public partial class SpillOrderBarrierDifferentialTests : TranspilerTestBase
         uint[] calls = [0];
 
         SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnDeviceValueParameterAcrossBarrierKernel(
-            initialState, [5], [6], result, calls);
+            bigCtx: initialState,
+            operands: new OperatorMacroOperands { Left = [5], Right = [6] },
+            results: new OperatorMacroResults { Result = result, Calls = calls });
         Assert.Equal(61u, result[0]);
         Assert.Equal(1u, calls[0]);
 
@@ -164,7 +170,9 @@ public partial class SpillOrderBarrierDifferentialTests : TranspilerTestBase
             uint[] managedResult = [0];
             uint[] managedCalls = [0];
             SpillOrderMutatingGetterKernels.LaunchOperatorMacroOnDeviceValueParameterAcrossBarrierKernel(
-                initialState, [5], [6], managedResult, managedCalls);
+                bigCtx: initialState,
+                operands: new OperatorMacroOperands { Left = [5], Right = [6] },
+                results: new OperatorMacroResults { Result = managedResult, Calls = managedCalls });
             Assert.Equal(61u, managedResult[0]);
             Assert.Equal(1u, managedCalls[0]);
         });

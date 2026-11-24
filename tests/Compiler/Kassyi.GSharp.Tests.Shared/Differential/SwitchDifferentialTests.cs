@@ -14,11 +14,9 @@ public sealed class SwitchDifferentialTests
     private const int Rows = 64;
     private static readonly LaunchShape s_shape = LaunchShape.ForRows(Rows, blockX: 32);
 
-    internal static readonly DifferentialCase s_switchIntStatement = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchIntStatementKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_switchIntStatement = DiffCases.Create(
+        SwitchDifferentialKernels.LaunchSwitchIntStatementKernel,
+        inputs: static (rng, rows) =>
         {
             var a = DiffValues.Int32(rng, rows);
             a[0] = int.MinValue;
@@ -36,17 +34,11 @@ public sealed class SwitchDifferentialTests
                 .In("b", b)
                 .Out<int>("dst", rows, ["standard", "no_default", "nested", "bool_switch"], OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchIntStatementKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
-    internal static readonly DifferentialCase s_switchWideInt64Statement = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchWideInt64StatementKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) =>
+    internal static readonly DifferentialCase s_switchWideInt64Statement = DiffCases.CreateRows<long, ulong, long>(
+        SwitchDifferentialKernels.LaunchSwitchWideInt64StatementKernel,
+        inputs: static (rng, rows) =>
         {
             var a = DiffValues.Random(rng, rows, static r => unchecked((long)r.NextUInt64()));
             a[0] = long.MinValue;
@@ -69,11 +61,8 @@ public sealed class SwitchDifferentialTests
                 .In("ua", ua)
                 .Out<long>("dst", rows, ["long_switch", "ulong_switch"], OutputPolicy.Bitwise);
         },
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchWideInt64StatementKernel(
-            b.Get<long>("a"), b.Get<ulong>("ua"), b.Get<long>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        secondInputName: "ua");
 
     internal static readonly DifferentialCase s_switchNarrowCharEnumStatement = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchNarrowCharEnumStatementKernel)}")
@@ -86,24 +75,27 @@ public sealed class SwitchDifferentialTests
             .In("usa", DiffValues.UInt16(rng, rows))
             .Out<int>("dst", rows, ["byte_sbyte", "short_ushort", "char_switch", "enum_switch"], OutputPolicy.Bitwise),
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchNarrowCharEnumStatementKernel(
-            b.Get<byte>("ba"), b.Get<sbyte>("sba"), b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            operands: new SwitchNarrowIntegerOperands
+            {
+                Unsigned8Values = b.Get<byte>("ba"),
+                Signed8Values = b.Get<sbyte>("sba"),
+                Signed16Values = b.Get<short>("sa"),
+                Unsigned16Values = b.Get<ushort>("usa"),
+            },
+            results: b.Get<int>("dst"),
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_switchGotoAndSharedLocals = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchGotoAndSharedLocalsKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_switchGotoAndSharedLocals = DiffCases.Create(
+        SwitchDifferentialKernels.LaunchSwitchGotoAndSharedLocalsKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["goto_case_chain", "shared_section_locals", "char_goto_case", "user_goto_labels"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchGotoAndSharedLocalsKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
     internal static readonly DifferentialCase s_switchExpressionIntAndLong = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionIntAndLongKernel)}")
@@ -124,24 +116,28 @@ public sealed class SwitchDifferentialTests
                 .Out<long>("dst", rows, ["int_sw_expr", "nested_sw_expr", "long_sw_expr", "side_effect_gov"], OutputPolicy.Bitwise);
         },
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchExpressionIntAndLongKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<long>("la"), b.Get<long>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            operands: new SwitchIntAndLongOperands
+            {
+                FirstInt32Values = b.Get<int>("a"),
+                SecondInt32Values = b.Get<int>("b"),
+                Int64Values = b.Get<long>("la"),
+            },
+            results: b.Get<long>("dst"),
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_switchExpressionFloatSpecial = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchExpressionFloatSpecialKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_switchExpressionFloatSpecial = DiffCases.CreateRows<int, float, float>(
+        SwitchDifferentialKernels.LaunchSwitchExpressionFloatSpecialKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("sel", DiffValues.Int32(rng, rows))
             .In("fa", DiffValues.Single(rng, rows))
             .Out<float>("dst", rows, ["special_floats", "nan_comparisons"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchExpressionFloatSpecialKernel(
-            b.Get<int>("sel"), b.Get<float>("fa"), b.Get<float>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows),
+        firstInputName: "sel",
+        secondInputName: "fa");
 
     internal static readonly DifferentialCase s_ternaryNestedAndRef = new(
         $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.TernaryNestedAndRefKernel)}")
@@ -153,8 +149,16 @@ public sealed class SwitchDifferentialTests
             .In("c", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["nested_assoc", "short_circuit", "ref_ternary", "ref_ternary_lhs_first"], OutputPolicy.Bitwise),
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchTernaryNestedAndRefKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("c"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            operands: new TernaryConditionOperands
+            {
+                FirstValues = b.Get<int>("a"),
+                SecondValues = b.Get<int>("b"),
+                ThirdValues = b.Get<int>("c"),
+            },
+            results: b.Get<int>("dst"),
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
@@ -173,43 +177,47 @@ public sealed class SwitchDifferentialTests
             .Out<long>("ldst", rows, ["uint_int_to_long", "uint_narrow_to_long", "narrow_mixed_to_int", "narrow_var_wrap"], OutputPolicy.Bitwise)
             .Out<double>("ddst", rows, ["uint_int_to_double", "nested_long_to_double"], OutputPolicy.Bitwise),
         Launch = static (b, s) => SwitchDifferentialKernels.LaunchTernaryTargetTypedAndNarrowKernel(
-            b.Get<int>("conds"), b.Get<uint>("ua"), b.Get<int>("ia"),
-            b.Get<short>("sa"), b.Get<ushort>("usa"), b.Get<byte>("ba"), b.Get<sbyte>("sba"),
-            b.Get<long>("ldst"), b.Get<double>("ddst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
+            operands: new TernaryMixedWidthOperands
+            {
+                Conditions = b.Get<int>("conds"),
+                Unsigned32Values = b.Get<uint>("ua"),
+                Signed32Values = b.Get<int>("ia"),
+                Signed16Values = b.Get<short>("sa"),
+                Unsigned16Values = b.Get<ushort>("usa"),
+                Unsigned8Values = b.Get<byte>("ba"),
+                Signed8Values = b.Get<sbyte>("sba"),
+            },
+            results: new TernaryMixedWidthResults
+            {
+                Int64Results = b.Get<long>("ldst"),
+                DoubleResults = b.Get<double>("ddst"),
+            },
+            rowCount: s.Rows,
+            gridDimX: s.GridX,
+            blockDimX: s.BlockX),
         OracleIsLaunch = true,
     };
 
-    internal static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.NullCoalesceAndNullCheckMatchingKernel)}")
-    {
-        Shapes = LaunchShapes.OneDimensionalMatrix(Rows),
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_nullCoalesceAndNullCheckMatching = DiffCases.Create(
+        SwitchDifferentialKernels.LaunchNullCoalesceAndNullCheckMatchingKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("b", DiffValues.Int32(rng, rows))
             .Out<int>("dst", rows, ["coalesce_short_circuit", "coalesce_chain", "coalesce_assign", "array_span_null_checks"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchNullCoalesceAndNullCheckMatchingKernel(
-            b.Get<int>("a"), b.Get<int>("b"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shapes: LaunchShapes.OneDimensionalMatrix(Rows));
 
     // The kernel calls Gpu.SyncThreads() inside a switch section, which the sequential oracle cannot run; the reference
     // is the same computation without the barriers
     // Fixed to an exact multiple of Rows because early `if (t >= n) return;` precedes `Gpu.SyncThreads()`.
-    internal static readonly DifferentialCase s_switchFlattenedFloatAndGoto = new(
-        $"{nameof(SwitchDifferentialKernels)}.{nameof(SwitchDifferentialKernels.SwitchFlattenedFloatAndGotoKernel)}")
-    {
-        Shape = s_shape,
-        Inputs = static (rng, rows) => new DiffBuffers()
+    internal static readonly DifferentialCase s_switchFlattenedFloatAndGoto = DiffCases.CreateRows<int, float, int>(
+        SwitchDifferentialKernels.LaunchSwitchFlattenedFloatAndGotoKernel,
+        inputs: static (rng, rows) => new DiffBuffers()
             .In("a", DiffValues.Int32(rng, rows))
             .In("fa", DiffValues.Single(rng, rows))
             .Out<int>("dst", rows, ["flattened_float_switch", "flattened_int_shared_local_switch"], OutputPolicy.Bitwise),
-        Launch = static (b, s) => SwitchDifferentialKernels.LaunchSwitchFlattenedFloatAndGotoKernel(
-            b.Get<int>("a"), b.Get<float>("fa"), b.Get<int>("dst"), s.Rows,
-            gridDimX: s.GridX, blockDimX: s.BlockX),
-        Reference = static (b, _) => FlattenedFloatAndGotoReference(b.Get<int>("a"), b.Get<float>("fa"), b.Get<int>("dst")),
-    };
+        shape: s_shape,
+        secondInputName: "fa",
+        reference: static (b, _) => FlattenedFloatAndGotoReference(b.Get<int>("a"), b.Get<float>("fa"), b.Get<int>("dst")));
 
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]

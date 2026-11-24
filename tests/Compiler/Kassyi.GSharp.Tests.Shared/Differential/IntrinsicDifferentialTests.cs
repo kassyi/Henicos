@@ -33,11 +33,14 @@ public class IntrinsicDifferentialTests
             .In("s", Values(rng, shape.Rows, s_selectors, 0), readOnly: true)
             .Out<uint>("output", shape.Rows, IntrinsicDifferentialKernels.Integer32Columns, OutputPolicy.Exact),
         Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchInteger32IntrinsicsKernel(
-            b.Get<uint>("a"),
-            b.Get<uint>("b"),
-            b.Get<uint>("s"),
-            b.Get<uint>("output"),
-            s.Rows,
+            operands: new Integer32IntrinsicOperands
+            {
+                FirstValues = b.Get<uint>("a"),
+                SecondValues = b.Get<uint>("b"),
+                Selectors = b.Get<uint>("s"),
+            },
+            results: b.Get<uint>("output"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         Reference = static (b, s) =>
@@ -84,12 +87,15 @@ public class IntrinsicDifferentialTests
                 .Out<ulong>("output", shape.Rows, IntrinsicDifferentialKernels.Integer64Columns, OutputPolicy.Exact);
         },
         Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchInteger64IntrinsicsKernel(
-            b.Get<uint>("a"),
-            b.Get<uint>("b"),
-            b.Get<ulong>("c"),
-            b.Get<ulong>("d"),
-            b.Get<ulong>("output"),
-            s.Rows,
+            operands: new Integer64IntrinsicOperands
+            {
+                FirstUInt32Values = b.Get<uint>("a"),
+                SecondUInt32Values = b.Get<uint>("b"),
+                FirstUInt64Values = b.Get<ulong>("c"),
+                SecondUInt64Values = b.Get<ulong>("d"),
+            },
+            results: b.Get<ulong>("output"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         Reference = static (b, s) =>
@@ -116,46 +122,37 @@ public class IntrinsicDifferentialTests
         },
     };
 
-    internal static readonly DifferentialCase s_cacheHintAndFence =
-        new(KernelName(nameof(IntrinsicDifferentialKernels.CacheHintAndFenceKernel)))
+    internal static readonly DifferentialCase s_cacheHintAndFence = DiffCases.Create(
+        IntrinsicDifferentialKernels.LaunchCacheHintAndFenceKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
+            .In("source", DiffValues.Int32(rng, shape.Rows), readOnly: true)
+            .Out<int>("output", shape.Rows, IntrinsicDifferentialKernels.CacheHintColumns, OutputPolicy.Exact),
+        shape: LaunchShapes.Linear(Rows, 32),
+        inputName: "source",
+        outputName: "output",
+        reference: static (b, s) =>
         {
-            Shape = LaunchShapes.Linear(Rows, 32),
-            Inputs = static (rng, shape) => new DiffBuffers()
-                .In("source", DiffValues.Int32(rng, shape.Rows), readOnly: true)
-                .Out<int>("output", shape.Rows, IntrinsicDifferentialKernels.CacheHintColumns, OutputPolicy.Exact),
-            Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchCacheHintAndFenceKernel(
-                b.Get<int>("source"),
-                b.Get<int>("output"),
-                s.Rows,
-                gridDimX: s.GridX,
-                blockDimX: s.BlockX),
-            Reference = static (b, s) =>
+            var source = b.Get<int>("source");
+            var output = b.Get<int>("output");
+            for (int i = 0; i < s.Rows; i++)
             {
-                var source = b.Get<int>("source");
-                var output = b.Get<int>("output");
-                for (int i = 0; i < s.Rows; i++)
-                {
-                    output[i * 2] = source[i];
-                    output[i * 2 + 1] = unchecked(source[i] * 3 + 1);
-                }
-            },
-        };
+                output[i * 2] = source[i];
+                output[i * 2 + 1] = unchecked(source[i] * 3 + 1);
+            }
+        });
 
-    internal static readonly DifferentialCase s_smId = new(KernelName(nameof(IntrinsicDifferentialKernels.SmIdKernel)))
-    {
-        Shape = LaunchShapes.Linear(Rows, 32),
-        Inputs = static (_, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_smId = DiffCases.Create(
+        IntrinsicDifferentialKernels.LaunchSmIdKernel,
+        inputs: static (_, shape) => new DiffBuffers()
             .Out<int>("output", shape.Rows, OutputPolicy.Ignore),
-        Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchSmIdKernel(
-            b.Get<int>("output"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        shape: LaunchShapes.Linear(Rows, 32),
+        bufferName: "output",
+        oracleIsLaunch: false,
         // The number of a streaming multiprocessor: never negative, and below 1024 (no GPU has that many). Which one a
         // block runs on is up to the GPU, so the paths are not compared with each other.
         // mutant: src/Compiler/Kassyi.GSharp.Compiler/Resources/Prelude/WarpAndHints.hpp `return 0;` -> `return -1;`
         // input: every thread
-        Verify = static (actual, s) =>
+        verify: static (actual, s) =>
         {
             var output = actual.Get<int>("output");
             for (int i = 0; i < s.Rows; i++)
@@ -167,21 +164,17 @@ public class IntrinsicDifferentialTests
             }
 
             return PropertyResult.Passed;
-        },
-    };
+        });
 
-    internal static readonly DifferentialCase s_clock = new(KernelName(nameof(IntrinsicDifferentialKernels.ClockKernel)))
-    {
-        Shape = LaunchShapes.Linear(Rows, 32),
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_clock = DiffCases.CreateRows<uint, ulong>(
+        IntrinsicDifferentialKernels.LaunchClockKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
             .In("input", Values(rng, shape.Rows, s_uint32Boundaries, 0), readOnly: true)
             .Out<ulong>("output", shape.Rows, IntrinsicDifferentialKernels.ClockColumns, OutputPolicy.Ignore),
-        Launch = static (b, s) => IntrinsicDifferentialKernels.LaunchClockKernel(
-            b.Get<uint>("input"),
-            b.Get<ulong>("output"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
+        shape: LaunchShapes.Linear(Rows, 32),
+        inputName: "input",
+        outputName: "output",
+        oracleIsLaunch: false,
         // A thread reads each counter twice; the counter only grows while the launch runs, so the second reading of
         // Clock64 is not below the first. Clock is the low 32 bits of the same counter (PTX: %clock is the low half
         // of %clock64; the CPU paths truncate their nanoseconds) and is read inside the two Clock64 readings, so it
@@ -191,7 +184,7 @@ public class IntrinsicDifferentialTests
         // -> a counter that counts down (`0ull - ...count()`); `__gsharp_clock` alone counting down
         // (`(unsigned int)(0ull - __gsharp_clock64())`) fails the Clock check
         // input: every thread
-        Verify = static (actual, s) =>
+        verify: static (actual, s) =>
         {
             var output = actual.Get<ulong>("output");
             for (int i = 0; i < s.Rows; i++)
@@ -214,8 +207,7 @@ public class IntrinsicDifferentialTests
             }
 
             return PropertyResult.Passed;
-        },
-    };
+        });
 
     // Each column agrees with its .NET definition on boundary pairs and random values.
     // mutant: src/Compiler/Kassyi.GSharp.Compiler/Resources/Prelude/MathAndBitOps.hpp `& 7u` -> `& 3u` in __byte_perm

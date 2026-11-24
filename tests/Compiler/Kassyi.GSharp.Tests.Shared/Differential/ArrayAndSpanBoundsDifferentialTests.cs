@@ -18,30 +18,22 @@ namespace Kassyi.GSharp.Tests.Shared.Differential;
 [Collection(TestCollections.BoundsAndMemoryDifferential)]
 public class ArrayAndSpanBoundsDifferentialTests
 {
-    internal static readonly DifferentialCase s_arrayAndSpanBoundaryEdges = new(
-        KernelName(nameof(BoundsAndMemoryDifferentialKernels.ArrayAndSpanBoundaryEdgesKernel)))
-    {
-        Shape = LaunchShapes.PartialWarp(74, 37),
-        ExtraShapesSeed0Only =
-        [
-            LaunchShapes.Linear(64, 32),
-            LaunchShapes.IrregularBlock(64, 17),
-        ],
-        Inputs = static (rng, shape) => new DiffBuffers()
+    internal static readonly DifferentialCase s_arrayAndSpanBoundaryEdges = DiffCases.Create(
+        BoundsAndMemoryDifferentialKernels.LaunchArrayAndSpanBoundaryEdgesKernel,
+        inputs: static (rng, shape) => new DiffBuffers()
             .In("src", DiffValues.Int32(rng, shape.Rows), readOnly: true)
             .Out<int>(
                 "dst",
                 shape.Rows,
                 BoundsAndMemoryDifferentialKernels.BoundaryEdges4PathColumns,
                 OutputPolicy.Exact),
-        Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchArrayAndSpanBoundaryEdgesKernel(
-            b.Get<int>("src"),
-            b.Get<int>("dst"),
-            s.Rows,
-            gridDimX: s.GridX,
-            blockDimX: s.BlockX),
-        OracleIsLaunch = true,
-    };
+        shape: LaunchShapes.PartialWarp(74, 37),
+        extraShapesSeed0Only:
+        [
+            LaunchShapes.Linear(64, 32),
+            LaunchShapes.IrregularBlock(64, 17),
+        ],
+        inputName: "src");
 
     internal static readonly DifferentialCase s_arrayIndexBounds = new(
         KernelName(nameof(BoundsAndMemoryDifferentialKernels.ArrayIndexBoundsKernel)))
@@ -89,11 +81,14 @@ public class ArrayAndSpanBoundsDifferentialTests
                 .Out<int>("dst", rows, ["val_plus_len"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchArrayIndexBoundsKernel(
-            b.Get<int>("src"),
-            b.Get<int>("readIndices"),
-            b.Get<int>("writeIndices"),
-            b.Get<int>("dst"),
-            s.Rows,
+            inputs: new ArrayIndexBoundsInputs
+            {
+                Source = b.Get<int>("src"),
+                ReadIndices = b.Get<int>("readIndices"),
+                WriteIndices = b.Get<int>("writeIndices"),
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -137,12 +132,15 @@ public class ArrayAndSpanBoundsDifferentialTests
                 .Out<int>("dst", rows, ["span_sum"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanCanaryIndexBoundsKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("indices"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceIndexInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Indices = b.Get<int>("indices"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -180,12 +178,15 @@ public class ArrayAndSpanBoundsDifferentialTests
                 .Out<int>("dst", rows, ["slice_res"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanSliceStartKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("starts"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceStartInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Starts = b.Get<int>("starts"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
@@ -253,13 +254,16 @@ public class ArrayAndSpanBoundsDifferentialTests
                 .Out<int>("dst", rows, ["slice_res"], OutputPolicy.Exact);
         },
         Launch = static (b, s) => BoundsAndMemoryDifferentialKernels.LaunchSpanSliceStartCountKernel(
-            b.Get<int>("backing"),
-            b.Get<int>("starts"),
-            b.Get<int>("counts"),
-            b.Get<int>("dst"),
-            CanaryStart,
-            CanaryLen,
-            s.Rows,
+            inputs: new SpanSliceRangeInputs
+            {
+                Backing = b.Get<int>("backing"),
+                Starts = b.Get<int>("starts"),
+                Counts = b.Get<int>("counts"),
+                SliceStart = CanaryStart,
+                SliceLength = CanaryLen,
+            },
+            results: b.Get<int>("dst"),
+            rows: s.Rows,
             gridDimX: s.GridX,
             blockDimX: s.BlockX),
         OracleIsLaunch = true,
