@@ -16,9 +16,10 @@ public class StackBodySweepTests
 {
     private const string StackFormPrefix = "__gsharp_stackmodel_";
 
-    // [WHY] The lowering of a short-circuit operator whose operands have their own operator true and false, and whose
-    // right operand splits, writes !t for ||, which C# rejects for such a type, and the right operand alone in place
-    // of the operator; the state machine writes the same, so the file stays as it is until the lowering handles them
+    // [WHY] #2320 (User-defined && / || whose right operand reaches a split point lose the & / | call in the shared
+    // lowering): the lowering of such an operator writes !t for ||, which C# rejects for such a type, and the right
+    // operand alone in place of the operator, for the state machine as for the stacks. The file stays out of the sweep
+    // until #2320 is fixed
     private const string UserDefinedShortCircuitFile = "OperatorMacroConditionalKernels.cu.cs";
 
     [Fact]
