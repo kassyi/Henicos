@@ -32,6 +32,11 @@ public class NativeStackEligibilityTests
         "ActiveMaskDeviceFunctionKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackEligibilityCases.Kernels",
         "FloatSwitchShuffleKernel", NativeStackObstacle.CaseValueWithoutLabel)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationActiveMaskKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels",
+        "UsingDeclarationInActiveMaskCalleeKernel", NativeStackObstacle.UsingDeclarationWithActiveMask)]
+    [InlineData("NativeStackEligibilityCases.Kernels", "UsingDeclarationShuffleKernel", NativeStackObstacle.None)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",
         "MacroAfterBarrierKernel", NativeStackObstacle.WarpOperatorMacro)]
     [InlineData("NativeStackOperatorMacroCases.Kernels",

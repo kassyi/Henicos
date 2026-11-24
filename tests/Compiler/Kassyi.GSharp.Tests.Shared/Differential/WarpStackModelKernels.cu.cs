@@ -1,3 +1,4 @@
+using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Differential;
@@ -137,4 +138,48 @@ public static partial class WarpStackModelKernels
 
         output[t] = sum;
     }
+
+    // The lanes whose t + i is even continue before a nullable local that a target-typed ?: initializes from
+    // Warp.ActiveMask(): the continue of the stack form jumps past the nullable local and the temporary of the ?:
+    [GpuKernel]
+    public static void ContinuePastNullableKernel(int[] output)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < 2; i++)
+        {
+            if ((t + i) % 2 == 0)
+            {
+                continue;
+            }
+
+            uint? v = t > 3 ? Warp.ActiveMask() : null;
+            output[t] += (int)(v ?? 9u);
+        }
+    }
+
+    // The lanes whose t + i is even continue before a using declaration: the native stack model keeps the kernel on the
+    // state machine, as the C++ form of the using would put the end of the loop body inside a try
+    [GpuKernel]
+    public static void ContinuePastUsingKernel(int[] output)
+    {
+        int t = ThreadIndex.X;
+        for (int i = 0; i < 2; i++)
+        {
+            if ((t + i) % 2 == 0)
+            {
+                continue;
+            }
+
+            using var guard = new WarpStackModelGuard { V = t };
+            output[t] += (int)Warp.ActiveMask() + guard.V;
+        }
+    }
+}
+
+/// <summary>A resource whose <c>Dispose</c> does nothing observable, for a using declaration in a kernel.</summary>
+public struct WarpStackModelGuard : IDisposable
+{
+    public int V;
+
+    public void Dispose() => V = 0;
 }

@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers.Locals;
 /// <summary>
 /// Declares at the start of their C++ scope (<see cref="CppBlockScopes"/>) two kinds of locals: those that a
 /// <c>goto</c> jumps past (<see cref="GotoJumpAnalysis"/>) and whose C++ type has a default constructor (an array
-/// alias, <c>GSharpArray&lt;T&gt;</c>, or such a struct), and those that a local function captures when the function
+/// alias, <c>GSharpArray&lt;T&gt;</c>, a <c>Nullable&lt;T&gt;</c>, or such a struct), and those that a local function captures when the function
 /// is written in front of the declaration (<see cref="LocalFunctionPlan"/>).
 /// </summary>
 /// <remarks>
@@ -57,7 +57,7 @@ internal static class JumpedOverDeclarations
     internal static bool IsArrayOrHasCppDefaultConstructor(VariableDeclaratorSyntax declarator,
         LocalDeclarationStatementSyntax statement, SemanticModel semanticModel)
     {
-        var type = semanticModel.GetTypeSymbol(statement.Declaration.Type);
+        var type = GetLocalType(statement.Declaration, declarator, semanticModel);
         if (!type.IsArrayLikeType())
         {
             return HasCppDefaultConstructor(type);
@@ -104,17 +104,42 @@ internal static class JumpedOverDeclarations
             }
 
             // <type> <name>;
-            context.Emitter.Dialect.AppendType(ref context, model.GetTypeSymbol(declaration.Declaration.Type));
+            context.Emitter.Dialect.AppendType(ref context,
+                GetLocalType(declaration.Declaration, declarator, model));
             context.Emitter.Writer.Append(' ');
             CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
             context.Emitter.Writer.AppendLine(";");
         }
     }
 
-    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct. A struct
-    // already on the path holds itself (CS0523), and the walk stops there
+    /// <summary>
+    /// The type of the local that <paramref name="declarator"/> declares: the declared type, or, for a <c>var</c> that
+    /// names no type (a temporary that a lowering pass wrote, as in the stack body of a method that reaches
+    /// <c>Warp.ActiveMask()</c>), the type of its initializer, or the type the initializer converts to when it has
+    /// none of its own (a target-typed <c>?:</c>).
+    /// </summary>
+    internal static ITypeSymbol? GetLocalType(VariableDeclarationSyntax declaration, VariableDeclaratorSyntax declarator,
+        SemanticModel semanticModel)
+    {
+        var type = semanticModel.GetTypeSymbol(declaration.Type);
+        if (type is not null || !declaration.Type.IsVar || declarator.Initializer?.Value is not { } initializer)
+        {
+            return type;
+        }
+
+        return semanticModel.GetTypeSymbol(initializer) ?? semanticModel.GetConvertedTypeSymbol(initializer);
+    }
+
+    // A struct whose C++ form has a default constructor: it holds an array (GSharpArray<T>) or such a struct, or it is
+    // a Nullable<T> (System_Nullable<T>() sets HasValue). A struct already on the path holds itself (CS0523), and the
+    // walk stops there
     private static bool HasCppDefaultConstructor(ITypeSymbol? type, StructPath? path = null)
     {
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
+        {
+            return true;
+        }
+
         if (type is not INamedTypeSymbol
             {
                 TypeKind: TypeKind.Struct, IsRefLikeType: false, SpecialType: SpecialType.None

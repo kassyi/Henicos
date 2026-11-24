@@ -231,6 +231,40 @@ namespace NativeStackEligibilityCases
             GridSyncHelper(data);
         }
 
+        public struct Guard : IDisposable
+        {
+            public int V;
+
+            public void Dispose() => V = 0;
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationActiveMaskKernel(int[] data)
+        {
+            using var guard = new Guard { V = ThreadIndex.X };
+            data[ThreadIndex.X] = (int)Warp.ActiveMask() + guard.V;
+        }
+
+        [GpuDeviceFunction]
+        public static uint UsingDeclarationActiveMaskHelper(int v)
+        {
+            using var guard = new Guard { V = v };
+            return Warp.ActiveMask() + (uint)guard.V;
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationInActiveMaskCalleeKernel(int[] data)
+        {
+            data[ThreadIndex.X] = (int)UsingDeclarationActiveMaskHelper(ThreadIndex.X);
+        }
+
+        [GpuKernel]
+        public static void UsingDeclarationShuffleKernel(int[] data)
+        {
+            using var guard = new Guard { V = ThreadIndex.X };
+            data[ThreadIndex.X] = Warp.ShuffleXorSync(0xFFFFFFFFu, guard.V, 1);
+        }
+
         [GpuKernel]
         public static void DirectRecursiveSuspendingKernel(int depth, int[] data)
         {
