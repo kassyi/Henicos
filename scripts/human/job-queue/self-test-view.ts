@@ -101,6 +101,47 @@ function checkLayout(plugins: ShortNameProvider): void {
   const idle = renderScreen(null, initialViewState(), { columns: 70, rows: 13, now: Now }, false);
   assert.match(idle[0] ?? "", /no scheduler \(idle\)/);
   assert.match(idle[12] ?? "", /no jobs/);
+
+  // Remote CPU job: shows jNNNN@ubuntu in job row, summary line, detail line, and keeps timeline aligned
+  const remoteReply: StatusReply = {
+    ...reply,
+    remotes: [
+      {
+        name: "ubuntu",
+        host: "jobrunner@ubuntu-server.lan",
+        slots: 1,
+        cpus: 4,
+        memoryMb: 6144,
+        mode: "prefer-remote",
+        running: [817],
+        probe: { ok: true, value: 6400, at: Now - 1000 },
+      },
+    ],
+    running: reply.running.map((j) => (j.id === 817 ? { ...j, remote: "ubuntu" } : j)),
+  };
+  const remoteLines = plain(
+    renderScreen(
+      remoteReply,
+      { ...initialViewState(), selectedId: 817 },
+      { columns: 100, rows: 13, now: Now },
+      false,
+      null,
+      plugins,
+    ),
+  );
+  assert.match(remoteLines[0] ?? "", /UBUNTU j0817/);
+  assert.match(remoteLines[4] ?? "", /^▸j0817@ubuntuR /, "remote job row shows jNNNN@ubuntu and R marker");
+  assert.match(remoteLines[12] ?? "", /^ j0817@ubuntu /, "selected remote detail line shows jNNNN@ubuntu");
+  const remoteNowCol = [...(remoteLines[1] ?? "")].indexOf("▼");
+  remoteLines
+    .slice(2, 8)
+    .forEach((line) =>
+      assert.match([...line][remoteNowCol] ?? "", /[│┃]/, `aligned now column with remote id: ${line}`),
+    );
+  const remoteSummary = plain(
+    renderScreen(remoteReply, initialViewState(), { columns: 100, rows: 13, now: Now }, false, null, plugins),
+  );
+  assert.match(remoteSummary[12] ?? "", /next end ~\d\d:\d\d j0817@ubuntu/);
 }
 
 function checkPieces(plugins: ShortNameProvider): void {

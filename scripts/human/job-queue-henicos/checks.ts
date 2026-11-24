@@ -15,6 +15,8 @@ import type { TargetDialectModule } from "../job-queue/lib/types.ts";
 import { PluginApiVersion, type AssertModule, type QueuePlugin } from "../job-queue/plugin-api.ts";
 import { withConfigEnv } from "../job-queue/plugin-checks.ts";
 import { PluginHost, type BaseClientContext } from "../job-queue/plugin-host.ts";
+import { translateForRemote } from "../job-queue/remote/command-translator.ts";
+import { buildRemoteFindPruneExpr, isExcludedSyncPath } from "../job-queue/remote/syncer.ts";
 import { FakeHost, FakeScheduler, quietly, until } from "../job-queue/self-test-client.ts";
 import { removeDirectory } from "../job-queue/self-test-support.ts";
 import { shortCommand } from "../job-queue/view.ts";
@@ -739,6 +741,92 @@ function checkSharedRecipeFilters(assert: AssertModule, host: PluginHost, config
   }
 }
 
+function checkOffloadClassification(assert: AssertModule, host: PluginHost, repoRoot: string): void {
+  const ctx: BaseClientContext = {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    configRoot: repoRoot,
+    shell: "pwsh",
+    env: {},
+    log: () => {},
+  };
+  const cpuTests = "tests/Compiler/Kassyi.GSharp.Tests.Cpu";
+  const genTests = "tests/Compiler/Kassyi.GSharp.Compiler.Generators.Tests";
+  const gpuMathTests = "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests";
+  const benchTests = "tests/Apps/Henicos.Benchmarks.Tests";
+  const cases: readonly [string, boolean][] = [
+    [`dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj --filter 'FullyQualifiedName~WarpStackModelTests'`, true],
+    [`$env:DiffEngine_Disabled='true'; dotnet test ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}`, true],
+    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests} -c Release`, true],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, true],
+    [`dotnet test ${genTests}/Kassyi.GSharp.Compiler.Generators.Tests.csproj`, true],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution'`, true],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution'`, true],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution&Category!=Stress'`, true],
+    ["just test-differential-cpu", true],
+    ["just test-sanitized", true],
+    // Ineligible: bare build, standalone or mismatched --no-build, CUDA, unfiltered GpuMath/Benchmarks, `|` filter
+    [`dotnet build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
+    [`dotnet test --no-build ${cpuTests}/Kassyi.GSharp.Tests.Cpu.csproj`, false],
+    [`dotnet build ${cpuTests} -c Release && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet build ${cpuTests} && dotnet test --no-build ${cpuTests} -c Release`, false],
+    [`dotnet build ${genTests} && dotnet test --no-build ${cpuTests}`, false],
+    [`dotnet build ${cpuTests} -o tmp/out && dotnet test --no-build ${cpuTests}`, false],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj", false],
+    [`dotnet test ${gpuMathTests}/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj`, false],
+    [`dotnet test ${gpuMathTests} --filter 'Category!=GpuExecution|Category=GpuExecution'`, false],
+    [`dotnet test ${benchTests}/Henicos.Benchmarks.Tests.csproj`, false],
+    [`dotnet test ${benchTests} --filter 'Category!=GpuExecution|Category=GpuExecution'`, false],
+    [`dotnet test ${cpuTests} --filter 'FullyQualifiedName~WindowsJobObjectTests'`, false],
+    ["dotnet test tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj", false],
+    ["just test", false],
+  ];
+  for (const [cmd, expected] of cases) {
+    assert.strictEqual(Boolean(host.classify(cmd, null, ctx).offloadable), expected, `offloadable for: ${cmd}`);
+  }
+  // Never offloadable when GPU resource is requested
+  assert.strictEqual(
+    Boolean(
+      host.classify("dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu", { name: "gpu", forcedExclusive: false }, ctx)
+        .offloadable,
+    ),
+    false,
+  );
+
+  // Full repo plugin stack contributes Henicos + dotnet + just remote offload rules
+  const rules = host.remoteOffload(ctx);
+  assert.strictEqual(rules.defaultEnv.GSHARP_TEST_NO_CUDA, "1");
+  assert.strictEqual(rules.defaultEnv.DiffEngine_Disabled, "true");
+  assert.ok(rules.allowedPrograms.has("dotnet"));
+  assert.ok(rules.allowedPrograms.has("just"));
+  const syncRules = { excludePrefixes: rules.syncExcludePrefixes, excludeFindNames: rules.syncExcludeFindNames };
+  assert.strictEqual(
+    isExcludedSyncPath("src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/Linq.cs", syncRules),
+    true,
+  );
+  const prune = buildRemoteFindPruneExpr(syncRules);
+  assert.ok(prune.includes("-path './src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded'"));
+  assert.ok(prune.includes("! -iname '*.received.*'"));
+  assert.ok(prune.includes("! -iname '*.user'"));
+  assert.ok(prune.includes("! -iname '*.log'"));
+
+  const plan = translateForRemote("just test-differential-cpu", {
+    cwd: repoRoot,
+    worktree: repoRoot,
+    shell: "pwsh",
+    places: {},
+    cpus: 4,
+    keepBuildServersWarm: true,
+    env: {},
+    remoteRules: rules,
+  });
+  assert.ok(plan !== null, "Henicos + just + dotnet plugins translate just test-differential-cpu");
+  assert.strictEqual(plan.env.GSHARP_TEST_NO_CUDA, "1");
+  assert.strictEqual(plan.env.DiffEngine_Disabled, "true");
+  assert.strictEqual(plan.env.MSBUILDCORELIMIT, "4");
+}
+
 export async function checks(assert: AssertModule): Promise<void> {
   await checkRepoBaselineConfig(assert);
   checkDialectOf(assert);
@@ -766,5 +854,6 @@ export async function checks(assert: AssertModule): Promise<void> {
   checkSharedRecipeFilters(assert, host, loaded.configRoot, henicosOptions?.sharedRecipes);
   await quietly(() => checkQueuedRunMemoryMb(assert, host));
   checkShortCommandWithPlugins(assert, host);
+  checkOffloadClassification(assert, host, loaded.configRoot);
   await checkNameFilter(assert);
 }

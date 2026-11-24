@@ -35,14 +35,18 @@ import {
 import { gpuSlotsProblem, loadConfig } from "./config.ts";
 import { MachineProfile } from "./machine.ts";
 import { PluginHost } from "./plugin-host.ts";
-import { prefix, resolveWorktree } from "./system.ts";
+import { remoteReset } from "./remote/control.ts";
+import { remoteSpecsFromConfig } from "./remote/spec.ts";
+import { CommandShell } from "./shell.ts";
+import { prefix, resolveStateDirectory, resolveWorktree } from "./system.ts";
 import { watch } from "./watch.ts";
 import { serve } from "./server.ts";
 
 const Usage = [
   "Usage:",
-  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--after <id> [--keep-if-failed]]",
-  '                                       [--shell <name>] [--timeout-minutes <n>] -- "<command>"',
+  "  node scripts/human/job-queue.js run [--weight <n>] [--gpu | --gpu-exclusive] [--local | --remote]",
+  "                                       [--after <id> [--keep-if-failed]] [--shell <name>] [--timeout-minutes <n>]",
+  '                                       -- "<command>"',
   "  node scripts/human/job-queue.js status [<id>] [--here] [--json | --watch | --accuracy]",
   "  node scripts/human/job-queue.js wait <id> [--json]",
   "  node scripts/human/job-queue.js cancel <id>",
@@ -53,6 +57,7 @@ const Usage = [
   "  node scripts/human/job-queue.js pause [--until-idle]",
   "  node scripts/human/job-queue.js resume",
   "  node scripts/human/job-queue.js stop",
+  "  node scripts/human/job-queue.js remote-reset [<name>] [--clean]",
   "  node scripts/human/job-queue.js serve [--slots <n>] [--memory-mb <n>] [--policy hrrn|backfill|fifo]",
   "                                        [--gpu-slots <n>] [--config <path>]",
   "  node scripts/human/job-queue.js --self-test",
@@ -68,6 +73,8 @@ const Usage = [
   "                                   lock (gpu-lock.js); the command's slots are then granted at once. The",
   "                                   plugins decide whether the run may share the GPU with other shared runs.",
   "            --gpu-exclusive        --gpu, and the run uses the GPU alone, whatever the plugins decide.",
+  "            --local                Run on this machine; disable transparent remote CPU offload.",
+  "            --remote               Require execution on a configured remote CPU worker (fails if ineligible).",
   "            --after <id>           Start only after job <id> has ended. When it failed, was cancelled or its",
   "                                   client was lost, this job is cancelled too (exit 4), unless --keep-if-failed.",
   "            --shell <name>         bash, pwsh, powershell, cmd or sh (default: the caller's: Git Bash when MSYSTEM",
@@ -98,6 +105,9 @@ const Usage = [
   "            restart. --until-idle then waits until no job runs and exits 0 (pause --until-idle && stop).",
   "resume      Lifts the pause; the waiting jobs are granted as usual.",
   "stop        Stops the scheduler; running jobs keep running and register with the next one.",
+  "remote-reset",
+  "            Terminates stuck build/test processes on a remote worker (or all enabled remotes) over SSH and clears",
+  "            manifest caches; with --clean, also wipes bin/, obj/, TestResults/, and tmp/ for a clean rebuild.",
   "serve       Runs the scheduler in the foreground (run starts it on demand). --slots: the CPU pool (default one",
   "            slot per 3 cores, at least 2, or config pools); --memory-mb: the memory pool for test runs (default",
   "            half the physical memory, or config pools); --gpu-slots: the shared GPU turns that run at a time",
@@ -127,6 +137,7 @@ const Modes = [
   "pause",
   "resume",
   "stop",
+  "remote-reset",
   "serve",
 ] as const;
 type Mode = (typeof Modes)[number] | "self-test" | "screenshots";
@@ -157,6 +168,10 @@ interface Options extends RunOptions {
   newWeight: number;
   /** --screenshots: the directory the SVG files go to. */
   screenshotDir: string;
+  /** remote-reset [<name>]: optional remote worker name (empty = all enabled remotes). */
+  remoteTarget: string;
+  /** remote-reset --clean: wipe remote bin/, obj/, TestResults/, tmp/. */
+  clean: boolean;
 }
 
 function parsePositive(name: string, text: string | undefined, allowZero = false): number {
@@ -215,6 +230,8 @@ export function parseArgs(argv: string[]): Options {
     moveReset: false,
     newWeight: 0,
     screenshotDir: "",
+    remoteTarget: "",
+    clean: false,
     command: command.join(" "),
     // Several words after `--` are argv that the calling shell has already split: re-quote them for the shell that
     // runs them (see run), instead of joining them into a different command.
@@ -239,6 +256,10 @@ export function parseArgs(argv: string[]): Options {
     if (options.mode === "status" && options.jobRef === null && parseJobRef(arg) !== null) {
       options.jobRef = parseRef("status", arg); // status <id>, before or after the options
       options.jobId = options.jobRef.kind === "exact" ? options.jobRef.id : 0;
+      continue;
+    }
+    if (options.mode === "remote-reset" && options.remoteTarget === "" && !arg.startsWith("-")) {
+      options.remoteTarget = arg;
       continue;
     }
     switch (arg) {
@@ -266,6 +287,15 @@ export function parseArgs(argv: string[]): Options {
       case "--gpu-exclusive":
         options.gpu = true;
         options.gpuExclusive = true;
+        break;
+      case "--local":
+        options.local = true;
+        break;
+      case "--remote":
+        options.remote = true;
+        break;
+      case "--clean":
+        options.clean = true;
         break;
       case "--after":
         options.afterRef = parseRef("--after", own[++i]);
@@ -367,6 +397,15 @@ export function parseArgs(argv: string[]): Options {
   if (options.untilIdle && options.mode !== "pause") {
     usageError("--until-idle goes with pause alone.");
   }
+  if (options.clean && options.mode !== "remote-reset") {
+    usageError("--clean goes with remote-reset alone.");
+  }
+  if (options.local && options.remote) {
+    usageError("--local and --remote cannot be used together.");
+  }
+  if (options.remote && options.gpu) {
+    usageError("--remote cannot be used with --gpu or --gpu-exclusive.");
+  }
   if (options.keepIfFailed && options.afterRef === null) {
     usageError("--keep-if-failed needs --after <id>.");
   }
@@ -386,6 +425,7 @@ export async function main(argv: string[]): Promise<void> {
     const loaded = loadConfig({
       mode: options.mode,
       configPath: options.configPath || undefined,
+      stateDir: options.stateDir || resolveStateDirectory(),
       warn: prefix,
     });
     if (loaded.path !== null) {
@@ -401,7 +441,13 @@ export async function main(argv: string[]): Promise<void> {
       options.memoryMb = machine.memoryPoolMb;
     }
     options.defaultTestMemoryMb = loaded.config.pools?.defaultTestMemoryMb ?? 0;
-    if (options.mode === "run" || (options.mode === "status" && options.watch) || options.mode === "screenshots") {
+    options.remotes = remoteSpecsFromConfig(loaded.config);
+    if (
+      options.mode === "run" ||
+      (options.mode === "status" && options.watch) ||
+      options.mode === "screenshots" ||
+      options.mode === "remote-reset"
+    ) {
       plugins = await PluginHost.load(loaded.config, loaded.configRoot);
     }
   }
@@ -477,6 +523,28 @@ export async function main(argv: string[]): Promise<void> {
       case "stop":
         await stop(options.port);
         break;
+      case "remote-reset": {
+        const cwd = process.cwd();
+        const remoteRules = plugins?.remoteOffload({
+          cwd,
+          worktree: cwd,
+          configRoot: plugins.configRoot,
+          shell: CommandShell.resolve(options.shell).name,
+          env: process.env,
+          log: prefix,
+        });
+        const code = await remoteReset(
+          options.remotes ?? [],
+          options.remoteTarget,
+          options.clean,
+          options.stateDir || resolveStateDirectory(),
+          remoteRules,
+        );
+        if (code !== 0) {
+          process.exitCode = code;
+        }
+        break;
+      }
       case "serve":
         serve(options);
         break;

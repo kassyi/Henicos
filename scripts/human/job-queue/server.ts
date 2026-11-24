@@ -25,8 +25,10 @@ import {
   keysField,
   memoryMbField,
   numberField,
+  offloadField,
   optionalNumberField,
   placesField,
+  remoteField,
   resourceField,
   send,
   shareField,
@@ -36,8 +38,9 @@ import {
   type ServerMessage,
 } from "./protocol.ts";
 import { MachineProfile } from "./machine.ts";
+import { remoteSpecsFromConfig } from "./remote/spec.ts";
 import { resourceOf, specsFromConfig, usageOf } from "./resources.ts";
-import { Scheduler, type Expected } from "./scheduler.ts";
+import { Scheduler, type Estimate, type Expected } from "./scheduler.ts";
 import { Connection } from "./server-connection.ts";
 import type { ServerJob } from "./server-job.ts";
 import { cancelTargets, type Phase } from "./server-job-state.ts";
@@ -78,6 +81,9 @@ export class JobServer {
   readonly config: QueueConfig;
   readonly scheduler: Scheduler<ServerJob>;
   readonly history: RunHistory;
+  /** Per-remote run-time histories (history-remote-<name>.json + accuracy-remote-<name>.json), separate from local. */
+  readonly remoteHistories = new Map<string, RunHistory>();
+  private readonly stateDirectory: string;
   readonly store: JobStore;
   private readonly legacyTestPattern: RegExp | null;
   nextId: number;
@@ -115,10 +121,13 @@ export class JobServer {
     this.log =
       options.log ??
       ((text: string): void => void process.stdout.write(`${new Date().toISOString()} [${process.pid}] ${text}\n`));
+    const stateDirectory = options.stateDir || resolveStateDirectory();
+    this.stateDirectory = stateDirectory;
     // Scheduler reads only configuration data (never loads plugin code).
     this.config = loadConfig({
       mode: "serve",
       configPath: options.configPath || undefined,
+      stateDir: stateDirectory,
       warn: (text) => this.log(text),
     }).config;
     this.legacyTestPattern = this.config.legacyClients?.testPattern
@@ -132,10 +141,14 @@ export class JobServer {
     const memoryMb = options.memoryMb > 0 ? options.memoryMb : (machine as MachineProfile).memoryPoolMb;
     // nothing is granted before listening (see listen)
     const resources = specsFromConfig(this.config, options.gpuSlots ?? 0);
-    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb, resources);
-    const stateDirectory = options.stateDir || resolveStateDirectory();
+    const remotes = remoteSpecsFromConfig(this.config);
+    this.scheduler = new Scheduler<ServerJob>(slots, Infinity, options.policy, memoryMb, resources, remotes);
     this.history = new RunHistory(path.join(stateDirectory, "history.json"), this.log);
     this.nextId = this.history.nextId;
+    for (const remote of remotes) {
+      const rh = this.remoteHistory(remote.name);
+      this.nextId = Math.max(this.nextId, rh.nextId);
+    }
     // The scheduler grants a job --after another on this record alone
     this.scheduler.outcomes = this.outcomes;
     this.store = new JobStore(this, stateDirectory, options.port);
@@ -202,7 +215,9 @@ export class JobServer {
     }
     const shown = names.slice(0, MaxDifferingNames).join(", ");
     const more = names.length > MaxDifferingNames ? ` and ${names.length - MaxDifferingNames} more` : "";
-    return `${formatJobId(job.id)}: env differs from ${formatJobId(before.id)} (same command and worktree): ${shown}${more}`;
+    const diffSummary = `${shown}${more}`;
+    const prefixText = `${formatJobId(job.id)}: env differs from ${formatJobId(before.id)}`;
+    return `${prefixText} (same command and worktree): ${diffSummary}`;
   }
 
   /** A job's place and expected times: ahead = waiting jobs before it (0 once it runs). */
@@ -254,7 +269,27 @@ export class JobServer {
     });
   }
 
+  /** Returns the dedicated RunHistory for remote worker `name`, separate from local history.json / accuracy.json. */
+  remoteHistory(name: string): RunHistory {
+    let history = this.remoteHistories.get(name);
+    if (history === undefined) {
+      history = new RunHistory(
+        path.join(this.stateDirectory, `history-remote-${name}.json`),
+        this.log,
+        path.join(this.stateDirectory, `accuracy-remote-${name}.json`),
+      );
+      this.remoteHistories.set(name, history);
+    }
+    return history;
+  }
+
   private cpus(job: ServerJob): number {
+    if (job.remote !== undefined) {
+      const remote = this.scheduler.remoteStateOf(job.remote);
+      if (remote !== undefined) {
+        return remote.spec.cpus;
+      }
+    }
     return Math.max(1, Math.floor((os.cpus().length / this.scheduler.capacity) * job.weight));
   }
 
@@ -268,6 +303,7 @@ export class JobServer {
       protocol: ProtocolVersion,
       // Told only of a turn that counts as shared: the client then takes the lock as shared, so that both agree
       ...(job.gpuTurn === true && job.share === "shared" ? { share: "shared" as const, downgrade: true as const } : {}),
+      ...(job.remote !== undefined ? { remote: job.remote } : {}),
     };
   }
 
@@ -277,7 +313,8 @@ export class JobServer {
       job.epoch++;
       const shared = job.gpuTurn === true && job.share === "shared" ? " shared" : "";
       const gpu = `${job.gpu ? " gpu" : ""}${job.gpuTurn ? " gpu-turn" : ""}${shared}`;
-      const flags = `${gpu}${job.backfilled ? " backfilled" : ""}`;
+      const remote = job.remote !== undefined ? ` remote=${job.remote}` : "";
+      const flags = `${gpu}${remote}${job.backfilled ? " backfilled" : ""}`;
       this.log(`grant ${formatJobId(job.id)} weight ${job.weight}${flags} pid ${job.pid}: ${job.command}`);
       this.tell(job, this.grantMessage(job));
     }
@@ -314,7 +351,16 @@ export class JobServer {
     const memoryMb = memoryMbField(message);
     const resource = resourceField(message);
     const share = shareField(message);
+    const offload = offloadField(message);
+    const remote = remoteField(message);
     const gpuTurn = message.gpuTurn === true;
+    const remoteEstimates = new Map<string, Estimate | null>();
+    for (const state of this.scheduler.remoteStates()) {
+      remoteEstimates.set(
+        state.spec.name,
+        this.remoteHistory(state.spec.name).estimateWithFallback(command, { cwd, worktree, places }, keys),
+      );
+    }
     return {
       id,
       phase,
@@ -339,6 +385,9 @@ export class JobServer {
       ...(keys !== undefined ? { keys } : {}),
       ...(resource !== undefined ? { resource } : {}),
       ...(share !== undefined ? { share } : {}),
+      ...(offload !== undefined ? { offload } : {}),
+      ...(remote !== undefined ? { remote } : {}),
+      ...(remoteEstimates.size > 0 ? { remoteEstimates } : {}),
       session: typeof message.session === "string" && message.session !== "" ? message.session : undefined,
       command,
       queuedAt: numberField(message, "queuedAt") || Date.now(),
@@ -404,13 +453,15 @@ export class JobServer {
       job.grantedAt > 0
     ) {
       const actualMs = Date.now() - job.grantedAt;
-      this.history.accuracy.add(
-        (job.estimate?.from ?? "none") as EstimateLevel,
-        job.estimate ? job.estimate.typicalMs : UnknownTypicalMs,
+      const targetHistory = job.remote !== undefined ? this.remoteHistory(job.remote) : this.history;
+      const estimate = Scheduler.estimateOf(job);
+      targetHistory.accuracy.add(
+        (estimate?.from ?? "none") as EstimateLevel,
+        estimate ? estimate.typicalMs : UnknownTypicalMs,
         actualMs,
       );
       const context = { cwd: job.cwd, worktree: job.worktree, places: job.places };
-      this.history.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
+      targetHistory.record(job.command, actualMs, this.nextId, Date.now(), context, job.keys);
     }
     this.scheduler.detach(job);
     this.recordOutcome(job.id, outcome);
@@ -493,6 +544,18 @@ export class JobServer {
       this.probes.start(name, probe, state.generation, (result) => {
         this.scheduler.recordProbe(name, result);
         this.log(describeProbe(name, probe, result));
+        this.settle();
+      });
+    }
+    for (const name of this.scheduler.remoteProbesWanted(now)) {
+      const state = this.scheduler.remoteStateOf(name);
+      const probe = state?.spec.probe ?? null;
+      if (probe === null) {
+        continue;
+      }
+      this.probes.start(`remote:${name}`, probe, 0, (result) => {
+        this.scheduler.recordRemoteProbe(name, result);
+        this.log(describeProbe(`remote:${name}`, probe, result));
         this.settle();
       });
     }

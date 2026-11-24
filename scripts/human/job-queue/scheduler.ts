@@ -11,6 +11,17 @@ import {
   type Policy,
 } from "./constants.ts";
 import {
+  fitsRemote,
+  remoteAcceptsJob,
+  remoteAwaitingProbe,
+  remoteHealthy,
+  remoteNeedsProbe,
+  remoteUsageOf,
+  type OffloadPreference,
+  type RemoteSpec,
+  type RemoteState,
+} from "./remote/spec.ts";
+import {
   resourceOf,
   sharedTurnsSettled,
   turnVerdict,
@@ -81,6 +92,12 @@ export interface SchedulerJob {
    * but is not granted, since nobody would receive the grant.
    */
   detached?: boolean;
+  /** Remote CPU offload preference: auto (eligible), force (--remote), never (--local / ineligible). */
+  offload?: OffloadPreference;
+  /** The remote worker name when running on a remote worker (undefined for local CPU slots). */
+  remote?: string;
+  /** Per-remote run-time estimates from history-remote-<name>.json, strictly separated from local `estimate`. */
+  remoteEstimates?: ReadonlyMap<string, Estimate | null>;
 }
 
 /**
@@ -108,7 +125,17 @@ export interface Expected {
  * (gpu-memory), the CPU slots (slots), the memory pool of the test runs (memory), or nothing but the jobs that go
  * first (in-line).
  */
-export type WaitFor = "after" | "away" | "restart" | "paused" | "gpu" | "gpu-memory" | "slots" | "memory" | "in-line";
+export type WaitFor =
+  | "after"
+  | "away"
+  | "restart"
+  | "paused"
+  | "gpu"
+  | "gpu-memory"
+  | "remote"
+  | "slots"
+  | "memory"
+  | "in-line";
 
 /**
  * The scheduler state. A job that holds the GPU lock is granted at once. The other waiting jobs are put in order (the
@@ -151,14 +178,17 @@ export class Scheduler<J extends SchedulerJob> {
   rotation: Rotation = { grants: 0, slots: new Map(), turns: new Map() };
   /** The turn resources by name: the configured ones, and those a turn named that the configuration does not. */
   private readonly resources = new Map<string, ResourceState>();
+  /** The configured remote CPU workers by name. */
+  private readonly remotes = new Map<string, RemoteState>();
 
-  /** `resources`: the turn resources (default: "gpu", one slot, no probe). */
+  /** `resources`: the turn resources (default: "gpu", one slot, no probe). `remotes`: configured remote CPU workers. */
   constructor(
     capacity: number,
     holdUntil = 0,
     policy: Policy = DefaultPolicy,
     memoryCapacity = Infinity,
     resources: ResourceSpec[] = [{ name: "gpu", slots: 1, probe: null }],
+    remotes: RemoteSpec[] = [],
   ) {
     this.capacity = capacity;
     this.holdUntil = holdUntil;
@@ -167,6 +197,132 @@ export class Scheduler<J extends SchedulerJob> {
     for (const spec of resources) {
       this.resources.set(spec.name, { spec, generation: 0, probe: null });
     }
+    for (const spec of remotes) {
+      this.remotes.set(spec.name, { spec, probe: null });
+    }
+  }
+
+  /** Configured remote worker states in config order. */
+  remoteStates(): RemoteState[] {
+    return [...this.remotes.values()];
+  }
+
+  /** Looks up one configured remote worker state by name. */
+  remoteStateOf(name: string): RemoteState | undefined {
+    return this.remotes.get(name);
+  }
+
+  /** Records a health/memory probe result for a remote worker. */
+  recordRemoteProbe(name: string, result: ProbeResult): void {
+    const state = this.remotes.get(name);
+    if (state !== undefined) {
+      state.probe = result;
+    }
+  }
+
+  /**
+   * Remote workers that need a health probe now because at least one waiting grantable job could use them.
+   * Empty while paused or before holdUntil.
+   */
+  remoteProbesWanted(now: number): string[] {
+    if (this.paused || now < this.holdUntil || this.remotes.size === 0) {
+      return [];
+    }
+    const wanted: string[] = [];
+    for (const [name, state] of this.remotes) {
+      if (!remoteNeedsProbe(state, now)) {
+        continue;
+      }
+      const hasCandidate = this.waiting.some((job) => !this.isBlocked(job) && remoteAcceptsJob(job, state.spec));
+      if (hasCandidate) {
+        wanted.push(name);
+      }
+    }
+    return wanted;
+  }
+
+  /**
+   * True when `job` must not spill over to local CPU slots: either the caller forced `--remote` (`offload` "force"),
+   * or a healthy/probing `remote-only` worker accepts it. Falls back to local when every `remote-only` worker is down.
+   */
+  private mustRunRemotely(job: SchedulerJob, now: number): boolean {
+    if (job.offload === "force") {
+      return true;
+    }
+    if (job.offload !== "auto") {
+      return false;
+    }
+    for (const state of this.remotes.values()) {
+      if (
+        state.spec.mode === "remote-only" &&
+        remoteAcceptsJob(job, state.spec) &&
+        (remoteHealthy(state, now) || remoteAwaitingProbe(state, now))
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Why a `force`-remote (`--remote`) job can never be granted on any configured remote worker, or null when at least
+   * one enabled remote worker can accept its memory budget.
+   */
+  remoteRefusalReason(job: SchedulerJob): string | null {
+    if (job.offload !== "force") {
+      return null;
+    }
+    if (job.gpu || job.gpuTurn === true) {
+      return "--remote cannot be used for GPU jobs";
+    }
+    const enabled = [...this.remotes.values()].filter((state) => state.spec.mode !== "off");
+    if (enabled.length === 0) {
+      return "--remote requested, but no enabled remote worker is configured";
+    }
+    if (!enabled.some((state) => remoteAcceptsJob(job, state.spec))) {
+      const memory = this.memoryOf(job);
+      return `--remote requested, but job memory (${memory} MB) exceeds every enabled remote worker`;
+    }
+    return null;
+  }
+
+  /** First healthy enabled remote worker with a free slot that accepts `job`, for `start <id>`. */
+  pickFreeRemoteForStart(job: SchedulerJob, now = Date.now()): RemoteState | undefined {
+    for (const state of this.remotes.values()) {
+      if (fitsRemote(job, state, this.running, now)) {
+        return state;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * True when `job` should briefly wait for a preferred remote worker's initial/refresh probe (when that worker has a
+   * free slot) instead of immediately spilling to a local slot before the ~250 ms probe returns.
+   */
+  private awaitsRemoteProbe(job: SchedulerJob, now: number): boolean {
+    if (job.offload !== "auto" && job.offload !== "force") {
+      return false;
+    }
+    for (const state of this.remotes.values()) {
+      if (
+        (state.spec.mode === "prefer-remote" || state.spec.mode === "remote-only") &&
+        remoteAcceptsJob(job, state.spec) &&
+        remoteAwaitingProbe(state, now) &&
+        remoteUsageOf(this.running, state.spec.name).jobs.length < state.spec.slots
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** The estimate of `job` for its execution target: remote history when on a remote, local history otherwise. */
+  static estimateOf(job: SchedulerJob, remoteName: string | undefined = job.remote): Estimate | null {
+    if (remoteName !== undefined) {
+      return job.remoteEstimates?.get(remoteName) ?? null;
+    }
+    return job.estimate;
   }
 
   /** The state of a turn resource; one the configuration does not name gets one slot and no probe (serialized). */
@@ -203,7 +359,8 @@ export class Scheduler<J extends SchedulerJob> {
 
   /**
    * The resources whose first waiting turn waits for a probe (turnVerdict "probe") while every shared turn that runs
-   * has used the resource for settleMs (sharedTurnsSettled): the server measures them. Nothing while paused or before holdUntil, when nothing is granted.
+   * has used the resource for settleMs (sharedTurnsSettled): the server measures them. Nothing while paused or before
+   * holdUntil, when nothing is granted.
    */
   probeWanted(now: number): string[] {
     if (this.paused || now < this.holdUntil) {
@@ -234,8 +391,11 @@ export class Scheduler<J extends SchedulerJob> {
 
   private start(job: J): void {
     this.running.push(job);
-    this.used += job.weight;
-    this.memoryUsed += this.memoryOf(job);
+    // Remote jobs consume a slot on their remote worker, never local CPU slots or local test memory
+    if (job.remote === undefined) {
+      this.used += job.weight;
+      this.memoryUsed += this.memoryOf(job);
+    }
   }
 
   clampWeight(weight: number): number {
@@ -279,8 +439,10 @@ export class Scheduler<J extends SchedulerJob> {
     const running = this.running.indexOf(job);
     if (running >= 0) {
       this.running.splice(running, 1);
-      this.used -= job.weight;
-      this.memoryUsed -= this.memoryOf(job);
+      if (job.remote === undefined) {
+        this.used -= job.weight;
+        this.memoryUsed -= this.memoryOf(job);
+      }
     }
     const waiting = this.waiting.indexOf(job);
     if (waiting >= 0) {
@@ -338,8 +500,11 @@ export class Scheduler<J extends SchedulerJob> {
     if (now < this.holdUntil) {
       return "restart";
     }
-    // A GPU holder and a job started by hand are granted at once, also while paused
-    if ((job.gpu || job.startNow === true) && job.gpuTurn !== true) {
+    // A GPU holder and a local job started by hand are granted at once, also while paused
+    if ((job.gpu || (job.startNow === true && job.offload !== "force")) && job.gpuTurn !== true) {
+      return undefined;
+    }
+    if (job.startNow === true && job.offload === "force" && !job.gpuTurn && this.pickFreeRemoteForStart(job, now)) {
       return undefined;
     }
     if (this.paused) {
@@ -351,14 +516,43 @@ export class Scheduler<J extends SchedulerJob> {
       const verdict = head === job ? turnVerdict(job, usageOf(this.running, name), this.stateOf(name), now) : "behind";
       return verdict === "grant" ? undefined : verdict === "probe" ? "gpu-memory" : "gpu";
     }
+    // Check if the next grant places this job on a preferred remote worker right now
+    for (const state of this.remotes.values()) {
+      if (
+        (state.spec.mode === "prefer-remote" || state.spec.mode === "remote-only") &&
+        fitsRemote(job, state, this.running, now)
+      ) {
+        return undefined;
+      }
+    }
+    if (this.mustRunRemotely(job, now) || this.awaitsRemoteProbe(job, now)) {
+      return "remote";
+    }
     if (this.used + job.weight > this.capacity) {
+      // A spillover remote may still take it right now
+      for (const state of this.remotes.values()) {
+        if (state.spec.mode === "spillover" && fitsRemote(job, state, this.running, now)) {
+          return undefined;
+        }
+      }
       return "slots";
     }
     if (!this.fitsMemory(job)) {
+      for (const state of this.remotes.values()) {
+        if (state.spec.mode === "spillover" && fitsRemote(job, state, this.running, now)) {
+          return undefined;
+        }
+      }
       return "memory";
     }
-    // The first job that takes slots and fits is granted by the next settle: it waits for nothing
-    const first = this.waiting.find((other) => !other.gpuTurn && !this.isBlocked(other));
+    // The first job that takes local slots and fits is granted by the next settle: it waits for nothing
+    const first = this.waiting.find(
+      (other) =>
+        !other.gpuTurn &&
+        !this.isBlocked(other) &&
+        !this.mustRunRemotely(other, now) &&
+        !this.awaitsRemoteProbe(other, now),
+    );
     // Nor does a later job that backfilling grants now (not under fifo, as in grant)
     if (first === job || (this.policy !== "fifo" && this.backfill(now).includes(job))) {
       return undefined;
@@ -538,10 +732,25 @@ export class Scheduler<J extends SchedulerJob> {
       this.start(job);
       granted.push(job);
     };
-    // GPU holders and the jobs started by hand, over the pools
+    // GPU holders and local jobs started by hand, over the pools
     this.waiting
-      .filter((job) => (job.gpu || job.startNow === true) && !job.gpuTurn && !this.isBlocked(job))
+      .filter(
+        (job) =>
+          (job.gpu || (job.startNow === true && job.offload !== "force")) && !job.gpuTurn && !this.isBlocked(job),
+      )
       .forEach(take);
+    // Forced-remote jobs started by hand may only take a free accepting remote slot, never a local slot.
+    for (const job of this.waiting.filter(
+      (other) => other.startNow === true && other.offload === "force" && !other.gpuTurn && !this.isBlocked(other),
+    )) {
+      const target = this.pickFreeRemoteForStart(job, now);
+      if (target !== undefined) {
+        job.remote = target.spec.name;
+        take(job);
+      } else {
+        job.startNow = false;
+      }
+    }
     this.order(now);
     if (this.paused) {
       return granted; // the places are told (order), but no waiting job starts
@@ -560,13 +769,50 @@ export class Scheduler<J extends SchedulerJob> {
         state.generation++;
       }
     }
+    // Preferred and remote-only workers: offload eligible CPU jobs first (0 local CPU/RAM)
+    for (const state of this.remotes.values()) {
+      if (state.spec.mode !== "prefer-remote" && state.spec.mode !== "remote-only") {
+        continue;
+      }
+      for (;;) {
+        const candidate = this.waiting.find(
+          (job) => !job.gpuTurn && !job.gpu && !this.isBlocked(job) && fitsRemote(job, state, this.running, now),
+        );
+        if (candidate === undefined) {
+          break;
+        }
+        candidate.remote = state.spec.name;
+        take(candidate);
+        this.serve(candidate);
+      }
+    }
     for (;;) {
-      const first = this.waiting.find((job) => !job.gpuTurn && !this.isBlocked(job));
+      const first = this.waiting.find(
+        (job) =>
+          !job.gpuTurn && !this.isBlocked(job) && !this.mustRunRemotely(job, now) && !this.awaitsRemoteProbe(job, now),
+      );
       if (first === undefined || this.used + first.weight > this.capacity || !this.fitsMemory(first)) {
         break;
       }
       take(first);
       this.serve(first);
+    }
+    // Spillover remotes take eligible jobs only after local CPU slots are full
+    for (const state of this.remotes.values()) {
+      if (state.spec.mode !== "spillover") {
+        continue;
+      }
+      for (;;) {
+        const candidate = this.waiting.find(
+          (job) => !job.gpuTurn && !job.gpu && !this.isBlocked(job) && fitsRemote(job, state, this.running, now),
+        );
+        if (candidate === undefined) {
+          break;
+        }
+        candidate.remote = state.spec.name;
+        take(candidate);
+        this.serve(candidate);
+      }
     }
     if (this.policy !== "fifo") {
       this.backfill(now).forEach((job) => {
@@ -580,14 +826,17 @@ export class Scheduler<J extends SchedulerJob> {
 
   /** The grantable waiting jobs after the first that may start now without delaying the first one's reserved start. */
   backfill(now: number): J[] {
-    const grantable = this.waiting.filter((job) => !job.gpuTurn && !this.isBlocked(job));
+    const grantable = this.waiting.filter(
+      (job) =>
+        !job.gpuTurn && !this.isBlocked(job) && !this.mustRunRemotely(job, now) && !this.awaitsRemoteProbe(job, now),
+    );
     if (grantable.length < 2) {
       return [];
     }
     const first = grantable[0] as J;
-    // When the running jobs end, at the latest; unknown when one has no recorded time or ran past all of them
+    // When the running local jobs end, at the latest; unknown when one has no recorded time or ran past all of them
     const ends: { end: number; weight: number }[] = [];
-    for (const job of this.running.filter((other) => other.weight > 0)) {
+    for (const job of this.running.filter((other) => other.weight > 0 && other.remote === undefined)) {
       // A GPU turn holds no slots, so its end frees none
       const end = job.estimate ? job.grantedAt + job.estimate.longestMs : NaN;
       if (!(end > now)) {
@@ -640,14 +889,36 @@ export class Scheduler<J extends SchedulerJob> {
    * from the same expected start.
    */
   forecast(now = Date.now()): Map<J, Expected> {
-    const duration = (job: SchedulerJob): number => (job.estimate ? job.estimate.typicalMs : UnknownTypicalMs);
+    const duration = (job: SchedulerJob): number => {
+      const est = Scheduler.estimateOf(job);
+      return est ? est.typicalMs : UnknownTypicalMs;
+    };
     // The end at its longest recorded run time, from the same start; none without a record
-    const latest = (startAt: number, job: SchedulerJob): { latestEndAt?: number } =>
-      job.estimate ? { latestEndAt: startAt + job.estimate.longestMs } : {};
+    const latest = (startAt: number, job: SchedulerJob): { latestEndAt?: number } => {
+      const est = Scheduler.estimateOf(job);
+      return est ? { latestEndAt: startAt + est.longestMs } : {};
+    };
     const specs = [...this.resources.values()].map((state) => state.spec);
-    const simulation = new Scheduler<SchedulerJob>(this.capacity, 0, this.policy, this.memoryCapacity, specs);
+    const remoteSpecs = [...this.remotes.values()].map((state) => state.spec);
+    const simulation = new Scheduler<SchedulerJob>(
+      this.capacity,
+      0,
+      this.policy,
+      this.memoryCapacity,
+      specs,
+      remoteSpecs,
+    );
     // The replay assumes every probe passes: an estimate, optimistic
     simulation.resources.forEach((state) => (state.assumeProbeOk = true));
+    simulation.remotes.forEach((state) => {
+      // Keep an explicitly failed remote offline in the forecast; assume healthy/unprobed ones pass
+      const current = this.remotes.get(state.spec.name);
+      if (current !== undefined && current.probe !== null && !current.probe.ok) {
+        state.probe = current.probe;
+      } else {
+        state.assumeProbeOk = true;
+      }
+    });
     // The replay continues the round-robin where this scheduler is, on its own copy
     const { grants, slots, turns } = this.rotation;
     const turnsCopy = new Map([...turns].map(([name, served]) => [name, new Map(served)] as const));
@@ -660,9 +931,10 @@ export class Scheduler<J extends SchedulerJob> {
     const result = new Map<J, Expected>();
     for (const job of this.running) {
       const copy: SchedulerJob = { ...job };
+      const est = Scheduler.estimateOf(job);
       let endAt = job.grantedAt + duration(job);
-      if (endAt <= now && job.estimate) {
-        endAt = job.grantedAt + job.estimate.longestMs;
+      if (endAt <= now && est) {
+        endAt = job.grantedAt + est.longestMs;
       }
       if (endAt <= now) {
         endAt = now + OverrunGuessMs;

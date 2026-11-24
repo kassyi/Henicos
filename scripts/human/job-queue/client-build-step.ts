@@ -111,7 +111,16 @@ export async function runBuildStep(
     return result.code;
   }
   const step = new StepRunHost(host);
-  const stepOptions: RunOptions = { ...options, command: build, commandWords: null, gpu: false, role };
+  // Pre-turn builds produce local bin/win artifacts for the local GPU turn that follows: never offload to Linux.
+  const stepOptions: RunOptions = {
+    ...options,
+    command: build,
+    commandWords: null,
+    gpu: false,
+    local: true,
+    remote: false,
+    role,
+  };
   void new QueuedRun(stepOptions, { ...placement }, false, false, step, plugins).run();
   return step.ended;
 }

@@ -13,6 +13,7 @@ import {
 } from "./protocol.ts";
 import { AccuracyLog, formatAccuracy, summarizeAccuracy } from "./estimate-fallback.ts";
 import { prefix, resolveStateDirectory, worktreeKey } from "./system.ts";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { formatJobId, type JobRef } from "./job-id.ts";
 
@@ -28,6 +29,7 @@ function formatJob(job: StatusJob, now: number): string {
     job.gpu ? " gpu" : "",
     job.gpuTurn ? " gpu-turn" : "",
     job.share === "shared" ? " shared" : "",
+    job.remote ? ` remote=${job.remote}` : "",
     job.memoryMb ? ` ${gigabytes(job.memoryMb)}GB` : "",
     job.orphan ? " client-lost" : "",
     job.pin != null ? " pinned" : "",
@@ -38,7 +40,8 @@ function formatJob(job: StatusJob, now: number): string {
   // An older scheduler says only what a job waits for after another (blockedBy)
   const waits = describeWaitFor(job) || (job.blockedBy != null ? `waits for ${formatJobId(job.blockedBy)} to end` : "");
   const detail = outlook || waits ? `\n      ${outlook}${waits && outlook ? "; " : ""}${waits}` : "";
-  return `  ${formatJobId(job.id)} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
+  const idLabel = job.remote ? `${formatJobId(job.id)}@${job.remote}` : formatJobId(job.id);
+  return `  ${idLabel} w${job.weight}${flags} ${minutes}m pid ${job.pid} ${job.cwd}${detail}\n      ${job.command}`;
 }
 
 /** The latest end is told when it is this much after the expected end: a shorter gap says nothing new. */
@@ -97,6 +100,8 @@ export function describeWaitFor(outlook: object): string {
       return `waits for a turn at ${resource}`;
     case "gpu-memory":
       return `waits for free memory on ${resource}`;
+    case "remote":
+      return "waits for a remote CPU worker";
     case "slots":
       return "waits for CPU slots";
     case "memory":
@@ -229,6 +234,16 @@ export async function status(port: number, id: number, json: boolean, here: stri
       ? `, ${gigabytes(reply.memoryUsed)}/${gigabytes(reply.memoryCapacity)} GB of test memory in use`
       : "";
   const lines = [`scheduler pid ${reply.pid}: ${reply.used}/${reply.capacity} slots${memory}, policy ${reply.policy}`];
+  if (reply.remotes !== undefined && reply.remotes.length > 0) {
+    const summary = reply.remotes
+      .map((r) => {
+        const health = r.probe === undefined ? "" : r.probe.ok ? "" : ` (${r.probe.why ?? "offline"})`;
+        const jobs = r.running.length > 0 ? ` [${r.running.map(formatJobId).join(" ")}]` : "";
+        return `${r.name}@${r.host} ${r.running.length}/${r.slots}${jobs}${health}`;
+      })
+      .join(", ");
+    lines.push(`remotes: ${summary}`);
+  }
   if (reply.paused === true) {
     const since = reply.pausedAt ? ` since ${new Date(reply.pausedAt).toTimeString().slice(0, 5)}` : "";
     lines.push(
@@ -246,14 +261,32 @@ export async function status(port: number, id: number, json: boolean, here: stri
 
 /** status --accuracy: the logged estimates against the run times that followed, per source of the estimate. */
 export function accuracy(json: boolean): Promise<void> {
-  const rows = summarizeAccuracy(AccuracyLog.read(path.join(resolveStateDirectory(), "accuracy.json")));
-  process.stdout.write(
-    json
-      ? `${JSON.stringify(rows)}
-`
-      : `${formatAccuracy(rows)}
-`,
-  );
+  const dir = resolveStateDirectory();
+  const rows = summarizeAccuracy(AccuracyLog.read(path.join(dir, "accuracy.json")));
+  const remoteFiles = fs.existsSync(dir)
+    ? fs
+        .readdirSync(dir)
+        .filter((name) => /^accuracy-remote-[a-z][a-z0-9-]*\.json$/.test(name))
+        .sort()
+    : [];
+  if (remoteFiles.length === 0) {
+    process.stdout.write(json ? `${JSON.stringify(rows)}\n` : `${formatAccuracy(rows)}\n`);
+    return Promise.resolve();
+  }
+  const remotes: Record<string, ReturnType<typeof summarizeAccuracy>> = {};
+  for (const file of remoteFiles) {
+    const name = file.slice("accuracy-remote-".length, -".json".length);
+    remotes[name] = summarizeAccuracy(AccuracyLog.read(path.join(dir, file)));
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify({ local: rows, remotes })}\n`);
+    return Promise.resolve();
+  }
+  const sections = [`local:\n${formatAccuracy(rows)}`];
+  for (const [name, remoteRows] of Object.entries(remotes)) {
+    sections.push(`remote (${name}):\n${formatAccuracy(remoteRows)}`);
+  }
+  process.stdout.write(`${sections.join("\n\n")}\n`);
   return Promise.resolve();
 }
 
