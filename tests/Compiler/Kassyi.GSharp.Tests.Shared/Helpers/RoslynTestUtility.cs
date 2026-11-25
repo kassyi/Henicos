@@ -285,90 +285,14 @@ public static class RoslynTestUtility
             !Directory.EnumerateFiles(stackLinqEmbeddedDir, "*.cs").Any())
         {
             throw new InvalidOperationException(
-                $"Embedded StackLinq sources were not found under {stackLinqEmbeddedDir}. Build Kassyi.GSharp.Compiler first.");
+                $"Embedded StackLinq sources were not found under {stackLinqEmbeddedDir}. " +
+                "Build Kassyi.GSharp.Compiler first.");
         }
 
         var pathSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var file in Directory.EnumerateFiles(compilerRoot, "*.cs"))
-        {
-            pathSet.Add(Path.GetFullPath(file));
-        }
-
-        foreach (var directory in Directory.EnumerateDirectories(compilerRoot))
-        {
-            if (Path.GetFileName(directory) is "obj" or "bin")
-            {
-                continue;
-            }
-
-            foreach (var file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
-            {
-                pathSet.Add(Path.GetFullPath(file));
-            }
-        }
-
-        var csprojPath = Path.Combine(compilerRoot, "Kassyi.GSharp.Compiler.csproj");
-        var csproj = XDocument.Load(csprojPath);
-        var sharedPrefix = $"..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}Shared{Path.DirectorySeparatorChar}";
-        foreach (var element in csproj.Descendants())
-        {
-            if (!string.Equals(element.Name.LocalName, "Compile", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var include = element.Attribute("Include")?.Value;
-            if (string.IsNullOrEmpty(include))
-            {
-                continue;
-            }
-
-            var normalizedInclude = NormalizeDirectorySeparators(include);
-            if (!normalizedInclude.StartsWith(sharedPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var linkedPath = Path.GetFullPath(Path.Combine(compilerRoot, normalizedInclude));
-            if (!File.Exists(linkedPath))
-            {
-                throw new InvalidOperationException($"Linked compiler source file not found: {linkedPath}");
-            }
-
-            pathSet.Add(linkedPath);
-        }
-
-        var intermediateDir = ResolveCompilerIntermediateOutputDirectory(compilerRoot);
-        string[] generatedSubdirectories =
-        [
-            "GeneratedDialects",
-            "GeneratedDiagnostics",
-            "GeneratedPrelude",
-            "GeneratedInternalNames"
-        ];
-        foreach (var subdir in generatedSubdirectories)
-        {
-            var generatedDir = Path.Combine(intermediateDir, subdir);
-            if (!Directory.Exists(generatedDir))
-            {
-                throw new InvalidOperationException($"Generated compiler directory not found: {generatedDir}");
-            }
-
-            var anyGenerated = false;
-            foreach (var file in Directory.EnumerateFiles(generatedDir, "*.g.cs", SearchOption.AllDirectories))
-            {
-                pathSet.Add(Path.GetFullPath(file));
-                anyGenerated = true;
-            }
-
-            if (!anyGenerated)
-            {
-                throw new InvalidOperationException($"No generated *.g.cs files found in: {generatedDir}");
-            }
-        }
-
-        // GeneratedNativeApi is not read: the compiler project removes it from its Compile items
+        AddProjectSources(compilerRoot, pathSet);
+        AddLinkedSharedSources(compilerRoot, pathSet);
+        AddGeneratedSources(ResolveCompilerIntermediateOutputDirectory(compilerRoot), pathSet);
 
         var sortedPaths = pathSet.Order(StringComparer.Ordinal).ToArray();
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: ["GSHARP_COMPILER"]);
@@ -398,6 +322,97 @@ public static class RoslynTestUtility
                 OutputKind.DynamicallyLinkedLibrary,
                 allowUnsafe: true,
                 nullableContextOptions: NullableContextOptions.Enable));
+    }
+
+    // Every .cs file of the project folder outside obj/ and bin/
+    private static void AddProjectSources(string compilerRoot, HashSet<string> pathSet)
+    {
+        foreach (var file in Directory.EnumerateFiles(compilerRoot, "*.cs"))
+        {
+            pathSet.Add(Path.GetFullPath(file));
+        }
+
+        foreach (var directory in Directory.EnumerateDirectories(compilerRoot))
+        {
+            if (Path.GetFileName(directory) is "obj" or "bin")
+            {
+                continue;
+            }
+
+            foreach (var file in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
+            {
+                pathSet.Add(Path.GetFullPath(file));
+            }
+        }
+    }
+
+    // The src/Shared files the project links with <Compile Include>
+    private static void AddLinkedSharedSources(string compilerRoot, HashSet<string> pathSet)
+    {
+        var csprojPath = Path.Combine(compilerRoot, "Kassyi.GSharp.Compiler.csproj");
+        var csproj = XDocument.Load(csprojPath);
+        var separator = Path.DirectorySeparatorChar;
+        var sharedPrefix = $"..{separator}..{separator}Shared{separator}";
+        foreach (var element in csproj.Descendants())
+        {
+            if (!string.Equals(element.Name.LocalName, "Compile", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var include = element.Attribute("Include")?.Value;
+            if (string.IsNullOrEmpty(include))
+            {
+                continue;
+            }
+
+            var normalizedInclude = NormalizeDirectorySeparators(include);
+            if (!normalizedInclude.StartsWith(sharedPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var linkedPath = Path.GetFullPath(Path.Combine(compilerRoot, normalizedInclude));
+            if (!File.Exists(linkedPath))
+            {
+                throw new InvalidOperationException($"Linked compiler source file not found: {linkedPath}");
+            }
+
+            pathSet.Add(linkedPath);
+        }
+    }
+
+    // The sources the build generates into obj/; GeneratedNativeApi is not read: the project removes it from its
+    // Compile items
+    private static void AddGeneratedSources(string intermediateDir, HashSet<string> pathSet)
+    {
+        string[] generatedSubdirectories =
+        [
+            "GeneratedDialects",
+            "GeneratedDiagnostics",
+            "GeneratedPrelude",
+            "GeneratedInternalNames"
+        ];
+        foreach (var subdir in generatedSubdirectories)
+        {
+            var generatedDir = Path.Combine(intermediateDir, subdir);
+            if (!Directory.Exists(generatedDir))
+            {
+                throw new InvalidOperationException($"Generated compiler directory not found: {generatedDir}");
+            }
+
+            var anyGenerated = false;
+            foreach (var file in Directory.EnumerateFiles(generatedDir, "*.g.cs", SearchOption.AllDirectories))
+            {
+                pathSet.Add(Path.GetFullPath(file));
+                anyGenerated = true;
+            }
+
+            if (!anyGenerated)
+            {
+                throw new InvalidOperationException($"No generated *.g.cs files found in: {generatedDir}");
+            }
+        }
     }
 
     private static string ResolveCompilerIntermediateOutputDirectory(string compilerRoot)
@@ -442,7 +457,8 @@ public static class RoslynTestUtility
         {
             var latest = Directory.EnumerateDirectories(objRoot, "netstandard2.0", SearchOption.AllDirectories)
                 .Where(HasRequiredGeneratedDirectories)
-                .OrderByDescending(static dir => Directory.GetLastWriteTimeUtc(Path.Combine(dir, "GeneratedDiagnostics")))
+                .OrderByDescending(static dir =>
+                    Directory.GetLastWriteTimeUtc(Path.Combine(dir, "GeneratedDiagnostics")))
                 .FirstOrDefault();
             if (latest is not null)
             {
