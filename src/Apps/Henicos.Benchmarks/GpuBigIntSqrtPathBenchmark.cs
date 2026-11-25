@@ -20,6 +20,10 @@ namespace Henicos.Benchmarks;
 /// the 2-prime NTT transform length is <c>M = 2^ceil(log2(2 * maxOutWords))</c>.
 /// </para>
 /// <para>
+/// Each case times the whole <c>Sqrt</c> call, end to end: the products, the correction and the shifts around the
+/// inverse square root are the same on both paths, so the difference between the paths is the inverse square root.
+/// </para>
+/// <para>
 /// The 20 measured <see cref="RootWords"/> values are the pairs <c>(r, r + 1)</c> bracketing the 10 doubling
 /// boundaries from <c>M = 512</c> (<c>r = 45</c>) to <c>M = 524288</c> (<c>r = 23831</c>):
 /// <c>(45, 46)</c>, <c>(92, 93)</c>, <c>(185, 186)</c>, <c>(371, 372)</c>, <c>(744, 745)</c>,
