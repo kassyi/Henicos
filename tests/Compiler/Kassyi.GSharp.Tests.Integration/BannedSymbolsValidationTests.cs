@@ -13,19 +13,7 @@ namespace Kassyi.GSharp.Tests.Integration
             Assert.True(File.Exists(rootBannedSymbolsPath), "Root BannedSymbols.txt must exist.");
             var rootSymbols = ParseBannedSymbols(rootBannedSymbolsPath);
 
-            var allFiles = Directory.GetFiles(root, "BannedSymbols.txt", SearchOption.AllDirectories);
-            var localBannedSymbolFiles = new List<string>();
-            foreach (var f in allFiles)
-            {
-                if (string.Equals(f, rootBannedSymbolsPath, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (f.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar) ||
-                    f.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar))
-                    continue;
-                localBannedSymbolFiles.Add(f);
-            }
-
-            foreach (var localFile in localBannedSymbolFiles)
+            foreach (var localFile in FindLocalBannedSymbolFiles(root))
             {
                 var localSymbols = ParseBannedSymbols(localFile);
                 var duplicates = new List<string>();
@@ -43,6 +31,79 @@ namespace Kassyi.GSharp.Tests.Integration
                     $"This will cause BannedApiAnalyzers to emit RS0031 and IGNORE the rule! " +
                     $"Duplicates: {string.Join(", ", duplicates)}");
             }
+        }
+
+        [Fact]
+        [Scenario(TestScenario.Boundary)]
+        public void FindLocalBannedSymbolFiles_NestedWorktreeTmpAndBuildOutput_AreSkipped()
+        {
+            var root = Path.Combine(Path.GetTempPath(), "gsharp-banned-symbols-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                WriteBannedSymbols(root);
+                WriteBannedSymbols(Path.Combine(root, "src", "Project"));
+                WriteBannedSymbols(Path.Combine(root, "src", "Project", "obj"));
+                WriteBannedSymbols(Path.Combine(root, "src", "Project", "bin"));
+                WriteBannedSymbols(Path.Combine(root, "tmp", "long-checks", "run"));
+                var nestedWorktree = Path.Combine(root, ".claude", "worktrees", "agent");
+                WriteBannedSymbols(nestedWorktree);
+                File.WriteAllText(Path.Combine(nestedWorktree, ".git"), "gitdir: elsewhere");
+                var nestedClone = Path.Combine(root, "docs", "clone");
+                WriteBannedSymbols(nestedClone);
+                Directory.CreateDirectory(Path.Combine(nestedClone, ".git"));
+
+                var found = FindLocalBannedSymbolFiles(root);
+
+                Assert.Equal(new[] { Path.Combine(root, "src", "Project", "BannedSymbols.txt") }, found);
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                    Directory.Delete(root, recursive: true);
+            }
+        }
+
+        private static void WriteBannedSymbols(string directory)
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "BannedSymbols.txt"), "T:System.Object");
+        }
+
+        // The BannedSymbols.txt files of this checkout other than the root one. [WHY] A nested git worktree or clone
+        // (a directory holding a .git file or folder, such as .claude/worktrees/<name>) and the root tmp/ (scratch
+        // worktrees and run output) carry their own copies of the root file; bin/ and obj/ hold build copies.
+        private static List<string> FindLocalBannedSymbolFiles(string root)
+        {
+            var found = new List<string>();
+            var pending = new Stack<string>();
+            pending.Push(root);
+            while (pending.Count > 0)
+            {
+                var directory = pending.Pop();
+                if (!string.Equals(directory, root, StringComparison.Ordinal))
+                {
+                    var bannedSymbols = Path.Combine(directory, "BannedSymbols.txt");
+                    if (File.Exists(bannedSymbols))
+                        found.Add(bannedSymbols);
+                }
+
+                foreach (var child in Directory.EnumerateDirectories(directory))
+                {
+                    if (!IsSkippedDirectory(root, child))
+                        pending.Push(child);
+                }
+            }
+
+            found.Sort(StringComparer.Ordinal);
+            return found;
+        }
+
+        private static bool IsSkippedDirectory(string root, string directory)
+        {
+            var name = Path.GetFileName(directory);
+            return name is "bin" or "obj" or ".git" ||
+                   (name == "tmp" && string.Equals(Path.GetDirectoryName(directory), root, StringComparison.Ordinal)) ||
+                   Path.Exists(Path.Combine(directory, ".git"));
         }
 
         private static readonly string[] ValidDocIdPrefixes = ["T:", "M:", "P:", "F:", "E:", "N:"];
