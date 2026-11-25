@@ -5082,6 +5082,14 @@
 - {file: "TestCases/Ir/IrReconvergenceCases.cs", method: "IrReconvergenceCases.UniformIf", status: "Compared", count: 1}
 - {file: "TestCases/Ir/IrReconvergenceCases.cs", method: "IrReconvergenceCases.UniformWhile", status: "Compared", count: 1}
 - {file: "TestCases/Ir/IrReconvergenceCases.cs", method: "IrReconvergenceCases.UniformWhileWithReturn", status: "Reconvergence", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.Pair", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.ReadIn", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.RefFirst", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.Three", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.Two", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.Use", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.Widen", status: "NoStateMachine", count: 1}
+- {file: "TestCases/Ir/IrSequenceCases.cs", method: "Forms.WithDefault", status: "NoStateMachine", count: 1}
 - {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Cases.ArgumentLeftOfAConditionalSplit", status: "Compared", count: 1}
 - {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Cases.BarrierStatement", status: "Compared", count: 1}
 - {file: "TestCases/Ir/IrSpillPlannerCases.cs", method: "Cases.Bump", status: "NoStateMachine", count: 1}
