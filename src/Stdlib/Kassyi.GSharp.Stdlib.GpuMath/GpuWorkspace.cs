@@ -538,6 +538,17 @@ public class GpuWorkspace : IGpuResourceScope
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         return new GpuBigUInt(this, MemoryManager.Allocate(numWords));
     }
+
+    private uint _lastModPowNttBlockDim;
+
+    /// <summary>
+    /// Gets the block size of the most recent ModPow NTT mega-kernel launch on this workspace, which the tests read to
+    /// verify the launcher's block-size rule.
+    /// </summary>
+    internal uint LastModPowNttBlockDim => Volatile.Read(ref _lastModPowNttBlockDim);
+
+    /// <summary>Records the block size used to launch the ModPow NTT mega-kernel.</summary>
+    internal void RecordModPowNttBlockDim(uint blockDim) => Volatile.Write(ref _lastModPowNttBlockDim, blockDim);
 }
 
 

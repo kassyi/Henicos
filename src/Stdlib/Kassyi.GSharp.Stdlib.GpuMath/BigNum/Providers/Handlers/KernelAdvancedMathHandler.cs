@@ -349,6 +349,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         int totalWords = exponent.NumWords;
         int chunkWords = 8;
 
+        workspace.RecordModPowNttBlockDim(blockDim);
+
         for (int start = 0; start < totalWords; start += chunkWords)
         {
             int end = Math.Min(start + chunkWords, totalWords);
