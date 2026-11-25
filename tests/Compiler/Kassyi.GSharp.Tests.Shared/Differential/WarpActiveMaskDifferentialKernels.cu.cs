@@ -1961,6 +1961,28 @@ public static partial class WarpActiveMaskDifferentialKernels
         result[t + 192] = Warp.ActiveMask();
     }
 
+    // A goto loop whose else branch is left by the lanes of every pass: the branch that goes back only goes back, so
+    // the lanes meet in the else after each of their own number of back gotos
+    [GpuKernel]
+    public static void GotoLoopLeftByElseOfBackGotoKernel(uint[] result, int u)
+    {
+        int t = ThreadIndex.X;
+        int n = 0;
+    L1:
+        result[t + 32 * (4 + n)] = Warp.ActiveMask();
+        if (((t >> n) & 1) != 0 && n < u + 2)
+        {
+            n++;
+            goto L1;
+        }
+        else
+        {
+            result[t + 32 * n] = Warp.ActiveMask();
+        }
+
+        result[t + 96] = (uint)n;
+    }
+
     // Two backward gotos in the label's list with a mask at the header and between the gotos: lanes that return by
     // either goto meet at L1 on the next pass. Slots: 0,1 header per pass; 2,3 between gotos per pass; 4 after; 5 n
     [GpuKernel]

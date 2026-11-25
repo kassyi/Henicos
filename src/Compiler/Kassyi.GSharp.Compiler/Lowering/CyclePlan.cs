@@ -10,7 +10,8 @@ internal sealed record Cycle(
     JumpRegion Region,
     ImmutableHashSet<FlowNode> Members,
     ImmutableArray<GotoStatementSyntax> BackJumps,
-    bool NeedsLatch);
+    bool NeedsLatch,
+    ImmutableHashSet<StatementSyntax>? BranchGates = null);
 
 /// <summary>
 /// Planned natural-loop cycles for <see cref="ReconvergenceInserter"/>, keyed by the first statement node and last
@@ -55,9 +56,15 @@ internal sealed class CyclePlan
 
     public bool IsGateStatement(Cycle cycle, StatementSyntax statement) =>
         _flow != null &&
-        _flow.TryGetListPosition(statement, out var list, out var index) &&
+        (IsSerialGate(cycle, _flow, statement) ||
+         (!cycle.Members.Contains(StatementFlow.EntryOf(statement)) &&
+          (cycle.BranchGates?.Contains(statement) ?? false)));
+
+    // The statement right after a member statement of the same list that falls out of the cycle
+    private static bool IsSerialGate(Cycle cycle, StatementFlow flow, StatementSyntax statement) =>
+        flow.TryGetListPosition(statement, out var list, out var index) &&
         index > 0 &&
-        IsGateTransition(_flow, cycle.Members, list[index - 1], statement);
+        IsGateTransition(flow, cycle.Members, list[index - 1], statement);
 
     internal static bool IsGateTransition(
         StatementFlow flow,
@@ -151,7 +158,7 @@ internal static class CyclePlanner
         var gotoLoops = allGotoLoops.ToImmutable();
         foreach (var (statements, plan) in listPlans)
         {
-            PlanListCycles(statements, plan, flow, gotoLoops, cycles, orderedCycles);
+            PlanListCycles(statements, plan, flow, gotoLoops, holdsSplitPoint, constantCondition, cycles, orderedCycles);
         }
 
         return new CyclePlan(flow, cycles, orderedCycles.ToImmutable());
@@ -323,6 +330,8 @@ internal static class CyclePlanner
         JumpRegionPlan plan,
         StatementFlow flow,
         ImmutableArray<(SyntaxList<StatementSyntax> Statements, JumpRegion Region)> allGotoLoops,
+        Func<StatementSyntax, bool> holdsSplitPoint,
+        Func<ExpressionSyntax, bool?> constantCondition,
         Dictionary<CyclePlan.CycleKey, Cycle> cycles,
         ImmutableArray<Cycle>.Builder orderedCycles)
     {
@@ -368,7 +377,9 @@ internal static class CyclePlanner
 
             backJumps = liveBackJumps.ToImmutable();
 
-            if (!HasOnlyAllowedParents(backJumps, members, flow, owner))
+            var branchGates = FindBranchGates(members, backJumps, constantCondition);
+            if (!HasOnlyAllowedParents(backJumps, members, flow, owner) ||
+                !AreBranchGatesAllowed(branchGates, members, flow, owner))
             {
                 continue;
             }
@@ -379,18 +390,232 @@ internal static class CyclePlanner
             }
 
             var needsLatch = backJumps.Length >= 2 ||
-                NeedsLatchForSingleBackJump(backJumps[0], owner, statements, region, members, flow, allGotoLoops);
+                NeedsLatchForSingleBackJump(backJumps[0], owner, statements, region, members, flow, allGotoLoops) ||
+                HasUngatedSplit(statements, region, flow, members, branchGates, holdsSplitPoint);
             var cycle = new Cycle(
                 header,
                 statements,
                 region,
                 members,
                 backJumps,
-                needsLatch);
+                needsLatch,
+                branchGates);
             cycles[new CyclePlan.CycleKey(statements[region.First], region.Last)] = cycle;
             orderedCycles.Add(cycle);
         }
     }
+
+    private static bool AreBranchGatesAllowed(
+        ImmutableHashSet<StatementSyntax> branchGates,
+        ImmutableHashSet<FlowNode> members,
+        StatementFlow flow,
+        SyntaxNode owner)
+    {
+        foreach (var gate in branchGates)
+        {
+            if (!HasAllowedAncestors(gate, owner) || IsInsideNonNaturalLoopWithJump(gate, owner, flow, members))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // (C3) A statement of the loop's range that is outside the cycle, has not passed a gate and holds a split point:
+    // the lanes that fall out of the loop there have left it in different passes
+    private static bool HasUngatedSplit(
+        SyntaxList<StatementSyntax> statements,
+        JumpRegion region,
+        StatementFlow flow,
+        ImmutableHashSet<FlowNode> members,
+        ImmutableHashSet<StatementSyntax> branchGates,
+        Func<StatementSyntax, bool> holdsSplitPoint)
+    {
+        var scan = new UngatedScan(flow, members, branchGates, holdsSplitPoint);
+        return scan.InList(statements, region.First, region.Last);
+    }
+
+    private readonly record struct UngatedScan(
+        StatementFlow Flow,
+        ImmutableHashSet<FlowNode> Members,
+        ImmutableHashSet<StatementSyntax> BranchGates,
+        Func<StatementSyntax, bool> HoldsSplitPoint)
+    {
+        // The statements after a gate statement of the list, and the gate statement itself, are past the gate
+        public bool InList(SyntaxList<StatementSyntax> list, int first, int last)
+        {
+            for (var i = first; i <= last; i++)
+            {
+                var statement = list[i];
+                if (BranchGates.Contains(statement))
+                {
+                    return false;
+                }
+
+                if (i > 0 && CyclePlan.IsGateTransition(Flow, Members, list[i - 1], statement))
+                {
+                    return false;
+                }
+
+                if (InStatement(statement))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // asMember: the flow graph has one node for a chain of labels and its statement, so the statement of a label of
+        // the cycle is a member too
+        private bool InStatement(StatementSyntax statement, bool asMember = false)
+        {
+            if (BranchGates.Contains(statement))
+            {
+                return false;
+            }
+
+            switch (statement)
+            {
+                case BlockSyntax block:
+                    return InList(block.Statements, 0, block.Statements.Count - 1);
+                case CheckedStatementSyntax checkedStatement:
+                    return InStatement(checkedStatement.Block);
+                case UnsafeStatementSyntax unsafeStatement:
+                    return InStatement(unsafeStatement.Block);
+                case LabeledStatementSyntax labeled:
+                    return InStatement(labeled.Statement, asMember || Members.Contains(StatementFlow.EntryOf(labeled)));
+            }
+
+            if (!asMember && !Members.Contains(StatementFlow.EntryOf(statement)) && HoldsSplitPoint(statement))
+            {
+                return true;
+            }
+
+            switch (statement)
+            {
+                case IfStatementSyntax ifStatement:
+                    return InStatement(ifStatement.Statement) ||
+                           (ifStatement.Else is { } elseClause && InStatement(elseClause.Statement));
+                case WhileStatementSyntax whileStatement:
+                    return InStatement(whileStatement.Statement);
+                case DoStatementSyntax doStatement:
+                    return InStatement(doStatement.Statement);
+                case ForStatementSyntax forStatement:
+                    return InStatement(forStatement.Statement);
+                case CommonForEachStatementSyntax forEach:
+                    return InStatement(forEach.Statement);
+                case SwitchStatementSyntax switchStatement:
+                    foreach (var section in switchStatement.Sections)
+                    {
+                        if (InList(section.Statements, 0, section.Statements.Count - 1))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                default:
+                    return false;
+            }
+        }
+    }
+
+    // The first statement of one branch of a latch if whose other branch only goes back: lanes leave the loop there
+    private static ImmutableHashSet<StatementSyntax> FindBranchGates(
+        ImmutableHashSet<FlowNode> members,
+        ImmutableArray<GotoStatementSyntax> backJumps,
+        Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        var gates = ImmutableHashSet.CreateBuilder<StatementSyntax>();
+        foreach (var member in members)
+        {
+            if (member.Kind != FlowNodeKind.Statement ||
+                member.Syntax is not IfStatementSyntax { Else: { } elseClause } ifStatement ||
+                !CyclePlan.HasBackJumpInside(backJumps, ifStatement))
+            {
+                continue;
+            }
+
+            if (IsBackOnlyBranch(ifStatement.Statement, members, constantCondition) &&
+                FirstStatementOf(elseClause.Statement) is { } elseFirst)
+            {
+                gates.Add(elseFirst);
+            }
+
+            if (IsBackOnlyBranch(elseClause.Statement, members, constantCondition) &&
+                FirstStatementOf(ifStatement.Statement) is { } thenFirst)
+            {
+                gates.Add(thenFirst);
+            }
+        }
+
+        return gates.ToImmutable();
+    }
+
+    private static StatementSyntax? FirstStatementOf(StatementSyntax branch) =>
+        branch is BlockSyntax block ? (block.Statements.Count == 0 ? null : block.Statements[0]) : branch;
+
+    // A branch that is not empty, cannot fall through, and whose statements are all in the loop
+    private static bool IsBackOnlyBranch(
+        StatementSyntax branch,
+        ImmutableHashSet<FlowNode> members,
+        Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        if (branch is BlockSyntax { Statements.Count: 0 } || CanFallThrough(branch, constantCondition))
+        {
+            return false;
+        }
+
+        return branch
+            .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+            .AsStackEnumerable()
+            .OfType<StatementSyntax>()
+            .All(members, static (statement, set) => set.Contains(StatementFlow.EntryOf(statement)));
+    }
+
+    // Whether control can reach the end of the statement; a form that is not sure answers true (no gate is placed)
+    private static bool CanFallThrough(StatementSyntax statement, Func<ExpressionSyntax, bool?> constantCondition)
+    {
+        switch (statement)
+        {
+            case GotoStatementSyntax or BreakStatementSyntax or ContinueStatementSyntax or ReturnStatementSyntax
+                or ThrowStatementSyntax:
+                return false;
+            case BlockSyntax block:
+                return block.Statements.Count == 0 || CanFallThrough(block.Statements[^1], constantCondition);
+            case CheckedStatementSyntax checkedStatement:
+                return CanFallThrough(checkedStatement.Block, constantCondition);
+            case UnsafeStatementSyntax unsafeStatement:
+                return CanFallThrough(unsafeStatement.Block, constantCondition);
+            case LabeledStatementSyntax labeled:
+                return CanFallThrough(labeled.Statement, constantCondition);
+            case IfStatementSyntax ifStatement:
+                return ifStatement.Else == null ||
+                       CanFallThrough(ifStatement.Statement, constantCondition) ||
+                       CanFallThrough(ifStatement.Else.Statement, constantCondition);
+            case WhileStatementSyntax whileStatement:
+                return constantCondition(whileStatement.Condition) != true || HasOwnBreak(whileStatement.Statement);
+            case DoStatementSyntax doStatement:
+                return constantCondition(doStatement.Condition) != true || HasOwnBreak(doStatement.Statement);
+            case ForStatementSyntax forStatement:
+                return (forStatement.Condition != null && constantCondition(forStatement.Condition) != true) ||
+                       HasOwnBreak(forStatement.Statement);
+            default:
+                return true;
+        }
+    }
+
+    // A break of the loop itself, not of a loop or switch inside its body
+    private static bool HasOwnBreak(StatementSyntax body) =>
+        body
+            .DescendantNodesAndSelf(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax
+                or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or CommonForEachStatementSyntax
+                or SwitchStatementSyntax))
+            .AsStackEnumerable()
+            .OfType<BreakStatementSyntax>()
+            .Any();
 
     private static bool NeedsLatchForSingleBackJump(
         GotoStatementSyntax backJump,

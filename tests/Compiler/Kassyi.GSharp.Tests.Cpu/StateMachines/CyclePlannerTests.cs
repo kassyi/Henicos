@@ -129,6 +129,60 @@ public class CyclePlannerTests
     }
 
     [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_ElseOfABranchThatOnlyGoesBack_IsGate()
+    {
+        var body = ParseBlock("L: Split(); if (c) { n++; goto L; } else { Split(); Split(); }");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var ifStatement = Assert.IsType<IfStatementSyntax>(body.Statements[1]);
+        var elseBlock = Assert.IsType<BlockSyntax>(ifStatement.Else!.Statement); // Parsed from the literal above: else exists
+        Assert.True(plan.IsGateStatement(cycle, elseBlock.Statements[0]));
+        Assert.False(plan.IsGateStatement(cycle, elseBlock.Statements[1]));
+
+        var unbraced = ParseBlock("L: Split(); if (c) { n++; goto L; } else Split();");
+        var unbracedPlan = CyclePlanner.Plan(unbraced, HoldsSplit, ConstantLiteralCondition);
+        var unbracedCycle = unbracedPlan.Find(unbraced.Statements, FindLoopRegion(unbraced.Statements, "L"));
+
+        Assert.NotNull(unbracedCycle);
+        var unbracedIf = Assert.IsType<IfStatementSyntax>(unbraced.Statements[1]);
+        Assert.True(unbracedPlan.IsGateStatement(unbracedCycle, unbracedIf.Else!.Statement)); // Parsed from the literal above: else exists
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ElseOfABranchThatFallsThrough_IsNotGate()
+    {
+        var body = ParseBlock("L: Split(); if (c) { if (d) goto L; } else { Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var ifStatement = Assert.IsType<IfStatementSyntax>(body.Statements[1]);
+        var elseBlock = Assert.IsType<BlockSyntax>(ifStatement.Else!.Statement); // Parsed from the literal above: else exists
+        Assert.False(plan.IsGateStatement(cycle, elseBlock.Statements[0]));
+        Assert.True(plan.IsGateStatement(cycle, body.Statements[2]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_IfWithoutElseAfterBackGoto_HasNoBranchGate()
+    {
+        var body = ParseBlock("L: Split(); if (c) { n++; goto L; } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        var ifStatement = Assert.IsType<IfStatementSyntax>(body.Statements[1]);
+        var thenBlock = Assert.IsType<BlockSyntax>(ifStatement.Statement);
+        Assert.False(plan.IsGateStatement(cycle, thenBlock.Statements[0]));
+        Assert.False(plan.IsGateStatement(cycle, thenBlock.Statements[1]));
+        Assert.True(plan.IsGateStatement(cycle, body.Statements[2]));
+    }
+
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Plan_GotoInForBody_IsPlannedAndNeedsLatch()
     {
@@ -606,6 +660,45 @@ public class CyclePlannerTests
         Assert.NotNull(cycle);
         Assert.Equal(2, cycle.BackJumps.Length);
         Assert.True(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_SplitInElseThatFallsThrough_NeedsLatch()
+    {
+        var body = ParseBlock("L: Split(); if (a) { if (c) goto L; Split(); } else { Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.True(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_GotoInIf_NeedsNoLatch()
+    {
+        var body = ParseBlock("L: Split(); if (a) { if (c) goto L; Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.False(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ElseOfABranchThatOnlyGoesBack_NeedsNoLatch()
+    {
+        var body = ParseBlock("L: Split(); if (c) { n++; goto L; } else { Split(); Split(); }");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.False(cycle.NeedsLatch);
     }
 
     [Fact]

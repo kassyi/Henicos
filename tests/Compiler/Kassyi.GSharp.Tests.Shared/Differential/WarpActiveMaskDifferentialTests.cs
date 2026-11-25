@@ -1327,6 +1327,21 @@ public class WarpActiveMaskDifferentialTests
 
     [SkippableFact]
     [Scenario(TestScenario.Boundary)]
+    public void ActiveMask_GotoLoopLeftByElseOfBackGoto_ReconvergesInTheElse() =>
+        RunOnEveryPath(224,
+            static output => WarpActiveMaskDifferentialKernels.LaunchGotoLoopLeftByElseOfBackGotoKernel(
+                output, 0, blockDimX: 32),
+            PerLane(32, static t => (t & 1) == 0, 0xFFFFFFFFu)
+                .Concat(PerLane(32, static t => (t & 3) == 1, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0xFFFFFFFFu))
+                .Concat(Enumerable.Range(0, 32).Select(static t => (t & 3) == 3 ? 2u : (t & 1) != 0 ? 1u : 0u))
+                .Concat(PerLane(32, static _ => true, 0xFFFFFFFFu))
+                .Concat(PerLane(32, static t => (t & 1) != 0, 0xAAAAAAAAu))
+                .Concat(PerLane(32, static t => (t & 3) == 3, 0x88888888u))
+                .ToArray());
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
     public void ActiveMask_TwoBackwardGotosWithHeaderMask_ReconvergesAtLabel() =>
         RunWithinClassicBounds(192,
             static output => WarpActiveMaskDifferentialKernels.LaunchTwoBackwardGotosWithHeaderMaskKernel(
