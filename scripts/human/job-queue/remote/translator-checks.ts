@@ -532,6 +532,14 @@ export const RemoteTranslatorChecks: Record<string, (assert: AssertModule) => vo
           `NB6 rejects: ${nb6Reject}`,
         );
       }
+      // pwsh refuses an unquoted @ (splatting) before the @rsp rule runs, so only bash reaches that rule
+      for (const rspReject of ["dotnet test @local.rsp", "dotnet test -- @local.rsp"]) {
+        assert.strictEqual(
+          translateForRemote(rspReject, { ...baseOpts, shell: "bash" as const, remoteRules: runnerRules }),
+          null,
+          `NB6 rejects in bash: ${rspReject}`,
+        );
+      }
       const ddAllowed = translateForRemote(`dotnet test -- RunConfiguration.X=1 ${path.join(wt, "tests", "in.txt")}`, {
         ...baseOpts,
         remoteRules: runnerRules,

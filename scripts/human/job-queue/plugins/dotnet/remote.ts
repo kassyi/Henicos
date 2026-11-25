@@ -60,7 +60,9 @@ export const DotnetReceivedArtifactRule: RemoteFailureArtifactRule = {
   cleanBeforeRun: true,
 };
 
-export const MaxSequenceXmlBytes = 4 * 1024 * 1024;
+// The largest Sequence_*.xml the collector pulls back (MaxSingleArtifactBytes of remote/artifact-collector.ts): a
+// full Tests.Cpu run writes about 4 MiB, and the parse is linear, so a lower cap would drop the names of a crash.
+export const MaxSequenceXmlBytes = 16 * 1024 * 1024;
 
 function isWordCharCode(code: number): boolean {
   return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 48 && code <= 57) || code === 95;
