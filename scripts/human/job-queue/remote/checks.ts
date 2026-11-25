@@ -31,6 +31,7 @@ import { RemoteServerChecks } from "./server-checks.ts";
 import {
   buildSshArgs,
   fitsRemote,
+  isValidRelativeCacheDir,
   isValidRemoteWorkspace,
   RemoteMetadataFiles,
   RemoteWorkspaceMarkerFile,
@@ -578,6 +579,45 @@ export const RemoteChecks: Record<string, (assert: AssertModule) => void | Promi
       "/home/jobrunner/henicos",
     ]) {
       assert.strictEqual(isValidRemoteWorkspace(goodWorkspace), true, `accepts ${goodWorkspace}`);
+    }
+    for (const badProvisionerWorkspace of [
+      "/etc/ssh",
+      "/srv/henicos",
+      "/home/ubuntu/ws",
+      "/home/jobrunner",
+      "/var/lib/jobrunner",
+      "~/.ssh",
+      "/opt/.hidden/ws",
+      "~/henicos\u0085",
+    ]) {
+      assert.strictEqual(
+        isValidRemoteWorkspace(badProvisionerWorkspace, { provisionerRunnerUser: "jobrunner" }),
+        false,
+        `provisioner mode rejects ${JSON.stringify(badProvisionerWorkspace)}`,
+      );
+    }
+    for (const goodProvisionerWorkspace of [
+      "~/henicos",
+      "/srv/jobrunner/henicos",
+      "/opt/jobrunner/henicos",
+      "/home/jobrunner/henicos",
+      "/var/lib/jobrunner/henicos",
+    ]) {
+      assert.strictEqual(
+        isValidRemoteWorkspace(goodProvisionerWorkspace, { provisionerRunnerUser: "jobrunner" }),
+        true,
+        `provisioner mode accepts ${goodProvisionerWorkspace}`,
+      );
+    }
+    for (const badCacheDir of [".", "./foo", "foo//bar", ".ssh", ".gnupg", ".cargo", ".nuget", "sub/.ssh"]) {
+      assert.strictEqual(
+        isValidRelativeCacheDir(badCacheDir),
+        false,
+        `rejects cacheDir ${JSON.stringify(badCacheDir)}`,
+      );
+    }
+    for (const goodCacheDir of [".nuget/packages", ".cargo/registry", "caches/nuget"]) {
+      assert.strictEqual(isValidRelativeCacheDir(goodCacheDir), true, `accepts cacheDir ${goodCacheDir}`);
     }
     const trimmedConfig = validateConfig({
       version: 1,
