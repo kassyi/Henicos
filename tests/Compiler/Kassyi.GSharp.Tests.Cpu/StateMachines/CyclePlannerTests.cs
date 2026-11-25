@@ -651,6 +651,45 @@ public class CyclePlannerTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_SplitInElseThatFallsThrough_NeedsLatch()
+    {
+        var body = ParseBlock("L: Split(); if (a) { if (c) goto L; Split(); } else { Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.True(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Plan_GotoInIf_NeedsNoLatch()
+    {
+        var body = ParseBlock("L: Split(); if (a) { if (c) goto L; Split(); } Split();");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.False(cycle.NeedsLatch);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Plan_ElseOfABranchThatOnlyGoesBack_NeedsNoLatch()
+    {
+        var body = ParseBlock("L: Split(); if (c) { n++; goto L; } else { Split(); Split(); }");
+        var plan = CyclePlanner.Plan(body, HoldsSplit, ConstantLiteralCondition);
+        var cycle = plan.Find(body.Statements, FindLoopRegion(body.Statements, "L"));
+
+        Assert.NotNull(cycle);
+        Assert.Single(cycle.BackJumps);
+        Assert.False(cycle.NeedsLatch);
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Plan_OneGoto_NeedsNoLatch()
     {
